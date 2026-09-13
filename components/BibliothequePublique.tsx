@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -17,6 +17,7 @@ import {
   reessayerVectorisationBibliothequePublique,
   copierVersBibliothequePersonnelle,
   creerDossierCataloguePublic,
+  modifierFiltresDossierCataloguePublic,
   supprimerDossierCataloguePublic,
   deplacerDossierCataloguePublic,
   retirerFichierDossierCataloguePublic,
@@ -38,6 +39,7 @@ import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { SignalerContenuModal } from "@/components/SignalerContenuModal";
 import { DeplacerVersModal } from "@/components/DeplacerVersModal";
+import { EditionFiltresDossierModal } from "@/components/EditionFiltresDossierModal";
 import { VisionneuseBibliotheque } from "@/components/VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
@@ -195,6 +197,118 @@ function ChampsFiltragePublication({
   );
 }
 
+// 13/09/2026, demande Bourama : un DOSSIER (uniquement -- pas un
+// fichier/lien/texte, qui garde ChampsFiltragePublication ci-dessus,
+// une seule valeur) peut recevoir plusieurs valeurs pour un même
+// filtre. Petites puces retirables + champ texte/<datalist> pour en
+// ajouter une nouvelle (Entrée ou en quittant le champ) -- même
+// logique "valeur libre, jamais de liste fermée" que ci-dessus.
+function ChampMultiValeurs({
+  valeurs,
+  onChange,
+  placeholder,
+  listeId,
+  suggestions,
+}: {
+  valeurs: string[];
+  onChange: (v: string[]) => void;
+  placeholder: string;
+  listeId: string;
+  suggestions: string[];
+}) {
+  const [saisie, setSaisie] = useState("");
+
+  function ajouter(v: string) {
+    const nettoyee = v.trim();
+    if (!nettoyee || valeurs.includes(nettoyee)) {
+      setSaisie("");
+      return;
+    }
+    onChange([...valeurs, nettoyee]);
+    setSaisie("");
+  }
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {valeurs.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {valeurs.map((v) => (
+            <span
+              key={v}
+              className="flex animate-dj-fade-in-rapide items-center gap-1 rounded-full border border-dj-bordure bg-dj-fond px-2 py-0.5 text-xs text-dj-texte"
+            >
+              {v}
+              <button
+                type="button"
+                onClick={() => onChange(valeurs.filter((x) => x !== v))}
+                aria-label={`Retirer ${v}`}
+                className="text-dj-texte-muet hover:text-dj-texte"
+              >
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        list={listeId}
+        value={saisie}
+        onChange={(e) => setSaisie(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            ajouter(saisie);
+          }
+        }}
+        onBlur={() => saisie.trim() && ajouter(saisie)}
+        placeholder={placeholder}
+        className="min-w-0 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-bordure-forte"
+      />
+      <datalist id={listeId}>
+        {suggestions.filter((s) => !valeurs.includes(s)).map((v) => (
+          <option key={v} value={v} />
+        ))}
+      </datalist>
+    </div>
+  );
+}
+
+function ChampsFiltrageDossierMulti({
+  pays,
+  niveau,
+  categorie,
+  classe,
+  specialite,
+  onChangePays,
+  onChangeNiveau,
+  onChangeCategorie,
+  onChangeClasse,
+  onChangeSpecialite,
+  listes,
+}: {
+  pays: string[];
+  niveau: string[];
+  categorie: string[];
+  classe: string[];
+  specialite: string[];
+  onChangePays: (v: string[]) => void;
+  onChangeNiveau: (v: string[]) => void;
+  onChangeCategorie: (v: string[]) => void;
+  onChangeClasse: (v: string[]) => void;
+  onChangeSpecialite: (v: string[]) => void;
+  listes: ListesFiltresBibliothequePublique;
+}) {
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <ChampMultiValeurs valeurs={pays} onChange={onChangePays} placeholder="Pays (optionnel)" listeId="biblio-pub-dossier-liste-pays" suggestions={listes.pays} />
+      <ChampMultiValeurs valeurs={niveau} onChange={onChangeNiveau} placeholder="Niveau (optionnel)" listeId="biblio-pub-dossier-liste-niveau" suggestions={listes.niveaux} />
+      <ChampMultiValeurs valeurs={categorie} onChange={onChangeCategorie} placeholder="Catégorie (optionnel)" listeId="biblio-pub-dossier-liste-categorie" suggestions={listes.categories} />
+      <ChampMultiValeurs valeurs={classe} onChange={onChangeClasse} placeholder="Classe (optionnel)" listeId="biblio-pub-dossier-liste-classe" suggestions={listes.classes} />
+      <ChampMultiValeurs valeurs={specialite} onChange={onChangeSpecialite} placeholder="Spécialité (optionnel)" listeId="biblio-pub-dossier-liste-specialite" suggestions={listes.specialites} />
+    </div>
+  );
+}
+
 function typeDe(entree: EntreeBibliothequePublique): TypeBiblioPublique {
   const typeMime = entree.type_mime;
   if (!typeMime) return "documents";
@@ -283,6 +397,46 @@ export function BibliothequePublique() {
 
   const [creationDossierOuverte, setCreationDossierOuverte] = useState(false);
   const [nouveauNomDossier, setNouveauNomDossier] = useState("");
+  // 13/09/2026, demande Bourama : les 5 filtres d'un dossier n'étaient
+  // modifiables nulle part -- panneau d'édition dédié, ouvert pour un
+  // seul dossier à la fois, pré-rempli avec ses valeurs actuelles.
+  const [dossierEditionFiltres, setDossierEditionFiltres] = useState<DossierCataloguePublic | null>(null);
+  const [editionFiltresPays, setEditionFiltresPays] = useState<string[]>([]);
+  const [editionFiltresNiveau, setEditionFiltresNiveau] = useState<string[]>([]);
+  const [editionFiltresCategorie, setEditionFiltresCategorie] = useState<string[]>([]);
+  const [editionFiltresClasse, setEditionFiltresClasse] = useState<string[]>([]);
+  const [editionFiltresSpecialite, setEditionFiltresSpecialite] = useState<string[]>([]);
+  const [enregistrementFiltresEnCours, setEnregistrementFiltresEnCours] = useState(false);
+
+  function ouvrirEditionFiltres(d: DossierCataloguePublic) {
+    setDossierEditionFiltres(d);
+    setEditionFiltresPays(d.pays || []);
+    setEditionFiltresNiveau(d.niveau || []);
+    setEditionFiltresCategorie(d.categorie || []);
+    setEditionFiltresClasse(d.classe || []);
+    setEditionFiltresSpecialite(d.specialite || []);
+  }
+
+  async function enregistrerEditionFiltres() {
+    if (!dossierEditionFiltres) return;
+    setEnregistrementFiltresEnCours(true);
+    try {
+      await modifierFiltresDossierCataloguePublic(dossierEditionFiltres.id, {
+        pays: editionFiltresPays,
+        niveau: editionFiltresNiveau,
+        categorie: editionFiltresCategorie,
+        classe: editionFiltresClasse,
+        specialite: editionFiltresSpecialite,
+      });
+      setDossierEditionFiltres(null);
+      chargerDossiers();
+    } catch (e) {
+      window.alert(messageErreur(e));
+    } finally {
+      setEnregistrementFiltresEnCours(false);
+    }
+  }
+
   // 08/09/2026, demande Bourama : les dossiers (et sous-dossiers) suivent
   // la même logique que les fichiers -- description optionnelle en plus
   // du nom.
@@ -304,6 +458,15 @@ export function BibliothequePublique() {
   // 04/09/2026, demande Bourama : 2 filtres supplémentaires, même principe.
   const [champClasse, setChampClasse] = useState("");
   const [champSpecialite, setChampSpecialite] = useState("");
+  // 13/09/2026, demande Bourama : un DOSSIER (uniquement -- un fichier/
+  // lien/texte garde une seule valeur par filtre, state ci-dessus
+  // inchangé) accepte désormais plusieurs valeurs par filtre. État
+  // séparé, propre au formulaire de création de dossier.
+  const [filtresDossierPays, setFiltresDossierPays] = useState<string[]>([]);
+  const [filtresDossierNiveau, setFiltresDossierNiveau] = useState<string[]>([]);
+  const [filtresDossierCategorie, setFiltresDossierCategorie] = useState<string[]>([]);
+  const [filtresDossierClasse, setFiltresDossierClasse] = useState<string[]>([]);
+  const [filtresDossierSpecialite, setFiltresDossierSpecialite] = useState<string[]>([]);
   const [listesFiltres, setListesFiltres] = useState<ListesFiltresBibliothequePublique>({
     pays: [], niveaux: [], categories: [], classes: [], specialites: [],
   });
@@ -320,6 +483,14 @@ export function BibliothequePublique() {
     setChampCategorie("");
     setChampClasse("");
     setChampSpecialite("");
+  }
+
+  function reinitialiserFiltresDossier() {
+    setFiltresDossierPays([]);
+    setFiltresDossierNiveau([]);
+    setFiltresDossierCategorie([]);
+    setFiltresDossierClasse([]);
+    setFiltresDossierSpecialite([]);
   }
 
   // Filtres de recherche/parcours (même demande) : le type est filtré
@@ -868,17 +1039,17 @@ export function BibliothequePublique() {
         nouveauStatutDossier,
         dossierCourantId ?? undefined,
         {
-          pays: champPays,
-          niveau: champNiveau,
-          categorie: champCategorie,
-          classe: champClasse,
-          specialite: champSpecialite,
+          pays: filtresDossierPays,
+          niveau: filtresDossierNiveau,
+          categorie: filtresDossierCategorie,
+          classe: filtresDossierClasse,
+          specialite: filtresDossierSpecialite,
         },
         nouvelleDescriptionDossier.trim(),
       );
       setNouveauNomDossier("");
       setNouvelleDescriptionDossier("");
-      reinitialiserChampsFiltragePublication();
+      reinitialiserFiltresDossier();
       setCreationDossierOuverte(false);
       chargerDossiers();
       chargerListesFiltres();
@@ -1139,11 +1310,15 @@ export function BibliothequePublique() {
   const sousDossiersAffiches = (dossiers ?? [])
     .filter((d) => (d.dossier_parent_id ?? null) === dossierCourantId)
     .filter((d) => filtreStatutDossier === "tous" || d.statut === filtreStatutDossier)
-    .filter((d) => !filtrePays || d.pays === filtrePays)
-    .filter((d) => !filtreNiveau || d.niveau === filtreNiveau)
-    .filter((d) => !filtreCategorie || d.categorie === filtreCategorie)
-    .filter((d) => !filtreClasse || d.classe === filtreClasse)
-    .filter((d) => !filtreSpecialite || d.specialite === filtreSpecialite);
+    // 13/09/2026 : un dossier peut désormais avoir plusieurs valeurs par
+    // filtre -- on garde le choix d'UNE seule valeur à la fois côté
+    // recherche (inchangé), mais on vérifie qu'elle fait partie de la
+    // liste du dossier au lieu d'une égalité stricte.
+    .filter((d) => !filtrePays || (d.pays || []).includes(filtrePays))
+    .filter((d) => !filtreNiveau || (d.niveau || []).includes(filtreNiveau))
+    .filter((d) => !filtreCategorie || (d.categorie || []).includes(filtreCategorie))
+    .filter((d) => !filtreClasse || (d.classe || []).includes(filtreClasse))
+    .filter((d) => !filtreSpecialite || (d.specialite || []).includes(filtreSpecialite));
   const dossierActuel = dossierCourantId ? (dossiers ?? []).find((d) => d.id === dossierCourantId) : null;
   // 04/09/2026 : le filtrage par dossier se fait désormais côté serveur
   // (voir charger()/chargerPlus(), paramètre dossier_id) pour que le
@@ -1518,6 +1693,17 @@ export function BibliothequePublique() {
                     >
                       <Move size={14} />
                     </button>
+                    {/* 13/09/2026, demande Bourama : filtres (pays/niveau/
+                        catégorie/classe/spécialité) modifiables après
+                        coup -- réservé au créateur côté backend (403
+                        sinon, même règle que renommer/supprimer). */}
+                    <button
+                      onClick={() => ouvrirEditionFiltres(d)}
+                      className="flex-shrink-0 text-dj-texte-muet hover:text-dj-texte"
+                      title="Modifier les filtres (pays, niveau, catégorie, classe, spécialité)"
+                    >
+                      <Tags size={14} />
+                    </button>
                     <button
                       onClick={() => supprimerDossier(d)}
                       className="flex-shrink-0 text-dj-texte-muet hover:text-[var(--dj-erreur)]"
@@ -1566,17 +1752,17 @@ export function BibliothequePublique() {
                 rows={2}
                 className="resize-none rounded-xl border border-dj-bordure bg-dj-fond px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
               />
-              <ChampsFiltragePublication
-                pays={champPays}
-                niveau={champNiveau}
-                categorie={champCategorie}
-                classe={champClasse}
-                specialite={champSpecialite}
-                onChangePays={setChampPays}
-                onChangeNiveau={setChampNiveau}
-                onChangeCategorie={setChampCategorie}
-                onChangeClasse={setChampClasse}
-                onChangeSpecialite={setChampSpecialite}
+              <ChampsFiltrageDossierMulti
+                pays={filtresDossierPays}
+                niveau={filtresDossierNiveau}
+                categorie={filtresDossierCategorie}
+                classe={filtresDossierClasse}
+                specialite={filtresDossierSpecialite}
+                onChangePays={setFiltresDossierPays}
+                onChangeNiveau={setFiltresDossierNiveau}
+                onChangeCategorie={setFiltresDossierCategorie}
+                onChangeClasse={setFiltresDossierClasse}
+                onChangeSpecialite={setFiltresDossierSpecialite}
                 listes={listesFiltres}
               />
               <div className="flex items-center justify-end gap-2">
@@ -1585,7 +1771,7 @@ export function BibliothequePublique() {
                     setCreationDossierOuverte(false);
                     setNouveauNomDossier("");
                     setNouvelleDescriptionDossier("");
-                    reinitialiserChampsFiltragePublication();
+                    reinitialiserFiltresDossier();
                   }}
                   className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
                 >
@@ -1866,6 +2052,30 @@ export function BibliothequePublique() {
             }
           }}
           onFermer={() => setCibleDeplacement(null)}
+        />
+      )}
+
+      {dossierEditionFiltres && (
+        <EditionFiltresDossierModal
+          nomDossier={dossierEditionFiltres.nom}
+          pays={editionFiltresPays}
+          niveau={editionFiltresNiveau}
+          categorie={editionFiltresCategorie}
+          classe={editionFiltresClasse}
+          specialite={editionFiltresSpecialite}
+          onChangePays={setEditionFiltresPays}
+          onChangeNiveau={setEditionFiltresNiveau}
+          onChangeCategorie={setEditionFiltresCategorie}
+          onChangeClasse={setEditionFiltresClasse}
+          onChangeSpecialite={setEditionFiltresSpecialite}
+          suggestionsPays={listesFiltres.pays}
+          suggestionsNiveau={listesFiltres.niveaux}
+          suggestionsCategorie={listesFiltres.categories}
+          suggestionsClasse={listesFiltres.classes}
+          suggestionsSpecialite={listesFiltres.specialites}
+          enregistrementEnCours={enregistrementFiltresEnCours}
+          onEnregistrer={enregistrerEditionFiltres}
+          onFermer={() => setDossierEditionFiltres(null)}
         />
       )}
 

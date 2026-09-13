@@ -578,12 +578,27 @@ export type DossierCataloguePublic = {
   created_at: string;
   fichier_ids: string[];
   // 03/09/2026, demande Bourama : mêmes 3 filtres que pour un fichier.
-  pays?: string | null;
-  niveau?: string | null;
-  categorie?: string | null;
+  // 13/09/2026, demande Bourama : un dossier (uniquement -- un fichier
+  // garde une seule valeur, type FiltresBibliothequePublique inchangé)
+  // accepte désormais plusieurs valeurs par filtre.
+  pays?: string[] | null;
+  niveau?: string[] | null;
+  categorie?: string[] | null;
   // 04/09/2026, demande Bourama : 2 filtres supplémentaires, même principe.
-  classe?: string | null;
-  specialite?: string | null;
+  classe?: string[] | null;
+  specialite?: string[] | null;
+};
+
+// 13/09/2026, demande Bourama : filtres d'un DOSSIER (uniquement),
+// chacun avec plusieurs valeurs possibles -- distinct de
+// FiltresBibliothequePublique (fichiers + recherche), qui reste à une
+// seule valeur par filtre.
+export type FiltresDossierCataloguePublic = {
+  pays?: string[];
+  niveau?: string[];
+  categorie?: string[];
+  classe?: string[];
+  specialite?: string[];
 };
 
 export async function listerDossiersCataloguePublic() {
@@ -617,7 +632,7 @@ export async function creerDossierCataloguePublic(
   nom: string,
   statut: "contribution_libre" | "privee" = "contribution_libre",
   dossierParentId?: string,
-  filtres?: FiltresBibliothequePublique,
+  filtres?: FiltresDossierCataloguePublic,
   // 08/09/2026, demande Bourama : dossiers = même logique que les fichiers, description optionnelle.
   description?: string,
 ) {
@@ -628,11 +643,11 @@ export async function creerDossierCataloguePublic(
       description: description || "",
       statut,
       dossier_parent_id: dossierParentId || null,
-      pays: filtres?.pays || "",
-      niveau: filtres?.niveau || "",
-      categorie: filtres?.categorie || "",
-      classe: filtres?.classe || "",
-      specialite: filtres?.specialite || "",
+      pays: filtres?.pays || [],
+      niveau: filtres?.niveau || [],
+      categorie: filtres?.categorie || [],
+      classe: filtres?.classe || [],
+      specialite: filtres?.specialite || [],
     }),
   }) as Promise<DossierCataloguePublic>;
 }
@@ -642,6 +657,22 @@ export async function renommerDossierCataloguePublic(dossierId: string, nom: str
     method: "PATCH",
     body: JSON.stringify({ nom }),
   });
+}
+
+// 13/09/2026, demande Bourama : les filtres d'un dossier n'étaient
+// modifiables nulle part jusqu'ici -- réservé au créateur du dossier
+// côté backend (même règle que renommer ci-dessus).
+export async function modifierFiltresDossierCataloguePublic(dossierId: string, filtres: FiltresDossierCataloguePublic) {
+  return appelerApi(`/api/bibliotheque-publique/dossiers/${dossierId}/filtres`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      pays: filtres.pays || [],
+      niveau: filtres.niveau || [],
+      categorie: filtres.categorie || [],
+      classe: filtres.classe || [],
+      specialite: filtres.specialite || [],
+    }),
+  }) as Promise<DossierCataloguePublic>;
 }
 
 // 09/09/2026, demande Bourama ("confirmation contributeurs") : pour un
