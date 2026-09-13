@@ -253,7 +253,22 @@ export function BlocExpansible({
           </div>
         }
       >
-        <div className="min-h-0 flex-1 overflow-auto">
+        {/* 13/09/2026, bug remonté par Bourama en plein écran : le
+            markdown déborde ET les boutons Formaté/Brut (en-tête sticky
+            de ContenuMarkdown) disparaissent. Cause : ce conteneur était
+            `overflow-auto` (x ET y) -- s'il scrolle aussi à l'horizontale,
+            il devient l'ancêtre de référence du `sticky top-0` de
+            ContenuMarkdown, qui n'est sticky que verticalement -- tout
+            défilement horizontal ICI fait donc glisser l'en-tête hors
+            champ avec le reste. Le contenu (tableaux, blocs de code) gère
+            déjà lui-même son propre débordement horizontal localement
+            (overflow-x-auto sur chaque tableau/bloc, voir
+            VisionneuseBibliotheque.tsx) -- ce conteneur n'a donc besoin
+            de scroller qu'à la verticale. `overflow-x-hidden` +
+            `w-full max-w-full min-w-0` empêchent tout élément interne de
+            forcer une largeur plus grande que le panneau plutôt que de
+            déborder proprement dans son propre `overflow-x-auto` local. */}
+        <div className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre}>{enfant}</GardeApercu>
         </div>
       </PanneauFlottant>

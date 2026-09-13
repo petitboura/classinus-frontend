@@ -194,7 +194,7 @@ export function ContenuMarkdown({ href }: { href: string }) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex w-full max-w-full min-w-0 flex-col">
       <div className="sticky top-0 z-10 flex justify-between gap-1 border-b border-dj-bordure bg-dj-surface px-3 py-2">
         <div className="flex gap-1">
           <button
@@ -219,7 +219,7 @@ export function ContenuMarkdown({ href }: { href: string }) {
       {vueBrute ? (
         <pre className="whitespace-pre-wrap break-words p-5 font-sans text-sm text-dj-texte">{texte}</pre>
       ) : (
-        <div className="flex flex-col gap-3 p-5 text-sm leading-relaxed text-dj-texte">
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-3 p-5 text-sm leading-relaxed text-dj-texte">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
