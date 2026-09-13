@@ -50,6 +50,7 @@ class TelechargementPlugin : Plugin() {
 
     @PluginMethod
     fun depuisUrl(call: PluginCall) {
+        android.util.Log.i("ClovisTelechargement", "depuisUrl() appelée (nom=${call.getString("nom")}).")
         val url = call.getString("url")
         val nom = call.getString("nom")
         if (url == null || nom == null) {
@@ -65,6 +66,7 @@ class TelechargementPlugin : Plugin() {
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
             val id = gestionnaire.enqueue(requete)
+            android.util.Log.i("ClovisTelechargement", "depuisUrl() enqueue OK, id=$id.")
             call.resolve(JSObject().put("id", id.toString()))
         } catch (e: Exception) {
             android.util.Log.e("ClovisTelechargement", "Échec depuisUrl (DownloadManager).", e)
@@ -74,6 +76,7 @@ class TelechargementPlugin : Plugin() {
 
     @PluginMethod
     fun depuisContenuLocal(call: PluginCall) {
+        android.util.Log.i("ClovisTelechargement", "depuisContenuLocal() appelée (nom=${call.getString("nom")}).")
         val base64 = call.getString("base64")
         val nom = call.getString("nom")
         val typeMime = call.getString("typeMime") ?: "application/octet-stream"
