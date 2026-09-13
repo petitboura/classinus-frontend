@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, ReactNode } from "react";
 import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { telecharger } from "@/lib/telecharger";
 import { GardeApercu } from "./GardeApercu";
 
 // Remplace le panneau latéral (retiré, 2026-07-20 -- Bourama a préféré
@@ -140,10 +141,10 @@ export function BlocExpansible({
           </button>
         )}
         {hrefTelechargement && (
-          <a href={hrefTelechargement} target="_blank" rel="noopener noreferrer" className={classe} aria-label="Télécharger">
+          <button onClick={() => telecharger(hrefTelechargement, titre)} className={classe} aria-label="Télécharger">
             <Download size={14} />
             {avecTexte && "Télécharger"}
-          </a>
+          </button>
         )}
         <button onClick={surAgrandir} className={classe} aria-label={pleinEcran ? "Rétrécir" : "Agrandir"}>
           {pleinEcran ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -220,7 +221,7 @@ export function BlocExpansible({
             </button>
           </div>
         </div>
-        <GardeApercu hrefTelechargement={hrefTelechargement}>{enfant}</GardeApercu>
+        <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre}>{enfant}</GardeApercu>
       </div>
 
       <div className="pt-2">
@@ -253,7 +254,7 @@ export function BlocExpansible({
         }
       >
         <div className="min-h-0 flex-1 overflow-auto">
-          <GardeApercu hrefTelechargement={hrefTelechargement}>{enfant}</GardeApercu>
+          <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre}>{enfant}</GardeApercu>
         </div>
       </PanneauFlottant>
     );

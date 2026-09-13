@@ -2,6 +2,7 @@
 
 import { Component, ReactNode } from "react";
 import { Download } from "lucide-react";
+import { telecharger } from "@/lib/telecharger";
 
 // 10/09/2026 (demande Bourama, suite au plantage de toute l'appli --
 // "Application error" -- en ouvrant un aperçu de document généré par
@@ -23,6 +24,7 @@ import { Download } from "lucide-react";
 type Props = {
   children: ReactNode;
   hrefTelechargement?: string;
+  nomTelechargement?: string;
 };
 
 type State = {
@@ -48,14 +50,12 @@ export class GardeApercu extends Component<Props, State> {
         <div className="flex flex-col items-center gap-2 p-8 text-center text-dj-texte-muet">
           <p className="text-sm">Impossible d&apos;afficher ce fichier ici.</p>
           {this.props.hrefTelechargement && (
-            <a
-              href={this.props.hrefTelechargement}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => telecharger(this.props.hrefTelechargement!, this.props.nomTelechargement || "fichier")}
               className="flex items-center gap-1.5 text-xs text-dj-accent-1-texte hover:underline"
             >
               <Download size={13} /> Télécharger
-            </a>
+            </button>
           )}
         </div>
       );
