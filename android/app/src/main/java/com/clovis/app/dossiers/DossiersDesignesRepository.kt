@@ -198,8 +198,17 @@ class DossiersDesignesRepository(private val context: Context) {
         return resultat
     }
 
+    // Correctif 13/09/2026 (Bourama, echec systematique "Erreur inattendue
+    // pendant l'execution : null") : DocumentFile.fromSingleUri() renvoie un
+    // SingleDocumentFile, dont renameTo() n'est PAS implemente (leve
+    // UnsupportedOperationException sans message des qu'on l'appelle) --
+    // seul un TreeDocumentFile (fromTreeUri()) sait renommer. elementUri est
+    // toujours un document a l'interieur d'un arbre designe (jamais une Uri
+    // "single" isolee), fromTreeUri() est donc toujours le bon choix ici,
+    // comme deja utilise pour dossierParNom/elementParNom plus haut dans ce
+    // fichier.
     fun renommer(elementUri: Uri, nouveauNom: String): Boolean {
-        val doc = DocumentFile.fromSingleUri(context, elementUri) ?: return false
+        val doc = DocumentFile.fromTreeUri(context, elementUri) ?: return false
         return doc.renameTo(nouveauNom)
     }
 
@@ -214,14 +223,26 @@ class DossiersDesignesRepository(private val context: Context) {
      * d'un meme fournisseur de documents). anciensParentUri et nouveauParentUri
      * sont les Uri des dossiers source/destination (pas du document lui-meme).
      */
+    // Correctif 13/09/2026 (Bourama, echec systematique "Echec du
+    // deplacement" des qu'un sous-dossier nested etait implique) :
+    // DocumentsContract.getTreeDocumentId(uri) renvoie TOUJOURS l'id de la
+    // RACINE de l'arbre (jamais l'id du document passe en parametre), donc
+    // buildDocumentUriUsingTree(uri, treeId) reconstruisait a chaque fois
+    // l'Uri de la racine du dossier designe -- meme quand ancienParentUri/
+    // nouveauParentUri pointaient en realite vers un sous-dossier precis
+    // (chemin/nouveau_chemin). Resultat : tout deplacement vers/depuis un
+    // sous-dossier niche etait silencieusement redirige vers la racine,
+    // provoquant un echec (ou un mauvais emplacement) systematique.
+    // DocumentFile.fromTreeUri() gere les deux cas correctement : Uri "nue"
+    // de racine (depuis dossier.uri) -> Uri document de la racine ; Uri de
+    // sous-dossier deja resolue (depuis dossierParChemin) -> conservee telle
+    // quelle (isDocumentUri() la detecte et garde son vrai id).
     fun deplacer(elementUri: Uri, ancienParentUri: Uri, nouveauParentUri: Uri): Boolean {
         return try {
             val resolver: ContentResolver = context.contentResolver
-            val ancienParentDocId = DocumentsContract.getTreeDocumentId(ancienParentUri)
-                .let { DocumentsContract.buildDocumentUriUsingTree(ancienParentUri, it) }
-            val nouveauParentDocId = DocumentsContract.getTreeDocumentId(nouveauParentUri)
-                .let { DocumentsContract.buildDocumentUriUsingTree(nouveauParentUri, it) }
-            DocumentsContract.moveDocument(resolver, elementUri, ancienParentDocId, nouveauParentDocId) != null
+            val ancienParentDocUri = DocumentFile.fromTreeUri(context, ancienParentUri)?.uri ?: return false
+            val nouveauParentDocUri = DocumentFile.fromTreeUri(context, nouveauParentUri)?.uri ?: return false
+            DocumentsContract.moveDocument(resolver, elementUri, ancienParentDocUri, nouveauParentDocUri) != null
         } catch (e: Exception) {
             false
         }
