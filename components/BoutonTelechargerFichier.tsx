@@ -19,6 +19,7 @@ export function BoutonTelechargerFichier({
 }) {
   return (
     <button
+      type="button"
       onClick={() => telecharger(url, nom)}
       className={
         "flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1a0f06] transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 " +
