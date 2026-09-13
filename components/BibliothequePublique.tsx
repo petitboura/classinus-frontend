@@ -42,7 +42,8 @@ import { VisionneuseBibliotheque } from "@/components/VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { Skeleton } from "./Skeleton";
-import { ButtonPartager, lienPartage } from "./ButtonPartager";
+import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
+import { MenuActionsCarte } from "./MenuActionsCarte";
 import { CaseACocher } from "./CaseACocher";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
@@ -1499,33 +1500,38 @@ export function BibliothequePublique() {
                       <CaseACocher checked={selectionne} onChange={() => {}} />
                     </button>
                   ) : (
-                  <div className="flex flex-shrink-0 items-center gap-3">
-                    <ButtonPartager lien={lienPartage("dossier-public", d.id)} titre={d.nom} variante="icone" />
-                    <button
-                      onClick={() => basculerAttache(d)}
-                      disabled={attacheEnCours === d.id}
-                      className={`flex-shrink-0 disabled:opacity-50 ${
-                        dossiersAttachesIds.has(d.id) ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:text-dj-texte"
-                      }`}
-                      title={dossiersAttachesIds.has(d.id) ? "Attaché à ma bibliothèque (cliquer pour détacher)" : "Attacher à ma bibliothèque (copie + mise à jour automatique)"}
-                    >
-                      {attacheEnCours === d.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                    </button>
-                    <button
-                      onClick={() => setCibleDeplacement({ type: "dossier", dossier: d })}
-                      className="flex-shrink-0 text-dj-texte-muet hover:text-dj-texte"
-                      title="Déplacer vers un autre dossier"
-                    >
-                      <Move size={14} />
-                    </button>
-                    <button
-                      onClick={() => supprimerDossier(d)}
-                      className="flex-shrink-0 text-dj-texte-muet hover:text-[var(--dj-erreur)]"
-                      title="Supprimer le dossier"
-                    >
-                      <FolderX size={14} />
-                    </button>
-                  </div>
+                  <MenuActionsCarte
+                    ariaLabel={`Actions pour ${d.nom}`}
+                    actions={[
+                      {
+                        cle: "partager",
+                        label: "Partager",
+                        icone: <Share2 size={14} />,
+                        onClick: () => partagerOuCopierLien(lienPartage("dossier-public", d.id), d.nom),
+                      },
+                      {
+                        cle: "attacher",
+                        label: dossiersAttachesIds.has(d.id) ? "Détacher de ma bibliothèque" : "Attacher à ma bibliothèque",
+                        icone: attacheEnCours === d.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />,
+                        onClick: () => {
+                          if (attacheEnCours !== d.id) basculerAttache(d);
+                        },
+                      },
+                      {
+                        cle: "deplacer",
+                        label: "Déplacer vers un autre dossier",
+                        icone: <Move size={14} />,
+                        onClick: () => setCibleDeplacement({ type: "dossier", dossier: d }),
+                      },
+                      {
+                        cle: "supprimer",
+                        label: "Supprimer le dossier",
+                        icone: <FolderX size={14} />,
+                        onClick: () => supprimerDossier(d),
+                        destructif: true,
+                      },
+                    ]}
+                  />
                   )}
                 </div>
               );
@@ -1747,55 +1753,64 @@ export function BibliothequePublique() {
                       )}
                     </span>
                   )}
-                  {entree.url_publique && (
-                    <button
-                      onClick={() => copierVersBiblioPerso(entree)}
-                      disabled={copieEnCours === entree.id}
-                      title="Copier dans ma bibliothèque"
-                      className="text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-50"
-                    >
-                      {copieReussie === entree.id ? (
-                        <Check size={15} className="text-dj-accent-1-texte" />
-                      ) : (
-                        <Download size={15} />
-                      )}
-                    </button>
-                  )}
-                  <ButtonPartager lien={lienPartage("fichier-public", entree.id)} titre={entree.nom} variante="icone" />
-                  <button
-                    onClick={() => setEntreeSignalee(entree)}
-                    title="Signaler ce contenu"
-                    className="text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
-                  >
-                    <Flag size={14} />
-                  </button>
-                  {dossierCourantId && (
-                    <>
-                      <button
-                        onClick={() =>
-                          setCibleDeplacement({ type: "fichier", entree, dossierSourceId: dossierCourantId })
-                        }
-                        title="Déplacer vers un autre dossier"
-                        className="text-dj-texte-muet transition-colors hover:text-dj-texte"
-                      >
-                        <Move size={14} />
-                      </button>
-                      <button
-                        onClick={() => retirerDuDossier(entree)}
-                        title="Retirer de ce dossier"
-                        className="text-dj-texte-muet transition-colors hover:text-dj-texte"
-                      >
-                        <FolderMinus size={14} />
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={() => supprimer(entree.id, entree.nom)}
-                    title="Retirer (uniquement si c'est toi qui l'as ajouté)"
-                    className="text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <MenuActionsCarte
+                    ariaLabel={`Actions pour ${entree.nom}`}
+                    actions={[
+                      ...(entree.url_publique
+                        ? [
+                            {
+                              cle: "copier",
+                              label: copieReussie === entree.id ? "Copié !" : "Copier dans ma bibliothèque",
+                              icone:
+                                copieReussie === entree.id ? (
+                                  <Check size={14} className="text-dj-accent-1-texte" />
+                                ) : (
+                                  <Download size={14} />
+                                ),
+                              onClick: () => {
+                                if (copieEnCours !== entree.id) copierVersBiblioPerso(entree);
+                              },
+                            },
+                          ]
+                        : []),
+                      {
+                        cle: "partager",
+                        label: "Partager",
+                        icone: <Share2 size={14} />,
+                        onClick: () => partagerOuCopierLien(lienPartage("fichier-public", entree.id), entree.nom),
+                      },
+                      {
+                        cle: "signaler",
+                        label: "Signaler ce contenu",
+                        icone: <Flag size={14} />,
+                        onClick: () => setEntreeSignalee(entree),
+                      },
+                      ...(dossierCourantId
+                        ? [
+                            {
+                              cle: "deplacer",
+                              label: "Déplacer vers un autre dossier",
+                              icone: <Move size={14} />,
+                              onClick: () =>
+                                setCibleDeplacement({ type: "fichier", entree, dossierSourceId: dossierCourantId }),
+                            },
+                            {
+                              cle: "retirer",
+                              label: "Retirer de ce dossier",
+                              icone: <FolderMinus size={14} />,
+                              onClick: () => retirerDuDossier(entree),
+                            },
+                          ]
+                        : []),
+                      {
+                        cle: "supprimer",
+                        label: "Retirer (uniquement si c'est toi qui l'as ajouté)",
+                        icone: <Trash2 size={14} />,
+                        onClick: () => supprimer(entree.id, entree.nom),
+                        destructif: true,
+                      },
+                    ]}
+                  />
                 </div>
                 )}
               </div>

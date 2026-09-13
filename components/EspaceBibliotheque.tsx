@@ -51,7 +51,8 @@ import { BibliothequePublique } from "./BibliothequePublique";
 import { EspaceDossiers } from "./EspaceDossiers";
 import { OngletsSegment } from "./OngletsSegment";
 import { useInfoSection } from "./SectionPage";
-import { ButtonPartager, lienPartage } from "./ButtonPartager";
+import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
+import { MenuActionsCarte } from "./MenuActionsCarte";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
 import { SelecteurCodesPartage } from "./SelecteurCodesPartage";
@@ -1450,24 +1451,30 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                       )}
                     </span>
                   )}
-                  <ButtonPartager
-                    lien={lienPartage("fichier-perso", f.id)}
-                    titre={f.description || f.nom_fichier}
-                    variante="icone"
+                  <MenuActionsCarte
+                    ariaLabel={`Actions pour ${f.description || f.nom_fichier}`}
+                    actions={[
+                      {
+                        cle: "partager",
+                        label: "Partager",
+                        icone: <Share2 size={14} />,
+                        onClick: () => partagerOuCopierLien(lienPartage("fichier-perso", f.id), f.description || f.nom_fichier),
+                      },
+                      {
+                        cle: "ranger",
+                        label: "Ranger dans un dossier",
+                        icone: <IconDossierOuvert size={14} />,
+                        onClick: () => setFichierARanger(f),
+                      },
+                      {
+                        cle: "supprimer",
+                        label: "Supprimer",
+                        icone: <Trash2 size={14} />,
+                        onClick: () => supprimer(f.id, f.description || f.nom_fichier),
+                        destructif: true,
+                      },
+                    ]}
                   />
-                  <button
-                    onClick={() => setFichierARanger(f)}
-                    className="hover:text-dj-texte"
-                    title="Ranger dans un dossier"
-                  >
-                    <IconDossierOuvert size={14} />
-                  </button>
-                  <button
-                    onClick={() => supprimer(f.id, f.description || f.nom_fichier)}
-                    className="transition-colors hover:text-[var(--dj-erreur)]"
-                  >
-                    Supprimer
-                  </button>
                 </div>
                 )}
               </div>
@@ -1814,21 +1821,34 @@ function CarteDossier({
           <CaseACocher checked={selectionne} onChange={() => {}} />
         </button>
       ) : (
-        <div className="flex flex-shrink-0 items-center gap-3 text-xs text-dj-texte-muet">
-          {!d.recu_de && (
-            <ButtonPartager lien={lienPartage("dossier-perso", d.id)} titre={d.nom} variante="icone" />
-          )}
-          <button onClick={() => setDossierEnRenommage(d.id)} className="hover:text-dj-texte" title="Renommer">
-            <Pencil size={14} />
-          </button>
-          <button
-            onClick={() => supprimerDossier(d.id, d.nom)}
-            className="hover:text-[var(--dj-erreur)]"
-            title="Supprimer le dossier"
-          >
-            <FolderX size={14} />
-          </button>
-        </div>
+        <MenuActionsCarte
+          ariaLabel={`Actions pour ${d.nom}`}
+          actions={[
+            ...(!d.recu_de
+              ? [
+                  {
+                    cle: "partager",
+                    label: "Partager",
+                    icone: <Share2 size={14} />,
+                    onClick: () => partagerOuCopierLien(lienPartage("dossier-perso", d.id), d.nom),
+                  },
+                ]
+              : []),
+            {
+              cle: "renommer",
+              label: "Renommer",
+              icone: <Pencil size={14} />,
+              onClick: () => setDossierEnRenommage(d.id),
+            },
+            {
+              cle: "supprimer",
+              label: "Supprimer le dossier",
+              icone: <FolderX size={14} />,
+              onClick: () => supprimerDossier(d.id, d.nom),
+              destructif: true,
+            },
+          ]}
+        />
       )}
     </div>
   );

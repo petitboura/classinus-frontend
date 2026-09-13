@@ -14,7 +14,29 @@ import { Share2 } from "lucide-react";
  *
  * Reste séparé du système de codes de partage existant (MesCodes.tsx,
  * EspaceEntrerCode.tsx) -- volontairement inchangé.
+ *
+ * 13/09/2026, `partagerOuCopierLien` ci-dessous extrait de `partager`
+ * (chantier "un seul bouton par carte", demande Bourama) : même logique,
+ * réutilisée telle quelle par MenuActionsCarte pour l'action "Partager"
+ * des menus de cartes (bibliothèque perso/publique) sans dupliquer le
+ * comportement navigator.share/copie presse-papier.
  */
+export async function partagerOuCopierLien(lien: string, titre?: string) {
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try {
+      await navigator.share({ title: titre, url: lien });
+    } catch {
+      // Annulé par la personne.
+    }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(lien);
+  } catch {
+    window.prompt("Copie ce lien :", lien);
+  }
+}
+
 export function ButtonPartager({
   lien,
   titre,
@@ -33,11 +55,7 @@ export function ButtonPartager({
     e.stopPropagation();
     e.preventDefault();
     if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: titre, url: lien });
-      } catch {
-        // Annulé par la personne.
-      }
+      await partagerOuCopierLien(lien, titre);
       return;
     }
     try {

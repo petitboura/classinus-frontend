@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Copy, ChevronDown, ChevronUp, X, ScrollText, Folder, StickyNote, Pencil } from "lucide-react";
+import { Plus, Trash2, Copy, ChevronDown, ChevronUp, X, ScrollText, Folder, StickyNote, Pencil, Power } from "lucide-react";
 import {
   listerMesCodes,
   creerCode,
@@ -23,6 +23,7 @@ import { BoutonInfoSection } from "./BoutonInfoSection";
 import { PanneauFlottant } from "./PanneauFlottant";
 import { EditeurComportement } from "./EditeurComportement";
 import { EspaceBibliotheque } from "./EspaceBibliotheque";
+import { MenuActionsCarte } from "./MenuActionsCarte";
 
 // Même agent générique que MesComportements.tsx (app/(app)/comportements/page.tsx)
 // -- "Mes comportements" n'a jamais eu de notion de rôle, un seul agentId
@@ -461,17 +462,39 @@ function CarteCode({
         </div>
 
         {!renommage && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setNomEnCours(c.nom || "");
-              setRenommage(true);
-            }}
-            title="Renommer"
-            className="flex-shrink-0 rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:text-dj-texte"
-          >
-            <Pencil size={13} />
-          </button>
+          <MenuActionsCarte
+            ariaLabel={`Actions pour le code ${c.nom || c.code}`}
+            actions={[
+              {
+                cle: "renommer",
+                label: "Renommer",
+                icone: <Pencil size={14} />,
+                onClick: () => {
+                  setNomEnCours(c.nom || "");
+                  setRenommage(true);
+                },
+              },
+              {
+                cle: "copier",
+                label: copieOk ? "Copié !" : "Copier le code",
+                icone: <Copy size={14} />,
+                onClick: onCopier,
+              },
+              {
+                cle: "actif",
+                label: c.actif ? "Désactiver" : "Réactiver",
+                icone: <Power size={14} />,
+                onClick: onToggleActif,
+              },
+              {
+                cle: "supprimer",
+                label: "Supprimer ce code",
+                icone: <Trash2 size={14} />,
+                onClick: onSupprimer,
+                destructif: true,
+              },
+            ]}
+          />
         )}
         <button
           onClick={onToggleOuvert}
@@ -483,31 +506,6 @@ function CarteCode({
 
       {estOuvert && (
         <div className="animate-dj-fade-in-rapide space-y-3 border-t border-dj-bordure px-3 py-3">
-          <div className="flex items-center gap-1 text-dj-texte-muet">
-            <button
-              onClick={onCopier}
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs transition-colors hover:bg-dj-surface hover:text-dj-texte"
-            >
-              <Copy size={12} /> {copieOk ? "Copié !" : "Copier le code"}
-            </button>
-            <button
-              onClick={onToggleActif}
-              className={
-                "ml-auto rounded-lg px-2 py-1 text-xs font-semibold transition-colors " +
-                (c.actif ? "hover:bg-dj-surface hover:text-dj-texte" : "text-dj-accent-1-texte")
-              }
-            >
-              {c.actif ? "Désactiver" : "Réactiver"}
-            </button>
-            <button
-              onClick={onSupprimer}
-              title="Supprimer ce code"
-              className="rounded-lg p-1.5 transition-colors hover:text-[var(--dj-erreur)]"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-
           <div className="flex flex-wrap items-center gap-1.5">
             {c.comportements.map((cm) => (
               <div
