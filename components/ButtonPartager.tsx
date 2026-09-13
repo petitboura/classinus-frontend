@@ -15,11 +15,17 @@ import { Share2 } from "lucide-react";
  * Reste séparé du système de codes de partage existant (MesCodes.tsx,
  * EspaceEntrerCode.tsx) -- volontairement inchangé.
  *
- * 13/09/2026, `partagerOuCopierLien` ci-dessous extrait de `partager`
- * (chantier "un seul bouton par carte", demande Bourama) : même logique,
- * réutilisée telle quelle par MenuActionsCarte pour l'action "Partager"
- * des menus de cartes (bibliothèque perso/publique) sans dupliquer le
- * comportement navigator.share/copie presse-papier.
+ * 13/09/2026, `partagerOuCopierLien` ci-dessous : même comportement que
+ * `partager` un peu plus bas (chantier "un seul bouton par carte",
+ * demande Bourama), utilisée par MenuActionsCarte pour l'action
+ * "Partager" des menus de cartes (bibliothèque perso/publique).
+ * Volontairement dupliquée plutôt qu'appelée par `partager` -- délégué
+ * à travers un helper faisait perdre à TypeScript la trace de l'appel
+ * réel à `navigator.share(...)` dans le bloc `if`, et casse le build
+ * Vercel (TS2774 : "This condition will always return true [...] Did
+ * you mean to call it instead?", suivi d'un TS2339 en cascade sur
+ * `navigator.clipboard`). Constaté et corrigé le jour même après un
+ * premier échec de build.
  */
 export async function partagerOuCopierLien(lien: string, titre?: string) {
   if (typeof navigator !== "undefined" && navigator.share) {
@@ -55,7 +61,11 @@ export function ButtonPartager({
     e.stopPropagation();
     e.preventDefault();
     if (typeof navigator !== "undefined" && navigator.share) {
-      await partagerOuCopierLien(lien, titre);
+      try {
+        await navigator.share({ title: titre, url: lien });
+      } catch {
+        // Annulé par la personne.
+      }
       return;
     }
     try {
