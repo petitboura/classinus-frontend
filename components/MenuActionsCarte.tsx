@@ -27,10 +27,16 @@ export function MenuActionsCarte({
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [ouvrirVersHaut, setOuvrirVersHaut] = useState(false);
+  const [alignerAGauche, setAlignerAGauche] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   // Hauteur estimée du menu (nombre d'actions * hauteur d'une ligne),
   // utilisée pour savoir s'il reste assez de place en dessous du bouton.
   const hauteurMenuEstimee = actions.length * 36 + 16;
+  // Largeur max réelle du menu (cf. max-w-[16rem] plus bas) : sert à
+  // savoir, avant même que le menu soit affiché, s'il tiendra en
+  // s'alignant sur le bord droit du bouton (le comportement par défaut)
+  // ou s'il déborderait de l'écran à gauche et doit s'aligner à gauche.
+  const LARGEUR_MENU_MAX = 256;
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(() => setOuvert(false));
 
@@ -55,6 +61,12 @@ export function MenuActionsCarte({
       const placeEnDessous = window.innerHeight - rect.bottom;
       const placeAuDessus = rect.top;
       setOuvrirVersHaut(placeEnDessous < hauteurMenuEstimee && placeAuDessus > placeEnDessous);
+      // Par défaut le menu s'aligne sur le bord droit du bouton (s'étend
+      // vers la gauche) -- sûr tant que le bouton est proche du bord
+      // droit de l'écran (cas normal, "..." toujours en fin de ligne).
+      // S'il n'y a pas assez de place à gauche du bouton, on aligne à
+      // gauche à la place (le menu s'étend alors vers la droite).
+      setAlignerAGauche(rect.right - LARGEUR_MENU_MAX < 0);
     }
     setOuvert(true);
   }
@@ -77,9 +89,11 @@ export function MenuActionsCarte({
 
       {(ouvert || enSortie) && (
         <div
-          className={`absolute right-0 z-20 min-w-[11rem] overflow-hidden rounded-lg border border-dj-bordure bg-dj-surface-haute p-1 shadow-lg ${
-            ouvrirVersHaut ? "bottom-full mb-1" : "top-full mt-1"
-          } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
+          className={`absolute z-20 max-w-[min(16rem,85vw)] min-w-[10rem] overflow-hidden rounded-lg border border-dj-bordure bg-dj-surface-haute p-1 shadow-lg ${
+            alignerAGauche ? "left-0" : "right-0"
+          } ${ouvrirVersHaut ? "bottom-full mb-1" : "top-full mt-1"} ${
+            enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
+          }`}
         >
           {actions.map((a) => (
             <button
@@ -94,8 +108,8 @@ export function MenuActionsCarte({
                 a.destructif ? "text-[var(--dj-erreur)]" : "text-dj-texte"
               }`}
             >
-              {a.icone}
-              <span className="truncate">{a.label}</span>
+              <span className="flex-shrink-0">{a.icone}</span>
+              <span className="min-w-0 flex-1 truncate">{a.label}</span>
             </button>
           ))}
         </div>
