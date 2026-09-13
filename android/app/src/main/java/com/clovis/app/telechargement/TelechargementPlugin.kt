@@ -67,6 +67,7 @@ class TelechargementPlugin : Plugin() {
             val id = gestionnaire.enqueue(requete)
             call.resolve(JSObject().put("id", id.toString()))
         } catch (e: Exception) {
+            android.util.Log.e("ClovisTelechargement", "Échec depuisUrl (DownloadManager).", e)
             call.reject("Échec du téléchargement : ${e.message}", e)
         }
     }
@@ -103,6 +104,7 @@ class TelechargementPlugin : Plugin() {
             afficherNotificationTerminee(nom, uri)
             call.resolve(JSObject().put("succes", true))
         } catch (e: Exception) {
+            android.util.Log.e("ClovisTelechargement", "Échec depuisContenuLocal (MediaStore.Downloads).", e)
             call.reject("Échec de l'écriture MediaStore : ${e.message}", e)
         }
     }

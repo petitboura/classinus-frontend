@@ -98,10 +98,14 @@ export async function telecharger(href: string, nom: string) {
       const plugin = await pluginTelechargement();
       await plugin.depuisUrl({ url: href, nom });
       return;
-    } catch {
+    } catch (e) {
       // Repli plus bas (partage natif, puis web) si le DownloadManager
       // système échoue pour une raison quelconque (URL non http,
-      // permission refusée...).
+      // permission refusée...). 12/09/2026, Bourama signale que "rien ne
+      // se passe" -- avant ce correctif, l'échec était totalement
+      // silencieux (aucun moyen de savoir pourquoi). Visible via
+      // chrome://inspect (WebView distante) ou adb logcat.
+      console.error("[telecharger] échec plugin natif Telechargement.depuisUrl :", e);
     }
   }
 
@@ -110,15 +114,17 @@ export async function telecharger(href: string, nom: string) {
       const reponse = await fetch(href);
       await telechargerViaPartageNatif(await reponse.blob(), nom);
       return;
-    } catch {
+    } catch (e) {
       // Repli sur le comportement web ci-dessous.
+      console.error("[telecharger] échec repli partage natif :", e);
     }
   }
 
   try {
     const reponse = await fetch(href);
     telechargerViaBlobWeb(await reponse.blob(), nom);
-  } catch {
+  } catch (e) {
+    console.error("[telecharger] échec repli web (fetch/blob), ouverture directe :", e);
     window.open(href, "_blank");
   }
 }
@@ -138,9 +144,10 @@ export async function telechargerContenuLocal(
       const plugin = await pluginTelechargement();
       await plugin.depuisContenuLocal({ base64, nom, typeMime: blob.type || typeMime });
       return;
-    } catch {
+    } catch (e) {
       // Repli plus bas (partage natif, puis web) -- notamment sur un
       // appareil Android < 10, où MediaStore.Downloads n'existe pas.
+      console.error("[telechargerContenuLocal] échec plugin natif Telechargement.depuisContenuLocal :", e);
     }
   }
 
@@ -148,8 +155,9 @@ export async function telechargerContenuLocal(
     try {
       await telechargerViaPartageNatif(blob, nom);
       return;
-    } catch {
+    } catch (e) {
       // Repli sur le comportement web ci-dessous.
+      console.error("[telechargerContenuLocal] échec repli partage natif :", e);
     }
   }
 
