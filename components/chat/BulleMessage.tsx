@@ -852,14 +852,23 @@ function BulleMessageInterne({
             juste avant de vider content, le temps de cette transition.
             Grille 1fr -> 0fr : replie n'importe quelle hauteur de
             contenu sans avoir besoin de la mesurer en JS (contenu texte
-            variable). overflow-hidden sur l'intérieur uniquement, pour
-            ne jamais rogner une éventuelle ombre/bordure du conteneur
-            extérieur. */}
+            variable). Clip sur l'intérieur uniquement, pour ne jamais
+            rogner une éventuelle ombre/bordure du conteneur extérieur.
+            11/09/2026 (bug rail sticky figé, PDF ET Markdown) : c'était
+            overflow-hidden avant -- remplacé par clip-path (même rendu
+            visuel de découpe pendant l'animation) car overflow-hidden,
+            même sans jamais scroller lui-même, devient malgré tout le
+            conteneur de référence pour tout `position: sticky` à
+            l'intérieur (le rail d'icônes de BlocExpansible.tsx, entre
+            autres) -- il ne voyait donc jamais le vrai scroll du fil de
+            messages (ChatIA.tsx) et restait figé. clip-path ne crée pas
+            ce problème (pur découpage visuel, pas une boîte de scroll),
+            tout en gardant exactement le même effet de repli. */}
         <div
           className="grid transition-[grid-template-rows] duration-300 ease-in-out"
           style={{ gridTemplateRows: message.enRepli ? "0fr" : "1fr" }}
         >
-          <div className="overflow-hidden min-h-0">
+          <div className="min-h-0 [clip-path:inset(0)]">
             {/* Rendu Markdown unique et cohérent (gras/liens/tableaux/listes en
                 une seule fois) : ceci règle définitivement le bug hérité de
                 Streamlit (bloc HTML brut qui empêchait toute transformation
