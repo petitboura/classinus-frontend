@@ -114,8 +114,20 @@ export function Mermaid({ definition }: { definition: string }) {
   return (
     <div className="my-3 overflow-x-auto rounded-xl border border-dj-bordure bg-dj-surface p-4">
       {svg ? (
+        // CORRECTIF 2026-09-14 (bug remonté par Bourama : "les diagrammes
+        // dans les fiches sont tellement moins visibles qu'on ne peut pas
+        // les lire") -- mermaid.render() (useMaxWidth activé par défaut)
+        // pose un style inline `max-width: Npx` sur la racine <svg>, où N
+        // est la largeur NATURELLE calculée du diagramme (pas un
+        // pourcentage) : ça plafonne le rendu à sa taille de contenu, sans
+        // jamais l'étirer pour remplir le conteneur -- petit pour un
+        // diagramme avec peu de noeuds/libellés courts (typiquement les
+        // cartes mentales des fiches de révision, avec 3-5 branches
+        // courtes). Une classe Tailwind normale ne suffit pas à
+        // l'écraser : un style inline gagne sur une règle de feuille de
+        // style, sauf avec !important -- d'où les variantes `!` ci-dessous.
         <div
-          className="animate-dj-fade-in [&_svg]:mx-auto"
+          className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-full [&_svg]:!max-w-full [&_svg]:!h-auto [&_svg]:min-h-[160px]"
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       ) : erreur ? (

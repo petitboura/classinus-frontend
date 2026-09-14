@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -357,6 +357,15 @@ export function BarreDeSaisie({
   const [menuLongueurOuvert, setMenuLongueurOuvert] = useState(false);
   const boutonLongueurRef = useRef<HTMLButtonElement>(null);
   const menuLongueurRef = useRef<HTMLDivElement>(null);
+  const menuLongueurMobileRef = useRef<HTMLDivElement>(null);
+  // Panneau "Mode pédagogique" mobile (14/09/2026, bug remonté par Bourama :
+  // "aucun moyen de choisir un mode sur mobile" -- le bouton+panneau de
+  // SelecteurPersonaPedagogique.tsx vit dans la barre d'outils desktop
+  // ("hidden ... md:block" plus bas), donc invisible ET inatteignable sur
+  // mobile. Ce booléen pilote une feuille du bas dédiée (variante="feuille"
+  // de ce composant), ouverte depuis le menu "+" mobile, même famille que
+  // menuUtilitairesOuvert juste au-dessus.
+  const [menuPersonaMobileOuvert, setMenuPersonaMobileOuvert] = useState(false);
   // Menu du bouton "Utilitaires" (2026-08-01) -- multi-sélection cumulative
   // via estOutilActif/executerActionOutil déjà génériques, pas d'onglets :
   // une seule liste plate (outilsUtilitairesPourAgent).
@@ -497,6 +506,12 @@ export function BarreDeSaisie({
       const cible = e.target as Node;
       if (menuLongueurRef.current?.contains(cible)) return;
       if (boutonLongueurRef.current?.contains(cible)) return;
+      // Feuille mobile (14/09/2026) -- même état menuLongueurOuvert que le
+      // panneau desktop, réutilisé pour éviter un deuxième state redondant
+      // (même principe que menuUtilitairesOuvert). boutonPlusRef exclu pour
+      // ne pas se refermer instantanément au clic qui vient de l'ouvrir.
+      if (menuLongueurMobileRef.current?.contains(cible)) return;
+      if (boutonPlusRef.current?.contains(cible)) return;
       setMenuLongueurOuvert(false);
     }
     document.addEventListener("mousedown", gererClicExterieur);
@@ -2239,6 +2254,35 @@ export function BarreDeSaisie({
               >
                 <Pin size={16} /> Joindre un fichier
               </button>
+              {/* Longueur de réponse + Mode pédagogique (14/09/2026, bug
+                  remonté par Bourama : sur mobile, aucun moyen d'atteindre
+                  ces deux réglages -- ils ne vivaient que dans la barre
+                  d'outils desktop ("hidden ... md:block" plus bas), display:none
+                  sur mobile donc invisibles ET inatteignables au clic malgré
+                  leur state déjà fonctionnel. Ajoutés ici comme les autres
+                  entrées du menu "+", chacun ouvrant sa propre feuille du bas
+                  (voir menuLongueurMobileRef et le rendu variante="feuille"
+                  de SelecteurPersonaPedagogique plus bas dans ce fichier). */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuLongueurOuvert(true);
+                  setMenuPlusOuvert(false);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+              >
+                <AlignLeft size={16} /> Longueur de réponse
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuPersonaMobileOuvert(true);
+                  setMenuPlusOuvert(false);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+              >
+                <GraduationCap size={16} /> Mode pédagogique
+              </button>
               {/* CORRECTION (2026-07-30, flux 3) : cette entrée n'a de
                   sens que si le bouton dropdown Applications existe
                   (>1 appli) -- sinon une entrée directe suffit
@@ -2496,6 +2540,59 @@ export function BarreDeSaisie({
           </div>
         </div>
       )}
+
+      {/* Feuille "Longueur de réponse" mobile (14/09/2026) -- même état
+          menuLongueurOuvert que le panneau desktop (voir plus bas dans ce
+          fichier), même famille visuelle que le panneau Utilitaires
+          juste au-dessus. */}
+      {menuLongueurOuvert && (
+        <div
+          ref={menuLongueurMobileRef}
+          className="fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] z-40 max-h-[60vh] overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
+        >
+          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-2">
+            <span className="text-xs font-medium text-dj-texte-muet">Longueur de réponse</span>
+            <button
+              onClick={() => setMenuLongueurOuvert(false)}
+              aria-label="Fermer"
+              className="flex-shrink-0 text-dj-texte-muet hover:text-dj-texte"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="overflow-y-auto p-1">
+            {(["courte", "moyenne", "longue"] as LongueurReponse[]).map((valeur) => (
+              <button
+                key={valeur}
+                type="button"
+                onClick={() => {
+                  setLongueur(valeur);
+                  setMenuLongueurOuvert(false);
+                }}
+                className={
+                  "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-dj-surface-haute " +
+                  (longueur === valeur ? "text-dj-accent-1-texte" : "text-dj-texte")
+                }
+              >
+                {LABELS_LONGUEUR[valeur]}
+                {longueur === valeur && <Check size={14} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Feuille "Mode pédagogique" mobile (14/09/2026) -- variante="feuille"
+          de SelecteurPersonaPedagogique.tsx, pilotée depuis ici
+          (menuPersonaMobileOuvert), même famille visuelle. Voir ce fichier
+          pour le détail (chargement/persistance backend inchangés, seule la
+          présentation change selon la variante). */}
+      <SelecteurPersonaPedagogique
+        conversationId={conversationId}
+        variante="feuille"
+        ouvert={menuPersonaMobileOuvert}
+        onFermer={() => setMenuPersonaMobileOuvert(false)}
+      />
 
       {/* Panneau Applications mobile (2026-07-28) -- même principe,
           même état `menuAppliOuvert` que l'icône desktop. */}
