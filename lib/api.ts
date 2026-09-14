@@ -587,19 +587,59 @@ export type DossierCataloguePublic = {
   // 04/09/2026, demande Bourama : 2 filtres supplémentaires, même principe.
   classe?: string[] | null;
   specialite?: string[] | null;
+  // 13/09/2026 (suite), demande Bourama : pour chaque filtre, quelles
+  // valeurs (parmi celles ci-dessus) descendent automatiquement à TOUS
+  // les descendants (sous-dossiers et/ou fichiers, à n'importe quelle
+  // profondeur, en plus des valeurs propres du descendant -- jamais de
+  // remplacement).
+  pays_heritage_sous_dossiers?: string[] | null;
+  pays_heritage_fichiers?: string[] | null;
+  niveau_heritage_sous_dossiers?: string[] | null;
+  niveau_heritage_fichiers?: string[] | null;
+  categorie_heritage_sous_dossiers?: string[] | null;
+  categorie_heritage_fichiers?: string[] | null;
+  classe_heritage_sous_dossiers?: string[] | null;
+  classe_heritage_fichiers?: string[] | null;
+  specialite_heritage_sous_dossiers?: string[] | null;
+  specialite_heritage_fichiers?: string[] | null;
 };
 
 // 13/09/2026, demande Bourama : filtres d'un DOSSIER (uniquement),
-// chacun avec plusieurs valeurs possibles -- distinct de
+// chacun avec plusieurs valeurs possibles + un réglage d'héritage par
+// valeur (descend aux sous-dossiers et/ou aux fichiers) -- distinct de
 // FiltresBibliothequePublique (fichiers + recherche), qui reste à une
-// seule valeur par filtre.
-export type FiltresDossierCataloguePublic = {
-  pays?: string[];
-  niveau?: string[];
-  categorie?: string[];
-  classe?: string[];
-  specialite?: string[];
+// seule valeur par filtre, sans héritage.
+export type ValeursFiltreDossier = {
+  valeurs: string[];
+  heritageSousDossiers: string[];
+  heritageFichiers: string[];
 };
+
+export type FiltresDossierCataloguePublic = {
+  pays: ValeursFiltreDossier;
+  niveau: ValeursFiltreDossier;
+  categorie: ValeursFiltreDossier;
+  classe: ValeursFiltreDossier;
+  specialite: ValeursFiltreDossier;
+};
+
+export function filtresDossierVides(): FiltresDossierCataloguePublic {
+  const vide = (): ValeursFiltreDossier => ({ valeurs: [], heritageSousDossiers: [], heritageFichiers: [] });
+  return { pays: vide(), niveau: vide(), categorie: vide(), classe: vide(), specialite: vide() };
+}
+
+// 13/09/2026 : reconstruit un FiltresDossierCataloguePublic à partir
+// d'un DossierCataloguePublic déjà chargé (pour pré-remplir l'édition
+// de ses filtres avec ses valeurs et réglages d'héritage actuels).
+export function filtresDossierDepuis(d: DossierCataloguePublic): FiltresDossierCataloguePublic {
+  return {
+    pays: { valeurs: d.pays || [], heritageSousDossiers: d.pays_heritage_sous_dossiers || [], heritageFichiers: d.pays_heritage_fichiers || [] },
+    niveau: { valeurs: d.niveau || [], heritageSousDossiers: d.niveau_heritage_sous_dossiers || [], heritageFichiers: d.niveau_heritage_fichiers || [] },
+    categorie: { valeurs: d.categorie || [], heritageSousDossiers: d.categorie_heritage_sous_dossiers || [], heritageFichiers: d.categorie_heritage_fichiers || [] },
+    classe: { valeurs: d.classe || [], heritageSousDossiers: d.classe_heritage_sous_dossiers || [], heritageFichiers: d.classe_heritage_fichiers || [] },
+    specialite: { valeurs: d.specialite || [], heritageSousDossiers: d.specialite_heritage_sous_dossiers || [], heritageFichiers: d.specialite_heritage_fichiers || [] },
+  };
+}
 
 export async function listerDossiersCataloguePublic() {
   return appelerApi("/api/bibliotheque-publique/dossiers") as Promise<DossierCataloguePublic[]>;
@@ -642,6 +682,7 @@ export async function creerDossierCataloguePublic(
   // 08/09/2026, demande Bourama : dossiers = même logique que les fichiers, description optionnelle.
   description?: string,
 ) {
+  const f = filtres || filtresDossierVides();
   return appelerApi("/api/bibliotheque-publique/dossiers", {
     method: "POST",
     body: JSON.stringify({
@@ -649,11 +690,22 @@ export async function creerDossierCataloguePublic(
       description: description || "",
       statut,
       dossier_parent_id: dossierParentId || null,
-      pays: filtres?.pays || [],
-      niveau: filtres?.niveau || [],
-      categorie: filtres?.categorie || [],
-      classe: filtres?.classe || [],
-      specialite: filtres?.specialite || [],
+      pays: f.pays.valeurs,
+      niveau: f.niveau.valeurs,
+      categorie: f.categorie.valeurs,
+      classe: f.classe.valeurs,
+      specialite: f.specialite.valeurs,
+      // 13/09/2026, demande Bourama : héritage vers sous-dossiers/fichiers, par valeur.
+      pays_heritage_sous_dossiers: f.pays.heritageSousDossiers,
+      pays_heritage_fichiers: f.pays.heritageFichiers,
+      niveau_heritage_sous_dossiers: f.niveau.heritageSousDossiers,
+      niveau_heritage_fichiers: f.niveau.heritageFichiers,
+      categorie_heritage_sous_dossiers: f.categorie.heritageSousDossiers,
+      categorie_heritage_fichiers: f.categorie.heritageFichiers,
+      classe_heritage_sous_dossiers: f.classe.heritageSousDossiers,
+      classe_heritage_fichiers: f.classe.heritageFichiers,
+      specialite_heritage_sous_dossiers: f.specialite.heritageSousDossiers,
+      specialite_heritage_fichiers: f.specialite.heritageFichiers,
     }),
   }) as Promise<DossierCataloguePublic>;
 }
@@ -672,11 +724,21 @@ export async function modifierFiltresDossierCataloguePublic(dossierId: string, f
   return appelerApi(`/api/bibliotheque-publique/dossiers/${dossierId}/filtres`, {
     method: "PATCH",
     body: JSON.stringify({
-      pays: filtres.pays || [],
-      niveau: filtres.niveau || [],
-      categorie: filtres.categorie || [],
-      classe: filtres.classe || [],
-      specialite: filtres.specialite || [],
+      pays: filtres.pays.valeurs,
+      niveau: filtres.niveau.valeurs,
+      categorie: filtres.categorie.valeurs,
+      classe: filtres.classe.valeurs,
+      specialite: filtres.specialite.valeurs,
+      pays_heritage_sous_dossiers: filtres.pays.heritageSousDossiers,
+      pays_heritage_fichiers: filtres.pays.heritageFichiers,
+      niveau_heritage_sous_dossiers: filtres.niveau.heritageSousDossiers,
+      niveau_heritage_fichiers: filtres.niveau.heritageFichiers,
+      categorie_heritage_sous_dossiers: filtres.categorie.heritageSousDossiers,
+      categorie_heritage_fichiers: filtres.categorie.heritageFichiers,
+      classe_heritage_sous_dossiers: filtres.classe.heritageSousDossiers,
+      classe_heritage_fichiers: filtres.classe.heritageFichiers,
+      specialite_heritage_sous_dossiers: filtres.specialite.heritageSousDossiers,
+      specialite_heritage_fichiers: filtres.specialite.heritageFichiers,
     }),
   }) as Promise<DossierCataloguePublic>;
 }

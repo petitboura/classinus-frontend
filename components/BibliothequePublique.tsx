@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -18,6 +18,8 @@ import {
   copierVersBibliothequePersonnelle,
   creerDossierCataloguePublic,
   modifierFiltresDossierCataloguePublic,
+  filtresDossierVides,
+  filtresDossierDepuis,
   supprimerDossierCataloguePublic,
   deplacerDossierCataloguePublic,
   retirerFichierDossierCataloguePublic,
@@ -32,6 +34,8 @@ import {
   type DossierCataloguePublic,
   type DemandeDossierCataloguePublic,
   type ListesFiltresBibliothequePublique,
+  type FiltresDossierCataloguePublic,
+  type ValeursFiltreDossier,
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -205,15 +209,25 @@ function ChampsFiltragePublication({
 // filtre. Petites puces retirables + champ texte/<datalist> pour en
 // ajouter une nouvelle (Entrée ou en quittant le champ) -- même
 // logique "valeur libre, jamais de liste fermée" que ci-dessus.
+//
+// 13/09/2026 (suite) : + 2 petites bascules par valeur (sous-dossiers /
+// fichiers) pour la faire descendre automatiquement à tous les
+// descendants, à n'importe quelle profondeur, en plus de leurs propres
+// valeurs -- jamais de remplacement. Une valeur peut cocher les deux,
+// une seule, ou aucune.
 function ChampMultiValeurs({
   valeurs,
+  heritageSousDossiers,
+  heritageFichiers,
   onChange,
   placeholder,
   listeId,
   suggestions,
 }: {
   valeurs: string[];
-  onChange: (v: string[]) => void;
+  heritageSousDossiers: string[];
+  heritageFichiers: string[];
+  onChange: (v: ValeursFiltreDossier) => void;
   placeholder: string;
   listeId: string;
   suggestions: string[];
@@ -222,33 +236,66 @@ function ChampMultiValeurs({
 
   function ajouter(v: string) {
     const nettoyee = v.trim();
-    if (!nettoyee || valeurs.includes(nettoyee)) {
-      setSaisie("");
-      return;
-    }
-    onChange([...valeurs, nettoyee]);
     setSaisie("");
+    if (!nettoyee || valeurs.includes(nettoyee)) return;
+    onChange({ valeurs: [...valeurs, nettoyee], heritageSousDossiers, heritageFichiers });
+  }
+
+  function retirer(v: string) {
+    onChange({
+      valeurs: valeurs.filter((x) => x !== v),
+      heritageSousDossiers: heritageSousDossiers.filter((x) => x !== v),
+      heritageFichiers: heritageFichiers.filter((x) => x !== v),
+    });
+  }
+
+  function basculerHeritage(v: string, camp: "sousDossiers" | "fichiers") {
+    const liste = camp === "sousDossiers" ? heritageSousDossiers : heritageFichiers;
+    const nouvelleListe = liste.includes(v) ? liste.filter((x) => x !== v) : [...liste, v];
+    onChange({
+      valeurs,
+      heritageSousDossiers: camp === "sousDossiers" ? nouvelleListe : heritageSousDossiers,
+      heritageFichiers: camp === "fichiers" ? nouvelleListe : heritageFichiers,
+    });
   }
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       {valeurs.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-col gap-1">
           {valeurs.map((v) => (
-            <span
-              key={v}
-              className="flex animate-dj-fade-in-rapide items-center gap-1 rounded-full border border-dj-bordure bg-dj-fond px-2 py-0.5 text-xs text-dj-texte"
-            >
-              {v}
+            <div key={v} className="flex animate-dj-fade-in-rapide flex-wrap items-center gap-1.5">
+              <span className="flex items-center gap-1 rounded-full border border-dj-bordure bg-dj-fond px-2 py-0.5 text-xs text-dj-texte">
+                {v}
+                <button type="button" onClick={() => retirer(v)} aria-label={`Retirer ${v}`} className="text-dj-texte-muet hover:text-dj-texte">
+                  <X size={11} />
+                </button>
+              </span>
               <button
                 type="button"
-                onClick={() => onChange(valeurs.filter((x) => x !== v))}
-                aria-label={`Retirer ${v}`}
-                className="text-dj-texte-muet hover:text-dj-texte"
+                onClick={() => basculerHeritage(v, "sousDossiers")}
+                title="Faire descendre cette valeur à tous les sous-dossiers"
+                className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${
+                  heritageSousDossiers.includes(v)
+                    ? "border-dj-accent-1 bg-dj-accent-1/15 text-dj-accent-1"
+                    : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
+                }`}
               >
-                <X size={11} />
+                <FolderTree size={11} /> Sous-dossiers
               </button>
-            </span>
+              <button
+                type="button"
+                onClick={() => basculerHeritage(v, "fichiers")}
+                title="Faire descendre cette valeur à tous les fichiers"
+                className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${
+                  heritageFichiers.includes(v)
+                    ? "border-dj-accent-1 bg-dj-accent-1/15 text-dj-accent-1"
+                    : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
+                }`}
+              >
+                <FileText size={11} /> Fichiers
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -276,37 +323,61 @@ function ChampMultiValeurs({
 }
 
 function ChampsFiltrageDossierMulti({
-  pays,
-  niveau,
-  categorie,
-  classe,
-  specialite,
-  onChangePays,
-  onChangeNiveau,
-  onChangeCategorie,
-  onChangeClasse,
-  onChangeSpecialite,
+  valeurs,
+  onChange,
   listes,
 }: {
-  pays: string[];
-  niveau: string[];
-  categorie: string[];
-  classe: string[];
-  specialite: string[];
-  onChangePays: (v: string[]) => void;
-  onChangeNiveau: (v: string[]) => void;
-  onChangeCategorie: (v: string[]) => void;
-  onChangeClasse: (v: string[]) => void;
-  onChangeSpecialite: (v: string[]) => void;
+  valeurs: FiltresDossierCataloguePublic;
+  onChange: (v: FiltresDossierCataloguePublic) => void;
   listes: ListesFiltresBibliothequePublique;
 }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-      <ChampMultiValeurs valeurs={pays} onChange={onChangePays} placeholder="Pays (optionnel)" listeId="biblio-pub-dossier-liste-pays" suggestions={listes.pays} />
-      <ChampMultiValeurs valeurs={niveau} onChange={onChangeNiveau} placeholder="Niveau (optionnel)" listeId="biblio-pub-dossier-liste-niveau" suggestions={listes.niveaux} />
-      <ChampMultiValeurs valeurs={categorie} onChange={onChangeCategorie} placeholder="Catégorie (optionnel)" listeId="biblio-pub-dossier-liste-categorie" suggestions={listes.categories} />
-      <ChampMultiValeurs valeurs={classe} onChange={onChangeClasse} placeholder="Classe (optionnel)" listeId="biblio-pub-dossier-liste-classe" suggestions={listes.classes} />
-      <ChampMultiValeurs valeurs={specialite} onChange={onChangeSpecialite} placeholder="Spécialité (optionnel)" listeId="biblio-pub-dossier-liste-specialite" suggestions={listes.specialites} />
+    <div className="flex flex-col gap-3">
+      <ChampMultiValeurs
+        valeurs={valeurs.pays.valeurs}
+        heritageSousDossiers={valeurs.pays.heritageSousDossiers}
+        heritageFichiers={valeurs.pays.heritageFichiers}
+        onChange={(v) => onChange({ ...valeurs, pays: v })}
+        placeholder="Pays (optionnel)"
+        listeId="biblio-pub-dossier-liste-pays"
+        suggestions={listes.pays}
+      />
+      <ChampMultiValeurs
+        valeurs={valeurs.niveau.valeurs}
+        heritageSousDossiers={valeurs.niveau.heritageSousDossiers}
+        heritageFichiers={valeurs.niveau.heritageFichiers}
+        onChange={(v) => onChange({ ...valeurs, niveau: v })}
+        placeholder="Niveau (optionnel)"
+        listeId="biblio-pub-dossier-liste-niveau"
+        suggestions={listes.niveaux}
+      />
+      <ChampMultiValeurs
+        valeurs={valeurs.categorie.valeurs}
+        heritageSousDossiers={valeurs.categorie.heritageSousDossiers}
+        heritageFichiers={valeurs.categorie.heritageFichiers}
+        onChange={(v) => onChange({ ...valeurs, categorie: v })}
+        placeholder="Catégorie (optionnel)"
+        listeId="biblio-pub-dossier-liste-categorie"
+        suggestions={listes.categories}
+      />
+      <ChampMultiValeurs
+        valeurs={valeurs.classe.valeurs}
+        heritageSousDossiers={valeurs.classe.heritageSousDossiers}
+        heritageFichiers={valeurs.classe.heritageFichiers}
+        onChange={(v) => onChange({ ...valeurs, classe: v })}
+        placeholder="Classe (optionnel)"
+        listeId="biblio-pub-dossier-liste-classe"
+        suggestions={listes.classes}
+      />
+      <ChampMultiValeurs
+        valeurs={valeurs.specialite.valeurs}
+        heritageSousDossiers={valeurs.specialite.heritageSousDossiers}
+        heritageFichiers={valeurs.specialite.heritageFichiers}
+        onChange={(v) => onChange({ ...valeurs, specialite: v })}
+        placeholder="Spécialité (optionnel)"
+        listeId="biblio-pub-dossier-liste-specialite"
+        suggestions={listes.specialites}
+      />
     </div>
   );
 }
@@ -407,35 +478,22 @@ export function BibliothequePublique() {
   const [nouveauNomDossier, setNouveauNomDossier] = useState("");
   // 13/09/2026, demande Bourama : les 5 filtres d'un dossier n'étaient
   // modifiables nulle part -- panneau d'édition dédié, ouvert pour un
-  // seul dossier à la fois, pré-rempli avec ses valeurs actuelles.
+  // seul dossier à la fois, pré-rempli avec ses valeurs et réglages
+  // d'héritage actuels (voir filtresDossierDepuis dans lib/api.ts).
   const [dossierEditionFiltres, setDossierEditionFiltres] = useState<DossierCataloguePublic | null>(null);
-  const [editionFiltresPays, setEditionFiltresPays] = useState<string[]>([]);
-  const [editionFiltresNiveau, setEditionFiltresNiveau] = useState<string[]>([]);
-  const [editionFiltresCategorie, setEditionFiltresCategorie] = useState<string[]>([]);
-  const [editionFiltresClasse, setEditionFiltresClasse] = useState<string[]>([]);
-  const [editionFiltresSpecialite, setEditionFiltresSpecialite] = useState<string[]>([]);
+  const [editionFiltres, setEditionFiltres] = useState<FiltresDossierCataloguePublic>(filtresDossierVides());
   const [enregistrementFiltresEnCours, setEnregistrementFiltresEnCours] = useState(false);
 
   function ouvrirEditionFiltres(d: DossierCataloguePublic) {
     setDossierEditionFiltres(d);
-    setEditionFiltresPays(d.pays || []);
-    setEditionFiltresNiveau(d.niveau || []);
-    setEditionFiltresCategorie(d.categorie || []);
-    setEditionFiltresClasse(d.classe || []);
-    setEditionFiltresSpecialite(d.specialite || []);
+    setEditionFiltres(filtresDossierDepuis(d));
   }
 
   async function enregistrerEditionFiltres() {
     if (!dossierEditionFiltres) return;
     setEnregistrementFiltresEnCours(true);
     try {
-      await modifierFiltresDossierCataloguePublic(dossierEditionFiltres.id, {
-        pays: editionFiltresPays,
-        niveau: editionFiltresNiveau,
-        categorie: editionFiltresCategorie,
-        classe: editionFiltresClasse,
-        specialite: editionFiltresSpecialite,
-      });
+      await modifierFiltresDossierCataloguePublic(dossierEditionFiltres.id, editionFiltres);
       setDossierEditionFiltres(null);
       chargerDossiers();
     } catch (e) {
@@ -468,13 +526,9 @@ export function BibliothequePublique() {
   const [champSpecialite, setChampSpecialite] = useState("");
   // 13/09/2026, demande Bourama : un DOSSIER (uniquement -- un fichier/
   // lien/texte garde une seule valeur par filtre, state ci-dessus
-  // inchangé) accepte désormais plusieurs valeurs par filtre. État
-  // séparé, propre au formulaire de création de dossier.
-  const [filtresDossierPays, setFiltresDossierPays] = useState<string[]>([]);
-  const [filtresDossierNiveau, setFiltresDossierNiveau] = useState<string[]>([]);
-  const [filtresDossierCategorie, setFiltresDossierCategorie] = useState<string[]>([]);
-  const [filtresDossierClasse, setFiltresDossierClasse] = useState<string[]>([]);
-  const [filtresDossierSpecialite, setFiltresDossierSpecialite] = useState<string[]>([]);
+  // inchangé) accepte désormais plusieurs valeurs par filtre, avec
+  // héritage. État séparé, propre au formulaire de création de dossier.
+  const [filtresDossierCreation, setFiltresDossierCreation] = useState<FiltresDossierCataloguePublic>(filtresDossierVides());
   const [listesFiltres, setListesFiltres] = useState<ListesFiltresBibliothequePublique>({
     pays: [], niveaux: [], categories: [], classes: [], specialites: [],
   });
@@ -494,11 +548,7 @@ export function BibliothequePublique() {
   }
 
   function reinitialiserFiltresDossier() {
-    setFiltresDossierPays([]);
-    setFiltresDossierNiveau([]);
-    setFiltresDossierCategorie([]);
-    setFiltresDossierClasse([]);
-    setFiltresDossierSpecialite([]);
+    setFiltresDossierCreation(filtresDossierVides());
   }
 
   // Filtres de recherche/parcours (même demande) : le type est filtré
@@ -1046,13 +1096,7 @@ export function BibliothequePublique() {
         nouveauNomDossier.trim(),
         nouveauStatutDossier,
         dossierCourantId ?? undefined,
-        {
-          pays: filtresDossierPays,
-          niveau: filtresDossierNiveau,
-          categorie: filtresDossierCategorie,
-          classe: filtresDossierClasse,
-          specialite: filtresDossierSpecialite,
-        },
+        filtresDossierCreation,
         nouvelleDescriptionDossier.trim(),
       );
       setNouveauNomDossier("");
@@ -1310,18 +1354,38 @@ export function BibliothequePublique() {
   // (mêmes états filtrePays/filtreNiveau/etc, filtrage côté app -- la
   // liste des dossiers est déjà chargée intégralement, pas de scroll
   // infini côté dossiers contrairement aux fichiers).
+  // 13/09/2026, demande Bourama (héritage des filtres) : un dossier
+  // "voit" aussi les valeurs que ses ancêtres font descendre à leurs
+  // sous-dossiers (à n'importe quelle profondeur, en plus de ses
+  // propres valeurs) -- calculé ici côté app puisque la liste complète
+  // des dossiers est déjà chargée intégralement (pas de pagination).
+  const dossiersParId = new Map((dossiers ?? []).map((d) => [d.id, d]));
+  function valeursEffectivesDossier(d: DossierCataloguePublic, cle: "pays" | "niveau" | "categorie" | "classe" | "specialite"): string[] {
+    const ensemble = new Set(d[cle] || []);
+    let courant: DossierCataloguePublic | undefined = d;
+    while (courant?.dossier_parent_id) {
+      const parent = dossiersParId.get(courant.dossier_parent_id);
+      if (!parent) break;
+      const heritees = (parent[`${cle}_heritage_sous_dossiers` as keyof DossierCataloguePublic] as string[] | null | undefined) || [];
+      heritees.forEach((v) => ensemble.add(v));
+      courant = parent;
+    }
+    return Array.from(ensemble);
+  }
+
   const sousDossiersAffiches = (dossiers ?? [])
     .filter((d) => (d.dossier_parent_id ?? null) === dossierCourantId)
     .filter((d) => filtreStatutDossier === "tous" || d.statut === filtreStatutDossier)
     // 13/09/2026 : un dossier peut désormais avoir plusieurs valeurs par
     // filtre -- on garde le choix d'UNE seule valeur à la fois côté
     // recherche (inchangé), mais on vérifie qu'elle fait partie de la
-    // liste du dossier au lieu d'une égalité stricte.
-    .filter((d) => !filtrePays || (d.pays || []).includes(filtrePays))
-    .filter((d) => !filtreNiveau || (d.niveau || []).includes(filtreNiveau))
-    .filter((d) => !filtreCategorie || (d.categorie || []).includes(filtreCategorie))
-    .filter((d) => !filtreClasse || (d.classe || []).includes(filtreClasse))
-    .filter((d) => !filtreSpecialite || (d.specialite || []).includes(filtreSpecialite));
+    // liste du dossier (ou héritée d'un ancêtre) au lieu d'une égalité
+    // stricte.
+    .filter((d) => !filtrePays || valeursEffectivesDossier(d, "pays").includes(filtrePays))
+    .filter((d) => !filtreNiveau || valeursEffectivesDossier(d, "niveau").includes(filtreNiveau))
+    .filter((d) => !filtreCategorie || valeursEffectivesDossier(d, "categorie").includes(filtreCategorie))
+    .filter((d) => !filtreClasse || valeursEffectivesDossier(d, "classe").includes(filtreClasse))
+    .filter((d) => !filtreSpecialite || valeursEffectivesDossier(d, "specialite").includes(filtreSpecialite));
   const dossierActuel = dossierCourantId ? (dossiers ?? []).find((d) => d.id === dossierCourantId) : null;
   // 04/09/2026 : le filtrage par dossier se fait désormais côté serveur
   // (voir charger()/chargerPlus(), paramètre dossier_id) pour que le
@@ -1760,16 +1824,8 @@ export function BibliothequePublique() {
                 className="resize-none rounded-xl border border-dj-bordure bg-dj-fond px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
               />
               <ChampsFiltrageDossierMulti
-                pays={filtresDossierPays}
-                niveau={filtresDossierNiveau}
-                categorie={filtresDossierCategorie}
-                classe={filtresDossierClasse}
-                specialite={filtresDossierSpecialite}
-                onChangePays={setFiltresDossierPays}
-                onChangeNiveau={setFiltresDossierNiveau}
-                onChangeCategorie={setFiltresDossierCategorie}
-                onChangeClasse={setFiltresDossierClasse}
-                onChangeSpecialite={setFiltresDossierSpecialite}
+                valeurs={filtresDossierCreation}
+                onChange={setFiltresDossierCreation}
                 listes={listesFiltres}
               />
               <div className="flex items-center justify-end gap-2">
@@ -2067,21 +2123,9 @@ export function BibliothequePublique() {
       {dossierEditionFiltres && (
         <EditionFiltresDossierModal
           nomDossier={dossierEditionFiltres.nom}
-          pays={editionFiltresPays}
-          niveau={editionFiltresNiveau}
-          categorie={editionFiltresCategorie}
-          classe={editionFiltresClasse}
-          specialite={editionFiltresSpecialite}
-          onChangePays={setEditionFiltresPays}
-          onChangeNiveau={setEditionFiltresNiveau}
-          onChangeCategorie={setEditionFiltresCategorie}
-          onChangeClasse={setEditionFiltresClasse}
-          onChangeSpecialite={setEditionFiltresSpecialite}
-          suggestionsPays={listesFiltres.pays}
-          suggestionsNiveau={listesFiltres.niveaux}
-          suggestionsCategorie={listesFiltres.categories}
-          suggestionsClasse={listesFiltres.classes}
-          suggestionsSpecialite={listesFiltres.specialites}
+          valeurs={editionFiltres}
+          onChange={setEditionFiltres}
+          listes={listesFiltres}
           enregistrementEnCours={enregistrementFiltresEnCours}
           onEnregistrer={enregistrerEditionFiltres}
           onFermer={() => setDossierEditionFiltres(null)}

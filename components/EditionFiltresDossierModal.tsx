@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Tags, X, Loader2 } from "lucide-react";
+import { Tags, X, Loader2, FolderTree, FileText } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
-import { messageErreur } from "@/lib/erreurs";
+import type { FiltresDossierCataloguePublic, ValeursFiltreDossier, ListesFiltresBibliothequePublique } from "@/lib/api";
 
 // Créé le 13/09/2026, demande Bourama : les 5 filtres d'un dossier du
 // catalogue public (pays, niveau, catégorie, classe, spécialité)
@@ -12,17 +12,28 @@ import { messageErreur } from "@/lib/erreurs";
 // Concerne UNIQUEMENT les dossiers : un fichier garde une seule valeur
 // par filtre, formulaire inchangé (ChampsFiltragePublication dans
 // BibliothequePublique.tsx).
+//
+// 13/09/2026 (suite) : + réglage d'héritage par valeur (descend
+// automatiquement aux sous-dossiers et/ou aux fichiers, à n'importe
+// quelle profondeur, en plus des valeurs propres du descendant --
+// jamais de remplacement). Même composant ChampMultiValeurs que celui
+// de BibliothequePublique.tsx (dupliqué ici pour rester un fichier
+// autonome, même pattern que les autres modales du dossier).
 
 function ChampMultiValeurs({
   label,
   valeurs,
+  heritageSousDossiers,
+  heritageFichiers,
   onChange,
   suggestions,
   listeId,
 }: {
   label: string;
   valeurs: string[];
-  onChange: (v: string[]) => void;
+  heritageSousDossiers: string[];
+  heritageFichiers: string[];
+  onChange: (v: ValeursFiltreDossier) => void;
   suggestions: string[];
   listeId: string;
 }) {
@@ -32,29 +43,65 @@ function ChampMultiValeurs({
     const nettoyee = v.trim();
     setSaisie("");
     if (!nettoyee || valeurs.includes(nettoyee)) return;
-    onChange([...valeurs, nettoyee]);
+    onChange({ valeurs: [...valeurs, nettoyee], heritageSousDossiers, heritageFichiers });
+  }
+
+  function retirer(v: string) {
+    onChange({
+      valeurs: valeurs.filter((x) => x !== v),
+      heritageSousDossiers: heritageSousDossiers.filter((x) => x !== v),
+      heritageFichiers: heritageFichiers.filter((x) => x !== v),
+    });
+  }
+
+  function basculerHeritage(v: string, camp: "sousDossiers" | "fichiers") {
+    const liste = camp === "sousDossiers" ? heritageSousDossiers : heritageFichiers;
+    const nouvelleListe = liste.includes(v) ? liste.filter((x) => x !== v) : [...liste, v];
+    onChange({
+      valeurs,
+      heritageSousDossiers: camp === "sousDossiers" ? nouvelleListe : heritageSousDossiers,
+      heritageFichiers: camp === "fichiers" ? nouvelleListe : heritageFichiers,
+    });
   }
 
   return (
     <div className="flex flex-col gap-1">
       <p className="text-xs font-medium text-dj-texte-muet">{label}</p>
       {valeurs.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-col gap-1">
           {valeurs.map((v) => (
-            <span
-              key={v}
-              className="flex animate-dj-fade-in-rapide items-center gap-1 rounded-full border border-dj-bordure bg-dj-fond px-2 py-0.5 text-xs text-dj-texte"
-            >
-              {v}
+            <div key={v} className="flex animate-dj-fade-in-rapide flex-wrap items-center gap-1.5">
+              <span className="flex items-center gap-1 rounded-full border border-dj-bordure bg-dj-fond px-2 py-0.5 text-xs text-dj-texte">
+                {v}
+                <button type="button" onClick={() => retirer(v)} aria-label={`Retirer ${v}`} className="text-dj-texte-muet hover:text-dj-texte">
+                  <X size={11} />
+                </button>
+              </span>
               <button
                 type="button"
-                onClick={() => onChange(valeurs.filter((x) => x !== v))}
-                aria-label={`Retirer ${v}`}
-                className="text-dj-texte-muet hover:text-dj-texte"
+                onClick={() => basculerHeritage(v, "sousDossiers")}
+                title="Faire descendre cette valeur à tous les sous-dossiers"
+                className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${
+                  heritageSousDossiers.includes(v)
+                    ? "border-dj-accent-1 bg-dj-accent-1/15 text-dj-accent-1"
+                    : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
+                }`}
               >
-                <X size={11} />
+                <FolderTree size={11} /> Sous-dossiers
               </button>
-            </span>
+              <button
+                type="button"
+                onClick={() => basculerHeritage(v, "fichiers")}
+                title="Faire descendre cette valeur à tous les fichiers"
+                className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${
+                  heritageFichiers.includes(v)
+                    ? "border-dj-accent-1 bg-dj-accent-1/15 text-dj-accent-1"
+                    : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
+                }`}
+              >
+                <FileText size={11} /> Fichiers
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -83,41 +130,17 @@ function ChampMultiValeurs({
 
 export function EditionFiltresDossierModal({
   nomDossier,
-  pays,
-  niveau,
-  categorie,
-  classe,
-  specialite,
-  onChangePays,
-  onChangeNiveau,
-  onChangeCategorie,
-  onChangeClasse,
-  onChangeSpecialite,
-  suggestionsPays,
-  suggestionsNiveau,
-  suggestionsCategorie,
-  suggestionsClasse,
-  suggestionsSpecialite,
+  valeurs,
+  onChange,
+  listes,
   enregistrementEnCours,
   onEnregistrer,
   onFermer,
 }: {
   nomDossier: string;
-  pays: string[];
-  niveau: string[];
-  categorie: string[];
-  classe: string[];
-  specialite: string[];
-  onChangePays: (v: string[]) => void;
-  onChangeNiveau: (v: string[]) => void;
-  onChangeCategorie: (v: string[]) => void;
-  onChangeClasse: (v: string[]) => void;
-  onChangeSpecialite: (v: string[]) => void;
-  suggestionsPays: string[];
-  suggestionsNiveau: string[];
-  suggestionsCategorie: string[];
-  suggestionsClasse: string[];
-  suggestionsSpecialite: string[];
+  valeurs: FiltresDossierCataloguePublic;
+  onChange: (v: FiltresDossierCataloguePublic) => void;
+  listes: ListesFiltresBibliothequePublique;
   enregistrementEnCours: boolean;
   onEnregistrer: () => void;
   onFermer: () => void;
@@ -147,12 +170,55 @@ export function EditionFiltresDossierModal({
             <X size={16} />
           </button>
         </div>
+        <p className="text-[11px] text-dj-texte-muet">
+          « Sous-dossiers » et « Fichiers » font descendre une valeur à tous les descendants (à n'importe quelle profondeur), en plus de leurs propres valeurs.
+        </p>
 
-        <ChampMultiValeurs label="Pays" valeurs={pays} onChange={onChangePays} suggestions={suggestionsPays} listeId="edition-filtres-dossier-pays" />
-        <ChampMultiValeurs label="Niveau" valeurs={niveau} onChange={onChangeNiveau} suggestions={suggestionsNiveau} listeId="edition-filtres-dossier-niveau" />
-        <ChampMultiValeurs label="Catégorie" valeurs={categorie} onChange={onChangeCategorie} suggestions={suggestionsCategorie} listeId="edition-filtres-dossier-categorie" />
-        <ChampMultiValeurs label="Classe" valeurs={classe} onChange={onChangeClasse} suggestions={suggestionsClasse} listeId="edition-filtres-dossier-classe" />
-        <ChampMultiValeurs label="Spécialité" valeurs={specialite} onChange={onChangeSpecialite} suggestions={suggestionsSpecialite} listeId="edition-filtres-dossier-specialite" />
+        <ChampMultiValeurs
+          label="Pays"
+          valeurs={valeurs.pays.valeurs}
+          heritageSousDossiers={valeurs.pays.heritageSousDossiers}
+          heritageFichiers={valeurs.pays.heritageFichiers}
+          onChange={(v) => onChange({ ...valeurs, pays: v })}
+          suggestions={listes.pays}
+          listeId="edition-filtres-dossier-pays"
+        />
+        <ChampMultiValeurs
+          label="Niveau"
+          valeurs={valeurs.niveau.valeurs}
+          heritageSousDossiers={valeurs.niveau.heritageSousDossiers}
+          heritageFichiers={valeurs.niveau.heritageFichiers}
+          onChange={(v) => onChange({ ...valeurs, niveau: v })}
+          suggestions={listes.niveaux}
+          listeId="edition-filtres-dossier-niveau"
+        />
+        <ChampMultiValeurs
+          label="Catégorie"
+          valeurs={valeurs.categorie.valeurs}
+          heritageSousDossiers={valeurs.categorie.heritageSousDossiers}
+          heritageFichiers={valeurs.categorie.heritageFichiers}
+          onChange={(v) => onChange({ ...valeurs, categorie: v })}
+          suggestions={listes.categories}
+          listeId="edition-filtres-dossier-categorie"
+        />
+        <ChampMultiValeurs
+          label="Classe"
+          valeurs={valeurs.classe.valeurs}
+          heritageSousDossiers={valeurs.classe.heritageSousDossiers}
+          heritageFichiers={valeurs.classe.heritageFichiers}
+          onChange={(v) => onChange({ ...valeurs, classe: v })}
+          suggestions={listes.classes}
+          listeId="edition-filtres-dossier-classe"
+        />
+        <ChampMultiValeurs
+          label="Spécialité"
+          valeurs={valeurs.specialite.valeurs}
+          heritageSousDossiers={valeurs.specialite.heritageSousDossiers}
+          heritageFichiers={valeurs.specialite.heritageFichiers}
+          onChange={(v) => onChange({ ...valeurs, specialite: v })}
+          suggestions={listes.specialites}
+          listeId="edition-filtres-dossier-specialite"
+        />
 
         <div className="flex items-center justify-end gap-2 pt-1">
           <button onClick={fermer} className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
