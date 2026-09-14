@@ -1069,6 +1069,7 @@ export function ChatIA({
             onModeleChange={setModeleSelectionne}
             boutonSansEnseignant={boutonSansEnseignant}
             outilsActifsAgent={outilsActifsAgent}
+            conversationId={conversationId}
           />
         </div>
       </div>
@@ -1090,6 +1091,7 @@ export function ChatIA({
               <BulleMessage
                 message={message}
                 nomAgent={nomAgent}
+                conversationId={conversationId}
               // Rattachés à CE message précis plutôt qu'en bloc séparé plus
               // bas dans la liste (retour Bourama 24/07 : trop loin du
               // message, le raisonnement semblait "disparaître" une fois
@@ -1209,6 +1211,7 @@ export function ChatIA({
           onModeleChange={setModeleSelectionne}
           boutonSansEnseignant={boutonSansEnseignant}
           outilsActifsAgent={outilsActifsAgent}
+          conversationId={conversationId}
         />
       </div>
 
