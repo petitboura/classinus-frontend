@@ -40,6 +40,7 @@ import { SignalerContenuModal } from "@/components/SignalerContenuModal";
 import { DeplacerVersModal } from "@/components/DeplacerVersModal";
 import { VisionneuseBibliotheque } from "@/components/VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
+import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { Skeleton } from "./Skeleton";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
@@ -258,9 +259,15 @@ export function BibliothequePublique() {
   const [sansCompte, setSansCompte] = useState(false);
   const [entreeSignalee, setEntreeSignalee] = useState<EntreeBibliothequePublique | null>(null);
   const [entreeOuverte, setEntreeOuverte] = useState<EntreeBibliothequePublique | null>(null);
-  const [copieEnCours, setCopieEnCours] = useState<string | null>(null);
-  const [copieReussie, setCopieReussie] = useState<string | null>(null);
   const [compteRequisPourCopie, setCompteRequisPourCopie] = useState(false);
+  // 13/09/2026, demande Bourama : "Copier dans ma bibliothèque" et
+  // "Télécharger" avaient la même icône -- remplacés par un bouton
+  // unique (TelechargerCopierModal). entreeModalTelechargement porte
+  // l'entrée ciblée depuis la carte d'un fichier ; modalMultiOuverte
+  // couvre la barre de sélection multiple (entreesSelectionnees déjà
+  // disponible plus bas, pas besoin de dupliquer l'état).
+  const [entreeModalTelechargement, setEntreeModalTelechargement] = useState<EntreeBibliothequePublique | null>(null);
+  const [modalMultiOuverte, setModalMultiOuverte] = useState(false);
 
   // 09/09/2026, demande Bourama ("confirmation contributeurs") : modale
   // de choix de destination (fichier ou sous-dossier) + panneau des
@@ -940,24 +947,19 @@ export function BibliothequePublique() {
   }
 
   // 25/08, Bourama : "rendre les fichiers de la bibliothèque publique
-  // uploadables/copiables vers ta bibliothèque privée". copieReussie
-  // affiche brièvement une coche à la place de l'icône (transition
-  // douce, cohérent avec la règle "jamais d'affichage brut") avant de
-  // revenir à l'icône copier.
-  async function copierVersBiblioPerso(entree: EntreeBibliothequePublique) {
-    setCopieEnCours(entree.id);
+  // uploadables/copiables vers ta bibliothèque privée" -- utilisée
+  // désormais uniquement via copierIdVersBiblioPerso ci-dessous
+  // (13/09/2026, remplacée par TelechargerCopierModal partout où elle
+  // était appelée directement).
+  async function copierIdVersBiblioPerso(id: string) {
     try {
-      await copierVersBibliothequePersonnelle(entree.id);
-      setCopieReussie(entree.id);
-      setTimeout(() => setCopieReussie((id) => (id === entree.id ? null : id)), 2000);
+      await copierVersBibliothequePersonnelle(id);
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) {
         setCompteRequisPourCopie(true);
       } else {
-        window.alert(messageErreur(e));
+        throw e;
       }
-    } finally {
-      setCopieEnCours(null);
     }
   }
 
@@ -1759,17 +1761,10 @@ export function BibliothequePublique() {
                       ...(entree.url_publique
                         ? [
                             {
-                              cle: "copier",
-                              label: copieReussie === entree.id ? "Copié !" : "Copier dans ma bibliothèque",
-                              icone:
-                                copieReussie === entree.id ? (
-                                  <Check size={14} className="text-dj-accent-1-texte" />
-                                ) : (
-                                  <Download size={14} />
-                                ),
-                              onClick: () => {
-                                if (copieEnCours !== entree.id) copierVersBiblioPerso(entree);
-                              },
+                              cle: "telecharger",
+                              label: "Télécharger",
+                              icone: <Download size={14} />,
+                              onClick: () => setEntreeModalTelechargement(entree),
                             },
                           ]
                         : []),
@@ -1963,7 +1958,26 @@ export function BibliothequePublique() {
             : null
         }
         onFermer={() => setEntreeOuverte(null)}
+        onCopierVersBibliotheque={copierIdVersBiblioPerso}
       />
+
+      {entreeModalTelechargement && entreeModalTelechargement.url_publique && (
+        <TelechargerCopierModal
+          titre={entreeModalTelechargement.nom}
+          surCopie={() => copierIdVersBiblioPerso(entreeModalTelechargement.id)}
+          surTelechargement={() => telecharger(entreeModalTelechargement.url_publique!, entreeModalTelechargement.nom)}
+          onFermer={() => setEntreeModalTelechargement(null)}
+        />
+      )}
+
+      {modalMultiOuverte && (
+        <TelechargerCopierModal
+          titre={entreesSelectionnees.length > 1 ? `${entreesSelectionnees.length} fichiers` : entreesSelectionnees[0]?.nom || "Fichier"}
+          surCopie={copierSelectionVersBiblioPerso}
+          surTelechargement={telechargerSelection}
+          onFermer={() => setModalMultiOuverte(false)}
+        />
+      )}
 
       {compteRequisPourCopie && (
         <CompteRequisModal
@@ -2422,16 +2436,10 @@ export function BibliothequePublique() {
             liste.push({ cle: "partager", label: "Partager", icone: <Share2 size={14} />, onClick: partagerSelection });
             if (queDesFichiers) {
               liste.push({
-                cle: "copier",
-                label: "Copier dans ma bibliothèque",
-                icone: <Download size={14} />,
-                onClick: copierSelectionVersBiblioPerso,
-              });
-              liste.push({
                 cle: "telecharger",
                 label: "Télécharger",
                 icone: <Download size={14} />,
-                onClick: telechargerSelection,
+                onClick: () => setModalMultiOuverte(true),
               });
             }
             if (queDesDossiers) {

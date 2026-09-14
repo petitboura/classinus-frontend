@@ -3,6 +3,8 @@
 import { Component, ReactNode } from "react";
 import { Download } from "lucide-react";
 import { telecharger } from "@/lib/telecharger";
+import { copierVersBibliothequePersonnelle } from "@/lib/api";
+import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 
 // 10/09/2026 (demande Bourama, suite au plantage de toute l'appli --
 // "Application error" -- en ouvrant un aperçu de document généré par
@@ -21,18 +23,27 @@ import { telecharger } from "@/lib/telecharger";
 // classe : seule une classe React peut définir
 // getDerivedStateFromError/componentDidCatch (pas encore possible avec
 // les hooks).
+//
+// 13/09/2026, demande Bourama : "Copier dans ma bibliothèque" et
+// "Télécharger" avaient la même icône à plusieurs endroits -- si ce
+// fichier vient de la bibliothèque publique (idBibliothequePublique
+// fourni par FichierChip.tsx via useEntreePubliqueParUrl), le bouton
+// ouvre désormais TelechargerCopierModal (les deux actions au même
+// endroit) au lieu de lancer directement le téléchargement.
 type Props = {
   children: ReactNode;
   hrefTelechargement?: string;
   nomTelechargement?: string;
+  idBibliothequePublique?: string | null;
 };
 
 type State = {
   enErreur: boolean;
+  modalOuverte: boolean;
 };
 
 export class GardeApercu extends Component<Props, State> {
-  state: State = { enErreur: false };
+  state: State = { enErreur: false, modalOuverte: false };
 
   static getDerivedStateFromError() {
     return { enErreur: true };
@@ -46,16 +57,30 @@ export class GardeApercu extends Component<Props, State> {
 
   render() {
     if (this.state.enErreur) {
+      const { hrefTelechargement, nomTelechargement, idBibliothequePublique } = this.props;
+      const nom = nomTelechargement || "fichier";
       return (
         <div className="flex flex-col items-center gap-2 p-8 text-center text-dj-texte-muet">
           <p className="text-sm">Impossible d&apos;afficher ce fichier ici.</p>
-          {this.props.hrefTelechargement && (
+          {hrefTelechargement && (
             <button
-              onClick={() => telecharger(this.props.hrefTelechargement!, this.props.nomTelechargement || "fichier")}
+              onClick={() =>
+                idBibliothequePublique
+                  ? this.setState({ modalOuverte: true })
+                  : telecharger(hrefTelechargement, nom)
+              }
               className="flex items-center gap-1.5 text-xs text-dj-accent-1-texte hover:underline"
             >
               <Download size={13} /> Télécharger
             </button>
+          )}
+          {this.state.modalOuverte && hrefTelechargement && idBibliothequePublique && (
+            <TelechargerCopierModal
+              titre={nom}
+              surCopie={() => copierVersBibliothequePersonnelle(idBibliothequePublique)}
+              surTelechargement={() => telecharger(hrefTelechargement, nom)}
+              onFermer={() => this.setState({ modalOuverte: false })}
+            />
           )}
         </div>
       );

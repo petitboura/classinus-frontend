@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import { LinkPreview } from "./chat/LinkPreview";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
+import { TelechargerCopierModal } from "./TelechargerCopierModal";
 
 // Chargé dynamiquement, ssr:false (01/09) : ce fichier-ci est importé
 // STATIQUEMENT par EspaceBibliotheque.tsx / BibliothequePublique.tsx
@@ -329,6 +330,7 @@ export function VisionneuseBibliotheque({
   fichier,
   onFermer,
   onRanger,
+  onCopierVersBibliotheque,
 }: {
   fichier: FichierBiblio | null;
   onFermer: () => void;
@@ -337,6 +339,12 @@ export function VisionneuseBibliotheque({
   // EspaceBibliotheque.tsx (bibliothèque personnelle, seule à avoir des
   // dossiers ; BibliothequePublique.tsx n'en passe pas).
   onRanger?: () => void;
+  // 13/09/2026, demande Bourama : fourni seulement par
+  // BibliothequePublique.tsx -- "Télécharger" devient alors le bouton
+  // unique (TelechargerCopierModal) qui propose aussi "Ajouter à ma
+  // bibliothèque". Absent (EspaceBibliotheque.tsx, bibliothèque déjà
+  // personnelle) : bouton de téléchargement direct inchangé.
+  onCopierVersBibliotheque?: (id: string) => Promise<void>;
 }) {
   // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
   // brut") : `if (!fichier) return null` démontait l'aperçu d'un coup --
@@ -363,6 +371,7 @@ export function VisionneuseBibliotheque({
   useEffect(() => {
     if (!fichier) setPleinEcran(false);
   }, [fichier]);
+  const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
 
   if (!fichier && !enSortie) return null;
   const f = fichier ?? dernierFichier;
@@ -420,7 +429,9 @@ export function VisionneuseBibliotheque({
             )}
             {!estLien && (
               <button
-                onClick={() => telecharger(f.url_publique, f.nom_fichier)}
+                onClick={() =>
+                  onCopierVersBibliotheque ? setModalTelechargementOuverte(true) : telecharger(f.url_publique, f.nom_fichier)
+                }
                 aria-label="Télécharger"
                 className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
@@ -485,6 +496,15 @@ export function VisionneuseBibliotheque({
           )}
         </div>
       </div>
+
+      {modalTelechargementOuverte && onCopierVersBibliotheque && (
+        <TelechargerCopierModal
+          titre={titre}
+          surCopie={() => onCopierVersBibliotheque(f.id)}
+          surTelechargement={() => telecharger(f.url_publique, f.nom_fichier)}
+          onFermer={() => setModalTelechargementOuverte(false)}
+        />
+      )}
     </div>
   );
 }

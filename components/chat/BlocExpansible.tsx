@@ -5,6 +5,8 @@ import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X,
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
+import { copierVersBibliothequePersonnelle } from "@/lib/api";
+import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { GardeApercu } from "./GardeApercu";
 
 // Remplace le panneau latéral (retiré, 2026-07-20 -- Bourama a préféré
@@ -32,6 +34,7 @@ export function BlocExpansible({
   sousTitre,
   texteACopier,
   hrefTelechargement,
+  idBibliothequePublique,
   enfant,
   chargement,
   onPremiereOuverture,
@@ -41,6 +44,12 @@ export function BlocExpansible({
   sousTitre: string;
   texteACopier?: string;
   hrefTelechargement?: string;
+  // 13/09/2026, demande Bourama : présent quand ce fichier vient de la
+  // bibliothèque publique (voir FichierChip.tsx, useEntreePubliqueParUrl)
+  // -- fait apparaître "Ajouter à ma bibliothèque" à côté du
+  // téléchargement réel, via TelechargerCopierModal, au lieu du
+  // téléchargement direct.
+  idBibliothequePublique?: string | null;
   enfant: ReactNode;
   chargement?: boolean;
   onPremiereOuverture?: () => void;
@@ -48,6 +57,7 @@ export function BlocExpansible({
   const [ouvert, setOuvert] = useState(false);
   const [pleinEcran, setPleinEcran] = useState(false);
   const [copie, setCopie] = useState(false);
+  const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
   const [premiereOuvertureFaite, setPremiereOuvertureFaite] = useState(false);
 
   // 11/09/2026, demande Bourama : le rail d'icônes sticky (sans texte) et
@@ -141,7 +151,13 @@ export function BlocExpansible({
           </button>
         )}
         {hrefTelechargement && (
-          <button onClick={() => telecharger(hrefTelechargement, titre)} className={classe} aria-label="Télécharger">
+          <button
+            onClick={() =>
+              idBibliothequePublique ? setModalTelechargementOuverte(true) : telecharger(hrefTelechargement, titre)
+            }
+            className={classe}
+            aria-label="Télécharger"
+          >
             <Download size={14} />
             {avecTexte && "Télécharger"}
           </button>
@@ -221,7 +237,9 @@ export function BlocExpansible({
             </button>
           </div>
         </div>
-        <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre}>{enfant}</GardeApercu>
+        <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+          {enfant}
+        </GardeApercu>
       </div>
 
       <div className="pt-2">
@@ -235,45 +253,64 @@ export function BlocExpansible({
     </>
   );
 
+  const modaleTelechargement = modalTelechargementOuverte && hrefTelechargement && (
+    <TelechargerCopierModal
+      titre={titre}
+      surCopie={idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined}
+      surTelechargement={() => telecharger(hrefTelechargement, titre)}
+      onFermer={() => setModalTelechargementOuverte(false)}
+    />
+  );
+
   if (pleinEcran) {
     return (
-      <PanneauFlottant
-        onFerme={() => demarrerFermeture(fermer)}
-        pleine
-        enSortie={enSortie}
-        entete={
-          <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
-            <div className="flex shrink-0 gap-1.5">
-              <BoutonsActions avecTexte surAgrandir={() => setPleinEcran(false)} />
-              <button onClick={() => demarrerFermeture(fermer)} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
-                <X size={14} /> Fermer
-              </button>
+      <>
+        <PanneauFlottant
+          onFerme={() => demarrerFermeture(fermer)}
+          pleine
+          enSortie={enSortie}
+          entete={
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
+              <div className="flex shrink-0 gap-1.5">
+                <BoutonsActions avecTexte surAgrandir={() => setPleinEcran(false)} />
+                <button onClick={() => demarrerFermeture(fermer)} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
+                  <X size={14} /> Fermer
+                </button>
+              </div>
             </div>
+          }
+        >
+          {/* 13/09/2026, bug remonté par Bourama en plein écran : le
+              markdown déborde ET les boutons Formaté/Brut (en-tête sticky
+              de ContenuMarkdown) disparaissent. Cause : ce conteneur était
+              `overflow-auto` (x ET y) -- s'il scrolle aussi à l'horizontale,
+              il devient l'ancêtre de référence du `sticky top-0` de
+              ContenuMarkdown, qui n'est sticky que verticalement -- tout
+              défilement horizontal ICI fait donc glisser l'en-tête hors
+              champ avec le reste. Le contenu (tableaux, blocs de code) gère
+              déjà lui-même son propre débordement horizontal localement
+              (overflow-x-auto sur chaque tableau/bloc, voir
+              VisionneuseBibliotheque.tsx) -- ce conteneur n'a donc besoin
+              de scroller qu'à la verticale. `overflow-x-hidden` +
+              `w-full max-w-full min-w-0` empêchent tout élément interne de
+              forcer une largeur plus grande que le panneau plutôt que de
+              déborder proprement dans son propre `overflow-x-auto` local. */}
+          <div className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+              {enfant}
+            </GardeApercu>
           </div>
-        }
-      >
-        {/* 13/09/2026, bug remonté par Bourama en plein écran : le
-            markdown déborde ET les boutons Formaté/Brut (en-tête sticky
-            de ContenuMarkdown) disparaissent. Cause : ce conteneur était
-            `overflow-auto` (x ET y) -- s'il scrolle aussi à l'horizontale,
-            il devient l'ancêtre de référence du `sticky top-0` de
-            ContenuMarkdown, qui n'est sticky que verticalement -- tout
-            défilement horizontal ICI fait donc glisser l'en-tête hors
-            champ avec le reste. Le contenu (tableaux, blocs de code) gère
-            déjà lui-même son propre débordement horizontal localement
-            (overflow-x-auto sur chaque tableau/bloc, voir
-            VisionneuseBibliotheque.tsx) -- ce conteneur n'a donc besoin
-            de scroller qu'à la verticale. `overflow-x-hidden` +
-            `w-full max-w-full min-w-0` empêchent tout élément interne de
-            forcer une largeur plus grande que le panneau plutôt que de
-            déborder proprement dans son propre `overflow-x-auto` local. */}
-        <div className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-          <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre}>{enfant}</GardeApercu>
-        </div>
-      </PanneauFlottant>
+        </PanneauFlottant>
+        {modaleTelechargement}
+      </>
     );
   }
 
-  return <div className="my-2 max-w-full animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface p-2">{contenuPrincipal}</div>;
+  return (
+    <>
+      <div className="my-2 max-w-full animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface p-2">{contenuPrincipal}</div>
+      {modaleTelechargement}
+    </>
+  );
 }

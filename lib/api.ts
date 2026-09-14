@@ -783,6 +783,22 @@ export async function copierVersBibliothequePersonnelle(entreeId: string) {
   return appelerApi(`/api/bibliotheque/copier-depuis-publique/${entreeId}`, { method: "POST" });
 }
 
+// 13/09/2026, demande Bourama : dans le chat, une carte fichier
+// (components/chat/FichierChip.tsx) ne reçoit qu'un lien -- cette fonction
+// retrouve l'entrée de bibliothèque publique correspondante (id) à partir
+// de cette URL, pour proposer "Ajouter à ma bibliothèque" en plus du
+// téléchargement réel. Renvoie null (pas d'erreur) si l'URL ne correspond
+// à aucune entrée publiée, cas normal la plupart du temps (fichier généré
+// par l'IA, pas issu de la bibliothèque) -- voir lib/useEntreePubliqueParUrl.ts.
+export async function entreePubliqueParUrl(url: string): Promise<{ id: string } | null> {
+  try {
+    return (await appelerApi(`/api/bibliotheque-publique/par-url?url=${encodeURIComponent(url)}`)) as { id: string };
+  } catch (e) {
+    if (e instanceof ErreurApi && e.statusCode === 404) return null;
+    throw e;
+  }
+}
+
 /**
  * Upload de PLUSIEURS fichiers d'un coup vers la bibliothèque personnelle
  * (2026-08-01, demande Bourama : "plusieurs upload à la fois") -- simple
