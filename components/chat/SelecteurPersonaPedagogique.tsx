@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Check, GraduationCap } from "lucide-react";
+import { obtenirPersonaPedagogique, definirPersonaPedagogique } from "@/lib/api";
 
 // Sélecteur de persona pédagogique (partie 8 des specs indépendantes,
 // volet étudiant ScholarFlow AI, 14/09/2026). Bouton + panneau flottant,
@@ -19,16 +20,21 @@ import { ChevronDown, Check, GraduationCap } from "lucide-react";
 // partie 1), pour rester direct à brancher une fois la partie 9
 // (stockage backend) prête.
 //
-// ÉTAT LOCAL TEMPORAIRE (explicitement permis par la partie 8 en
-// attendant la partie 9) : pas de persistance ici, pas d'appel réseau --
-// le choix ne survit pas à un rechargement de page pour l'instant.
-// onPersonaChange permet au parent de lire le choix sans que ce
-// composant ait besoin de connaître conversationId ni l'API.
+// BRANCHÉ AU BACKEND (14/09/2026, jonction items 1+8+9 des specs
+// indépendantes) : persona chargé au montage via obtenirPersonaPedagogique
+// et persisté à chaque choix via definirPersonaPedagogique
+// (core/persona_pedagogique_conversation.py côté backend). Mise à jour
+// optimiste immédiate, revert silencieux en cas d'échec réseau -- même
+// patron que SelecteurModeActif.tsx juste à côté (choisir()).
 //
-// Aucune valeur par défaut choisie : le texte backend note explicitement
-// que le mode par défaut est une décision en attente, à trancher avant
-// le branchement réel (voir commit ce405c3, clovis-backend) -- persona
-// commence donc à `null` ("Aucun mode" affiché), jamais présélectionné.
+// conversationId requis (comme SelecteurModeActif) : sans lui, ce
+// composant garde persona à null et n'appelle jamais l'API (ex. écran
+// d'accueil avant le premier message, pas encore de conversation).
+//
+// Aucune valeur par défaut choisie : obtenirPersonaPedagogique/
+// obtenir_persona_pedagogique ne renvoient jamais de valeur implicite --
+// persona commence donc à `null` ("Aucun mode" affiché) tant que rien
+// n'a été chargé ou choisi, jamais présélectionné.
 //
 // Raccourci clavier "/" (même action que le bouton, aucune bascule
 // automatique décidée par l'IA -- voir REGLE_BASCULE_MODE_PEDAGOGIQUE
@@ -44,8 +50,10 @@ const PERSONAS: { id: string; label: string }[] = [
 ];
 
 export function SelecteurPersonaPedagogique({
+  conversationId,
   onPersonaChange,
 }: {
+  conversationId?: string;
   onPersonaChange?: (persona: string | null) => void;
 }) {
   const [persona, setPersona] = useState<string | null>(null);
@@ -53,10 +61,41 @@ export function SelecteurPersonaPedagogique({
   const boutonRef = useRef<HTMLButtonElement>(null);
   const panneauRef = useRef<HTMLDivElement>(null);
 
-  function choisir(id: string | null) {
-    setPersona(id);
+  // Charge le persona déjà choisi pour cette conversation, s'il existe.
+  // Un remontage (nouvelle conversation, key changée côté
+  // ChatFlottant.tsx) redéclenche ce useEffect -- pas de fuite d'un
+  // persona d'une conversation vers une autre.
+  useEffect(() => {
+    if (!conversationId) return;
+    let annule = false;
+    obtenirPersonaPedagogique(conversationId)
+      .then((res) => {
+        if (!annule) setPersona(res.persona);
+      })
+      .catch(() => {
+        // Échec silencieux -- reste à null ("Aucun mode"), cohérent
+        // avec l'absence de valeur par défaut implicite.
+      });
+    return () => {
+      annule = true;
+    };
+  }, [conversationId]);
+
+  async function choisir(id: string | null) {
+    if (!conversationId || id === persona) {
+      setOuvert(false);
+      return;
+    }
+    const precedent = persona;
+    setPersona(id); // optimiste, transition immédiate
     onPersonaChange?.(id);
     setOuvert(false);
+    try {
+      await definirPersonaPedagogique(conversationId, id);
+    } catch {
+      setPersona(precedent); // échec silencieux -- reprend l'affichage précédent
+      onPersonaChange?.(precedent);
+    }
   }
 
   // Fermeture au clic extérieur -- même pattern que le sélecteur de

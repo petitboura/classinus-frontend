@@ -1519,6 +1519,51 @@ export async function definirModeActif(conversationId: string, rattachementId: s
   }) as Promise<{ rattachement_id: string | null }>;
 }
 
+// --- Persona pédagogique par conversation (jonction items 1+8+9 des specs
+// indépendantes ScholarFlow AI, volet étudiant, 14/09/2026, demande
+// Bourama -- voir api/persona_pedagogique_conversation.py). Même patron
+// que le mode actif ci-dessus, mais concept totalement différent : ici
+// Socratique/Professeur/Tuteur/Examinateur, pas un rattachement
+// enseignant/code de classe. Volontairement pas de champ "verrouillé"
+// ni "choisi" ici (pas demandé pour ce mécanisme, contrairement au mode
+// actif) -- persona vaut simplement null tant que rien n'est choisi. ---
+
+export async function obtenirPersonaPedagogique(conversationId: string) {
+  return appelerApi(`/api/conversations/${conversationId}/persona-pedagogique`) as Promise<{
+    persona: string | null;
+  }>;
+}
+
+export async function definirPersonaPedagogique(conversationId: string, persona: string | null) {
+  return appelerApi(`/api/conversations/${conversationId}/persona-pedagogique`, {
+    method: "PUT",
+    body: JSON.stringify({ persona }),
+  }) as Promise<{ persona: string | null }>;
+}
+
+// --- Historique des réponses QCM (item 2 + jonction "QCM complet" des
+// specs indépendantes ScholarFlow AI, volet étudiant, 14/09/2026, demande
+// Bourama -- voir api/historique_reponses_qcm.py). Écriture seule, appelée
+// par QCMInteractif.tsx (item 3) au moment où l'étudiant sélectionne une
+// réponse. reponse_choisie/reponse_correcte : index (0-based) dans
+// `choix`, même convention que le format ```qcm côté backend. ------------
+
+export async function enregistrerReponseQCM(
+  conversationId: string,
+  payload: {
+    question: string;
+    choix: string[];
+    reponse_choisie: number;
+    reponse_correcte: number;
+    explication?: string | null;
+  }
+) {
+  return appelerApi(`/api/conversations/${conversationId}/reponses-qcm`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }) as Promise<{ enregistre: boolean }>;
+}
+
 // Structure des notions et avancement (Partie 1/2 du chantier "confiance
 // pédagogique", 06/09/2026 -- voir djiguigne-backend/core/programme_notions.py).
 // Rattachée à un code de partage (codes_partage), pas à un rôle -- même

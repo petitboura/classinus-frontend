@@ -207,6 +207,7 @@ export function BarreDeSaisie({
   boutonSansEnseignant = false,
   outilsActifsAgent = null,
   texteInitial,
+  conversationId,
 }: {
   onEnvoyer: (
     texte: string,
@@ -251,6 +252,11 @@ export function BarreDeSaisie({
   // changée dans ChatFlottant.tsx) quand cette prop est fournie, jamais
   // réappliqué en cours de frappe.
   texteInitial?: string;
+  // Persona pédagogique (jonction items 1+8+9, 14/09/2026) -- transmis
+  // tel quel à SelecteurPersonaPedagogique, même principe que
+  // conversationId sur SelecteurModeActif (monté à côté de ce
+  // composant dans ChatIA.tsx, pas dedans).
+  conversationId?: string;
 }) {
   const [texte, setTexte] = useState(() => texteInitial ?? "");
   const [longueur, setLongueur] = useState<LongueurReponse>("moyenne");
@@ -2079,11 +2085,10 @@ export function BarreDeSaisie({
               </div>
             </div>
 
-            {/* Persona pédagogique (partie 8 des specs indépendantes,
-                14/09/2026) -- voir SelecteurPersonaPedagogique.tsx pour
-                le détail (état local temporaire, pas encore branché à un
-                stockage backend, voir partie 9). */}
-            <SelecteurPersonaPedagogique />
+            {/* Persona pédagogique (jonction items 1+8+9 des specs
+                indépendantes, 14/09/2026) -- voir SelecteurPersonaPedagogique.tsx
+                pour le détail (branché sur le stockage backend). */}
+            <SelecteurPersonaPedagogique conversationId={conversationId} />
 
             <button
               type="button"

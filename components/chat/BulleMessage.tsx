@@ -18,6 +18,7 @@ import { MenuSignalementCorrection, type ChoixSignalement } from "./MenuSignalem
 import { IndicateurReflexion } from "@/components/IndicateurReflexion";
 import { SchemaGeometrique } from "./SchemaGeometrique";
 import { QCMInteractif } from "./QCMInteractif";
+import { FicheRevision } from "./FicheRevision";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { ImageMessage } from "./ImageMessage";
 import { VisionneuseImage } from "./VisionneuseImage";
@@ -435,6 +436,7 @@ function BulleMessageInterne({
   raisonnement,
   raisonnementEnCours,
   outilsResultats,
+  conversationId,
 }: {
   message: MessageAffiche;
   onRegenerer?: () => void;
@@ -466,6 +468,11 @@ function BulleMessageInterne({
   raisonnement?: string;
   raisonnementEnCours?: boolean;
   outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  // Persona pédagogique / jonction "QCM complet" (14/09/2026) : transmis
+  // tel quel à QCMInteractif (voir le case "qcm" du switch plus bas) --
+  // best-effort, aucun de ces deux blocs ne dépend de sa présence pour
+  // s'afficher correctement.
+  conversationId?: string;
 }) {
   const [copie, setCopie] = useState(false);
   const [pieceJointeOuverteIndex, setPieceJointeOuverteIndex] = useState<number | null>(null);
@@ -685,7 +692,9 @@ function BulleMessageInterne({
               case "geometrie":
                 return <SchemaGeometrique code={code} />;
               case "qcm":
-                return <QCMInteractif code={code} />;
+                return <QCMInteractif code={code} conversationId={conversationId} />;
+              case "fiche":
+                return <FicheRevision code={code} />;
               case "widget":
               case "html":
                 return <WidgetSandbox code={code} />;
@@ -1156,7 +1165,8 @@ function memeApparence(
     precedent.estEnCoursDeGeneration === suivant.estEnCoursDeGeneration &&
     precedent.raisonnement === suivant.raisonnement &&
     precedent.raisonnementEnCours === suivant.raisonnementEnCours &&
-    precedent.outilsResultats === suivant.outilsResultats
+    precedent.outilsResultats === suivant.outilsResultats &&
+    precedent.conversationId === suivant.conversationId
   );
 }
 

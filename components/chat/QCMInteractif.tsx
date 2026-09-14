@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { enregistrerReponseQCM } from "@/lib/api";
 
 // Rend un bloc ```qcm du markdown -- même famille que ```chart
 // (GraphiqueDonnees.tsx), ```carte (CarteMessage.tsx) et ```geometrie
@@ -18,11 +19,14 @@ import { CheckCircle2, XCircle } from "lucide-react";
 //     "explication"?: string,  // affichée après la réponse, quel que soit le choix
 //   }
 //
-// HORS SCOPE ICI (voir specs-independantes.md, section 3) : aucun appel
-// réseau. La réponse choisie n'est PAS envoyée au backend ni sauvegardée --
-// ça dépend de la table d'historique et de l'endpoint de sauvegarde
-// (sections 2 et 5, pas encore construites). Ce composant ne fait que de
-// l'affichage + de l'état local temporaire à la conversation.
+// JONCTION "QCM COMPLET" BRANCHÉE (14/09/2026, voir specs-independantes.md) :
+// la réponse choisie est envoyée à POST /api/conversations/{id}/reponses-qcm
+// (core/historique_reponses_qcm.py, item 2) dès la sélection. Appel best-effort
+// et délibérément ignoré (pas de useState d'erreur dédié, pas de retry) :
+// la correction ci-dessous s'affiche depuis l'état local, indépendamment du
+// réseau -- un échec d'historisation ne doit jamais dégrader l'expérience de
+// l'étudiant ni bloquer l'affichage de la correction. Sans conversationId
+// (ex. aperçu hors conversation), l'appel est simplement sauté.
 //
 // Pas de mécanisme i18n branché sur ce projet à ce jour (voir même constat
 // dans EspaceParametres.tsx) : textes fixes en français, comme le reste de
@@ -35,7 +39,7 @@ type QCM = {
   explication?: string;
 };
 
-export function QCMInteractif({ code }: { code: string }) {
+export function QCMInteractif({ code, conversationId }: { code: string; conversationId?: string }) {
   const [qcm, setQcm] = useState<QCM | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [choixSelectionne, setChoixSelectionne] = useState<number | null>(null);
@@ -91,6 +95,21 @@ export function QCMInteractif({ code }: { code: string }) {
 
   const aRepondu = choixSelectionne !== null;
 
+  function repondre(index: number) {
+    setChoixSelectionne(index);
+    if (!conversationId || !qcm) return;
+    // Best-effort, résultat ignoré (voir commentaire d'en-tête) -- ne
+    // doit jamais bloquer ni retarder l'affichage de la correction,
+    // déjà géré ci-dessus via l'état local choixSelectionne.
+    enregistrerReponseQCM(conversationId, {
+      question: qcm.question,
+      choix: qcm.choix,
+      reponse_choisie: index,
+      reponse_correcte: qcm.reponse,
+      explication: qcm.explication ?? null,
+    }).catch(() => {});
+  }
+
   return (
     <div className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
       <p className="text-sm font-semibold text-dj-texte">{qcm.question}</p>
@@ -116,7 +135,7 @@ export function QCMInteractif({ code }: { code: string }) {
               key={index}
               type="button"
               disabled={aRepondu}
-              onClick={() => setChoixSelectionne(index)}
+              onClick={() => repondre(index)}
               aria-pressed={estSelectionne}
               className={`flex items-center justify-between gap-2 rounded-cgpt-carte border px-3 py-2 text-left text-sm text-dj-texte transition-colors ${classesEtat} ${
                 aRepondu ? "cursor-default" : "cursor-pointer"
