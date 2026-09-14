@@ -747,7 +747,24 @@ export function ChatIA({
         ? fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) }))
         : null,
     };
-    const historiquePourApi = messages.map((m) => ({ role: m.role, content: m.content }));
+    // Ajouté 15/09/2026 (demande Bourama) : avant, seul le texte final
+    // (role/content) partait au backend -- tout résultat d'outil obtenu à
+    // un tour précédent (bibliothèque, skill, recherche web...) restait
+    // affiché à l'écran mais devenait invisible pour le modèle dès le
+    // message suivant. `outilsResultats` porte déjà cette donnée (en
+    // direct ET rechargé depuis meta.outils, voir BulleMessage.tsx) --
+    // simplifié ici aux seuls champs utiles au modèle (nomOutil/
+    // nomLisible/resultat, sans sources/images qui ne servent qu'à
+    // l'affichage). Voir core/historique_outils.py côté backend pour la
+    // réinjection effective.
+    const historiquePourApi = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+      outils:
+        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
+          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
+          : undefined,
+    }));
 
     // Si on arrive ici, soit il n'y avait pas d'état de reprise en
     // attente, soit on est dans le cas de secours (fichier joint,
