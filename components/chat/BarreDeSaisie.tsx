@@ -18,6 +18,7 @@ import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
+import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -2077,6 +2078,12 @@ export function BarreDeSaisie({
                 ))}
               </div>
             </div>
+
+            {/* Persona pédagogique (partie 8 des specs indépendantes,
+                14/09/2026) -- voir SelecteurPersonaPedagogique.tsx pour
+                le détail (état local temporaire, pas encore branché à un
+                stockage backend, voir partie 9). */}
+            <SelecteurPersonaPedagogique />
 
             <button
               type="button"
