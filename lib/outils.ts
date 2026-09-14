@@ -11,7 +11,6 @@ import {
   FileType,
   FileSpreadsheet,
   Presentation,
-  FolderSearch,
   Package,
   Archive,
   Download,
@@ -165,7 +164,8 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   { nom: "tavily_crawl", label: "Explorer un site", Icone: Globe, onglet: "rechercher" },
   { nom: "tavily_map", label: "Cartographier un site", Icone: Map, onglet: "rechercher" },
   { nom: "tavily_research", label: "Recherche approfondie", Icone: BookOpen, onglet: "rechercher" },
-  { nom: "chercher_fichier", label: "Chercher un fichier", Icone: FolderSearch, onglet: "rechercher" },
+  // "chercher_fichier" retiré le 14/09/2026 (outil backend cassé,
+  // remplacé par gerer_fichier_conversation, non cliquable)
   // gerer_document_bibliotheque (2026-08-01, nouvelle section "Mon espace" ->
   // Bibliothèque ; consolidé le 26/08, ex consulter_bibliotheque + 11
   // autres outils fusionnés en un seul avec un paramètre `action`, voir
@@ -175,6 +175,11 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // backend, PAS configurable par le créateur d'agent) : la bibliothèque
   // est personnelle à l'utilisateur, pas liée à un agent précis.
   { nom: "gerer_document_bibliotheque", label: "Consulter ma bibliothèque", Icone: Library, onglet: "rechercher" },
+  // gerer_fichier_conversation (14/09/2026) volontairement absent d'ici :
+  // pas cliquable manuellement, son icône/label vient du registre vivant
+  // chargé depuis le backend (voir OutilResultatBulle.tsx, useOutilsRegistre),
+  // comme tout autre outil onglet=None -- OUTILS_DISPONIBLES est réservé
+  // aux outils déclenchables à la main dans BarreDeSaisie.
 
   { nom: "gerer_depot_github", label: "Dépôt GitHub", Icone: Github, onglet: "action_app", appli: "github" },
   // Notion activé à 100% côté backend (01/08, demande Bourama, voir
