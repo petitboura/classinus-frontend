@@ -57,9 +57,11 @@ export function OutilResultatBulle({
   // regroupement dans BulleMessage.tsx), ils se replient en une seule
   // ligne "X outils utilisés" au lieu d'une ligne par outil. Sans effet
   // si `resultats` ne contient qu'un seul élément (affichage simple
-  // inchangé) -- et jamais activé pour l'affichage groupé historique
-  // (message.segments absent, voir BulleMessage.tsx), qui n'a jamais
-  // passé cette prop et garde donc son rendu d'origine.
+  // inchangé). Depuis le 15/09/2026, s'applique aussi à un fil rechargé
+  // depuis l'historique QUAND message.segments est présent (voir
+  // BulleMessage.tsx) -- seul un message antérieur à ce chantier (pas de
+  // rétro-remplissage) retombe encore sur l'ancien affichage groupé, qui
+  // ne passe jamais cette prop.
   groupe?: boolean;
 }) {
   const { outils } = useOutilsRegistre();
