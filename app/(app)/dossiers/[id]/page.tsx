@@ -80,30 +80,50 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
         {dossier.description && <p className="mt-2 text-sm text-dj-texte-muet">{dossier.description}</p>}
       </section>
 
-      <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-        {entrees.length === 0 ? (
-          <p className="px-5 py-4 text-center text-xs text-dj-texte-muet">Ce dossier est vide pour l'instant.</p>
-        ) : (
+      {dossier.sous_dossiers.length > 0 && (
+        <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
           <ul className="divide-y divide-dj-bordure">
-            {entrees.map((entree) => (
-              <li key={entree.id}>
+            {dossier.sous_dossiers.map((sousDossier) => (
+              <li key={sousDossier.id}>
                 <Link
-                  href={`/bibliotheque/${entree.id}`}
+                  href={`/dossiers/${sousDossier.id}`}
                   className="flex items-center gap-2.5 px-5 py-3 transition-colors duration-200 ease-cgpt-doux hover:bg-dj-surface-haute"
                 >
-                  <FileText size={16} className="flex-shrink-0 text-dj-texte-muet" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-dj-texte">{entree.nom}</p>
-                    {entree.description && (
-                      <p className="truncate text-xs text-dj-texte-muet">{entree.description}</p>
-                    )}
-                  </div>
+                  <Folder size={16} className="flex-shrink-0 text-dj-accent-1" />
+                  <p className="min-w-0 truncate text-sm text-dj-texte">{sousDossier.nom}</p>
                 </Link>
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
+
+      {(entrees.length > 0 || dossier.sous_dossiers.length === 0) && (
+        <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
+          {entrees.length === 0 ? (
+            <p className="px-5 py-4 text-center text-xs text-dj-texte-muet">Ce dossier est vide pour l'instant.</p>
+          ) : (
+            <ul className="divide-y divide-dj-bordure">
+              {entrees.map((entree) => (
+                <li key={entree.id}>
+                  <Link
+                    href={`/bibliotheque/${entree.id}`}
+                    className="flex items-center gap-2.5 px-5 py-3 transition-colors duration-200 ease-cgpt-doux hover:bg-dj-surface-haute"
+                  >
+                    <FileText size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-dj-texte">{entree.nom}</p>
+                      {entree.description && (
+                        <p className="truncate text-xs text-dj-texte-muet">{entree.description}</p>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </SectionPage>
   );
 }

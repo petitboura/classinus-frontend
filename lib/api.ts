@@ -622,6 +622,12 @@ export type DossierCataloguePublic = {
   classe_heritage_fichiers?: string[] | null;
   specialite_heritage_sous_dossiers?: string[] | null;
   specialite_heritage_fichiers?: string[] | null;
+  // 15/09/2026, demande Bourama : les sous-dossiers ne remontaient pas
+  // sur la page de consultation publique d'un dossier (/dossiers/[id]),
+  // seulement ses fichiers directs. Meme forme que
+  // SousDossierBibliothequeConsultation (perso), definie plus bas dans
+  // ce fichier.
+  sous_dossiers: SousDossierBibliothequeConsultation[];
 };
 
 // 13/09/2026, demande Bourama : filtres d'un DOSSIER (uniquement),
