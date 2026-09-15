@@ -11,11 +11,21 @@
 // Schéma JSON couvrant les 8 types validés par Bourama (voir
 // specs-question-riche.md, "Schéma JSON commun").
 
+// gabarit_reponse (optionnel, tous types) : phrase naturelle écrite par
+// Clovis lui-même pour ce champ précis, avec le placeholder générique
+// {reponse} à l'endroit où insérer la réponse formatée de l'étudiant (ex.
+// "Je veux réviser {reponse}"). Ajouté le 15/09/2026 (demande Bourama,
+// "Option A avec filet de sécurité") : un seul placeholder générique,
+// volontairement pas un placeholder différent par type, pour rester
+// simple à générer côté prompt et limiter le risque d'erreur de Clovis.
+// Si absent, invalide, ou sans {reponse} : filet de sécurité, voir
+// formaterReponseChamp plus bas -- jamais de crash, jamais de message vide.
 export type QuestionChoixUnique = {
   question: string;
   type: "choix_unique";
   choix: string[];
   autre?: boolean;
+  gabarit_reponse?: string;
 };
 
 export type QuestionChoixMultiple = {
@@ -23,17 +33,20 @@ export type QuestionChoixMultiple = {
   type: "choix_multiple";
   choix: string[];
   autre?: boolean;
+  gabarit_reponse?: string;
 };
 
 export type QuestionTexte = {
   question: string;
   type: "texte";
   format?: "court" | "long";
+  gabarit_reponse?: string;
 };
 
 export type QuestionOuiNon = {
   question: string;
   type: "oui_non";
+  gabarit_reponse?: string;
 };
 
 export type QuestionEchelle = {
@@ -42,18 +55,21 @@ export type QuestionEchelle = {
   min: number;
   max: number;
   labels?: { min?: string; max?: string };
+  gabarit_reponse?: string;
 };
 
 export type QuestionClassement = {
   question: string;
   type: "classement";
   elements: string[];
+  gabarit_reponse?: string;
 };
 
 export type QuestionDate = {
   question: string;
   type: "date";
   granularite?: "date" | "heure" | "date_heure";
+  gabarit_reponse?: string;
 };
 
 // Les 7 types utilisables seuls ou imbriqués dans multi_champs (jamais de
@@ -166,11 +182,12 @@ function formaterHeureCourte(hhmm: string): string {
   return `${h}h${m}`;
 }
 
-// Transforme la valeur d'édition d'un champ en texte final lisible, prêt
-// à être envoyé comme un message normal de l'étudiant (voir Lot 3 pour le
-// branchement réel sur l'envoi). Format choisi ici, faute de format
-// imposé par le schéma JSON -- signalé à Bourama, ajustable facilement.
-export function formaterReponseChamp(champ: ChampSimple, valeur: ValeurChamp): string {
+// Valeur brute formatée d'un champ (ex. "Maths, Physique", "7 (Excellent)",
+// "1. Suites, 2. Limites") -- jamais envoyée telle quelle à l'étudiant,
+// sert seulement de matière première à formaterReponseChamp/
+// formaterReponseChampImbrique ci-dessous (habillage gabarit_reponse ou
+// filet de sécurité).
+function valeurBrute(champ: ChampSimple, valeur: ValeurChamp): string {
   switch (champ.type) {
     case "choix_unique":
     case "choix_multiple": {
@@ -215,4 +232,36 @@ export function formaterReponseChamp(champ: ChampSimple, valeur: ValeurChamp): s
       });
     }
   }
+}
+
+// Insère la valeur brute dans le gabarit écrit par Clovis. Renvoie null
+// (jamais une chaîne vide ou bizarre) si le gabarit est inutilisable, pour
+// déclencher le filet de sécurité chez l'appelant -- gabarit absent, pas
+// une chaîne, ou sans le placeholder {reponse}.
+function remplirGabarit(gabarit: unknown, brute: string): string | null {
+  if (typeof gabarit !== "string" || !gabarit.includes("{reponse}")) return null;
+  const resultat = gabarit.replace("{reponse}", brute).trim();
+  return resultat.length > 0 ? resultat : null;
+}
+
+// Transforme la valeur d'édition d'un champ en texte final, prêt à être
+// envoyé comme un message normal de l'étudiant (usage standalone -- voir
+// ChampStandalone dans QuestionInteractive.tsx). Priorité au
+// gabarit_reponse écrit par Clovis (Option A) ; filet de sécurité
+// générique sinon (Option B, "Réponse : ...", validé par Bourama).
+export function formaterReponseChamp(champ: ChampSimple, valeur: ValeurChamp): string {
+  const brute = valeurBrute(champ, valeur);
+  if (!brute) return "";
+  return remplirGabarit(champ.gabarit_reponse, brute) ?? `Réponse : ${brute}`;
+}
+
+// Même chose, pour un champ imbriqué dans multi_champs (voir
+// QuestionMultiChamps.tsx). Filet de sécurité différent : la question du
+// champ reste le contexte le plus utile quand Clovis n'a pas fourni de
+// gabarit_reponse pour ce sous-champ précis (plutôt que "Réponse : ..."
+// générique, ambigu une fois plusieurs sous-réponses combinées).
+export function formaterReponseChampImbrique(champ: ChampSimple, valeur: ValeurChamp): string {
+  const brute = valeurBrute(champ, valeur);
+  if (!brute) return "";
+  return remplirGabarit(champ.gabarit_reponse, brute) ?? `${champ.question} : ${brute}`;
 }

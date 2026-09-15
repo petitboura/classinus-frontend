@@ -71,6 +71,24 @@ const EXEMPLES: { titre: string; json: object }[] = [
     },
   },
   {
+    titre: "choix_unique avec gabarit_reponse (Option A)",
+    json: {
+      question: "Quelle matière veux-tu réviser en priorité ?",
+      type: "choix_unique",
+      choix: ["Algèbre", "Analyse", "Physique"],
+      gabarit_reponse: "Je veux réviser {reponse} en priorité",
+    },
+  },
+  {
+    titre: "texte avec gabarit_reponse cassé (filet de sécurité)",
+    json: {
+      question: "Ton objectif principal ce mois-ci ?",
+      type: "texte",
+      format: "court",
+      gabarit_reponse: "sans placeholder, donc invalide",
+    },
+  },
+  {
     titre: "multi_champs",
     json: {
       question: "Petit point rapide avant de commencer",

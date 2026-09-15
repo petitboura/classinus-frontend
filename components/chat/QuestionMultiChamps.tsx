@@ -6,7 +6,7 @@ import {
   type ValeurChamp,
   valeurInitiale,
   valeurComplete,
-  formaterReponseChamp,
+  formaterReponseChampImbrique,
 } from "@/lib/questionRiche";
 import { ChampChoix } from "./ChampChoix";
 import { ChampTexte } from "./ChampTexte";
@@ -19,9 +19,10 @@ import { ChampDate } from "./ChampDate";
 // aux 7 autres types, aucun sous-champ n'a son propre bouton "Valider"
 // (ni de soumission "un clic suffit" pour choix_unique/oui_non) -- tout
 // le formulaire est rempli localement puis envoyé en une seule fois, via
-// l'unique bouton Valider en bas. onReponse combine chaque sous-réponse
-// en une ligne "Question : réponse" (format choisi ici faute de format
-// imposé par le schéma, signalé à Bourama).
+// l'unique bouton Valider en bas. onReponse combine une ligne par
+// sous-champ (voir formaterReponseChampImbrique, lib/questionRiche.ts) :
+// phrase du gabarit_reponse écrit par Clovis pour ce sous-champ si
+// présent, sinon "Question : réponse" en filet de sécurité.
 export function QuestionMultiChamps({
   champs,
   onReponse,
@@ -41,9 +42,11 @@ export function QuestionMultiChamps({
 
   function valider() {
     if (!toutComplet || desactive) return;
-    const texte = champs
-      .map((champ, i) => `${champ.question} : ${formaterReponseChamp(champ, valeurs[i])}`)
-      .join("\n");
+    // formaterReponseChampImbrique gère déjà le gabarit_reponse de chaque
+    // sous-champ (ou son propre filet de sécurité "Question : réponse"
+    // s'il n'y en a pas) -- pas de préfixage supplémentaire ici, sinon
+    // double affichage de la question quand un gabarit est présent.
+    const texte = champs.map((champ, i) => formaterReponseChampImbrique(champ, valeurs[i])).join("\n");
     onReponse(texte);
   }
 
