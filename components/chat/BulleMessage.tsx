@@ -18,6 +18,7 @@ import { MenuSignalementCorrection, type ChoixSignalement } from "./MenuSignalem
 import { IndicateurReflexion } from "@/components/IndicateurReflexion";
 import { SchemaGeometrique } from "./SchemaGeometrique";
 import { QCMInteractif } from "./QCMInteractif";
+import { QuestionInteractive } from "./QuestionInteractive";
 import { FicheRevision } from "./FicheRevision";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { ImageMessage } from "./ImageMessage";
@@ -696,6 +697,11 @@ function BulleMessageInterne({
                 return <SchemaGeometrique code={code} />;
               case "qcm":
                 return <QCMInteractif code={code} conversationId={conversationId} />;
+              case "question":
+                // onReponse pas encore branché sur l'envoi réel -- Lot 3
+                // (voir QuestionInteractive.tsx en-tête et
+                // specs-question-riche.md).
+                return <QuestionInteractive code={code} />;
               case "fiche":
                 return <FicheRevision code={code} />;
               case "widget":
