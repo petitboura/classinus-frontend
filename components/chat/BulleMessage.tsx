@@ -29,7 +29,7 @@ import { LecteurMedia, typeMedia } from "./LecteurMedia";
 import { NoteTexteChip, estNoteTexteBibliotheque } from "./NoteTexteChip";
 import { LinkPreview } from "./LinkPreview";
 import { RaisonnementBulle } from "./RaisonnementBulle";
-import { OutilResultatBulle } from "./OutilResultatBulle";
+import { OutilResultatBulle, OutilEnCours } from "./OutilResultatBulle";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { Skeleton } from "../Skeleton";
 
@@ -439,6 +439,13 @@ function BulleMessageInterne({
   raisonnement,
   raisonnementEnCours,
   outilsResultats,
+  // Outils encore en train de s'exécuter pour CE message précis
+  // (15/09/2026, chantier "ligne connectrice") -- transmis UNIQUEMENT
+  // pour le dernier message assistant en cours de génération (voir
+  // ChatIA.tsx), jamais persisté sur le message lui-même (contrairement à
+  // outilsResultats/segments) puisqu'un outil "en cours" n'a par
+  // définition pas encore de résultat à sauvegarder.
+  outilsEnCours,
   conversationId,
 }: {
   message: MessageAffiche;
@@ -471,6 +478,7 @@ function BulleMessageInterne({
   raisonnement?: string;
   raisonnementEnCours?: boolean;
   outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  outilsEnCours?: OutilEnCours[];
   // Persona pédagogique / jonction "QCM complet" (14/09/2026) : transmis
   // tel quel à QCMInteractif (voir le case "qcm" du switch plus bas) --
   // best-effort, aucun de ces deux blocs ne dépend de sa présence pour
@@ -779,6 +787,17 @@ function BulleMessageInterne({
     );
   }
 
+  // Un message avec des outils encore "en cours" (15/09/2026, chantier
+  // "ligne connectrice") doit basculer sur l'affichage timeline même
+  // AVANT que le tout premier segment n'existe -- ex. le tout premier
+  // outil appelé par le modèle : ChatIA.tsx ne pousse un segment dans
+  // message.segments qu'à la réception du RÉSULTAT (voir
+  // appliquerEvenementOutil, "outil_resultat"), jamais pour un simple
+  // "en cours". Sans ce cas, ce tout premier outil retomberait sur
+  // l'ancien affichage groupé (raisonnement en haut / outils en bas) le
+  // temps qu'il se termine, ce qui romprait la timeline en plein milieu.
+  const enTimeline = !!(message.segments && message.segments.length > 0) || !!(outilsEnCours && outilsEnCours.length > 0);
+
   return (
     <div className={`group flex flex-col ${estUtilisateur ? "items-end" : "items-start"}`}>
       {/* Raisonnement tout en haut, avant le contenu de la réponse (31/07,
@@ -788,7 +807,7 @@ function BulleMessageInterne({
       {!estUtilisateur && enAttente && (
         <IndicateurReflexion nomAgent={nomAgent ?? "Clovis"} />
       )}
-      {!estUtilisateur && (!message.segments || message.segments.length === 0) && raisonnement && (
+      {!estUtilisateur && !enTimeline && raisonnement && (
         <RaisonnementBulle nomAgent={nomAgent ?? "Clovis"} texte={raisonnement} enCours={!!raisonnementEnCours} />
       )}
       <div
@@ -900,15 +919,17 @@ function BulleMessageInterne({
                   tableaux à la main cassait le LaTeX (ou l'inverse) : un seul
                   moteur, cohérent, jamais de manipulation du texte brut à
                   part la normalisation des délimiteurs ci-dessus. */}
-              {!estUtilisateur && message.segments && message.segments.length > 0 ? (
+              {!estUtilisateur && enTimeline ? (
                 // Timeline chronologique (05/09/2026, demande Bourama) :
                 // réflexion/texte/outil dans l'ordre réel où ils se sont
                 // produits, au lieu du regroupement par catégorie
-                // ci-dessous. Uniquement pour un message généré dans la
-                // session en cours (voir MessageAffiche.segments) -- un
-                // message rechargé depuis l'historique n'a jamais ce
-                // champ rempli et retombe donc sur le rendu groupé
-                // normal, inchangé.
+                // ci-dessous. Pour un message généré dans la session en
+                // cours (voir MessageAffiche.segments) OU qui a encore des
+                // outils en cours (outilsEnCours, voir enTimeline
+                // ci-dessus) -- un message rechargé depuis l'historique
+                // antérieur au chantier "ligne connectrice" (15/09/2026)
+                // n'a ni l'un ni l'autre et retombe donc sur le rendu
+                // groupé normal, inchangé.
                 <div className="flex flex-col gap-1.5">
                   {/* Fusion des segments de raisonnement (06/09/2026, demande
                       Bourama) -- une même génération peut contenir plusieurs
@@ -924,12 +945,12 @@ function BulleMessageInterne({
                       regroupé dans une seule bulle, à l'endroit où la
                       réflexion a réellement commencé. */}
                   {(() => {
-                    const segments = message.segments!;
+                    const segments = message.segments ?? [];
                     const premierIndexRaisonnement = segments.findIndex(
                       (s) => s.type === "raisonnement",
                     );
                     const dernierSegment = segments[segments.length - 1];
-                    const raisonnementFusionEnCours = !!raisonnementEnCours && dernierSegment.type === "raisonnement";
+                    const raisonnementFusionEnCours = !!raisonnementEnCours && dernierSegment?.type === "raisonnement";
                     const texteRaisonnementFusionne = segments
                       .filter((s): s is { type: "raisonnement"; texte: string } => s.type === "raisonnement")
                       .map((s) => s.texte)
@@ -947,6 +968,7 @@ function BulleMessageInterne({
                     // l'affichage simple actuel, inchangé.
                     const elements: ReactNode[] = [];
                     let i = 0;
+                    let enCoursAttache = false;
                     while (i < segments.length) {
                       const segment = segments[i];
 
@@ -987,13 +1009,52 @@ function BulleMessageInterne({
                         );
                       }
 
-                      if (outilsDuRun.length === 1) {
-                        elements.push(<OutilResultatBulle key={`outil-${debutRun}`} resultats={outilsDuRun} />);
-                      } else if (outilsDuRun.length > 1) {
+                      // Ce run est-il le DERNIER de la timeline (rien après,
+                      // pas même un segment "texte") ? Si oui, et si des
+                      // outils tournent encore pour ce message, ils
+                      // appartiennent au même run -- une seule colonne
+                      // icône/ligne continue entre les outils déjà finis de
+                      // ce run et ceux encore en cours (15/09/2026, demande
+                      // Bourama : la ligne doit relier les deux, quel que
+                      // soit le mélange d'états).
+                      const dernierRun = i === segments.length;
+                      const enCoursDuRun = dernierRun ? outilsEnCours : undefined;
+                      if (enCoursDuRun && enCoursDuRun.length > 0) enCoursAttache = true;
+
+                      const total = outilsDuRun.length + (enCoursDuRun?.length ?? 0);
+                      if (total === 1) {
                         elements.push(
-                          <OutilResultatBulle key={`outils-${debutRun}`} resultats={outilsDuRun} groupe />,
+                          <OutilResultatBulle
+                            key={`outil-${debutRun}`}
+                            resultats={outilsDuRun.length ? outilsDuRun : undefined}
+                            enCours={enCoursDuRun}
+                          />,
+                        );
+                      } else if (total > 1) {
+                        elements.push(
+                          <OutilResultatBulle
+                            key={`outils-${debutRun}`}
+                            resultats={outilsDuRun.length ? outilsDuRun : undefined}
+                            enCours={enCoursDuRun}
+                            groupe
+                          />,
                         );
                       }
+                    }
+
+                    // Aucun run n'a pu accueillir les outils en cours (la
+                    // timeline se termine sur un segment "texte", ou est
+                    // encore complètement vide pour le tout premier outil
+                    // du message) -- on les affiche quand même, dans leur
+                    // propre colonne icône/ligne, à la toute fin.
+                    if (!enCoursAttache && outilsEnCours && outilsEnCours.length > 0) {
+                      elements.push(
+                        <OutilResultatBulle
+                          key="outils-en-cours-fin"
+                          enCours={outilsEnCours}
+                          groupe={outilsEnCours.length > 1}
+                        />,
+                      );
                     }
 
                     return elements;
@@ -1025,7 +1086,7 @@ function BulleMessageInterne({
         )}
       </div>
 
-      {!estUtilisateur && (!message.segments || message.segments.length === 0) && outilsResultats && outilsResultats.length > 0 && (
+      {!estUtilisateur && !enTimeline && outilsResultats && outilsResultats.length > 0 && (
         <OutilResultatBulle resultats={outilsResultats} />
       )}
       {/* Bloc "Fichier(s) généré(s)" retiré (04/09/2026, demande Bourama) :
@@ -1169,6 +1230,7 @@ function memeApparence(
     precedent.raisonnement === suivant.raisonnement &&
     precedent.raisonnementEnCours === suivant.raisonnementEnCours &&
     precedent.outilsResultats === suivant.outilsResultats &&
+    precedent.outilsEnCours === suivant.outilsEnCours &&
     precedent.conversationId === suivant.conversationId
   );
 }

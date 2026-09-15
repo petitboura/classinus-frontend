@@ -165,6 +165,17 @@ const config: Config = {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
         },
+        // Ligne connectrice entre outils (15/09/2026, demande Bourama) :
+        // se trace du haut vers le bas plutôt que d'apparaître déjà en
+        // place -- scaleY sur transform-origin:top, animation pure CSS
+        // (aucun JS de mesure de hauteur), donc jamais bloquante pour le
+        // reste de l'affichage. Durée alignée sur dj-fade-in-rapide
+        // (0.18s) -- même principe : une micro-interaction d'UI, pas un
+        // chargement de page.
+        "dj-ligne-trace": {
+          from: { transform: "scaleY(0)" },
+          to: { transform: "scaleY(1)" },
+        },
       },
       animation: {
         "dj-fade-up": "dj-fade-up 0.5s ease both",
@@ -184,6 +195,7 @@ const config: Config = {
         // décélération franche de cgpt-doux n'a pas de sens répétée en
         // boucle.
         "dj-shimmer": "dj-shimmer 2.2s ease-in-out infinite",
+        "dj-ligne-trace": "dj-ligne-trace 0.18s ease-out both",
       },
     },
   },
