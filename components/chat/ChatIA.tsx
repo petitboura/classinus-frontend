@@ -1109,6 +1109,18 @@ export function ChatIA({
                 message={message}
                 nomAgent={nomAgent}
                 conversationId={conversationId}
+                // Lot 3 (chantier "question riche dans le chat", voir
+                // specs-question-riche.md) : réutilise envoyerMessage comme
+                // pour "renvoyer"/"reformuler" plus haut, la réponse
+                // choisie part donc comme un vrai message utilisateur.
+                // questionDejaRepondue se base sur la POSITION dans
+                // messages (le message juste après est déjà un message
+                // utilisateur), pas sur le contenu du texte -- évite de
+                // confondre deux questions au texte proche, et corrige le
+                // défaut de QCMInteractif.tsx qui redevenait cliquable à
+                // chaque rechargement.
+                onRepondreQuestion={(texte) => envoyerMessage(texte, "moyenne", [])}
+                questionDejaRepondue={message.role === "assistant" && messages[index + 1]?.role === "user"}
               // Rattachés à CE message précis plutôt qu'en bloc séparé plus
               // bas dans la liste (retour Bourama 24/07 : trop loin du
               // message, le raisonnement semblait "disparaître" une fois

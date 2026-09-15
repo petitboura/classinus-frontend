@@ -441,6 +441,8 @@ function BulleMessageInterne({
   raisonnementEnCours,
   outilsResultats,
   conversationId,
+  onRepondreQuestion,
+  questionDejaRepondue,
 }: {
   message: MessageAffiche;
   onRegenerer?: () => void;
@@ -477,6 +479,15 @@ function BulleMessageInterne({
   // best-effort, aucun de ces deux blocs ne dépend de sa présence pour
   // s'afficher correctement.
   conversationId?: string;
+  // Lot 3 (chantier "question riche dans le chat", voir
+  // specs-question-riche.md) : branchés uniquement pour le bloc
+  // ```question``` (case "question" plus bas), transmis tels quels à
+  // QuestionInteractive. onRepondreQuestion envoie la réponse choisie
+  // comme un vrai message (ChatIA.tsx/envoyerMessage) ;
+  // questionDejaRepondue verrouille l'affichage si l'historique montre
+  // qu'un message utilisateur répond déjà à ce message-ci.
+  onRepondreQuestion?: (texteFinal: string) => void;
+  questionDejaRepondue?: boolean;
 }) {
   const [copie, setCopie] = useState(false);
   const [pieceJointeOuverteIndex, setPieceJointeOuverteIndex] = useState<number | null>(null);
@@ -698,10 +709,13 @@ function BulleMessageInterne({
               case "qcm":
                 return <QCMInteractif code={code} conversationId={conversationId} />;
               case "question":
-                // onReponse pas encore branché sur l'envoi réel -- Lot 3
-                // (voir QuestionInteractive.tsx en-tête et
-                // specs-question-riche.md).
-                return <QuestionInteractive code={code} />;
+                return (
+                  <QuestionInteractive
+                    code={code}
+                    onReponse={onRepondreQuestion}
+                    dejaRepondu={questionDejaRepondue}
+                  />
+                );
               case "fiche":
                 return <FicheRevision code={code} />;
               case "widget":

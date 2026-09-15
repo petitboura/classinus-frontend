@@ -245,12 +245,20 @@ function ChampStandalone({
 export function QuestionInteractive({
   code,
   onReponse,
+  dejaRepondu,
 }: {
   code: string;
-  // Optionnelle : le composant s'affiche et se verrouille localement même
-  // sans elle (page de démo Lot 2). C'est le Lot 3 qui la branchera sur
-  // l'envoi réel du message (ChatIA.tsx/envoyerMessage), voir en-tête.
+  // Branchée par ChatIA.tsx (Lot 3) sur envoyerMessage : la réponse choisie
+  // part comme un vrai message utilisateur dans le fil.
   onReponse?: (texteFinal: string) => void;
+  // Lot 3 : vrai quand ChatIA.tsx détecte, au chargement de l'historique,
+  // qu'un message utilisateur suit déjà ce bloc question (voir
+  // specs-question-riche.md, correction du défaut de persistance de
+  // QCMInteractif.tsx). On ne connaît pas ici le texte exact de cette
+  // réponse -- elle est de toute façon déjà visible juste en dessous comme
+  // une bulle de message normale -- on se contente de verrouiller les
+  // contrôles pour ne pas permettre une seconde réponse au rechargement.
+  dejaRepondu?: boolean;
 }) {
   const [donnee, setDonnee] = useState<QuestionRiche | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -310,7 +318,10 @@ export function QuestionInteractive({
     if (messageErreur) return <EtatErreur texte={messageErreur} />;
   }
 
-  const aRepondu = reponseEnvoyee !== null;
+  // reponseEnvoyee (cette session) OU dejaRepondu (détecté dans
+  // l'historique au chargement, voir prop ci-dessus) -- les deux verrouillent
+  // les contrôles de la même façon.
+  const aRepondu = reponseEnvoyee !== null || !!dejaRepondu;
 
   return (
     <div className="my-3 flex animate-dj-fade-in flex-col rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
@@ -322,7 +333,7 @@ export function QuestionInteractive({
         <ChampStandalone champ={donnee} onReponse={gererReponse} desactive={aRepondu} />
       )}
 
-      {aRepondu && (
+      {reponseEnvoyee !== null && (
         <div className="mt-3 animate-dj-fade-in-rapide rounded-cgpt-carte bg-dj-surface-haute p-3 text-xs text-dj-texte-muet">
           Réponse envoyée : {reponseEnvoyee}
         </div>
