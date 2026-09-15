@@ -78,6 +78,20 @@ function Etiquette({ valeur }: { valeur: string | null | undefined }) {
   );
 }
 
+// 15/09/2026, demande Bourama : un fichier peut désormais avoir
+// plusieurs valeurs par filtre (colonnes passées en tableau côté
+// Supabase), donc une étiquette par valeur au lieu d'une seule.
+function Etiquettes({ valeurs }: { valeurs: string[] | null | undefined }) {
+  if (!valeurs || valeurs.length === 0) return null;
+  return (
+    <>
+      {valeurs.map((v) => (
+        <Etiquette key={v} valeur={v} />
+      ))}
+    </>
+  );
+}
+
 export default async function PageEntreeBibliothequePublique({ params }: { params: { id: string } }) {
   const entree = await chargerEntree(params.id);
 
@@ -109,11 +123,11 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
         {entree.description && <p className="mt-2 text-sm text-dj-texte-muet">{entree.description}</p>}
 
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <Etiquette valeur={entree.pays} />
-          <Etiquette valeur={entree.niveau} />
-          <Etiquette valeur={entree.categorie} />
-          <Etiquette valeur={entree.classe} />
-          <Etiquette valeur={entree.specialite} />
+          <Etiquettes valeurs={entree.pays} />
+          <Etiquettes valeurs={entree.niveau} />
+          <Etiquettes valeurs={entree.categorie} />
+          <Etiquettes valeurs={entree.classe} />
+          <Etiquettes valeurs={entree.specialite} />
         </div>
       </section>
 

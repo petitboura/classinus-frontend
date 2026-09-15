@@ -108,7 +108,19 @@ function ChampMultiValeurs({
       <input
         list={listeId}
         value={saisie}
-        onChange={(e) => setSaisie(e.target.value)}
+        onChange={(e) => {
+          const nouvelleValeur = e.target.value;
+          setSaisie(nouvelleValeur);
+          // 15/09/2026, correction bug Bourama : choisir une suggestion
+          // dans le <datalist> ne fait que remplir le champ texte (pas
+          // d'événement natif "sélection" côté datalist), donc l'ajout
+          // n'arrivait qu'au blur (cliquer sur un autre filtre). On
+          // ajoute immédiatement dès que le texte tapé correspond
+          // exactement à une suggestion existante.
+          if (suggestions.includes(nouvelleValeur)) {
+            ajouter(nouvelleValeur);
+          }
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();

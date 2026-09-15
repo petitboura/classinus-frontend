@@ -43,6 +43,7 @@ import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { SignalerContenuModal } from "@/components/SignalerContenuModal";
 import { DeplacerVersModal } from "@/components/DeplacerVersModal";
+import { GererDossiersFichierModal } from "@/components/GererDossiersFichierModal";
 import { EditionFiltresDossierModal } from "@/components/EditionFiltresDossierModal";
 import { VisionneuseBibliotheque } from "@/components/VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
@@ -111,6 +112,84 @@ const TYPES_BIBLIO_PUBLIQUE: { id: TypeBiblioPublique; label: string }[] = [
 // menu fermé : on peut toujours taper une valeur qui n'existe pas
 // encore, le serveur l'ajoute tout seul à la liste (voir
 // core/listes_bibliotheque_publique.py) -- pas de bouton "Autre" séparé.
+// 15/09/2026, demande Bourama : un FICHIER (comme un dossier depuis le
+// 13/09/2026) peut désormais recevoir plusieurs valeurs par filtre.
+// Version simplifiée de ChampMultiValeurs ci-dessous : un fichier n'a
+// jamais de descendants, donc pas de bascules d'héritage sous-dossiers/
+// fichiers ici, juste des puces retirables + un champ texte/
+// <datalist> pour en ajouter une nouvelle.
+function ChampMultiValeursFichier({
+  valeurs,
+  onChange,
+  placeholder,
+  listeId,
+  suggestions,
+}: {
+  valeurs: string[];
+  onChange: (v: string[]) => void;
+  placeholder: string;
+  listeId: string;
+  suggestions: string[];
+}) {
+  const [saisie, setSaisie] = useState("");
+
+  function ajouter(v: string) {
+    const nettoyee = v.trim();
+    setSaisie("");
+    if (!nettoyee || valeurs.includes(nettoyee)) return;
+    onChange([...valeurs, nettoyee]);
+  }
+
+  function retirer(v: string) {
+    onChange(valeurs.filter((x) => x !== v));
+  }
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {valeurs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {valeurs.map((v) => (
+            <span key={v} className="flex animate-dj-fade-in-rapide items-center gap-1 rounded-full border border-dj-bordure bg-dj-fond px-2 py-0.5 text-xs text-dj-texte">
+              {v}
+              <button type="button" onClick={() => retirer(v)} aria-label={`Retirer ${v}`} className="text-dj-texte-muet hover:text-dj-texte">
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        list={listeId}
+        value={saisie}
+        onChange={(e) => {
+          const nouvelleValeur = e.target.value;
+          setSaisie(nouvelleValeur);
+          // Même correction que ChampMultiValeurs/EditionFiltresDossierModal :
+          // une sélection dans le <datalist> doit s'ajouter tout de
+          // suite, pas seulement au blur.
+          if (suggestions.includes(nouvelleValeur)) {
+            ajouter(nouvelleValeur);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            ajouter(saisie);
+          }
+        }}
+        onBlur={() => saisie.trim() && ajouter(saisie)}
+        placeholder={placeholder}
+        className="min-w-0 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-bordure-forte"
+      />
+      <datalist id={listeId}>
+        {suggestions.filter((s) => !valeurs.includes(s)).map((v) => (
+          <option key={v} value={v} />
+        ))}
+      </datalist>
+    </div>
+  );
+}
+
 function ChampsFiltragePublication({
   pays,
   niveau,
@@ -124,91 +203,66 @@ function ChampsFiltragePublication({
   onChangeSpecialite,
   listes,
 }: {
-  pays: string;
-  niveau: string;
-  categorie: string;
-  classe: string;
-  specialite: string;
-  onChangePays: (v: string) => void;
-  onChangeNiveau: (v: string) => void;
-  onChangeCategorie: (v: string) => void;
-  onChangeClasse: (v: string) => void;
-  onChangeSpecialite: (v: string) => void;
+  pays: string[];
+  niveau: string[];
+  categorie: string[];
+  classe: string[];
+  specialite: string[];
+  onChangePays: (v: string[]) => void;
+  onChangeNiveau: (v: string[]) => void;
+  onChangeCategorie: (v: string[]) => void;
+  onChangeClasse: (v: string[]) => void;
+  onChangeSpecialite: (v: string[]) => void;
   listes: ListesFiltresBibliothequePublique;
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-      <input
-        list="biblio-pub-liste-pays"
-        value={pays}
-        onChange={(e) => onChangePays(e.target.value)}
+      <ChampMultiValeursFichier
+        valeurs={pays}
+        onChange={onChangePays}
         placeholder="Pays (optionnel)"
-        className="min-w-0 flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-bordure-forte"
+        listeId="biblio-pub-liste-pays"
+        suggestions={listes.pays}
       />
-      <input
-        list="biblio-pub-liste-niveau"
-        value={niveau}
-        onChange={(e) => onChangeNiveau(e.target.value)}
+      <ChampMultiValeursFichier
+        valeurs={niveau}
+        onChange={onChangeNiveau}
         placeholder="Niveau (optionnel)"
-        className="min-w-0 flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-bordure-forte"
+        listeId="biblio-pub-liste-niveau"
+        suggestions={listes.niveaux}
       />
-      <input
-        list="biblio-pub-liste-categorie"
-        value={categorie}
-        onChange={(e) => onChangeCategorie(e.target.value)}
+      <ChampMultiValeursFichier
+        valeurs={categorie}
+        onChange={onChangeCategorie}
         placeholder="Catégorie (optionnel)"
-        className="min-w-0 flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-bordure-forte"
+        listeId="biblio-pub-liste-categorie"
+        suggestions={listes.categories}
       />
       {/* 04/09/2026, demande Bourama : 2 champs supplémentaires, même principe. */}
-      <input
-        list="biblio-pub-liste-classe"
-        value={classe}
-        onChange={(e) => onChangeClasse(e.target.value)}
+      <ChampMultiValeursFichier
+        valeurs={classe}
+        onChange={onChangeClasse}
         placeholder="Classe (optionnel)"
-        className="min-w-0 flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-bordure-forte"
+        listeId="biblio-pub-liste-classe"
+        suggestions={listes.classes}
       />
-      <input
-        list="biblio-pub-liste-specialite"
-        value={specialite}
-        onChange={(e) => onChangeSpecialite(e.target.value)}
+      <ChampMultiValeursFichier
+        valeurs={specialite}
+        onChange={onChangeSpecialite}
         placeholder="Spécialité (optionnel)"
-        className="min-w-0 flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-bordure-forte"
+        listeId="biblio-pub-liste-specialite"
+        suggestions={listes.specialites}
       />
-      <datalist id="biblio-pub-liste-pays">
-        {listes.pays.map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
-      <datalist id="biblio-pub-liste-niveau">
-        {listes.niveaux.map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
-      <datalist id="biblio-pub-liste-categorie">
-        {listes.categories.map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
-      <datalist id="biblio-pub-liste-classe">
-        {listes.classes.map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
-      <datalist id="biblio-pub-liste-specialite">
-        {listes.specialites.map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
     </div>
   );
 }
 
-// 13/09/2026, demande Bourama : un DOSSIER (uniquement -- pas un
-// fichier/lien/texte, qui garde ChampsFiltragePublication ci-dessus,
-// une seule valeur) peut recevoir plusieurs valeurs pour un même
-// filtre. Petites puces retirables + champ texte/<datalist> pour en
-// ajouter une nouvelle (Entrée ou en quittant le champ) -- même
-// logique "valeur libre, jamais de liste fermée" que ci-dessus.
+// 13/09/2026, demande Bourama : un DOSSIER peut recevoir plusieurs
+// valeurs pour un même filtre. Petites puces retirables + champ texte/
+// <datalist> pour en ajouter une nouvelle (Entrée ou en quittant le
+// champ) -- même logique "valeur libre, jamais de liste fermée" que
+// ci-dessus (voir ChampMultiValeursFichier, équivalent sans héritage
+// pour un fichier/lien/texte, ajouté le 15/09/2026).
 //
 // 13/09/2026 (suite) : + 2 petites bascules par valeur (sous-dossiers /
 // fichiers) pour la faire descendre automatiquement à tous les
@@ -302,7 +356,20 @@ function ChampMultiValeurs({
       <input
         list={listeId}
         value={saisie}
-        onChange={(e) => setSaisie(e.target.value)}
+        onChange={(e) => {
+          const nouvelleValeur = e.target.value;
+          setSaisie(nouvelleValeur);
+          // 15/09/2026, correction bug Bourama (même bug que
+          // EditionFiltresDossierModal.tsx, composant dupliqué) :
+          // choisir une suggestion dans le <datalist> ne fait que
+          // remplir le champ texte, l'ajout n'arrivait qu'au blur
+          // (cliquer sur un autre filtre). On ajoute immédiatement
+          // dès que le texte tapé correspond exactement à une
+          // suggestion existante.
+          if (suggestions.includes(nouvelleValeur)) {
+            ajouter(nouvelleValeur);
+          }
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -518,16 +585,20 @@ export function BibliothequePublique() {
   // n'existe pas encore dans la liste, le serveur l'ajoute tout seul
   // (voir core/listes_bibliotheque_publique.py) -- pas de bouton
   // "Autre" séparé, on tape simplement une nouvelle valeur.
-  const [champPays, setChampPays] = useState("");
-  const [champNiveau, setChampNiveau] = useState("");
-  const [champCategorie, setChampCategorie] = useState("");
+  // 15/09/2026, demande Bourama : un fichier peut désormais recevoir
+  // plusieurs valeurs par filtre, même principe que les dossiers depuis
+  // le 13/09/2026 : chaque état passe de string à string[].
+  const [champPays, setChampPays] = useState<string[]>([]);
+  const [champNiveau, setChampNiveau] = useState<string[]>([]);
+  const [champCategorie, setChampCategorie] = useState<string[]>([]);
   // 04/09/2026, demande Bourama : 2 filtres supplémentaires, même principe.
-  const [champClasse, setChampClasse] = useState("");
-  const [champSpecialite, setChampSpecialite] = useState("");
-  // 13/09/2026, demande Bourama : un DOSSIER (uniquement -- un fichier/
-  // lien/texte garde une seule valeur par filtre, state ci-dessus
-  // inchangé) accepte désormais plusieurs valeurs par filtre, avec
-  // héritage. État séparé, propre au formulaire de création de dossier.
+  const [champClasse, setChampClasse] = useState<string[]>([]);
+  const [champSpecialite, setChampSpecialite] = useState<string[]>([]);
+  // 13/09/2026, demande Bourama : un DOSSIER accepte plusieurs valeurs
+  // par filtre AVEC héritage (descendants). Un fichier (state
+  // ci-dessus, mis à jour le 15/09/2026) accepte aussi plusieurs
+  // valeurs mais n'a jamais de descendants, donc pas d'héritage. État
+  // séparé, propre au formulaire de création de dossier.
   const [filtresDossierCreation, setFiltresDossierCreation] = useState<FiltresDossierCataloguePublic>(filtresDossierVides());
   const [listesFiltres, setListesFiltres] = useState<ListesFiltresBibliothequePublique>({
     pays: [], niveaux: [], categories: [], classes: [], specialites: [],
@@ -540,11 +611,11 @@ export function BibliothequePublique() {
   }
 
   function reinitialiserChampsFiltragePublication() {
-    setChampPays("");
-    setChampNiveau("");
-    setChampCategorie("");
-    setChampClasse("");
-    setChampSpecialite("");
+    setChampPays([]);
+    setChampNiveau([]);
+    setChampCategorie([]);
+    setChampClasse([]);
+    setChampSpecialite([]);
   }
 
   function reinitialiserFiltresDossier() {
@@ -712,15 +783,6 @@ export function BibliothequePublique() {
       }
     } catch (e) {
       window.alert(messageErreur(e));
-    }
-  }
-
-  async function deplacerFichierVers(entree: EntreeBibliothequePublique, dossierSourceId: string, dossierDestinationId: string) {
-    const resultat = await deplacerFichierDossierCataloguePublic(dossierSourceId, entree.id, dossierDestinationId);
-    if ("id" in resultat) {
-      setMessageDemandeEnvoyee("Demande envoyée : en attente de confirmation du créateur du dossier.");
-    } else {
-      charger(recherche);
     }
   }
 
@@ -1376,6 +1438,16 @@ export function BibliothequePublique() {
   const sousDossiersAffiches = (dossiers ?? [])
     .filter((d) => (d.dossier_parent_id ?? null) === dossierCourantId)
     .filter((d) => filtreStatutDossier === "tous" || d.statut === filtreStatutDossier)
+    // 15/09/2026, correction bug Bourama : la recherche texte ne
+    // filtrait jamais les dossiers (seuls les fichiers étaient
+    // filtrés côté serveur via `q`), même logique que le ilike
+    // backend sur nom/description des fichiers, appliquée ici côté
+    // app puisque la liste des dossiers est déjà chargée intégralement.
+    .filter((d) => {
+      const terme = recherche.trim().toLowerCase();
+      if (!terme) return true;
+      return d.nom.toLowerCase().includes(terme) || (d.description ?? "").toLowerCase().includes(terme);
+    })
     // 13/09/2026 : un dossier peut désormais avoir plusieurs valeurs par
     // filtre -- on garde le choix d'UNE seule valeur à la fois côté
     // recherche (inchangé), mais on vérifie qu'elle fait partie de la
@@ -2025,7 +2097,7 @@ export function BibliothequePublique() {
                         ? [
                             {
                               cle: "deplacer",
-                              label: "Déplacer vers un autre dossier",
+                              label: "Gérer les dossiers de ce fichier",
                               icone: <Move size={14} />,
                               onClick: () =>
                                 setCibleDeplacement({ type: "fichier", entree, dossierSourceId: dossierCourantId }),
@@ -2102,19 +2174,27 @@ export function BibliothequePublique() {
         />
       )}
 
-      {cibleDeplacement && (
-        <DeplacerVersModal
-          titre={cibleDeplacement.type === "fichier" ? "Déplacer ce fichier vers…" : "Déplacer ce sous-dossier vers…"}
+      {cibleDeplacement && cibleDeplacement.type === "fichier" && (
+        <GererDossiersFichierModal
+          titre="Gérer les dossiers de ce fichier"
+          fichierId={cibleDeplacement.entree.id}
           dossiers={dossiers ?? []}
-          destinationActuelleId={
-            cibleDeplacement.type === "fichier" ? cibleDeplacement.dossierSourceId : cibleDeplacement.dossier.id
-          }
+          onTermine={(messageDemande) => {
+            if (messageDemande) setMessageDemandeEnvoyee(messageDemande);
+            charger(recherche);
+            chargerDossiers();
+          }}
+          onFermer={() => setCibleDeplacement(null)}
+        />
+      )}
+
+      {cibleDeplacement && cibleDeplacement.type === "dossier" && (
+        <DeplacerVersModal
+          titre="Déplacer ce sous-dossier vers…"
+          dossiers={dossiers ?? []}
+          destinationActuelleId={cibleDeplacement.dossier.id}
           onChoisir={async (dossierDestinationId) => {
-            if (cibleDeplacement.type === "fichier") {
-              await deplacerFichierVers(cibleDeplacement.entree, cibleDeplacement.dossierSourceId, dossierDestinationId);
-            } else {
-              await deplacerDossierVers(cibleDeplacement.dossier, dossierDestinationId);
-            }
+            await deplacerDossierVers(cibleDeplacement.dossier, dossierDestinationId);
           }}
           onFermer={() => setCibleDeplacement(null)}
         />

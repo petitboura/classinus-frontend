@@ -395,12 +395,15 @@ export type EntreeBibliothequePublique = {
   statut_vectorisation?: string;
   // 03/09/2026, demande Bourama : 3 filtres cochables à la publication
   // (voir core/listes_bibliotheque_publique.py côté backend), optionnels.
-  pays?: string | null;
-  niveau?: string | null;
-  categorie?: string | null;
+  // 15/09/2026, demande Bourama : un fichier peut désormais avoir
+  // plusieurs valeurs par filtre, colonnes passées en tableau côté
+  // Supabase (même principe que les dossiers depuis le 13/09/2026).
+  pays?: string[];
+  niveau?: string[];
+  categorie?: string[];
   // 04/09/2026, demande Bourama : 2 filtres supplémentaires, même principe.
-  classe?: string | null;
-  specialite?: string | null;
+  classe?: string[];
+  specialite?: string[];
 };
 
 // 03/09/2026, demande Bourama : filtres pays/niveau/catégorie en plus de
@@ -418,6 +421,20 @@ export type FiltresBibliothequePublique = {
   dossierId?: string;
   decalage?: number;
   limite?: number;
+};
+
+// 15/09/2026, demande Bourama : filtres à la PUBLICATION d'un fichier/
+// lien/texte, distinct de FiltresBibliothequePublique ci-dessus (qui
+// sert à chercher/parcourir avec UNE seule valeur par filtre). Un
+// fichier peut désormais recevoir PLUSIEURS valeurs par filtre, même
+// principe que FiltresDossierCataloguePublic côté dossier (mais sans
+// héritage, un fichier n'a jamais de descendants).
+export type FiltresPublicationBibliothequePublique = {
+  pays?: string[];
+  niveau?: string[];
+  categorie?: string[];
+  classe?: string[];
+  specialite?: string[];
 };
 
 export async function listerBibliothequePublique(q?: string, filtres?: FiltresBibliothequePublique) {
@@ -486,7 +503,7 @@ export async function ajouterABibliothequePublique(
   nom?: string,
   description?: string,
   dossierId?: string,
-  filtres?: FiltresBibliothequePublique,
+  filtres?: FiltresPublicationBibliothequePublique,
 ) {
   const {
     data: { session },
@@ -501,11 +518,14 @@ export async function ajouterABibliothequePublique(
   corps.append("nom", (nom || "").trim());
   corps.append("description", description || "");
   if (dossierId) corps.append("dossier_id", dossierId);
-  if (filtres?.pays?.trim()) corps.append("pays", filtres.pays.trim());
-  if (filtres?.niveau?.trim()) corps.append("niveau", filtres.niveau.trim());
-  if (filtres?.categorie?.trim()) corps.append("categorie", filtres.categorie.trim());
-  if (filtres?.classe?.trim()) corps.append("classe", filtres.classe.trim());
-  if (filtres?.specialite?.trim()) corps.append("specialite", filtres.specialite.trim());
+  // 15/09/2026 : plusieurs valeurs possibles par filtre, chaque
+  // valeur est une entrée FormData distincte sous le même nom de champ
+  // (le backend les reçoit comme une liste, voir Form(...) côté FastAPI).
+  (filtres?.pays || []).forEach((v) => corps.append("pays", v));
+  (filtres?.niveau || []).forEach((v) => corps.append("niveau", v));
+  (filtres?.categorie || []).forEach((v) => corps.append("categorie", v));
+  (filtres?.classe || []).forEach((v) => corps.append("classe", v));
+  (filtres?.specialite || []).forEach((v) => corps.append("specialite", v));
 
   const reponse = await fetch(`${API_URL}/api/bibliotheque-publique`, {
     method: "POST",
@@ -528,7 +548,7 @@ export async function ajouterLienBibliothequePublique(
   nom?: string,
   description?: string,
   dossierId?: string,
-  filtres?: FiltresBibliothequePublique,
+  filtres?: FiltresPublicationBibliothequePublique,
 ) {
   return appelerApi("/api/bibliotheque-publique/lien", {
     method: "POST",
@@ -537,11 +557,11 @@ export async function ajouterLienBibliothequePublique(
       nom: nom || "",
       description: description || "",
       dossier_id: dossierId || "",
-      pays: filtres?.pays || "",
-      niveau: filtres?.niveau || "",
-      categorie: filtres?.categorie || "",
-      classe: filtres?.classe || "",
-      specialite: filtres?.specialite || "",
+      pays: filtres?.pays || [],
+      niveau: filtres?.niveau || [],
+      categorie: filtres?.categorie || [],
+      classe: filtres?.classe || [],
+      specialite: filtres?.specialite || [],
     }),
   }) as Promise<EntreeBibliothequePublique>;
 }
@@ -550,7 +570,7 @@ export async function ajouterTexteBibliothequePublique(
   contenu: string,
   nom?: string,
   dossierId?: string,
-  filtres?: FiltresBibliothequePublique,
+  filtres?: FiltresPublicationBibliothequePublique,
 ) {
   return appelerApi("/api/bibliotheque-publique/texte", {
     method: "POST",
@@ -558,11 +578,11 @@ export async function ajouterTexteBibliothequePublique(
       contenu,
       nom: nom || "",
       dossier_id: dossierId || "",
-      pays: filtres?.pays || "",
-      niveau: filtres?.niveau || "",
-      categorie: filtres?.categorie || "",
-      classe: filtres?.classe || "",
-      specialite: filtres?.specialite || "",
+      pays: filtres?.pays || [],
+      niveau: filtres?.niveau || [],
+      categorie: filtres?.categorie || [],
+      classe: filtres?.classe || [],
+      specialite: filtres?.specialite || [],
     }),
   }) as Promise<EntreeBibliothequePublique>;
 }
@@ -813,6 +833,14 @@ export async function rangerFichierDossierCataloguePublic(dossierId: string, fic
     method: "POST",
     body: JSON.stringify({ fichier_id: fichierId }),
   });
+}
+
+// 15/09/2026, demande Bourama (fichier attaché à plusieurs dossiers) :
+// tous les dossiers dans lesquels ce fichier est déjà rangé, pour
+// pré-cocher la liste à cocher (voir GererDossiersFichierModal.tsx).
+export async function listerDossiersDuFichierCataloguePublic(fichierId: string) {
+  const resultat = (await appelerApi(`/api/bibliotheque-publique/dossiers/fichiers/${fichierId}`)) as { dossier_ids: string[] };
+  return resultat.dossier_ids;
 }
 
 export async function retirerFichierDossierCataloguePublic(dossierId: string, fichierId: string) {
