@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Bird, X, Maximize2, MessageSquarePlus, History } from "lucide-react";
 import { appelerApi, lireMonProfil, enregistrerMonProfil } from "@/lib/api";
 import { ChatIA } from "./ChatIA";
-import { MessageAffiche, nettoyerMessageHistorique } from "./BulleMessage";
+import { MessageAffiche, SegmentMessage, nettoyerMessageHistorique } from "./BulleMessage";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
@@ -364,6 +364,10 @@ export function ChatFlottant({
         meta?: {
           outils?: MessageAffiche["outilsResultats"];
           pieces_jointes?: MessageAffiche["piecesJointes"];
+          // Ajouté 15/09/2026 (demande Bourama) : voir le même champ côté
+          // ChatSection.tsx -- absent pour les échanges antérieurs à ce
+          // chantier, repli sur l'affichage groupé dans ce cas.
+          segments?: SegmentMessage[];
         } | null;
       }[] = await appelerApi(`/api/historique/${agent.id}/conversations/${cheminId}`);
       setCle(fil.conversation_id ?? crypto.randomUUID());
@@ -376,6 +380,7 @@ export function ChatFlottant({
               content: l.content,
               created_at: l.created_at,
               outilsResultats: l.meta?.outils ?? undefined,
+              segments: l.meta?.segments && l.meta.segments.length > 0 ? l.meta.segments : undefined,
             };
           }
           const { texte, piecesJointes } = nettoyerMessageHistorique(l.content);

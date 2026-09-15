@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { appelerApi } from "@/lib/api";
 import { ChatIA } from "./ChatIA";
 import { AppSidebar } from "@/components/AppSidebar";
-import { MessageAffiche, nettoyerMessageHistorique } from "./BulleMessage";
+import { MessageAffiche, SegmentMessage, nettoyerMessageHistorique } from "./BulleMessage";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
@@ -117,6 +117,13 @@ export function ChatSection() {
         meta?: {
           outils?: MessageAffiche["outilsResultats"];
           pieces_jointes?: MessageAffiche["piecesJointes"];
+          // Ajouté 15/09/2026 (demande Bourama) : timeline chronologique
+          // (raisonnement/outil/texte dans l'ordre réel, voir
+          // core/boucle_agent.py:_capturer_reponse côté backend) --
+          // absente pour les échanges antérieurs à ce chantier (pas de
+          // rétro-remplissage), qui gardent donc l'ancien affichage
+          // groupé ci-dessous en repli.
+          segments?: SegmentMessage[];
         } | null;
       }[] = await appelerApi(`/api/historique/${agent.id}/conversations/${cheminId}`);
       setCle(fil.conversation_id ?? crypto.randomUUID());
@@ -129,6 +136,7 @@ export function ChatSection() {
               content: l.content,
               created_at: l.created_at,
               outilsResultats: l.meta?.outils ?? undefined,
+              segments: l.meta?.segments && l.meta.segments.length > 0 ? l.meta.segments : undefined,
             };
           }
           const { texte, piecesJointes } = nettoyerMessageHistorique(l.content);

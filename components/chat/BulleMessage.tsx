@@ -301,12 +301,15 @@ export interface MessageAffiche {
   // ORDONNÉE des étapes réellement traversées pendant CETTE génération
   // (réflexion / texte / outil, dans l'ordre réel), construite en direct
   // par ChatIA.tsx au fil des événements SSE -- voir SegmentMessage plus
-  // bas. Uniquement présent pour un message généré dans la session en
-  // cours ; jamais persisté en base, jamais rempli pour un message rechargé
-  // depuis l'historique (qui garde raisonnement/content/outilsResultats
-  // séparés, affichage groupé inchangé -- décision explicite de Bourama de
-  // ne pas toucher à l'historique). Quand présent et non vide, BulleMessage
-  // l'utilise à la place de l'affichage groupé pour CE message précis.
+  // bas. Depuis le 15/09/2026 (demande Bourama), aussi persisté côté
+  // backend (meta.segments, voir core/boucle_agent.py:_capturer_reponse)
+  // et rechargé tel quel par ChatSection.tsx/ChatFlottant.tsx à la
+  // réouverture d'un fil -- absent seulement pour les échanges
+  // antérieurs à ce chantier (pas de rétro-remplissage), qui gardent
+  // dans ce cas l'ancien affichage groupé (raisonnement/content/
+  // outilsResultats séparés) en repli. Quand présent et non vide,
+  // BulleMessage l'utilise à la place de l'affichage groupé pour CE
+  // message précis.
   segments?: SegmentMessage[];
 }
 
