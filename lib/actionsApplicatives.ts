@@ -90,6 +90,18 @@ export function obtenirActionsDisponibles(): ActionDisponible[] {
 }
 
 /**
+ * Chantier C : usage interne à lib/canalAgentApplicatif.ts seulement --
+ * contrairement à obtenirActionsDisponibles (destinée à décrire ce qui
+ * est possible), ceci renvoie l'action complète (avec `executer`) pour
+ * vérifier sa sensibilité avant de demander confirmation. Ne jamais
+ * exposer ceci au modèle : il ne doit connaître que
+ * obtenirActionsDisponibles().
+ */
+export function obtenirAction(id: string): ActionDeclaree | undefined {
+  return registre.get(id);
+}
+
+/**
  * Exécute l'action `id` si -- et seulement si -- elle est toujours
  * montée et active à cet instant précis. Ne fait JAMAIS confiance à une
  * liste d'actions disponibles obtenue plus tôt dans le raisonnement :

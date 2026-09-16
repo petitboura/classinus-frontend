@@ -34,6 +34,28 @@ export function useConfirmationAction(): ValeurConfirmationAction {
   return contexte;
 }
 
+// Pont vers lib/canalAgentApplicatif.ts (chantier C), qui n'est pas un
+// composant React et ne peut donc pas appeler useConfirmationAction()
+// directement -- même principe que enregistrerPluginDossiers dans
+// lib/canalTempsReel.ts. AppShell.tsx enregistre la vraie fonction dès
+// que le Provider est monté (voir useEffect dans AppShell.tsx).
+let demandeurGlobal: ((description: string) => Promise<boolean>) | null = null;
+
+export function enregistrerDemandeurConfirmation(fn: (description: string) => Promise<boolean>) {
+  demandeurGlobal = fn;
+}
+
+/**
+ * Si aucun Provider n'est encore monté (cas très rare, ex. message reçu
+ * avant hydratation complète), refuse par défaut plutôt que d'exécuter
+ * une action sensible sans confirmation possible -- défaut prudent,
+ * cohérent avec "sensible par défaut" ailleurs dans ce chantier.
+ */
+export function demanderConfirmationDepuisAgent(description: string): Promise<boolean> {
+  if (!demandeurGlobal) return Promise.resolve(false);
+  return demandeurGlobal(description);
+}
+
 export function useFournirConfirmationAction(): ValeurConfirmationAction {
   const [demandeEnCours, setDemandeEnCours] = useState<DemandeConfirmation | null>(null);
   // Une seule demande à la fois (décision implicite du plan : aucune

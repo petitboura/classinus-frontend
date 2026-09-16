@@ -23,7 +23,11 @@ import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { ContexteCurseurVirtuel, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { ConfirmationActionAgentModal } from "@/components/ConfirmationActionAgentModal";
-import { ContexteConfirmationAction, useFournirConfirmationAction } from "@/lib/contexteConfirmationAction";
+import {
+  ContexteConfirmationAction,
+  useFournirConfirmationAction,
+  enregistrerDemandeurConfirmation,
+} from "@/lib/contexteConfirmationAction";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -75,6 +79,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const dossiersCataloguePublicValeur = useFournirDossiersCataloguePublic();
   const curseurVirtuelValeur = useFournirCurseurVirtuel();
   const confirmationActionValeur = useFournirConfirmationAction();
+  // Chantier C : permet à lib/canalAgentApplicatif.ts (module hors React)
+  // de déclencher la même fenêtre de confirmation que le reste de l'app.
+  useEffect(() => {
+    enregistrerDemandeurConfirmation(confirmationActionValeur.demanderConfirmation);
+  }, [confirmationActionValeur.demanderConfirmation]);
   // Le catalogue "Pourquoi Clovis ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
   // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui
