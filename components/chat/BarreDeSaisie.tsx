@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Compass } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -19,6 +19,7 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
+import { useOuvrirGuide } from "@/lib/contexteChat";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -461,6 +462,13 @@ export function BarreDeSaisie({
   const [menuPlusOuvert, setMenuPlusOuvert] = useState(false);
   const menuPlusRef = useRef<HTMLDivElement>(null);
   const boutonPlusRef = useRef<HTMLButtonElement>(null);
+  // Guide de decouverte, etape 5 (16/09/2026, demande Bourama, voir
+  // specs-guide-decouverte.md) : meme hook que le bouton flottant
+  // (etape 4, components/GuideFlottant.tsx) -- active le mode guide cote
+  // serveur pour une NOUVELLE conversation dediee, puis navigue vers
+  // /chat (deja la page courante ici, donc sans effet visible autre que
+  // le changement de conversation/cle).
+  const ouvrirGuide = useOuvrirGuide();
 
   useEffect(() => {
     if (!menuPlusOuvert) return;
@@ -2244,6 +2252,16 @@ export function BarreDeSaisie({
               ref={menuPlusRef}
               className="absolute bottom-full left-0 z-30 mb-2 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl"
             >
+              <button
+                type="button"
+                onClick={() => {
+                  ouvrirGuide();
+                  setMenuPlusOuvert(false);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+              >
+                <Compass size={16} /> Guide de découverte
+              </button>
               <button
                 type="button"
                 onClick={() => {
