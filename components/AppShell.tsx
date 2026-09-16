@@ -22,6 +22,8 @@ import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { ContexteCurseurVirtuel, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
+import { ConfirmationActionAgentModal } from "@/components/ConfirmationActionAgentModal";
+import { ContexteConfirmationAction, useFournirConfirmationAction } from "@/lib/contexteConfirmationAction";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -72,6 +74,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // dès que la session est confirmée.
   const dossiersCataloguePublicValeur = useFournirDossiersCataloguePublic();
   const curseurVirtuelValeur = useFournirCurseurVirtuel();
+  const confirmationActionValeur = useFournirConfirmationAction();
   // Le catalogue "Pourquoi Clovis ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
   // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui
@@ -130,6 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteCatalogue.Provider value={{ ouvrir: () => setCatalogueOuvert(true) }}>
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
     <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
+    <ContexteConfirmationAction.Provider value={confirmationActionValeur}>
       <ContexteFenetres.Provider value={fenetres}>
         <div className="flex h-dvh">
           {natif && <BarreOngletsNative />}
@@ -265,6 +269,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
           <FenetresSections />
           <CurseurVirtuelAgent />
+          <ConfirmationActionAgentModal />
           <PaletteCommandes
             connecte={connecte}
             etatChat={etatChat}
@@ -275,6 +280,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
         </div>
       </ContexteFenetres.Provider>
+    </ContexteConfirmationAction.Provider>
     </ContexteCurseurVirtuel.Provider>
     </ContexteDossiersCataloguePublic.Provider>
     </ContexteCatalogue.Provider>
