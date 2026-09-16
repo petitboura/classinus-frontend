@@ -20,6 +20,8 @@ import { MenuHamburgerNatif } from "@/components/mobile/MenuHamburgerNatif";
 import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
+import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
+import { ContexteCurseurVirtuel, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -69,6 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // lib/contexteDossiersCataloguePublic.tsx. Déclenché juste en dessous,
   // dès que la session est confirmée.
   const dossiersCataloguePublicValeur = useFournirDossiersCataloguePublic();
+  const curseurVirtuelValeur = useFournirCurseurVirtuel();
   // Le catalogue "Pourquoi Clovis ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
   // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui
@@ -126,6 +129,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteChat.Provider value={contexteChatValeur}>
     <ContexteCatalogue.Provider value={{ ouvrir: () => setCatalogueOuvert(true) }}>
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
+    <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
       <ContexteFenetres.Provider value={fenetres}>
         <div className="flex h-dvh">
           {natif && <BarreOngletsNative />}
@@ -260,6 +264,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             natif={natif}
           />
           <FenetresSections />
+          <CurseurVirtuelAgent />
           <PaletteCommandes
             connecte={connecte}
             etatChat={etatChat}
@@ -270,6 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
         </div>
       </ContexteFenetres.Provider>
+    </ContexteCurseurVirtuel.Provider>
     </ContexteDossiersCataloguePublic.Provider>
     </ContexteCatalogue.Provider>
     </ContexteChat.Provider>
