@@ -44,6 +44,7 @@ import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { SignalerContenuModal } from "@/components/SignalerContenuModal";
 import { DeplacerVersModal } from "@/components/DeplacerVersModal";
 import { GererDossiersFichierModal } from "@/components/GererDossiersFichierModal";
+import { EditionFiltresFichierModal } from "@/components/EditionFiltresFichierModal";
 import { EditionFiltresDossierModal } from "@/components/EditionFiltresDossierModal";
 import { VisionneuseBibliotheque } from "@/components/VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
@@ -526,6 +527,8 @@ export function BibliothequePublique() {
   // demandes que JE dois confirmer/refuser (dossiers dont je suis le
   // créateur concerné).
   const [cibleDeplacement, setCibleDeplacement] = useState<CibleDeplacement | null>(null);
+  // 15/09/2026, demande Bourama (modifier les filtres après publication) :
+  const [fichierEditionFiltres, setFichierEditionFiltres] = useState<EntreeBibliothequePublique | null>(null);
   const [demandesEnAttente, setDemandesEnAttente] = useState<DemandeDossierCataloguePublic[]>([]);
   const [panneauDemandesOuvert, setPanneauDemandesOuvert] = useState(false);
   const [demandeEnCoursId, setDemandeEnCoursId] = useState<string | null>(null);
@@ -2093,6 +2096,16 @@ export function BibliothequePublique() {
                         icone: <Flag size={14} />,
                         onClick: () => setEntreeSignalee(entree),
                       },
+                      ...(entree.est_a_moi
+                        ? [
+                            {
+                              cle: "modifier-filtres",
+                              label: "Modifier les filtres",
+                              icone: <SlidersHorizontal size={14} />,
+                              onClick: () => setFichierEditionFiltres(entree),
+                            },
+                          ]
+                        : []),
                       ...(dossierCourantId
                         ? [
                             {
@@ -2197,6 +2210,17 @@ export function BibliothequePublique() {
             await deplacerDossierVers(cibleDeplacement.dossier, dossierDestinationId);
           }}
           onFermer={() => setCibleDeplacement(null)}
+        />
+      )}
+
+      {fichierEditionFiltres && (
+        <EditionFiltresFichierModal
+          entree={fichierEditionFiltres}
+          listes={listesFiltres}
+          onEnregistre={(entreeModifiee) => {
+            setListe((precedent) => (precedent ?? []).map((e) => (e.id === entreeModifiee.id ? entreeModifiee : e)));
+          }}
+          onFermer={() => setFichierEditionFiltres(null)}
         />
       )}
 

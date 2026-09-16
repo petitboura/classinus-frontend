@@ -404,6 +404,12 @@ export type EntreeBibliothequePublique = {
   // 04/09/2026, demande Bourama : 2 filtres supplémentaires, même principe.
   classe?: string[];
   specialite?: string[];
+  // 15/09/2026, demande Bourama (modifier les filtres après
+  // publication) : true si l'utilisateur courant est le contributeur
+  // d'origine de cette entrée, pour savoir s'il faut proposer le
+  // bouton "Modifier les filtres" (voir api/bibliotheque_publique.py::
+  // _marquer_est_a_moi).
+  est_a_moi?: boolean;
 };
 
 // 03/09/2026, demande Bourama : filtres pays/niveau/catégorie en plus de
@@ -864,6 +870,24 @@ export async function deplacerFichierDossierCataloguePublic(dossierId: string, f
 
 export async function supprimerDeBibliothequePublique(entreeId: string) {
   return appelerApi(`/api/bibliotheque-publique/${entreeId}`, { method: "DELETE" });
+}
+
+// 15/09/2026, demande Bourama : les filtres d'un fichier/lien/texte
+// déjà publié peuvent désormais être modifiés (réservé au
+// contributeur d'origine), même principe que PATCH
+// /dossiers/{dossier_id}/filtres côté dossier. Remplace toujours
+// entièrement chaque filtre par la liste fournie.
+export async function modifierFiltresFichierBibliothequePublique(entreeId: string, filtres: FiltresPublicationBibliothequePublique) {
+  return appelerApi(`/api/bibliotheque-publique/${entreeId}/filtres`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      pays: filtres.pays || [],
+      niveau: filtres.niveau || [],
+      categorie: filtres.categorie || [],
+      classe: filtres.classe || [],
+      specialite: filtres.specialite || [],
+    }),
+  }) as Promise<EntreeBibliothequePublique>;
 }
 
 /** Pendant de reessayerVectorisationBibliothequePersonnelle ci-dessus, pour la bibliothèque publique. */
