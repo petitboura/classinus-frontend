@@ -11,20 +11,40 @@
 // cliquer, et cliquer réellement) viendra des chantiers A (déclaration
 // d'action sur les composants) et C (outil MCP côté backend), pas
 // encore posés à cette date.
+//
+// Ajout du 16/09/2026 (demande Bourama) : la forme du curseur change
+// comme un vrai curseur de souris, pas seulement sa position. "defaut"
+// (flèche) pendant le trajet, "main" au dessus d'un élément cliquable
+// (équivalent visuel de cursor: pointer), "attrape" pour un élément en
+// train d'être saisi/déplacé (équivalent visuel de cursor: grabbing,
+// pour un futur glisser déposer, pas encore construit).
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { animate, useMotionValue, type MotionValue } from "framer-motion";
 
 export type PointEcran = { x: number; y: number };
 
+export type FormeCurseur = "defaut" | "main" | "attrape";
+
 export type ValeurCurseurVirtuel = {
   x: MotionValue<number>;
   y: MotionValue<number>;
   echelle: MotionValue<number>;
   visible: boolean;
+  forme: FormeCurseur;
+  // Change la forme du curseur indépendamment d'un déplacement, par
+  // exemple pour tenir "attrape" pendant toute la durée d'un glisser
+  // (pas encore utilisé, prêt pour un futur chantier de glisser déposer).
+  definirForme: (forme: FormeCurseur) => void;
   // cliquer: true ajoute le petit effet de pulsation une fois la
   // trajectoire terminée, pour simuler visuellement le clic.
-  deplacerVers: (cible: PointEcran | HTMLElement, options?: { cliquer?: boolean }) => Promise<void>;
+  // forme: si fournie, s'applique à l'arrivée (par défaut "main" si
+  // cliquer est vrai, sinon "defaut"), comme un vrai curseur qui prend
+  // la forme de la zone qu'il survole une fois arrivé.
+  deplacerVers: (
+    cible: PointEcran | HTMLElement,
+    options?: { cliquer?: boolean; forme?: FormeCurseur }
+  ) => Promise<void>;
   masquer: () => void;
 };
 
@@ -77,12 +97,14 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
   const y = useMotionValue(0);
   const echelle = useMotionValue(1);
   const [visible, setVisible] = useState(false);
+  const [forme, setForme] = useState<FormeCurseur>("defaut");
   const positionInitialisee = useRef(false);
 
   const masquer = useCallback(() => setVisible(false), []);
+  const definirForme = useCallback((f: FormeCurseur) => setForme(f), []);
 
   const deplacerVers = useCallback(
-    (cible: PointEcran | HTMLElement, options?: { cliquer?: boolean }): Promise<void> => {
+    (cible: PointEcran | HTMLElement, options?: { cliquer?: boolean; forme?: FormeCurseur }): Promise<void> => {
       const arrivee = resoudrePoint(cible);
 
       if (!positionInitialisee.current && typeof window !== "undefined") {
@@ -95,6 +117,9 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
       }
 
       setVisible(true);
+      // Repasse en flèche par défaut pendant le trajet, comme un vrai
+      // curseur qui quitte la forme de la zone qu'il vient de survoler.
+      setForme("defaut");
       const depart = { x: x.get(), y: y.get() };
       const controle = pointDeControle(depart, arrivee);
       const distance = Math.hypot(arrivee.x - depart.x, arrivee.y - depart.y);
@@ -113,6 +138,11 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
           y.set(point.y);
         },
       }).then(() => {
+        // À l'arrivée, la forme se met à jour comme un vrai curseur qui
+        // vient de passer au dessus d'une zone : "main" par défaut si
+        // l'action va cliquer, sinon reste en flèche, sauf forme
+        // explicitement demandée (utile plus tard pour "attrape").
+        setForme(options?.forme ?? (options?.cliquer ? "main" : "defaut"));
         if (!options?.cliquer) return;
         return animate(echelle, [1, 0.72, 1], { duration: 0.28, ease: "easeOut" }).then(() => undefined);
       });
@@ -120,5 +150,5 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
     [x, y, echelle]
   );
 
-  return { x, y, echelle, visible, deplacerVers, masquer };
+  return { x, y, echelle, visible, forme, definirForme, deplacerVers, masquer };
 }
