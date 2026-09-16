@@ -277,6 +277,24 @@ export function ChatFlottant({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nouvelleConversation recréée à chaque rendu (pas dans useCallback), la comparer romprait l'effet ; seul demandePrefill doit déclencher ce passage.
   }, [demandePrefill]);
 
+  // Guide de decouverte, etape 4 (16/09/2026, demande Bourama) -- meme
+  // esprit que l'effet demandePrefill juste au-dessus, MAIS adopte le
+  // conversation_id fourni par useOuvrirGuide() (lib/contexteChat.tsx)
+  // au lieu d'en generer un nouveau ici via nouvelleConversation() :
+  // useOuvrirGuide() a deja active le mode guide cote serveur pour cet
+  // id precis avant d'arriver ici, un id different casserait ce lien.
+  const demandeGuide = ctxChat?.demandeGuide ?? null;
+  useEffect(() => {
+    if (demandeGuide === null) return;
+    setCle(demandeGuide.conversationId);
+    setMessagesInitiaux([]);
+    setNbMessages(0);
+    setHistoriqueOuvert(false);
+    setTexteInitialConversation(demandeGuide.texte);
+    ctxChat?.setDemandeGuide(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seul demandeGuide doit déclencher ce passage, même logique que l'effet demandePrefill ci-dessus.
+  }, [demandeGuide]);
+
   // 07/09/2026, bug signalé Bourama : cliquer sur une conversation
   // récente de EcranAccueil.tsx ("Activité récente") ouvrait le chat
   // sans jamais charger cette conversation précise (voir

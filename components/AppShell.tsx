@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
 import { FenetresSections } from "@/components/chat/FenetresSections";
+import { GuideFlottant } from "@/components/GuideFlottant";
 import { CatalogueClovis } from "@/components/CatalogueClovis";
 import { PaletteCommandes } from "@/components/PaletteCommandes";
 import { ContexteChat, useFournirContexteChat } from "@/lib/contexteChat";
@@ -144,6 +145,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               dans cette appli, voir commentaire dans
               BoutonNotifications.tsx. */}
           <BoutonNotifications connecte={connecte} />
+          {/* Guide de decouverte, etape 4 (16/09/2026, demande Bourama) :
+              meme condition que AppSidebar juste en dessous -- masque sur
+              /chat, qui a deja son propre point d'entree du guide (menu
+              "+" du chat, etape 5). */}
+          {pathname !== "/chat" && <GuideFlottant />}
           {/* 07/09/2026, décision Bourama (bug PC web signalé : profil et
               "..." affichés en double) : cette instance-ci d'AppSidebar
               (nav principale, hors chat) reste montée en permanence,

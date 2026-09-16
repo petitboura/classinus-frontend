@@ -96,6 +96,17 @@ type ContexteChatValeur = {
   // tout) exige un objet ici plutôt qu'un simple string | null.
   demandeOuvrirConversation: { conversationId: string | null } | null;
   setDemandeOuvrirConversation: (v: { conversationId: string | null } | null) => void;
+  // Guide de decouverte, etape 4 (16/09/2026, demande Bourama, voir
+  // specs-guide-decouverte.md) : meme esprit que demandePrefill
+  // ci-dessus, mais avec un conversation_id CHOISI PAR L'APPELANT plutot
+  // qu'un id genere au hasard par ChatFlottant -- necessaire pour que
+  // useOuvrirGuide() puisse activer le mode guide cote serveur (PUT
+  // .../guide-actif) AVANT que ce fil existe reellement, avec le meme id
+  // que celui que ChatFlottant adoptera a l'ouverture. Sans ca, le tout
+  // premier message de cette conversation partirait sans guide_actif
+  // encore connu du backend.
+  demandeGuide: { conversationId: string; texte: string } | null;
+  setDemandeGuide: (v: { conversationId: string; texte: string } | null) => void;
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
@@ -123,6 +134,8 @@ export function useFournirContexteChat(): ContexteChatValeur {
   const [demandeOuvrirConversation, setDemandeOuvrirConversation] = useState<{ conversationId: string | null } | null>(
     null
   );
+  // Guide de decouverte, etape 4 -- voir le type ci-dessus.
+  const [demandeGuide, setDemandeGuide] = useState<{ conversationId: string; texte: string } | null>(null);
 
   // Étape 1 -- état de la conversation, avant local à ChatFlottant.tsx.
   const [chargement, setChargement] = useState<"chargement" | "pret" | "erreur">("chargement");
@@ -205,6 +218,8 @@ export function useFournirContexteChat(): ContexteChatValeur {
       setDemandePrefill,
       demandeOuvrirConversation,
       setDemandeOuvrirConversation,
+      demandeGuide,
+      setDemandeGuide,
       chargement,
       setChargement,
       erreur,
@@ -232,6 +247,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       fermerAvecFondu,
       demandePrefill,
       demandeOuvrirConversation,
+      demandeGuide,
       chargement,
       erreur,
       agent,
@@ -263,6 +279,42 @@ export function useOuvrirChatAvecTexte() {
   // (ChatFlottant.tsx) et l'action Cmd+K (PaletteCommandes.tsx).
   return (texte: string) => {
     ctx?.setDemandePrefill(texte);
+    ctx?.fermerAvecFondu();
+    router.push("/chat");
+  };
+}
+
+// Guide de decouverte, etape 4 (16/09/2026, demande Bourama, voir
+// specs-guide-decouverte.md dans ce depot). Toujours une NOUVELLE
+// conversation dediee (meme choix que useOuvrirChatAvecTexte
+// ci-dessus, pour la meme raison : un parcours du guide n'a rien a
+// faire mele au fil de devoirs en cours) -- id genere ICI plutot que
+// laisse a nouvelleConversation() de ChatFlottant.tsx, pour pouvoir
+// activer le mode guide cote serveur (PUT .../guide-actif) AVANT que
+// ChatFlottant.tsx n'adopte ce meme id (voir demandeGuide plus haut).
+// Le mode guide reste actif sur cette conversation cote serveur tant
+// que rien ne le desactive explicitement (aucun mecanisme de
+// desactivation encore construit a cette etape -- voir
+// specs-guide-decouverte.md, "ce qui n'est pas encore traite").
+export function useOuvrirGuide() {
+  const ctx = useContext(ContexteChat);
+  const router = useRouter();
+  return async () => {
+    const conversationId = crypto.randomUUID();
+    try {
+      await appelerApi(`/api/conversations/${conversationId}/guide-actif`, {
+        method: "PUT",
+        body: JSON.stringify({ actif: true }),
+      });
+    } catch (e) {
+      // Un utilisateur non connecte (chat anonyme, voir 02-chat.md de la
+      // base de connaissance) n'a pas de session -- la route exige un
+      // utilisateur authentifie (meme limite que persona_pedagogique).
+      // On ouvre quand meme le chat normalement plutot que de bloquer le
+      // clic : Clovis repondra sans le mode guide actif dans ce cas.
+      console.error("Erreur activation guide de decouverte:", e);
+    }
+    ctx?.setDemandeGuide({ conversationId, texte: "Lance le guide de découverte de Clovis." });
     ctx?.fermerAvecFondu();
     router.push("/chat");
   };
