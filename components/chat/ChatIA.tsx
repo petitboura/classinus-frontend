@@ -5,6 +5,7 @@ import Image from "next/image";
 import { appelerApiStream, uploaderImageChat, uploaderDocumentChat, uploaderVideoChat, transcrireAudioChat, signalerPedagogique } from "@/lib/api";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
 import { BulleMessage, MessageAffiche, SegmentMessage } from "./BulleMessage";
+import type { OutilEnCours } from "./OutilResultatBulle";
 import { BarreDeSaisie, LongueurReponse, LocalisationJointe } from "./BarreDeSaisie";
 import { PopupFeedback } from "./PopupFeedback";
 import { StatutOutil, EtatStatut } from "./StatutOutil";
@@ -147,7 +148,18 @@ export function ChatIA({
   const tickerActifRef = useRef(false);
   const tickerIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [affichageEnCours, setAffichageEnCours] = useState(false);
-  const [statuts, setStatuts] = useState<{ texte: string; etat: EtatStatut }[]>([]);
+  // Étendu (15/09/2026, chantier "ligne connectrice", demande Bourama) :
+  // `id`/`nomOutil` viennent de id_appel/nom_outil, ajoutés côté backend
+  // sur l'événement "statut" (execution_outils.py:_traiter_appels) --
+  // sans eux, on ne pouvait recoller un "statut_termine" qu'au DERNIER
+  // "en_cours" de la liste (voir appliquerEvenementOutil ci-dessous),
+  // ce qui donne le mauvais résultat dès que plusieurs outils tournent
+  // vraiment en parallèle et finissent dans le désordre (voir
+  // core/execution_outils.py, ThreadPoolExecutor + as_completed). Un
+  // statut sans id (chemins plus anciens/rares : lecture d'image,
+  // "niveau2" dans main.py -- toujours un seul à la fois, jamais de
+  // vrai parallélisme) garde l'ancien comportement par repli.
+  const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; texte: string; etat: EtatStatut }[]>([]);
   // Correctif 09/09/2026 (Bourama : l'exécution d'un outil coupait une
   // phrase en cours d'affichage) : les événements outils (statut/
   // statut_termine/outil_resultat/sources/images) qui arrivent PENDANT
@@ -374,16 +386,32 @@ export function ChatIA({
   function appliquerEvenementOutil(item: { type: string; evenement: any }) {
     const evenement = item.evenement;
     if (item.type === "statut") {
-      setStatuts((prec) => [...prec, { texte: evenement.texte, etat: "en_cours" as EtatStatut }]);
+      setStatuts((prec) => [
+        ...prec,
+        { id: evenement.id_appel, nomOutil: evenement.nom_outil, texte: evenement.texte, etat: "en_cours" as EtatStatut },
+      ]);
     } else if (item.type === "statut_termine") {
       setStatuts((prec) => {
         const copie = [...prec];
-        const iDernierEnCours = [...copie].reverse().findIndex((s) => s.etat === "en_cours");
-        if (iDernierEnCours === -1) {
+        // Corrélation par id_appel (fiable même si plusieurs outils
+        // finissent dans le désordre) -- repli sur "le dernier en_cours"
+        // uniquement si aucun id n'est fourni des deux côtés (chemins
+        // anciens/rares, toujours séquentiels -- voir le commentaire sur
+        // le state `statuts` plus haut).
+        const iParId = evenement.id_appel
+          ? copie.findIndex((s) => s.id === evenement.id_appel && s.etat === "en_cours")
+          : -1;
+        const i =
+          iParId !== -1
+            ? iParId
+            : (() => {
+                const iDernierEnCours = [...copie].reverse().findIndex((s) => s.etat === "en_cours");
+                return iDernierEnCours === -1 ? -1 : copie.length - 1 - iDernierEnCours;
+              })();
+        if (i === -1) {
           copie.push({ texte: evenement.texte, etat: "termine" });
         } else {
-          const i = copie.length - 1 - iDernierEnCours;
-          copie[i] = { texte: evenement.texte, etat: evenement.texte.includes("annulée") ? "annule" : "termine" };
+          copie[i] = { ...copie[i], texte: evenement.texte, etat: evenement.texte.includes("annulée") ? "annule" : "termine" };
         }
         return copie;
       });
@@ -435,6 +463,15 @@ export function ChatIA({
       });
     } else if (item.type === "outil_resultat") {
       emettreDonneesModifieesPourOutil(evenement.nom_outil);
+      // Retire l'entrée "en_cours" correspondante dès que le vrai résultat
+      // arrive (15/09/2026, demande Bourama) -- filet de sécurité : si
+      // "statut_termine" pour ce même id n'arrivait pas ou arrivait après
+      // (ordre non garanti en vrai parallèle, voir core/execution_outils.py),
+      // l'entrée resterait sinon affichée "en cours" indéfiniment à côté
+      // de son propre résultat déjà affiché juste au-dessus.
+      if (evenement.id_appel) {
+        setStatuts((prec) => prec.filter((s) => s.id !== evenement.id_appel));
+      }
       majMessages((prec) => {
         const copie = [...prec];
         const dernier = copie[copie.length - 1];
@@ -1093,6 +1130,19 @@ export function ChatIA({
     );
   }
 
+  // Scission (15/09/2026, chantier "ligne connectrice", demande Bourama) :
+  // les statuts qui portent un id_appel (la grande majorité -- tout appel
+  // passé par execution_outils.py) sont désormais rattachés au message
+  // assistant concerné, DANS sa timeline, reliés par la même ligne
+  // connectrice que les outils déjà terminés. Les statuts SANS id (chemins
+  // anciens/rares : lecture d'image, "niveau2" dans main.py -- toujours un
+  // seul à la fois) gardent l'ancien affichage flottant en bas de la
+  // liste, inchangé.
+  const outilsEnCoursTrackes: OutilEnCours[] = statuts
+    .filter((s) => !!s.id && s.etat === "en_cours")
+    .map((s) => ({ id: s.id as string, nomOutil: s.nomOutil, texte: s.texte }));
+  const statutsFlottants = statuts.filter((s) => !s.id);
+
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col">
       <div
@@ -1127,6 +1177,7 @@ export function ChatIA({
               raisonnement={message.raisonnement}
               raisonnementEnCours={estDernier ? raisonnementEnCours : false}
               outilsResultats={message.outilsResultats}
+              outilsEnCours={estDernier && message.role === "assistant" ? outilsEnCoursTrackes : undefined}
               onRegenerer={
                 message.role === "assistant"
                   ? () => regenererDepuis(index)
@@ -1179,9 +1230,9 @@ export function ChatIA({
           );
         })}
 
-        {statuts.length > 0 && (
+        {statutsFlottants.length > 0 && (
           <div className="max-w-[80%]">
-            {statuts.map((s, i) => (
+            {statutsFlottants.map((s, i) => (
               <StatutOutil key={i} texte={s.texte} etat={s.etat} />
             ))}
           </div>
