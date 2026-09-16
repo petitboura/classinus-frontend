@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Check, GraduationCap, X } from "lucide-react";
-import { obtenirPersonaPedagogique, definirPersonaPedagogique } from "@/lib/api";
+import {
+  obtenirPersonaPedagogique,
+  definirPersonaPedagogique,
+  obtenirModeSource,
+  definirModeSource,
+} from "@/lib/api";
 
 // Sélecteur de persona pédagogique (partie 8 des specs indépendantes,
 // volet étudiant ScholarFlow AI, 14/09/2026). Bouton + panneau flottant,
@@ -56,12 +61,30 @@ import { obtenirPersonaPedagogique, definirPersonaPedagogique } from "@/lib/api"
 // (menuPersonaMobileOuvert dans BarreDeSaisie.tsx, via `ouvert`/`onFermer`)
 // et rendu en feuille du bas fixe, même famille visuelle que le panneau
 // Utilitaires mobile juste à côté.
+//
+// GROUPE "MODE SOURCE" (chantier "mode source", voir
+// contexte-mode-source-clovis.md, demande Bourama, 16/09/2026) : Aucun /
+// Recherche / Sur pièces, ajouté dans le MÊME panneau que le persona
+// pédagogique ci-dessus, séparé par une ligne. Réglage totalement
+// indépendant du persona (deux states distincts, deux appels API
+// distincts, core/mode_source_conversation.py côté backend) : les deux
+// peuvent être choisis en même temps. Visible pour tout le monde,
+// majeurs et mineurs, contrairement à "Aucun mode" du sélecteur de codes
+// profs (SelecteurModeActif.tsx) qui reste réservé aux majeurs. Ce
+// composant-ci n'a jamais eu cette restriction et ne l'ajoute pas ici.
 
 const PERSONAS: { id: string; label: string }[] = [
   { id: "socratique", label: "Socratique" },
   { id: "professeur", label: "Professeur" },
   { id: "tuteur", label: "Tuteur" },
   { id: "examinateur", label: "Examinateur" },
+];
+
+// Chantier "mode source" (voir en-tête du fichier) : mêmes clés que
+// MODES_SOURCE côté backend (core/profils_agents.py).
+const MODES_SOURCE: { id: string; label: string }[] = [
+  { id: "recherche", label: "Recherche" },
+  { id: "sur_pieces", label: "Sur pièces" },
 ];
 
 export function SelecteurPersonaPedagogique({
@@ -80,6 +103,7 @@ export function SelecteurPersonaPedagogique({
   onFermer?: () => void;
 }) {
   const [persona, setPersona] = useState<string | null>(null);
+  const [modeSource, setModeSource] = useState<string | null>(null);
   const [ouvertInterne, setOuvertInterne] = useState(false);
   const boutonRef = useRef<HTMLButtonElement>(null);
   const panneauRef = useRef<HTMLDivElement>(null);
@@ -108,6 +132,26 @@ export function SelecteurPersonaPedagogique({
     };
   }, [conversationId]);
 
+  // Chargement du mode source déjà choisi, indépendant du persona
+  // ci-dessus (deux réglages séparés, deux appels API séparés). Même
+  // remarque sur le remontage : un changement de conversationId
+  // redéclenche ce useEffect.
+  useEffect(() => {
+    if (!conversationId) return;
+    let annule = false;
+    obtenirModeSource(conversationId)
+      .then((res) => {
+        if (!annule) setModeSource(res.mode_source);
+      })
+      .catch(() => {
+        // Échec silencieux, reste à null ("Aucun"), cohérent avec
+        // l'absence de valeur par défaut implicite.
+      });
+    return () => {
+      annule = true;
+    };
+  }, [conversationId]);
+
   async function choisir(id: string | null) {
     if (!conversationId || id === persona) {
       fermer();
@@ -128,6 +172,25 @@ export function SelecteurPersonaPedagogique({
   function fermer() {
     if (enFeuille) onFermer?.();
     else setOuvertInterne(false);
+  }
+
+  // Chantier "mode source" : même patron que choisir() ci-dessus (mise à
+  // jour optimiste, revert silencieux en cas d'échec réseau), sur son
+  // propre state et son propre appel API, totalement indépendant du
+  // persona.
+  async function choisirModeSource(id: string | null) {
+    if (!conversationId || id === modeSource) {
+      fermer();
+      return;
+    }
+    const precedent = modeSource;
+    setModeSource(id); // optimiste, transition immédiate
+    fermer();
+    try {
+      await definirModeSource(conversationId, id);
+    } catch {
+      setModeSource(precedent); // échec silencieux, reprend l'affichage précédent
+    }
   }
 
   // Fermeture au clic extérieur -- même pattern que le sélecteur de
@@ -213,6 +276,32 @@ export function SelecteurPersonaPedagogique({
               {persona === p.id && <Check size={14} />}
             </button>
           ))}
+          <div className="my-1 border-t border-dj-bordure" />
+          <button
+            type="button"
+            onClick={() => choisirModeSource(null)}
+            className={
+              "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-dj-surface-haute " +
+              (!modeSource ? "text-dj-accent-1-texte" : "text-dj-texte")
+            }
+          >
+            Aucun
+            {!modeSource && <Check size={14} />}
+          </button>
+          {MODES_SOURCE.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => choisirModeSource(m.id)}
+              className={
+                "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-dj-surface-haute " +
+                (modeSource === m.id ? "text-dj-accent-1-texte" : "text-dj-texte")
+              }
+            >
+              {m.label}
+              {modeSource === m.id && <Check size={14} />}
+            </button>
+          ))}
         </div>
       </div>
     );
@@ -266,6 +355,32 @@ export function SelecteurPersonaPedagogique({
           >
             {p.label}
             {persona === p.id && <Check size={13} />}
+          </button>
+        ))}
+        <div className="my-1 border-t border-dj-bordure" />
+        <button
+          type="button"
+          onClick={() => choisirModeSource(null)}
+          className={
+            "flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs transition-colors hover:bg-dj-surface-haute " +
+            (!modeSource ? "text-dj-accent-1-texte" : "text-dj-texte")
+          }
+        >
+          Aucun
+          {!modeSource && <Check size={13} />}
+        </button>
+        {MODES_SOURCE.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => choisirModeSource(m.id)}
+            className={
+              "flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs transition-colors hover:bg-dj-surface-haute " +
+              (modeSource === m.id ? "text-dj-accent-1-texte" : "text-dj-texte")
+            }
+          >
+            {m.label}
+            {modeSource === m.id && <Check size={13} />}
           </button>
         ))}
       </div>

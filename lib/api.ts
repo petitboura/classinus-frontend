@@ -1685,6 +1685,23 @@ export async function definirPersonaPedagogique(conversationId: string, persona:
   }) as Promise<{ persona: string | null }>;
 }
 
+// Chantier "mode source" (voir contexte-mode-source-clovis.md), demande
+// Bourama, 16/09/2026 : meme forme exacte que obtenirPersonaPedagogique/
+// definirPersonaPedagogique juste au-dessus, reglage totalement
+// independant (core/mode_source_conversation.py cote backend).
+export async function obtenirModeSource(conversationId: string) {
+  return appelerApi(`/api/conversations/${conversationId}/mode-source`) as Promise<{
+    mode_source: string | null;
+  }>;
+}
+
+export async function definirModeSource(conversationId: string, modeSource: string | null) {
+  return appelerApi(`/api/conversations/${conversationId}/mode-source`, {
+    method: "PUT",
+    body: JSON.stringify({ mode_source: modeSource }),
+  }) as Promise<{ mode_source: string | null }>;
+}
+
 // --- Historique des réponses QCM (item 2 + jonction "QCM complet" des
 // specs indépendantes ScholarFlow AI, volet étudiant, 14/09/2026, demande
 // Bourama -- voir api/historique_reponses_qcm.py). Écriture seule, appelée
