@@ -85,6 +85,15 @@ Cette table doit être stockée quelque part de dynamique (voir étape 1), pas
 codée en dur dans un composant, conformément à la règle générale de
 dynamisme des standards de Bourama.
 
+## Une seule branche pour tout le chantier
+
+Toutes les étapes de ce chantier, backend comme frontend, se poussent sur
+UNE SEULE branche dédiée nommée `guide-decouverte` (une par dépôt, donc
+`guide-decouverte` sur `clovis-backend` ET sur `clovis-frontend`), jamais
+une branche séparée par étape. Si la branche `guide-decouverte` du dépôt
+concerné existe déjà, la récupérer et committer par dessus ; sinon la
+créer à partir de `main` à jour.
+
 ## Étapes indépendantes
 
 Chaque étape ci dessous peut être développée et poussée séparément, sans
