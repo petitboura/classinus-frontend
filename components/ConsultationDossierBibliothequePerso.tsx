@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Folder, FileText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
+import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
 import { Skeleton } from "@/components/Skeleton";
 import { obtenirDossierBibliothequeConsultation, type DossierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
@@ -23,6 +24,12 @@ import { ErreurApi, messageErreur } from "@/lib/erreurs";
  * dans ce lien de partage (seulement les fichiers directs). Ajout de
  * la section sous-dossiers, cliquable vers la même route récursivement.
  */
+// 16/09/2026, demande Bourama ("les pages si tu ouvres un lien de partage
+// n'ont aucun CTA") : un lien perso reste en lecture seule (aucune action
+// automatique, décision du 11/09 inchangée), donc pas d'ajout auto ici --
+// mais la page n'offrait rien du tout pour continuer, pas même de quoi
+// repasser le lien à quelqu'un d'autre. Le bouton Partager commun
+// (ButtonPartager) est ajouté, comme sur les pages publiques.
 export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
   const [dossier, setDossier] = useState<DossierBibliothequeConsultation | null | undefined>(undefined);
   const [sansCompte, setSansCompte] = useState(false);
@@ -48,7 +55,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (sansCompte) {
     return (
-      <SectionPage title="Dossier partagé">
+      <SectionPage title="Dossier partagé" retour="/bibliotheque">
         <CTACompteRequis texte="Crée un compte pour consulter ce dossier." />
       </SectionPage>
     );
@@ -56,7 +63,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (erreur) {
     return (
-      <SectionPage title="Dossier partagé">
+      <SectionPage title="Dossier partagé" retour="/bibliotheque">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">{erreur}</p>
       </SectionPage>
     );
@@ -64,7 +71,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (dossier === undefined) {
     return (
-      <SectionPage title="Dossier partagé">
+      <SectionPage title="Dossier partagé" retour="/bibliotheque">
         <Skeleton className="h-16 w-full rounded-cgpt-carte" />
         <Skeleton className="h-32 w-full rounded-cgpt-carte" />
       </SectionPage>
@@ -73,7 +80,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (dossier === null) {
     return (
-      <SectionPage title="Dossier introuvable">
+      <SectionPage title="Dossier introuvable" retour="/bibliotheque">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce dossier est introuvable, ou a été supprimé par son propriétaire.
         </p>
@@ -82,11 +89,14 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
   }
 
   return (
-    <SectionPage title={dossier.nom}>
+    <SectionPage title={dossier.nom} retour="/bibliotheque">
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
-        <div className="flex items-center gap-2">
-          <Folder size={18} className="flex-shrink-0 text-dj-accent-1" />
-          <h2 className="font-display text-base font-semibold text-dj-texte">{dossier.nom}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Folder size={18} className="flex-shrink-0 text-dj-accent-1" />
+            <h2 className="font-display text-base font-semibold text-dj-texte">{dossier.nom}</h2>
+          </div>
+          <ButtonPartager lien={lienPartage("dossier-perso", dossier.id)} titre={dossier.nom} />
         </div>
       </section>
 

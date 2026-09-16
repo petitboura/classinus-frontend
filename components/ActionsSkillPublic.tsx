@@ -6,6 +6,7 @@ import { activerComportementPublic, type ComportementPublic } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { telechargerTexte, nomFichierDepuis } from "@/lib/telechargerTexte";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
+import { SuggestionCompte } from "@/components/SuggestionCompte";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
 
 // Client Component isolé (10/09/2026, Lot B "Clovis ouvert") : la page
@@ -48,6 +49,7 @@ export function ActionsSkillPublic({ skill }: { skill: ComportementPublic }) {
 
   return (
     <div className="flex flex-col gap-2">
+      <SuggestionCompte texte="Crée un compte pour activer ce skill sur ton propre espace Clovis." />
       <div className="flex flex-wrap gap-2">
         <button
           onClick={activer}

@@ -14,7 +14,7 @@ export async function generateStaticParams() {
 
 export default function PageSignalement({ params }: { params: { id: string } }) {
   return (
-    <SectionPage title="Signalement">
+    <SectionPage title="Signalement" retour="/">
       <ConfirmerVisibiliteSignalement signalementId={params.id} />
     </SectionPage>
   );

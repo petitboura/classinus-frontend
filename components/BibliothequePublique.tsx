@@ -30,12 +30,14 @@ import {
   listerListesFiltresBibliothequePublique,
   attacherDossierPublic,
   detacherDossierPublic,
+  obtenirContenuDossierCataloguePublic,
   type EntreeBibliothequePublique,
   type DossierCataloguePublic,
   type DemandeDossierCataloguePublic,
   type ListesFiltresBibliothequePublique,
   type FiltresDossierCataloguePublic,
   type ValeursFiltreDossier,
+  type ContenuDossierPublic,
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -53,6 +55,7 @@ import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { Skeleton } from "./Skeleton";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { MenuActionsCarte } from "./MenuActionsCarte";
+import { StatistiquesContenuDossier } from "./StatistiquesContenuDossier";
 import { CaseACocher } from "./CaseACocher";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
@@ -505,6 +508,10 @@ export function BibliothequePublique() {
   // pile du fil d'ariane, tableau vide = racine.
   const [pileDossiers, setPileDossiers] = useState<{ id: string; nom: string }[]>([]);
   const dossierCourantId = pileDossiers.length > 0 ? pileDossiers[pileDossiers.length - 1].id : null;
+  // 16/09/2026, demande Bourama : compte de contenu du dossier ouvert
+  // (fichiers/liens/sous-dossiers), affiché dans le fil d'ariane -- voir
+  // le useEffect plus bas qui le recharge à chaque changement de dossier.
+  const [contenuDossierActuel, setContenuDossierActuel] = useState<ContenuDossierPublic | null>(null);
   const [recherche, setRecherche] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -962,6 +969,28 @@ export function BibliothequePublique() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recherche, filtrePays, filtreNiveau, filtreCategorie, filtreClasse, filtreSpecialite, dossierCourantId]);
 
+  // 16/09/2026, demande Bourama : compte de contenu du dossier ouvert
+  // (fichiers/liens/sous-dossiers), affiché dans le fil d'ariane -- une
+  // requête dédiée par dossier ouvert (voir compter_contenu_dossier côté
+  // backend), remis à zéro à la racine ou en sortant du dossier.
+  useEffect(() => {
+    if (!dossierCourantId) {
+      setContenuDossierActuel(null);
+      return;
+    }
+    let annule = false;
+    obtenirContenuDossierCataloguePublic(dossierCourantId)
+      .then((c) => {
+        if (!annule) setContenuDossierActuel(c);
+      })
+      .catch(() => {
+        if (!annule) setContenuDossierActuel(null);
+      });
+    return () => {
+      annule = true;
+    };
+  }, [dossierCourantId]);
+
   // Scroll infini : observe la sentinelle en bas de la liste affichée,
   // charge le lot suivant dès qu'elle devient visible.
   useEffect(() => {
@@ -1148,6 +1177,76 @@ export function BibliothequePublique() {
     } finally {
       setEnvoi(false);
     }
+  }
+
+  // 16/09/2026, demande Bourama ("les trois points sur chaque fichier ...
+  // pareil sur l'aperçu d'un fichier") : cette liste d'actions vivait
+  // uniquement inline dans la carte de la liste -- extraite ici pour
+  // être réutilisée telle quelle par l'aperçu (VisionneuseBibliotheque),
+  // qui n'avait jusqu'ici que Télécharger/Ranger, sans Partager/Signaler/
+  // Gérer les dossiers. dossierCourantId (déjà dans le scope du
+  // composant) continue de conditionner "Gérer les dossiers de ce
+  // fichier"/"Retirer de ce dossier" -- ces deux actions n'ont de sens
+  // que si un dossier est actuellement ouvert.
+  function actionsPourEntree(entree: EntreeBibliothequePublique) {
+    return [
+      ...(entree.url_publique
+        ? [
+            {
+              cle: "telecharger",
+              label: "Télécharger",
+              icone: <Download size={14} />,
+              onClick: () => setEntreeModalTelechargement(entree),
+            },
+          ]
+        : []),
+      {
+        cle: "partager",
+        label: "Partager",
+        icone: <Share2 size={14} />,
+        onClick: () => partagerOuCopierLien(lienPartage("fichier-public", entree.id), entree.nom),
+      },
+      {
+        cle: "signaler",
+        label: "Signaler ce contenu",
+        icone: <Flag size={14} />,
+        onClick: () => setEntreeSignalee(entree),
+      },
+      ...(entree.est_a_moi
+        ? [
+            {
+              cle: "modifier-filtres",
+              label: "Modifier les filtres",
+              icone: <SlidersHorizontal size={14} />,
+              onClick: () => setFichierEditionFiltres(entree),
+            },
+          ]
+        : []),
+      ...(dossierCourantId
+        ? [
+            {
+              cle: "deplacer",
+              label: "Gérer les dossiers de ce fichier",
+              icone: <Move size={14} />,
+              onClick: () =>
+                setCibleDeplacement({ type: "fichier", entree, dossierSourceId: dossierCourantId }),
+            },
+            {
+              cle: "retirer",
+              label: "Retirer de ce dossier",
+              icone: <FolderMinus size={14} />,
+              onClick: () => retirerDuDossier(entree),
+            },
+          ]
+        : []),
+      {
+        cle: "supprimer",
+        label: "Retirer (uniquement si c'est toi qui l'as ajouté)",
+        icone: <Trash2 size={14} />,
+        onClick: () => supprimer(entree.id, entree.nom),
+        destructif: true,
+      },
+    ];
   }
 
   async function creerDossier() {
@@ -1655,6 +1754,12 @@ export function BibliothequePublique() {
             </button>
           )}
 
+          {dossierCourantId !== null && contenuDossierActuel && (
+            <div className="max-w-xs">
+              <StatistiquesContenuDossier contenu={contenuDossierActuel} />
+            </div>
+          )}
+
           <div className="flex items-center gap-1 text-xs">
             {(
               [
@@ -2073,64 +2178,7 @@ export function BibliothequePublique() {
                   )}
                   <MenuActionsCarte
                     ariaLabel={`Actions pour ${entree.nom}`}
-                    actions={[
-                      ...(entree.url_publique
-                        ? [
-                            {
-                              cle: "telecharger",
-                              label: "Télécharger",
-                              icone: <Download size={14} />,
-                              onClick: () => setEntreeModalTelechargement(entree),
-                            },
-                          ]
-                        : []),
-                      {
-                        cle: "partager",
-                        label: "Partager",
-                        icone: <Share2 size={14} />,
-                        onClick: () => partagerOuCopierLien(lienPartage("fichier-public", entree.id), entree.nom),
-                      },
-                      {
-                        cle: "signaler",
-                        label: "Signaler ce contenu",
-                        icone: <Flag size={14} />,
-                        onClick: () => setEntreeSignalee(entree),
-                      },
-                      ...(entree.est_a_moi
-                        ? [
-                            {
-                              cle: "modifier-filtres",
-                              label: "Modifier les filtres",
-                              icone: <SlidersHorizontal size={14} />,
-                              onClick: () => setFichierEditionFiltres(entree),
-                            },
-                          ]
-                        : []),
-                      ...(dossierCourantId
-                        ? [
-                            {
-                              cle: "deplacer",
-                              label: "Gérer les dossiers de ce fichier",
-                              icone: <Move size={14} />,
-                              onClick: () =>
-                                setCibleDeplacement({ type: "fichier", entree, dossierSourceId: dossierCourantId }),
-                            },
-                            {
-                              cle: "retirer",
-                              label: "Retirer de ce dossier",
-                              icone: <FolderMinus size={14} />,
-                              onClick: () => retirerDuDossier(entree),
-                            },
-                          ]
-                        : []),
-                      {
-                        cle: "supprimer",
-                        label: "Retirer (uniquement si c'est toi qui l'as ajouté)",
-                        icone: <Trash2 size={14} />,
-                        onClick: () => supprimer(entree.id, entree.nom),
-                        destructif: true,
-                      },
-                    ]}
+                    actions={actionsPourEntree(entree)}
                   />
                 </div>
                 )}
@@ -2316,6 +2364,7 @@ export function BibliothequePublique() {
         }
         onFermer={() => setEntreeOuverte(null)}
         onCopierVersBibliotheque={copierIdVersBiblioPerso}
+        actions={entreeOuverte ? actionsPourEntree(entreeOuverte) : undefined}
       />
 
       {entreeModalTelechargement && entreeModalTelechargement.url_publique && (
@@ -2428,8 +2477,15 @@ export function BibliothequePublique() {
           )}
           <button
             onClick={() => {
+              // 16/09/2026, correctif Bourama ("le bouton + ... s'exécute
+              // toujours à la racine, ne respecte pas que tu es dans un
+              // dossier") : `setPileDossiers([])` ramenait systématiquement
+              // à la racine avant d'ouvrir le formulaire, quel que soit le
+              // dossier ouvert au moment du clic -- creerDossier() prenait
+              // pourtant déjà dossierCourantId comme parent depuis le
+              // 01/09, ce reset l'annulait juste avant. Retiré : on garde
+              // la pile de dossiers telle quelle, seul l'onglet change.
               setOngletBiblioPublique("dossiers");
-              setPileDossiers([]);
               setCreationDossierOuverte(true);
               setMenuAjoutOuvert(false);
             }}

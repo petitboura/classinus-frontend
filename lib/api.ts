@@ -613,6 +613,11 @@ export type DossierCataloguePublic = {
   // 04/09/2026, demande Bourama : 2 filtres supplémentaires, même principe.
   classe?: string[] | null;
   specialite?: string[] | null;
+  // 16/09/2026, demande Bourama : compte de contenu (fichiers/liens/
+  // sous-dossiers), toujours présent sur obtenirDossierCataloguePublic
+  // (pas sur listerDossiersCataloguePublic, voir ContenuDossierPublic
+  // plus bas pour l'usage en navigation).
+  contenu?: ContenuDossierPublic;
   // 13/09/2026 (suite), demande Bourama : pour chaque filtre, quelles
   // valeurs (parmi celles ci-dessus) descendent automatiquement à TOUS
   // les descendants (sous-dossiers et/ou fichiers, à n'importe quelle
@@ -684,6 +689,25 @@ export async function listerDossiersCataloguePublic() {
 // GET /api/bibliotheque-publique/dossiers/{id} côté backend.
 export async function obtenirDossierCataloguePublic(dossierId: string) {
   return appelerApi(`/api/bibliotheque-publique/dossiers/${dossierId}`) as Promise<DossierCataloguePublic>;
+}
+
+// 16/09/2026, demande Bourama : "l'analytique dans l'app, combien
+// d'éléments, de liens, de fichiers, de dossiers" -- compte exact du
+// contenu DIRECT d'un dossier (pas récursif dans ses sous-dossiers).
+// Utilisée à deux endroits : obtenirDossierCataloguePublic l'inclut déjà
+// (champ `contenu`) pour la page de partage ; cette fonction séparée sert
+// à la bibliothèque publique en navigation (dossier actuellement ouvert),
+// voir core/dossiers_catalogue_public.py::compter_contenu_dossier côté
+// backend pour le détail du calcul.
+export type ContenuDossierPublic = {
+  nb_fichiers: number;
+  nb_liens: number;
+  nb_sous_dossiers: number;
+  nb_elements: number;
+};
+
+export async function obtenirContenuDossierCataloguePublic(dossierId: string) {
+  return appelerApi(`/api/bibliotheque-publique/dossiers/${dossierId}/contenu`) as Promise<ContenuDossierPublic>;
 }
 
 // 11/09/2026, demande Bourama : lien de partage direct pour un dossier

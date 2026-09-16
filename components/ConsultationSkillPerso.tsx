@@ -7,6 +7,7 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { ScrollText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
+import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
 import { Skeleton } from "@/components/Skeleton";
 import { extraireCorpsSkill } from "@/components/VoirSkillRecuModal";
 import { obtenirComportementConsultation, type ComportementConsultation } from "@/lib/api";
@@ -27,6 +28,12 @@ const AGENT_ID = "clovis";
  * ConsultationFichierBibliothequePerso.tsx (contrainte generateStaticParams
  * / build:capacitor).
  */
+// 16/09/2026, demande Bourama ("les pages si tu ouvres un lien de partage
+// n'ont aucun CTA") : un lien perso reste en lecture seule (aucune action
+// automatique, décision du 11/09 inchangée), donc pas d'ajout auto ici --
+// mais la page n'offrait rien du tout pour continuer, pas même de quoi
+// repasser le lien à quelqu'un d'autre. Le bouton Partager commun
+// (ButtonPartager) est ajouté, comme sur les pages publiques.
 export function ConsultationSkillPerso({ id }: { id: string }) {
   const [skill, setSkill] = useState<ComportementConsultation | null | undefined>(undefined);
   const [sansCompte, setSansCompte] = useState(false);
@@ -52,7 +59,7 @@ export function ConsultationSkillPerso({ id }: { id: string }) {
 
   if (sansCompte) {
     return (
-      <SectionPage title="Skill partagée">
+      <SectionPage title="Skill partagée" retour="/comportements">
         <CTACompteRequis texte="Crée un compte pour consulter cette skill." />
       </SectionPage>
     );
@@ -60,7 +67,7 @@ export function ConsultationSkillPerso({ id }: { id: string }) {
 
   if (erreur) {
     return (
-      <SectionPage title="Skill partagée">
+      <SectionPage title="Skill partagée" retour="/comportements">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">{erreur}</p>
       </SectionPage>
     );
@@ -68,7 +75,7 @@ export function ConsultationSkillPerso({ id }: { id: string }) {
 
   if (skill === undefined) {
     return (
-      <SectionPage title="Skill partagée">
+      <SectionPage title="Skill partagée" retour="/comportements">
         <Skeleton className="h-32 w-full rounded-cgpt-carte" />
       </SectionPage>
     );
@@ -76,7 +83,7 @@ export function ConsultationSkillPerso({ id }: { id: string }) {
 
   if (skill === null) {
     return (
-      <SectionPage title="Skill introuvable">
+      <SectionPage title="Skill introuvable" retour="/comportements">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Cette skill est introuvable, ou a été supprimée par son propriétaire.
         </p>
@@ -85,11 +92,14 @@ export function ConsultationSkillPerso({ id }: { id: string }) {
   }
 
   return (
-    <SectionPage title={skill.nom}>
+    <SectionPage title={skill.nom} retour="/comportements">
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
-        <div className="flex items-center gap-2">
-          <ScrollText size={18} className="flex-shrink-0 text-dj-accent-1" />
-          <h2 className="font-display text-base font-semibold text-dj-texte">{skill.nom}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ScrollText size={18} className="flex-shrink-0 text-dj-accent-1" />
+            <h2 className="font-display text-base font-semibold text-dj-texte">{skill.nom}</h2>
+          </div>
+          <ButtonPartager lien={lienPartage("skill-perso", id)} titre={skill.nom} />
         </div>
         {skill.description && <p className="mt-2 text-sm text-dj-texte-muet">{skill.description}</p>}
       </section>

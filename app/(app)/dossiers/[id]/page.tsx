@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Folder, FileText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
+import { ActionsDossierPublic } from "@/components/ActionsDossierPublic";
+import { StatistiquesContenuDossier } from "@/components/StatistiquesContenuDossier";
 import { obtenirDossierCataloguePublic, listerBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
 
@@ -51,7 +53,7 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
 
   if (!dossier) {
     return (
-      <SectionPage title="Dossier introuvable">
+      <SectionPage title="Dossier introuvable" retour="/bibliotheque">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce dossier est introuvable sur la bibliothèque publique.
         </p>
@@ -71,14 +73,24 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
   }
 
   return (
-    <SectionPage title={dossier.nom}>
+    <SectionPage title={dossier.nom} retour={dossier.dossier_parent_id ? `/dossiers/${dossier.dossier_parent_id}` : "/bibliotheque"}>
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-center gap-2">
           <Folder size={18} className="flex-shrink-0 text-dj-accent-1" />
           <h2 className="font-display text-base font-semibold text-dj-texte">{dossier.nom}</h2>
         </div>
         {dossier.description && <p className="mt-2 text-sm text-dj-texte-muet">{dossier.description}</p>}
+
+        <div className="mt-4">
+          <ActionsDossierPublic dossierId={dossier.id} nom={dossier.nom} />
+        </div>
       </section>
+
+      {dossier.contenu && (
+        <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
+          <StatistiquesContenuDossier contenu={dossier.contenu} />
+        </section>
+      )}
 
       {dossier.sous_dossiers.length > 0 && (
         <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface">

@@ -58,7 +58,7 @@ export default async function PageSkillPublique({ params }: { params: { id: stri
 
   if (!skill) {
     return (
-      <SectionPage title="Skill introuvable">
+      <SectionPage title="Skill introuvable" retour="/comportements">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Cette skill est introuvable, ou a été retirée par son auteur.
         </p>
@@ -67,7 +67,7 @@ export default async function PageSkillPublique({ params }: { params: { id: stri
   }
 
   return (
-    <SectionPage title={skill.nom}>
+    <SectionPage title={skill.nom} retour="/comportements">
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-center gap-2">
           <ScrollText size={18} className="flex-shrink-0 text-dj-accent-1" />

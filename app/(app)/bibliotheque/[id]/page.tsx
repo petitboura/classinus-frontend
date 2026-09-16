@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { FileText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
+import { ActionsFichierPublic } from "@/components/ActionsFichierPublic";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
-import { BoutonTelechargerFichier } from "@/components/BoutonTelechargerFichier";
 import { obtenirEntreeBibliothequePublique, type EntreeBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
 
@@ -97,7 +97,7 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
 
   if (!entree) {
     return (
-      <SectionPage title="Document introuvable">
+      <SectionPage title="Document introuvable" retour="/bibliotheque">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce document est introuvable, ou n'est plus publié sur la bibliothèque publique.
         </p>
@@ -108,19 +108,25 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
   const estPdf = entree.type_mime === "application/pdf";
 
   return (
-    <SectionPage title={entree.nom}>
+    <SectionPage title={entree.nom} retour="/bibliotheque">
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText size={18} className="flex-shrink-0 text-dj-accent-1" />
             <h2 className="font-display text-base font-semibold text-dj-texte">{entree.nom}</h2>
           </div>
-          {entree.url_publique && (
-            <BoutonTelechargerFichier url={entree.url_publique} nom={entree.nom_fichier || entree.nom} />
-          )}
         </div>
 
         {entree.description && <p className="mt-2 text-sm text-dj-texte-muet">{entree.description}</p>}
+
+        <div className="mt-4">
+          <ActionsFichierPublic
+            entreeId={entree.id}
+            nom={entree.nom}
+            urlPublique={entree.url_publique}
+            nomFichier={entree.nom_fichier}
+          />
+        </div>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
           <Etiquettes valeurs={entree.pays} />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { X, Download, ExternalLink, Loader2, File as IconFichier, Copy, Check, FolderOpen, Maximize2, Minimize2 } from "lucide-react";
+import { MenuActionsCarte } from "./MenuActionsCarte";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LinkPreview } from "./chat/LinkPreview";
@@ -331,6 +332,7 @@ export function VisionneuseBibliotheque({
   onFermer,
   onRanger,
   onCopierVersBibliotheque,
+  actions,
 }: {
   fichier: FichierBiblio | null;
   onFermer: () => void;
@@ -345,6 +347,13 @@ export function VisionneuseBibliotheque({
   // bibliothèque". Absent (EspaceBibliotheque.tsx, bibliothèque déjà
   // personnelle) : bouton de téléchargement direct inchangé.
   onCopierVersBibliotheque?: (id: string) => Promise<void>;
+  // 16/09/2026, demande Bourama : les mêmes actions que le menu "..."
+  // de la carte (Partager, Signaler, Gérer les dossiers de ce fichier,
+  // etc.) doivent aussi être exécutables depuis l'aperçu, pas seulement
+  // en fermant l'aperçu pour revenir sur la carte. Fourni uniquement par
+  // BibliothequePublique.tsx (seule à avoir cette liste d'actions) --
+  // absent, le bouton "..." ne s'affiche simplement pas.
+  actions?: { cle: string; label: string; icone: React.ReactNode; onClick: () => void; destructif?: boolean }[];
 }) {
   // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
   // brut") : `if (!fichier) return null` démontait l'aperçu d'un coup --
@@ -437,6 +446,9 @@ export function VisionneuseBibliotheque({
               >
                 <Download size={16} />
               </button>
+            )}
+            {actions && actions.length > 0 && (
+              <MenuActionsCarte ariaLabel={`Actions pour ${f.nom_fichier}`} actions={actions} />
             )}
             <button
               onClick={fermer}

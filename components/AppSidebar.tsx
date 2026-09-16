@@ -7,7 +7,7 @@ import { useFenetres } from "@/lib/contexteFenetres";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LogOut,
-  LogIn,
+  UserRound,
   Home,
   Briefcase,
   ScrollText,
@@ -1051,7 +1051,20 @@ export function AppSidebar({
             exactement le principe qu'on applique déjà aux 8 sections
             (un bouton qui ouvre une liste plutôt qu'un bouton par
             action). Pour un visiteur non connecté, MenuProfil n'existe
-            pas : on garde un vrai bouton "Se connecter" à la place. */}
+            pas : on garde un vrai bouton "Se connecter" à la place.
+
+            16/09/2026, correctif Bourama ("le bouton qui apparaît à la
+            place du profil quand tu n'es pas connecté est le bouton se
+            déconnecter, quel paradoxe") : l'action et le libellé étaient
+            déjà les bons, c'est l'icône qui trompait. LogIn et LogOut
+            (lucide) dessinent la même porte avec la même flèche, à un
+            miroir près, et sur le rail replié comme sur une barre
+            étroite le libellé est masqué (voir LibelleRail) : il ne
+            restait donc que cette icône ambiguë, lue comme une sortie.
+            Remplacée par une silhouette dans le même rond que l'avatar
+            de MenuProfil, pour que la place du profil montre toujours un
+            profil, vide ici faute de compte. aria-label/title ajoutés
+            pour que le libellé reste lisible même rail replié. */}
         {connecte ? (
           <MenuProfil
             avatarUrl={avatarUrl}
@@ -1082,10 +1095,14 @@ export function AppSidebar({
         ) : (
           <button
             onClick={seDeconnecter}
+            aria-label="Se connecter"
+            title="Se connecter"
             className="group mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <LogIn size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+              <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface-haute">
+                <UserRound size={13} className="text-dj-texte-muet" />
+              </span>
             </span>
             <LibelleRail ouverte={ouverte}>Se connecter</LibelleRail>
           </button>
@@ -1309,10 +1326,14 @@ export function AppSidebar({
             ) : (
               <button
                 onClick={seDeconnecter}
+                aria-label="Se connecter"
+                title="Se connecter"
                 className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
               >
                 <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                  <LogIn size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface-haute">
+                    <UserRound size={13} className="text-dj-texte-muet" />
+                  </span>
                 </span>
                 <span className="text-sm">Se connecter</span>
               </button>

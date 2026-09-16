@@ -6,6 +6,7 @@ import { BoutonTelechargerFichier } from "@/components/BoutonTelechargerFichier"
 import { SectionPage } from "@/components/SectionPage";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
+import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
 import { Skeleton } from "@/components/Skeleton";
 import { obtenirFichierBibliothequeConsultation, type FichierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
@@ -24,6 +25,12 @@ import { ErreurApi, messageErreur } from "@/lib/erreurs";
  * (même contrainte que app/(app)/bibliotheque/[id]/page.tsx, corrigée
  * le 11/09/2026 sur ce dépôt pour l'id "placeholder").
  */
+// 16/09/2026, demande Bourama ("les pages si tu ouvres un lien de partage
+// n'ont aucun CTA") : un lien perso reste en lecture seule (aucune action
+// automatique, décision du 11/09 inchangée), donc pas d'ajout auto ici --
+// mais la page n'offrait rien du tout pour continuer, pas même de quoi
+// repasser le lien à quelqu'un d'autre. Le bouton Partager commun
+// (ButtonPartager) est ajouté, comme sur les pages publiques.
 export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
   const [fichier, setFichier] = useState<FichierBibliothequeConsultation | null | undefined>(undefined);
   const [sansCompte, setSansCompte] = useState(false);
@@ -49,7 +56,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
 
   if (sansCompte) {
     return (
-      <SectionPage title="Document partagé">
+      <SectionPage title="Document partagé" retour="/bibliotheque">
         <CTACompteRequis texte="Crée un compte pour consulter ce document." />
       </SectionPage>
     );
@@ -57,7 +64,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
 
   if (erreur) {
     return (
-      <SectionPage title="Document partagé">
+      <SectionPage title="Document partagé" retour="/bibliotheque">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">{erreur}</p>
       </SectionPage>
     );
@@ -65,7 +72,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
 
   if (fichier === undefined) {
     return (
-      <SectionPage title="Document partagé">
+      <SectionPage title="Document partagé" retour="/bibliotheque">
         <Skeleton className="h-32 w-full rounded-cgpt-carte" />
       </SectionPage>
     );
@@ -73,7 +80,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
 
   if (fichier === null) {
     return (
-      <SectionPage title="Document introuvable">
+      <SectionPage title="Document introuvable" retour="/bibliotheque">
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce document est introuvable, ou a été supprimé par son propriétaire.
         </p>
@@ -84,16 +91,19 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
   const estPdf = fichier.type_mime === "application/pdf";
 
   return (
-    <SectionPage title={fichier.nom_fichier}>
+    <SectionPage title={fichier.nom_fichier} retour="/bibliotheque">
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText size={18} className="flex-shrink-0 text-dj-accent-1" />
             <h2 className="font-display text-base font-semibold text-dj-texte">{fichier.nom_fichier}</h2>
           </div>
-          {fichier.url_publique && (
-            <BoutonTelechargerFichier url={fichier.url_publique} nom={fichier.nom_fichier} />
-          )}
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {fichier.url_publique && (
+              <BoutonTelechargerFichier url={fichier.url_publique} nom={fichier.nom_fichier} />
+            )}
+            <ButtonPartager lien={lienPartage("fichier-perso", fichier.id)} titre={fichier.nom_fichier} />
+          </div>
         </div>
 
         {fichier.description && <p className="mt-2 text-sm text-dj-texte-muet">{fichier.description}</p>}

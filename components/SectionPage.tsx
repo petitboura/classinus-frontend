@@ -67,23 +67,41 @@ export function useInfoSection(id: string | null) {
   }, [definir, id]);
 }
 
-function TitreSection({ title, infoRubriqueId, className }: { title: string; infoRubriqueId: string | null; className?: string }) {
+function TitreSection({ title, infoRubriqueId, className, retour }: { title: string; infoRubriqueId: string | null; className?: string; retour?: string }) {
   const rubrique = infoRubriqueId ? trouverRubriqueAide(infoRubriqueId) : undefined;
   return (
     <div className={`flex items-center gap-1.5 ${className ?? ""}`}>
+      {retour && <BoutonRetour href={retour} padding="p-1" className="-ml-1" />}
       <h1 className="font-display text-xl font-bold text-dj-texte">{title}</h1>
       {rubrique && <BoutonInfoSection rubriqueId={rubrique.id} texteCourt={rubrique.texteCourt} />}
     </div>
   );
 }
 
+// Prop `retour` (16/09/2026, demande Bourama : "énormément de sections
+// ou pages qui n'ont pas de bouton retour"). Concerne les écrans de
+// détail atteints depuis une liste (un document, un dossier, une skill,
+// un signalement, un établissement) : ils n'avaient jusqu'ici aucun
+// moyen de remonter d'un niveau, puisque le bouton retour de ce
+// composant n'existait que dans la branche `groupe` (fil d'Ariane
+// "Personnaliser Clovis -> Mes skills").
+//
+// Volontairement un href fixe, pas un router.back() : l'app pousse des
+// entrées d'historique factices pour fermer menus et panneaux (voir
+// lib/contexteRetour.tsx), et toute la série de bugs de navigation de
+// début septembre venait justement de retours qui tombaient sur ces
+// entrées-là. Une destination explicite est déterministe, et reste
+// correcte quand la page est ouverte directement depuis un lien de
+// partage (cas où il n'y a aucun historique à remonter).
 export function SectionPage({
   title,
   children,
   groupe,
+  retour,
 }: {
   title: string;
   children: React.ReactNode;
+  retour?: string;
   groupe?: {
     label: string;
     href: string;
@@ -97,7 +115,7 @@ export function SectionPage({
     return (
       <ContexteInfoSection.Provider value={setInfoRubriqueId}>
         <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-24 pt-6 md:pt-8">
-          <TitreSection title={title} infoRubriqueId={infoRubriqueId} />
+          <TitreSection title={title} infoRubriqueId={infoRubriqueId} retour={retour} />
           {children}
         </div>
       </ContexteInfoSection.Provider>

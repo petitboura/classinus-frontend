@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
 export default function PageEtablissement({ params }: { params: { id: string } }) {
   return (
-    <SectionPage title="Établissement">
+    <SectionPage title="Établissement" retour="/etablissements">
       <EtablissementDetail etablissementId={params.id} />
     </SectionPage>
   );
