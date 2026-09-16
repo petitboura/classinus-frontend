@@ -18,6 +18,7 @@ import { MenuSignalementCorrection, type ChoixSignalement } from "./MenuSignalem
 import { IndicateurReflexion } from "@/components/IndicateurReflexion";
 import { SchemaGeometrique } from "./SchemaGeometrique";
 import { QCMInteractif } from "./QCMInteractif";
+import { QuestionInteractive } from "./QuestionInteractive";
 import { FicheRevision } from "./FicheRevision";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { ImageMessage } from "./ImageMessage";
@@ -447,6 +448,8 @@ function BulleMessageInterne({
   // définition pas encore de résultat à sauvegarder.
   outilsEnCours,
   conversationId,
+  onRepondreQuestion,
+  questionDejaRepondue,
 }: {
   message: MessageAffiche;
   onRegenerer?: () => void;
@@ -484,6 +487,15 @@ function BulleMessageInterne({
   // best-effort, aucun de ces deux blocs ne dépend de sa présence pour
   // s'afficher correctement.
   conversationId?: string;
+  // Lot 3 (chantier "question riche dans le chat", voir
+  // specs-question-riche.md) : branchés uniquement pour le bloc
+  // ```question``` (case "question" plus bas), transmis tels quels à
+  // QuestionInteractive. onRepondreQuestion envoie la réponse choisie
+  // comme un vrai message (ChatIA.tsx/envoyerMessage) ;
+  // questionDejaRepondue verrouille l'affichage si l'historique montre
+  // qu'un message utilisateur répond déjà à ce message-ci.
+  onRepondreQuestion?: (texteFinal: string) => void;
+  questionDejaRepondue?: boolean;
 }) {
   const [copie, setCopie] = useState(false);
   const [pieceJointeOuverteIndex, setPieceJointeOuverteIndex] = useState<number | null>(null);
@@ -704,6 +716,14 @@ function BulleMessageInterne({
                 return <SchemaGeometrique code={code} />;
               case "qcm":
                 return <QCMInteractif code={code} conversationId={conversationId} />;
+              case "question":
+                return (
+                  <QuestionInteractive
+                    code={code}
+                    onReponse={onRepondreQuestion}
+                    dejaRepondu={questionDejaRepondue}
+                  />
+                );
               case "fiche":
                 return <FicheRevision code={code} />;
               case "widget":
