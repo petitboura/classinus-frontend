@@ -1884,6 +1884,24 @@ export function BarreDeSaisie({
                       </button>
                     );
                   })}
+                {/* Guide de decouverte, ajoute ici le 16/09/2026 (demande
+                    Bourama : "ajoute le dans le bouton utilitaire") --
+                    seul point d'entree desktop du guide depuis /chat, le
+                    bouton flottant (etape 4) etant masque sur cette page
+                    et le menu "+" (etape 5) etant mobile uniquement.
+                    Entree fixe, pas issue de outilsUtilitairesPourAgent
+                    (pas un vrai outil backend) -- meme hook que les deux
+                    autres points d'entree, voir lib/contexteChat.tsx. */}
+                <button
+                  onClick={() => {
+                    ouvrirGuide();
+                    setMenuUtilitairesOuvert(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl border-t border-dj-bordure px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                >
+                  <Compass size={14} />
+                  <span className="flex-1">Guide de découverte</span>
+                </button>
               </div>
             </div>
             )}
