@@ -14,6 +14,7 @@ import { SplashOuverture } from "@/components/SplashOuverture";
 import { SplashPret } from "@/components/SplashPret";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
+import { FournisseurRequetes } from "@/lib/reactQuery";
 
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
 // Djiguignè (jugée trop générique "IA" -- palette + paire de polices
@@ -176,7 +177,7 @@ export default function RacineLayout({
         />
         <ServiceWorkerRegistration />
         <ReveilBackend />
-        {children}
+        <FournisseurRequetes>{children}</FournisseurRequetes>
         <BoutonFlottantTelecharger />
         <PopupExplorationDossier />
         <SplashPret />

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { clesRequetes } from "@/lib/clesRequetes";
 import {
   Link as IconLien,
   Link2,
@@ -162,8 +164,38 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
   // combinent (une origine ET un type à la fois).
   const [origineOnglet, setOrigineOnglet] = useState<OrigineOnglet>("privee");
   const [filtreOuvert, setFiltreOuvert] = useState(false);
-  const [fichiers, setFichiers] = useState<FichierBiblio[] | null>(null);
-  const [dossiers, setDossiers] = useState<DossierBibliotheque[] | null>(null);
+  // 17/09/2026 (chantier persistance/cache, demande Bourama) :
+  // `fichiers`/`dossiers` viennent maintenant de React Query au lieu
+  // d'un useState local -- la donnée est partagée entre TOUTES les
+  // instances de ce composant (donc entre deux visites successives de
+  // la section, même après démontage), mise en cache, et survit à un
+  // rafraîchissement de page via la persistance sessionStorage (voir
+  // lib/reactQuery.tsx). `chargerFichiers`/`chargerDossiers` plus bas
+  // restent des fonctions de ce nom (invalidation du cache) pour ne pas
+  // devoir toucher chacun de leurs nombreux points d'appel dans ce
+  // fichier -- seul CE QU'ELLES FONT change, pas leur signature.
+  const queryClient = useQueryClient();
+  const { data: fichiers } = useQuery({
+    queryKey: clesRequetes.bibliothequeFichiers,
+    queryFn: async () => {
+      try {
+        return (await appelerApi("/api/bibliotheque")) as FichierBiblio[];
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
+        return [] as FichierBiblio[];
+      }
+    },
+  });
+  const { data: dossiers } = useQuery({
+    queryKey: clesRequetes.bibliothequeDossiers,
+    queryFn: async () => {
+      try {
+        return await listerDossiersBibliotheque();
+      } catch {
+        return [] as DossierBibliotheque[];
+      }
+    },
+  });
   const [texteOuLien, setTexteOuLien] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreursEnvoi, setErreursEnvoi] = useState<{ nom: string; erreur: string }[]>([]);
@@ -312,7 +344,7 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
     setReessaiEnCoursId(f.id);
     try {
       await reessayerVectorisationBibliothequePersonnelle(f.id);
-      setFichiers((precedent) =>
+      queryClient.setQueryData<FichierBiblio[]>(clesRequetes.bibliothequeFichiers, (precedent) =>
         precedent?.map((ligne) =>
           ligne.id === f.id ? { ...ligne, statut_vectorisation: "en_attente" } : ligne
         ) ?? precedent
@@ -380,26 +412,26 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
     }
   }
 
-  useEffect(() => {
-    chargerFichiers();
-    chargerDossiers();
-  }, []);
-
+  // Le chargement initial est désormais entièrement porté par les deux
+  // useQuery plus haut (React Query charge seul au montage, et sert le
+  // cache existant sans reguêter si une autre section l'a déjà rempli
+  // récemment) -- l'ancien useEffect(() => { chargerFichiers();
+  // chargerDossiers(); }, []) est donc retiré, il ferait sinon doublon.
+  //
+  // chargerFichiers/chargerDossiers restent des fonctions de ce nom
+  // uniquement pour ne pas devoir toucher chacun de leurs nombreux
+  // points d'appel dans ce fichier (upload, suppression, renommage...) :
+  // avant, elles refaisaient l'appel API et réécrivaient l'état local ;
+  // maintenant, elles invalident la clé de cache correspondante, ce qui
+  // déclenche automatiquement un nouveau fetch en arrière-plan et met à
+  // jour toute instance de ce composant qui l'observe, y compris une
+  // autre section ouverte ailleurs qui dépendrait de la même donnée.
   function chargerFichiers() {
-    appelerApi("/api/bibliotheque")
-      .then((r: FichierBiblio[]) => setFichiers(r))
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) {
-          setSansCompte(true);
-        }
-        setFichiers([]);
-      });
+    queryClient.invalidateQueries({ queryKey: clesRequetes.bibliothequeFichiers });
   }
 
   function chargerDossiers() {
-    listerDossiersBibliotheque()
-      .then((r) => setDossiers(r))
-      .catch(() => setDossiers([]));
+    queryClient.invalidateQueries({ queryKey: clesRequetes.bibliothequeDossiers });
   }
 
   const fichiersParId = useMemo(() => {

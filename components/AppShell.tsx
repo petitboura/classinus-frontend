@@ -20,6 +20,7 @@ import { MenuHamburgerNatif } from "@/components/mobile/MenuHamburgerNatif";
 import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
+import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { ConfirmationActionAgentModal } from "@/components/ConfirmationActionAgentModal";
@@ -167,6 +168,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               dans cette appli, voir commentaire dans
               BoutonNotifications.tsx. */}
           <BoutonNotifications connecte={connecte} />
+          <SyncTempsReelCache connecte={connecte} />
           {/* Guide de decouverte, etape 4 (16/09/2026, demande Bourama) :
               meme condition que AppSidebar juste en dessous -- masque sur
               /chat, qui a deja son propre point d'entree du guide (menu
