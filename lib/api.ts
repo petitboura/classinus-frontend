@@ -692,7 +692,7 @@ export async function obtenirDossierCataloguePublic(dossierId: string) {
 }
 
 // 16/09/2026, demande Bourama : "l'analytique dans l'app, combien
-// d'éléments, de liens, de fichiers, de dossiers" -- compte exact du
+// d'éléments, de liens, de fichiers, de dossiers" : compte exact du
 // contenu DIRECT d'un dossier (pas récursif dans ses sous-dossiers).
 // Utilisée à deux endroits : obtenirDossierCataloguePublic l'inclut déjà
 // (champ `contenu`) pour la page de partage ; cette fonction séparée sert

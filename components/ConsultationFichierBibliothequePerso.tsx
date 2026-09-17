@@ -27,7 +27,7 @@ import { ErreurApi, messageErreur } from "@/lib/erreurs";
  */
 // 16/09/2026, demande Bourama ("les pages si tu ouvres un lien de partage
 // n'ont aucun CTA") : un lien perso reste en lecture seule (aucune action
-// automatique, décision du 11/09 inchangée), donc pas d'ajout auto ici --
+// automatique, décision du 11/09 inchangée), donc pas d'ajout auto ici,
 // mais la page n'offrait rien du tout pour continuer, pas même de quoi
 // repasser le lien à quelqu'un d'autre. Le bouton Partager commun
 // (ButtonPartager) est ajouté, comme sur les pages publiques.

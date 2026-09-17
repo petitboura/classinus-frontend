@@ -6,19 +6,19 @@ import { supabase } from "@/lib/supabase";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 
 // 16/09/2026, demande Bourama : sur les pages publiques (fichier/dossier
-// partagés), il faut aussi une suggestion "créer un compte" -- mais en
+// partagés), il faut aussi une suggestion "créer un compte" : mais en
 // suggestion seulement, jamais en blocage de ce qui ne dépend pas d'un
 // compte (voir la page elle-même, le téléchargement : ça reste ouvert à
 // tout visiteur). Seul ce qui dépend réellement d'un compte (Ajouter à
 // ma bibliothèque, Activer une skill) continue de le demander au moment
-// de l'action -- inchangé, voir CTACompteRequis dans ActionsFichierPublic/
+// de l'action : inchangé, voir CTACompteRequis dans ActionsFichierPublic/
 // ActionsDossierPublic/ActionsSkillPublic.
 //
 // Différence avec CTACompteRequis : celui-ci REMPLACE tout un bloc quand
 // une action a échoué faute de compte (409/401 déjà survenu). Celui-ci
 // est une simple ligne discrète, affichée par anticipation dès qu'on sait
 // que le visiteur n'est pas connecté (véritable check de session, pas une
-// erreur), à côté du contenu -- jamais à sa place.
+// erreur), à côté du contenu : jamais à sa place.
 export function SuggestionCompte({ texte }: { texte: string }) {
   const [connecte, setConnecte] = useState<boolean | null>(null);
   const [ouverte, setOuverte] = useState(false);

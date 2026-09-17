@@ -509,7 +509,7 @@ export function BibliothequePublique() {
   const [pileDossiers, setPileDossiers] = useState<{ id: string; nom: string }[]>([]);
   const dossierCourantId = pileDossiers.length > 0 ? pileDossiers[pileDossiers.length - 1].id : null;
   // 16/09/2026, demande Bourama : compte de contenu du dossier ouvert
-  // (fichiers/liens/sous-dossiers), affiché dans le fil d'ariane -- voir
+  // (fichiers/liens/sous-dossiers), affiché dans le fil d'ariane, voir
   // le useEffect plus bas qui le recharge à chaque changement de dossier.
   const [contenuDossierActuel, setContenuDossierActuel] = useState<ContenuDossierPublic | null>(null);
   const [recherche, setRecherche] = useState("");
@@ -1181,12 +1181,12 @@ export function BibliothequePublique() {
 
   // 16/09/2026, demande Bourama ("les trois points sur chaque fichier ...
   // pareil sur l'aperçu d'un fichier") : cette liste d'actions vivait
-  // uniquement inline dans la carte de la liste -- extraite ici pour
+  // uniquement inline dans la carte de la liste, extraite ici pour
   // être réutilisée telle quelle par l'aperçu (VisionneuseBibliotheque),
   // qui n'avait jusqu'ici que Télécharger/Ranger, sans Partager/Signaler/
   // Gérer les dossiers. dossierCourantId (déjà dans le scope du
   // composant) continue de conditionner "Gérer les dossiers de ce
-  // fichier"/"Retirer de ce dossier" -- ces deux actions n'ont de sens
+  // fichier"/"Retirer de ce dossier" : ces deux actions n'ont de sens
   // que si un dossier est actuellement ouvert.
   function actionsPourEntree(entree: EntreeBibliothequePublique) {
     return [
@@ -2481,7 +2481,7 @@ export function BibliothequePublique() {
               // toujours à la racine, ne respecte pas que tu es dans un
               // dossier") : `setPileDossiers([])` ramenait systématiquement
               // à la racine avant d'ouvrir le formulaire, quel que soit le
-              // dossier ouvert au moment du clic -- creerDossier() prenait
+              // dossier ouvert au moment du clic : creerDossier() prenait
               // pourtant déjà dossierCourantId comme parent depuis le
               // 01/09, ce reset l'annulait juste avant. Retiré : on garde
               // la pile de dossiers telle quelle, seul l'onglet change.

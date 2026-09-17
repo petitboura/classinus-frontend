@@ -1,7 +1,7 @@
 import type { ContenuDossierPublic } from "@/lib/api";
 
 // 16/09/2026, demande Bourama : "l'analytique dans l'app, combien
-// d'éléments, de liens, de fichiers, de dossiers" -- pas de composant
+// d'éléments, de liens, de fichiers, de dossiers" : pas de composant
 // client (aucun état, aucun événement) : les chiffres arrivent déjà
 // calculés du parent, que ce soit un Server Component (page de partage)
 // ou un Client Component (bibliothèque publique en navigation).
