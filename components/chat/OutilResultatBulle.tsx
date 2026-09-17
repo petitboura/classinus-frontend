@@ -128,22 +128,31 @@ export function OutilResultatBulle({
     // passage en_cours -> terminé, seul l'anneau de chargement disparaît.
     const Icone = iconePourOutil(outils, rangee.nomOutil ?? "");
     const colonneIcone = (
-      <div className="flex w-[13px] flex-col items-center">
-        <div className="relative mt-0.5 shrink-0">
+      <div className="flex w-4 flex-col items-center">
+        {/* Boîte de taille fixe (16x16) : le rond de chargement est
+            centré dedans via inset-0 + m-auto, jamais par un décalage
+            calculé à la main -- corrige le débordement/chevauchement
+            avec l'icône voisine signalé par Bourama (16/09). */}
+        <div className="relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
           <Icone size={13} className={rangee.statut === "en_cours" ? "text-dj-texte-muet opacity-40" : "text-dj-texte-muet"} />
           {rangee.statut === "en_cours" && (
-            <Loader2 size={19} className="absolute -left-[3px] -top-[3px] animate-spin text-dj-texte-muet" />
+            <Loader2 size={16} className="absolute inset-0 m-auto animate-spin text-dj-texte-muet" />
           )}
         </div>
         {/* Ligne connectrice : se trace vers le bas (scaleY, pure CSS,
             jamais de mesure JS ni de délai) dès qu'une rangée suivante
             existe -- peu importe l'état des deux rangées qu'elle relie
             (terminé-terminé, terminé-en_cours, en_cours-en_cours). Sa
-            hauteur suit automatiquement celle de la rangée (stretch
-            flex), donc elle rejoint toujours l'icône suivante sans
-            calcul JS. */}
+            hauteur suit celle de la rangée (stretch flex), donc elle
+            rejoint toujours l'icône suivante sans calcul JS -- mais avec
+            un plancher `min-h` explicite (16/09, correction) : replié, le
+            contenu texte à droite est très court (juste le nom de
+            l'outil), donc sans ce plancher la ligne n'avait presque
+            aucune hauteur disponible et restait quasi invisible tant que
+            personne ne dépliait un résultat pour donner de la hauteur au
+            bloc. */}
         {!estDerniere && (
-          <div className="mt-1 w-[2px] flex-1 origin-top animate-dj-ligne-trace bg-dj-bordure" />
+          <div className="mt-1.5 min-h-[18px] w-[2px] flex-1 origin-top animate-dj-ligne-trace bg-dj-bordure" />
         )}
       </div>
     );
