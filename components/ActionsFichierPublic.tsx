@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Library, Loader2 } from "lucide-react";
+import { Check, ExternalLink, Library, Loader2 } from "lucide-react";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
@@ -25,11 +25,18 @@ export function ActionsFichierPublic({
   nom,
   urlPublique,
   nomFichier,
+  estLien,
 }: {
   entreeId: string;
   nom: string;
   urlPublique?: string | null;
   nomFichier?: string | null;
+  // 17/09/2026, demande Bourama : un lien (type_mime "text/uri-list")
+  // n'est pas un fichier téléchargeable -- proposer "Ouvrir le site" à
+  // la place de BoutonTelechargerFichier, même logique que
+  // VisionneuseBibliotheque.tsx (viewer interne, jusqu'ici seul endroit
+  // à faire cette distinction).
+  estLien?: boolean;
 }) {
   const [ajoutEnCours, setAjoutEnCours] = useState(false);
   const [ajoute, setAjoute] = useState(false);
@@ -70,7 +77,17 @@ export function ActionsFichierPublic({
           {ajoutEnCours ? <Loader2 size={15} className="animate-spin" /> : ajoute ? <Check size={15} /> : <Library size={15} />}
           {ajoute ? "Ajouté" : "Ajouter à ma bibliothèque"}
         </button>
-        {urlPublique && <BoutonTelechargerFichier url={urlPublique} nom={nomFichier || nom} />}
+        {urlPublique && estLien && (
+          <a
+            href={urlPublique}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-2 text-sm text-dj-texte-muet transition-colors duration-200 ease-cgpt-doux hover:border-dj-bordure-forte hover:text-dj-texte"
+          >
+            <ExternalLink size={15} /> Ouvrir le site
+          </a>
+        )}
+        {urlPublique && !estLien && <BoutonTelechargerFichier url={urlPublique} nom={nomFichier || nom} />}
         <ButtonPartager lien={lienPartage("fichier-public", entreeId)} titre={nom} />
       </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}

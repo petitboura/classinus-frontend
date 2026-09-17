@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { FileText } from "lucide-react";
+import { FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { ActionsFichierPublic } from "@/components/ActionsFichierPublic";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
+import { LinkPreview } from "@/components/chat/LinkPreview";
 import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { obtenirEntreeBibliothequePublique, type EntreeBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
@@ -107,18 +108,34 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
   }
 
   const estPdf = entree.type_mime === "application/pdf";
+  // 17/09/2026, demande Bourama : un lien partagé (seul ou via un
+  // dossier) s'affichait comme un fichier générique sur cette page --
+  // icône fichier, aucun aperçu, bouton "Télécharger" pointant sur
+  // l'URL du site comme si c'était un fichier. Même détection que
+  // VisionneuseBibliotheque.tsx (viewer interne, jamais eu ce bug).
+  const estLien = entree.type_mime === "text/uri-list";
 
   return (
     <SectionPage title={entree.nom} retour="/bibliotheque">
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <FileText size={18} className="flex-shrink-0 text-dj-accent-1" />
+            {estLien ? (
+              <IconLien size={18} className="flex-shrink-0 text-dj-accent-1" />
+            ) : (
+              <FileText size={18} className="flex-shrink-0 text-dj-accent-1" />
+            )}
             <h2 className="font-display text-base font-semibold text-dj-texte">{entree.nom}</h2>
           </div>
         </div>
 
         {entree.description && <TexteAvecLiens texte={entree.description} className="mt-2 text-sm text-dj-texte-muet" />}
+
+        {estLien && entree.url_publique && (
+          <div className="mt-3">
+            <LinkPreview href={entree.url_publique} texteLien={entree.nom} />
+          </div>
+        )}
 
         <div className="mt-4">
           <ActionsFichierPublic
@@ -126,6 +143,7 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
             nom={entree.nom}
             urlPublique={entree.url_publique}
             nomFichier={entree.nom_fichier}
+            estLien={estLien}
           />
         </div>
 

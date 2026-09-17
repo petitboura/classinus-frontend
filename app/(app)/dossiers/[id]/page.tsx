@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Folder, FileText } from "lucide-react";
+import { Folder, FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { ActionsDossierPublic } from "@/components/ActionsDossierPublic";
 import { StatistiquesContenuDossier } from "@/components/StatistiquesContenuDossier";
@@ -122,7 +122,11 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
                     href={`/bibliotheque/${entree.id}`}
                     className="flex items-center gap-2.5 px-5 py-3 transition-colors duration-200 ease-cgpt-doux hover:bg-dj-surface-haute"
                   >
-                    <FileText size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                    {entree.type_mime === "text/uri-list" ? (
+                      <IconLien size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                    ) : (
+                      <FileText size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                    )}
                     <div className="min-w-0">
                       <p className="truncate text-sm text-dj-texte">{entree.nom}</p>
                       {entree.description && (

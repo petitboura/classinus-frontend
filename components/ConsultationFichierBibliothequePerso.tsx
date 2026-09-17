@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText } from "lucide-react";
+import { ExternalLink, FileText, Link as IconLien } from "lucide-react";
 import { BoutonTelechargerFichier } from "@/components/BoutonTelechargerFichier";
 import { SectionPage } from "@/components/SectionPage";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
+import { LinkPreview } from "@/components/chat/LinkPreview";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
 import { SuggestionCompte } from "@/components/SuggestionCompte";
 import { TexteAvecLiens } from "@/components/TexteAvecLiens";
@@ -86,17 +87,35 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
   }
 
   const estPdf = fichier.type_mime === "application/pdf";
+  // 17/09/2026, demande Bourama : même bug que côté public
+  // (app/(app)/bibliotheque/[id]/page.tsx) -- un lien partagé (seul ou
+  // via un dossier) s'affichait comme un fichier générique.
+  const estLien = fichier.type_mime === "text/uri-list";
 
   return (
     <SectionPage title={fichier.nom_fichier} retour="/bibliotheque">
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <FileText size={18} className="flex-shrink-0 text-dj-accent-1" />
+            {estLien ? (
+              <IconLien size={18} className="flex-shrink-0 text-dj-accent-1" />
+            ) : (
+              <FileText size={18} className="flex-shrink-0 text-dj-accent-1" />
+            )}
             <h2 className="font-display text-base font-semibold text-dj-texte">{fichier.nom_fichier}</h2>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
-            {fichier.url_publique && (
+            {fichier.url_publique && estLien && (
+              <a
+                href={fichier.url_publique}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+              >
+                <ExternalLink size={13} /> Ouvrir le site
+              </a>
+            )}
+            {fichier.url_publique && !estLien && (
               <BoutonTelechargerFichier url={fichier.url_publique} nom={fichier.nom_fichier} />
             )}
             <ButtonPartager lien={lienPartage("fichier-perso", fichier.id)} titre={fichier.nom_fichier} />
@@ -104,6 +123,12 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
         </div>
 
         {fichier.description && <TexteAvecLiens texte={fichier.description} className="mt-2 text-sm text-dj-texte-muet" />}
+
+        {estLien && fichier.url_publique && (
+          <div className="mt-3">
+            <LinkPreview href={fichier.url_publique} texteLien={fichier.nom_fichier} />
+          </div>
+        )}
 
         <div className="mt-4">
           <SuggestionCompte texte="Crée un compte Clovis pour retrouver tes propres documents." />

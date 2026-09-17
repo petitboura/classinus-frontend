@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Folder, FileText } from "lucide-react";
+import { Folder, FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
@@ -130,7 +130,11 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
                     href={`/bibliotheque/perso/${fichier.id}`}
                     className="flex items-center gap-2.5 px-5 py-3 transition-colors duration-200 ease-cgpt-doux hover:bg-dj-surface-haute"
                   >
-                    <FileText size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                    {fichier.type_mime === "text/uri-list" ? (
+                      <IconLien size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                    ) : (
+                      <FileText size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                    )}
                     <div className="min-w-0">
                       <p className="truncate text-sm text-dj-texte">{fichier.nom_fichier}</p>
                       {fichier.description && (
