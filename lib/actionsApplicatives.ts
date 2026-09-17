@@ -30,6 +30,13 @@ export type ActionDeclaree = {
   continuerEnArrierePlan: boolean;
   actif: boolean;
   executer: () => void | Promise<void>;
+  // Ajout chantier G (16/09/2026) : optionnel -- permet au curseur
+  // virtuel (chantier B) de se déplacer réellement vers l'élément avant
+  // exécution (chantier C) ou pour un simple pointage sans clic
+  // (chantier G, mode guidage). Une fonction plutôt qu'une référence
+  // figée : l'élément DOM réel peut changer entre deux rendus (ex:
+  // liste réordonnée), on veut toujours le lire au moment de l'appel.
+  obtenirElement?: () => HTMLElement | null;
 };
 
 export type ActionDisponible = Pick<
@@ -99,6 +106,22 @@ export function obtenirActionsDisponibles(): ActionDisponible[] {
  */
 export function obtenirAction(id: string): ActionDeclaree | undefined {
   return registre.get(id);
+}
+
+/**
+ * Chantier G (et réutilisé par le chantier C) : position actuelle de
+ * l'élément de l'action `id`, si elle en a déclaré une -- jamais
+ * mémorisée, toujours relue au moment de l'appel (l'élément DOM réel
+ * peut avoir changé depuis la déclaration). Renvoie null si l'action
+ * n'existe pas, n'est pas active, ou n'a déclaré aucun élément (cas
+ * normal pour une action sans intérêt visuel de pointage) -- jamais une
+ * erreur : l'absence d'élément ne doit jamais bloquer l'exécution
+ * elle-même, seulement l'animation du curseur avant.
+ */
+export function obtenirElementAction(id: string): HTMLElement | null {
+  const action = registre.get(id);
+  if (!action || !action.actif || !action.obtenirElement) return null;
+  return action.obtenirElement();
 }
 
 /**

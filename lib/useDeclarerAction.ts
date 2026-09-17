@@ -12,6 +12,11 @@ type OptionsDeclarerAction = {
   sensible?: boolean;
   continuerEnArrierePlan?: boolean;
   executer: () => void | Promise<void>;
+  // Ajout chantier G (16/09/2026) : ref React classique posée sur
+  // l'élément DOM concerné (ex: <button ref={ref}>). Optionnelle --
+  // permet au curseur virtuel de s'y déplacer avant exécution ou pour
+  // un simple pointage (mode guidage), sans effet si omise.
+  ref?: React.RefObject<HTMLElement | null>;
 };
 
 /**
@@ -31,7 +36,7 @@ export function useDeclarerAction(options: OptionsDeclarerAction): void {
   const executerRef = useRef(options.executer);
   executerRef.current = options.executer;
 
-  const { id, description, actif, sensible = true, continuerEnArrierePlan = false } = options;
+  const { id, description, actif, sensible = true, continuerEnArrierePlan = false, ref } = options;
 
   useEffect(() => {
     declarerAction({
@@ -41,8 +46,9 @@ export function useDeclarerAction(options: OptionsDeclarerAction): void {
       sensible,
       continuerEnArrierePlan,
       executer: () => executerRef.current(),
+      obtenirElement: ref ? () => ref.current : undefined,
     });
     return () => retirerAction(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, description, actif, sensible, continuerEnArrierePlan]);
+  }, [id, description, actif, sensible, continuerEnArrierePlan, ref]);
 }

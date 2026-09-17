@@ -31,9 +31,19 @@
 // TOUJOURS demandee, sans exception. Deplace aussi le curseur virtuel
 // (chantier B) avant le clic reel, via le pont
 // lib/contexteCurseurVirtuel.tsx.
+//
+// Ajout chantier G (16/09/2026, demande Bourama) : mode guidage --
+// quatrieme forme de message recue, {"id", "montrer_action_id"} :
+// deplace uniquement le curseur vers l'element d'une action DEJA
+// declaree (chantier A), sans jamais l'executer. Reutilise le meme
+// mecanisme de reference d'element (ActionDeclaree.obtenirElement,
+// pose via la nouvelle option `ref` de useDeclarerAction) desormais
+// aussi utilise par traiterDemandeAction (chantier C) pour deplacer
+// le curseur avant une VRAIE execution, quand l'action a declare une
+// ref -- retrocompatible si elle n'en a pas.
 
 import { supabase } from "./supabase";
-import { obtenirAction, obtenirActionsDisponibles, ecouterActionsModifiees } from "./actionsApplicatives";
+import { obtenirAction, obtenirActionsDisponibles, obtenirElementAction, ecouterActionsModifiees } from "./actionsApplicatives";
 import { demanderConfirmationDepuisAgent } from "./contexteConfirmationAction";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { estVisibleEtActif, resoudreElementCliquable } from "./clicGenerique";
@@ -107,6 +117,16 @@ async function traiterDemandeAction(id: string, actionId: string) {
   }
 
   try {
+    // Amélioration du 16/09/2026 (demande Bourama : finir le chantier) :
+    // déplace le curseur virtuel vers l'élément réel de l'action avant
+    // de l'exécuter, si un élément a été déclaré (voir ref dans
+    // useDeclarerAction) -- sans effet, ni blocage, si aucun élément
+    // n'a été fourni (rétrocompatible avec les actions déjà déclarées
+    // sans ref).
+    const element = obtenirElementAction(actionId);
+    if (element) {
+      await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
+    }
     await action.executer();
     envoyerReponse(id, { succes: true });
   } catch (e) {
@@ -165,13 +185,48 @@ async function traiterDemandeClicGenerique(id: string, selecteur: string, descri
   }
 }
 
+/**
+ * Chantier G (mode guidage, 16/09/2026, demande Bourama : finir ce
+ * chantier). Déplace simplement le curseur virtuel vers l'élément de
+ * l'action `actionId`, SANS l'exécuter -- pour que Clovis puisse
+ * montrer où se trouve une nouveauté en l'expliquant dans le chat,
+ * sans agir à la place de l'étudiant. Jamais de confirmation ici : un
+ * simple pointage visuel n'a aucun effet sur les données de l'étudiant.
+ */
+async function traiterDemandeMontrer(id: string, actionId: string) {
+  const action = obtenirAction(actionId);
+  if (!action || !action.actif) {
+    envoyerReponse(id, { ignore: true });
+    return;
+  }
+
+  const element = obtenirElementAction(actionId);
+  if (!element) {
+    envoyerReponse(id, {
+      erreur: "Cette action n'a pas de position associée à l'écran pour le pointage (aucune ref déclarée).",
+    });
+    return;
+  }
+
+  await deplacerCurseurDepuisAgent(element, { cliquer: false, forme: "main" });
+  envoyerReponse(id, { succes: true });
+}
+
 function traiterMessage(message: unknown) {
   if (!message || typeof message !== "object") return;
-  const m = message as { id?: string; action_id?: string; selecteur_generique?: string; description?: string };
+  const m = message as {
+    id?: string;
+    action_id?: string;
+    selecteur_generique?: string;
+    description?: string;
+    montrer_action_id?: string;
+  };
   if (m.id && m.action_id) {
     traiterDemandeAction(m.id, m.action_id);
   } else if (m.id && m.selecteur_generique) {
     traiterDemandeClicGenerique(m.id, m.selecteur_generique, m.description ?? "une action dans l'application");
+  } else if (m.id && m.montrer_action_id) {
+    traiterDemandeMontrer(m.id, m.montrer_action_id);
   }
 }
 
