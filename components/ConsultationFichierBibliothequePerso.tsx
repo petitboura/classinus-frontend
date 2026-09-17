@@ -5,8 +5,8 @@ import { FileText } from "lucide-react";
 import { BoutonTelechargerFichier } from "@/components/BoutonTelechargerFichier";
 import { SectionPage } from "@/components/SectionPage";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
-import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
+import { SuggestionCompte } from "@/components/SuggestionCompte";
 import { Skeleton } from "@/components/Skeleton";
 import { obtenirFichierBibliothequeConsultation, type FichierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
@@ -14,9 +14,16 @@ import { ErreurApi, messageErreur } from "@/lib/erreurs";
 /**
  * 11/09/2026, demande Bourama : lien de partage direct pour un fichier
  * PERSO, lecture seule, même affichage que la version publique
- * (app/(app)/bibliotheque/[id]/page.tsx), compte obligatoire pour
- * consulter (contrairement à la version publique, indexable/ouverte à
- * tous). Aucune action automatique : n'ajoute rien chez qui consulte.
+ * (app/(app)/bibliotheque/[id]/page.tsx). Aucune action automatique :
+ * n'ajoute rien chez qui consulte.
+ *
+ * 17/09/2026, changement d'avis de Bourama : compte non obligatoire pour
+ * consulter (l'ancien blocage dur via CTACompteRequis contredisait la
+ * demande initiale, mal comprise comme "obligation" -- voir
+ * api/bibliotheque_utilisateur.py::consulter côté backend, passé à
+ * utilisateur_optionnel). Même traitement que la bibliothèque publique :
+ * le document reste visible sans compte, seule une SuggestionCompte
+ * discrète (fermable) invite à s'inscrire.
  *
  * Extrait en composant client séparé de sa page (voir
  * app/(app)/bibliotheque/perso/[id]/page.tsx) : sous build:capacitor
@@ -33,7 +40,6 @@ import { ErreurApi, messageErreur } from "@/lib/erreurs";
 // (ButtonPartager) est ajouté, comme sur les pages publiques.
 export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
   const [fichier, setFichier] = useState<FichierBibliothequeConsultation | null | undefined>(undefined);
-  const [sansCompte, setSansCompte] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,23 +50,13 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
     obtenirFichierBibliothequeConsultation(id)
       .then(setFichier)
       .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) {
-          setSansCompte(true);
-        } else if (e instanceof ErreurApi && e.statusCode === 404) {
+        if (e instanceof ErreurApi && e.statusCode === 404) {
           setFichier(null);
         } else {
           setErreur(messageErreur(e));
         }
       });
   }, [id]);
-
-  if (sansCompte) {
-    return (
-      <SectionPage title="Document partagé" retour="/bibliotheque">
-        <CTACompteRequis texte="Crée un compte pour consulter ce document." />
-      </SectionPage>
-    );
-  }
 
   if (erreur) {
     return (
@@ -107,6 +103,10 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
         </div>
 
         {fichier.description && <p className="mt-2 text-sm text-dj-texte-muet">{fichier.description}</p>}
+
+        <div className="mt-4">
+          <SuggestionCompte texte="Crée un compte Clovis pour retrouver tes propres documents." />
+        </div>
       </section>
 
       {estPdf && fichier.url_publique && (
