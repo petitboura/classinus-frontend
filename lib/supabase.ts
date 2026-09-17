@@ -50,6 +50,11 @@ if (typeof window !== "undefined") {
   import("./canalTempsReel").then(({ initialiserCanalTempsReel }) => {
     initialiserCanalTempsReel();
   });
+  // Chantier agent applicatif (16/09/2026), chantier C : canal SEPARE
+  // (decision Bourama 0.1), meme cycle de vie que ci-dessus.
+  import("./canalAgentApplicatif").then(({ initialiserCanalAgentApplicatif }) => {
+    initialiserCanalAgentApplicatif();
+  });
 }
 
 // Ajouté le 25/08/2026, Bourama : Lot 3B (fusion Capacitor) -- transmet le

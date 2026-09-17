@@ -53,6 +53,7 @@ import { OngletsSegment } from "./OngletsSegment";
 import { useInfoSection } from "./SectionPage";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { MenuActionsCarte } from "./MenuActionsCarte";
+import { useDeclarerAction } from "@/lib/useDeclarerAction";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
 import { SelecteurCodesPartage } from "./SelecteurCodesPartage";
@@ -232,6 +233,11 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
 
   const [nouveauNomDossier, setNouveauNomDossier] = useState("");
   const [creationDossierOuverte, setCreationDossierOuverte] = useState(false);
+  // Chantier agent applicatif, POC : refs posées sur les deux boutons
+  // déclarés plus bas, pour que le curseur virtuel (chantier B) puisse
+  // s'y déplacer réellement avant que Clovis clique.
+  const refBoutonAjouter = useRef<HTMLButtonElement | null>(null);
+  const refBoutonNouveauDossier = useRef<HTMLButtonElement | null>(null);
   const [dossierEnRenommage, setDossierEnRenommage] = useState<string | null>(null);
   const [fichierARanger, setFichierARanger] = useState<FichierBiblio | null>(null);
   // 25/08/2026, demande Bourama : depuis l'INTÉRIEUR d'un dossier
@@ -511,6 +517,36 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
     .filter((d) => selectionMultiple.selection.has(d.id))
     .map((d) => d.id);
   const fichiersSelectionnes = (fichiersAffiches ?? []).filter((f) => selectionMultiple.selection.has(f.id));
+
+  // Chantier agent applicatif, POC (16/09/2026, demande Bourama : la
+  // bibliothèque est la première section réellement câblée). Deux
+  // actions volontairement sans effet destructeur pour ce premier
+  // câblage réel : ouvrir un menu, ouvrir un formulaire vide -- rien
+  // n'est créé ni supprimé tant que l'étudiant (ou Clovis) n'a pas
+  // rempli et confirmé quoi que ce soit ensuite. Non sensibles
+  // (sensible: false) : simples ouvertures de menu/formulaire, sans
+  // aucun effet sur les données de l'étudiant.
+  useDeclarerAction({
+    id: "bibliotheque_ouvrir_menu_ajout",
+    description: "Ouvrir le menu d'ajout de la bibliothèque (Importer / Texte / Lien / Nouveau dossier)",
+    actif: !selectionMultiple.actif && !menuAjoutOuvert,
+    sensible: false,
+    executer: () => setMenuAjoutOuvert(true),
+    ref: refBoutonAjouter,
+  });
+  useDeclarerAction({
+    id: "bibliotheque_ouvrir_creation_dossier",
+    description: "Ouvrir le formulaire de création d'un nouveau dossier dans la bibliothèque",
+    // Seulement disponible une fois le menu ouvert (comme pour
+    // l'étudiant lui même) -- jamais annoncée comme possible avant.
+    actif: menuAjoutOuvert && !creationDossierOuverte,
+    sensible: false,
+    executer: () => {
+      setMenuAjoutOuvert(false);
+      setCreationDossierOuverte(true);
+    },
+    ref: refBoutonNouveauDossier,
+  });
 
   // 25/08/2026, demande Bourama ("le dossier est juste là et point") :
 // tant qu'on est DANS un dossier, un ajout (fichier, texte, lien) doit y
@@ -1194,6 +1230,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
               flottant pour toute la Bibliothèque privée, pas un deuxième
               à côté qui ferait presque la même chose. */}
           <button
+            ref={refBoutonNouveauDossier}
             onClick={() => {
               setCreationDossierOuverte(true);
               setMenuAjoutOuvert(false);
@@ -1279,6 +1316,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
       )}
       {!selectionMultiple.actif && (
       <button
+        ref={refBoutonAjouter}
         onClick={() => setMenuAjoutOuvert((v) => !v)}
         aria-label={menuAjoutOuvert ? "Fermer le menu d'ajout" : "Ajouter"}
         className="fixed bottom-[calc(5rem+var(--cap-native-navigation-bottom,0px)+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
