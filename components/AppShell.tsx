@@ -21,7 +21,7 @@ import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
-import { ContexteCurseurVirtuel, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
+import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { ConfirmationActionAgentModal } from "@/components/ConfirmationActionAgentModal";
 import {
   ContexteConfirmationAction,
@@ -84,6 +84,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     enregistrerDemandeurConfirmation(confirmationActionValeur.demanderConfirmation);
   }, [confirmationActionValeur.demanderConfirmation]);
+  // Chantier F : même principe, pour que lib/canalAgentApplicatif.ts
+  // puisse déplacer le curseur virtuel avant un clic générique.
+  useEffect(() => {
+    enregistrerDeplacementCurseur(curseurVirtuelValeur.deplacerVers);
+  }, [curseurVirtuelValeur.deplacerVers]);
   // Le catalogue "Pourquoi Clovis ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
   // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui

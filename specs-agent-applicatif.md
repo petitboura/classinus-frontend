@@ -2,6 +2,8 @@
 
 Rédigé le 15/09/2026, après audit réel de `clovis-frontend` et `clovis-backend`. Ce fichier est fait pour être repris par une ou plusieurs IA en parallèle, chacune sur une branche dédiée à son chantier.
 
+**Avancement (16/09/2026)** : chantiers A, B, C, D, E, F posés sur la branche `chantier-agent-applicatif` (frontend + backend). Reste : chantier G (mode guidage), le POC limité à une section décidé en section 6 (encore à câbler dans une vraie section de l'appli), et la vérification visuelle réelle sur les trois plateformes (personne n'a encore ouvert l'appli avec ce code).
+
 ## 1. Décisions déjà actées avec Bourama (ne pas re-discuter)
 
 - Périmètre : Clovis peut voir l'état de l'appli et agir (cliquer, naviguer) comme l'utilisateur, mais uniquement à l'intérieur de l'appli Clovis elle même, jamais sur le reste du PC ou du téléphone.

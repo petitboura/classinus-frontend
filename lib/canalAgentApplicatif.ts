@@ -12,10 +12,31 @@
 // montee ICI, on repond {"ignore": true} pour laisser une chance a une
 // AUTRE connexion du meme compte (autre onglet/appareil) de repondre
 // reellement, plutot que de faire echouer la demande a tort.
+//
+// Ajout chantier D (16/09/2026) : poussee continue de l'etat des
+// actions disponibles, dans l'autre sens (frontend -> backend), sur ce
+// meme canal separe. Envoyee une fois a l'ouverture du canal, puis a
+// chaque fois que ecouterActionsModifiees (lib/actionsApplicatives.ts)
+// signale un changement -- jamais sur un evenement DOM brut, uniquement
+// sur mount/demontage/activation d'une action DECLAREE (meme
+// granularite que decidee avec Bourama pour eviter le bruit). Un court
+// debounce evite une rafale de messages quand plusieurs actions se
+// (dé)montent dans le meme cycle de rendu.
+//
+// Ajout chantier F (16/09/2026) : meme canal, troisieme forme de
+// message recue -- {"id", "selecteur_generique", "description"} --
+// pour le mode generique de secours (DOM + selecteur), pour tout ce qui
+// n'a pas encore d'action declaree via le chantier A. Aucune
+// metadonnee de sensibilite possible ici : la confirmation est
+// TOUJOURS demandee, sans exception. Deplace aussi le curseur virtuel
+// (chantier B) avant le clic reel, via le pont
+// lib/contexteCurseurVirtuel.tsx.
 
 import { supabase } from "./supabase";
-import { obtenirAction } from "./actionsApplicatives";
+import { obtenirAction, obtenirActionsDisponibles, ecouterActionsModifiees } from "./actionsApplicatives";
 import { demanderConfirmationDepuisAgent } from "./contexteConfirmationAction";
+import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
+import { estVisibleEtActif, resoudreElementCliquable } from "./clicGenerique";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -36,6 +57,27 @@ function urlWebSocket(token: string): string | null {
 function envoyerReponse(id: string, resultat: unknown) {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
   socket.send(JSON.stringify({ id, resultat }));
+}
+
+let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
+
+function envoyerEtatActionsMaintenant() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({ etat_actions: obtenirActionsDisponibles() }));
+}
+
+/**
+ * Poussee chantier D : un court debounce (200ms) evite d'envoyer un
+ * message par action quand plusieurs se (dé)montent dans le meme cycle
+ * de rendu (ex: changement de page qui démonte 5 boutons d'un coup),
+ * sans introduire de latence perceptible pour Clovis.
+ */
+function envoyerEtatActions() {
+  if (debounceEtatActions) clearTimeout(debounceEtatActions);
+  debounceEtatActions = setTimeout(() => {
+    debounceEtatActions = null;
+    envoyerEtatActionsMaintenant();
+  }, 200);
 }
 
 async function traiterDemandeAction(id: string, actionId: string) {
@@ -72,11 +114,64 @@ async function traiterDemandeAction(id: string, actionId: string) {
   }
 }
 
+/**
+ * Chantier F : mode générique de secours. Contrairement à
+ * traiterDemandeAction, aucune métadonnée de sensibilité n'existe ici
+ * -- la confirmation est donc TOUJOURS demandée, sans exception (défaut
+ * prudent, décision Bourama).
+ */
+async function traiterDemandeClicGenerique(id: string, selecteur: string, description: string) {
+  const element = resoudreElementCliquable(selecteur);
+
+  // Introuvable OU trouvé mais indisponible ICI : "ignore" dans les
+  // deux cas -- laisse une chance à une autre connexion du même compte
+  // (même principe que traiterDemandeAction), plutôt que de conclure à
+  // tort que l'élément n'existe nulle part.
+  if (!element) {
+    envoyerReponse(id, { ignore: true });
+    return;
+  }
+
+  const accepte = await demanderConfirmationDepuisAgent(description);
+  if (!accepte) {
+    envoyerReponse(id, { refuse: true });
+    return;
+  }
+
+  // Revalidation juste avant le clic reel : l'ecran a pu changer
+  // pendant que l'etudiant repondait a la fenetre de confirmation.
+  const elementRevalide = resoudreElementCliquable(selecteur);
+  if (!elementRevalide) {
+    envoyerReponse(id, { erreur: "L'élément n'est plus disponible à l'écran (l'écran a changé)." });
+    return;
+  }
+
+  elementRevalide.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+  await deplacerCurseurDepuisAgent(elementRevalide, { cliquer: true, forme: "main" });
+
+  // Toute dernière vérification, juste avant le clic physique -- le
+  // défilement ou l'animation du curseur pourrait, en théorie, avoir
+  // fait disparaître l'élément entre temps.
+  if (!document.body.contains(elementRevalide) || !estVisibleEtActif(elementRevalide)) {
+    envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
+    return;
+  }
+
+  try {
+    elementRevalide.click();
+    envoyerReponse(id, { succes: true });
+  } catch (e) {
+    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors du clic." });
+  }
+}
+
 function traiterMessage(message: unknown) {
   if (!message || typeof message !== "object") return;
-  const m = message as { id?: string; action_id?: string };
+  const m = message as { id?: string; action_id?: string; selecteur_generique?: string; description?: string };
   if (m.id && m.action_id) {
     traiterDemandeAction(m.id, m.action_id);
+  } else if (m.id && m.selecteur_generique) {
+    traiterDemandeClicGenerique(m.id, m.selecteur_generique, m.description ?? "une action dans l'application");
   }
 }
 
@@ -104,6 +199,13 @@ async function ouvrirCanal() {
 
   fermetureVoulue = false;
   const ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    // Etat initial des actions disponibles pour CETTE connexion, sans
+    // attendre un changement (chantier D) -- sinon le backend n'a rien
+    // tant qu'aucune action ne se (dé)monte apres l'ouverture.
+    envoyerEtatActionsMaintenant();
+  };
 
   ws.onmessage = (evenement) => {
     try {
@@ -159,6 +261,11 @@ export function initialiserCanalAgentApplicatif() {
       fermerCanal();
     }
   });
+
+  // Chantier D : a chaque (dé)montage/changement d'une action déclarée
+  // (lib/actionsApplicatives.ts), pousse l'état à jour au backend --
+  // sans attendre le tour de conversation suivant.
+  ecouterActionsModifiees(envoyerEtatActions);
 
   ouvrirCanal();
 }

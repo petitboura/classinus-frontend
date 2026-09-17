@@ -58,6 +58,31 @@ export function useCurseurVirtuelAgent(): ValeurCurseurVirtuel {
   return contexte;
 }
 
+// Pont vers lib/canalAgentApplicatif.ts (chantiers C et F), qui n'est
+// pas un composant React et ne peut donc pas appeler
+// useCurseurVirtuelAgent() directement -- même principe que
+// enregistrerDemandeurConfirmation dans lib/contexteConfirmationAction.tsx.
+// AppShell.tsx enregistre la vraie fonction dès que le Provider est
+// monté.
+let deplacementGlobal: ValeurCurseurVirtuel["deplacerVers"] | null = null;
+
+export function enregistrerDeplacementCurseur(fn: ValeurCurseurVirtuel["deplacerVers"]) {
+  deplacementGlobal = fn;
+}
+
+/**
+ * Si aucun Provider n'est encore monté (cas très rare), résout
+ * immédiatement sans animer -- l'absence de curseur visible ne doit
+ * jamais bloquer l'exécution réelle de l'action.
+ */
+export function deplacerCurseurDepuisAgent(
+  cible: PointEcran | HTMLElement,
+  options?: { cliquer?: boolean; forme?: FormeCurseur }
+): Promise<void> {
+  if (!deplacementGlobal) return Promise.resolve();
+  return deplacementGlobal(cible, options);
+}
+
 function resoudrePoint(cible: PointEcran | HTMLElement): PointEcran {
   if (cible instanceof HTMLElement) {
     const rect = cible.getBoundingClientRect();
