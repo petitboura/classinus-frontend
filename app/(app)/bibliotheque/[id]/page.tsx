@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { ActionsFichierPublic } from "@/components/ActionsFichierPublic";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
+import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { obtenirEntreeBibliothequePublique, type EntreeBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
 
@@ -117,7 +118,7 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
           </div>
         </div>
 
-        {entree.description && <p className="mt-2 text-sm text-dj-texte-muet">{entree.description}</p>}
+        {entree.description && <TexteAvecLiens texte={entree.description} className="mt-2 text-sm text-dj-texte-muet" />}
 
         <div className="mt-4">
           <ActionsFichierPublic

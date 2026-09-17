@@ -7,6 +7,7 @@ import { SectionPage } from "@/components/SectionPage";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
 import { SuggestionCompte } from "@/components/SuggestionCompte";
+import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { Skeleton } from "@/components/Skeleton";
 import { obtenirFichierBibliothequeConsultation, type FichierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
@@ -102,7 +103,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
           </div>
         </div>
 
-        {fichier.description && <p className="mt-2 text-sm text-dj-texte-muet">{fichier.description}</p>}
+        {fichier.description && <TexteAvecLiens texte={fichier.description} className="mt-2 text-sm text-dj-texte-muet" />}
 
         <div className="mt-4">
           <SuggestionCompte texte="Crée un compte Clovis pour retrouver tes propres documents." />
