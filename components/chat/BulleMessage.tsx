@@ -25,7 +25,7 @@ import { ImageMessage } from "./ImageMessage";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TableauMessage } from "./TableauMessage";
 import { FichierChip, extensionFichier } from "./FichierChip";
-import { FichierCode, extensionCode } from "./FichierCode";
+import { FichierCode, estFichierCodeAffichable } from "./FichierCode";
 import { LecteurMedia, typeMedia } from "./LecteurMedia";
 import { NoteTexteChip, estNoteTexteBibliotheque } from "./NoteTexteChip";
 import { LinkPreview } from "./LinkPreview";
@@ -780,7 +780,7 @@ function BulleMessageInterne({
             if (estNoteTexteBibliotheque(href)) {
               return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
             }
-            if (extensionCode(href)) {
+            if (estFichierCodeAffichable(href)) {
               return <FichierCode href={href} nom={texteBrut(children) || href} />;
             }
             if (extensionFichier(href)) {

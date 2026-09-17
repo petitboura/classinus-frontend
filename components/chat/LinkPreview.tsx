@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Play, X } from "lucide-react";
 import { Skeleton } from "../Skeleton";
+import { API_URL } from "@/lib/api";
 
 // Aperçu de lien dans le chat -- demande de Bourama (2026-07-20) : "n'importe
 // quel lien génère un aperçu... comme dans n'importe quelle plateforme"
@@ -14,9 +15,19 @@ import { Skeleton } from "../Skeleton";
 //   - YouTube : l'oEmbed public (https://www.youtube.com/oembed) renvoie
 //     déjà les en-têtes CORS nécessaires pour un fetch() direct côté
 //     client -- pas besoin de passer par notre route serveur pour ce cas.
-//   - Générique : passe par /api/apercu-lien (voir ce fichier) qui
-//     récupère les balises Open Graph côté serveur (CORS bloquerait un
-//     fetch direct pour la quasi-totalité des sites).
+//   - Générique : passe par GET {API_URL}/api/apercu-lien (backend
+//     FastAPI, voir api/apercu_lien.py côté clovis-backend) qui récupère
+//     les balises Open Graph côté serveur (CORS bloquerait un fetch
+//     direct pour la quasi-totalité des sites).
+//
+// 17/09/2026, CORRECTIF Bourama ("beaucoup d'aperçus ne marchent plus du
+// tout") : cet appel visait jusqu'ici `/api/apercu-lien` en RELATIF (même
+// origine que le frontend Next.js) -- une route qui n'a en fait jamais
+// existé dans ce dépôt (copiée depuis djiguigne-frontend le 08/08 sans
+// son fichier de route). Tout lien non-YouTube échouait donc
+// silencieusement. Pointe désormais vers le backend FastAPI (comme tout
+// le reste du dynamique de l'app), qui répond {} sans erreur HTTP quand
+// aucune métadonnée n'est trouvée -- traité ci-dessous comme un échec.
 //
 // Repli : si aucune métadonnée n'est trouvée (site qui bloque, erreur
 // réseau, timeout...), on retombe sur un lien texte classique -- jamais de
@@ -92,9 +103,19 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       };
     }
 
-    fetch(`/api/apercu-lien?url=${encodeURIComponent(href)}`)
+    fetch(`${API_URL}/api/apercu-lien?url=${encodeURIComponent(href)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => !annule && setApercu(data))
+      .then((data) => {
+        if (annule) return;
+        // Le backend renvoie {} (200, pas d'erreur HTTP) quand aucune
+        // métadonnée n'est trouvée -- distinct d'une erreur réseau, mais
+        // même repli côté affichage : lien texte brut, jamais de carte vide.
+        if (!data?.titre && !data?.image) {
+          setEchec(true);
+        } else {
+          setApercu(data);
+        }
+      })
       .catch(() => !annule && setEchec(true))
       .finally(() => !annule && setCharge(true));
 

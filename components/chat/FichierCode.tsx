@@ -23,6 +23,33 @@ export function extensionCode(href: string): string | null {
   return ext && ext in LANGAGE_PAR_EXTENSION ? ext : null;
 }
 
+// 17/09/2026, demande Bourama ("un type de lien qui se transforme en
+// fichier html") : extensionCode() ci-dessus ne regarde QUE l'extension
+// dans l'URL, jamais son origine -- n'importe quel lien web externe se
+// terminant par .html (fréquent, beaucoup de sites l'utilisent encore),
+// .md, .py, etc. était donc affiché comme un fichier de code Clovis à
+// dérouler (markup brut, souvent illisible), au lieu d'un aperçu de site
+// normal. Restreint à notre propre stockage (comme estOrigineDeConfiance
+// dans FichierChip.tsx et estNoteTexteBibliotheque dans NoteTexteChip.tsx,
+// dupliqué volontairement ici -- convention du projet, pas de dépendance
+// croisée entre petits composants) : un vrai fichier de code généré par
+// Clovis vient toujours de ce stockage ; un lien externe, même en .html,
+// retombe désormais sur le comportement normal (LinkPreview) dans
+// BulleMessage.tsx.
+function estOrigineDeConfiance(href: string): boolean {
+  const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!urlSupabase) return false;
+  try {
+    return new URL(href).origin === new URL(urlSupabase).origin;
+  } catch {
+    return false;
+  }
+}
+
+export function estFichierCodeAffichable(href: string): boolean {
+  return extensionCode(href) !== null && estOrigineDeConfiance(href);
+}
+
 export function FichierCode({ href, nom }: { href: string; nom: string }) {
   const [contenu, setContenu] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
