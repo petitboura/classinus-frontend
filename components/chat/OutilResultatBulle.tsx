@@ -143,25 +143,32 @@ export function OutilResultatBulle({
             jamais de mesure JS ni de délai) dès qu'une rangée suivante
             existe -- peu importe l'état des deux rangées qu'elle relie
             (terminé-terminé, terminé-en_cours, en_cours-en_cours). Sa
-            hauteur suit celle de la rangée (stretch flex), donc elle
-            rejoint toujours l'icône suivante sans calcul JS -- mais avec
-            un plancher `min-h` explicite (16/09, correction) : replié, le
-            contenu texte à droite est très court (juste le nom de
-            l'outil), donc sans ce plancher la ligne n'avait presque
-            aucune hauteur disponible et restait quasi invisible tant que
-            personne ne dépliait un résultat pour donner de la hauteur au
-            bloc. */}
+            hauteur suit celle de la rangée via stretch flex : depuis la
+            correction du 17/09 (voir pb-3 plus bas, déplacé dans le bloc
+            de contenu), l'espacement entre deux rangées fait
+            intégralement partie de ce stretch, donc la ligne rejoint
+            toujours l'icône suivante bout à bout, sans aucun vide.
+            min-h ici est juste un filet de sécurité si jamais le
+            contenu est encore plus court que prévu. */}
         {!estDerniere && (
-          <div className="mt-1.5 min-h-[18px] w-[2px] flex-1 origin-top animate-dj-ligne-trace bg-dj-bordure" />
+          <div className="mt-1 min-h-[6px] w-[2px] flex-1 origin-top animate-dj-ligne-trace bg-dj-bordure" />
         )}
       </div>
     );
 
     if (rangee.statut === "en_cours") {
       return (
-        <div key={rangee.cle} className="flex gap-2.5 pb-3 last:pb-0 animate-dj-fade-in-rapide">
+        <div key={rangee.cle} className="flex gap-2.5 animate-dj-fade-in-rapide">
           {colonneIcone}
-          <span className="pt-0.5 text-[13px] text-dj-texte-muet">{rangee.texte}</span>
+          {/* pb-3 ICI plutôt que sur la rangée entière (correction
+              17/09, signalé par Bourama capture à l'appui) : mis sur la
+              rangée, ce padding restait EN DEHORS du stretch flex entre
+              colonneIcone et ce bloc, donc la ligne (qui, elle, stretch
+              bien À L'INTÉRIEUR de colonneIcone) ne le couvrait jamais --
+              d'où le vide visible entre le bas de la ligne et l'icône
+              suivante. Ici, ce padding fait partie du bloc qui participe
+              au stretch, donc la ligne s'étire pour le couvrir aussi. */}
+          <span className={`pt-0.5 text-[13px] text-dj-texte-muet ${estDerniere ? "" : "pb-3"}`}>{rangee.texte}</span>
         </div>
       );
     }
@@ -171,9 +178,12 @@ export function OutilResultatBulle({
     const aDesSources = !!rangee.sources && rangee.sources.length > 0;
     const sourcesOuvert = !!sourcesOuvertes[index];
     return (
-      <div key={rangee.cle} className="flex gap-2.5 pb-3 last:pb-0 animate-dj-fade-in">
+      <div key={rangee.cle} className="flex gap-2.5 animate-dj-fade-in">
         {colonneIcone}
-        <div className="min-w-0 flex-1">
+        {/* Même correction que ci-dessus (17/09) : pb-3 déplacé ici,
+            dans le bloc qui stretch avec colonneIcone, plutôt que sur la
+            rangée entière. */}
+        <div className={`min-w-0 flex-1 ${estDerniere ? "" : "pb-3"}`}>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <button
               onClick={() => setOuverts((prec) => ({ ...prec, [index]: !ouvert }))}
