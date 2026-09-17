@@ -205,8 +205,15 @@ export function OutilResultatBulle({
           </div>
           {/* Galerie d'images (01/09) -- TOUJOURS visible, contrairement
               au résultat brut replié juste en dessous : voir
-              GalerieImagesBulle.tsx pour le raisonnement. */}
-          <GalerieImagesBulle images={rangee.images} />
+              GalerieImagesBulle.tsx pour le raisonnement. Rendue ici
+              seulement quand la rangée N'EST PAS dans un groupe (17/09,
+              correction Bourama) -- en groupe, ce bloc entier est
+              lui-même à l'intérieur du grid-rows-[0fr]/overflow-hidden
+              du groupe (voir plus bas), qui se replie automatiquement
+              après 3s : la galerie disparaissait avec lui, alors qu'elle
+              doit rester visible quoi qu'il arrive. Rendue séparément,
+              hors de ce repli, via galeriesExternes. */}
+          {!estGroupe && <GalerieImagesBulle images={rangee.images} />}
           <div
             className={`grid transition-[grid-template-rows] duration-300 ease-out ${
               ouvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
@@ -238,6 +245,16 @@ export function OutilResultatBulle({
     return <div className="my-1.5 flex max-w-[85%] flex-col">{elementsResultats}</div>;
   }
 
+  // Galeries des outils du groupe, rendues hors du bloc repliable
+  // juste en dessous (voir le commentaire plus haut, 17/09) -- toujours
+  // visibles, peu importe que le groupe soit ouvert, fermé, ou déjà
+  // replié automatiquement.
+  const galeriesExternes = (resultats ?? [])
+    .map((r, index) =>
+      r.images && r.images.length ? <GalerieImagesBulle key={`galerie-${index}`} images={r.images} /> : null,
+    )
+    .filter(Boolean);
+
   return (
     <div className="my-1.5 flex max-w-[85%] flex-col gap-1 animate-dj-fade-in">
       <button
@@ -263,6 +280,9 @@ export function OutilResultatBulle({
       >
         <div className="overflow-hidden flex flex-col">{elementsResultats}</div>
       </div>
+      {galeriesExternes.length > 0 && (
+        <div className="flex flex-col gap-1.5">{galeriesExternes}</div>
+      )}
     </div>
   );
 }
