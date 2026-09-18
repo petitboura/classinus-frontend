@@ -7,12 +7,12 @@
 // ici, le rendu de la fenêtre vit dans
 // components/ConfirmationActionAgentModal.tsx.
 //
-// Décision Bourama : la confirmation d'une action sensible se fait
-// TOUJOURS par une fenêtre avec un bouton, jamais par une question posée
-// en texte libre dans le chat. `demanderConfirmation` est le seul point
-// d'entrée pour ça -- les chantiers C (outil MCP) et F (mode générique)
-// l'appelleront avant d'exécuter toute action sensible ou non qualifiée
-// (sensible par défaut, voir lib/actionsApplicatives.ts).
+// Décision Bourama : la confirmation d'une action se fait TOUJOURS par
+// une fenêtre avec un bouton, jamais par une question posée en texte
+// libre dans le chat. `demanderConfirmation` est le seul point d'entrée
+// pour ça -- lib/canalAgentApplicatif.ts l'appelle avant d'exécuter tout
+// élément détecté par le scan générique (lib/scanElementsInteractifs.ts),
+// systématiquement sensible par défaut, sans exception.
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 
