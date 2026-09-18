@@ -493,6 +493,20 @@ export function BibliothequePublique() {
   const searchParams = useSearchParams();
   const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   const [liste, setListe] = useState<EntreeBibliothequePublique[] | undefined>(undefined);
+  // 19/09/2026, correctif Bourama ("le skeleton se recharge à chaque
+  // fois") : charger() (plus bas) remettait TOUJOURS `liste` à undefined
+  // avant de refaire la requête, y compris en rouvrant un dossier déjà
+  // visité dans la session -- le skeleton réapparaissait donc à chaque
+  // navigation, jamais seulement au tout premier chargement. Ce cache
+  // garde le dernier résultat par combinaison exacte (dossier + filtres +
+  // recherche, voir cleListeCourante) : s'il existe déjà, il s'affiche
+  // tout de suite (aucun skeleton), pendant qu'une requête fraîche part
+  // quand même en arrière-plan pour rester à jour -- même principe que le
+  // "rafraîchissement silencieux, jamais de nouveau skeleton" déjà en
+  // place juste au-dessus pour les dossiers (lib/contexteDossiersCatalogue
+  // Public.tsx). Vidé nulle part explicitement : vit seulement pour la
+  // durée du montage de ce composant, comme `liste` elle-même.
+  const cacheListeRef = useRef<Map<string, EntreeBibliothequePublique[]>>(new Map());
   // 09/09/2026 : dossiers + dossiers attachés viennent désormais d'un
   // contexte partagé, préchargé dès l'ouverture de l'app par AppShell.tsx
   // (voir lib/contexteDossiersCataloguePublic.tsx) -- ce composant n'en
@@ -851,11 +865,36 @@ export function BibliothequePublique() {
 
   // Recharge depuis le début (recherche/filtre/dossier changé, ou ajout/
   // suppression d'une entrée) -- réinitialise la pagination.
+  function cleListeCourante(q?: string) {
+    return JSON.stringify({
+      q: q ?? "",
+      dossierCourantId,
+      filtrePays,
+      filtreNiveau,
+      filtreCategorie,
+      filtreClasse,
+      filtreSpecialite,
+    });
+  }
+
   function charger(q?: string) {
     const idAppel = ++requeteListeRef.current;
-    setListe(undefined);
-    setDecalage(0);
-    setPlusDeResultats(true);
+    // Correctif 19/09/2026 (voir cacheListeRef plus haut) : un résultat
+    // déjà en cache pour cette combinaison exacte s'affiche tout de
+    // suite, sans passer par le skeleton -- la requête fraîche plus bas
+    // s'exécute quand même, pour ne jamais rester sur une version
+    // périmée.
+    const cle = cleListeCourante(q);
+    const enCache = cacheListeRef.current.get(cle);
+    if (enCache) {
+      setListe(enCache);
+      setDecalage(enCache.length);
+      setPlusDeResultats(enCache.length === TAILLE_PAGE_BIBLIO_PUBLIQUE);
+    } else {
+      setListe(undefined);
+      setDecalage(0);
+      setPlusDeResultats(true);
+    }
     listerBibliothequePublique(q, {
       pays: filtrePays,
       niveau: filtreNiveau,
@@ -868,14 +907,17 @@ export function BibliothequePublique() {
     })
       .then((resultat) => {
         if (requeteListeRef.current !== idAppel) return;
+        cacheListeRef.current.set(cle, resultat);
         setListe(resultat);
         setDecalage(resultat.length);
         setPlusDeResultats(resultat.length === TAILLE_PAGE_BIBLIO_PUBLIQUE);
       })
       .catch(() => {
         if (requeteListeRef.current !== idAppel) return;
-        setListe([]);
-        setPlusDeResultats(false);
+        if (!enCache) {
+          setListe([]);
+          setPlusDeResultats(false);
+        }
       });
   }
 
