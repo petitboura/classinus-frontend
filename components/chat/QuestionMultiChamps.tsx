@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type ChampSimple,
   type ValeurChamp,
@@ -8,6 +8,7 @@ import {
   valeurComplete,
   formaterReponseChampImbrique,
 } from "@/lib/questionRiche";
+import type { EntreeReponseGroupee } from "@/lib/questionsGroupees";
 import { ChampChoix } from "./ChampChoix";
 import { ChampTexte } from "./ChampTexte";
 import { ChampOuiNon } from "./ChampOuiNon";
@@ -23,20 +24,40 @@ import { ChampDate } from "./ChampDate";
 // sous-champ (voir formaterReponseChampImbrique, lib/questionRiche.ts) :
 // phrase du gabarit_reponse écrit par Clovis pour ce sous-champ si
 // présent, sinon "Question : réponse" en filet de sécurité.
+//
+// Mode groupé (18/09/2026, demande Bourama) : quand plusieurs questions sont
+// posées dans le même message, ce formulaire n'a plus son propre bouton
+// Valider. Il signale à chaque changement les lignes déjà répondues (un
+// champ laissé vide est simplement absent), et BulleMessage envoie tout
+// avec le bouton unique "Valider mes réponses".
 export function QuestionMultiChamps({
   champs,
   onReponse,
   desactive,
+  question,
+  modeGroupe = false,
+  onChangementGroupe,
 }: {
   champs: ChampSimple[];
   onReponse: (texteFinal: string) => void;
   desactive?: boolean;
+  question: string;
+  modeGroupe?: boolean;
+  onChangementGroupe?: (entree: EntreeReponseGroupee | null) => void;
 }) {
   const [valeurs, setValeurs] = useState<ValeurChamp[]>(() => champs.map(valeurInitiale));
 
   function majValeur(index: number, v: ValeurChamp) {
     setValeurs((prec) => prec.map((val, i) => (i === index ? v : val)));
   }
+
+  useEffect(() => {
+    if (!modeGroupe) return;
+    const lignes = champs
+      .map((champ, i) => (valeurComplete(champ, valeurs[i]) ? formaterReponseChampImbrique(champ, valeurs[i]) : ""))
+      .filter(Boolean);
+    onChangementGroupe?.({ question, texte: lignes.length > 0 ? lignes.join("\n") : null });
+  }, [valeurs, modeGroupe]);
 
   const toutComplet = champs.every((champ, i) => valeurComplete(champ, valeurs[i]));
 
@@ -120,14 +141,16 @@ export function QuestionMultiChamps({
         );
       })}
 
-      <button
-        type="button"
-        disabled={!toutComplet || desactive}
-        onClick={valider}
-        className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
-      >
-        Valider
-      </button>
+      {!modeGroupe && (
+        <button
+          type="button"
+          disabled={!toutComplet || desactive}
+          onClick={valider}
+          className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+        >
+          Valider
+        </button>
+      )}
     </div>
   );
 }

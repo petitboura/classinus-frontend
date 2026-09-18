@@ -19,6 +19,11 @@ import { IndicateurReflexion } from "@/components/IndicateurReflexion";
 import { SchemaGeometrique } from "./SchemaGeometrique";
 import { QCMInteractif } from "./QCMInteractif";
 import { QuestionInteractive } from "./QuestionInteractive";
+import {
+  compterBlocsQuestion,
+  composerReponsesGroupees,
+  type EntreeReponseGroupee,
+} from "@/lib/questionsGroupees";
 import { FicheRevision } from "./FicheRevision";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { ImageMessage } from "./ImageMessage";
@@ -583,6 +588,31 @@ function BulleMessageInterne({
   const conteneurRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useState<{ texte: string; x: number; y: number } | null>(null);
 
+  // Réponses groupées aux questions (18/09/2026, demande Bourama : quand
+  // l'IA pose plusieurs questions dans un même tour, chacune envoyait sa
+  // réponse toute seule et la première bloquait toutes les autres). Dès que
+  // le message contient au moins deux blocs question ET que l'envoi est
+  // branché (onRepondreQuestion), rien ne part au clic : chaque question
+  // mémorise sa réponse dans cette ref (pas un state, pour ne pas refaire
+  // tout le rendu à chaque lettre tapée) et le bouton "Valider mes
+  // réponses" en bas du message envoie tout en un seul message, répondu
+  // ou non. Voir lib/questionsGroupees.ts.
+  const reponsesGroupeesRef = useRef<Map<string, EntreeReponseGroupee>>(new Map());
+  const [reponsesGroupeesEnvoyees, setReponsesGroupeesEnvoyees] = useState(false);
+  const modeQuestionsGroupees = !estUtilisateur && !!onRepondreQuestion && compterBlocsQuestion(message.content) >= 2;
+
+  function enregistrerReponseGroupee(code: string, entree: EntreeReponseGroupee | null) {
+    if (entree) reponsesGroupeesRef.current.set(code, entree);
+    else reponsesGroupeesRef.current.delete(code);
+  }
+
+  function validerReponsesGroupees() {
+    const texte = composerReponsesGroupees(message.content, reponsesGroupeesRef.current);
+    if (!texte.trim()) return;
+    setReponsesGroupeesEnvoyees(true);
+    onRepondreQuestion?.(texte);
+  }
+
   function gererFinSelection() {
     if (!onExpliquerSelection || estUtilisateur) return;
     const sel = window.getSelection();
@@ -724,7 +754,9 @@ function BulleMessageInterne({
                   <QuestionInteractive
                     code={code}
                     onReponse={onRepondreQuestion}
-                    dejaRepondu={questionDejaRepondue}
+                    dejaRepondu={questionDejaRepondue || reponsesGroupeesEnvoyees}
+                    modeGroupe={modeQuestionsGroupees}
+                    onChangementGroupe={(entree) => enregistrerReponseGroupee(code, entree)}
                   />
                 );
               case "fiche":
@@ -1093,6 +1125,15 @@ function BulleMessageInterne({
                 rendreMarkdown(normaliserCitations(normaliserLatex(message.content)), !!estEnCoursDeGeneration)
               )}
             </div>
+            {modeQuestionsGroupees && !estEnCoursDeGeneration && !questionDejaRepondue && !reponsesGroupeesEnvoyees && (
+              <button
+                type="button"
+                onClick={validerReponsesGroupees}
+                className="mt-2 animate-dj-fade-in-rapide rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02]"
+              >
+                Valider mes réponses
+              </button>
+            )}
           </div>
         </div>
 
