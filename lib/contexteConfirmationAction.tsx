@@ -39,11 +39,6 @@ export function useConfirmationAction(): ValeurConfirmationAction {
 // directement -- même principe que enregistrerPluginDossiers dans
 // lib/canalTempsReel.ts. AppShell.tsx enregistre la vraie fonction dès
 // que le Provider est monté (voir useEffect dans AppShell.tsx).
-// Interrupteur central : false = confirmation désactivée, true = modal active.
-// Le système de confirmation, son contexte et sa fenêtre restent présents.
-// Pour réactiver la confirmation, passer simplement cette valeur à true.
-export const CONFIRMATION_ACTION_ACTIVE = false;
-
 let demandeurGlobal: ((description: string) => Promise<boolean>) | null = null;
 
 export function enregistrerDemandeurConfirmation(fn: (description: string) => Promise<boolean>) {
@@ -51,20 +46,19 @@ export function enregistrerDemandeurConfirmation(fn: (description: string) => Pr
 }
 
 /**
- * Point d'entrée unique utilisé par l'agent applicatif avant une exécution.
- * Quand la confirmation est désactivée, l'action est autorisée directement.
- * Quand elle est activée, le comportement existant (Provider + modal) reste
- * inchangé, y compris le refus sécurisé si le Provider n'est pas monté.
+ * Si aucun Provider n'est encore monté (cas très rare, ex. message reçu
+ * avant hydratation complète), refuse par défaut plutôt que d'exécuter
+ * une action sensible sans confirmation possible -- défaut prudent,
+ * cohérent avec "sensible par défaut" ailleurs dans ce chantier.
  */
 export function demanderConfirmationDepuisAgent(description: string): Promise<boolean> {
-  if (!CONFIRMATION_ACTION_ACTIVE) return Promise.resolve(true);
   if (!demandeurGlobal) return Promise.resolve(false);
   return demandeurGlobal(description);
 }
 
 export function useFournirConfirmationAction(): ValeurConfirmationAction {
   const [demandeEnCours, setDemandeEnCours] = useState<DemandeConfirmation | null>(null);
-  // Une seule demande à la fois quand la confirmation est active (décision implicite du plan : aucune
+  // Une seule demande à la fois (décision implicite du plan : aucune
   // mention d'empilement de confirmations) -- une nouvelle demande alors
   // qu'une autre est déjà affichée annule silencieusement la précédente
   // (refuse) plutôt que de les empiler ou de perdre la référence de
@@ -72,7 +66,6 @@ export function useFournirConfirmationAction(): ValeurConfirmationAction {
   const resolveRef = useRef<((accepte: boolean) => void) | null>(null);
 
   const demanderConfirmation = useCallback((description: string): Promise<boolean> => {
-    if (!CONFIRMATION_ACTION_ACTIVE) return Promise.resolve(true);
     if (resolveRef.current) {
       resolveRef.current(false);
       resolveRef.current = null;
