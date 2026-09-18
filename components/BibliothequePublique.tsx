@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Star,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -40,7 +40,6 @@ import {
   type ContenuDossierPublic,
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
-import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
@@ -55,6 +54,8 @@ import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { Skeleton } from "./Skeleton";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
+import { BoutonAvecIA } from "./BoutonAvecIA";
+import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { MenuActionsCarte } from "./MenuActionsCarte";
 import { StatistiquesContenuDossier } from "./StatistiquesContenuDossier";
 import { CaseACocher } from "./CaseACocher";
@@ -489,6 +490,7 @@ function typeDe(entree: EntreeBibliothequePublique): TypeBiblioPublique {
 // dans lib/api.ts, boucle séquentielle).
 export function BibliothequePublique() {
   const searchParams = useSearchParams();
+  const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   const [liste, setListe] = useState<EntreeBibliothequePublique[] | undefined>(undefined);
   // 09/09/2026 : dossiers + dossiers attachés viennent désormais d'un
   // contexte partagé, préchargé dès l'ouverture de l'app par AppShell.tsx
@@ -496,7 +498,7 @@ export function BibliothequePublique() {
   // est plus seul propriétaire, il ne fait plus que les lire et déclencher
   // un rafraîchissement (silencieux, jamais de nouveau skeleton) à son
   // propre montage et après ses propres actions.
-  const { dossiers, setDossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches } =
+  const { dossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches } =
     useDossiersCataloguePublic();
   const [attacheEnCours, setAttacheEnCours] = useState<string | null>(null);
   // Navigation par dossier avec fil d'ariane (corrigé 01/09/2026, bug
@@ -1191,6 +1193,17 @@ export function BibliothequePublique() {
   // que si un dossier est actuellement ouvert.
   function actionsPourEntree(entree: EntreeBibliothequePublique) {
     return [
+      {
+        cle: "discuter-ia",
+        label: "Discuter avec l'IA",
+        icone: <Sparkles size={14} />,
+        onClick: () =>
+          ouvrirChatAvecTexte(
+            `Je veux discuter du fichier id ${entree.id}. ` +
+              `Utilise l'outil gerer_document_bibliotheque (action "lire_catalogue_public") avec cet id pour voir de quoi il s'agit, ` +
+              `puis discutons-en ensemble.`
+          ),
+      },
       ...(entree.url_publique
         ? [
             {
@@ -1745,14 +1758,25 @@ export function BibliothequePublique() {
               dans le "+" flottant existant plus bas (menuAjoutOuvert), pas
               de deuxième "+" séparé. */}
           {dossierCourantId !== null && (
-            <button
-              onClick={() => setPileDossiers((p) => p.slice(0, -1))}
-              aria-label="Revenir au dossier précédent"
-              className="flex w-fit min-w-0 items-center gap-1 rounded-cgpt-bouton px-2 py-1 text-xs font-medium text-dj-texte transition-colors hover:text-dj-texte-muet"
-            >
-              <ChevronLeft size={14} className="flex-shrink-0" />
-              <span className="truncate">{dossierActuel?.nom}</span>
-            </button>
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={() => setPileDossiers((p) => p.slice(0, -1))}
+                aria-label="Revenir au dossier précédent"
+                className="flex min-w-0 items-center gap-1 rounded-cgpt-bouton px-2 py-1 text-xs font-medium text-dj-texte transition-colors hover:text-dj-texte-muet"
+              >
+                <ChevronLeft size={14} className="flex-shrink-0" />
+                <span className="truncate">{dossierActuel?.nom}</span>
+              </button>
+              <BoutonAvecIA
+                variante="icone"
+                libelle="Explorer avec l'IA"
+                texte={
+                  `Je veux explorer le dossier public id ${dossierCourantId}. ` +
+                  `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
+                  `puis discutons-en ensemble.`
+                }
+              />
+            </div>
           )}
 
           {dossierCourantId !== null && contenuDossierActuel && (
@@ -1913,17 +1937,6 @@ export function BibliothequePublique() {
                       garder collés à droite. Icône Download (au lieu de
                       FolderSync, jugée confuse) : "attacher" se lit
                       simplement comme "récupérer ce dossier chez moi". */}
-                  <BoutonEtoile
-                    typeElement="dossier"
-                    elementId={d.id}
-                    count={d.etoiles_count ?? 0}
-                    active={d.mon_etoile ?? false}
-                    onBascule={(etoile, etoilesCount) =>
-                      setDossiers((prev) =>
-                        prev?.map((x) => (x.id === d.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
-                      )
-                    }
-                  />
                   {selectionMultiple.actif ? (
                     <button
                       onClick={(e) => selectionMultiple.basculer(d.id, { shiftKey: e.shiftKey })}
@@ -1936,6 +1949,17 @@ export function BibliothequePublique() {
                   <MenuActionsCarte
                     ariaLabel={`Actions pour ${d.nom}`}
                     actions={[
+                      {
+                        cle: "discuter-ia",
+                        label: "Explorer avec l'IA",
+                        icone: <Sparkles size={14} />,
+                        onClick: () =>
+                          ouvrirChatAvecTexte(
+                            `Je veux explorer le dossier public id ${d.id}. ` +
+                              `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
+                              `puis discutons-en ensemble.`
+                          ),
+                      },
                       {
                         cle: "partager",
                         label: "Partager",
@@ -2133,17 +2157,6 @@ export function BibliothequePublique() {
                     )}
                   </div>
                 </button>
-                <BoutonEtoile
-                  typeElement="fichier"
-                  elementId={entree.id}
-                  count={entree.etoiles_count ?? 0}
-                  active={entree.mon_etoile ?? false}
-                  onBascule={(etoile, etoilesCount) =>
-                    setListe((prev) =>
-                      prev?.map((x) => (x.id === entree.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
-                    )
-                  }
-                />
                 {selectionMultiple.actif ? (
                   <button
                     onClick={(e) => selectionMultiple.basculer(entree.id, { shiftKey: e.shiftKey })}

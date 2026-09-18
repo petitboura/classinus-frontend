@@ -7,6 +7,7 @@ import { SectionPage } from "@/components/SectionPage";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
 import { LinkPreview } from "@/components/chat/LinkPreview";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
+import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 import { SuggestionCompte } from "@/components/SuggestionCompte";
 import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { Skeleton } from "@/components/Skeleton";
@@ -118,6 +119,14 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
             {fichier.url_publique && !estLien && (
               <BoutonTelechargerFichier url={fichier.url_publique} nom={fichier.nom_fichier} />
             )}
+            <BoutonAvecIA
+              libelle="Discuter avec l'IA"
+              texte={
+                `Je veux discuter du fichier id ${fichier.id}. ` +
+                `Utilise l'outil gerer_document_bibliotheque (action "lire_entier") avec cet id pour voir de quoi il s'agit, ` +
+                `puis discutons-en ensemble.`
+              }
+            />
             <ButtonPartager lien={lienPartage("fichier-perso", fichier.id)} titre={fichier.nom_fichier} />
           </div>
         </div>

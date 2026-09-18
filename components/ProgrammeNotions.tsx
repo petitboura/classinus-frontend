@@ -41,6 +41,7 @@ import { CTACompteRequis } from "./CTACompteRequis";
 import { BoutonInfoSection } from "./BoutonInfoSection";
 import { SelectPersonnalise, type OptionMenu } from "./SelectPersonnalise";
 import { PanneauFlottant } from "./PanneauFlottant";
+import { BoutonAvecIA } from "./BoutonAvecIA";
 
 /**
  * "Programme" (06/09/2026, Partie 2 du chantier "confiance pédagogique"
@@ -820,7 +821,14 @@ export function ProgrammeNotions() {
           entete={
             <div className="flex items-center justify-between gap-2">
               <h3 className="font-display text-sm font-semibold text-dj-texte">Modifier</h3>
-              <PastilleStatut statut={notionEnEdition.statut} onChange={(s) => changerStatut(notionEnEdition, s)} />
+              <div className="flex items-center gap-2">
+                <BoutonAvecIA
+                  variante="icone"
+                  libelle="Travailler avec l'IA"
+                  texte={`Je veux qu'on travaille la notion « ${notionEnEdition.nom} » ensemble.`}
+                />
+                <PastilleStatut statut={notionEnEdition.statut} onChange={(s) => changerStatut(notionEnEdition, s)} />
+              </div>
             </div>
           }
         >

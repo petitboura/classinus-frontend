@@ -15,6 +15,7 @@ import {
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CompteRequisModal } from "./CompteRequisModal";
+import { BoutonAvecIA } from "./BoutonAvecIA";
 
 /** Créé le 06/09/2026, Partie 9 (frontend) : profil d'un établissement +
  * ses publications validées (publiques pour tout le monde, privées en
@@ -93,7 +94,14 @@ export function EtablissementDetail({ etablissementId }: { etablissementId: stri
             <Building2 size={18} className="flex-shrink-0 text-dj-accent-1" />
             <h2 className="font-display text-base font-semibold text-dj-texte">{etablissement.nom}</h2>
           </div>
-          <ActionsRattachement etat={etat} enCours={enCours} onSuivre={() => agir("suivre")} onConnecter={() => agir("connecter")} />
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <BoutonAvecIA
+              variante="icone"
+              libelle="En savoir plus avec l'IA"
+              texte={`Je veux en savoir plus sur l'établissement « ${etablissement.nom} ».`}
+            />
+            <ActionsRattachement etat={etat} enCours={enCours} onSuivre={() => agir("suivre")} onConnecter={() => agir("connecter")} />
+          </div>
         </div>
 
         {etablissement.description && <p className="mt-2 text-sm text-dj-texte-muet">{etablissement.description}</p>}

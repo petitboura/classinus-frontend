@@ -24,6 +24,7 @@ import { OngletsSegment } from "./OngletsSegment";
 import { CaseACocher } from "./CaseACocher";
 import { BulleSurvol } from "./BulleSurvol";
 import { ButtonPartager, lienPartage } from "./ButtonPartager";
+import { BoutonAvecIA } from "./BoutonAvecIA";
 import { SelecteurCodesPartage } from "./SelecteurCodesPartage";
 
 // Même découpage que côté backend (core/comportements_etudiants.py) :
@@ -295,7 +296,18 @@ export function EditeurComportement({
             </BulleSurvol>
           )}
           {!estCreation && comportementActuel && (
-            <ButtonPartager lien={lienPartage("skill-perso", comportementActuel.id)} titre={comportementActuel.nom || undefined} variante="icone" />
+            <>
+              <BoutonAvecIA
+                variante="icone"
+                libelle="Utiliser avec l'IA"
+                texte={
+                  `Je veux utiliser le skill id ${comportementActuel.id}. ` +
+                  `Utilise l'outil gerer_comportement (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
+                  `puis discutons-en ensemble.`
+                }
+              />
+              <ButtonPartager lien={lienPartage("skill-perso", comportementActuel.id)} titre={comportementActuel.nom || undefined} variante="icone" />
+            </>
           )}
         </span>
         <button

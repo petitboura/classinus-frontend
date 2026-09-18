@@ -8,6 +8,7 @@ import { telechargerTexte, nomFichierDepuis } from "@/lib/telechargerTexte";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { SuggestionCompte } from "@/components/SuggestionCompte";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
+import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 
 // Client Component isolé (10/09/2026, Lot B "Clovis ouvert") : la page
 // /skills/[id] elle-même est un Server Component (pour generateMetadata),
@@ -72,6 +73,14 @@ export function ActionsSkillPublic({ skill }: { skill: ComportementPublic }) {
           <Download size={15} />
           Télécharger (.md)
         </button>
+        <BoutonAvecIA
+          libelle="Essayer avec l'IA"
+          texte={
+            `Je veux essayer le skill public id ${skill.id}. ` +
+            `Utilise l'outil gerer_comportement_public (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
+            `puis discutons-en ensemble.`
+          }
+        />
         <ButtonPartager lien={lienPartage("skill-public", skill.id)} titre={skill.nom} />
       </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}

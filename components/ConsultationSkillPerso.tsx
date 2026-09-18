@@ -8,6 +8,7 @@ import { ScrollText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
+import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 import { Skeleton } from "@/components/Skeleton";
 import { extraireCorpsSkill } from "@/components/VoirSkillRecuModal";
 import { obtenirComportementConsultation, type ComportementConsultation } from "@/lib/api";
@@ -99,7 +100,17 @@ export function ConsultationSkillPerso({ id }: { id: string }) {
             <ScrollText size={18} className="flex-shrink-0 text-dj-accent-1" />
             <h2 className="font-display text-base font-semibold text-dj-texte">{skill.nom}</h2>
           </div>
-          <ButtonPartager lien={lienPartage("skill-perso", id)} titre={skill.nom} />
+          <div className="flex items-center gap-2">
+            <BoutonAvecIA
+              libelle="Utiliser avec l'IA"
+              texte={
+                `Je veux utiliser le skill id ${id}. ` +
+                `Utilise l'outil gerer_comportement (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
+                `puis discutons-en ensemble.`
+              }
+            />
+            <ButtonPartager lien={lienPartage("skill-perso", id)} titre={skill.nom} />
+          </div>
         </div>
         {skill.description && <p className="mt-2 text-sm text-dj-texte-muet">{skill.description}</p>}
       </section>

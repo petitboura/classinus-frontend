@@ -6,6 +6,7 @@ import { Folder, FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
+import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 import { Skeleton } from "@/components/Skeleton";
 import { obtenirDossierBibliothequeConsultation, type DossierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
@@ -96,7 +97,17 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
             <Folder size={18} className="flex-shrink-0 text-dj-accent-1" />
             <h2 className="font-display text-base font-semibold text-dj-texte">{dossier.nom}</h2>
           </div>
-          <ButtonPartager lien={lienPartage("dossier-perso", dossier.id)} titre={dossier.nom} />
+          <div className="flex items-center gap-2">
+            <BoutonAvecIA
+              libelle="Explorer avec l'IA"
+              texte={
+                `Je veux explorer le dossier id ${dossier.id}. ` +
+                `Utilise l'outil gerer_dossier_bibliotheque (action "consulter") avec cet id pour voir ce qu'il contient, ` +
+                `puis discutons-en ensemble.`
+              }
+            />
+            <ButtonPartager lien={lienPartage("dossier-perso", dossier.id)} titre={dossier.nom} />
+          </div>
         </div>
       </section>
 

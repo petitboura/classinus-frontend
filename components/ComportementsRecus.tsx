@@ -76,6 +76,11 @@ export function ComportementsRecus() {
           comportementId={skillOuvert.id}
           nom={skillOuvert.nom}
           proprietaireNom={skillOuvert.proprietaireNom}
+          texteAvecIA={
+            `Je veux utiliser le skill id recu:${skillOuvert.id}. ` +
+            `Utilise l'outil gerer_comportement (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
+            `puis discutons-en ensemble.`
+          }
           onFermer={() => setSkillOuvert(null)}
         />
       )}

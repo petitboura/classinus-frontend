@@ -6,6 +6,7 @@ import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
+import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 import { BoutonTelechargerFichier } from "@/components/BoutonTelechargerFichier";
 import { SuggestionCompte } from "@/components/SuggestionCompte";
 
@@ -88,6 +89,14 @@ export function ActionsFichierPublic({
           </a>
         )}
         {urlPublique && !estLien && <BoutonTelechargerFichier url={urlPublique} nom={nomFichier || nom} />}
+        <BoutonAvecIA
+          libelle="Discuter avec l'IA"
+          texte={
+            `Je veux discuter du fichier id ${entreeId}. ` +
+            `Utilise l'outil gerer_document_bibliotheque (action "lire_catalogue_public") avec cet id pour voir de quoi il s'agit, ` +
+            `puis discutons-en ensemble.`
+          }
+        />
         <ButtonPartager lien={lienPartage("fichier-public", entreeId)} titre={nom} />
       </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}

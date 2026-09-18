@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { clesRequetes } from "@/lib/clesRequetes";
 import {
   Link as IconLien,
   Link2,
@@ -28,6 +26,7 @@ import {
   Trash2,
   Share2,
   Download,
+  Sparkles,
 } from "lucide-react";
 import {
   appelerApi,
@@ -55,10 +54,12 @@ import { OngletsSegment } from "./OngletsSegment";
 import { useInfoSection } from "./SectionPage";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { MenuActionsCarte } from "./MenuActionsCarte";
+import { BoutonAvecIA } from "./BoutonAvecIA";
 import { useDeclarerAction } from "@/lib/useDeclarerAction";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
 import { SelecteurCodesPartage } from "./SelecteurCodesPartage";
+import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 
 // Onglet "Bibliothèque" de Mon espace, porté de
 // djiguigne-frontend/app/dashboard/espace/page.tsx (même logique,
@@ -164,38 +165,8 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
   // combinent (une origine ET un type à la fois).
   const [origineOnglet, setOrigineOnglet] = useState<OrigineOnglet>("privee");
   const [filtreOuvert, setFiltreOuvert] = useState(false);
-  // 17/09/2026 (chantier persistance/cache, demande Bourama) :
-  // `fichiers`/`dossiers` viennent maintenant de React Query au lieu
-  // d'un useState local -- la donnée est partagée entre TOUTES les
-  // instances de ce composant (donc entre deux visites successives de
-  // la section, même après démontage), mise en cache, et survit à un
-  // rafraîchissement de page via la persistance sessionStorage (voir
-  // lib/reactQuery.tsx). `chargerFichiers`/`chargerDossiers` plus bas
-  // restent des fonctions de ce nom (invalidation du cache) pour ne pas
-  // devoir toucher chacun de leurs nombreux points d'appel dans ce
-  // fichier -- seul CE QU'ELLES FONT change, pas leur signature.
-  const queryClient = useQueryClient();
-  const { data: fichiers } = useQuery({
-    queryKey: clesRequetes.bibliothequeFichiers,
-    queryFn: async () => {
-      try {
-        return (await appelerApi("/api/bibliotheque")) as FichierBiblio[];
-      } catch (e) {
-        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
-        return [] as FichierBiblio[];
-      }
-    },
-  });
-  const { data: dossiers } = useQuery({
-    queryKey: clesRequetes.bibliothequeDossiers,
-    queryFn: async () => {
-      try {
-        return await listerDossiersBibliotheque();
-      } catch {
-        return [] as DossierBibliotheque[];
-      }
-    },
-  });
+  const [fichiers, setFichiers] = useState<FichierBiblio[] | null>(null);
+  const [dossiers, setDossiers] = useState<DossierBibliotheque[] | null>(null);
   const [texteOuLien, setTexteOuLien] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreursEnvoi, setErreursEnvoi] = useState<{ nom: string; erreur: string }[]>([]);
@@ -344,7 +315,7 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
     setReessaiEnCoursId(f.id);
     try {
       await reessayerVectorisationBibliothequePersonnelle(f.id);
-      queryClient.setQueryData<FichierBiblio[]>(clesRequetes.bibliothequeFichiers, (precedent) =>
+      setFichiers((precedent) =>
         precedent?.map((ligne) =>
           ligne.id === f.id ? { ...ligne, statut_vectorisation: "en_attente" } : ligne
         ) ?? precedent
@@ -412,26 +383,26 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
     }
   }
 
-  // Le chargement initial est désormais entièrement porté par les deux
-  // useQuery plus haut (React Query charge seul au montage, et sert le
-  // cache existant sans reguêter si une autre section l'a déjà rempli
-  // récemment) -- l'ancien useEffect(() => { chargerFichiers();
-  // chargerDossiers(); }, []) est donc retiré, il ferait sinon doublon.
-  //
-  // chargerFichiers/chargerDossiers restent des fonctions de ce nom
-  // uniquement pour ne pas devoir toucher chacun de leurs nombreux
-  // points d'appel dans ce fichier (upload, suppression, renommage...) :
-  // avant, elles refaisaient l'appel API et réécrivaient l'état local ;
-  // maintenant, elles invalident la clé de cache correspondante, ce qui
-  // déclenche automatiquement un nouveau fetch en arrière-plan et met à
-  // jour toute instance de ce composant qui l'observe, y compris une
-  // autre section ouverte ailleurs qui dépendrait de la même donnée.
+  useEffect(() => {
+    chargerFichiers();
+    chargerDossiers();
+  }, []);
+
   function chargerFichiers() {
-    queryClient.invalidateQueries({ queryKey: clesRequetes.bibliothequeFichiers });
+    appelerApi("/api/bibliotheque")
+      .then((r: FichierBiblio[]) => setFichiers(r))
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+        }
+        setFichiers([]);
+      });
   }
 
   function chargerDossiers() {
-    queryClient.invalidateQueries({ queryKey: clesRequetes.bibliothequeDossiers });
+    listerDossiersBibliotheque()
+      .then((r) => setDossiers(r))
+      .catch(() => setDossiers([]));
   }
 
   const fichiersParId = useMemo(() => {
@@ -545,6 +516,7 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
     [sousDossiersAffiches, fichiersAffiches]
   );
   const selectionMultiple = useSelectionMultiple(idsElementsAffiches);
+  const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   const idsDossiersSelectionnes = sousDossiersAffiches
     .filter((d) => selectionMultiple.selection.has(d.id))
     .map((d) => d.id);
@@ -752,6 +724,46 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
     } catch (e) {
       window.alert(messageErreur(e));
     }
+  }
+
+  // 17/09/2026, demande Bourama : un CTA "avec l'IA" sur chaque fichier,
+  // sur la carte ET dans l'aperçu une fois ouvert (même liste d'actions
+  // passée aux deux, voir <VisionneuseBibliotheque actions=...> plus bas
+  // -- avant cet ajout, l'aperçu perso n'avait AUCUN menu d'actions,
+  // contrairement à la bibliothèque publique).
+  function actionsPourFichier(f: FichierBiblio) {
+    return [
+      {
+        cle: "discuter-ia",
+        label: "Discuter avec l'IA",
+        icone: <Sparkles size={14} />,
+        onClick: () =>
+          ouvrirChatAvecTexte(
+            `Je veux discuter du fichier id ${f.id}. ` +
+              `Utilise l'outil gerer_document_bibliotheque (action "lire_entier") avec cet id pour voir de quoi il s'agit, ` +
+              `puis discutons-en ensemble.`
+          ),
+      },
+      {
+        cle: "partager",
+        label: "Partager",
+        icone: <Share2 size={14} />,
+        onClick: () => partagerOuCopierLien(lienPartage("fichier-perso", f.id), f.description || f.nom_fichier),
+      },
+      {
+        cle: "ranger",
+        label: "Ranger dans un dossier",
+        icone: <IconDossierOuvert size={14} />,
+        onClick: () => setFichierARanger(f),
+      },
+      {
+        cle: "supprimer",
+        label: "Supprimer",
+        icone: <Trash2 size={14} />,
+        onClick: () => supprimer(f.id, f.description || f.nom_fichier),
+        destructif: true,
+      },
+    ];
   }
 
   async function creerDossier() {
@@ -1035,16 +1047,27 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           ici") ont été fusionnées dans le "+" flottant existant plus bas
           (menuAjoutOuvert), pas de deuxième "+" séparé. */}
       {dossierCourantId !== null && (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setPileDossiers((p) => p.slice(0, -1))}
-            aria-label="Revenir au dossier précédent"
-            className="flex w-fit min-w-0 items-center gap-1 rounded-cgpt-bouton px-2 py-1 text-xs font-medium text-dj-texte transition-colors hover:text-dj-texte-muet"
-          >
-            <ChevronLeft size={14} className="flex-shrink-0" />
-            <span className="truncate">{pileDossiers[pileDossiers.length - 1]?.nom}</span>
-          </button>
-          <CodesDossierCourant dossierId={dossierCourantId} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setPileDossiers((p) => p.slice(0, -1))}
+              aria-label="Revenir au dossier précédent"
+              className="flex w-fit min-w-0 items-center gap-1 rounded-cgpt-bouton px-2 py-1 text-xs font-medium text-dj-texte transition-colors hover:text-dj-texte-muet"
+            >
+              <ChevronLeft size={14} className="flex-shrink-0" />
+              <span className="truncate">{pileDossiers[pileDossiers.length - 1]?.nom}</span>
+            </button>
+            <CodesDossierCourant dossierId={dossierCourantId} />
+          </div>
+          <BoutonAvecIA
+            variante="icone"
+            libelle="Explorer avec l'IA"
+            texte={
+              `Je veux explorer le dossier id ${dossierCourantId}. ` +
+              `Utilise l'outil gerer_dossier_bibliotheque (action "consulter") avec cet id pour voir ce qu'il contient, ` +
+              `puis discutons-en ensemble.`
+            }
+          />
         </div>
       )}
 
@@ -1523,27 +1546,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                   )}
                   <MenuActionsCarte
                     ariaLabel={`Actions pour ${f.description || f.nom_fichier}`}
-                    actions={[
-                      {
-                        cle: "partager",
-                        label: "Partager",
-                        icone: <Share2 size={14} />,
-                        onClick: () => partagerOuCopierLien(lienPartage("fichier-perso", f.id), f.description || f.nom_fichier),
-                      },
-                      {
-                        cle: "ranger",
-                        label: "Ranger dans un dossier",
-                        icone: <IconDossierOuvert size={14} />,
-                        onClick: () => setFichierARanger(f),
-                      },
-                      {
-                        cle: "supprimer",
-                        label: "Supprimer",
-                        icone: <Trash2 size={14} />,
-                        onClick: () => supprimer(f.id, f.description || f.nom_fichier),
-                        destructif: true,
-                      },
-                    ]}
+                    actions={actionsPourFichier(f)}
                   />
                 </div>
                 )}
@@ -1634,6 +1637,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
       <VisionneuseBibliotheque
         fichier={fichierOuvert}
         onFermer={() => setFichierOuvert(null)}
+        actions={fichierOuvert ? actionsPourFichier(fichierOuvert) : undefined}
         onRanger={() => {
           if (fichierOuvert) {
             setFichierARanger(fichierOuvert);
@@ -1839,6 +1843,7 @@ function CarteDossier({
   selectionne: boolean;
   onToggleSelection: (e: React.MouseEvent) => void;
 }) {
+  const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   return (
     <div
       onDragOver={(e) => {
@@ -1894,6 +1899,17 @@ function CarteDossier({
         <MenuActionsCarte
           ariaLabel={`Actions pour ${d.nom}`}
           actions={[
+            {
+              cle: "discuter-ia",
+              label: "Explorer avec l'IA",
+              icone: <Sparkles size={14} />,
+              onClick: () =>
+                ouvrirChatAvecTexte(
+                  `Je veux explorer le dossier id ${d.id}. ` +
+                    `Utilise l'outil gerer_dossier_bibliotheque (action "consulter") avec cet id pour voir ce qu'il contient, ` +
+                    `puis discutons-en ensemble.`
+                ),
+            },
             ...(!d.recu_de
               ? [
                   {

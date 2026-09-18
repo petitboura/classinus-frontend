@@ -7,6 +7,7 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { SuggestionCompte } from "@/components/SuggestionCompte";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
+import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 
 // 16/09/2026, demande Bourama ("les pages si tu ouvres un lien de partage
 // n'ont aucun CTA") : la page d'un dossier public n'avait aucune action du
@@ -57,6 +58,14 @@ export function ActionsDossierPublic({ dossierId, nom }: { dossierId: string; no
           {ajoutEnCours ? <Loader2 size={15} className="animate-spin" /> : ajoute ? <Check size={15} /> : <FolderPlus size={15} />}
           {ajoute ? "Ajouté" : "Ajouter à ma bibliothèque"}
         </button>
+        <BoutonAvecIA
+          libelle="Explorer avec l'IA"
+          texte={
+            `Je veux explorer le dossier public id ${dossierId}. ` +
+            `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
+            `puis discutons-en ensemble.`
+          }
+        />
         <ButtonPartager lien={lienPartage("dossier-public", dossierId)} titre={nom} />
       </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
