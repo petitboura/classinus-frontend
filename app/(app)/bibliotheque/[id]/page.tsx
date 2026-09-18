@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
+import { SectionPageRetourDepuis } from "@/components/SectionPageRetourDepuis";
 import { ActionsFichierPublic } from "@/components/ActionsFichierPublic";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
 import { LinkPreview } from "@/components/chat/LinkPreview";
@@ -97,13 +99,30 @@ function Etiquettes({ valeurs }: { valeurs: string[] | null | undefined }) {
 export default async function PageEntreeBibliothequePublique({ params }: { params: { id: string } }) {
   const entree = await chargerEntree(params.id);
 
+  // 18/09/2026, correctif Bourama (bouton retour d'un fichier partagé qui
+  // ramenait toujours à la bibliothèque de l'appli au lieu du dossier
+  // parcouru pour y arriver) : le calcul du retour (lecture de ?depuis=)
+  // se fait dans SectionPageRetourDepuis (client, useSearchParams), pas
+  // ici -- lire searchParams directement dans ce Server Component casse
+  // le build export statique mobile (build:capacitor), vérifié le jour
+  // même. <Suspense> requis autour : c'est la façon documentée par
+  // Next.js de garder l'export statique valide malgré useSearchParams ;
+  // le fallback ne s'affiche jamais en pratique en déploiement web normal
+  // (useSearchParams résout de façon synchrone, rien à attendre), il ne
+  // sert qu'à la génération de la page statique factice "placeholder" que
+  // l'appli native n'ouvre jamais (voir generateStaticParams ci-dessus).
   if (!entree) {
+    const messageIntrouvable = (
+      <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
+        Ce document est introuvable, ou n'est plus publié sur la bibliothèque publique.
+      </p>
+    );
     return (
-      <SectionPage title="Document introuvable" retour="/bibliotheque">
-        <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
-          Ce document est introuvable, ou n'est plus publié sur la bibliothèque publique.
-        </p>
-      </SectionPage>
+      <Suspense fallback={<SectionPage title="Document introuvable" retour="/bibliotheque">{messageIntrouvable}</SectionPage>}>
+        <SectionPageRetourDepuis title="Document introuvable" routeParDefaut="/bibliotheque">
+          {messageIntrouvable}
+        </SectionPageRetourDepuis>
+      </Suspense>
     );
   }
 
@@ -115,8 +134,12 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
   // VisionneuseBibliotheque.tsx (viewer interne, jamais eu ce bug).
   const estLien = entree.type_mime === "text/uri-list";
 
-  return (
-    <SectionPage title={entree.nom} retour="/bibliotheque">
+  // Contenu identique dans les deux branches ci-dessous (fallback à
+  // retour par défaut pendant la génération statique factice, rendu réel
+  // à retour dynamique une fois useSearchParams résolu) -- voir le
+  // commentaire plus haut sur pourquoi ce calcul passe par un Suspense.
+  const contenu = (
+    <>
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -161,6 +184,14 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
           <VisionneurPdf url={entree.url_publique} />
         </section>
       )}
-    </SectionPage>
+    </>
+  );
+
+  return (
+    <Suspense fallback={<SectionPage title={entree.nom} retour="/bibliotheque">{contenu}</SectionPage>}>
+      <SectionPageRetourDepuis title={entree.nom} routeParDefaut="/bibliotheque">
+        {contenu}
+      </SectionPageRetourDepuis>
+    </Suspense>
   );
 }

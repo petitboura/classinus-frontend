@@ -116,10 +116,19 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
             <p className="px-5 py-4 text-center text-xs text-dj-texte-muet">Ce dossier est vide pour l'instant.</p>
           ) : (
             <ul className="divide-y divide-dj-bordure">
+              {/* 18/09/2026, correctif Bourama (bouton retour d'un fichier
+                 partagé qui ramenait toujours à la bibliothèque de l'appli
+                 au lieu du dossier parcouru pour y arriver) : ?depuis=
+                 transporte ce dossier jusqu'à la page du fichier, voir
+                 app/(app)/bibliotheque/[id]/page.tsx. Un fichier public
+                 peut appartenir à plusieurs dossiers à la fois (table de
+                 liaison côté backend), donc pas de "dossier parent" unique
+                 en base : on suit le chemin réel parcouru plutôt qu'une
+                 règle fixe. */}
               {entrees.map((entree) => (
                 <li key={entree.id}>
                   <Link
-                    href={`/bibliotheque/${entree.id}`}
+                    href={`/bibliotheque/${entree.id}?depuis=${dossier.id}`}
                     className="flex items-center gap-2.5 px-5 py-3 transition-colors duration-200 ease-cgpt-doux hover:bg-dj-surface-haute"
                   >
                     {entree.type_mime === "text/uri-list" ? (
