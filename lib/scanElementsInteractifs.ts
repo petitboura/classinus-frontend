@@ -63,7 +63,7 @@ function tronquer(texte: string): string {
  * générique de repli si rien de tout ça n'est disponible, jamais une
  * chaîne vide.
  */
-function decrireElement(element: HTMLElement): string {
+export function decrireElement(element: HTMLElement): string {
   const texteVisible = nettoyerTexte(element.textContent);
   if (texteVisible) return tronquer(texteVisible);
 

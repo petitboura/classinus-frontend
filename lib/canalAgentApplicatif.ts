@@ -16,37 +16,41 @@
 // Ajout chantier D (16/09/2026) : poussee continue de l'etat des
 // actions disponibles, dans l'autre sens (frontend -> backend), sur ce
 // meme canal separe. Envoyee une fois a l'ouverture du canal, puis a
-// chaque fois que ecouterActionsModifiees (lib/actionsApplicatives.ts)
-// signale un changement -- jamais sur un evenement DOM brut, uniquement
-// sur mount/demontage/activation d'une action DECLAREE (meme
-// granularite que decidee avec Bourama pour eviter le bruit). Un court
-// debounce evite une rafale de messages quand plusieurs actions se
-// (dé)montent dans le meme cycle de rendu.
+// chaque changement detecte du DOM -- un court debounce evite une
+// rafale de messages quand plusieurs elements se (dé)montent dans le
+// meme cycle de rendu.
 //
-// Ajout chantier F (16/09/2026) : meme canal, troisieme forme de
-// message recue -- {"id", "selecteur_generique", "description"} --
-// pour le mode generique de secours (DOM + selecteur), pour tout ce qui
-// n'a pas encore d'action declaree via le chantier A. Aucune
-// metadonnee de sensibilite possible ici : la confirmation est
+// Revision (17/09/2026, voir plan-scan-generique-agent-applicatif.md) :
+// l'ancien systeme de declaration manuelle (chantiers A/D d'origine,
+// lib/actionsApplicatives.ts + lib/useDeclarerAction.ts) est remplace
+// par un scan generique et automatique du DOM
+// (lib/scanElementsInteractifs.ts) -- plus aucune description ecrite a
+// la main dans un composant. Le declenchement du rescan, auparavant lie
+// a un evenement emis par une declaration manuelle, est desormais un
+// MutationObserver generique sur le document -- coherent avec le
+// principe "rien a decrire, rien a cabler a la main".
+//
+// Ajout chantier F (16/09/2026), fusionne ici le 17/09/2026 : meme
+// canal, mode "clic par identifiant genere" -- l'element cible est
+// resolu par son attribut data-agent-id (pose par le scan), jamais
+// invente ni devine par le modele. Aucune metadonnee de sensibilite
+// n'existe sur un element detecte automatiquement : la confirmation est
 // TOUJOURS demandee, sans exception. Deplace aussi le curseur virtuel
 // (chantier B) avant le clic reel, via le pont
 // lib/contexteCurseurVirtuel.tsx.
 //
 // Ajout chantier G (16/09/2026, demande Bourama) : mode guidage --
-// quatrieme forme de message recue, {"id", "montrer_action_id"} :
-// deplace uniquement le curseur vers l'element d'une action DEJA
-// declaree (chantier A), sans jamais l'executer. Reutilise le meme
-// mecanisme de reference d'element (ActionDeclaree.obtenirElement,
-// pose via la nouvelle option `ref` de useDeclarerAction) desormais
-// aussi utilise par traiterDemandeAction (chantier C) pour deplacer
-// le curseur avant une VRAIE execution, quand l'action a declare une
-// ref -- retrocompatible si elle n'en a pas.
+// troisieme forme de message recue, {"id", "montrer_action_id"} :
+// deplace uniquement le curseur vers l'element cible, sans jamais
+// l'executer.
 
 import { supabase } from "./supabase";
-import { obtenirAction, obtenirActionsDisponibles, obtenirElementAction, ecouterActionsModifiees } from "./actionsApplicatives";
+import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { demanderConfirmationDepuisAgent } from "./contexteConfirmationAction";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { estVisibleEtActif, resoudreElementCliquable } from "./clicGenerique";
+
+const ATTRIBUT_AGENT_ID = "data-agent-id";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -54,6 +58,19 @@ let socket: WebSocket | null = null;
 let tentativeReconnexion: ReturnType<typeof setTimeout> | null = null;
 let fermetureVoulue = false;
 let dejaInitialise = false;
+let observateurDom: MutationObserver | null = null;
+
+function resoudreElementParAgentId(agentId: string): HTMLElement | null {
+  let element: Element | null;
+  try {
+    element = document.querySelector(`[${ATTRIBUT_AGENT_ID}="${CSS.escape(agentId)}"]`);
+  } catch {
+    return null;
+  }
+  if (!(element instanceof HTMLElement)) return null;
+  if (!estVisibleEtActif(element)) return null;
+  return element;
+}
 
 function urlWebSocket(token: string): string | null {
   if (!API_URL) return null;
@@ -73,7 +90,7 @@ let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
-  socket.send(JSON.stringify({ etat_actions: obtenirActionsDisponibles() }));
+  socket.send(JSON.stringify({ etat_actions: scannerElementsInteractifs() }));
 }
 
 /**
@@ -90,44 +107,56 @@ function envoyerEtatActions() {
   }, 200);
 }
 
+/**
+ * Chantier C, revise (17/09/2026) pour le scan generique : `actionId`
+ * est un identifiant genere par le scan (attribut data-agent-id), pas
+ * un identifiant declare a la main. Tout element issu du scan est
+ * TOUJOURS sensible (aucun jugement de sensibilite possible sur un
+ * element dont on ne sait rien d'autre que sa presence a l'ecran) :
+ * la confirmation est donc systematique, sans exception -- meme
+ * principe que traiterDemandeClicGenerique ci-dessous, dont ce mode
+ * se rapproche desormais beaucoup (difference : l'identifiant est
+ * genere par le scan plutot que devine par le modele).
+ */
 async function traiterDemandeAction(id: string, actionId: string) {
-  const action = obtenirAction(actionId);
+  const element = resoudreElementParAgentId(actionId);
 
-  // Pas montee ICI (autre onglet/appareil, ou action deja disparue) :
+  // Pas montee ICI (autre onglet/appareil, ou element deja disparu) :
   // "ignore", jamais une erreur -- laisse la vraie connexion repondre.
-  if (!action || !action.actif) {
+  if (!element) {
     envoyerReponse(id, { ignore: true });
     return;
   }
 
-  if (action.sensible) {
-    const accepte = await demanderConfirmationDepuisAgent(action.description);
-    if (!accepte) {
-      envoyerReponse(id, { refuse: true });
-      return;
-    }
-    // Revalidation juste avant execution (decision Bourama, meme
-    // principe que le mode generique du chantier F) : l'ecran a pu
-    // changer pendant que l'etudiant repondait a la fenetre.
-    const actionRevalidee = obtenirAction(actionId);
-    if (!actionRevalidee || !actionRevalidee.actif) {
-      envoyerReponse(id, { erreur: "L'action n'est plus disponible à l'écran (l'écran a changé)." });
-      return;
-    }
+  // La description est derivee de l'element REEL au moment de la
+  // confirmation (pas transmise par le backend, qui ne connait
+  // l'element que par son id genere) -- toujours a jour, jamais perimee
+  // meme si le texte visible a change depuis le dernier scan.
+  const accepte = await demanderConfirmationDepuisAgent(decrireElement(element));
+  if (!accepte) {
+    envoyerReponse(id, { refuse: true });
+    return;
+  }
+
+  // Revalidation juste avant execution (l'ecran a pu changer pendant
+  // que l'etudiant repondait a la fenetre de confirmation).
+  const elementRevalide = resoudreElementParAgentId(actionId);
+  if (!elementRevalide) {
+    envoyerReponse(id, { erreur: "L'action n'est plus disponible à l'écran (l'écran a changé)." });
+    return;
   }
 
   try {
-    // Amélioration du 16/09/2026 (demande Bourama : finir le chantier) :
-    // déplace le curseur virtuel vers l'élément réel de l'action avant
-    // de l'exécuter, si un élément a été déclaré (voir ref dans
-    // useDeclarerAction) -- sans effet, ni blocage, si aucun élément
-    // n'a été fourni (rétrocompatible avec les actions déjà déclarées
-    // sans ref).
-    const element = obtenirElementAction(actionId);
-    if (element) {
-      await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
+    elementRevalide.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+    await deplacerCurseurDepuisAgent(elementRevalide, { cliquer: true, forme: "main" });
+
+    // Toute derniere verification, juste avant le clic physique.
+    if (!document.body.contains(elementRevalide) || !estVisibleEtActif(elementRevalide)) {
+      envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
+      return;
     }
-    await action.executer();
+
+    elementRevalide.click();
     envoyerReponse(id, { succes: true });
   } catch (e) {
     envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors de l'exécution." });
@@ -186,28 +215,19 @@ async function traiterDemandeClicGenerique(id: string, selecteur: string, descri
 }
 
 /**
- * Chantier G (mode guidage, 16/09/2026, demande Bourama : finir ce
- * chantier). Déplace simplement le curseur virtuel vers l'élément de
- * l'action `actionId`, SANS l'exécuter -- pour que Clovis puisse
- * montrer où se trouve une nouveauté en l'expliquant dans le chat,
- * sans agir à la place de l'étudiant. Jamais de confirmation ici : un
- * simple pointage visuel n'a aucun effet sur les données de l'étudiant.
+ * Chantier G (mode guidage, 16/09/2026, demande Bourama). Deplace
+ * simplement le curseur virtuel vers l'element cible, SANS l'executer.
+ * Jamais de confirmation ici : un simple pointage visuel n'a aucun
+ * effet sur les donnees de l'etudiant.
  */
 async function traiterDemandeMontrer(id: string, actionId: string) {
-  const action = obtenirAction(actionId);
-  if (!action || !action.actif) {
+  const element = resoudreElementParAgentId(actionId);
+  if (!element) {
     envoyerReponse(id, { ignore: true });
     return;
   }
 
-  const element = obtenirElementAction(actionId);
-  if (!element) {
-    envoyerReponse(id, {
-      erreur: "Cette action n'a pas de position associée à l'écran pour le pointage (aucune ref déclarée).",
-    });
-    return;
-  }
-
+  element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
   await deplacerCurseurDepuisAgent(element, { cliquer: false, forme: "main" });
   envoyerReponse(id, { succes: true });
 }
@@ -260,6 +280,7 @@ async function ouvrirCanal() {
     // attendre un changement (chantier D) -- sinon le backend n'a rien
     // tant qu'aucune action ne se (dé)monte apres l'ouverture.
     envoyerEtatActionsMaintenant();
+    demarrerObservationDom();
   };
 
   ws.onmessage = (evenement) => {
@@ -272,6 +293,7 @@ async function ouvrirCanal() {
 
   ws.onclose = () => {
     if (socket === ws) socket = null;
+    arreterObservationDom();
     planifierReconnexion();
   };
 
@@ -282,12 +304,40 @@ async function ouvrirCanal() {
   socket = ws;
 }
 
+/**
+ * Remplace l'ancien evenement "clovis:actions_modifiees" (declaration
+ * manuelle) par une observation generique du DOM : tout changement de
+ * structure (montage/demontage) ou d'etat (disabled, aria-disabled,
+ * hidden) declenche un rescan debounce -- coherent avec le principe
+ * "rien a decrire, rien a cabler a la main" du scan generique. Actif
+ * uniquement pendant qu'une connexion est ouverte, pour eviter du
+ * travail inutile quand personne n'ecoute cote backend.
+ */
+function demarrerObservationDom() {
+  if (observateurDom || typeof document === "undefined") return;
+  observateurDom = new MutationObserver(() => {
+    envoyerEtatActions();
+  });
+  observateurDom.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["disabled", "aria-disabled", "hidden", "aria-hidden"],
+  });
+}
+
+function arreterObservationDom() {
+  observateurDom?.disconnect();
+  observateurDom = null;
+}
+
 function fermerCanal() {
   fermetureVoulue = true;
   if (tentativeReconnexion) {
     clearTimeout(tentativeReconnexion);
     tentativeReconnexion = null;
   }
+  arreterObservationDom();
   socket?.close();
   socket = null;
 }
@@ -316,11 +366,6 @@ export function initialiserCanalAgentApplicatif() {
       fermerCanal();
     }
   });
-
-  // Chantier D : a chaque (dé)montage/changement d'une action déclarée
-  // (lib/actionsApplicatives.ts), pousse l'état à jour au backend --
-  // sans attendre le tour de conversation suivant.
-  ecouterActionsModifiees(envoyerEtatActions);
 
   ouvrirCanal();
 }
