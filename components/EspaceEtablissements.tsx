@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { clesRequetes } from "@/lib/clesRequetes";
 import Link from "next/link";
 import { Building2, Check, Clock, Link2, ChevronRight } from "lucide-react";
 import {
@@ -34,33 +36,41 @@ import { CompteRequisModal } from "./CompteRequisModal";
  * même principe que BibliothequePublique.tsx.
  */
 export function EspaceEtablissements() {
-  const [liste, setListe] = useState<Etablissement[] | undefined>(undefined);
-  const [mesRattachements, setMesRattachements] = useState<RattachementEtablissement[]>([]);
+  const queryClient = useQueryClient();
+  const { data: liste } = useQuery({
+    queryKey: clesRequetes.etablissements,
+    queryFn: async () => {
+      try {
+        return await listerEtablissementsPublics();
+      } catch (e) {
+        setErreur(messageErreur(e));
+        return [] as Etablissement[];
+      }
+    },
+  });
+  const { data: mesRattachements = [] } = useQuery({
+    queryKey: clesRequetes.etablissementsMesRattachements,
+    // Ne demande rien si pas connecté -- simplement aucun badge affiché,
+    // la liste publique reste consultable (401 silencieux, pas une
+    // vraie erreur pour un visiteur).
+    queryFn: () => listerMesRattachementsEtablissements().catch(() => [] as RattachementEtablissement[]),
+  });
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null); // `${id}:suivre` ou `${id}:connecter`
   const [compteRequisPour, setCompteRequisPour] = useState<{ id: string; action: "suivre" | "connecter" } | null>(
     null
   );
 
+  // Chargement initial porté par les deux useQuery plus haut. Ces deux
+  // fonctions gardent leur nom pour ne pas toucher leurs points d'appel
+  // plus bas (bouton "réessayer" éventuel, etc.).
   function charger() {
-    listerEtablissementsPublics()
-      .then(setListe)
-      .catch((e) => setErreur(messageErreur(e)));
+    queryClient.invalidateQueries({ queryKey: clesRequetes.etablissements });
   }
 
   function chargerMesRattachements() {
-    // Ne demande rien si pas connecté -- simplement aucun badge affiché,
-    // la liste publique reste consultable (401 silencieux, pas une
-    // vraie erreur pour un visiteur).
-    listerMesRattachementsEtablissements()
-      .then(setMesRattachements)
-      .catch(() => setMesRattachements([]));
+    queryClient.invalidateQueries({ queryKey: clesRequetes.etablissementsMesRattachements });
   }
-
-  useEffect(() => {
-    charger();
-    chargerMesRattachements();
-  }, []);
 
   function etatPour(etablissementId: string): EtatRattachementEtablissement | null {
     return mesRattachements.find((r) => r.etablissement_id === etablissementId)?.etat ?? null;
@@ -71,8 +81,8 @@ export function EspaceEtablissements() {
     setEnCours(`${etablissementId}:${action}`);
     try {
       const maj = action === "suivre" ? await suivreEtablissement(etablissementId) : await demanderConnexionEtablissement(etablissementId);
-      setMesRattachements((prec) => {
-        const sansCelui = prec.filter((r) => r.etablissement_id !== etablissementId);
+      queryClient.setQueryData<RattachementEtablissement[]>(clesRequetes.etablissementsMesRattachements, (prec) => {
+        const sansCelui = (prec || []).filter((r) => r.etablissement_id !== etablissementId);
         return [...sansCelui, maj];
       });
     } catch (e) {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { clesRequetes } from "@/lib/clesRequetes";
 import { Plus, Trash2, Copy, ChevronDown, ChevronUp, X, ScrollText, Folder, StickyNote, Pencil, Power } from "lucide-react";
 import {
   listerMesCodes,
@@ -48,9 +50,32 @@ const AGENT_ID = "clovis";
  * receveurs de ce code, pas besoin d'en générer un nouveau.
  */
 export function MesCodes() {
-  const [codes, setCodes] = useState<CodePartage[] | undefined>(undefined);
-  const [mesComportements, setMesComportements] = useState<Comportement[]>([]);
-  const [mesDossiers, setMesDossiers] = useState<DossierBibliotheque[]>([]);
+  // 17/09/2026 (chantier persistance/cache) : `mesComportements` et
+  // `mesDossiers` partagent leur clé de cache avec MesComportements.tsx
+  // et EspaceBibliotheque.tsx respectivement (même donnée, même clé) --
+  // une modification faite ici se répercute là-bas sans nouveau fetch,
+  // et inversement. `codes` reste propre à cette section.
+  const queryClient = useQueryClient();
+  const { data: codes } = useQuery({
+    queryKey: clesRequetes.codes,
+    queryFn: async () => {
+      try {
+        return await listerMesCodes();
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
+        else setErreur(messageErreur(e));
+        return [] as CodePartage[];
+      }
+    },
+  });
+  const { data: mesComportements = [] } = useQuery({
+    queryKey: clesRequetes.comportements(AGENT_ID),
+    queryFn: () => lireMesComportements(AGENT_ID).catch(() => [] as Comportement[]),
+  });
+  const { data: mesDossiers = [] } = useQuery({
+    queryKey: clesRequetes.bibliothequeDossiers,
+    queryFn: () => listerDossiersBibliotheque().catch(() => [] as DossierBibliotheque[]),
+  });
   const [erreur, setErreur] = useState<string | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null); // id du code en édition
   const [creation, setCreation] = useState(false);
@@ -85,31 +110,22 @@ export function MesCodes() {
     setEstDesktop(window.matchMedia("(min-width: 768px)").matches);
   }, []);
 
+  // Chargement initial porté par les trois useQuery plus haut. Ces trois
+  // fonctions gardent leur nom pour ne pas toucher leurs nombreux points
+  // d'appel plus bas (création/édition/suppression de code, panneau
+  // dossier...) -- elles invalident la clé de cache concernée au lieu de
+  // reguêter et réécrire l'état local elles-mêmes.
   function chargerDossiers() {
-    listerDossiersBibliotheque().then(setMesDossiers).catch(() => setMesDossiers([]));
+    queryClient.invalidateQueries({ queryKey: clesRequetes.bibliothequeDossiers });
   }
 
   function chargerComportements() {
-    lireMesComportements(AGENT_ID).then(setMesComportements).catch(() => setMesComportements([]));
+    queryClient.invalidateQueries({ queryKey: clesRequetes.comportements(AGENT_ID) });
   }
 
   function charger() {
-    listerMesCodes()
-      .then(setCodes)
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) {
-          setSansCompte(true);
-        } else {
-          setErreur(messageErreur(e));
-        }
-      });
+    queryClient.invalidateQueries({ queryKey: clesRequetes.codes });
   }
-
-  useEffect(() => {
-    charger();
-    chargerComportements();
-    chargerDossiers();
-  }, []);
 
   function ouvrirEditeurComportement(codeId: string, id: string | null) {
     setEditeurComportement({ id, codeId });
@@ -136,7 +152,7 @@ export function MesCodes() {
     setErreur(null);
     try {
       const c = await creerCode({});
-      setCodes((prec) => [...(prec || []), c]);
+      queryClient.setQueryData<CodePartage[]>(clesRequetes.codes, (prec) => [...(prec || []), c]);
       setOuvert(c.id);
       setCreation(false);
     } catch (e) {
@@ -148,7 +164,9 @@ export function MesCodes() {
     setErreur(null);
     try {
       const maj = await modifierCode(codeId, patch);
-      setCodes((prec) => (prec || []).map((c) => (c.id === codeId ? maj : c)));
+      queryClient.setQueryData<CodePartage[]>(clesRequetes.codes, (prec) =>
+        (prec || []).map((c) => (c.id === codeId ? maj : c))
+      );
     } catch (e) {
       setErreur(messageErreur(e));
     }
@@ -158,7 +176,9 @@ export function MesCodes() {
     setErreur(null);
     try {
       const maj = await activerCode(c.id, !c.actif);
-      setCodes((prec) => (prec || []).map((x) => (x.id === c.id ? maj : x)));
+      queryClient.setQueryData<CodePartage[]>(clesRequetes.codes, (prec) =>
+        (prec || []).map((x) => (x.id === c.id ? maj : x))
+      );
     } catch (e) {
       setErreur(messageErreur(e));
     }
@@ -168,7 +188,9 @@ export function MesCodes() {
     setErreur(null);
     try {
       await supprimerCode(codeId);
-      setCodes((prec) => (prec || []).filter((c) => c.id !== codeId));
+      queryClient.setQueryData<CodePartage[]>(clesRequetes.codes, (prec) =>
+        (prec || []).filter((c) => c.id !== codeId)
+      );
       if (ouvert === codeId) setOuvert(null);
     } catch (e) {
       setErreur(messageErreur(e));
@@ -294,13 +316,24 @@ export function MesCodes() {
       comportement={editeurComportement.id ? mesComportements.find((cm) => cm.id === editeurComportement.id) || null : null}
       onFermer={() => fermerEditeurAnime(fermerEditeurComportement)}
       onCree={(nouveau) => {
-        setMesComportements((prev) => [...prev, nouveau]);
+        queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(AGENT_ID), (prev) => [
+          ...(prev || []),
+          nouveau,
+        ]);
         const codeCourant = codes?.find((x) => x.id === editeurComportement.codeId);
         const idsActuels = codeCourant ? codeCourant.comportements.map((cm) => cm.id) : [];
         sauvegarder(editeurComportement.codeId, { comportement_ids: [...idsActuels, nouveau.id] });
       }}
-      onModifie={(maj) => setMesComportements((prev) => prev.map((x) => (x.id === maj.id ? maj : x)))}
-      onSupprime={(id) => setMesComportements((prev) => prev.filter((x) => x.id !== id))}
+      onModifie={(maj) =>
+        queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(AGENT_ID), (prev) =>
+          (prev || []).map((x) => (x.id === maj.id ? maj : x))
+        )
+      }
+      onSupprime={(id) =>
+        queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(AGENT_ID), (prev) =>
+          (prev || []).filter((x) => x.id !== id)
+        )
+      }
     />
   );
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X as IconRejeter } from "lucide-react";
 import { listerSignalements, traiterSignalement, type Signalement } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { clesRequetes } from "@/lib/clesRequetes";
 
 // Traitement des signalements (bibliothèque publique). 22/08, chantier
 // "rendre la bibliothèque plus sérieuse". Réservé aux admins
@@ -14,33 +16,37 @@ import { Skeleton } from "./Skeleton";
 // renvoyé par l'API est la seule porte, affiché tel quel si
 // l'utilisateur courant n'est pas admin.
 export function EspaceAdminSignalements() {
-  const [liste, setListe] = useState<Signalement[] | undefined>(undefined);
+  const queryClient = useQueryClient();
   const [accesRefuse, setAccesRefuse] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enTraitement, setEnTraitement] = useState<string | null>(null);
 
-  function charger() {
-    listerSignalements("en_attente")
-      .then(setListe)
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 403) {
-          setAccesRefuse(true);
-        } else {
-          setErreur(messageErreur(e));
-        }
-        setListe([]);
-      });
-  }
+  const { data: liste } = useQuery({
+    queryKey: clesRequetes.adminSignalements,
+    queryFn: async () => {
+      try {
+        return await listerSignalements("en_attente");
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 403) setAccesRefuse(true);
+        else setErreur(messageErreur(e));
+        return [] as Signalement[];
+      }
+    },
+  });
 
-  useEffect(() => {
-    charger();
-  }, []);
+  // Chargement initial porté par le useQuery plus haut. charger() garde
+  // ce nom pour ne pas toucher ses éventuels points d'appel ailleurs.
+  function charger() {
+    queryClient.invalidateQueries({ queryKey: clesRequetes.adminSignalements });
+  }
 
   async function traiter(id: string, action: "retire" | "rejete") {
     setEnTraitement(id);
     try {
       await traiterSignalement(id, action);
-      setListe((l) => (l ?? []).filter((s) => s.id !== id));
+      queryClient.setQueryData<Signalement[]>(clesRequetes.adminSignalements, (l) =>
+        (l ?? []).filter((s) => s.id !== id)
+      );
     } catch (e) {
       window.alert(messageErreur(e));
     } finally {

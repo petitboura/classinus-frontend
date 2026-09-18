@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, type MouseEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { clesRequetes } from "@/lib/clesRequetes";
 import { Plus, ScrollText, Link2, ToggleLeft, ToggleRight, Download, Sparkles } from "lucide-react";
 import { lireMesComportements, activerDesactiverComportement, type Comportement } from "@/lib/api";
-import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { ErreurApi } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
@@ -145,7 +146,22 @@ function ChipComportement({
 }
 
 export function MesComportements({ agentId }: { agentId: string }) {
-  const [liste, setListe] = useState<Comportement[] | undefined>(undefined);
+  // 17/09/2026 (chantier persistance/cache) : `liste` vient de React Query
+  // au lieu d'un useState local -- clé partagée avec MesCodes.tsx qui lit
+  // les mêmes comportements (clesRequetes.comportements), donc les deux
+  // sections se resynchronisent l'une l'autre sans requête en double.
+  const queryClient = useQueryClient();
+  const { data: liste } = useQuery({
+    queryKey: clesRequetes.comportements(agentId),
+    queryFn: async () => {
+      try {
+        return await lireMesComportements(agentId);
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
+        return [] as Comportement[];
+      }
+    },
+  });
 
   // 21/08/2026, demande Bourama : "je veux un onglet public" -- bascule
   // entre la liste perso (comportement par défaut) et le catalogue
@@ -208,29 +224,22 @@ export function MesComportements({ agentId }: { agentId: string }) {
   // panneau au lieu de le démonter d'un coup.
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
 
+  // Le chargement initial est porté par le useQuery plus haut. charger()
+  // reste ce nom pour ne pas devoir toucher ses points d'appel plus bas
+  // (toggle, écoute d'événements) : avant elle refaisait l'appel et
+  // réécrivait l'état local, maintenant elle invalide la clé de cache.
   function charger() {
-    lireMesComportements(agentId)
-      .then(setListe)
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) {
-          setSansCompte(true);
-          setListe([]);
-        } else {
-          setListe([]);
-        }
-      });
+    queryClient.invalidateQueries({ queryKey: clesRequetes.comportements(agentId) });
   }
-
-  useEffect(() => {
-    charger();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentId]);
 
   // 15/08 (demande Bourama : "quand l'IA crée un comportement on ne le
   // voit pas") : l'IA peut créer/modifier/supprimer un comportement
   // elle-même depuis le chat (ajouter_comportement, etc.) -- ce panneau
   // ne rechargeait avant que sur montage. Voir lib/evenementsDonnees.ts.
-  useEffect(() => ecouterDonneesModifiees("comportements", charger), [agentId]);
+  // Le rafraîchissement quand l'IA modifie un comportement depuis le chat
+  // est maintenant géré en permanence par SyncTempsReelCache.tsx (monté
+  // dans AppShell), qui invalide la même clé de cache même si cette
+  // section n'est pas ouverte -- l'écoute locale ici serait redondante.
 
   function ouvrirEdition(c: Comportement) {
     setPanneau({ type: "edition", c });
@@ -250,7 +259,9 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setActifEnCours(c.id);
     try {
       const maj = await activerDesactiverComportement(agentId, c.id, !c.actif);
-      setListe((prec) => (prec || []).map((x) => (x.id === maj.id ? maj : x)));
+      queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(agentId), (prec) =>
+        (prec || []).map((x) => (x.id === maj.id ? maj : x))
+      );
     } catch {
       // Silencieux -- le toggle est optionnel/secondaire, une erreur ici
       // ne doit pas casser la liste ; l'état reste simplement inchangé.
@@ -393,9 +404,22 @@ export function MesComportements({ agentId }: { agentId: string }) {
             agentId={agentId}
             comportement={panneau.type === "edition" ? panneau.c : null}
             onFermer={() => demarrerFermeture(fermer)}
-            onCree={(c) => setListe((prec) => [...(prec || []), c])}
-            onModifie={(c) => setListe((prec) => (prec || []).map((x) => (x.id === c.id ? c : x)))}
-            onSupprime={(id) => setListe((prec) => (prec || []).filter((x) => x.id !== id))}
+            onCree={(c) =>
+              queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(agentId), (prec) => [
+                ...(prec || []),
+                c,
+              ])
+            }
+            onModifie={(c) =>
+              queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(agentId), (prec) =>
+                (prec || []).map((x) => (x.id === c.id ? c : x))
+              )
+            }
+            onSupprime={(id) =>
+              queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(agentId), (prec) =>
+                (prec || []).filter((x) => x.id !== id)
+              )
+            }
             onActionEnCoursChange={setActionPanneauEnCours}
           />
         </PanneauFlottant>

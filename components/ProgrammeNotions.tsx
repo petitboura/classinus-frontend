@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { clesRequetes } from "@/lib/clesRequetes";
 import {
   Plus,
   Trash2,
@@ -198,11 +200,44 @@ function aplatirSousChapitre(noeud: NoeudNotion, chemin: string[] = []): LigneAp
 }
 
 export function ProgrammeNotions() {
-  const [codes, setCodes] = useState<CodePartage[] | undefined>(undefined);
-  const [codeId, setCodeId] = useState<string | null>(null);
-  const [notions, setNotions] = useState<Notion[] | undefined>(undefined);
+  // 17/09/2026 (chantier persistance/cache) : `codes` partage sa clé de
+  // cache avec MesCodes.tsx (même appel listerMesCodes) -- pas de
+  // requête en double si les deux sections ont déjà été visitées.
+  // `notions` dépend de codeId : une clé par code (clesRequetes.
+  // programmeNotions), React Query gère seul le changement de clé au
+  // changement de code sélectionné, plus besoin de vider `notions` à la
+  // main avant de recharger.
+  const queryClient = useQueryClient();
   const [erreur, setErreur] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
+  const { data: codes } = useQuery({
+    queryKey: clesRequetes.codes,
+    queryFn: async () => {
+      try {
+        return await listerMesCodes();
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
+        else setErreur(messageErreur(e));
+        return [] as CodePartage[];
+      }
+    },
+  });
+  const [codeId, setCodeId] = useState<string | null>(null);
+  useEffect(() => {
+    if (codes && codes.length > 0) setCodeId((prec) => prec ?? codes[0].id);
+  }, [codes]);
+  const { data: notions } = useQuery({
+    queryKey: clesRequetes.programmeNotions(codeId ?? ""),
+    queryFn: async () => {
+      try {
+        return await listerNotions(codeId as string);
+      } catch (e) {
+        setErreur(messageErreur(e));
+        return undefined;
+      }
+    },
+    enabled: !!codeId,
+  });
 
   // Lignes en cours de disparition animée (voir supprimer() plus bas) --
   // gardées dans `notions` avec opacity-0/scale réduite le temps de
@@ -231,30 +266,15 @@ export function ProgrammeNotions() {
   const [erreurGeneration, setErreurGeneration] = useState<string | null>(null);
   const inputFichierRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    listerMesCodes()
-      .then((c) => {
-        setCodes(c);
-        if (c.length > 0) setCodeId((prec) => prec ?? c[0].id);
-      })
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
-        else setErreur(messageErreur(e));
-      });
-  }, []);
-
+  // Chargement initial (codes ET notions) désormais entièrement porté par
+  // les deux useQuery plus haut. charger() garde ce nom pour ne pas
+  // toucher ses nombreux points d'appel plus bas (ajout, réordonnancement,
+  // fusion, suppression, génération...) -- elle invalide la clé de cache
+  // des notions du code courant au lieu de reguêter et réécrire l'état.
   function charger() {
     if (!codeId) return;
-    listerNotions(codeId)
-      .then(setNotions)
-      .catch((e) => setErreur(messageErreur(e)));
+    queryClient.invalidateQueries({ queryKey: clesRequetes.programmeNotions(codeId) });
   }
-
-  useEffect(() => {
-    setNotions(undefined);
-    charger();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codeId]);
 
   if (sansCompte) {
     return <CTACompteRequis texte="Crée un compte pour organiser un programme de notions." />;
@@ -277,7 +297,10 @@ export function ProgrammeNotions() {
     if (!nom || !codeId) return;
     try {
       const creee = await creerNotion(codeId, nom, parentId);
-      setNotions((prec) => [...(prec || []), creee]);
+      queryClient.setQueryData<Notion[]>(clesRequetes.programmeNotions(codeId), (prec) => [
+        ...(prec || []),
+        creee,
+      ]);
       if (parentId) setOuverts((prec) => new Set(prec).add(parentId));
       setValeurAjout("");
       setAjoutParentId(null);
@@ -291,7 +314,9 @@ export function ProgrammeNotions() {
     // Optimiste : le statut est l'action la plus fréquente de cette
     // carte, une pastille qui met plusieurs centaines de ms à réagir se
     // ressent immédiatement au clic.
-    setNotions((prec) => (prec || []).map((n) => (n.id === notion.id ? { ...n, statut } : n)));
+    queryClient.setQueryData<Notion[]>(clesRequetes.programmeNotions(codeId), (prec) =>
+      (prec || []).map((n) => (n.id === notion.id ? { ...n, statut } : n))
+    );
     try {
       await changerStatutNotion(codeId, notion.id, statut);
     } catch (e) {
@@ -333,6 +358,7 @@ export function ProgrammeNotions() {
 
   function supprimer(notionId: string) {
     if (!codeId) return;
+    const codeIdActuel = codeId;
     // Disparition animée (règle transversale du dépôt : pas de
     // disparition brute) -- la ligne (et ses éventuels descendants,
     // supprimés en cascade côté backend) reste montée avec une classe de
@@ -351,7 +377,9 @@ export function ProgrammeNotions() {
     setIdsEnSortie((prec) => new Set([...prec, ...idsDescendants]));
     setNotionEnEditionId(null);
     setTimeout(() => {
-      setNotions((prec) => (prec || []).filter((n) => !idsDescendants.has(n.id)));
+      queryClient.setQueryData<Notion[]>(clesRequetes.programmeNotions(codeIdActuel), (prec) =>
+        (prec || []).filter((n) => !idsDescendants.has(n.id))
+      );
       setIdsEnSortie((prec) => {
         const copie = new Set(prec);
         idsDescendants.forEach((id) => copie.delete(id));
@@ -422,17 +450,23 @@ export function ProgrammeNotions() {
       const nomTrim = formNom.trim();
       if (nomTrim && nomTrim !== notionEnEdition.nom) {
         const maj = await renommerNotion(codeId, notionEnEdition.id, nomTrim);
-        setNotions((prec) => (prec || []).map((n) => (n.id === maj.id ? maj : n)));
+        queryClient.setQueryData<Notion[]>(clesRequetes.programmeNotions(codeId), (prec) =>
+          (prec || []).map((n) => (n.id === maj.id ? maj : n))
+        );
       }
       const regleVoulue = (formRegle || null) as RegleComportementNotion | null;
       if (regleVoulue !== (notionEnEdition.regle_comportement || null)) {
         const maj = await definirRegleNotion(codeId, notionEnEdition.id, regleVoulue);
-        setNotions((prec) => (prec || []).map((n) => (n.id === maj.id ? maj : n)));
+        queryClient.setQueryData<Notion[]>(clesRequetes.programmeNotions(codeId), (prec) =>
+          (prec || []).map((n) => (n.id === maj.id ? maj : n))
+        );
       }
       const consigneVoulue = formConsigne.trim() || null;
       if (consigneVoulue !== (notionEnEdition.consigne_llm || null)) {
         const maj = await definirConsigneNotion(codeId, notionEnEdition.id, consigneVoulue);
-        setNotions((prec) => (prec || []).map((n) => (n.id === maj.id ? maj : n)));
+        queryClient.setQueryData<Notion[]>(clesRequetes.programmeNotions(codeId), (prec) =>
+          (prec || []).map((n) => (n.id === maj.id ? maj : n))
+        );
       }
       setNotionEnEditionId(null);
     } catch (e) {

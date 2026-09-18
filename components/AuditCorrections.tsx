@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, AlertTriangle } from "lucide-react";
 import { obtenirAuditCorrections, type AuditCorrections } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -8,6 +9,7 @@ import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { BoutonInfoSection } from "./BoutonInfoSection";
 import { dateRelative } from "@/lib/dateRelative";
+import { clesRequetes } from "@/lib/clesRequetes";
 
 /**
  * Audit synthétique hebdomadaire des signalements pédagogiques (refonte
@@ -16,21 +18,21 @@ import { dateRelative } from "@/lib/dateRelative";
  * Les signalements encore "nouveau" sont mis en avant, séparément.
  */
 export function AuditCorrections() {
-  const [audit, setAudit] = useState<AuditCorrections | undefined>(undefined);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
 
-  useEffect(() => {
-    obtenirAuditCorrections()
-      .then(setAudit)
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) {
-          setSansCompte(true);
-        } else {
-          setErreur(messageErreur(e));
-        }
-      });
-  }, []);
+  const { data: audit } = useQuery({
+    queryKey: clesRequetes.auditCorrections,
+    queryFn: async () => {
+      try {
+        return await obtenirAuditCorrections();
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
+        else setErreur(messageErreur(e));
+        return undefined;
+      }
+    },
+  });
 
   if (sansCompte) {
     return <CTACompteRequis texte="Crée un compte pour recevoir l'audit hebdomadaire des signalements de tes élèves." />;

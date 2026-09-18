@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { clesRequetes } from "@/lib/clesRequetes";
 import { MessageSquareText, Copy, Trash2, Tag } from "lucide-react";
 import {
   listerSignalementsRecus,
@@ -40,31 +42,45 @@ const CHAMPS: { id: "question" | "reponse" | "conversation"; label: string }[] =
  * Liste triée par date, la plus récente en premier.
  */
 export function ListeCorrectionsProf() {
+  const queryClient = useQueryClient();
   const [ongletActif, setOngletActif] = useState<"nouveau" | "discute">("nouveau");
-  const [signalements, setSignalements] = useState<SignalementPedagogique[] | undefined>(undefined);
+  const { data: signalements } = useQuery({
+    queryKey: clesRequetes.correctionsProf(ongletActif),
+    queryFn: async () => {
+      try {
+        return await listerSignalementsRecus(ongletActif);
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
+        else setErreur(messageErreur(e));
+        return [] as SignalementPedagogique[];
+      }
+    },
+  });
   const [erreur, setErreur] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
   const [rattachementOuvertPour, setRattachementOuvertPour] = useState<string | null>(null);
-  const [codes, setCodes] = useState<CodePartage[] | undefined>(undefined);
+  // `codes` partage sa clé de cache avec MesCodes.tsx/ProgrammeNotions.tsx
+  // (même appel listerMesCodes) -- déjà chargé si l'une de ces sections a
+  // été visitée. `notionsParCode` reste un état local, mais alimenté via
+  // queryClient.fetchQuery (clesRequetes.programmeNotions, même clé que
+  // ProgrammeNotions.tsx) : si le programme de ce code a déjà été
+  // consulté récemment, aucune requête réseau ici non plus.
+  const { data: codes } = useQuery({
+    queryKey: clesRequetes.codes,
+    queryFn: () => listerMesCodes().catch((e) => {
+      setErreur(messageErreur(e));
+      return [] as CodePartage[];
+    }),
+  });
   const [notionsParCode, setNotionsParCode] = useState<Record<string, Notion[]>>({});
   const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
 
+  // Chargement initial des signalements porté par le useQuery plus haut.
+  // charger() garde ce nom pour ne pas toucher ses points d'appel plus
+  // bas (bouton "réessayer" éventuel).
   function charger(statut: "nouveau" | "discute") {
-    setSignalements(undefined);
-    listerSignalementsRecus(statut)
-      .then(setSignalements)
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) {
-          setSansCompte(true);
-        } else {
-          setErreur(messageErreur(e));
-        }
-      });
+    queryClient.invalidateQueries({ queryKey: clesRequetes.correctionsProf(statut) });
   }
-
-  useEffect(() => {
-    charger(ongletActif);
-  }, [ongletActif]);
 
   function discuter(s: SignalementPedagogique) {
     // L'id est repris tel quel par le modèle comme paramètre de
@@ -84,27 +100,24 @@ export function ListeCorrectionsProf() {
     setErreur(null);
     try {
       const maj = await demanderVisibiliteSignalement(s.id, manquants);
-      setSignalements((prec) => (prec || []).map((x) => (x.id === s.id ? maj : x)));
+      queryClient.setQueryData<SignalementPedagogique[]>(clesRequetes.correctionsProf(ongletActif), (prec) =>
+        (prec || []).map((x) => (x.id === s.id ? maj : x))
+      );
     } catch (e) {
       setErreur(messageErreur(e));
     }
   }
 
-  async function ouvrirRattachement(s: SignalementPedagogique) {
+  function ouvrirRattachement(s: SignalementPedagogique) {
     setRattachementOuvertPour(s.id);
-    if (codes === undefined) {
-      try {
-        setCodes(await listerMesCodes());
-      } catch (e) {
-        setErreur(messageErreur(e));
-      }
-    }
   }
 
   async function chargerNotions(codeId: string) {
-    if (notionsParCode[codeId]) return;
     try {
-      const n = await listerNotions(codeId);
+      const n = await queryClient.fetchQuery({
+        queryKey: clesRequetes.programmeNotions(codeId),
+        queryFn: () => listerNotions(codeId),
+      });
       setNotionsParCode((prec) => ({ ...prec, [codeId]: n }));
     } catch (e) {
       setErreur(messageErreur(e));
@@ -115,7 +128,9 @@ export function ListeCorrectionsProf() {
     setErreur(null);
     try {
       const maj = await rattacherSignalementPedagogique(signalementId, codeId, notionId);
-      setSignalements((prec) => (prec || []).map((x) => (x.id === signalementId ? maj : x)));
+      queryClient.setQueryData<SignalementPedagogique[]>(clesRequetes.correctionsProf(ongletActif), (prec) =>
+        (prec || []).map((x) => (x.id === signalementId ? maj : x))
+      );
       setRattachementOuvertPour(null);
     } catch (e) {
       setErreur(messageErreur(e));
@@ -126,7 +141,10 @@ export function ListeCorrectionsProf() {
     setErreur(null);
     try {
       const copie = await dupliquerSignalementPedagogique(signalementId);
-      setSignalements((prec) => [copie, ...(prec || [])]);
+      queryClient.setQueryData<SignalementPedagogique[]>(clesRequetes.correctionsProf(ongletActif), (prec) => [
+        copie,
+        ...(prec || []),
+      ]);
     } catch (e) {
       setErreur(messageErreur(e));
     }
@@ -136,7 +154,9 @@ export function ListeCorrectionsProf() {
     setErreur(null);
     try {
       await supprimerSignalementPedagogique(signalementId);
-      setSignalements((prec) => (prec || []).filter((x) => x.id !== signalementId));
+      queryClient.setQueryData<SignalementPedagogique[]>(clesRequetes.correctionsProf(ongletActif), (prec) =>
+        (prec || []).filter((x) => x.id !== signalementId)
+      );
     } catch (e) {
       setErreur(messageErreur(e));
     }

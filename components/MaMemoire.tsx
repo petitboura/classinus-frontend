@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { appelerApi } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { useInfoSection } from "./SectionPage";
+import { clesRequetes } from "@/lib/clesRequetes";
 
 /**
  * Extrait de app/dashboard/memoire/page.tsx (2026-08-01, demande Bourama :
@@ -16,33 +18,44 @@ import { useInfoSection } from "./SectionPage";
  * par la page qui l'utilise).
  */
 export function MaMemoire() {
+  const queryClient = useQueryClient();
+  const [sansCompte, setSansCompte] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  const { data: resumeServeur, isLoading: chargement } = useQuery({
+    queryKey: clesRequetes.memoire,
+    queryFn: async () => {
+      try {
+        const r = (await appelerApi("/api/memoire")) as { resume: string };
+        return r.resume || "";
+      } catch (e) {
+        if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
+        else setErreur(messageErreur(e));
+        return "";
+      }
+    },
+  });
+
+  // `resume` reste un état local éditable (zone de texte) : on ne veut
+  // surtout pas y refléter en direct chaque revalidation en arrière-plan
+  // de React Query pendant que l'utilisateur est en train de taper --
+  // seulement l'initialiser une fois quand le résumé serveur arrive.
   const [resume, setResume] = useState("");
-  const [chargement, setChargement] = useState(true);
+  const [resumeInitialise, setResumeInitialise] = useState(false);
+  useEffect(() => {
+    if (resumeServeur !== undefined && !resumeInitialise) {
+      setResume(resumeServeur);
+      setResumeInitialise(true);
+    }
+  }, [resumeServeur, resumeInitialise]);
   const [enregistrement, setEnregistrement] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
-  // Visiteur sans compte (refonte "Mon espace = l'app", cette section
-  // n'avait jamais eu à le gérer avant) -- même détection que
-  // MesComportements.tsx : 401 -> CTA plutôt qu'une erreur brute.
-  const [sansCompte, setSansCompte] = useState(false);
 
   // Description fixe remplacée par le bouton "i" du titre de page (voir
   // lib/aideSections.tsx, rubrique "memoire") -- correctif 02/09/2026,
   // suite audit Bourama.
   useInfoSection("memoire");
 
-  useEffect(() => {
-    appelerApi("/api/memoire")
-      .then((r: { resume: string }) => setResume(r.resume || ""))
-      .catch((e) => {
-        if (e instanceof ErreurApi && e.statusCode === 401) {
-          setSansCompte(true);
-        } else {
-          setErreur(messageErreur(e));
-        }
-      })
-      .finally(() => setChargement(false));
-  }, []);
 
   async function enregistrer() {
     setEnregistrement(true);
@@ -53,6 +66,7 @@ export function MaMemoire() {
         method: "PATCH",
         body: JSON.stringify({ resume }),
       });
+      queryClient.setQueryData(clesRequetes.memoire, resume);
       setMessage("Mémoire enregistrée.");
     } catch (e) {
       setErreur(messageErreur(e));
@@ -73,6 +87,7 @@ export function MaMemoire() {
     try {
       await appelerApi("/api/memoire", { method: "DELETE" });
       setResume("");
+      queryClient.setQueryData(clesRequetes.memoire, "");
       setMessage("Mémoire effacée.");
     } catch (e) {
       setErreur(messageErreur(e));
