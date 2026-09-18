@@ -36,11 +36,21 @@ export function extensionCode(href: string): string | null {
 // Clovis vient toujours de ce stockage ; un lien externe, même en .html,
 // retombe désormais sur le comportement normal (LinkPreview) dans
 // BulleMessage.tsx.
+// 18/09/2026 : stockage migré de Supabase vers R2 (clovis-backend,
+// core/stockage_r2.py) -- NEXT_PUBLIC_API_URL ajouté comme origine de
+// confiance en plus de Supabase (anciens fichiers non migrés).
 function estOrigineDeConfiance(href: string): boolean {
   const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!urlSupabase) return false;
+  const urlApi = process.env.NEXT_PUBLIC_API_URL;
+  const originesFiables = [urlSupabase, urlApi].filter(Boolean).map((u) => {
+    try {
+      return new URL(u as string).origin;
+    } catch {
+      return null;
+    }
+  });
   try {
-    return new URL(href).origin === new URL(urlSupabase).origin;
+    return originesFiables.includes(new URL(href).origin);
   } catch {
     return false;
   }
