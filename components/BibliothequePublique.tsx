@@ -1937,86 +1937,95 @@ export function BibliothequePublique() {
                       les répartissait sur toute la largeur au lieu de les
                       garder collés à droite. Icône Download (au lieu de
                       FolderSync, jugée confuse) : "attacher" se lit
-                      simplement comme "récupérer ce dossier chez moi". */}
-                  <BoutonEtoile
-                    typeElement="dossier"
-                    elementId={d.id}
-                    count={d.etoiles_count ?? 0}
-                    active={d.mon_etoile ?? false}
-                    onBascule={(etoile, etoilesCount) =>
-                      setDossiers((prev) =>
-                        prev?.map((x) => (x.id === d.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
-                      )
-                    }
-                  />
-                  {selectionMultiple.actif ? (
-                    <button
-                      onClick={(e) => selectionMultiple.basculer(d.id, { shiftKey: e.shiftKey })}
-                      aria-label="Sélectionner"
-                      className="flex flex-shrink-0 items-center p-1"
-                    >
-                      <CaseACocher checked={selectionne} onChange={() => {}} />
-                    </button>
-                  ) : (
-                  <MenuActionsCarte
-                    ariaLabel={`Actions pour ${d.nom}`}
-                    actions={[
-                      {
-                        cle: "discuter-ia",
-                        label: "Explorer avec l'IA",
-                        icone: <Sparkles size={14} />,
-                        onClick: () =>
-                          ouvrirChatAvecTexte(
-                            `Je veux explorer le dossier public id ${d.id}. ` +
-                              `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
-                              `puis discutons-en ensemble.`
-                          ),
-                      },
-                      {
-                        cle: "partager",
-                        label: "Partager",
-                        icone: <Share2 size={14} />,
-                        onClick: () => partagerOuCopierLien(lienPartage("dossier-public", d.id), d.nom),
-                      },
-                      {
-                        cle: "attacher",
-                        label: dossiersAttachesIds.has(d.id) ? "Détacher de ma bibliothèque" : "Attacher à ma bibliothèque",
-                        icone: attacheEnCours === d.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />,
-                        onClick: () => {
-                          if (attacheEnCours !== d.id) basculerAttache(d);
+                      simplement comme "récupérer ce dossier chez moi".
+                      17/09/2026 (correctif) : le bouton étoile est
+                      regroupé ICI, dans le même conteneur flex que la
+                      case à cocher/le menu -- placé comme troisième
+                      enfant direct de la carte (justify-between), il se
+                      retrouvait espacé au milieu de la carte au lieu de
+                      rester collé à droite avec le reste des actions. */}
+                  <div className="flex flex-shrink-0 items-center gap-1">
+                    <BoutonEtoile
+                      typeElement="dossier"
+                      elementId={d.id}
+                      count={d.etoiles_count ?? 0}
+                      active={d.mon_etoile ?? false}
+                      onBascule={(etoile, etoilesCount) =>
+                        setDossiers((prev) =>
+                          prev?.map((x) => (x.id === d.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
+                        )
+                      }
+                    />
+                    {selectionMultiple.actif ? (
+                      <button
+                        onClick={(e) => selectionMultiple.basculer(d.id, { shiftKey: e.shiftKey })}
+                        aria-label="Sélectionner"
+                        className="flex flex-shrink-0 items-center p-1"
+                      >
+                        <CaseACocher checked={selectionne} onChange={() => {}} />
+                      </button>
+                    ) : (
+                    <MenuActionsCarte
+                      ariaLabel={`Actions pour ${d.nom}`}
+                      actions={[
+                        {
+                          cle: "discuter-ia",
+                          label: "Explorer avec l'IA",
+                          icone: <Sparkles size={14} />,
+                          onClick: () =>
+                            ouvrirChatAvecTexte(
+                              `Je veux explorer le dossier public id ${d.id}. ` +
+                                `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
+                                `puis discutons-en ensemble.`
+                            ),
                         },
-                      },
-                      {
-                        cle: "deplacer",
-                        label: "Déplacer vers un autre dossier",
-                        icone: <Move size={14} />,
-                        onClick: () => setCibleDeplacement({ type: "dossier", dossier: d }),
-                      },
-                      {
-                        // 13/09/2026, demande Bourama : filtres (pays/niveau/
-                        // catégorie/classe/spécialité) modifiables après
-                        // coup -- réservé au créateur côté backend (403
-                        // sinon, même règle que renommer/supprimer).
-                        cle: "modifier-filtres",
-                        label: "Modifier les filtres (pays, niveau, catégorie, classe, spécialité)",
-                        icone: <Tags size={14} />,
-                        onClick: () => ouvrirEditionFiltres(d),
-                      },
-                      {
-                        cle: "supprimer",
-                        label: "Supprimer le dossier",
-                        icone: <FolderX size={14} />,
-                        onClick: () => supprimerDossier(d),
-                        destructif: true,
-                      },
-                    ]}
-                  />
-                  )}
+                        {
+                          cle: "partager",
+                          label: "Partager",
+                          icone: <Share2 size={14} />,
+                          onClick: () => partagerOuCopierLien(lienPartage("dossier-public", d.id), d.nom),
+                        },
+                        {
+                          cle: "attacher",
+                          label: dossiersAttachesIds.has(d.id) ? "Détacher de ma bibliothèque" : "Attacher à ma bibliothèque",
+                          icone: attacheEnCours === d.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />,
+                          onClick: () => {
+                            if (attacheEnCours !== d.id) basculerAttache(d);
+                          },
+                        },
+                        {
+                          cle: "deplacer",
+                          label: "Déplacer vers un autre dossier",
+                          icone: <Move size={14} />,
+                          onClick: () => setCibleDeplacement({ type: "dossier", dossier: d }),
+                        },
+                        {
+                          // 13/09/2026, demande Bourama : filtres (pays/niveau/
+                          // catégorie/classe/spécialité) modifiables après
+                          // coup -- réservé au créateur côté backend (403
+                          // sinon, même règle que renommer/supprimer).
+                          cle: "modifier-filtres",
+                          label: "Modifier les filtres (pays, niveau, catégorie, classe, spécialité)",
+                          icone: <Tags size={14} />,
+                          onClick: () => ouvrirEditionFiltres(d),
+                        },
+                        {
+                          cle: "supprimer",
+                          label: "Supprimer le dossier",
+                          icone: <FolderX size={14} />,
+                          onClick: () => supprimerDossier(d),
+                          destructif: true,
+                        },
+                      ]}
+                    />
+                    )}
+                  </div>
                 </div>
               );
               })}
             </div>
           )}
+
 
           {creationDossierOuverte && (
             // 03/09/2026, demande Bourama : passage d'une simple ligne à
