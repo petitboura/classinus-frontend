@@ -54,6 +54,7 @@ import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { Skeleton } from "./Skeleton";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
+import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { BoutonAvecIA } from "./BoutonAvecIA";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { MenuActionsCarte } from "./MenuActionsCarte";
@@ -498,7 +499,7 @@ export function BibliothequePublique() {
   // est plus seul propriétaire, il ne fait plus que les lire et déclencher
   // un rafraîchissement (silencieux, jamais de nouveau skeleton) à son
   // propre montage et après ses propres actions.
-  const { dossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches } =
+  const { dossiers, setDossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches } =
     useDossiersCataloguePublic();
   const [attacheEnCours, setAttacheEnCours] = useState<string | null>(null);
   // Navigation par dossier avec fil d'ariane (corrigé 01/09/2026, bug
@@ -1937,6 +1938,17 @@ export function BibliothequePublique() {
                       garder collés à droite. Icône Download (au lieu de
                       FolderSync, jugée confuse) : "attacher" se lit
                       simplement comme "récupérer ce dossier chez moi". */}
+                  <BoutonEtoile
+                    typeElement="dossier"
+                    elementId={d.id}
+                    count={d.etoiles_count ?? 0}
+                    active={d.mon_etoile ?? false}
+                    onBascule={(etoile, etoilesCount) =>
+                      setDossiers((prev) =>
+                        prev?.map((x) => (x.id === d.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
+                      )
+                    }
+                  />
                   {selectionMultiple.actif ? (
                     <button
                       onClick={(e) => selectionMultiple.basculer(d.id, { shiftKey: e.shiftKey })}
@@ -2157,6 +2169,17 @@ export function BibliothequePublique() {
                     )}
                   </div>
                 </button>
+                <BoutonEtoile
+                  typeElement="fichier"
+                  elementId={entree.id}
+                  count={entree.etoiles_count ?? 0}
+                  active={entree.mon_etoile ?? false}
+                  onBascule={(etoile, etoilesCount) =>
+                    setListe((prev) =>
+                      prev?.map((x) => (x.id === entree.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
+                    )
+                  }
+                />
                 {selectionMultiple.actif ? (
                   <button
                     onClick={(e) => selectionMultiple.basculer(entree.id, { shiftKey: e.shiftKey })}

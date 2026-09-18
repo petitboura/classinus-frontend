@@ -16,6 +16,7 @@ import { Skeleton } from "./Skeleton";
 import { VoirSkillRecuModal } from "@/components/VoirSkillRecuModal";
 import { lienPartage } from "@/components/ButtonPartager";
 import { BulleSurvol } from "@/components/BulleSurvol";
+import { BoutonEtoile } from "@/components/BoutonEtoile";
 
 // Catalogue public des comportements (21/08/2026, demande Bourama : "les
 // comportements aussi, je veux un onglet public, c'est à dire quelqu'un
@@ -361,6 +362,17 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
                     </BulleSurvol>
                   </div>
                 </div>
+                <BoutonEtoile
+                  typeElement="skill"
+                  elementId={c.id}
+                  count={c.etoiles_count ?? 0}
+                  active={c.mon_etoile ?? false}
+                  onBascule={(etoile, etoilesCount) =>
+                    setListe((prev) =>
+                      prev?.map((x) => (x.id === c.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
+                    )
+                  }
+                />
                 {c.est_a_moi && (
                   <button
                     onClick={(e) => {
@@ -412,7 +424,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
         <VoirSkillRecuModal
           nom={apercu.nom}
           skillMdInitial={apercu.skill_md}
-          sousTitre={`${apercu.activations_count} activation(s) · lecture seule`}
+          sousTitre={`${apercu.activations_count} activation(s) · ${apercu.etoiles_count ?? 0} étoile(s) · lecture seule`}
           lienPartage={lienPartage("skill-public", apercu.id)}
           texteAvecIA={
             `Je veux essayer le skill public id ${apercu.id}. ` +
