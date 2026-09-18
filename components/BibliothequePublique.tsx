@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Star,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -40,6 +40,7 @@ import {
   type ContenuDossierPublic,
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
+import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
@@ -495,7 +496,7 @@ export function BibliothequePublique() {
   // est plus seul propriétaire, il ne fait plus que les lire et déclencher
   // un rafraîchissement (silencieux, jamais de nouveau skeleton) à son
   // propre montage et après ses propres actions.
-  const { dossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches } =
+  const { dossiers, setDossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches } =
     useDossiersCataloguePublic();
   const [attacheEnCours, setAttacheEnCours] = useState<string | null>(null);
   // Navigation par dossier avec fil d'ariane (corrigé 01/09/2026, bug
@@ -1912,6 +1913,17 @@ export function BibliothequePublique() {
                       garder collés à droite. Icône Download (au lieu de
                       FolderSync, jugée confuse) : "attacher" se lit
                       simplement comme "récupérer ce dossier chez moi". */}
+                  <BoutonEtoile
+                    typeElement="dossier"
+                    elementId={d.id}
+                    count={d.etoiles_count ?? 0}
+                    active={d.mon_etoile ?? false}
+                    onBascule={(etoile, etoilesCount) =>
+                      setDossiers((prev) =>
+                        prev?.map((x) => (x.id === d.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
+                      )
+                    }
+                  />
                   {selectionMultiple.actif ? (
                     <button
                       onClick={(e) => selectionMultiple.basculer(d.id, { shiftKey: e.shiftKey })}
@@ -2121,6 +2133,17 @@ export function BibliothequePublique() {
                     )}
                   </div>
                 </button>
+                <BoutonEtoile
+                  typeElement="fichier"
+                  elementId={entree.id}
+                  count={entree.etoiles_count ?? 0}
+                  active={entree.mon_etoile ?? false}
+                  onBascule={(etoile, etoilesCount) =>
+                    setListe((prev) =>
+                      prev?.map((x) => (x.id === entree.id ? { ...x, mon_etoile: etoile, etoiles_count: etoilesCount } : x))
+                    )
+                  }
+                />
                 {selectionMultiple.actif ? (
                   <button
                     onClick={(e) => selectionMultiple.basculer(entree.id, { shiftKey: e.shiftKey })}

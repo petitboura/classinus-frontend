@@ -24,6 +24,10 @@ import {
 // diffère, jamais de nouveau skeleton pour cette seconde requête.
 type ContexteDossiersCataloguePublicValeur = {
   dossiers: DossierCataloguePublic[] | undefined;
+  // 17/09/2026, demande Bourama (étoiles) : exposé pour permettre une
+  // mise à jour locale optimiste (ex: clic étoile) sans réappeler le
+  // serveur -- même principe que setDossiersAttachesIds déjà exposé.
+  setDossiers: Dispatch<SetStateAction<DossierCataloguePublic[] | undefined>>;
   dossiersAttachesIds: Set<string>;
   setDossiersAttachesIds: Dispatch<SetStateAction<Set<string>>>;
   rafraichirDossiers: () => void;
@@ -52,7 +56,7 @@ export function useFournirDossiersCataloguePublic() {
       .catch(() => {});
   }, []);
 
-  return { dossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches };
+  return { dossiers, setDossiers, dossiersAttachesIds, setDossiersAttachesIds, rafraichirDossiers, rafraichirDossiersAttaches };
 }
 
 export function useDossiersCataloguePublic() {

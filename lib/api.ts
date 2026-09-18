@@ -410,6 +410,11 @@ export type EntreeBibliothequePublique = {
   // bouton "Modifier les filtres" (voir api/bibliotheque_publique.py::
   // _marquer_est_a_moi).
   est_a_moi?: boolean;
+  // 17/09/2026, demande Bourama : étoiles façon GitHub sur le catalogue
+  // public (fichiers/dossiers/skills), voir basculerEtoileCatalogue
+  // plus bas -- une étoile par personne, seul le total compte.
+  etoiles_count?: number;
+  mon_etoile?: boolean;
 };
 
 // 03/09/2026, demande Bourama : filtres pays/niveau/catégorie en plus de
@@ -442,6 +447,21 @@ export type FiltresPublicationBibliothequePublique = {
   classe?: string[];
   specialite?: string[];
 };
+
+// 17/09/2026, demande Bourama : étoiles façon GitHub sur le catalogue
+// public -- une seule route pour les 3 types d'éléments (fichier/
+// dossier/skill), voir POST /api/etoiles-catalogue-public/basculer
+// côté backend. Toggle : ajoute l'étoile de cet utilisateur si elle
+// n'y est pas encore, la retire sinon.
+export type TypeElementCataloguePublic = "fichier" | "dossier" | "skill";
+
+export async function basculerEtoileCatalogue(typeElement: TypeElementCataloguePublic, elementId: string) {
+  const resultat = await appelerApi("/api/etoiles-catalogue-public/basculer", {
+    method: "POST",
+    body: JSON.stringify({ type_element: typeElement, element_id: elementId }),
+  });
+  return resultat as { etoile: boolean; etoiles_count: number };
+}
 
 export async function listerBibliothequePublique(q?: string, filtres?: FiltresBibliothequePublique) {
   const params = new URLSearchParams();
@@ -639,6 +659,10 @@ export type DossierCataloguePublic = {
   // SousDossierBibliothequeConsultation (perso), definie plus bas dans
   // ce fichier.
   sous_dossiers: SousDossierBibliothequeConsultation[];
+  // 17/09/2026, demande Bourama : étoiles façon GitHub, même principe
+  // que sur EntreeBibliothequePublique plus haut.
+  etoiles_count?: number;
+  mon_etoile?: boolean;
 };
 
 // 13/09/2026, demande Bourama : filtres d'un DOSSIER (uniquement),
@@ -1290,6 +1314,10 @@ export type ComportementPublic = {
   skill_md: string;
   activations_count: number;
   est_a_moi: boolean;
+  // 17/09/2026, demande Bourama : étoiles façon GitHub, même principe
+  // que sur EntreeBibliothequePublique/DossierCataloguePublic.
+  etoiles_count?: number;
+  mon_etoile?: boolean;
 };
 
 export async function rechercherComportementsPublics(q?: string) {
