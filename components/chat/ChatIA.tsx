@@ -160,6 +160,13 @@ export function ChatIA({
   // "niveau2" dans main.py -- toujours un seul à la fois, jamais de
   // vrai parallélisme) garde l'ancien comportement par repli.
   const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; texte: string; etat: EtatStatut }[]>([]);
+  // Ajouté (18/09/2026, demande Bourama : statut d'outil incohérent) :
+  // texte "X effectuée" reçu dans "statut_termine", gardé par id_appel
+  // jusqu'à l'événement "outil_resultat" du même appel, qui l'emporte avec
+  // le résultat. Sert à afficher l'étape "effectuée" sur la MÊME ligne que
+  // l'outil (voir LigneOutil.tsx). Simple table de correspondance (pas un
+  // state) : lue et vidée dans la même suite d'événements, dans l'ordre.
+  const textesTermineRef = useRef<Map<string, string>>(new Map());
   // Correctif 09/09/2026 (Bourama : l'exécution d'un outil coupait une
   // phrase en cours d'affichage) : les événements outils (statut/
   // statut_termine/outil_resultat/sources/images) qui arrivent PENDANT
@@ -408,13 +415,19 @@ export function ChatIA({
                 const iDernierEnCours = [...copie].reverse().findIndex((s) => s.etat === "en_cours");
                 return iDernierEnCours === -1 ? -1 : copie.length - 1 - iDernierEnCours;
               })();
+        // "a échoué" traité comme "annulée" (18/09/2026) : une ligne d'outil
+        // ne doit jamais afficher de coche verte pour un échec.
+        const estEchecOuAnnulation = evenement.texte.includes("annulée") || evenement.texte.includes("échoué");
         if (i === -1) {
           copie.push({ texte: evenement.texte, etat: "termine" });
         } else {
-          copie[i] = { ...copie[i], texte: evenement.texte, etat: evenement.texte.includes("annulée") ? "annule" : "termine" };
+          copie[i] = { ...copie[i], texte: evenement.texte, etat: estEchecOuAnnulation ? "annule" : "termine" };
         }
         return copie;
       });
+      if (evenement.id_appel && !(evenement.texte.includes("annulée") || evenement.texte.includes("échoué"))) {
+        textesTermineRef.current.set(evenement.id_appel, evenement.texte);
+      }
     } else if (item.type === "sources") {
       majMessages((prec) => {
         const copie = [...prec];
@@ -469,14 +482,24 @@ export function ChatIA({
       // (ordre non garanti en vrai parallèle, voir core/execution_outils.py),
       // l'entrée resterait sinon affichée "en cours" indéfiniment à côté
       // de son propre résultat déjà affiché juste au-dessus.
+      // Texte "effectuée" du même appel, lu ICI (hors du updater de
+      // majMessages, qui peut être appelé deux fois en mode dev) puis vidé.
+      const texteTermine = evenement.id_appel ? textesTermineRef.current.get(evenement.id_appel) : undefined;
       if (evenement.id_appel) {
+        textesTermineRef.current.delete(evenement.id_appel);
         setStatuts((prec) => prec.filter((s) => s.id !== evenement.id_appel));
       }
       majMessages((prec) => {
         const copie = [...prec];
         const dernier = copie[copie.length - 1];
         const existants = dernier.outilsResultats || [];
-        const nouvelEntree = { nomOutil: evenement.nom_outil, nomLisible: evenement.nom_lisible, resultat: evenement.resultat };
+        const nouvelEntree = {
+          nomOutil: evenement.nom_outil,
+          nomLisible: evenement.nom_lisible,
+          resultat: evenement.resultat,
+          idAppel: evenement.id_appel as string | undefined,
+          texteTermine,
+        };
         copie[copie.length - 1] = {
           ...dernier,
           outilsResultats: [...existants, nouvelEntree],
@@ -697,6 +720,7 @@ export function ChatIA({
     reinitialiserAffichageControle();
     setGenEnCours(true);
     setStatuts([]);
+    textesTermineRef.current.clear();
     setRaisonnementEnCours(false);
 
     try {
@@ -816,6 +840,7 @@ export function ChatIA({
     reinitialiserAffichageControle();
     setGenEnCours(true);
     setStatuts([]);
+    textesTermineRef.current.clear();
     setRaisonnementEnCours(false);
     setConfirmation(null);
 
@@ -1138,9 +1163,18 @@ export function ChatIA({
   // anciens/rares : lecture d'image, "niveau2" dans main.py -- toujours un
   // seul à la fois) gardent l'ancien affichage flottant en bas de la
   // liste, inchangé.
+  // Étendu (18/09/2026, demande Bourama : statut d'outil incohérent) :
+  // inclut aussi l'état "termine" (l'outil a fini, son résultat n'est pas
+  // encore arrivé) pour que la ligne ne disparaisse pas un instant entre les
+  // deux événements. "annule" (annulation ou échec) reste exclu, comme avant.
   const outilsEnCoursTrackes: OutilEnCours[] = statuts
-    .filter((s) => !!s.id && s.etat === "en_cours")
-    .map((s) => ({ id: s.id as string, nomOutil: s.nomOutil, texte: s.texte }));
+    .filter((s) => !!s.id && (s.etat === "en_cours" || s.etat === "termine"))
+    .map((s) => ({
+      id: s.id as string,
+      nomOutil: s.nomOutil,
+      texte: s.texte,
+      etat: s.etat === "termine" ? ("termine" as const) : ("en_cours" as const),
+    }));
   const statutsFlottants = statuts.filter((s) => !s.id);
 
   return (

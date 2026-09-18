@@ -270,7 +270,7 @@ export interface MessageAffiche {
   // séparé du message) : elles doivent apparaître juste après le
   // résultat de leur outil, pas dans un bloc "Sources" à part à la fin
   // -- voir OutilResultatBulle.tsx.
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
   // Ajouté 30/08/2026 (audit UX mobile, partie 5 : "pas de chemin de
   // récupération après une erreur") : la génération a échoué avant la
   // moindre réponse persistée -- message.id reste donc null pour
@@ -327,6 +327,9 @@ export type SegmentMessage =
       nomOutil: string;
       nomLisible: string;
       resultat: string;
+      // Ajoutés (18/09/2026, statut d'outil unifié) : voir OutilResultatBulle.tsx.
+      idAppel?: string;
+      texteTermine?: string;
       sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[];
       images?: { titre: string; url: string; miniature: string; credit?: string | null }[];
     };
@@ -480,7 +483,7 @@ function BulleMessageInterne({
   estEnCoursDeGeneration?: boolean;
   raisonnement?: string;
   raisonnementEnCours?: boolean;
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
   outilsEnCours?: OutilEnCours[];
   // Persona pédagogique / jonction "QCM complet" (14/09/2026) : transmis
   // tel quel à QCMInteractif (voir le case "qcm" du switch plus bas) --
@@ -1041,22 +1044,24 @@ function BulleMessageInterne({
                       const enCoursDuRun = dernierRun ? outilsEnCours : undefined;
                       if (enCoursDuRun && enCoursDuRun.length > 0) enCoursAttache = true;
 
+                      // Clé identique que le run ait 1 outil ou plusieurs
+                      // (18/09/2026, demande Bourama : statut d'outil
+                      // incohérent) : avant, "outil-N" pour un seul outil
+                      // et "outils-N" pour un groupe, donc React démontait
+                      // tout le bloc au passage du 1er au 2e outil (repli,
+                      // ouverture et animations remis à zéro). Le repli
+                      // automatique du groupe n'a lieu que si du texte
+                      // suit ce run, ou si ce message n'est plus le
+                      // message en cours (outilsEnCours absent).
                       const total = outilsDuRun.length + (enCoursDuRun?.length ?? 0);
-                      if (total === 1) {
-                        elements.push(
-                          <OutilResultatBulle
-                            key={`outil-${debutRun}`}
-                            resultats={outilsDuRun.length ? outilsDuRun : undefined}
-                            enCours={enCoursDuRun}
-                          />,
-                        );
-                      } else if (total > 1) {
+                      if (total >= 1) {
                         elements.push(
                           <OutilResultatBulle
                             key={`outils-${debutRun}`}
                             resultats={outilsDuRun.length ? outilsDuRun : undefined}
                             enCours={enCoursDuRun}
-                            groupe
+                            groupe={total > 1}
+                            peutSeReplier={!dernierRun || outilsEnCours === undefined}
                           />,
                         );
                       }
@@ -1066,13 +1071,17 @@ function BulleMessageInterne({
                     // timeline se termine sur un segment "texte", ou est
                     // encore complètement vide pour le tout premier outil
                     // du message) -- on les affiche quand même, dans leur
-                    // propre colonne icône/ligne, à la toute fin.
+                    // propre colonne icône/ligne, à la toute fin. La clé est
+                    // celle que le run aura quand son premier segment
+                    // arrivera (segments.length), pour que le bloc reste le
+                    // même élément quand le résultat vient s'y attacher.
                     if (!enCoursAttache && outilsEnCours && outilsEnCours.length > 0) {
                       elements.push(
                         <OutilResultatBulle
-                          key="outils-en-cours-fin"
+                          key={`outils-${segments.length}`}
                           enCours={outilsEnCours}
                           groupe={outilsEnCours.length > 1}
+                          peutSeReplier={false}
                         />,
                       );
                     }

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, Wrench, Link2, Layers, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Wrench, Layers } from "lucide-react";
 import { useOutilsRegistre } from "@/lib/outils";
-import { SourcesBulle } from "./SourcesBulle";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
+import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 
 // Un outil encore en train de s'exécuter (15/09/2026, demande Bourama --
 // chantier "ligne connectrice") -- `id` correspond à id_appel émis par le
@@ -15,7 +15,12 @@ import { GalerieImagesBulle } from "./GalerieImagesBulle";
 // en cours de la liste" ne suffit plus dans ce cas. `nomOutil` permet de
 // retrouver la même icône que l'outil aura une fois terminé, pour que la
 // transition en_cours -> terminé ne change pas d'icône sous les yeux.
-export type OutilEnCours = { id: string; nomOutil?: string; texte: string };
+//
+// Étendu (18/09/2026, demande Bourama : statut d'outil incohérent) : `etat`
+// distingue "en_cours" (texte "X...") de "termine" (texte "X effectuée",
+// l'outil a fini mais son résultat n'est pas encore arrivé). Absent =
+// "en_cours", comme avant.
+export type OutilEnCours = { id: string; nomOutil?: string; texte: string; etat?: "en_cours" | "termine" };
 
 // Affiche, pour CHAQUE outil utilisé, ce qu'il a concrètement exécuté /
 // retourné -- dans sa propre section, avec l'icône de cet outil précis,
@@ -58,12 +63,28 @@ function iconePourOutil(outils: ReturnType<typeof useOutilsRegistre>["outils"], 
   return outils.find((o) => o.nom === nomOutil)?.Icone ?? Wrench;
 }
 
+type ResultatOutil = {
+  nomOutil: string;
+  nomLisible: string;
+  resultat: string;
+  // Ajoutés (18/09/2026) : idAppel recolle le résultat à la ligne "en cours"
+  // du même outil (même clé, donc même élément, plus de remplacement) ;
+  // texteTermine est le texte "effectuée" reçu juste avant le résultat.
+  idAppel?: string;
+  texteTermine?: string;
+  sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[];
+  images?: { titre: string; url: string; miniature: string; credit?: string | null }[];
+};
+
+type Rangee = { cle: string; nomOutil?: string; donnees: DonneesLigneOutil };
+
 export function OutilResultatBulle({
   resultats,
   enCours,
   groupe = false,
+  peutSeReplier = true,
 }: {
-  resultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  resultats?: ResultatOutil[];
   // Outils encore en train de s'exécuter, à afficher DANS la même colonne
   // icône/ligne que les outils déjà terminés (15/09/2026, demande
   // Bourama) -- peu importe le mélange (que des en cours, que des
@@ -80,173 +101,104 @@ export function OutilResultatBulle({
   // message antérieur à ce chantier (pas de rétro-remplissage) retombe
   // encore sur l'ancien affichage groupé, qui ne passe jamais cette prop.
   groupe?: boolean;
+  // Ajouté (18/09/2026, demande Bourama : après deux ou trois outils, le
+  // groupe se repliait tout seul alors que d'autres outils tournaient
+  // encore, et l'utilisateur ne voyait plus rien). Le repli automatique
+  // n'a lieu que si aucun outil ne tourne ET si le groupe est terminé pour
+  // de bon (du texte de réponse suit déjà, ou message plus ancien). Tant
+  // que la réponse n'a pas commencé, le groupe reste ouvert : il peut
+  // encore recevoir un nouvel outil au tour suivant du modèle.
+  peutSeReplier?: boolean;
 }) {
   const { outils } = useOutilsRegistre();
-  const [ouverts, setOuverts] = useState<Record<number, boolean>>({});
-  const [sourcesOuvertes, setSourcesOuvertes] = useState<Record<number, boolean>>({});
-
-  // Ligne groupée : ouverte automatiquement quelques secondes puis se
-  // replie seule -- même principe que RaisonnementBulle (repli
-  // automatique, jamais brut), mais basé sur un délai plutôt que sur la
-  // fin d'un état "en cours" : les outils du groupe sont déjà terminés
-  // au moment où ce composant les reçoit. `groupeOuvertManuel` respecte
-  // ensuite le choix de la personne si elle a cliqué entre-temps.
-  const [groupeOuvertManuel, setGroupeOuvertManuel] = useState<boolean | null>(null);
-  const [groupeOuvertAuto, setGroupeOuvertAuto] = useState(true);
-
-  useEffect(() => {
-    if (!groupe) return;
-    setGroupeOuvertAuto(true);
-    const minuteur = setTimeout(() => setGroupeOuvertAuto(false), 3000);
-    return () => clearTimeout(minuteur);
-  }, [groupe]);
-
-  const nbResultats = resultats?.length ?? 0;
-  const nbEnCours = enCours?.length ?? 0;
-  if (!nbResultats && !nbEnCours) return null;
-
-  const estGroupe = groupe && nbResultats + nbEnCours >= 2;
-  const groupeOuvert = groupeOuvertManuel ?? groupeOuvertAuto;
 
   // Rangées unifiées, terminés puis en cours (ordre d'arrivée réel : un
   // outil encore en cours est forcément plus récent que tout outil déjà
   // terminé dans le même lot) -- une seule séquence, pour que la colonne
   // icône/ligne de gauche soit continue quel que soit le mélange d'états.
-  type Rangee =
-    | ({ statut: "termine"; cle: string } & NonNullable<typeof resultats>[number])
-    | { statut: "en_cours"; cle: string; nomOutil?: string; texte: string };
+  //
+  // Clé stable par outil (18/09/2026) : `o-<id_appel>` pour le résultat ET
+  // pour l'entrée en cours du même appel, donc React garde la même ligne
+  // quand l'outil passe de "en cours" à "terminé" au lieu d'en démonter une
+  // pour en monter une autre. Sans id_appel (fil rechargé depuis
+  // l'historique), repli sur la position, comme avant.
+  const clesVues = new Map<string, number>();
+  const cleUnique = (base: string) => {
+    const n = clesVues.get(base) ?? 0;
+    clesVues.set(base, n + 1);
+    return n === 0 ? base : `${base}-${n}`;
+  };
+  const idsAvecResultat = new Set((resultats ?? []).map((r) => r.idAppel).filter(Boolean) as string[]);
   const rangees: Rangee[] = [
-    ...(resultats ?? []).map((r, index) => ({ statut: "termine" as const, cle: `t-${index}`, ...r })),
-    ...(enCours ?? []).map((e) => ({ statut: "en_cours" as const, cle: `e-${e.id}`, nomOutil: e.nomOutil, texte: e.texte })),
+    ...(resultats ?? []).map((r, index) => ({
+      cle: cleUnique(r.idAppel ? `o-${r.idAppel}` : `t-${index}`),
+      nomOutil: r.nomOutil,
+      donnees: {
+        etat: "resultat" as const,
+        nomLisible: r.nomLisible,
+        resultat: r.resultat,
+        sources: r.sources,
+        images: r.images,
+        texteTermine: r.texteTermine,
+      },
+    })),
+    ...(enCours ?? [])
+      .filter((e) => !idsAvecResultat.has(e.id))
+      .map((e) => ({
+        cle: cleUnique(`o-${e.id}`),
+        nomOutil: e.nomOutil,
+        donnees:
+          e.etat === "termine"
+            ? { etat: "termine" as const, texteTermine: e.texte }
+            : { etat: "en_cours" as const, texteEnCours: e.texte },
+      })),
   ];
 
-  const elementsResultats = rangees.map((rangee, position) => {
-    const estDerniere = position === rangees.length - 1;
-    // Colonne icône partagée entre les deux états -- même icône d'outil
-    // dès qu'on la connaît (nomOutil transmis dès l'événement "statut"
-    // par ChatIA.tsx), pour que l'icône ne change pas d'apparence au
-    // passage en_cours -> terminé, seul l'anneau de chargement disparaît.
-    const Icone = iconePourOutil(outils, rangee.nomOutil ?? "");
-    const colonneIcone = (
-      <div className="flex w-4 flex-col items-center">
-        {/* Boîte de taille fixe (16x16) : le rond de chargement est
-            centré dedans via inset-0 + m-auto, jamais par un décalage
-            calculé à la main -- corrige le débordement/chevauchement
-            avec l'icône voisine signalé par Bourama (16/09). */}
-        <div className="relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
-          <Icone size={13} className={rangee.statut === "en_cours" ? "text-dj-texte-muet opacity-40" : "text-dj-texte-muet"} />
-          {rangee.statut === "en_cours" && (
-            <Loader2 size={16} className="absolute inset-0 m-auto animate-spin text-dj-texte-muet" />
-          )}
-        </div>
-        {/* Ligne connectrice : se trace vers le bas (scaleY, pure CSS,
-            jamais de mesure JS ni de délai) dès qu'une rangée suivante
-            existe -- peu importe l'état des deux rangées qu'elle relie
-            (terminé-terminé, terminé-en_cours, en_cours-en_cours). Sa
-            hauteur suit celle de la rangée via stretch flex : depuis la
-            correction du 17/09 (voir pb-3 plus bas, déplacé dans le bloc
-            de contenu), l'espacement entre deux rangées fait
-            intégralement partie de ce stretch, donc la ligne rejoint
-            toujours l'icône suivante bout à bout, sans aucun vide.
-            min-h ici est juste un filet de sécurité si jamais le
-            contenu est encore plus court que prévu. */}
-        {!estDerniere && (
-          <div className="mt-1 min-h-[6px] w-[2px] flex-1 origin-top animate-dj-ligne-trace bg-dj-bordure" />
-        )}
-      </div>
-    );
+  const nbTermines = rangees.filter((r) => r.donnees.etat === "resultat").length;
+  const nbEnCours = rangees.length - nbTermines;
 
-    if (rangee.statut === "en_cours") {
-      return (
-        <div key={rangee.cle} className="flex gap-2.5 animate-dj-fade-in-rapide">
-          {colonneIcone}
-          {/* pb-3 ICI plutôt que sur la rangée entière (correction
-              17/09, signalé par Bourama capture à l'appui) : mis sur la
-              rangée, ce padding restait EN DEHORS du stretch flex entre
-              colonneIcone et ce bloc, donc la ligne (qui, elle, stretch
-              bien À L'INTÉRIEUR de colonneIcone) ne le couvrait jamais --
-              d'où le vide visible entre le bas de la ligne et l'icône
-              suivante. Ici, ce padding fait partie du bloc qui participe
-              au stretch, donc la ligne s'étire pour le couvrir aussi. */}
-          <span className={`pt-0.5 text-[13px] text-dj-texte-muet ${estDerniere ? "" : "pb-3"}`}>{rangee.texte}</span>
-        </div>
-      );
+  // Ligne groupée : ouverte automatiquement, se replie seule quelques
+  // secondes après la fin de TOUS les outils (voir peutSeReplier plus haut),
+  // même principe que RaisonnementBulle (repli automatique, jamais brut).
+  // `groupeOuvertManuel` respecte ensuite le choix de la personne si elle a
+  // cliqué entre-temps. Un nouvel outil qui démarre rouvre le groupe.
+  const [groupeOuvertManuel, setGroupeOuvertManuel] = useState<boolean | null>(null);
+  const [groupeOuvertAuto, setGroupeOuvertAuto] = useState(true);
+
+  useEffect(() => {
+    if (!groupe) return;
+    if (!peutSeReplier || nbEnCours > 0) {
+      setGroupeOuvertAuto(true);
+      return;
     }
+    const minuteur = setTimeout(() => setGroupeOuvertAuto(false), 3000);
+    return () => clearTimeout(minuteur);
+  }, [groupe, peutSeReplier, nbEnCours]);
 
-    const index = rangees.slice(0, position + 1).filter((x) => x.statut === "termine").length - 1;
-    const ouvert = !!ouverts[index];
-    const aDesSources = !!rangee.sources && rangee.sources.length > 0;
-    const sourcesOuvert = !!sourcesOuvertes[index];
-    return (
-      <div key={rangee.cle} className="flex gap-2.5 animate-dj-fade-in">
-        {colonneIcone}
-        {/* Même correction que ci-dessus (17/09) : pb-3 déplacé ici,
-            dans le bloc qui stretch avec colonneIcone, plutôt que sur la
-            rangée entière. */}
-        <div className={`min-w-0 flex-1 ${estDerniere ? "" : "pb-3"}`}>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button
-              onClick={() => setOuverts((prec) => ({ ...prec, [index]: !ouvert }))}
-              className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
-            >
-              <span>{rangee.nomLisible}</span>
-              {ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-            </button>
-            {aDesSources && (
-              <button
-                onClick={() => setSourcesOuvertes((prec) => ({ ...prec, [index]: !sourcesOuvert }))}
-                className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
-              >
-                <Link2 size={13} />
-                <span>Sources ({rangee.sources!.length})</span>
-                {sourcesOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-              </button>
-            )}
-          </div>
-          {/* Galerie d'images (01/09) -- TOUJOURS visible, contrairement
-              au résultat brut replié juste en dessous : voir
-              GalerieImagesBulle.tsx pour le raisonnement. Rendue ici
-              seulement quand la rangée N'EST PAS dans un groupe (17/09,
-              correction Bourama) -- en groupe, ce bloc entier est
-              lui-même à l'intérieur du grid-rows-[0fr]/overflow-hidden
-              du groupe (voir plus bas), qui se replie automatiquement
-              après 3s : la galerie disparaissait avec lui, alors qu'elle
-              doit rester visible quoi qu'il arrive. Rendue séparément,
-              hors de ce repli, via galeriesExternes. */}
-          {!estGroupe && <GalerieImagesBulle images={rangee.images} />}
-          <div
-            className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-              ouvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-            }`}
-          >
-            <div className="overflow-hidden">
-              <pre className="mt-1.5 max-h-64 overflow-auto rounded-xl border border-dj-bordure bg-dj-surface p-2.5 text-[12px] leading-relaxed text-dj-texte-muet">
-                {rangee.resultat}
-              </pre>
-            </div>
-          </div>
-          {aDesSources && (
-            <div
-              className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                sourcesOuvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-              }`}
-            >
-              <div className="overflow-hidden">
-                <SourcesBulle sources={rangee.sources} />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  });
+  if (rangees.length === 0) return null;
+
+  const estGroupe = groupe && rangees.length >= 2;
+  const groupeOuvert = groupeOuvertManuel ?? groupeOuvertAuto;
+
+  // Même icône d'outil dès qu'on la connaît (nomOutil transmis dès
+  // l'événement "statut" par ChatIA.tsx). Repli Wrench pour tout outil
+  // absent du registre (voir iconePourOutil).
+  const elementsResultats = rangees.map((rangee, position) => (
+    <LigneOutil
+      key={rangee.cle}
+      donnees={rangee.donnees}
+      Icone={iconePourOutil(outils, rangee.nomOutil ?? "")}
+      estDerniere={position === rangees.length - 1}
+      estGroupe={estGroupe}
+    />
+  ));
 
   if (!estGroupe) {
     return <div className="my-1.5 flex max-w-[85%] flex-col">{elementsResultats}</div>;
   }
 
   // Galeries des outils du groupe, rendues hors du bloc repliable
-  // juste en dessous (voir le commentaire plus haut, 17/09) -- toujours
+  // juste en dessous (voir le commentaire dans LigneOutil, 17/09) -- toujours
   // visibles, peu importe que le groupe soit ouvert, fermé, ou déjà
   // replié automatiquement.
   const galeriesExternes = (resultats ?? [])
@@ -263,15 +215,15 @@ export function OutilResultatBulle({
       >
         <Layers size={13} />
         <span>
-          {nbResultats} outil{nbResultats > 1 ? "s" : ""} utilisé{nbResultats > 1 ? "s" : ""}
+          {nbTermines} outil{nbTermines > 1 ? "s" : ""} utilisé{nbTermines > 1 ? "s" : ""}
           {nbEnCours > 0 ? ` (${nbEnCours} en cours)` : ""}
         </span>
         {groupeOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
       </button>
       {/* La ligne connectrice entre les outils individuels reste bien
           présente une fois le groupe déplié (demande Bourama, 15/09) --
-          rien de spécifique à faire ici : elementsResultats porte déjà
-          sa propre colonne icône/ligne, ce wrapper ne fait que
+          rien de spécifique à faire ici : chaque ligne porte déjà sa
+          propre colonne icône/ligne, ce wrapper ne fait que
           plier/déplier l'ensemble, jamais la ligne à l'intérieur. */}
       <div
         className={`grid transition-[grid-template-rows] duration-300 ease-out ${
