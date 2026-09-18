@@ -1526,7 +1526,19 @@ export function BarreDeSaisie({
           barre de saisie avait été oubliée quand les cartes sont
           repassées en blanc pur (--dj-surface), demande explicite de
           Bourama. */}
-      <div className="relative hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3 focus-within:border-dj-bordure-forte md:block">
+      <div
+        // 18/09/2026, correctif Bourama (voir @container posé sur la
+        // popup dans ChatFlottant.tsx) : bascule désormais sur la largeur
+        // réellement disponible ICI (popup mini redimensionnable ou page
+        // /chat) plutôt que sur la largeur de toute la fenêtre du
+        // navigateur -- md: restait "desktop" même quand la popup était
+        // rétrécie bien en dessous de 768px, coupant des morceaux de
+        // cette barre. Seuil choisi (360px) : sous le défaut de la popup
+        // (380px, inchangé), au-dessus de sa taille minimale (320px, voir
+        // TAILLE_MIN) -- qui bascule donc vers la version compacte
+        // ci-dessous (ligne ~2211), déjà pensée pour un espace étroit.
+        className="relative hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3 focus-within:border-dj-bordure-forte @[360px]:block"
+      >
         {/* Aperçu formules (2026-07-27) -- affiché seulement si le
             brouillon contient au moins un "$", pour ne pas dupliquer
             inutilement un simple message texte sans maths. Placé
@@ -1992,7 +2004,7 @@ export function BarreDeSaisie({
                 même endroit que le bouton Appli. Le panneau mobile
                 (md:hidden, plus bas dans le fichier) couvre le petit écran. */}
             {appliButtonVisible && selecteurNotionOuvert && (
-              <div className="relative hidden md:block" ref={selecteurNotionRef}>
+              <div className="relative hidden @[360px]:block" ref={selecteurNotionRef}>
                 <div className="absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
                   {contenuSelecteurNotion("bg-dj-surface", "bg-dj-surface")}
                 </div>
@@ -2197,7 +2209,7 @@ export function BarreDeSaisie({
       {texte.includes("$") && (
         <div
           ref={apercuFormulesMobileRef}
-          className="mb-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2 text-[15px] leading-relaxed text-dj-texte md:hidden"
+          className="mb-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2 text-[15px] leading-relaxed text-dj-texte @[360px]:hidden"
         >
           {segmenterTexteAvecFormules(texte).map((s, i) =>
             s.formule ? (
@@ -2208,7 +2220,7 @@ export function BarreDeSaisie({
           )}
         </div>
       )}
-      <div className="flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
+      <div className="flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte @[360px]:hidden">
         <textarea
           ref={zoneTexteMobileRef}
           value={texte}
@@ -2505,7 +2517,7 @@ export function BarreDeSaisie({
           display:none masque aussi bien le rendu que l'interactivité de
           ses enfants. Même props que la version desktop plus haut. */}
       {editeurFormuleOuvert && (
-        <div className="md:hidden">
+        <div className="@[360px]:hidden">
           <EditeurFormule
             onChangeLive={mettreAJourFormuleLive}
             onChangerOnglet={finaliserFormuleLive}

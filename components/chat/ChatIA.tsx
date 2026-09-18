@@ -47,6 +47,8 @@ export function ChatIA({
   messagesInitiaux = [],
   texteInitial,
   onMessagesChange,
+  onMessagesSync,
+  onNouvelleConversationDemarree,
   modelesDisponibles = [],
   modeleChoisi = null,
   boutonSansEnseignant = false,
@@ -72,6 +74,24 @@ export function ChatIA({
   // tous les autres cas d'usage de ChatIA, comportement inchangé.
   texteInitial?: string;
   onMessagesChange?: (nbMessages: number) => void;
+  // Corrige un bug signalé par Bourama le 18/09/2026 : passer du popup
+  // mini au plein écran (vraie route /chat, voir ChatSection.tsx) démonte
+  // ce composant puis en remonte un autre, tous deux initialisés à partir
+  // de messagesInitiaux -- sans ce callback, la conversation en cours
+  // (messages envoyés depuis le dernier chargement de messagesInitiaux)
+  // n'était jamais reportée dans le contexte partagé, donc le nouveau
+  // montage repartait avec une conversation vide. Reporte le tableau
+  // complet à chaque changement (même fréquence qu'onMessagesChange
+  // ci-dessus, aucun coût supplémentaire), pour que le parent puisse le
+  // garder synchronisé dans ContexteChat.messagesInitiaux.
+  onMessagesSync?: (messages: MessageAffiche[]) => void;
+  // Corrige un bug signalé par Bourama le 18/09/2026 : une conversation
+  // tout juste commencée n'apparaissait dans "Historique" qu'après avoir
+  // rechargé la page (la liste n'est chargée qu'une fois, voir
+  // lib/contexteChat.tsx). Appelé une seule fois, au tout premier message
+  // envoyé d'une conversation (jamais aux suivants), pour que le parent
+  // ajoute l'entrée immédiatement dans ContexteChat.historique.
+  onNouvelleConversationDemarree?: (fil: { conversationId: string; titre: string }) => void;
   // Modeles premium (02/08/2026, voir core/fournisseurs_llm.py) : liste
   // vide = agent sans abonnement premium debloque, BarreDeSaisie
   // n'affiche alors AUCUN selecteur (comportement identique a avant
@@ -255,6 +275,7 @@ export function ChatIA({
     setMessages((prec) => {
       const suivant = fabriqueSuivant(prec);
       onMessagesChange?.(suivant.length);
+      onMessagesSync?.(suivant);
       return suivant;
     });
   }
@@ -826,6 +847,21 @@ export function ChatIA({
           ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
           : undefined,
     }));
+
+    // Corrige un bug signalé par Bourama le 18/09/2026 : "Historique" ne
+    // montrait une nouvelle conversation qu'après rechargement de la page
+    // (liste chargée une seule fois, voir lib/contexteChat.tsx). `messages`
+    // vide ici = c'est le tout premier message de cette conversation ->
+    // même règle de titre que côté serveur (api/historique.py,
+    // LONGUEUR_MAX_TITRE = 42), pour que le titre affiché tout de suite
+    // soit identique à celui qu'un rechargement afficherait.
+    if (messages.length === 0) {
+      const LONGUEUR_MAX_TITRE = 42;
+      const brut = texte.trim();
+      const titre =
+        brut.length > LONGUEUR_MAX_TITRE ? brut.slice(0, LONGUEUR_MAX_TITRE).trimEnd() + "…" : brut || "Conversation sans titre";
+      onNouvelleConversationDemarree?.({ conversationId, titre });
+    }
 
     // Si on arrive ici, soit il n'y avait pas d'état de reprise en
     // attente, soit on est dans le cas de secours (fichier joint,

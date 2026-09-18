@@ -105,6 +105,20 @@ export function ChatSection() {
     setNbMessages(0);
   }
 
+  // Corrige un bug signalé par Bourama le 18/09/2026 (voir le commentaire
+  // sur onNouvelleConversationDemarree, ChatIA.tsx) : ajoute tout de suite
+  // le nouveau fil en tête d'historique (comme le ferait un rechargement
+  // de page, qui refait l'appel réseau trié par activité récente) --
+  // garde-fou sur conversation_id pour ne jamais dupliquer une entrée déjà
+  // présente si ce callback était appelé deux fois pour la même conversation.
+  function ajouterConversationHistorique(fil: { conversationId: string; titre: string }) {
+    if (historique.some((f) => f.conversation_id === fil.conversationId)) return;
+    ctxChat?.setHistorique([
+      { conversation_id: fil.conversationId, titre: fil.titre, derniere_activite: new Date().toISOString() },
+      ...historique,
+    ]);
+  }
+
   async function selectionnerConversation(fil: FilConversation) {
     if (!agent) return;
     setChargementFilConversation(true);
@@ -192,7 +206,16 @@ export function ChatSection() {
           onSelectionnerConversation={selectionnerConversation}
         />
 
-        <div onMouseDownCapture={fermerFenetresAuClic} className="relative min-h-0 flex-1">
+        <div
+          onMouseDownCapture={fermerFenetresAuClic}
+          // 18/09/2026 : "@container" (voir le même correctif sur la
+          // popup, ChatFlottant.tsx) -- nécessaire pour que les classes
+          // "@[360px]:" de BarreDeSaisie.tsx (via ChatIA.tsx) aient une
+          // largeur de référence ici aussi ; cette page occupe toujours
+          // largement plus de 360px, donc la version desktop reste
+          // affichée comme avant, aucun changement de comportement ici.
+          className="@container relative min-h-0 flex-1"
+        >
           {chargementFilConversation && (
             <div className="absolute inset-0 z-10 overflow-hidden bg-dj-fond">
               <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 px-4 py-6" aria-hidden>
@@ -250,6 +273,8 @@ export function ChatSection() {
               outilsActifsAgent={outilsActifsAgent}
               boutonSansEnseignant={false}
               avantEnvoi={verifierLimiteInvite}
+              onMessagesSync={setMessagesInitiaux}
+              onNouvelleConversationDemarree={ajouterConversationHistorique}
               pleinEcran
               natif={natif}
             />

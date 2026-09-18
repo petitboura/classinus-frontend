@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import containerQueries from "@tailwindcss/container-queries";
 
 // Tokens "cgpt-*" (partie 5, traitement "à main levée") : propres à
 // Clovis, n'existent pas dans djiguigne-frontend -- easings sur mesure
@@ -199,7 +200,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [containerQueries],
 };
 
 export default config;
