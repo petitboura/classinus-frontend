@@ -415,6 +415,11 @@ export type EntreeBibliothequePublique = {
   // plus bas -- une étoile par personne, seul le total compte.
   etoiles_count?: number;
   mon_etoile?: boolean;
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 8 : id du contributeur, pour le bouton "détails" -> popup
+  // profil (voir ProfilPublicModal.tsx). Soumis à profil_public côté
+  // profil visé, jamais l'id d'un tiers exposé sans ce garde-fou.
+  ajoute_par?: string | null;
 };
 
 // 03/09/2026, demande Bourama : filtres pays/niveau/catégorie en plus de
@@ -461,6 +466,103 @@ export async function basculerEtoileCatalogue(typeElement: TypeElementCatalogueP
     body: JSON.stringify({ type_element: typeElement, element_id: elementId }),
   });
   return resultat as { etoile: boolean; etoiles_count: number };
+}
+
+// 18/09/2026, chantier "profil contributeur bibliotheque publique",
+// étapes 6/7/9 : compteurs bruts (partages, CTA) et lecture agrégée en
+// lot pour l'analytique affichée sur chaque carte. Best-effort côté
+// appelant -- ces deux incréments ne doivent jamais faire échouer
+// l'action utilisateur (partager/discuter avec l'IA), voir usages dans
+// ButtonPartager.tsx et BoutonAvecIA.tsx.
+export async function incrementerCtaCatalogue(typeElement: TypeElementCataloguePublic, elementId: string) {
+  const resultat = await appelerApi("/api/compteurs-catalogue-public/cta", {
+    method: "POST",
+    body: JSON.stringify({ type_element: typeElement, element_id: elementId }),
+  });
+  return resultat as { total: number };
+}
+
+export async function incrementerPartageCatalogue(typeElement: TypeElementCataloguePublic, elementId: string) {
+  const resultat = await appelerApi("/api/compteurs-catalogue-public/partages", {
+    method: "POST",
+    body: JSON.stringify({ type_element: typeElement, element_id: elementId }),
+  });
+  return resultat as { total: number };
+}
+
+export type CompteursCatalogue = {
+  partages_count: number;
+  etoiles_count: number;
+  cta_count: number;
+  enregistrements_count: number;
+};
+
+// Un seul appel pour toute une page de cartes (note performance étape
+// 7 du chantier) -- jamais un appel par carte. La clé de retour est
+// "type_element:id", voir core/analytique_catalogue_public.py.
+export async function analytiqueCatalogueEnLot(elements: { typeElement: TypeElementCataloguePublic; id: string }[]) {
+  if (elements.length === 0) return {} as Record<string, CompteursCatalogue>;
+  const resultat = await appelerApi("/api/analytique-catalogue-public/lot", {
+    method: "POST",
+    body: JSON.stringify({ elements: elements.map((e) => ({ type_element: e.typeElement, id: e.id })) }),
+  });
+  return resultat as Record<string, CompteursCatalogue>;
+}
+
+// 18/09/2026, même chantier, étapes 4/8 : profil public d'un
+// contributeur (bio/nom/photo), vide si la personne n'a pas activé son
+// profil public -- voir GET /api/profiles/{user_id} côté backend
+// (réutilise l'endpoint existant de "Mon espace", pas de nouvelle
+// route). Le popup (étape 8) n'affiche que les 4 champs ci-dessous.
+export type ProfilPublicContributeur = {
+  user_id: string;
+  nom_affiche: string;
+  bio: string;
+  avatar_url: string | null;
+  profil_public: boolean;
+};
+
+export async function lireProfilPublicContributeur(userId: string) {
+  const resultat = await appelerApi(`/api/profiles/${userId}`);
+  return resultat as ProfilPublicContributeur;
+}
+
+// Commentaires sur un élément du catalogue public (étape 5/10).
+export type CommentaireCatalogue = {
+  id: string;
+  contenu: string;
+  created_at: string;
+  utilisateur_id: string;
+  auteur_nom: string;
+  auteur_avatar_url: string | null;
+};
+
+export async function listerCommentairesCatalogue(
+  typeElement: TypeElementCataloguePublic,
+  elementId: string,
+  decalage = 0,
+  limite = 20
+) {
+  const resultat = await appelerApi(
+    `/api/commentaires-catalogue-public/${typeElement}/${elementId}?decalage=${decalage}&limite=${limite}`
+  );
+  return resultat as { commentaires: CommentaireCatalogue[]; total: number };
+}
+
+export async function creerCommentaireCatalogue(
+  typeElement: TypeElementCataloguePublic,
+  elementId: string,
+  contenu: string
+) {
+  const resultat = await appelerApi("/api/commentaires-catalogue-public", {
+    method: "POST",
+    body: JSON.stringify({ type_element: typeElement, element_id: elementId, contenu }),
+  });
+  return resultat as CommentaireCatalogue;
+}
+
+export async function supprimerCommentaireCatalogue(commentaireId: string) {
+  return appelerApi(`/api/commentaires-catalogue-public/${commentaireId}`, { method: "DELETE" });
 }
 
 export async function listerBibliothequePublique(q?: string, filtres?: FiltresBibliothequePublique) {

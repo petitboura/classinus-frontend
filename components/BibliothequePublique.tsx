@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles, Info,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -31,6 +31,7 @@ import {
   attacherDossierPublic,
   detacherDossierPublic,
   obtenirContenuDossierCataloguePublic,
+  analytiqueCatalogueEnLot,
   type EntreeBibliothequePublique,
   type DossierCataloguePublic,
   type DemandeDossierCataloguePublic,
@@ -38,6 +39,7 @@ import {
   type FiltresDossierCataloguePublic,
   type ValeursFiltreDossier,
   type ContenuDossierPublic,
+  type CompteursCatalogue,
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -56,6 +58,8 @@ import { Skeleton } from "./Skeleton";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { BoutonAvecIA } from "./BoutonAvecIA";
+import { ProfilPublicModal } from "@/components/ProfilPublicModal";
+import { BlocAnalytiqueCarte } from "@/components/BlocAnalytiqueCarte";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { MenuActionsCarte } from "./MenuActionsCarte";
 import { StatistiquesContenuDossier } from "./StatistiquesContenuDossier";
@@ -536,6 +540,12 @@ export function BibliothequePublique() {
   const [erreursEnvoi, setErreursEnvoi] = useState<{ nom: string; erreur: string }[]>([]);
   const [sansCompte, setSansCompte] = useState(false);
   const [entreeSignalee, setEntreeSignalee] = useState<EntreeBibliothequePublique | null>(null);
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étapes 8/9 : id du contributeur dont le profil est ouvert (popup),
+  // et compteurs analytiques par élément affiché (clé "type:id"),
+  // chargés en un seul appel par lot (voir l'effet plus bas).
+  const [profilOuvert, setProfilOuvert] = useState<string | null>(null);
+  const [analytiqueCatalogue, setAnalytiqueCatalogue] = useState<Record<string, CompteursCatalogue>>({});
   const [entreeOuverte, setEntreeOuverte] = useState<EntreeBibliothequePublique | null>(null);
   const [compteRequisPourCopie, setCompteRequisPourCopie] = useState(false);
   // 13/09/2026, demande Bourama : "Copier dans ma bibliothèque" et
@@ -1261,8 +1271,24 @@ export function BibliothequePublique() {
         cle: "partager",
         label: "Partager",
         icone: <Share2 size={14} />,
-        onClick: () => partagerOuCopierLien(lienPartage("fichier-public", entree.id), entree.nom),
+        onClick: () =>
+          partagerOuCopierLien(lienPartage("fichier-public", entree.id), entree.nom, {
+            typeElement: "fichier",
+            elementId: entree.id,
+          }),
       },
+      // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+      // étape 8 : ouvre le profil du contributeur (voir ProfilPublicModal.tsx).
+      ...(entree.ajoute_par
+        ? [
+            {
+              cle: "details",
+              label: "Détails du contributeur",
+              icone: <Info size={14} />,
+              onClick: () => setProfilOuvert(entree.ajoute_par as string),
+            },
+          ]
+        : []),
       {
         cle: "signaler",
         label: "Signaler ce contenu",
@@ -1634,6 +1660,29 @@ export function BibliothequePublique() {
   // panneau.
   const listeFichiersVisible = ongletBiblioPublique === "tous" || !!dossierCourantId;
 
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 9 : un seul appel pour toute la page affichée (note
+  // performance de l'étape 7), jamais un appel par carte. Dépendance
+  // sur une clé texte stable (pas les tableaux eux-mêmes, recréés à
+  // chaque rendu par les .filter()/.map() ci-dessus) pour ne relancer
+  // l'appel que quand le contenu réellement affiché change.
+  const idsAnalytiqueCatalogue = [
+    ...(listeAffichee ?? []).map((e) => `fichier:${e.id}`),
+    ...sousDossiersAffiches.map((d) => `dossier:${d.id}`),
+  ].join(",");
+
+  useEffect(() => {
+    if (!idsAnalytiqueCatalogue) return;
+    const elements = idsAnalytiqueCatalogue.split(",").map((cle) => {
+      const [typeElement, id] = cle.split(":") as ["fichier" | "dossier", string];
+      return { typeElement, id };
+    });
+    analytiqueCatalogueEnLot(elements)
+      .then((res) => setAnalytiqueCatalogue((prev) => ({ ...prev, ...res })))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsAnalytiqueCatalogue]);
+
   // 12/09/2026, demande Bourama : sélection multiple, même principe que
   // EspaceBibliotheque.tsx -- idsElementsAffiches reflète ce qui est
   // réellement visible (donc après filtre/recherche), condition pour que
@@ -1971,6 +2020,7 @@ export function BibliothequePublique() {
                       {d.description && (
                         <p className="truncate text-xs text-dj-texte-muet">{d.description}</p>
                       )}
+                      <BlocAnalytiqueCarte compteurs={analytiqueCatalogue[`dossier:${d.id}`]} />
                     </div>
                   </button>
                   {/* 08/09/2026 (correctif) : les deux boutons d'action
@@ -2025,8 +2075,25 @@ export function BibliothequePublique() {
                           cle: "partager",
                           label: "Partager",
                           icone: <Share2 size={14} />,
-                          onClick: () => partagerOuCopierLien(lienPartage("dossier-public", d.id), d.nom),
+                          onClick: () =>
+                            partagerOuCopierLien(lienPartage("dossier-public", d.id), d.nom, {
+                              typeElement: "dossier",
+                              elementId: d.id,
+                            }),
                         },
+                        // 18/09/2026, chantier "profil contributeur
+                        // bibliotheque publique", étape 8 : ouvre le profil
+                        // du créateur du dossier (voir ProfilPublicModal.tsx).
+                        ...(d.cree_par
+                          ? [
+                              {
+                                cle: "details",
+                                label: "Détails du contributeur",
+                                icone: <Info size={14} />,
+                                onClick: () => setProfilOuvert(d.cree_par as string),
+                              },
+                            ]
+                          : []),
                         {
                           cle: "attacher",
                           label: dossiersAttachesIds.has(d.id) ? "Détacher de ma bibliothèque" : "Attacher à ma bibliothèque",
@@ -2218,6 +2285,7 @@ export function BibliothequePublique() {
                     {entree.description && (
                       <p className="truncate text-xs text-dj-texte-muet">{entree.description}</p>
                     )}
+                    <BlocAnalytiqueCarte compteurs={analytiqueCatalogue[`fichier:${entree.id}`]} />
                   </div>
                 </button>
                 <BoutonEtoile
@@ -2344,6 +2412,8 @@ export function BibliothequePublique() {
           onFermer={() => setEntreeSignalee(null)}
         />
       )}
+
+      {profilOuvert && <ProfilPublicModal userId={profilOuvert} onFermer={() => setProfilOuvert(null)} />}
 
       {cibleDeplacement && cibleDeplacement.type === "fichier" && (
         <GererDossiersFichierModal
