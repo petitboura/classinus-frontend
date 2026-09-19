@@ -91,7 +91,8 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 | `/bibliotheque/telephone` | Dossiers du téléphone (appli mobile uniquement) |
 | `/memoire` | Ma mémoire |
 | `/comportements` | Mes skills ("comportements" en interne) |
-| `/personnaliser` | Personnaliser Clovis (skills, mémoire, plugins) — onglet central du menu natif |
+| `/skills-publics` | Skills publics (catalogue partagé par les autres étudiants) |
+| `/personnaliser` | Personnaliser Clovis : page d'accueil en liste (Mes skills, Skills publics, Ma mémoire) — onglet central du menu natif |
 | `/controle-session` | Concentration : page d'accueil en liste, même principe que Personnaliser Clovis |
 | `/controle-session/session` | Contrôle de session |
 | `/controle-session/temps-ecran` | Temps d'écran |
@@ -128,7 +129,9 @@ sous forme de pastilles (`OngletsLiens` dans `components/OngletsSegment.tsx`).
 Les deux se branchent via la prop `groupe` de `components/SectionPage.tsx`.
 Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses dans
 `lib/routesBibliotheque.ts`. Bureau : `lib/sectionsBureau.tsx` et `lib/routesBureau.ts`. Concentration :
-`lib/sectionsConcentration.tsx` et `lib/routesConcentration.ts`.
+`lib/sectionsConcentration.tsx` et `lib/routesConcentration.ts`. Personnaliser Clovis :
+`lib/sectionsPersonnaliser.tsx` et `lib/routesPersonnaliser.ts` (`/comportements` et `/memoire` gardent
+leurs adresses historiques hors de `/personnaliser`, seul `/skills-publics` est nouveau).
 Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
 et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
 les écrans ne les répètent pas dans leur carte.

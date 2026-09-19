@@ -1,26 +1,15 @@
 import { SectionPage } from "@/components/SectionPage";
 import { ListeSections } from "@/components/ListeSections";
-import { ScrollText, Brain } from "lucide-react";
+import { SECTIONS_PERSONNALISER } from "@/lib/sectionsPersonnaliser";
 
-const SECTIONS = [
-  {
-    href: "/comportements",
-    label: "Mes skills",
-    description: "Des instructions personnalisées que Classinus suit dans le chat",
-    Icone: ScrollText,
-  },
-  {
-    href: "/memoire",
-    label: "Ma mémoire",
-    description: "Ce que Classinus retient de toi entre les conversations",
-    Icone: Brain,
-  },
-];
-
+// 19/09/2026, demande Bourama : cette page n'a plus sa propre liste de
+// sections en dur -- elle vient de lib/sectionsPersonnaliser.tsx, réutilisée
+// aussi par le menu des pages voisines sur chaque page fille (même principe
+// que Bureau/Bibliothèque/Concentration).
 export default function PagePersonnaliser() {
   return (
     <SectionPage title="Personnaliser Classinus">
-      <ListeSections sections={SECTIONS} />
+      <ListeSections sections={SECTIONS_PERSONNALISER} />
     </SectionPage>
   );
 }
