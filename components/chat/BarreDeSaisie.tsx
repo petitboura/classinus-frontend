@@ -341,7 +341,16 @@ export function BarreDeSaisie({
   // problème d'amorçage. APPLIS_DISPONIBLES (lib/outils.ts) reste
   // inchangé -- il sert aussi à app/dashboard/applications/page.tsx
   // (liste des applis connectables), qui doit continuer à lister GitHub.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.nom === "notion" || a.nom === "google_drive");
+  // google_drive retiré du filtre (19/09/2026, demande Bourama : "on va
+  // masquer son bouton pour l'instant") -- bouton/menu uniquement, ne
+  // touche pas à core/registre_outils.py côté backend : si un agent a
+  // encore "google_drive" coché dans ses droits, l'outil reste utilisable
+  // en autonomie par le modèle, seul le bouton de connexion manuelle
+  // disparaît ici. APPLIS_DISPONIBLES (lib/outils.ts) reste inchangé --
+  // app/dashboard/applications/page.tsx continue donc de lister Google
+  // Drive comme appli connectable, ce filtre-ci ne concerne que la barre
+  // de saisie du chat.
+  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.nom === "notion");
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
