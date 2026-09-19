@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/Skeleton";
 
-// Skeleton de la route (10/09/2026, Lot B "Clovis ouvert") : forme
+// Skeleton de la route (10/09/2026, Lot B "Classinus ouvert") : forme
 // fidèle à page.tsx (titre + actions + corps markdown).
 export default function ChargementSkillPublique() {
   return (
