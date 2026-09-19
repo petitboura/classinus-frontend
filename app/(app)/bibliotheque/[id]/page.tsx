@@ -11,7 +11,7 @@ import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { obtenirEntreeBibliothequePublique, type EntreeBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
 
-// Chantier "Clovis ouvert" (10/09/2026, demande Bourama : chaque PDF de
+// Chantier "Classinus ouvert" (10/09/2026, demande Bourama : chaque PDF de
 // la bibliothèque publique retrouvable par son nom, indexable par
 // Google, et téléchargeable via un lien propre -- jusqu'ici cette
 // entrée n'existait que dans la liste côté client, aucune URL dédiée).
@@ -61,11 +61,11 @@ async function chargerEntree(id: string): Promise<EntreeBibliothequePublique | n
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const entree = await chargerEntree(params.id);
   if (!entree) {
-    return { title: "Document introuvable · Bibliothèque Clovis" };
+    return { title: "Document introuvable · Bibliothèque Classinus" };
   }
   return {
-    title: `${entree.nom} · Bibliothèque Clovis`,
-    description: entree.description || `Document partagé sur la bibliothèque publique de Clovis : ${entree.nom}.`,
+    title: `${entree.nom} · Bibliothèque Classinus`,
+    description: entree.description || `Document partagé sur la bibliothèque publique de Classinus : ${entree.nom}.`,
     openGraph: {
       title: entree.nom,
       description: entree.description || undefined,

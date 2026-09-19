@@ -5,7 +5,7 @@ import type { ValeurChoix } from "@/lib/questionRiche";
 
 // Sous-composant de QuestionInteractive.tsx (choix_unique/choix_multiple),
 // réutilisé tel quel par QuestionMultiChamps.tsx pour un champ imbriqué.
-// Le bouton "Autre" (validé par Bourama le 15/09/2026) : Clovis peut
+// Le bouton "Autre" (validé par Bourama le 15/09/2026) : Classinus peut
 // choisir de l'ajouter à une question à choix ; au clic il révèle un
 // champ texte libre qui remplace la réponse envoyée pour cette question.
 export function ChampChoix({

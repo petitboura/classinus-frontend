@@ -1,4 +1,4 @@
-// 19/09/2026, demande Bourama : dans Clovis, rien ne doit être accessible
+// 19/09/2026, demande Bourama : dans Classinus, rien ne doit être accessible
 // sans compte, sauf une page d'élément partagé ouverte par son lien.
 // Cette liste dit quelles routes sont des pages d'élément partagé. Toute
 // autre route du groupe (app) exige un compte, voir components/AppShell.tsx
@@ -8,7 +8,7 @@
 // Les six routes bibliotheque, dossiers et skills (version publique et
 // version perso) sont celles que produit lienPartage() dans
 // components/ButtonPartager.tsx. La fiche établissement s'y ajoute : c'est
-// une page à URL propre, indexable par Google (chantier "Clovis ouvert",
+// une page à URL propre, indexable par Google (chantier "Classinus ouvert",
 // lot C, voir app/(app)/etablissements/[id]/page.tsx).
 //
 // Volontairement absentes : les listes (/bibliotheque, /dossiers,

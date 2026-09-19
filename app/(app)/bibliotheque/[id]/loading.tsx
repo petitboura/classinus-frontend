@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/Skeleton";
 
-// Skeleton de la route (10/09/2026, Lot A "Clovis ouvert") : forme
+// Skeleton de la route (10/09/2026, Lot A "Classinus ouvert") : forme
 // fidèle à la carte réelle de page.tsx (titre + bouton télécharger +
 // description + étiquettes), affiché par Next.js pendant que
 // generateMetadata/le composant serveur attendent la réponse du

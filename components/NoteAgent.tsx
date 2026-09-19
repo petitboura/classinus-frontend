@@ -78,7 +78,7 @@ export function NoteAgent({ agentId }: { agentId: string }) {
       {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
       {compteRequis && (
         <CompteRequisModal
-          texte="Crée un compte pour noter Clovis."
+          texte="Crée un compte pour noter Classinus."
           onFerme={() => setCompteRequis(false)}
         />
       )}

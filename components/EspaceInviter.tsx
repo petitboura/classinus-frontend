@@ -10,7 +10,7 @@ import { SelectPersonnalise } from "./SelectPersonnalise";
 import { BoutonInfoSection } from "./BoutonInfoSection";
 
 /**
- * Bloc "Écrire une matière" de l'espace Clovis (réécrit le 09/08,
+ * Bloc "Écrire une matière" de l'espace Classinus (réécrit le 09/08,
  * demande Bourama : plus de rôle enseignant/étudiant, plus de simple
  * bouton "générer un code" -- ici on écrit d'abord un contenu, le code
  * est généré en même temps que la première sauvegarde. Réutilise tel
@@ -78,7 +78,7 @@ export function EspaceInviter() {
         <h2 className="font-display text-base font-semibold text-dj-texte">Écrire une matière</h2>
         <BoutonInfoSection
           rubriqueId="ecrire-matiere"
-          texteCourt="Choisis une matière et écris ce que Clovis doit savoir ou comment il doit répondre."
+          texteCourt="Choisis une matière et écris ce que Classinus doit savoir ou comment il doit répondre."
         />
       </div>
 

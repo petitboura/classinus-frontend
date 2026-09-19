@@ -41,7 +41,7 @@ export default function PageConnexion() {
             <div className="mb-8 flex items-center justify-center gap-2.5">
               <Logo taille={32} />
               <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
-                <span className="text-dj-accent-1-texte">Clovis</span>
+                <span className="text-dj-accent-1-texte">Classinus</span>
               </span>
             </div>
 
@@ -113,7 +113,7 @@ function FormulaireConnexion() {
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <Logo taille={32} />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
-            <span className="text-dj-accent-1-texte">Clovis</span>
+            <span className="text-dj-accent-1-texte">Classinus</span>
           </span>
         </div>
 

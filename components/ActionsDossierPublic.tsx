@@ -48,7 +48,7 @@ export function ActionsDossierPublic({ dossierId, nom }: { dossierId: string; no
 
   return (
     <div className="flex flex-col gap-2">
-      <SuggestionCompte texte="Crée un compte pour ajouter ce dossier à ton espace Clovis." />
+      <SuggestionCompte texte="Crée un compte pour ajouter ce dossier à ton espace Classinus." />
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={ajouter}

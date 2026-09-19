@@ -100,7 +100,7 @@ export function ChatIA({
   // l'utilisateur peut la changer pour la session via le selecteur.
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleChoisi?: string | null;
-  // Agent "Clovis" / contenu dynamique par matière (06/08/2026) -- voir
+  // Agent "Classinus" / contenu dynamique par matière (06/08/2026) -- voir
   // core/contenu_dynamique_matiere.py. Passé jusqu'à BarreDeSaisie pour
   // afficher le bouton "Sans enseignant" (forcer le prompt généraliste
   // pour un message précis, sans passer par le routeur de matière).
@@ -113,10 +113,10 @@ export function ChatIA({
   // comme si la prop n'existait pas.
   avantEnvoi?: () => boolean;
   // Écran de démarrage : remplace iconeUrl/IconeGenerique par cet
-  // élément quand fourni (09/08, demande Bourama : sur Clovis, l'IA
+  // élément quand fourni (09/08, demande Bourama : sur Classinus, l'IA
   // "étudiant autonome" ne doit montrer ni le nom technique de l'agent
   // réel -- déjà géré via nomAgent -- ni son icône réelle, remplacée ici
-  // par le logo Clovis).
+  // par le logo Classinus).
   iconePersonnalisee?: React.ReactNode;
   // Outils autorisés pour cet agent (14/08, demande Bourama) -- chargés
   // par le parent (page.tsx) EN MÊME TEMPS que le détail de l'agent,
@@ -1025,7 +1025,7 @@ export function ChatIA({
           ignorer_suggestion_outils: false,
           // Bouton "Sans enseignant" (06/08/2026, demande Bourama) --
           // uniquement pour les agents à contenu dynamique par matière
-          // (Clovis) : force le prompt généraliste pour CE message
+          // (Classinus) : force le prompt généraliste pour CE message
           // précis, sans passer par le routeur de matière ni utiliser le
           // contenu d'aucun enseignant, même si l'étudiant a des
           // matières débloquées. Voir core/contenu_dynamique_matiere.py.
@@ -1271,7 +1271,7 @@ export function ChatIA({
                   ? () =>
                       message.id
                         ? setPopupFeedback({ type: "positif", messageId: message.id!, questionMessageId: messages[index - 1]?.id ?? null })
-                        : alert("Connecte-toi pour noter Clovis.")
+                        : alert("Connecte-toi pour noter Classinus.")
                   : undefined
               }
               onDislike={
@@ -1279,7 +1279,7 @@ export function ChatIA({
                   ? () =>
                       message.id
                         ? setPopupFeedback({ type: "negatif", messageId: message.id!, questionMessageId: messages[index - 1]?.id ?? null })
-                        : alert("Connecte-toi pour noter Clovis.")
+                        : alert("Connecte-toi pour noter Classinus.")
                   : undefined
               }
               onSignalerCorrection={

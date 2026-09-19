@@ -19,7 +19,7 @@ import { FournisseurRequetes } from "@/lib/reactQuery";
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
 // Djiguignè (jugée trop générique "IA" -- palette + paire de polices
 // Bricolage Grotesque/Inter, devenue elle-même un choix par défaut des
-// produits IA/SaaS actuels) au profit d'une identité propre à Clovis :
+// produits IA/SaaS actuels) au profit d'une identité propre à Classinus :
 // Work Sans (texte courant). Portée CLOVIS UNIQUEMENT -- djiguigne-frontend
 // garde Bricolage Grotesque/Inter, ce fichier n'est donc plus dérivé à
 // l'identique de son homologue.
@@ -30,7 +30,7 @@ import { FournisseurRequetes } from "@/lib/reactQuery";
 // uniquement -- Work Sans reste inchangé pour le texte courant.
 //
 // Volontairement ABSENT ici : SessionSyncVitrine (synchronisation de
-// session avec djiguigne-ai.vercel.app). Clovis ne doit jamais
+// session avec djiguigne-ai.vercel.app). Classinus ne doit jamais
 // laisser transparaître l'existence de l'écosystème Djiguignè (brief
 // section 1) — inclure ce composant romprait ce principe dès le layout
 // racine, avant même la moindre page.
@@ -76,9 +76,9 @@ const sourceSerif = Source_Serif_4({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
-  title: "Clovis",
+  title: "Classinus",
   description: "Ton compagnon d'études pour la classe.",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Clovis" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Classinus" },
   // Correctif (02/09/2026) : Next.js (appleWebApp ci-dessus) ne génère
   // que la balise préfixée "apple-", dépréciée par Chrome/Android au
   // profit du nom standard sans préfixe -- averti en console. On garde
@@ -94,15 +94,15 @@ export const metadata: Metadata = {
   // de ce fichier, URL absolue calculée via metadataBase ci-dessus -- aucune
   // URL en dur ici).
   openGraph: {
-    title: "Clovis",
+    title: "Classinus",
     description: "Ton compagnon d'études pour la classe.",
-    siteName: "Clovis",
+    siteName: "Classinus",
     locale: "fr_FR",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Clovis",
+    title: "Classinus",
     description: "Ton compagnon d'études pour la classe.",
   },
   // Icône d'onglet (favicon) et icône iOS "ajouter à l'écran d'accueil"

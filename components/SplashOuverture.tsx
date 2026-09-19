@@ -2,10 +2,10 @@
 // tout au tout premier instant -- il fallait "quelque chose de dingue qui
 // éblouit l'user"). La plume se dessine comme si elle était en train
 // d'écrire, dans l'esprit "à main levée" déjà en place sur tout le reste
-// de l'identité Clovis (brief section 4b : jamais un tracé qui apparaît
+// de l'identité Classinus (brief section 4b : jamais un tracé qui apparaît
 // d'un coup, jamais deux barbes identiques). Puis (28/08) elle "prend
 // vie" -- petit sursaut + rotation comme si elle venait de se réveiller,
-// zigzag vers la droite comme si c'est elle qui écrivait le mot "Clovis"
+// zigzag vers la droite comme si c'est elle qui écrivait le mot "Classinus"
 // qui apparaît en même temps, puis sursaute à nouveau et revient se
 // poser à sa position finale à gauche du mot.
 //
@@ -28,7 +28,7 @@
 // components/Logo.tsx -- même plume, juste redécoupée en étapes animées.
 //
 // Mise en page : #clovis-splash-scene est une boîte de taille fixe
-// (280x150px, contenu connu et fixe -- "Clovis" -- donc pas besoin de
+// (280x150px, contenu connu et fixe -- "Classinus" -- donc pas besoin de
 // mesurer quoi que ce soit en JS) qui contient la plume ET le mot, tous
 // deux positionnés en absolu selon LEUR position finale (plume à gauche,
 // mot à droite). Le mouvement de la plume (centrage initial, sursauts,
@@ -135,7 +135,7 @@ export function SplashOuverture() {
           id="clovis-splash-mot"
           className="absolute left-[122px] top-1/2 -mt-[24px] animate-[cv-mot_1.7s_cubic-bezier(.25,.8,.35,1)_1.9s_forwards] font-display text-[44px] font-bold leading-none text-dj-texte [clip-path:inset(0_100%_0_0)]"
         >
-          Clovis
+          Classinus
         </span>
       </div>
     </div>

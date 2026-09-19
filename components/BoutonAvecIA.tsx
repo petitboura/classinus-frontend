@@ -8,7 +8,7 @@ import { incrementerCtaCatalogue, type TypeElementCataloguePublic } from "@/lib/
  * 17/09/2026, demande Bourama : bouton "avec l'IA" commun, réutilisé
  * partout où un élément (fichier, dossier, skill, notion,
  * établissement...) peut être ouvert directement dans une conversation
- * avec Clovis -- un clic ouvre le chat sur une NOUVELLE conversation
+ * avec Classinus -- un clic ouvre le chat sur une NOUVELLE conversation
  * préremplie avec `texte` (même mécanisme que "discuter d'un
  * signalement", voir useOuvrirChatAvecTexte, lib/contexteChat.tsx).
  * Même pattern visuel que ButtonPartager (components/ButtonPartager.tsx)
@@ -30,7 +30,7 @@ export function BoutonAvecIA({
   className = "",
   compterCta,
 }: {
-  /** Message pré-rempli envoyé à Clovis à l'ouverture du chat. */
+  /** Message pré-rempli envoyé à Classinus à l'ouverture du chat. */
   texte: string;
   /** Libellé affiché (variante "texte" uniquement). */
   libelle?: string;

@@ -263,7 +263,7 @@ export async function listerBibliothequePersonnelle() {
 export type ResultatDiffusion = { diffuse_a: number; total_receveurs: number; echecs: string[] };
 // MonRole/lireMonRole/diffuserDocumentEtablissement/diffuserLien/
 // listerMesDiffusions retirés le 09/08 (demande Bourama : plus de rôle
-// pour Clovis) -- voir plus bas dans ce fichier les nouvelles
+// pour Classinus) -- voir plus bas dans ce fichier les nouvelles
 // fonctions basées sur /api/agents/clovis/contenus-matiere et
 // /rattachements (contenu dynamique par matière, système déjà existant
 // et partagé avec Djiguignè, pas de vérification de rôle dessus).
@@ -458,7 +458,7 @@ export type FiltresPublicationBibliothequePublique = {
 // dossier/skill), voir POST /api/etoiles-catalogue-public/basculer
 // côté backend. Toggle : ajoute l'étoile de cet utilisateur si elle
 // n'y est pas encore, la retire sinon.
-// 18/09/2026, étape 13 : "clovis" ajouté pour les avis sur Clovis
+// 18/09/2026, étape 13 : "clovis" ajouté pour les avis sur Classinus
 // lui-même (commentaires + étoiles UNIQUEMENT, voir
 // core/etoiles_catalogue_public.py et
 // core/commentaires_catalogue_public.py -- pas de CTA/partages pour ce
@@ -597,7 +597,7 @@ export async function listerBibliothequePublique(q?: string, filtres?: FiltresBi
   return resultat as EntreeBibliothequePublique[];
 }
 
-// 10/09/2026, chantier "Clovis ouvert" (demande Bourama : chaque PDF de
+// 10/09/2026, chantier "Classinus ouvert" (demande Bourama : chaque PDF de
 // la bibliothèque publique retrouvable par son nom et téléchargeable via
 // un lien propre) -- détail d'une seule entrée, pour /bibliotheque/[id]
 // (page publique, y compris generateMetadata côté serveur). Lance une
@@ -824,7 +824,7 @@ export async function listerDossiersCataloguePublic() {
   return appelerApi("/api/bibliotheque-publique/dossiers") as Promise<DossierCataloguePublic[]>;
 }
 
-// 10/09/2026, chantier "Clovis ouvert" -- détail public d'un seul dossier
+// 10/09/2026, chantier "Classinus ouvert" -- détail public d'un seul dossier
 // (aucune auth requise, contrairement à listerDossiersCataloguePublic
 // ci-dessus), pour /dossiers/[id] (page publique, generateMetadata côté
 // serveur). Lance une ErreurApi(404) si le dossier n'existe pas, voir
@@ -1352,7 +1352,7 @@ export async function creerPageNotion(titre: string, contenu: string) {
 }
 
 /**
- * Contenu dynamique par matière -- agent "Clovis" (06/08/2026, demande
+ * Contenu dynamique par matière -- agent "Classinus" (06/08/2026, demande
  * Bourama). Voir djiguigne-backend/api/contenu_dynamique_matiere.py.
  * "Enseignant" et "étudiant" ici ne sont pas des rôles de compte : ce
  * sont juste les deux rôles qu'on joue sur CET agent précis en écrivant
@@ -1360,7 +1360,7 @@ export async function creerPageNotion(titre: string, contenu: string) {
  * peut faire les deux. Fonctions ci-dessous ajoutées le 09/08 (le bloc
  * repris tel quel de djiguigne-frontend au bootstrap du projet n'avait
  * jamais été câblé nulle part, retiré) -- toujours agent_id="clovis"
- * en dur, Clovis n'ayant qu'une seule IA (contrairement à
+ * en dur, Classinus n'ayant qu'une seule IA (contrairement à
  * djiguigne-frontend, générique sur plusieurs agents).
  */
 
@@ -1444,7 +1444,7 @@ export async function rechercherComportementsPublics(q?: string) {
   return resultat as ComportementPublic[];
 }
 
-// 10/09/2026, chantier "Clovis ouvert" -- détail d'un seul skill public,
+// 10/09/2026, chantier "Classinus ouvert" -- détail d'un seul skill public,
 // pour /skills/[id] (page publique, generateMetadata côté serveur).
 // Lance une ErreurApi(404) si le skill n'existe pas ou a été retiré par
 // son auteur, voir GET /api/comportements-publics/{id} côté backend.
@@ -2042,7 +2042,7 @@ export async function listerReceveurs(contenuId: string) {
 
 /** Diffuse un fichier à tous ceux qui ont entré mon code pour ce
  * contenu_id -- ajouté à la bibliothèque personnelle de chacun, pas à
- * la base partagée de Clovis. */
+ * la base partagée de Classinus. */
 export async function diffuserDocumentMatiere(
   contenuId: string,
   fichier: File,
@@ -2218,7 +2218,7 @@ export async function obtenirUsage(jours = 7) {
 
 // 02/09/2026, Bourama : centre de notifications (bouton cloche, header,
 // web + mobile). Voir api/notifications.py côté backend -- ne couvre
-// que les 4 nouveaux types Clovis (rappel_echu, action_ia_terminee,
+// que les 4 nouveaux types Classinus (rappel_echu, action_ia_terminee,
 // document_recu_code, message_systeme), pas les anciens types de la
 // table (follow/comment/rating/...), laissés de côté pour l'instant.
 export type NotificationClovis = {

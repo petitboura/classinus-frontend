@@ -34,16 +34,16 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "accessibilite",
     titre: "Accessibilité",
-    texteCourt: "Autorise Clovis à lire et agir dans les apps que tu choisis, une par une.",
+    texteCourt: "Autorise Classinus à lire et agir dans les apps que tu choisis, une par une.",
     texteComplet:
-      "Autorise Clovis à lire et agir dans les apps que tu choisis, une par une. Le service d'accessibilité de Clovis doit être activé dans les réglages système du téléphone pour que ça fonctionne. Tu contrôles précisément quelles apps sont autorisées, et un journal garde la trace de ce que Clovis y a lu ou fait.",
+      "Autorise Classinus à lire et agir dans les apps que tu choisis, une par une. Le service d'accessibilité de Classinus doit être activé dans les réglages système du téléphone pour que ça fonctionne. Tu contrôles précisément quelles apps sont autorisées, et un journal garde la trace de ce que Classinus y a lu ou fait.",
   },
   {
     id: "audit-corrections",
     titre: "Audit hebdomadaire",
     texteCourt: "Une fois par semaine, un résumé des signalements de tes élèves, même s'il n'y en a aucun.",
     texteComplet:
-      "Chaque semaine, Clovis t'envoie un résumé des signalements reçus de tes élèves, même s'il n'y en a aucun. Les signalements de type A (correctif de fond) encore en attente sont listés en priorité, avec un accès direct pour les corriger.",
+      "Chaque semaine, Classinus t'envoie un résumé des signalements reçus de tes élèves, même s'il n'y en a aucun. Les signalements de type A (correctif de fond) encore en attente sont listés en priorité, avec un accès direct pour les corriger.",
   },
   {
     id: "controle-session",
@@ -54,13 +54,13 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   },
   {
     // Partie 5 (06/09/2026, chantier "confiance pédagogique") : côté
-    // élève, sur le drapeau qui apparaît sous une réponse de Clovis.
+    // élève, sur le drapeau qui apparaît sous une réponse de Classinus.
     id: "corrections-elve",
     titre: "Signaler un problème",
     texteCourt:
-      "Sous une réponse de Clovis, le drapeau propose deux choix : une notion ou une méthode incorrecte (ton prof recevra ce message pour corriger directement dans le chat), ou un comportement général mal réglé (transmis pour supervision, rien à faire de ton côté).",
+      "Sous une réponse de Classinus, le drapeau propose deux choix : une notion ou une méthode incorrecte (ton prof recevra ce message pour corriger directement dans le chat), ou un comportement général mal réglé (transmis pour supervision, rien à faire de ton côté).",
     texteComplet:
-      "Sous une réponse de Clovis, le drapeau propose deux choix : une notion ou une méthode incorrecte (ton prof recevra ce message pour corriger directement dans le chat, et tu seras notifié une fois traité), ou un comportement général mal réglé (transmis pour supervision, rien à faire de ton côté). Entièrement séparé du pouce en l'air/en bas juste à côté, qui sert uniquement à noter la réponse.",
+      "Sous une réponse de Classinus, le drapeau propose deux choix : une notion ou une méthode incorrecte (ton prof recevra ce message pour corriger directement dans le chat, et tu seras notifié une fois traité), ou un comportement général mal réglé (transmis pour supervision, rien à faire de ton côté). Entièrement séparé du pouce en l'air/en bas juste à côté, qui sert uniquement à noter la réponse.",
   },
   {
     // Côté prof, sur la section "Corrections" du Bureau.
@@ -69,7 +69,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt:
       "Les signalements de tes élèves sur une notion ou une méthode incorrecte. Clique sur « Corriger » pour ouvrir une conversation déjà préparée avec le contexte, où tu n'as plus qu'à taper ou dicter ta correction.",
     texteComplet:
-      "Les signalements de tes élèves sur une notion ou une méthode incorrecte apparaissent ici, dans l'onglet « À corriger ». Clique sur « Corriger » pour ouvrir une conversation neuve déjà préparée avec le contexte (question et réponse mise en cause), où tu n'as plus qu'à taper ou dicter ta correction à Clovis. Une fois traitée, elle apparaît dans « Traitées » : tu peux la désactiver temporairement, l'éditer, la dupliquer, ou la supprimer. Ton élève reçoit une notification dès que sa correction est traitée. Les signalements de comportement général (distincts de ceux-ci) ne sont pas affichés dans le Bureau : ils sont transmis directement pour supervision.",
+      "Les signalements de tes élèves sur une notion ou une méthode incorrecte apparaissent ici, dans l'onglet « À corriger ». Clique sur « Corriger » pour ouvrir une conversation neuve déjà préparée avec le contexte (question et réponse mise en cause), où tu n'as plus qu'à taper ou dicter ta correction à Classinus. Une fois traitée, elle apparaît dans « Traitées » : tu peux la désactiver temporairement, l'éditer, la dupliquer, ou la supprimer. Ton élève reçoit une notification dès que sa correction est traitée. Les signalements de comportement général (distincts de ceux-ci) ne sont pas affichés dans le Bureau : ils sont transmis directement pour supervision.",
   },
   {
     id: "diffuser",
@@ -88,23 +88,23 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "ecrire-matiere",
     titre: "Écrire une matière",
-    texteCourt: "Choisis une matière et écris ce que Clovis doit savoir ou comment il doit répondre.",
+    texteCourt: "Choisis une matière et écris ce que Classinus doit savoir ou comment il doit répondre.",
     texteComplet:
-      "Choisis une matière et écris ce que Clovis doit savoir ou comment il doit répondre. Un code se génère à l'enregistrement : partage-le, il débloque exactement ce texte pour celui qui l'entre.",
+      "Choisis une matière et écris ce que Classinus doit savoir ou comment il doit répondre. Un code se génère à l'enregistrement : partage-le, il débloque exactement ce texte pour celui qui l'entre.",
   },
   {
     id: "rappels",
     titre: "Rappels",
     texteCourt: "Notifications, rappels programmés et événements de calendrier.",
     texteComplet:
-      "Regroupe les notifications classiques, les rappels programmés à une heure précise, et les événements ajoutés au calendrier du téléphone. Nécessite l'app mobile Clovis.",
+      "Regroupe les notifications classiques, les rappels programmés à une heure précise, et les événements ajoutés au calendrier du téléphone. Nécessite l'app mobile Classinus.",
   },
   {
     id: "temps-ecran",
     titre: "Temps d'écran",
     texteCourt: "Temps passé aujourd'hui dans chaque app, et les 7 derniers jours.",
     texteComplet:
-      "Affiche le temps passé aujourd'hui dans chaque app installée, avec un historique sur les 7 derniers jours. Nécessite l'app mobile Clovis (Android uniquement pour l'instant).",
+      "Affiche le temps passé aujourd'hui dans chaque app installée, avec un historique sur les 7 derniers jours. Nécessite l'app mobile Classinus (Android uniquement pour l'instant).",
   },
   {
     id: "mes-codes",
@@ -126,9 +126,9 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "bibliotheque-perso",
     titre: "Bibliothèque",
-    texteCourt: "Les documents ajoutés ici sont personnels : toi seul y as accès, et Clovis peut les consulter pendant une conversation.",
+    texteCourt: "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation.",
     texteComplet:
-      "Les documents ajoutés ici sont personnels : toi seul y as accès, et Clovis peut les consulter pendant une conversation.",
+      "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation.",
   },
   {
     id: "bibliotheque-publique",
@@ -168,9 +168,9 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     id: "mes-skills",
     titre: "Mes skills",
     texteCourt:
-      "Tes consignes perso pour Clovis, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
+      "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
     texteComplet:
-      "Tes consignes perso pour Clovis, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
+      "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
   },
   {
     id: "skills-publics",
@@ -182,19 +182,19 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   },
   {
     id: "connecter-claude",
-    titre: "Utiliser Clovis dans Claude",
+    titre: "Utiliser Classinus dans Claude",
     texteCourt:
-      "Connecte ton compte Clovis à Claude pour que Claude puisse utiliser ce que tu as dans Clovis (ta mémoire, tes skills, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.",
+      "Connecte ton compte Classinus à Claude pour que Claude puisse utiliser ce que tu as dans Classinus (ta mémoire, tes skills, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.",
     texteComplet:
-      "Connecte ton compte Clovis à Claude pour que Claude puisse utiliser ce que tu as dans Clovis (ta mémoire, tes skills, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.",
+      "Connecte ton compte Classinus à Claude pour que Claude puisse utiliser ce que tu as dans Classinus (ta mémoire, tes skills, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.",
   },
   {
     id: "memoire",
     titre: "Ma mémoire",
     texteCourt:
-      "Résumé de ce que Clovis retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
+      "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
     texteComplet:
-      "Résumé de ce que Clovis retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
+      "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
   },
 ];
 

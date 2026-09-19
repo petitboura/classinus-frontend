@@ -17,18 +17,18 @@ import { ChampTelephone } from "@/components/ChampTelephone";
 type MethodeAuth = "email" | "telephone";
 
 // Refonte du 09/08 (demande explicite Bourama : plus de rôle
-// enseignant/étudiant/établissement pour Clovis -- "tu as une IA
+// enseignant/étudiant/établissement pour Classinus -- "tu as une IA
 // normale, tu es normal, tant que tu n'entres pas un code"). Avant :
 // cet écran attribuait silencieusement un rôle "etudiant" à la création
 // du compte (creerEtudiantAutonome). Maintenant : aucun rôle à
 // attribuer, juste le compte Supabase + le nom enregistré sur le
 // profil (mettreAJourMonProfil, endpoint générique déjà partagé, voir
 // api/profiles.py:mettre_a_jour_mon_profil) -- puis droit au chat avec
-// Clovis.
+// Classinus.
 //
 // Garde-fou (10/08, Atik) : app/page.tsx ne redirige plus jamais ici un
 // compte déjà connecté sans rôle (il n'y a plus de rôle à vérifier, voir
-// EspaceClovis.tsx/app/page.tsx). Si cette page est quand même
+// EspaceClassinus.tsx/app/page.tsx). Si cette page est quand même
 // atteinte avec une session active (lien direct, favori), inutile de
 // repasser par le formulaire : retour "/" immédiat plus bas.
 
@@ -99,7 +99,7 @@ export default function PageInscription() {
           <div className="mb-8 flex items-center justify-center gap-2.5">
             <Logo taille={32} />
             <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
-              <span className="text-dj-accent-1-texte">Clovis</span>
+              <span className="text-dj-accent-1-texte">Classinus</span>
             </span>
           </div>
 
@@ -137,7 +137,7 @@ export default function PageInscription() {
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <Logo taille={32} />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
-            <span className="text-dj-accent-1-texte">Clovis</span>
+            <span className="text-dj-accent-1-texte">Classinus</span>
           </span>
         </div>
 

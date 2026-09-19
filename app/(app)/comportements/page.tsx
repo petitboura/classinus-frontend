@@ -2,7 +2,7 @@ import { SectionPage } from "@/components/SectionPage";
 import { MesComportements } from "@/components/MesComportements";
 import { ScrollText, Brain } from "lucide-react";
 
-// Agent unique de Clovis (voir components/chat/ChatFlottant.tsx) --
+// Agent unique de Classinus (voir components/chat/ChatFlottant.tsx) --
 // même constante que partout ailleurs dans l'app.
 const AGENT_ID = "clovis";
 
@@ -13,7 +13,7 @@ const SOEURS = [
 
 export default function PageComportements() {
   return (
-    <SectionPage title="Mes skills" groupe={{ label: "Personnaliser Clovis", href: "/personnaliser", soeurs: SOEURS }}>
+    <SectionPage title="Mes skills" groupe={{ label: "Personnaliser Classinus", href: "/personnaliser", soeurs: SOEURS }}>
       <MesComportements agentId={AGENT_ID} />
     </SectionPage>
   );

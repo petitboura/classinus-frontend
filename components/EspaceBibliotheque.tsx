@@ -215,7 +215,7 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
   // mobile, PAS dans l'app native Capacitor (limite de la plateforme,
   // pas du code -- pas de plugin natif dédié pour l'instant, décision de
   // Bourama). L'arborescence exacte du dossier importé (sous-dossiers
-  // compris) est recréée dans Clovis -- voir envoyerDossierDirect plus
+  // compris) est recréée dans Classinus -- voir envoyerDossierDirect plus
   // bas pour le détail et son historique de correctifs.
   //
   // 30/08/2026, audit navigation web mobile vs natif, étape 3 : le bouton
@@ -939,7 +939,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           voir OngletsSegment.tsx pour le détail. Fusion Dossiers du
           téléphone (26/08/2026, décision Bourama) : même plugin natif que
           la bibliothèque perso/publique mais source différente (SAF
-          système, pas les fichiers Clovis), voir /areas/clovis.md. Le
+          système, pas les fichiers Classinus), voir /areas/clovis.md. Le
           composant lui-même gère déjà son état "disponible seulement sur
           mobile" (usePluginNatif), donc pas de logique conditionnelle à
           dupliquer ici. */}

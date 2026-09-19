@@ -22,7 +22,7 @@ import { ChevronLeft } from "lucide-react";
 // - `onClick` : retour local, un état en mémoire (pile/vue) redescend
 //   d'un niveau sans changer d'URL (ex: Paramètres, Dossiers du téléphone).
 // - `href` : vraie navigation de route (ex: SectionPage.tsx, fil d'Ariane
-//   "Personnaliser Clovis -> Mes skills") -- rendu en <Link>, même style,
+//   "Personnaliser Classinus -> Mes skills") -- rendu en <Link>, même style,
 //   pour que le retour reste identique visuellement que ce soit un vrai
 //   changement de page ou juste un état local.
 type PropsBase = {

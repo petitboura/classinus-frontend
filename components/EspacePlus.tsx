@@ -13,9 +13,9 @@ import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 //
 // 30/08/2026, audit navigation web mobile vs natif, étape 1 : web mobile
 // et natif ont désormais exactement les mêmes 5 onglets directs
-// (Bibliothèque, Concentration, Chat, Bureau, Personnaliser Clovis, voir
+// (Bibliothèque, Concentration, Chat, Bureau, Personnaliser Classinus, voir
 // BarreOngletsNative.tsx et BarreOngletsWeb.tsx), donc Personnaliser
-// Clovis n'a plus besoin d'une place à part ici (SECTION_PERSONNALISER
+// Classinus n'a plus besoin d'une place à part ici (SECTION_PERSONNALISER
 // supprimée, elle vivait dans ce fichier depuis la tâche du même jour sur
 // le menu hamburger natif). Accueil, qui n'avait de son côté aucun accès
 // dans l'appli native (orphelin, signalé par Bourama), rejoint
@@ -30,10 +30,10 @@ import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 // mobile), donc l'ajouter maintenant serait construire du neuf, pas
 // ranger. À trancher avec Bourama avant de l'ajouter.
 //
-// Partager, Avis sur Clovis et "Pourquoi Clovis ?" restent dans le bloc
+// Partager, Avis sur Classinus et "Pourquoi Classinus ?" restent dans le bloc
 // d'actions ci-dessous (ajoutés le 28/08/2026 pour rester atteignables
 // sur mobile, natif ET web, pas seulement sur desktop). "Pourquoi
-// Clovis ?" ouvre CatalogueClovis via lib/contexteCatalogue.tsx.
+// Classinus ?" ouvre CatalogueClovis via lib/contexteCatalogue.tsx.
 
 // Exporté (pas seulement local) : MenuHamburgerNatif.tsx et
 // MenuHamburgerWeb.tsx réutilisent ce même tableau tel quel, pour ne
@@ -55,7 +55,7 @@ import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 // exclusivement mobiles).
 export const SECTIONS_BASE: { icone: LucideIcon; titre: string; sousTitre?: string; href: string }[] = [
   { icone: Home, titre: "Accueil", sousTitre: "Mon espace", href: "/" },
-  { icone: Plug, titre: "Connecter Claude", sousTitre: "Utiliser Clovis dans Claude", href: "/connecter-claude" },
+  { icone: Plug, titre: "Connecter Claude", sousTitre: "Utiliser Classinus dans Claude", href: "/connecter-claude" },
   { icone: Settings, titre: "Paramètres", sousTitre: "Profil, confidentialité, capacités du téléphone...", href: "/parametres" },
   { icone: Bell, titre: "Rappels", sousTitre: "Notifications programmées", href: "/rappels" },
 ];
@@ -154,7 +154,7 @@ export function BlocsMenuPlus({
   onNaviguer?: (href: string) => void;
   // 30/08/2026, audit "bouton Plus mal aligné" -- voir le commentaire sur
   // LigneSection ci-dessus pour le détail. Passé tel quel à chaque ligne
-  // rendue ici (navigation ET actions Partager/Avis/Pourquoi Clovis, pour
+  // rendue ici (navigation ET actions Partager/Avis/Pourquoi Classinus, pour
   // que le tiroir mobile du chat soit uniformément plat, pas seulement sa
   // première liste).
   plat?: boolean;
@@ -177,7 +177,7 @@ export function BlocsMenuPlus({
     const url = `${process.env.NEXT_PUBLIC_APP_URL}/telecharger`;
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: "Télécharger Clovis", url });
+        await navigator.share({ title: "Télécharger Classinus", url });
       } catch {
         // Annulé par la personne.
       }
@@ -207,14 +207,14 @@ export function BlocsMenuPlus({
   const lignesActions = (
     <>
       <LigneSection icone={Share2} titre={copie ? "Copié !" : "Partager"} onClick={partager} plat={plat} />
-      <LigneSection icone={Star} titre="Avis sur Clovis" onClick={() => setAvisDeplie((v) => !v)} plat={plat} />
+      <LigneSection icone={Star} titre="Avis sur Classinus" onClick={() => setAvisDeplie((v) => !v)} plat={plat} />
       {avisDeplie && (
         <div className="flex flex-col gap-4 p-4">
           <NoteAgent agentId={AGENT_ID} />
           <CommentairesAgent agentId={AGENT_ID} />
         </div>
       )}
-      <LigneSection icone={Compass} titre="Pourquoi Clovis ?" onClick={ouvrirCatalogue} plat={plat} />
+      <LigneSection icone={Compass} titre="Pourquoi Classinus ?" onClick={ouvrirCatalogue} plat={plat} />
     </>
   );
 

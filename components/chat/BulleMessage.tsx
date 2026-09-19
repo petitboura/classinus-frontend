@@ -860,10 +860,10 @@ function BulleMessageInterne({
           la réponse, ce qui ne reflétait pas l'ordre réel "le modèle
           réfléchit D'ABORD, répond ENSUITE". */}
       {!estUtilisateur && enAttente && (
-        <IndicateurReflexion nomAgent={nomAgent ?? "Clovis"} />
+        <IndicateurReflexion nomAgent={nomAgent ?? "Classinus"} />
       )}
       {!estUtilisateur && !enTimeline && raisonnement && (
-        <RaisonnementBulle nomAgent={nomAgent ?? "Clovis"} texte={raisonnement} enCours={!!raisonnementEnCours} />
+        <RaisonnementBulle nomAgent={nomAgent ?? "Classinus"} texte={raisonnement} enCours={!!raisonnementEnCours} />
       )}
       <div
         className={
@@ -915,7 +915,7 @@ function BulleMessageInterne({
                 </div>
               ) : (
                 // 04/09/2026, demande Bourama : window.open(_blank)
-                // faisait sortir de Clovis (surtout gênant sur mobile/
+                // faisait sortir de Classinus (surtout gênant sur mobile/
                 // appli native) -- remplacé par le même visionneur
                 // interne que pour un fichier reçu/de bibliothèque
                 // (VisionneurPositionGlobal), jamais de nouvel onglet.
@@ -990,7 +990,7 @@ function BulleMessageInterne({
                       Bourama) -- une même génération peut contenir plusieurs
                       segments "raisonnement" (le modèle réfléchit, appelle un
                       outil, réfléchit encore...), ce qui affichait avant
-                      autant de bulles "Raisonnement de Clovis" séparées et
+                      autant de bulles "Raisonnement de Classinus" séparées et
                       éparpillées dans le message. On calcule ici une seule
                       fois l'index du PREMIER segment de raisonnement et le
                       texte de TOUS les segments de raisonnement concaténé :
@@ -1057,7 +1057,7 @@ function BulleMessageInterne({
                         elements.push(
                           <RaisonnementBulle
                             key={`raisonnement-${premierIndexRaisonnement}`}
-                            nomAgent={nomAgent ?? "Clovis"}
+                            nomAgent={nomAgent ?? "Classinus"}
                             texte={texteRaisonnementFusionne}
                             enCours={raisonnementFusionEnCours}
                           />,

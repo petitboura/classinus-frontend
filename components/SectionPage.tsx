@@ -9,7 +9,7 @@ import { BoutonInfoSection } from "./BoutonInfoSection";
 import { trouverRubriqueAide } from "@/lib/aideSections";
 
 // Conteneur partagé par les sections de l'app (refonte "Mon espace =
-// l'app", 15/08/2026). Remplace le conteneur à onglets d'EspaceClovis.tsx
+// l'app", 15/08/2026). Remplace le conteneur à onglets d'EspaceClassinus.tsx
 // (lien "Retour au chat" et barre d'onglets en state local) -- la
 // navigation entre sections passe désormais par AppSidebar.tsx (vraies
 // routes), plus besoin de rien de tout ça ici.
@@ -22,7 +22,7 @@ import { trouverRubriqueAide } from "@/lib/aideSections";
 // y a une vraie profondeur -- pas ajouté ici pour cette raison.
 //
 // Prop `groupe` réintroduite le 22/08/2026 (demande Bourama, sidebar
-// regroupée) : ici la profondeur existe vraiment (Personnaliser Clovis ->
+// regroupée) : ici la profondeur existe vraiment (Personnaliser Classinus ->
 // Mes skills), donc la même logique justifie cette fois d'afficher le fil
 // d'Ariane, plus une colonne de navigation persistante vers les sections
 // soeurs (comme une vraie page de paramètres avec sidebar, pas un popup
@@ -84,7 +84,7 @@ function TitreSection({ title, infoRubriqueId, className, retour }: { title: str
 // un signalement, un établissement) : ils n'avaient jusqu'ici aucun
 // moyen de remonter d'un niveau, puisque le bouton retour de ce
 // composant n'existait que dans la branche `groupe` (fil d'Ariane
-// "Personnaliser Clovis -> Mes skills").
+// "Personnaliser Classinus -> Mes skills").
 //
 // Volontairement un href fixe, pas un router.back() : l'app pousse des
 // entrées d'historique factices pour fermer menus et panneaux (voir

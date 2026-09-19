@@ -101,13 +101,13 @@ export default async function PageTelecharger() {
       <div className="w-full max-w-lg animate-dj-fade-up">
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <Logo taille={32} />
-          <span className="font-display text-lg font-bold tracking-tight text-dj-texte">Clovis</span>
+          <span className="font-display text-lg font-bold tracking-tight text-dj-texte">Classinus</span>
         </div>
 
         <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">
           {estAndroid ? (
             <>
-              <h1 className="font-display text-xl font-bold text-dj-texte">Télécharger Clovis pour Android</h1>
+              <h1 className="font-display text-xl font-bold text-dj-texte">Télécharger Classinus pour Android</h1>
               <p className="mt-2 text-sm text-dj-texte-muet">
                 Cette version est distribuée directement en dehors du Google Play Store, avec les
                 fonctionnalités avancées de contrôle de l&apos;appareil (accessibilité).
@@ -115,15 +115,15 @@ export default async function PageTelecharger() {
             </>
           ) : estIOS ? (
             <>
-              <h1 className="font-display text-xl font-bold text-dj-texte">Installer Clovis sur iPhone / iPad</h1>
+              <h1 className="font-display text-xl font-bold text-dj-texte">Installer Classinus sur iPhone / iPad</h1>
               <p className="mt-2 text-sm text-dj-texte-muet">
-                Pas de fichier à télécharger sur iOS : Clovis s&apos;installe directement depuis Safari.
+                Pas de fichier à télécharger sur iOS : Classinus s&apos;installe directement depuis Safari.
               </p>
             </>
           ) : (
             <>
               <h1 className="font-display text-xl font-bold text-dj-texte">
-                Clovis n&apos;est pas installable depuis un PC
+                Classinus n&apos;est pas installable depuis un PC
               </h1>
               <p className="mt-2 text-sm text-dj-texte-muet">
                 Scanne ce code avec ton téléphone pour accéder au téléchargement.

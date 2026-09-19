@@ -85,7 +85,7 @@ export function ChatFlottant({
   etat: EtatChat;
   setEtat: (etat: EtatChat) => void;
   // Transmise à AppSidebar en mode plein écran (voir plus bas) -- "Pourquoi
-  // Clovis ?" vit dans le dropdown Actions de la sidebar, mais l'état
+  // Classinus ?" vit dans le dropdown Actions de la sidebar, mais l'état
   // catalogueOuvert lui-même reste au niveau du layout (AppShell.tsx).
   onOuvrirCatalogue: () => void;
   // Ref pont vers PaletteCommandes.tsx (22/08/2026, chantier "grandes
@@ -561,7 +561,7 @@ export function ChatFlottant({
         }
       >
         <Logo taille={20} />
-        <span className="font-display text-sm font-bold text-dj-texte">Clovis</span>
+        <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
 
         <div className="ml-auto flex items-center gap-1">
           {nbMessages > 0 && (
@@ -679,7 +679,7 @@ export function ChatFlottant({
             <ChatIA
               key={cle}
               agentId={agent.id}
-              nomAgent="Clovis"
+              nomAgent="Classinus"
               titreAccueil={texteAccueilSelonHeure()}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
               iconePersonnalisee={<Logo taille={40} />}

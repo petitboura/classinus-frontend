@@ -179,7 +179,7 @@ export function EspaceControleSession() {
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium text-dj-texte">Permission requise</span>
               <span className="text-xs text-dj-texte-muet">
-                Accorde l&apos;accès à la Politique de notification pour que Clovis puisse couper le son et activer Ne pas
+                Accorde l&apos;accès à la Politique de notification pour que Classinus puisse couper le son et activer Ne pas
                 déranger.
               </span>
             </div>

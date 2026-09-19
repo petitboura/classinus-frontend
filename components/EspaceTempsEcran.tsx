@@ -232,7 +232,7 @@ export function EspaceTempsEcran() {
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium text-dj-texte">Permission requise</span>
               <span className="text-xs text-dj-texte-muet">
-                Accorde l&apos;accès à l&apos;usage des apps pour que Clovis puisse afficher ton temps d&apos;écran.
+                Accorde l&apos;accès à l&apos;usage des apps pour que Classinus puisse afficher ton temps d&apos;écran.
               </span>
             </div>
           </div>

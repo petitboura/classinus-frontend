@@ -20,7 +20,7 @@ import {
 // d'URL #page=/#t= pour se positionner, ne marche pas de façon fiable
 // (le lecteur PDF/audio du système, ou l'app externe qui prend la main,
 // ignore souvent ce fragment, surtout en PWA/mobile). Ce composant
-// affiche donc le PDF/audio directement DANS Clovis, avec un vrai
+// affiche donc le PDF/audio directement DANS Classinus, avec un vrai
 // contrôle de la page/du timestamp, plutôt que de déléguer à un lecteur
 // externe. Mounté UNE SEULE FOIS (voir ChatIA.tsx), piloté par un simple
 // CustomEvent "clovis:ouvrir-position" -- évite le prop drilling entre

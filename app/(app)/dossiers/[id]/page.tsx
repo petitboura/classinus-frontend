@@ -8,7 +8,7 @@ import { StatistiquesContenuDossier } from "@/components/StatistiquesContenuDoss
 import { obtenirDossierCataloguePublic, listerBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
 
-// Chantier "Clovis ouvert" (10/09/2026, Lot E) : même principe que les
+// Chantier "Classinus ouvert" (10/09/2026, Lot E) : même principe que les
 // lots précédents. Server Component pour generateMetadata + premier
 // rendu HTML non vide.
 //
@@ -36,11 +36,11 @@ async function chargerDossier(id: string) {
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const dossier = await chargerDossier(params.id);
   if (!dossier) {
-    return { title: "Dossier introuvable · Bibliothèque Clovis" };
+    return { title: "Dossier introuvable · Bibliothèque Classinus" };
   }
   return {
-    title: `${dossier.nom} · Bibliothèque Clovis`,
-    description: dossier.description || `Dossier de la bibliothèque publique Clovis : ${dossier.nom}.`,
+    title: `${dossier.nom} · Bibliothèque Classinus`,
+    description: dossier.description || `Dossier de la bibliothèque publique Classinus : ${dossier.nom}.`,
     openGraph: {
       title: dossier.nom,
       description: dossier.description || undefined,

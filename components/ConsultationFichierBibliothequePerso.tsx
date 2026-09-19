@@ -140,7 +140,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
         )}
 
         <div className="mt-4">
-          <SuggestionCompte texte="Crée un compte Clovis pour retrouver tes propres documents." />
+          <SuggestionCompte texte="Crée un compte Classinus pour retrouver tes propres documents." />
         </div>
       </section>
 
