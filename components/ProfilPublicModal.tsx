@@ -80,7 +80,7 @@ export function ProfilPublicModal({
         <div className="flex items-center justify-between gap-2">
           <h4 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-dj-texte">
             <User size={15} className="flex-shrink-0" />
-            <span className="truncate">{userId ? "Détails" : "Statistiques"}</span>
+            <span className="truncate">Activité</span>
           </h4>
           <button onClick={fermer} className="text-dj-texte-muet hover:text-dj-texte">
             <X size={16} />

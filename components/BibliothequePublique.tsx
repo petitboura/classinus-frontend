@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles, Info,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles, Activity,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -1305,8 +1305,8 @@ export function BibliothequePublique() {
       // avant que le lot d'analytiques ait chargé.
       {
         cle: "details",
-        label: "Détails",
-        icone: <Info size={14} />,
+        label: "Activité",
+        icone: <Activity size={14} />,
         onClick: () =>
           setProfilOuvert({
             userId: entree.ajoute_par as string | undefined,
@@ -2116,8 +2116,8 @@ export function BibliothequePublique() {
                         // voir le même correctif côté fichier plus haut.
                         {
                           cle: "details",
-                          label: "Détails",
-                          icone: <Info size={14} />,
+                          label: "Activité",
+                          icone: <Activity size={14} />,
                           onClick: () =>
                             setProfilOuvert({
                               userId: d.cree_par as string | undefined,

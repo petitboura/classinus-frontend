@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, ScrollText, Download, Check, Upload, Plus, Trash2, Info } from "lucide-react";
+import { Search, ScrollText, Download, Check, Upload, Plus, Trash2, Activity } from "lucide-react";
 import {
   rechercherComportementsPublics,
   activerComportementPublic,
@@ -426,8 +426,8 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
                     // contributeur exposé pour les skills publics).
                     {
                       cle: "details",
-                      label: "Détails",
-                      icone: <Info size={14} />,
+                      label: "Activité",
+                      icone: <Activity size={14} />,
                       onClick: () =>
                         setProfilOuvert({
                           compteurs: analytiqueCatalogue[`skill:${c.id}`],
