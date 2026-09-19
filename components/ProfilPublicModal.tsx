@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { X, User } from "lucide-react";
-import { lireProfilPublicContributeur, type ProfilPublicContributeur, type CompteursCatalogue } from "@/lib/api";
+import { lireProfilPublicContributeur, type ProfilPublicContributeur, type CompteursCatalogue, type TypeElementCataloguePublic } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BlocAnalytiqueCarte } from "@/components/BlocAnalytiqueCarte";
+import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCatalogue";
 
 /**
  * 18/09/2026, chantier "profil contributeur bibliotheque publique",
@@ -27,14 +28,25 @@ import { BlocAnalytiqueCarte } from "@/components/BlocAnalytiqueCarte";
  * un élément peut avoir des analytiques sans contributeur connu --
  * dans ce cas la section profil est simplement absente, la modale
  * ne montre que les analytiques.
+ *
+ * 19/09/2026 (correctif, demande Bourama) : la section commentaires
+ * (SectionCommentairesCatalogue.tsx, étape 10 -- repliée par défaut,
+ * compteur total visible replié, scroll infini au dépli, déjà prête
+ * telle quelle) rejoint ici les analytiques et le profil, en dernier
+ * -- elle n'était branchée que sur les pages de détail dédiées
+ * (fichier/dossier/skill), pas encore sur cette modale "Détails".
+ * `element` optionnel : absent pour un appel qui n'a que le profil
+ * (aucun cas actuel, mais garde la modale réutilisable telle quelle).
  */
 export function ProfilPublicModal({
   userId,
   compteurs,
+  element,
   onFermer,
 }: {
   userId?: string;
   compteurs?: CompteursCatalogue;
+  element?: { typeElement: TypeElementCataloguePublic; elementId: string };
   onFermer: () => void;
 }) {
   const [profil, setProfil] = useState<ProfilPublicContributeur | null>(null);
@@ -101,6 +113,12 @@ export function ProfilPublicModal({
             )}
             <p className="text-sm font-semibold text-dj-texte">{profil.nom_affiche || "Sans nom"}</p>
             {profil.bio && <p className="whitespace-pre-wrap text-xs text-dj-texte-muet">{profil.bio}</p>}
+          </div>
+        )}
+
+        {element && (
+          <div className="border-t border-dj-bordure pt-3">
+            <SectionCommentairesCatalogue typeElement={element.typeElement} elementId={element.elementId} />
           </div>
         )}
       </div>

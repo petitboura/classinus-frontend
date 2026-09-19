@@ -40,6 +40,7 @@ import {
   type ValeursFiltreDossier,
   type ContenuDossierPublic,
   type CompteursCatalogue,
+  type TypeElementCataloguePublic,
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -548,7 +549,11 @@ export function BibliothequePublique() {
   // 19/09/2026 (correctif, demande Bourama) : porte maintenant aussi les
   // compteurs analytiques de l'élément d'où la modale a été ouverte, pour
   // que ProfilPublicModal affiche les deux ensemble (voir ProfilPublicModal.tsx).
-  const [profilOuvert, setProfilOuvert] = useState<{ userId: string; compteurs?: CompteursCatalogue } | null>(null);
+  const [profilOuvert, setProfilOuvert] = useState<{
+    userId?: string;
+    compteurs?: CompteursCatalogue;
+    element: { typeElement: TypeElementCataloguePublic; elementId: string };
+  } | null>(null);
   // 18/09/2026, chantier "profil contributeur bibliotheque publique",
   // étape 11 : voir lib/usePremierePublicationCatalogue.ts.
   const {
@@ -1293,24 +1298,22 @@ export function BibliothequePublique() {
       // 18/09/2026, chantier "profil contributeur bibliotheque publique",
       // étape 8 : ouvre le profil du contributeur (voir ProfilPublicModal.tsx).
       // 19/09/2026 (correctif, demande Bourama) : regroupe aussi les 4
-      // analytiques (plus affichées directement sur la carte, voir plus
-      // bas) -- condition élargie pour rester visible même sans
-      // contributeur connu tant que des compteurs existent, sinon les
-      // analytiques deviendraient invisibles pour ces éléments.
-      ...(entree.ajoute_par || analytiqueCatalogue[`fichier:${entree.id}`]
-        ? [
-            {
-              cle: "details",
-              label: "Détails",
-              icone: <Info size={14} />,
-              onClick: () =>
-                setProfilOuvert({
-                  userId: entree.ajoute_par as string,
-                  compteurs: analytiqueCatalogue[`fichier:${entree.id}`],
-                }),
-            },
-          ]
-        : []),
+      // analytiques (plus affichées directement sur la carte) et les
+      // commentaires (SectionCommentairesCatalogue, étape 10) -- toujours
+      // affiché désormais (plus conditionné à ajoute_par/compteurs) car les
+      // commentaires restent consultables même sans contributeur connu ou
+      // avant que le lot d'analytiques ait chargé.
+      {
+        cle: "details",
+        label: "Détails",
+        icone: <Info size={14} />,
+        onClick: () =>
+          setProfilOuvert({
+            userId: entree.ajoute_par as string | undefined,
+            compteurs: analytiqueCatalogue[`fichier:${entree.id}`],
+            element: { typeElement: "fichier", elementId: entree.id },
+          }),
+      },
       {
         cle: "signaler",
         label: "Signaler ce contenu",
@@ -2108,23 +2111,20 @@ export function BibliothequePublique() {
                         // bibliotheque publique", étape 8 : ouvre le profil
                         // du créateur du dossier (voir ProfilPublicModal.tsx).
                         // 19/09/2026 (correctif, demande Bourama) : regroupe
-                        // aussi les 4 analytiques (plus affichées directement
-                        // sur la carte, voir plus haut) -- condition élargie,
+                        // aussi les 4 analytiques et les commentaires
+                        // (SectionCommentairesCatalogue) -- toujours affiché,
                         // voir le même correctif côté fichier plus haut.
-                        ...(d.cree_par || analytiqueCatalogue[`dossier:${d.id}`]
-                          ? [
-                              {
-                                cle: "details",
-                                label: "Détails",
-                                icone: <Info size={14} />,
-                                onClick: () =>
-                                  setProfilOuvert({
-                                    userId: d.cree_par as string,
-                                    compteurs: analytiqueCatalogue[`dossier:${d.id}`],
-                                  }),
-                              },
-                            ]
-                          : []),
+                        {
+                          cle: "details",
+                          label: "Détails",
+                          icone: <Info size={14} />,
+                          onClick: () =>
+                            setProfilOuvert({
+                              userId: d.cree_par as string | undefined,
+                              compteurs: analytiqueCatalogue[`dossier:${d.id}`],
+                              element: { typeElement: "dossier", elementId: d.id },
+                            }),
+                        },
                         {
                           cle: "attacher",
                           label: dossiersAttachesIds.has(d.id) ? "Détacher de ma bibliothèque" : "Attacher à ma bibliothèque",
@@ -2448,6 +2448,7 @@ export function BibliothequePublique() {
         <ProfilPublicModal
           userId={profilOuvert.userId}
           compteurs={profilOuvert.compteurs}
+          element={profilOuvert.element}
           onFermer={() => setProfilOuvert(null)}
         />
       )}
