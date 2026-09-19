@@ -2,28 +2,50 @@
 
 import { useEffect, useState } from "react";
 import { X, User } from "lucide-react";
-import { lireProfilPublicContributeur, type ProfilPublicContributeur } from "@/lib/api";
+import { lireProfilPublicContributeur, type ProfilPublicContributeur, type CompteursCatalogue } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { BlocAnalytiqueCarte } from "@/components/BlocAnalytiqueCarte";
 
 /**
  * 18/09/2026, chantier "profil contributeur bibliotheque publique",
- * étape 8 : popup ouvert depuis le bouton "détails" d'une carte
+ * étape 8 : popup ouvert depuis le bouton "Détails" d'une carte
  * fichier/dossier public (voir BibliothequePublique.tsx), affiche
  * bio/nom/photo du contributeur -- ou un état "profil non public" si
  * la personne n'a pas activé ce réglage (étape 1/4). Même langage
  * visuel et même mécanique de fermeture animée que
  * VoirSkillRecuModal.tsx (pas de fermeture brute, demande Bourama).
+ *
+ * 19/09/2026 (correctif, demande Bourama) : les 4 analytiques
+ * (BlocAnalytiqueCarte, jusque-là affichées en permanence sur la
+ * carte) sont désormais repliées ICI, en tête de cette même modale --
+ * le profil du contributeur n'est plus le seul sujet de la modale,
+ * juste une section parmi d'autres. `compteurs` optionnel : peut être
+ * absent si le lot d'analytiques n'a pas encore chargé, ou si
+ * l'élément n'a pas encore de compteurs -- BlocAnalytiqueCarte gère
+ * déjà ce cas (rend null). `userId` également optionnel désormais :
+ * un élément peut avoir des analytiques sans contributeur connu --
+ * dans ce cas la section profil est simplement absente, la modale
+ * ne montre que les analytiques.
  */
-export function ProfilPublicModal({ userId, onFermer }: { userId: string; onFermer: () => void }) {
+export function ProfilPublicModal({
+  userId,
+  compteurs,
+  onFermer,
+}: {
+  userId?: string;
+  compteurs?: CompteursCatalogue;
+  onFermer: () => void;
+}) {
   const [profil, setProfil] = useState<ProfilPublicContributeur | null>(null);
-  const [chargement, setChargement] = useState(true);
+  const [chargement, setChargement] = useState(!!userId);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onFermer);
 
   useEffect(() => {
+    if (!userId) return;
     lireProfilPublicContributeur(userId)
       .then(setProfil)
       .catch((e) => setErreur(messageErreur(e)))
@@ -46,14 +68,20 @@ export function ProfilPublicModal({ userId, onFermer }: { userId: string; onFerm
         <div className="flex items-center justify-between gap-2">
           <h4 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-dj-texte">
             <User size={15} className="flex-shrink-0" />
-            <span className="truncate">Profil du contributeur</span>
+            <span className="truncate">{userId ? "Détails" : "Statistiques"}</span>
           </h4>
           <button onClick={fermer} className="text-dj-texte-muet hover:text-dj-texte">
             <X size={16} />
           </button>
         </div>
 
-        {chargement ? (
+        {compteurs && (
+          <div className="border-b border-dj-bordure pb-3">
+            <BlocAnalytiqueCarte compteurs={compteurs} />
+          </div>
+        )}
+
+        {!userId ? null : chargement ? (
           <div className="flex flex-1 items-center justify-center py-8 text-dj-texte-muet">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-dj-bordure border-t-dj-accent-1" />
           </div>

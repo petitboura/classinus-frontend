@@ -59,7 +59,6 @@ import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { BoutonAvecIA } from "./BoutonAvecIA";
 import { ProfilPublicModal } from "@/components/ProfilPublicModal";
-import { BlocAnalytiqueCarte } from "@/components/BlocAnalytiqueCarte";
 import { PopupProposerProfilPublic } from "@/components/PopupProposerProfilPublic";
 import { usePremierePublicationCatalogue } from "@/lib/usePremierePublicationCatalogue";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
@@ -546,7 +545,10 @@ export function BibliothequePublique() {
   // étapes 8/9 : id du contributeur dont le profil est ouvert (popup),
   // et compteurs analytiques par élément affiché (clé "type:id"),
   // chargés en un seul appel par lot (voir l'effet plus bas).
-  const [profilOuvert, setProfilOuvert] = useState<string | null>(null);
+  // 19/09/2026 (correctif, demande Bourama) : porte maintenant aussi les
+  // compteurs analytiques de l'élément d'où la modale a été ouverte, pour
+  // que ProfilPublicModal affiche les deux ensemble (voir ProfilPublicModal.tsx).
+  const [profilOuvert, setProfilOuvert] = useState<{ userId: string; compteurs?: CompteursCatalogue } | null>(null);
   // 18/09/2026, chantier "profil contributeur bibliotheque publique",
   // étape 11 : voir lib/usePremierePublicationCatalogue.ts.
   const {
@@ -1290,13 +1292,22 @@ export function BibliothequePublique() {
       },
       // 18/09/2026, chantier "profil contributeur bibliotheque publique",
       // étape 8 : ouvre le profil du contributeur (voir ProfilPublicModal.tsx).
-      ...(entree.ajoute_par
+      // 19/09/2026 (correctif, demande Bourama) : regroupe aussi les 4
+      // analytiques (plus affichées directement sur la carte, voir plus
+      // bas) -- condition élargie pour rester visible même sans
+      // contributeur connu tant que des compteurs existent, sinon les
+      // analytiques deviendraient invisibles pour ces éléments.
+      ...(entree.ajoute_par || analytiqueCatalogue[`fichier:${entree.id}`]
         ? [
             {
               cle: "details",
-              label: "Détails du contributeur",
+              label: "Détails",
               icone: <Info size={14} />,
-              onClick: () => setProfilOuvert(entree.ajoute_par as string),
+              onClick: () =>
+                setProfilOuvert({
+                  userId: entree.ajoute_par as string,
+                  compteurs: analytiqueCatalogue[`fichier:${entree.id}`],
+                }),
             },
           ]
         : []),
@@ -2033,7 +2044,6 @@ export function BibliothequePublique() {
                       {d.description && (
                         <p className="truncate text-xs text-dj-texte-muet">{d.description}</p>
                       )}
-                      <BlocAnalytiqueCarte compteurs={analytiqueCatalogue[`dossier:${d.id}`]} />
                     </div>
                   </button>
                   {/* 08/09/2026 (correctif) : les deux boutons d'action
@@ -2097,13 +2107,21 @@ export function BibliothequePublique() {
                         // 18/09/2026, chantier "profil contributeur
                         // bibliotheque publique", étape 8 : ouvre le profil
                         // du créateur du dossier (voir ProfilPublicModal.tsx).
-                        ...(d.cree_par
+                        // 19/09/2026 (correctif, demande Bourama) : regroupe
+                        // aussi les 4 analytiques (plus affichées directement
+                        // sur la carte, voir plus haut) -- condition élargie,
+                        // voir le même correctif côté fichier plus haut.
+                        ...(d.cree_par || analytiqueCatalogue[`dossier:${d.id}`]
                           ? [
                               {
                                 cle: "details",
-                                label: "Détails du contributeur",
+                                label: "Détails",
                                 icone: <Info size={14} />,
-                                onClick: () => setProfilOuvert(d.cree_par as string),
+                                onClick: () =>
+                                  setProfilOuvert({
+                                    userId: d.cree_par as string,
+                                    compteurs: analytiqueCatalogue[`dossier:${d.id}`],
+                                  }),
                               },
                             ]
                           : []),
@@ -2298,7 +2316,7 @@ export function BibliothequePublique() {
                     {entree.description && (
                       <p className="truncate text-xs text-dj-texte-muet">{entree.description}</p>
                     )}
-                    <BlocAnalytiqueCarte compteurs={analytiqueCatalogue[`fichier:${entree.id}`]} />
+
                   </div>
                 </button>
                 <BoutonEtoile
@@ -2426,7 +2444,13 @@ export function BibliothequePublique() {
         />
       )}
 
-      {profilOuvert && <ProfilPublicModal userId={profilOuvert} onFermer={() => setProfilOuvert(null)} />}
+      {profilOuvert && (
+        <ProfilPublicModal
+          userId={profilOuvert.userId}
+          compteurs={profilOuvert.compteurs}
+          onFermer={() => setProfilOuvert(null)}
+        />
+      )}
 
       {popupProfilPublicOuverte && <PopupProposerProfilPublic onFermer={fermerPopupProfilPublic} />}
 
