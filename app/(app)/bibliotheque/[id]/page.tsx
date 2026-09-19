@@ -4,6 +4,7 @@ import { FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { SectionPageRetourDepuis } from "@/components/SectionPageRetourDepuis";
 import { ActionsFichierPublic } from "@/components/ActionsFichierPublic";
+import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCatalogue";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
 import { LinkPreview } from "@/components/chat/LinkPreview";
 import { TexteAvecLiens } from "@/components/TexteAvecLiens";
@@ -184,6 +185,8 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
           <VisionneurPdf url={entree.url_publique} />
         </section>
       )}
+
+      <SectionCommentairesCatalogue typeElement="fichier" elementId={entree.id} />
     </>
   );
 

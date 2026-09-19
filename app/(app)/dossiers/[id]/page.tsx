@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Folder, FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { ActionsDossierPublic } from "@/components/ActionsDossierPublic";
+import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCatalogue";
 import { StatistiquesContenuDossier } from "@/components/StatistiquesContenuDossier";
 import { obtenirDossierCataloguePublic, listerBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
@@ -149,6 +150,8 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
           )}
         </section>
       )}
+
+      <SectionCommentairesCatalogue typeElement="dossier" elementId={dossier.id} />
     </SectionPage>
   );
 }

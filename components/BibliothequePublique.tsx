@@ -60,6 +60,8 @@ import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { BoutonAvecIA } from "./BoutonAvecIA";
 import { ProfilPublicModal } from "@/components/ProfilPublicModal";
 import { BlocAnalytiqueCarte } from "@/components/BlocAnalytiqueCarte";
+import { PopupProposerProfilPublic } from "@/components/PopupProposerProfilPublic";
+import { usePremierePublicationCatalogue } from "@/lib/usePremierePublicationCatalogue";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { MenuActionsCarte } from "./MenuActionsCarte";
 import { StatistiquesContenuDossier } from "./StatistiquesContenuDossier";
@@ -531,6 +533,13 @@ export function BibliothequePublique() {
   // et compteurs analytiques par élément affiché (clé "type:id"),
   // chargés en un seul appel par lot (voir l'effet plus bas).
   const [profilOuvert, setProfilOuvert] = useState<string | null>(null);
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11 : voir lib/usePremierePublicationCatalogue.ts.
+  const {
+    popupOuverte: popupProfilPublicOuverte,
+    fermerPopup: fermerPopupProfilPublic,
+    signalerPublication: signalerPublicationCatalogue,
+  } = usePremierePublicationCatalogue();
   const [analytiqueCatalogue, setAnalytiqueCatalogue] = useState<Record<string, CompteursCatalogue>>({});
   const [entreeOuverte, setEntreeOuverte] = useState<EntreeBibliothequePublique | null>(null);
   const [compteRequisPourCopie, setCompteRequisPourCopie] = useState(false);
@@ -1143,6 +1152,7 @@ export function BibliothequePublique() {
       charger(recherche);
       chargerDossiers();
       chargerListesFiltres();
+      signalerPublicationCatalogue();
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) {
         setSansCompte(true);
@@ -1182,6 +1192,7 @@ export function BibliothequePublique() {
       charger(recherche);
       chargerDossiers();
       chargerListesFiltres();
+      signalerPublicationCatalogue();
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) {
         setSansCompte(true);
@@ -1310,6 +1321,7 @@ export function BibliothequePublique() {
       setCreationDossierOuverte(false);
       chargerDossiers();
       chargerListesFiltres();
+      signalerPublicationCatalogue();
     } catch (e) {
       window.alert(messageErreur(e));
     }
@@ -1825,6 +1837,7 @@ export function BibliothequePublique() {
                   `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
                   `puis discutons-en ensemble.`
                 }
+                compterCta={{ typeElement: "dossier", elementId: dossierCourantId }}
               />
             </div>
           )}
@@ -2372,6 +2385,8 @@ export function BibliothequePublique() {
       )}
 
       {profilOuvert && <ProfilPublicModal userId={profilOuvert} onFermer={() => setProfilOuvert(null)} />}
+
+      {popupProfilPublicOuverte && <PopupProposerProfilPublic onFermer={fermerPopupProfilPublic} />}
 
       {cibleDeplacement && cibleDeplacement.type === "fichier" && (
         <GererDossiersFichierModal

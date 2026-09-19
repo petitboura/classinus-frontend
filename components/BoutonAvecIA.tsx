@@ -2,6 +2,7 @@
 
 import { Sparkles } from "lucide-react";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
+import { incrementerCtaCatalogue, type TypeElementCataloguePublic } from "@/lib/api";
 
 /**
  * 17/09/2026, demande Bourama : bouton "avec l'IA" commun, réutilisé
@@ -12,12 +13,22 @@ import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
  * signalement", voir useOuvrirChatAvecTexte, lib/contexteChat.tsx).
  * Même pattern visuel que ButtonPartager (components/ButtonPartager.tsx)
  * pour que les deux boutons s'alignent naturellement côte à côte.
+ *
+ * 18/09/2026, `compterCta` (optionnel) : chantier "profil contributeur
+ * bibliotheque publique", étape 12 -- incrémente cta_count pour un
+ * élément du catalogue PUBLIC uniquement (fichier/dossier/skill, voir
+ * TypeElementCataloguePublic ; jamais pour la bibliothèque perso, les
+ * notions ou les établissements, qui n'ont pas ce compteur côté
+ * backend). Fire-and-forget, même pattern que compterPartage dans
+ * ButtonPartager.tsx : ne doit jamais retarder ni faire échouer
+ * l'ouverture du chat.
  */
 export function BoutonAvecIA({
   texte,
   libelle = "Avec l'IA",
   variante = "texte",
   className = "",
+  compterCta,
 }: {
   /** Message pré-rempli envoyé à Clovis à l'ouverture du chat. */
   texte: string;
@@ -26,12 +37,17 @@ export function BoutonAvecIA({
   /** "texte" : bouton avec libellé (listes/panneaux). "icone" : simple icône (lignes compactes). */
   variante?: "texte" | "icone";
   className?: string;
+  /** Catalogue public uniquement, voir docstring plus haut. */
+  compterCta?: { typeElement: TypeElementCataloguePublic; elementId: string };
 }) {
   const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
 
   function ouvrir(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
+    if (compterCta) {
+      incrementerCtaCatalogue(compterCta.typeElement, compterCta.elementId).catch(() => {});
+    }
     ouvrirChatAvecTexte(texte);
   }
 

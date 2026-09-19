@@ -5,6 +5,7 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { ScrollText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { ActionsSkillPublic } from "@/components/ActionsSkillPublic";
+import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCatalogue";
 import { extraireCorpsSkill } from "@/components/VoirSkillRecuModal";
 import { obtenirComportementPublic, type ComportementPublic } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
@@ -90,6 +91,8 @@ export default async function PageSkillPublique({ params }: { params: { id: stri
           </ReactMarkdown>
         </div>
       </section>
+
+      <SectionCommentairesCatalogue typeElement="skill" elementId={skill.id} />
     </SectionPage>
   );
 }
