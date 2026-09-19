@@ -61,7 +61,7 @@ import { SectionCommentairesCatalogue } from "./SectionCommentairesCatalogue";
  *
  * Deux sections minimales par manque de contenu réel (signalé à Bourama
  * plutôt qu'inventé) : Aide et support (pas d'adresse dédiée trouvée dans
- * le projet), À propos (pas de CGU propres à Clovis, liens vers les pages
+ * le projet), À propos (pas de CGU propres à Classinus, liens vers les pages
  * légales déjà en ligne sur la vitrine).
  *
  * Pas de mécanisme i18n branché ici (même constat que MesComportements.tsx
@@ -239,7 +239,7 @@ export function EspaceParametres() {
   const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
 
   // 18/09/2026, chantier "profil contributeur bibliotheque publique",
-  // étape 13 : avis sur Clovis lui-même (voir vue "À propos" plus bas).
+  // étape 13 : avis sur Classinus lui-même (voir vue "À propos" plus bas).
   const [infosClovis, setInfosClovis] = useState<{ etoilesCount: number; monEtoile: boolean } | null>(null);
 
   useEffect(() => {
@@ -383,7 +383,7 @@ export function EspaceParametres() {
   }
 
   async function handleExporterMesDonnees() {
-    if (!window.confirm("Télécharger une copie de toutes tes données Clovis ?")) return;
+    if (!window.confirm("Télécharger une copie de toutes tes données Classinus ?")) return;
 
     setExportEnCours(true);
     setErreurExport(null);
@@ -397,7 +397,7 @@ export function EspaceParametres() {
   }
 
   async function seDeconnecter() {
-    if (!window.confirm("Se déconnecter de Clovis ?")) return;
+    if (!window.confirm("Se déconnecter de Classinus ?")) return;
 
     await supabase.auth.signOut();
     window.location.href = "/connexion";
@@ -411,7 +411,7 @@ export function EspaceParametres() {
     if (!window.confirm("Supprimer définitivement ton compte Clovis ?")) return;
 
     const saisie = window.prompt(
-      'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Clovis seront supprimés. Tape "SUPPRIMER" pour confirmer.'
+      'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Classinus seront supprimés. Tape "SUPPRIMER" pour confirmer.'
     );
     if (saisie !== "SUPPRIMER") return;
 
@@ -796,7 +796,7 @@ export function EspaceParametres() {
 
           <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-dj-texte">Relances de Clovis</span>
+              <span className="text-sm font-medium text-dj-texte">Relances de Classinus</span>
               <span className="text-xs text-dj-texte-muet">
                 Autorise Clovis à te relancer si tu es inactif, pour ne pas perdre le fil.
               </span>
@@ -875,7 +875,7 @@ export function EspaceParametres() {
             className="flex items-center gap-2 rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
             <MessageCircle size={16} />
-            Poser une question à Clovis
+            Poser une question à Classinus
           </button>
         </div>
         <div>
