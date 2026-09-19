@@ -7,10 +7,13 @@
 // - au dessus, quand le canal est actif, les boutons d'interaction du
 //   chantier M et N (ControlesInteractionCanal.tsx).
 //
-// Sur /chat, le bouton d'activation est masqué : le chat a son propre
-// point d'entrée (menu de BarreDeSaisie.tsx), même principe que
-// GuideFlottant masqué sur cette page. Les boutons d'interaction, eux,
-// restent visibles pour que le canal fonctionne aussi depuis le chat.
+// Correctif (19/09/2026, decision Bourama : "on ne désactive rien de
+// son fonctionnement parce qu'il est dans le chat, [le canal] doit être
+// tellement indépendant que...") : plus AUCUNE condition liée à /chat
+// ici. Le canal (bouton d'activation compris) se comporte exactement de
+// la même façon partout, chat plein écran inclus -- ce n'est pas le
+// même point d'entrée que le chat, avoir les deux visibles en même
+// temps sur /chat est voulu, pas un doublon à masquer.
 //
 // Placement : l'écart du bas suit la convention des autres éléments
 // fixed ancrés en bas (ChatFlottant.tsx) : barre d'onglets web via
@@ -21,7 +24,7 @@
 // Le côté gauche suit le rail latéral sur ordinateur, voir
 // lib/useDecalageRailLateral.ts.
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Radio } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useContext } from "react";
@@ -50,28 +53,23 @@ export function CanalEnDirectFlottant() {
       className={`fixed z-[65] flex flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
       style={{ left: `calc(${decalageRail}px + 1rem)` }}
     >
-      <AnimatePresence initial={false}>
-        {!surChat && (
-          <motion.button
-            key="activation"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.15 }}
-            onClick={actif ? desactiver : activer}
-            aria-pressed={actif}
-            aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
-            title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
-            className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
-              actif
-                ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
-                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-            }`}
-          >
-            <Radio size={18} />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <motion.button
+        key="activation"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.15 }}
+        onClick={actif ? desactiver : activer}
+        aria-pressed={actif}
+        aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
+        title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
+        className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
+          actif
+            ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
+            : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+        }`}
+      >
+        <Radio size={18} />
+      </motion.button>
       <ControlesInteractionCanal />
     </div>
   );

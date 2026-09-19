@@ -14,6 +14,7 @@ import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { SelecteurModeActif } from "./SelecteurModeActif";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat } from "@/lib/contexteChat";
+import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import dynamic from "next/dynamic";
@@ -785,6 +786,13 @@ export function ChatIA({
   // reponse.
   const ctxChatCanal = useContext(ContexteChat);
   const nbMessagesEnAttenteCanal = ctxChatCanal?.nbMessagesEnAttente ?? 0;
+  // Canal en direct, suite (19/09/2026, decision Bourama : "dès que le
+  // canal est actif ces outils sont automatiquement envoyés au LLM").
+  // Lu directement ici (pas juste sur les messages venus du canal) :
+  // TOUT message envoyé pendant que le canal est actif doit forcer les
+  // outils de clic côté backend (voir api/chat.py, core/main.py:chat()).
+  const ctxCanalEnDirect = useContext(ContexteCanalEnDirect);
+  const canalEnDirectActif = ctxCanalEnDirect?.actif ?? false;
   useEffect(() => {
     if (!ctxChatCanal || nbMessagesEnAttenteCanal === 0) return;
     if (genEnCours || affichageEnCours || accesBloqueMineur) return;
@@ -1048,6 +1056,11 @@ export function ChatIA({
           sans_enseignant: sansEnseignant,
           // Appli installée (04/09/2026) -- voir prop `natif` ci-dessus.
           natif,
+          // Canal en direct (19/09/2026) -- voir ctxCanalEnDirect
+          // ci-dessus : force les outils de clic côté backend tant que
+          // le canal est actif, sur ce message comme sur tous les
+          // autres pendant ce temps.
+          canal_en_direct: canalEnDirectActif,
           // Selecteur de modele premium (02/08/2026) -- null tant que
           // l'agent n'a rien debloque ou que l'utilisateur n'a pas
           // change le defaut, voir modeleSelectionne plus haut. Revalide

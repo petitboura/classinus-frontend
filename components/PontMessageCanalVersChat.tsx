@@ -6,31 +6,36 @@
 // un vrai message du chat. Ce composant, monté une fois dans AppShell sous
 // ContexteChat, enregistre cette voie de repli : le message est déposé dans
 // la file du chat (lib/contexteChat.tsx), consommée par ChatIA dès qu'il est
-// libre, et le chat est ouvert s'il ne l'était pas (déjà affiché sur /chat,
-// sinon le petit popup).
+// déjà monté et ouvert.
+//
+// Correctif (19/09/2026, décision Bourama : "le canal n'envoie rien dans
+// le chat [au sens où il ouvre le chat]") : ce repli n'ouvre plus JAMAIS
+// le chat lui même -- avant, il forçait `ctx.setEtat("mini")`, ce qui
+// faisait surgir le popup de chat à l'écran juste parce qu'un message
+// tapé dans le canal n'avait pas pu être lu par un tour en cours. Le
+// canal reste indépendant du chat visuellement : si le chat est déjà
+// ouvert, le message y apparaît normalement (comportement inchangé) ;
+// sinon, il patiente dans la file jusqu'à la prochaine ouverture réelle
+// du chat par l'étudiant, sans jamais le faire apparaître de force.
 
-import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef } from "react";
 import { enregistrerRepliMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { ContexteChat } from "@/lib/contexteChat";
 
 export function PontMessageCanalVersChat() {
   const ctxChat = useContext(ContexteChat);
-  const pathname = usePathname();
   const ctxRef = useRef(ctxChat);
-  const cheminRef = useRef(pathname);
 
   useEffect(() => {
     ctxRef.current = ctxChat;
-    cheminRef.current = pathname;
-  }, [ctxChat, pathname]);
+  }, [ctxChat]);
 
   useEffect(() => {
     enregistrerRepliMessageEtudiant((texte) => {
-      const ctx = ctxRef.current;
-      if (!ctx) return;
-      ctx.deposerMessageEnAttente(texte);
-      if (!cheminRef.current.startsWith("/chat") && ctx.etat === "fermee") ctx.setEtat("mini");
+      // Dépose dans la file, sans jamais ouvrir le chat de force (voir
+      // le commentaire en tête de fichier). Le chat le consomme dès
+      // qu'il est déjà monté (ouvert), ou à sa prochaine ouverture réelle.
+      ctxRef.current?.deposerMessageEnAttente(texte);
     });
     return () => enregistrerRepliMessageEtudiant(null);
   }, []);
