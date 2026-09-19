@@ -45,7 +45,12 @@ type PluginControleSession = {
 
 const DUREES_PREDEFINIES_MIN = [15, 30, 45, 60, 90];
 
-export function EspaceControleSession() {
+// `sansEnTete` (19/09/2026, demande Bourama : Concentration fonctionne
+// comme Personnaliser Clovis) : sur la vraie page
+// /controle-session/session, le titre et le bouton "i" sont portés par la
+// page, l'écran ne les répète plus. Absent (fenêtre flottante du chat,
+// via EspaceConcentration) : affichage inchangé.
+export function EspaceControleSession({ sansEnTete = false }: { sansEnTete?: boolean } = {}) {
   const { natif, plugin } = usePluginNatif<PluginControleSession>("ControleSession");
 
   const [chargementPermission, setChargementPermission] = useState(true);
@@ -129,11 +134,13 @@ export function EspaceControleSession() {
   if (natif === null) {
     return (
       <div className="flex flex-col gap-4 p-4" aria-hidden>
-        <div>
-          <Skeleton className="h-4 w-44 rounded" />
-          <Skeleton className="mt-1 h-3 w-full rounded" style={{ animationDelay: "60ms" }} />
-          <Skeleton className="h-3 w-3/4 rounded" style={{ animationDelay: "120ms" }} />
-        </div>
+        {!sansEnTete && (
+          <div>
+            <Skeleton className="h-4 w-44 rounded" />
+            <Skeleton className="mt-1 h-3 w-full rounded" style={{ animationDelay: "60ms" }} />
+            <Skeleton className="h-3 w-3/4 rounded" style={{ animationDelay: "120ms" }} />
+          </div>
+        )}
         <div className="flex flex-col items-center gap-4 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-6">
           <Skeleton className="h-3 w-3 rounded-full" style={{ animationDelay: "180ms" }} />
           <Skeleton className="h-3.5 w-40 rounded" style={{ animationDelay: "240ms" }} />
@@ -155,13 +162,15 @@ export function EspaceControleSession() {
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4 p-4">
-      <div className="flex items-center gap-1.5">
-        <h2 className="font-display text-base font-bold text-dj-texte">Contrôle de session</h2>
-        <BoutonInfoSection
-          rubriqueId="controle-session"
-          texteCourt="Coupe les sonneries et notifications, et active Ne pas déranger pendant la durée choisie."
-        />
-      </div>
+      {!sansEnTete && (
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-display text-base font-bold text-dj-texte">Contrôle de session</h2>
+          <BoutonInfoSection
+            rubriqueId="controle-session"
+            texteCourt="Coupe les sonneries et notifications, et active Ne pas déranger pendant la durée choisie."
+          />
+        </div>
+      )}
 
       {chargementPermission ? (
         <div

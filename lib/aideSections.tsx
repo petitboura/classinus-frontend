@@ -48,7 +48,10 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "controle-session",
     titre: "Contrôle de session",
-    texteCourt: "Coupe les sonneries et notifications, et active Ne pas déranger le temps de ta session.",
+    // 19/09/2026, demande Bourama : le bouton "i" passe de l'écran à la
+    // page (Concentration fonctionne comme Personnaliser Clovis). Le texte
+    // court est aligné sur celui que l'écran affichait jusqu'ici.
+    texteCourt: "Coupe les sonneries et notifications, et active Ne pas déranger pendant la durée choisie.",
     texteComplet:
       "Coupe les sonneries et notifications, et active Ne pas déranger le temps de ta session de travail. L'activation se fait dans les réglages système (Accessibilité), en dehors de l'app.",
   },

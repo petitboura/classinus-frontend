@@ -92,7 +92,9 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 | `/memoire` | Ma mémoire |
 | `/comportements` | Mes skills ("comportements" en interne) |
 | `/personnaliser` | Personnaliser Clovis (skills, mémoire, plugins) — onglet central du menu natif |
-| `/controle-session` | Contrôle de session |
+| `/controle-session` | Concentration : page d'accueil en liste, même principe que Personnaliser Clovis |
+| `/controle-session/session` | Contrôle de session |
+| `/controle-session/temps-ecran` | Temps d'écran |
 | `/rappels` | Notes / rappels |
 | `/connecter-claude` | Connexion du serveur MCP public comme connecteur externe |
 | `/parametres` | Paramètres (profil, préférences, confidentialité, capacités du téléphone, accessibilité, aide, à propos, zone de danger) |
@@ -115,7 +117,7 @@ sont réservés aux pages de liste de la Bibliothèque et ne sont jamais pris
 pour l'identifiant d'un document partagé. Leur liste vient de
 `lib/routesBibliotheque.ts`, la source unique des adresses de la Bibliothèque.
 
-## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau)
+## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau, Concentration)
 
 Une section en groupe a une page d'accueil en liste (`components/ListeSections.tsx`)
 et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Chaque
@@ -125,7 +127,8 @@ gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en h
 sous forme de pastilles (`OngletsLiens` dans `components/OngletsSegment.tsx`).
 Les deux se branchent via la prop `groupe` de `components/SectionPage.tsx`.
 Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses dans
-`lib/routesBibliotheque.ts`. Bureau : `lib/sectionsBureau.tsx` et `lib/routesBureau.ts`.
+`lib/routesBibliotheque.ts`. Bureau : `lib/sectionsBureau.tsx` et `lib/routesBureau.ts`. Concentration :
+`lib/sectionsConcentration.tsx` et `lib/routesConcentration.ts`.
 Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
 et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
 les écrans ne les répètent pas dans leur carte.

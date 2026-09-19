@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PAGES_FILLES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { PAGES_FILLES_BUREAU } from "@/lib/routesBureau";
+import { PAGES_FILLES_CONCENTRATION } from "@/lib/routesConcentration";
 import { usePathname, useRouter } from "next/navigation";
 import { useFenetres } from "@/lib/contexteFenetres";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -118,7 +119,7 @@ export const ONGLETS: {
   // inatteignable sur PC (signalé par Bourama comme écran orphelin).
   // Ajouté ici pour que le PC ait, au minimum, le même accès de
   // consultation que les deux autres plateformes.
-  { id: "controle-session", href: "/controle-session", label: "Concentration", Icone: Hourglass },
+  { id: "controle-session", href: "/controle-session", label: "Concentration", Icone: Hourglass, routesFilles: PAGES_FILLES_CONCENTRATION },
 ];
 
 // Regroupement du rail par similarité d'usage (refonte sidebar,
