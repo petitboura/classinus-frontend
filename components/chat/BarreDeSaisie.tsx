@@ -1584,7 +1584,7 @@ export function BarreDeSaisie({
         // (380px, inchangé), au-dessus de sa taille minimale (320px, voir
         // TAILLE_MIN) -- qui bascule donc vers la version compacte
         // ci-dessous (ligne ~2211), déjà pensée pour un espace étroit.
-        className="relative hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3 focus-within:border-dj-bordure-forte @[360px]:block"
+        className="relative hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3 focus-within:border-dj-bordure-forte md:block"
       >
         {/* Aperçu formules (2026-07-27) -- affiché seulement si le
             brouillon contient au moins un "$", pour ne pas dupliquer
@@ -2051,7 +2051,7 @@ export function BarreDeSaisie({
                 même endroit que le bouton Appli. Le panneau mobile
                 (md:hidden, plus bas dans le fichier) couvre le petit écran. */}
             {appliButtonVisible && selecteurNotionOuvert && (
-              <div className="relative hidden @[360px]:block" ref={selecteurNotionRef}>
+              <div className="relative hidden md:block" ref={selecteurNotionRef}>
                 <div className="absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
                   {contenuSelecteurNotion("bg-dj-surface", "bg-dj-surface")}
                 </div>
@@ -2256,7 +2256,7 @@ export function BarreDeSaisie({
       {texte.includes("$") && (
         <div
           ref={apercuFormulesMobileRef}
-          className="mb-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2 text-[15px] leading-relaxed text-dj-texte @[360px]:hidden"
+          className="mb-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2 text-[15px] leading-relaxed text-dj-texte md:hidden"
         >
           {segmenterTexteAvecFormules(texte).map((s, i) =>
             s.formule ? (
@@ -2267,7 +2267,7 @@ export function BarreDeSaisie({
           )}
         </div>
       )}
-      <div className="flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte @[360px]:hidden">
+      <div className="flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
         <textarea
           ref={zoneTexteMobileRef}
           value={texte}
