@@ -58,6 +58,15 @@ export function BulleDialogueAgent() {
   const haut = useTransform(positionY, (v) =>
     typeof window === "undefined" ? v : limiter(v + DECALAGE_Y, MARGE_BORD, window.innerHeight - HAUTEUR_MIN_SOUS_LE_CURSEUR)
   );
+  // Correctif (demande Bourama) : la bulle grandissait sans limite avec
+  // un texte long, pouvant déborder en bas de l'écran selon la position
+  // du curseur. Hauteur maximale calculée depuis la position verticale
+  // RÉELLE de la bulle (dérivée de `haut`, jamais une valeur fixe) --
+  // garantit qu'elle ne dépasse jamais le bas de l'écran, où qu'elle
+  // s'affiche. Au-delà, le contenu défile au lieu de déborder.
+  const hauteurMax = useTransform(haut, (v) =>
+    typeof window === "undefined" ? 320 : Math.min(320, Math.max(120, window.innerHeight - v - MARGE_BORD))
+  );
 
   useEffect(() => {
     if (!texte) return;
@@ -111,13 +120,20 @@ export function BulleDialogueAgent() {
               léger (gras, italique, liens, listes -- via remarkGfm),
               volontairement plus simple que components/chat/BulleMessage.tsx
               (pas de KaTeX/code ici, la bulle est faite pour une ou deux
-              phrases courtes, voir dire_a_l_etudiant côté backend). Le
-              conteneur garde pointerEvents "none" (il suit le curseur,
-              ne doit jamais bloquer un clic sous lui) -- seuls les liens
-              redeviennent cliquables via [&_a]:pointer-events-auto. */}
-          <div className="dj-markdown break-words [&_p]:m-0 [&_p+p]:mt-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_a]:pointer-events-auto [&_a]:text-dj-accent-1 [&_a]:underline [&_a]:underline-offset-2">
+              phrases courtes, voir dire_a_l_etudiant côté backend).
+              Défilement interne ajouté (demande Bourama) : au-delà de
+              hauteurMax, le texte défile au lieu de déborder -- ce
+              conteneur repasse en pointerEvents "auto" (contrairement au
+              conteneur parent, qui reste "none" pour ne jamais bloquer un
+              clic sous la bulle) pour que la molette/le tactile puisse
+              vraiment défiler dessus, même principe que
+              [&_a]:pointer-events-auto plus bas pour les liens. */}
+          <motion.div
+            style={{ pointerEvents: "auto", maxHeight: hauteurMax }}
+            className="dj-markdown overflow-y-auto overflow-x-hidden break-words [&_p]:m-0 [&_p+p]:mt-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_a]:pointer-events-auto [&_a]:text-dj-accent-1 [&_a]:underline [&_a]:underline-offset-2"
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{texte}</ReactMarkdown>
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
