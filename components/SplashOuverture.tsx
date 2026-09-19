@@ -59,7 +59,7 @@ export function SplashOuverture() {
       >
         <div
           id="clovis-splash-logo"
-          className="absolute left-0 top-1/2 animate-[cv-vit_2.2s_cubic-bezier(.36,0,.2,1.04)_1.6s_forwards]"
+          className="absolute left-0 top-1/2 animate-[cv-vit_2.2s_cubic-bezier(.36,0,.2,1.04)_1.6s_both]"
           style={{ marginTop: "calc(-66 * var(--u))" }}
         >
           <svg
