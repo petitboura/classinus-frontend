@@ -39,6 +39,17 @@ const SELECTEURS_ELEMENTS_INTERACTIFS = [
 const NOM_ATTRIBUT = "data-agent-id";
 const PREFIXE_ID = "el";
 
+// Mémorise l'id déjà attribué à chaque élément d'un scan à l'autre --
+// voir le commentaire de scannerElementsInteractifs plus bas. WeakMap
+// pour ne jamais retenir un élément détaché du DOM (garbage collecté
+// normalement une fois le noeud vraiment retiré).
+const idsConnus = new WeakMap<HTMLElement, string>();
+// Jamais réinitialisé (contrairement à l'ancien compteur local par
+// scan) : un nouvel élément reçoit toujours un id jamais utilisé
+// avant, pour qu'aucune collision ne soit possible avec un ancien id
+// encore détenu (côté backend, LLM) par un élément différent.
+let prochainIndex = 0;
+
 // Longueur maximale d'une description dérivée du texte visible d'un
 // élément, pour éviter d'envoyer un pavé de texte au modèle si un
 // bouton contient accidentellement un long paragraphe.
@@ -81,24 +92,40 @@ export function decrireElement(element: HTMLElement): string {
 /**
  * Scanne le DOM actuel et renvoie la liste des éléments réellement
  * visibles, actifs et potentiellement cliquables à cet instant précis
- * -- jamais mémorisé, toujours recalculé au moment de l'appel (même
- * principe que l'ancien obtenirActionsDisponibles). Assigne à chaque
- * élément retenu un attribut data-agent-id unique, valable seulement
- * pour ce scan (réassigné/écrasé au scan suivant, jamais persistant
- * d'un scan à l'autre).
+ * -- la liste est toujours recalculée au moment de l'appel (même
+ * principe que l'ancien obtenirActionsDisponibles), mais l'attribut
+ * data-agent-id assigné à chaque élément retenu est désormais STABLE
+ * par élément (mémorisé dans idsConnus, un WeakMap<élément, id>) --
+ * réutilisé tel quel tant que c'est le même noeud DOM, jamais
+ * recalculé depuis sa position dans la liste. Correctif du 19/09/2026
+ * (Bourama, bug "tous les boutons du rail répondent élément disparu") :
+ * avant, l'id d'un élément dépendait de sa position parmi TOUS les
+ * éléments détectés sur la page (compteur reparti de zéro à chaque
+ * scan) -- un simple bouton qui apparaissait/disparaissait ailleurs
+ * (ex: dans le chat, en streaming) décalait la position, donc l'id, de
+ * tous les éléments suivants, y compris ceux du rail jamais vraiment
+ * remontés par React. L'id que Clovis recevait devenait alors
+ * introuvable au moment du clic, même si le bouton visé n'avait jamais
+ * bougé. Un élément réellement remplacé par React (vrai remount, cas
+ * distinct déjà géré par la re-résolution juste avant le clic dans
+ * lib/canalAgentApplicatif.ts) reçoit lui un nouvel id, normal
+ * puisque c'est un nouveau noeud.
  */
 export function scannerElementsInteractifs(): ElementInteractifDetecte[] {
   if (typeof document === "undefined") return [];
 
   const elements = document.querySelectorAll<HTMLElement>(SELECTEURS_ELEMENTS_INTERACTIFS);
   const resultat: ElementInteractifDetecte[] = [];
-  let compteur = 0;
 
   for (const element of elements) {
     if (!estVisibleEtActif(element)) continue;
 
-    const id = `${PREFIXE_ID}-${compteur}`;
-    compteur += 1;
+    let id = idsConnus.get(element);
+    if (!id) {
+      id = `${PREFIXE_ID}-${prochainIndex}`;
+      prochainIndex += 1;
+      idsConnus.set(element, id);
+    }
     element.setAttribute(NOM_ATTRIBUT, id);
 
     resultat.push({

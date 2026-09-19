@@ -26,6 +26,19 @@ export function estVisibleEtActif(element: HTMLElement): boolean {
   const style = window.getComputedStyle(element);
   if (style.visibility === "hidden" || style.display === "none") return false;
 
+  // L'opacité, contrairement à visibility/display/pointer-events, ne se
+  // transmet pas aux enfants via l'héritage CSS -- un parent à
+  // opacity-0 (popup fermé animé en CSS, ex: menu bouton utilitaire de
+  // BarreDeSaisie.tsx) laisse donc les éléments à l'intérieur avec leur
+  // propre opacité par défaut (1), même invisibles à l'écran. On
+  // remonte donc explicitement la chaîne des parents pour vérifier ça
+  // en plus.
+  let parent: HTMLElement | null = element;
+  while (parent) {
+    if (window.getComputedStyle(parent).opacity === "0") return false;
+    parent = parent.parentElement;
+  }
+
   return true;
 }
 
