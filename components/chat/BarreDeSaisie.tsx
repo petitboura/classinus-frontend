@@ -324,13 +324,24 @@ export function BarreDeSaisie({
   const outilsPourAgent = outilsDisponibles.filter((o) => outilAutorisePourAgent(o));
   // Une appli (ex. GitHub) est autorisée si au moins une de ses actions
   // (ex. explorer_depot_github) fait partie des outils autorisés.
-  // GitHub exclu du bouton Applications de la barre de saisie (demande
-  // Bourama, 19/09/2026) : seuls Drive et Notion doivent y apparaitre.
-  // APPLIS_DISPONIBLES (lib/outils.ts) reste inchange -- il sert aussi a
-  // app/dashboard/applications/page.tsx (liste des applis connectables),
-  // qui doit continuer a lister GitHub.
-  const APPLIS_BOUTON_SAISIE = APPLIS_DISPONIBLES.filter((a) => a.nom !== "github");
-  const applisPourAgent = APPLIS_BOUTON_SAISIE.filter((a) => outilsPourAgent.some((o) => o.appli === a.nom));
+  //
+  // CORRECTIF (19/09/2026, demande Bourama) : Notion et Google Drive sont
+  // "necessite_utilisateur" côté backend (core/registre_outils.py) --
+  // tant que la personne n'est pas connectée, leurs outils sont
+  // entièrement absents d'outilsPourAgent (headers=None -> ignoré en
+  // silence, voir lister_outils_autorises_pour_agent). Baser l'affichage
+  // du bouton sur outilsPourAgent est donc impossible à amorcer : avant
+  // la toute première connexion, la liste est vide, le bouton ne peut
+  // jamais apparaître, et sans bouton la personne ne peut jamais se
+  // connecter. Notion et Drive sont donc toujours proposés ici --
+  // cliquerNotion()/cliquerGoogleDrive() gèrent déjà eux-mêmes, via
+  // statutConnexion()/demarrerConnexion() (appels REST directs, pas liés
+  // à outilsPourAgent), l'état connecté/non connecté au clic. GitHub
+  // exclu de CE bouton précis (même demande) même s'il n'a pas ce
+  // problème d'amorçage. APPLIS_DISPONIBLES (lib/outils.ts) reste
+  // inchangé -- il sert aussi à app/dashboard/applications/page.tsx
+  // (liste des applis connectables), qui doit continuer à lister GitHub.
+  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.nom === "notion" || a.nom === "google_drive");
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
@@ -356,6 +367,12 @@ export function BarreDeSaisie({
 
   const appliButtonVisible = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length > 1;
   const appliSlotUnique = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length === 1 ? applisPourAgent[0] : null;
+  // Booléens stables (contrairement à applisPourAgent, un nouveau tableau
+  // à chaque rendu) pour les deps des useEffect de statut plus bas --
+  // équivalent de appliSlotUnique?.nom === "x" mais qui reste vrai aussi
+  // dans le cas multi-appli (Notion + Drive tous les deux actifs).
+  const notionDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "notion");
+  const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
   // Menus custom pour les selecteurs modele premium / longueur de reponse
   // (02/08/2026, Bourama : "ce style d'affichage n'est pas propre a ma
   // plateforme" -- <select> natif remplace par le meme pattern
@@ -882,12 +899,19 @@ export function BarreDeSaisie({
   // Même correctif (02/09/2026) que githubConnecte plus haut : ne
   // vérifier le statut Notion que si le bouton Notion peut réellement
   // s'afficher pour cet agent.
+  // ÉLARGI (19/09/2026) de appliSlotUnique?.nom à applisPourAgent.some(...) :
+  // avec Notion + Drive actifs en même temps (cas multi-appli, menu
+  // déroulant plutôt que slot unique -- voir le sélecteur Notion "cas
+  // MULTI-appli" plus bas), appliSlotUnique reste null et cet effet ne se
+  // déclenchait jamais -- notionConnecte restait bloqué à null, donc
+  // cliquerNotion() relançait une connexion à chaque clic au lieu
+  // d'ouvrir le sélecteur pour une personne déjà connectée.
   useEffect(() => {
-    if (appliSlotUnique?.nom !== "notion") return;
+    if (!notionDisponiblePourAgent) return;
     statutConnexion("notion")
       .then((r) => setNotionConnecte(r.connecte))
       .catch(() => setNotionConnecte(false));
-  }, [appliSlotUnique?.nom]);
+  }, [notionDisponiblePourAgent]);
 
   // Recherche débouncée (400ms) déclenchée par la frappe, uniquement
   // pendant que le sélecteur est ouvert. Champ vide -> pas d'appel réseau,
@@ -943,12 +967,15 @@ export function BarreDeSaisie({
   // plus haut : ne vérifier le statut Drive que si le bouton Drive peut
   // réellement s'afficher pour cet agent (évite un 404 répété en
   // console sinon).
+  // ÉLARGI (19/09/2026), même raison que notionDisponiblePourAgent
+  // ci-dessus : Drive est maintenant actif en même temps que Notion
+  // (cas multi-appli), appliSlotUnique seul ne suffit plus.
   useEffect(() => {
-    if (appliSlotUnique?.nom !== "google_drive") return;
+    if (!driveDisponiblePourAgent) return;
     statutConnexion("google_drive")
       .then((r) => setDriveConnecte(r.connecte))
       .catch(() => setDriveConnecte(false));
-  }, [appliSlotUnique?.nom]);
+  }, [driveDisponiblePourAgent]);
 
   async function cliquerGoogleDrive() {
     if (driveConnecte) return;
