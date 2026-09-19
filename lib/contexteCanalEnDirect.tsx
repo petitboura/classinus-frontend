@@ -46,15 +46,6 @@ export type ModeInteraction = "voix" | "texte";
 // "navigateur" = Web Speech API du navigateur.
 export type MoteurDictee = "whisper" | "navigateur";
 
-// Message écrit ou dicté par l'user via les boutons du chantier M.
-// Horodatage et id inclus pour que le futur consommateur (chantiers O et
-// P) distingue deux messages au texte identique.
-export type MessageUtilisateurCanal = {
-  id: string;
-  texte: string;
-  horodatage: number;
-};
-
 export type ValeurCanalEnDirect = {
   actif: boolean;
   activer: () => void;
@@ -64,12 +55,6 @@ export type ValeurCanalEnDirect = {
   choisirModeInteraction: (mode: ModeInteraction) => void;
   moteurDictee: MoteurDictee;
   choisirMoteurDictee: (moteur: MoteurDictee) => void;
-
-  // Dernier message de l'user pendant le travail de Clovis. Personne ne le
-  // lit encore : la destination (chat, tour en cours de Clovis) relève des
-  // chantiers O et P.
-  dernierMessageUtilisateur: MessageUtilisateurCanal | null;
-  soumettreMessageUtilisateur: (texte: string) => void;
 
   dernierTexte: string | null;
   // Remplace le texte affiché ; horodatage inclus pour que la bulle
@@ -98,7 +83,7 @@ export function useCanalEnDirect(): ValeurCanalEnDirect {
 }
 
 // Pont vers les modules hors React (lib/canalAgentApplicatif.ts et,
-// plus tard, chantiers O/P) -- même principe que
+// chantier P) -- même principe que
 // enregistrerDeplacementCurseur dans lib/contexteCurseurVirtuel.tsx.
 // AppShell.tsx enregistre la vraie valeur dès que le Provider est monté.
 let canalGlobal: ValeurCanalEnDirect | null = null;
@@ -126,7 +111,6 @@ export function afficherTexteDepuisAgent(texte: string) {
 }
 
 let compteurEntreeJournal = 0;
-let compteurMessageUtilisateur = 0;
 
 // Préférences d'affichage du chantier M et N : localStorage suffit pour
 // la v1, pas de table Supabase pour un simple choix d'interface.
@@ -157,7 +141,6 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const [journal, setJournal] = useState<EntreeJournalCanal[]>([]);
   const [modeInteraction, setModeInteraction] = useState<ModeInteraction>("texte");
   const [moteurDictee, setMoteurDictee] = useState<MoteurDictee>("whisper");
-  const [dernierMessageUtilisateur, setDernierMessageUtilisateur] = useState<MessageUtilisateurCanal | null>(null);
   // Ref plutôt que de dépendre de `journal` dans les callbacks : évite
   // de recréer ajouterEntreeJournal/mettreAJourEntreeJournal à chaque
   // changement de journal.
@@ -193,13 +176,6 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const choisirMoteurDictee = useCallback((moteur: MoteurDictee) => {
     setMoteurDictee(moteur);
     ecrirePreference(CLE_MOTEUR_DICTEE, moteur);
-  }, []);
-
-  const soumettreMessageUtilisateur = useCallback((texte: string) => {
-    const propre = texte.trim();
-    if (!propre) return;
-    compteurMessageUtilisateur += 1;
-    setDernierMessageUtilisateur({ id: `message-utilisateur-${compteurMessageUtilisateur}`, texte: propre, horodatage: Date.now() });
   }, []);
 
   const activer = useCallback(() => setActif(true), []);
@@ -243,8 +219,6 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     choisirModeInteraction,
     moteurDictee,
     choisirMoteurDictee,
-    dernierMessageUtilisateur,
-    soumettreMessageUtilisateur,
     dernierTexte,
     afficherTexte,
     effacerTexte,

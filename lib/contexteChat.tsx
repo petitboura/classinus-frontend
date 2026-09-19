@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MessageAffiche } from "@/components/chat/BulleMessage";
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
@@ -107,6 +107,16 @@ type ContexteChatValeur = {
   // encore connu du backend.
   demandeGuide: { conversationId: string; texte: string } | null;
   setDemandeGuide: (v: { conversationId: string; texte: string } | null) => void;
+  // Canal en direct (19/09/2026) : messages ecrits ou dictes par l'etudiant
+  // qui doivent partir comme un VRAI message du chat (aucun tour de Clovis
+  // en cours pour les recevoir). File, car deux messages peuvent arriver
+  // avant que le chat soit pret. Le chat monte (ChatIA) en prend un a la
+  // fois via prendreMessageEnAttente, atomique (un ref, pas un state) pour
+  // qu'un message ne parte jamais deux fois si deux chats sont montes.
+  // nbMessagesEnAttente ne sert qu'a declencher l'effet du chat.
+  nbMessagesEnAttente: number;
+  deposerMessageEnAttente: (texte: string) => void;
+  prendreMessageEnAttente: () => string | null;
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
@@ -136,6 +146,17 @@ export function useFournirContexteChat(): ContexteChatValeur {
   );
   // Guide de decouverte, etape 4 -- voir le type ci-dessus.
   const [demandeGuide, setDemandeGuide] = useState<{ conversationId: string; texte: string } | null>(null);
+  const messagesEnAttenteRef = useRef<string[]>([]);
+  const [nbMessagesEnAttente, setNbMessagesEnAttente] = useState(0);
+  const deposerMessageEnAttente = useCallback((texte: string) => {
+    messagesEnAttenteRef.current.push(texte);
+    setNbMessagesEnAttente(messagesEnAttenteRef.current.length);
+  }, []);
+  const prendreMessageEnAttente = useCallback((): string | null => {
+    const texte = messagesEnAttenteRef.current.shift() ?? null;
+    setNbMessagesEnAttente(messagesEnAttenteRef.current.length);
+    return texte;
+  }, []);
 
   // Étape 1 -- état de la conversation, avant local à ChatFlottant.tsx.
   const [chargement, setChargement] = useState<"chargement" | "pret" | "erreur">("chargement");
@@ -220,6 +241,9 @@ export function useFournirContexteChat(): ContexteChatValeur {
       setDemandeOuvrirConversation,
       demandeGuide,
       setDemandeGuide,
+      nbMessagesEnAttente,
+      deposerMessageEnAttente,
+      prendreMessageEnAttente,
       chargement,
       setChargement,
       erreur,
@@ -248,6 +272,9 @@ export function useFournirContexteChat(): ContexteChatValeur {
       demandePrefill,
       demandeOuvrirConversation,
       demandeGuide,
+      nbMessagesEnAttente,
+      deposerMessageEnAttente,
+      prendreMessageEnAttente,
       chargement,
       erreur,
       agent,

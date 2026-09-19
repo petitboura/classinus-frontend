@@ -25,6 +25,7 @@ import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
+import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
 import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import {
   ContexteCanalEnDirect,
@@ -291,6 +292,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <BulleDialogueAgent />
           <BoutonJournalAgent />
           <CanalEnDirectFlottant />
+          <PontMessageCanalVersChat />
           <PaletteCommandes
             connecte={connecte}
             etatChat={etatChat}

@@ -55,6 +55,13 @@
 // le modele du tour de conversation en cours (outil dire_a_l_etudiant
 // cote backend), sans reponse attendue. Affiche dans la bulle de dialogue
 // et garde dans le journal, quelle que soit la section de l'app.
+//
+// Ajout du 19/09/2026 (decision Bourama : le message de l'etudiant doit
+// etre envoye) : envoyerMessageEtudiant. Le message part sur ce canal ;
+// si un tour de Clovis est en cours, le backend le lui fait lire a son
+// prochain aller-retour (accuse pris_en_compte=true). Sinon (ou canal
+// ferme, ou accuse perdu) il est envoye comme un message normal du chat,
+// via le repli enregistre par components/PontMessageCanalVersChat.tsx.
 
 import { supabase } from "./supabase";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
@@ -91,6 +98,63 @@ function urlWebSocket(token: string): string | null {
   // core/canal_agent_applicatif.py) -- le backend n'utilise cette
   // connexion que pour diffuser, jamais pour cibler.
   return `${base}/api/canal-agent-applicatif/ws?token=${encodeURIComponent(token)}`;
+}
+
+let repliMessageEtudiant: ((texte: string) => void) | null = null;
+
+/** Enregistre (ou retire, avec null) la fonction qui envoie un texte comme message normal du chat. */
+export function enregistrerRepliMessageEtudiant(fn: ((texte: string) => void) | null) {
+  repliMessageEtudiant = fn;
+}
+
+const DELAI_ACCUSE_MESSAGE_MS = 8000;
+const LONGUEUR_MAX_DESCRIPTION_JOURNAL = 80;
+const messagesEnAttenteAccuse = new Map<string, { texte: string; minuteur: ReturnType<typeof setTimeout> }>();
+let compteurMessageEtudiant = 0;
+
+function texteCourt(texte: string): string {
+  return texte.length > LONGUEUR_MAX_DESCRIPTION_JOURNAL
+    ? `${texte.slice(0, LONGUEUR_MAX_DESCRIPTION_JOURNAL).trimEnd()}…`
+    : texte;
+}
+
+function envoyerViaRepli(texte: string) {
+  pousserJournalDepuisAgent(`Ton message envoyé dans le chat : ${texteCourt(texte)}`, "succes");
+  repliMessageEtudiant?.(texte);
+}
+
+/**
+ * Envoie un message ecrit ou dicte par l'etudiant pendant que Clovis
+ * travaille. Ne perd jamais le message : canal ferme ou pas d'accuse dans
+ * le delai => envoi comme message normal du chat.
+ */
+export function envoyerMessageEtudiant(texte: string) {
+  const propre = texte.trim();
+  if (!propre) return;
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    envoyerViaRepli(propre);
+    return;
+  }
+  compteurMessageEtudiant += 1;
+  const idMessage = `message-etudiant-${Date.now()}-${compteurMessageEtudiant}`;
+  const minuteur = setTimeout(() => {
+    if (messagesEnAttenteAccuse.delete(idMessage)) envoyerViaRepli(propre);
+  }, DELAI_ACCUSE_MESSAGE_MS);
+  messagesEnAttenteAccuse.set(idMessage, { texte: propre, minuteur });
+  socket.send(JSON.stringify({ id_message: idMessage, message_etudiant: propre }));
+}
+
+function traiterAccuseMessageEtudiant(idMessage: unknown, prisEnCompte: unknown) {
+  if (typeof idMessage !== "string") return;
+  const attente = messagesEnAttenteAccuse.get(idMessage);
+  if (!attente) return;
+  clearTimeout(attente.minuteur);
+  messagesEnAttenteAccuse.delete(idMessage);
+  if (prisEnCompte === true) {
+    pousserJournalDepuisAgent(`Ton message à Clovis : ${texteCourt(attente.texte)}`, "succes");
+  } else {
+    envoyerViaRepli(attente.texte);
+  }
 }
 
 function envoyerReponse(id: string, resultat: unknown) {
@@ -239,6 +303,9 @@ function traiterTexteClovis(texte: unknown) {
 function traiterMessage(message: unknown) {
   if (!message || typeof message !== "object") return;
   const m = message as {
+    accuse_message_etudiant?: unknown;
+    pris_en_compte?: unknown;
+    message_etudiant_renvoye?: unknown;
     texte_clovis?: unknown;
     id?: string;
     action_id?: string;
@@ -246,7 +313,13 @@ function traiterMessage(message: unknown) {
     description?: string;
     montrer_action_id?: string;
   };
-  if (m.texte_clovis !== undefined) {
+  if (m.accuse_message_etudiant !== undefined) {
+    traiterAccuseMessageEtudiant(m.accuse_message_etudiant, m.pris_en_compte);
+  } else if (typeof m.message_etudiant_renvoye === "string") {
+    // Arrive trop tard pour que le tour de Clovis le lise : meme traitement
+    // qu'un accuse negatif.
+    envoyerViaRepli(m.message_etudiant_renvoye);
+  } else if (m.texte_clovis !== undefined) {
     traiterTexteClovis(m.texte_clovis);
   } else if (m.id && m.action_id) {
     traiterDemandeAction(m.id, m.action_id);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { appelerApiStream, uploaderImageChat, uploaderDocumentChat, uploaderVideoChat, transcrireAudioChat, signalerPedagogique } from "@/lib/api";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
@@ -13,6 +13,7 @@ import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { SelecteurModeActif } from "./SelecteurModeActif";
 import { messageErreur } from "@/lib/erreurs";
+import { ContexteChat } from "@/lib/contexteChat";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import dynamic from "next/dynamic";
@@ -731,6 +732,21 @@ export function ChatIA({
       setRaisonnementEnCours(false);
     }
   }
+
+  // Canal en direct (19/09/2026) : un message ecrit ou dicte pendant qu'aucun
+  // tour de Clovis n'etait en cours part ici comme un vrai message du chat,
+  // des que le chat est libre (voir lib/contexteChat.tsx, file de messages
+  // en attente). Un seul message a la fois, le suivant attend la fin de la
+  // reponse.
+  const ctxChatCanal = useContext(ContexteChat);
+  const nbMessagesEnAttenteCanal = ctxChatCanal?.nbMessagesEnAttente ?? 0;
+  useEffect(() => {
+    if (!ctxChatCanal || nbMessagesEnAttenteCanal === 0) return;
+    if (genEnCours || affichageEnCours || accesBloqueMineur) return;
+    const texte = ctxChatCanal.prendreMessageEnAttente();
+    if (texte) void envoyerMessage(texte, "moyenne", []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
+  }, [nbMessagesEnAttenteCanal, genEnCours, affichageEnCours, accesBloqueMineur]);
 
   async function envoyerMessage(
     texte: string,

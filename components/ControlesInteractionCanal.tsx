@@ -12,15 +12,15 @@
 // lib/contexteCanalEnDirect.tsx) et reste mis en avant à la prochaine
 // activation. Le choix du moteur est mémorisé de la même façon.
 //
-// Ce que devient le message une fois capté (envoi au chat, à Clovis
-// pendant son tour) relève des chantiers O et P : ici il est seulement
-// remis au store via soumettreMessageUtilisateur, personne ne le lit
-// encore.
+// Le message capté part par envoyerMessageEtudiant (lib/canalAgentApplicatif.ts) :
+// lu par Clovis à son prochain aller-retour s'il est en train de travailler,
+// sinon envoyé comme un message normal du chat.
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, Mic, PenLine, Square } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
+import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
 
 const DUREE_ERREUR_MS = 6000;
@@ -52,7 +52,7 @@ export function ControlesInteractionCanal() {
     moteur: moteurChoisi,
     surTexte: (texte) => {
       setErreur(null);
-      contexte?.soumettreMessageUtilisateur(texte);
+      envoyerMessageEtudiant(texte);
     },
     surErreur: afficherErreur,
   });
@@ -78,7 +78,7 @@ export function ControlesInteractionCanal() {
   );
 
   if (!contexte) return null;
-  const { choisirModeInteraction, choisirMoteurDictee, soumettreMessageUtilisateur } = contexte;
+  const { choisirModeInteraction, choisirMoteurDictee } = contexte;
 
   function basculerDictee() {
     choisirModeInteraction("voix");
@@ -98,7 +98,7 @@ export function ControlesInteractionCanal() {
   function envoyerTexte() {
     const propre = texteSaisi.trim();
     if (!propre) return;
-    soumettreMessageUtilisateur(propre);
+    envoyerMessageEtudiant(propre);
     setTexteSaisi("");
     setPanneauOuvert(false);
   }

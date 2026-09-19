@@ -9,33 +9,78 @@
 // Décision Bourama (18/09/2026) : la bulle n'est PAS persistante --
 // elle s'ouvre seulement quand Clovis a un texte à dire (dernierTexte
 // non null), se ferme sinon (effacement automatique après un délai,
-// voir lib/contexteCanalEnDirect.tsx). Elle suit le VRAI curseur de la
-// souris (mousemove), pas le curseur virtuel de Clovis (CurseurVirtuelAgent,
-// qui simule les clics de l'IA) -- les deux sont indépendants et peuvent
-// être visibles en même temps à des positions différentes.
+// voir lib/contexteCanalEnDirect.tsx).
+//
+// Révisé le 19/09/2026 (décision Bourama) :
+// - elle n'apparaît QUE canal en direct activé, jamais sinon ;
+// - elle suit le curseur de l'appli : le curseur virtuel de Clovis quand
+//   il est affiché (donc aussi sur téléphone, où il n'y a pas de souris),
+//   sinon la vraie souris. Si aucune position n'est encore connue (téléphone,
+//   curseur jamais apparu), elle s'affiche en haut au centre de l'écran.
 //
 // L'écoute mousemove n'est active que pendant qu'un texte est affiché,
 // pour ne rien faire tourner inutilement le reste du temps (même souci
 // de performance que le MutationObserver dans lib/canalAgentApplicatif.ts).
 
-import { AnimatePresence, motion } from "framer-motion";
-import { useContext, useEffect, useState } from "react";
+import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
+import { useContext, useEffect, useRef } from "react";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 
 const DECALAGE_X = 18;
 const DECALAGE_Y = 18;
+const LARGEUR_MAX = 320;
+const MARGE_BORD = 8;
+const HAUTEUR_MIN_SOUS_LE_CURSEUR = 96;
+const POSITION_REPLI_Y = 72;
+
+function limiter(valeur: number, min: number, max: number): number {
+  return Math.min(Math.max(valeur, min), Math.max(min, max));
+}
 
 export function BulleDialogueAgent() {
   const contexte = useContext(ContexteCanalEnDirect);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const texte = contexte?.dernierTexte ?? null;
+  const curseur = useContext(ContexteCurseurVirtuel);
+  const texte = contexte?.actif ? (contexte.dernierTexte ?? null) : null;
+  const curseurVisible = curseur?.visible ?? false;
+
+  const curseurX = curseur?.x;
+  const curseurY = curseur?.y;
+  const positionX = useMotionValue(0);
+  const positionY = useMotionValue(0);
+  const positionConnue = useRef(false);
+
+  const gauche = useTransform(positionX, (v) =>
+    typeof window === "undefined" ? v : limiter(v + DECALAGE_X, MARGE_BORD, window.innerWidth - LARGEUR_MAX - MARGE_BORD)
+  );
+  const haut = useTransform(positionY, (v) =>
+    typeof window === "undefined" ? v : limiter(v + DECALAGE_Y, MARGE_BORD, window.innerHeight - HAUTEUR_MIN_SOUS_LE_CURSEUR)
+  );
 
   useEffect(() => {
     if (!texte) return;
-    const surDeplacement = (e: MouseEvent) => setPosition({ x: e.clientX, y: e.clientY });
+
+    const poser = (x: number, y: number) => {
+      positionX.set(x);
+      positionY.set(y);
+      positionConnue.current = true;
+    };
+
+    if (curseurVisible && curseurX && curseurY) {
+      poser(curseurX.get(), curseurY.get());
+      const arretX = curseurX.on("change", (v) => positionX.set(v));
+      const arretY = curseurY.on("change", (v) => positionY.set(v));
+      return () => {
+        arretX();
+        arretY();
+      };
+    }
+
+    if (!positionConnue.current) poser(window.innerWidth / 2 - DECALAGE_X - LARGEUR_MAX / 2, POSITION_REPLI_Y);
+    const surDeplacement = (e: MouseEvent) => poser(e.clientX, e.clientY);
     window.addEventListener("mousemove", surDeplacement);
     return () => window.removeEventListener("mousemove", surDeplacement);
-  }, [texte]);
+  }, [texte, curseurVisible, curseurX, curseurY, positionX, positionY]);
 
   if (!contexte) return null;
 
@@ -51,11 +96,11 @@ export function BulleDialogueAgent() {
           transition={{ duration: 0.18 }}
           style={{
             position: "fixed",
-            top: position.y + DECALAGE_Y,
-            left: position.x + DECALAGE_X,
+            top: haut,
+            left: gauche,
             zIndex: 70,
             pointerEvents: "none",
-            maxWidth: "min(320px, calc(100vw - 32px))",
+            maxWidth: `min(${LARGEUR_MAX}px, calc(100vw - ${MARGE_BORD * 2}px))`,
           }}
           className="rounded-cgpt-bouton bg-dj-surface border border-dj-bordure px-3 py-2 text-sm text-dj-texte shadow-xl"
         >
