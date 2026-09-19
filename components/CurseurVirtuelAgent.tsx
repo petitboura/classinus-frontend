@@ -29,7 +29,7 @@ const ICONE_PAR_FORME: Record<FormeCurseur, typeof MousePointer2> = {
 export function CurseurVirtuelAgent() {
   const contexte = useContext(ContexteCurseurVirtuel);
   if (!contexte) return null;
-  const { x, y, echelle, visible, forme } = contexte;
+  const { x, y, echelle, visible, forme, enAction } = contexte;
   const Icone = ICONE_PAR_FORME[forme];
 
   return (
@@ -42,6 +42,16 @@ export function CurseurVirtuelAgent() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
+          // Correctif (19/09/2026, decision Bourama : "l'user doit
+          // pouvoir la déplacer si elle n'est pas utilisée") : glissable
+          // uniquement pendant qu'aucune trajectoire n'est en cours
+          // (enAction, voir lib/contexteCurseurVirtuel.tsx) -- pendant
+          // une action réelle, le curseur reste purement décoratif
+          // (pointerEvents "none"), pour ne jamais interférer avec le
+          // clic que Clovis est en train d'exécuter.
+          drag={!enAction}
+          dragMomentum={false}
+          dragElastic={0}
           style={{
             x,
             y,
@@ -50,7 +60,9 @@ export function CurseurVirtuelAgent() {
             top: 0,
             left: 0,
             zIndex: 60,
-            pointerEvents: "none",
+            pointerEvents: enAction ? "none" : "auto",
+            touchAction: "none",
+            cursor: enAction ? undefined : "grab",
             translateX: "-4px",
             translateY: "-4px",
           }}

@@ -102,6 +102,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     enregistrerDeplacementCurseur(curseurVirtuelValeur.deplacerVers);
   }, [curseurVirtuelValeur.deplacerVers]);
+  // Correctif (19/09/2026, decision Bourama : "c'est la souris du LLM
+  // donc il doit toujours être visible dès les premières réponses") :
+  // le curseur virtuel apparaît dès que le canal en direct s'active,
+  // pas seulement au moment d'un premier clic -- et disparaît quand le
+  // canal se désactive. afficher/masquer plutôt que deplacerVers : pas
+  // de trajectoire à jouer ici, juste une apparition/disparition.
+  const canalActif = canalEnDirectValeur.actif;
+  const { afficher: afficherCurseur, masquer: masquerCurseur } = curseurVirtuelValeur;
+  useEffect(() => {
+    if (canalActif) afficherCurseur();
+    else masquerCurseur();
+  }, [canalActif, afficherCurseur, masquerCurseur]);
   // Le catalogue "Pourquoi Classinus ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
   // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui

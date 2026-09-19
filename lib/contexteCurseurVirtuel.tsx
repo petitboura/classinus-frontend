@@ -32,6 +32,12 @@ export type ValeurCurseurVirtuel = {
   echelle: MotionValue<number>;
   visible: boolean;
   forme: FormeCurseur;
+  // Correctif (19/09/2026, decision Bourama : "c'est la souris du LLM
+  // donc il doit toujours être visible dès les premières réponses") :
+  // vrai pendant qu'une trajectoire (deplacerVers) est réellement en
+  // cours -- le curseur n'est déplaçable à la main par l'étudiant QUE
+  // quand c'est faux (voir components/CurseurVirtuelAgent.tsx, drag).
+  enAction: boolean;
   // Change la forme du curseur indépendamment d'un déplacement, par
   // exemple pour tenir "attrape" pendant toute la durée d'un glisser
   // (pas encore utilisé, prêt pour un futur chantier de glisser déposer).
@@ -46,6 +52,11 @@ export type ValeurCurseurVirtuel = {
     options?: { cliquer?: boolean; forme?: FormeCurseur }
   ) => Promise<void>;
   masquer: () => void;
+  // Ajouté le 19/09/2026 (decision Bourama) : affiche le curseur sans
+  // déclencher de trajectoire -- utilisé dès que le canal en direct
+  // s'active (voir AppShell.tsx), pour que le curseur soit visible dès
+  // la première réponse, pas seulement au moment d'un premier clic.
+  afficher: () => void;
 };
 
 export const ContexteCurseurVirtuel = createContext<ValeurCurseurVirtuel | null>(null);
@@ -123,25 +134,32 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
   const echelle = useMotionValue(1);
   const [visible, setVisible] = useState(false);
   const [forme, setForme] = useState<FormeCurseur>("defaut");
+  const [enAction, setEnAction] = useState(false);
   const positionInitialisee = useRef(false);
 
   const masquer = useCallback(() => setVisible(false), []);
+
+  const centrer = useCallback(() => {
+    if (positionInitialisee.current || typeof window === "undefined") return;
+    x.set(window.innerWidth / 2);
+    y.set(window.innerHeight / 2);
+    positionInitialisee.current = true;
+  }, [x, y]);
+
+  const afficher = useCallback(() => {
+    centrer();
+    setVisible(true);
+  }, [centrer]);
+
   const definirForme = useCallback((f: FormeCurseur) => setForme(f), []);
 
   const deplacerVers = useCallback(
     (cible: PointEcran | HTMLElement, options?: { cliquer?: boolean; forme?: FormeCurseur }): Promise<void> => {
       const arrivee = resoudrePoint(cible);
-
-      if (!positionInitialisee.current && typeof window !== "undefined") {
-        // Première apparition : le curseur part du centre de l'écran,
-        // pas d'un point (0,0) qui donnerait un grand trait visible et
-        // artificiel au tout premier déplacement.
-        x.set(window.innerWidth / 2);
-        y.set(window.innerHeight / 2);
-        positionInitialisee.current = true;
-      }
+      centrer();
 
       setVisible(true);
+      setEnAction(true);
       // Repasse en flèche par défaut pendant le trajet, comme un vrai
       // curseur qui quitte la forme de la zone qu'il vient de survoler.
       setForme("defaut");
@@ -168,12 +186,17 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
         // l'action va cliquer, sinon reste en flèche, sauf forme
         // explicitement demandée (utile plus tard pour "attrape").
         setForme(options?.forme ?? (options?.cliquer ? "main" : "defaut"));
-        if (!options?.cliquer) return;
-        return animate(echelle, [1, 0.72, 1], { duration: 0.28, ease: "easeOut" }).then(() => undefined);
+        if (!options?.cliquer) {
+          setEnAction(false);
+          return;
+        }
+        return animate(echelle, [1, 0.72, 1], { duration: 0.28, ease: "easeOut" }).then(() => {
+          setEnAction(false);
+        });
       });
     },
-    [x, y, echelle]
+    [x, y, echelle, centrer]
   );
 
-  return { x, y, echelle, visible, forme, definirForme, deplacerVers, masquer };
+  return { x, y, echelle, visible, forme, enAction, definirForme, deplacerVers, masquer, afficher };
 }
