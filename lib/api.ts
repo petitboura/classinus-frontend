@@ -1288,6 +1288,21 @@ export async function demarrerConnexion(service: string, agentId?: string) {
 }
 
 /**
+ * Termine une connexion à une application : appelée par la page de retour
+ * (app/oauth/retour/page.tsx) avec le code et le state que le fournisseur a
+ * ajoutés à l'adresse. Le service n'est pas à préciser, le serveur le
+ * retrouve grâce au state. Un échec de connexion (code expiré, refus) revient
+ * avec succes à false et un message, sans lever d'erreur : la page l'affiche.
+ */
+export async function finaliserConnexion(code: string, state: string) {
+  const resultat = await appelerApi("/api/connexions/finaliser", {
+    method: "POST",
+    body: JSON.stringify({ code, state }),
+  });
+  return resultat as { succes: boolean; message: string; service: string | null };
+}
+
+/**
  * Liste les dépôts GitHub (publics et privés) de la personne connectée --
  * voir api/connexions.py:depots_github, utilisé par le sélecteur de dépôt
  * dans BarreDeSaisie.tsx. Voir demarrerConnexion ci-dessus pour la même
