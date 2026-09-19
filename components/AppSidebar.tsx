@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { PAGES_FILLES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { usePathname, useRouter } from "next/navigation";
 import { useFenetres } from "@/lib/contexteFenetres";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -88,13 +89,23 @@ export type OngletId =
   | "claude"
   | "controle-session";
 
-export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof Briefcase }[] = [
+// `routesFilles` (19/09/2026, demande Bourama : la Bibliothèque fonctionne
+// comme Personnaliser Clovis) : pages filles d'une section, pour que son
+// bouton reste en surbrillance quand on est sur l'une d'elles et pas
+// seulement sur la page d'accueil de la section.
+export const ONGLETS: {
+  id: OngletId;
+  href: string;
+  label: string;
+  Icone: typeof Briefcase;
+  routesFilles?: readonly string[];
+}[] = [
   { id: "bureau", href: "/bureau", label: "Bureau", Icone: Briefcase },
   // Texte affiché "Mes skills" (21/08/2026, demande Bourama) : en
   // interne (route, code, BDD, outils MCP) ça reste "comportement",
   // voir la note dans lib/api.ts. Seul le mot vu par l'utilisateur change.
   { id: "comportements", href: "/comportements", label: "Mes skills", Icone: ScrollText },
-  { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
+  { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library, routesFilles: PAGES_FILLES_BIBLIOTHEQUE },
   { id: "memoire", href: "/memoire", label: "Ma mémoire", Icone: Brain },
   // Guide "Utiliser Classinus dans Claude" (18/08, demande Bourama) :
   // icône Plug ("branchement", demande explicite Bourama) plutôt que le
@@ -685,7 +696,7 @@ export function AppSidebar({
     mobile = false,
     actifSupplementaire = false,
   }: {
-    onglet: { id?: OngletId; href: string; label: string; Icone: typeof Briefcase };
+    onglet: { id?: OngletId; href: string; label: string; Icone: typeof Briefcase; routesFilles?: readonly string[] };
     mouvement: string;
     mobile?: boolean;
     /** Pour les liens de groupe (Personnaliser Classinus, Scolarité) : reste
@@ -694,7 +705,7 @@ export function AppSidebar({
      * Bourama). */
     actifSupplementaire?: boolean;
   }) {
-    const actif = pathname === onglet.href || actifSupplementaire;
+    const actif = pathname === onglet.href || actifSupplementaire || Boolean(onglet.routesFilles?.includes(pathname));
     return (
       <Link
         href={onglet.href}

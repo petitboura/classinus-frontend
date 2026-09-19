@@ -10,6 +10,7 @@ import { LinkPreview } from "@/components/chat/LinkPreview";
 import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { obtenirEntreeBibliothequePublique, type EntreeBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
 // Chantier "Classinus ouvert" (10/09/2026, demande Bourama : chaque PDF de
 // la bibliothèque publique retrouvable par son nom, indexable par
@@ -119,8 +120,8 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
       </p>
     );
     return (
-      <Suspense fallback={<SectionPage title="Document introuvable" retour="/bibliotheque">{messageIntrouvable}</SectionPage>}>
-        <SectionPageRetourDepuis title="Document introuvable" routeParDefaut="/bibliotheque">
+      <Suspense fallback={<SectionPage title="Document introuvable" retour={ROUTES_BIBLIOTHEQUE.publique}>{messageIntrouvable}</SectionPage>}>
+        <SectionPageRetourDepuis title="Document introuvable" routeParDefaut={ROUTES_BIBLIOTHEQUE.publique}>
           {messageIntrouvable}
         </SectionPageRetourDepuis>
       </Suspense>
@@ -191,8 +192,8 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
   );
 
   return (
-    <Suspense fallback={<SectionPage title={entree.nom} retour="/bibliotheque">{contenu}</SectionPage>}>
-      <SectionPageRetourDepuis title={entree.nom} routeParDefaut="/bibliotheque">
+    <Suspense fallback={<SectionPage title={entree.nom} retour={ROUTES_BIBLIOTHEQUE.publique}>{contenu}</SectionPage>}>
+      <SectionPageRetourDepuis title={entree.nom} routeParDefaut={ROUTES_BIBLIOTHEQUE.publique}>
         {contenu}
       </SectionPageRetourDepuis>
     </Suspense>

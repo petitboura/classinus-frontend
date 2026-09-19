@@ -17,6 +17,21 @@
 //
 // Pour ouvrir un nouveau type de page partagée, il suffit de l'ajouter ici.
 
+import { PAGES_FILLES_BIBLIOTHEQUE } from "./routesBibliotheque";
+
+// Mots qui, placés seuls après la racine, désignent une page de liste et
+// jamais l'identifiant d'un élément : "perso" (racine/perso/<id>) et les
+// pages filles de la Bibliothèque (19/09/2026, demande Bourama : la
+// Bibliothèque fonctionne comme Personnaliser Clovis, voir
+// lib/routesBibliotheque.ts). Sans cette liste, /bibliotheque/publique
+// aurait été prise pour un document partagé et serait devenue ouverte à
+// tout le monde. Lue depuis la source unique des routes de la
+// Bibliothèque, pour qu'une page fille ajoutée là soit réservée d'office.
+const MOTS_RESERVES = new Set<string>([
+  "perso",
+  ...PAGES_FILLES_BIBLIOTHEQUE.map((route) => route.split("/").pop() as string),
+]);
+
 // Racine de route (premier segment) et présence d'une version perso
 // (racine/perso/<id>) en plus de la version publique (racine/<id>).
 // Une Map (et non un objet simple) pour qu'un segment comme "constructor"
@@ -34,8 +49,8 @@ export function estPageElementPartage(chemin: string): boolean {
   const regle = PAGES_ELEMENT_PARTAGE.get(racine);
   if (!regle) return false;
 
-  // racine/<id> : le mot "perso" seul n'est jamais un identifiant.
-  if (reste.length === 1) return reste[0] !== "perso";
+  // racine/<id> : un mot réservé seul n'est jamais un identifiant.
+  if (reste.length === 1) return !MOTS_RESERVES.has(reste[0]);
   // racine/perso/<id>
   if (reste.length === 2) return regle.aVersionPerso && reste[0] === "perso";
   return false;

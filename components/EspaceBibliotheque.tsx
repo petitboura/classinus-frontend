@@ -146,7 +146,17 @@ function origineDe(f: FichierBiblio): OrigineOnglet {
   return "privee";
 }
 
-export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: string } = {}) {
+// `sansOnglets` (19/09/2026, demande Bourama : la Bibliothèque fonctionne
+// comme Personnaliser Clovis) : sur la vraie page /bibliotheque/perso, le
+// choix entre Perso, Publique et Dossiers du téléphone se fait désormais
+// par de vraies pages voisines (voir lib/sectionsBibliotheque.tsx), donc
+// la rangée d'onglets interne n'a plus à s'afficher et le composant reste
+// sur la vue Perso. Absent (fenêtre flottante du chat, Mes codes) : le
+// comportement d'avant est inchangé, onglets internes compris.
+export function EspaceBibliotheque({
+  dossierInitialId,
+  sansOnglets = false,
+}: { dossierInitialId?: string; sansOnglets?: boolean } = {}) {
   // 21/08/2026, demande Bourama : "un bibliothèque publique dans la
   // section bibliothèque" -- bascule entre la bibliothèque perso
   // (comportement par défaut, inchangé ci-dessous) et le catalogue
@@ -943,16 +953,18 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           composant lui-même gère déjà son état "disponible seulement sur
           mobile" (usePluginNatif), donc pas de logique conditionnelle à
           dupliquer ici. */}
-      <OngletsSegment
-        ariaLabel="Section de la bibliothèque"
-        valeur={vue}
-        onChange={(v) => setVue(v as typeof vue)}
-        onglets={[
-          { valeur: "perso", libelle: "Perso" },
-          { valeur: "publique", libelle: "Publique" },
-          { valeur: "dossiers", libelle: "Dossiers du téléphone" },
-        ]}
-      />
+      {!sansOnglets && (
+        <OngletsSegment
+          ariaLabel="Section de la bibliothèque"
+          valeur={vue}
+          onChange={(v) => setVue(v as typeof vue)}
+          onglets={[
+            { valeur: "perso", libelle: "Perso" },
+            { valeur: "publique", libelle: "Publique" },
+            { valeur: "dossiers", libelle: "Dossiers du téléphone" },
+          ]}
+        />
+      )}
 
       {vue === "publique" ? (
         <BibliothequePublique />

@@ -7,6 +7,7 @@ import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCa
 import { StatistiquesContenuDossier } from "@/components/StatistiquesContenuDossier";
 import { obtenirDossierCataloguePublic, listerBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
 // Chantier "Classinus ouvert" (10/09/2026, Lot E) : même principe que les
 // lots précédents. Server Component pour generateMetadata + premier
@@ -54,7 +55,7 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
 
   if (!dossier) {
     return (
-      <SectionPage title="Dossier introuvable" retour="/bibliotheque">
+      <SectionPage title="Dossier introuvable" retour={ROUTES_BIBLIOTHEQUE.publique}>
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce dossier est introuvable sur la bibliothèque publique.
         </p>
@@ -74,7 +75,7 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
   }
 
   return (
-    <SectionPage title={dossier.nom} retour={dossier.dossier_parent_id ? `/dossiers/${dossier.dossier_parent_id}` : "/bibliotheque"}>
+    <SectionPage title={dossier.nom} retour={dossier.dossier_parent_id ? `/dossiers/${dossier.dossier_parent_id}` : ROUTES_BIBLIOTHEQUE.publique}>
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-center gap-2">
           <Folder size={18} className="flex-shrink-0 text-dj-accent-1" />

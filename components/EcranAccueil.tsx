@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { Carte } from "@/components/Carte";
 import { ONGLETS } from "@/components/AppSidebar";
 import { BandeauMiseAJour } from "@/components/BandeauMiseAJour";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
 // Écran d'accueil réel de l'app (16/08/2026, demande Bourama : "faut une
 // vraie écran d'accueil pour l'app, pas un lieu dans l'app" -- avant
@@ -144,7 +145,7 @@ export function EcranAccueil() {
             Icone: Library,
             label: `Ajouté à la bibliothèque : ${f.nom_fichier}`,
             date: f.created_at,
-            href: "/bibliotheque",
+            href: ROUTES_BIBLIOTHEQUE.perso,
           });
         }
       } catch {

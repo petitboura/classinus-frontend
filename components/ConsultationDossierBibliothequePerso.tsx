@@ -10,6 +10,7 @@ import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 import { Skeleton } from "@/components/Skeleton";
 import { obtenirDossierBibliothequeConsultation, type DossierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
 /**
  * 11/09/2026, demande Bourama : lien de partage direct pour un dossier
@@ -56,7 +57,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (sansCompte) {
     return (
-      <SectionPage title="Dossier partagé" retour="/bibliotheque">
+      <SectionPage title="Dossier partagé" retour={ROUTES_BIBLIOTHEQUE.perso}>
         <CTACompteRequis texte="Crée un compte pour consulter ce dossier." />
       </SectionPage>
     );
@@ -64,7 +65,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (erreur) {
     return (
-      <SectionPage title="Dossier partagé" retour="/bibliotheque">
+      <SectionPage title="Dossier partagé" retour={ROUTES_BIBLIOTHEQUE.perso}>
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">{erreur}</p>
       </SectionPage>
     );
@@ -72,7 +73,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (dossier === undefined) {
     return (
-      <SectionPage title="Dossier partagé" retour="/bibliotheque">
+      <SectionPage title="Dossier partagé" retour={ROUTES_BIBLIOTHEQUE.perso}>
         <Skeleton className="h-16 w-full rounded-cgpt-carte" />
         <Skeleton className="h-32 w-full rounded-cgpt-carte" />
       </SectionPage>
@@ -81,7 +82,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
 
   if (dossier === null) {
     return (
-      <SectionPage title="Dossier introuvable" retour="/bibliotheque">
+      <SectionPage title="Dossier introuvable" retour={ROUTES_BIBLIOTHEQUE.perso}>
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce dossier est introuvable, ou a été supprimé par son propriétaire.
         </p>
@@ -90,7 +91,7 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
   }
 
   return (
-    <SectionPage title={dossier.nom} retour="/bibliotheque">
+    <SectionPage title={dossier.nom} retour={ROUTES_BIBLIOTHEQUE.perso}>
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">

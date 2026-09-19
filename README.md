@@ -79,7 +79,10 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 |---|---|
 | `/` | Accueil (raccourcis "Mon espace", activité récente) |
 | `/bureau` | Bureau (Mes codes, entrer un code, corrections pédagogiques reçues) |
-| `/bibliotheque` | Bibliothèque personnelle (+ sous-section Dossiers du téléphone) |
+| `/bibliotheque` | Bibliothèque : page d'accueil en liste (Perso, Publique, Dossiers du téléphone), même principe que Personnaliser Clovis |
+| `/bibliotheque/perso` | Bibliothèque personnelle |
+| `/bibliotheque/publique` | Bibliothèque publique (catalogue partagé par tout le monde) |
+| `/bibliotheque/telephone` | Dossiers du téléphone (appli mobile uniquement) |
 | `/memoire` | Ma mémoire |
 | `/comportements` | Mes skills ("comportements" en interne) |
 | `/personnaliser` | Personnaliser Clovis (skills, mémoire, plugins) — onglet central du menu natif |
@@ -100,6 +103,23 @@ page du groupe `app/(app)` renvoie vers `/inscription`. La garde est posée une
 seule fois, dans `components/AppShell.tsx`, et la liste des pages ouvertes vit
 dans `lib/routesPubliques.ts` : une nouvelle page est donc protégée d'office,
 et il suffit de l'ajouter à cette liste pour l'ouvrir à tout le monde.
+
+Les mots `perso`, `publique` et `telephone`, seuls après `/bibliotheque/`,
+sont réservés aux pages de liste de la Bibliothèque et ne sont jamais pris
+pour l'identifiant d'un document partagé. Leur liste vient de
+`lib/routesBibliotheque.ts`, la source unique des adresses de la Bibliothèque.
+
+## Sections en groupe (Personnaliser Clovis, Bibliothèque)
+
+Une section en groupe a une page d'accueil en liste (`components/ListeSections.tsx`)
+et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Chaque
+page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
+l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
+gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut
+sous forme de pastilles (`OngletsLiens` dans `components/OngletsSegment.tsx`).
+Les deux se branchent via la prop `groupe` de `components/SectionPage.tsx`.
+Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses dans
+`lib/routesBibliotheque.ts`.
 
 ## Navigation mobile
 
