@@ -220,7 +220,7 @@ export function normaliserLatex(texte: string): string {
 // ici vers le format de lien que le handler `a` ci-dessous sait déjà
 // afficher (voir plus bas), pour ne rien changer au rendu de la pilule
 // elle-même, seulement à ce qui déclenche son affichage.
-function normaliserCitations(texte: string): string {
+export function normaliserCitations(texte: string): string {
   return texte.replace(/\[\[(\d+)\]\]/g, (_, numero) => `[${numero}](citation:${numero})`);
 }
 

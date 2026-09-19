@@ -11,11 +11,14 @@
 // (mêmes plugins remark/rehype, mêmes composants pour chaque bloc), mais
 // hors de tout état propre à un message du chat : pas de sources
 // numérotées (donc pas de pastilles de citation), pas de mode questions
-// groupées, pas d'animation mot par mot. BulleMessage.tsx n'est pas
+// groupées, pas d'animation mot par mot. Les sources, les questions et
+// les images se branchent par props (sources trouvées pendant le tour,
+// callback de réponse à une question) : tout ce que le chat sait afficher
+// dans une réponse marche ici aussi. BulleMessage.tsx n'est pas
 // modifié (seul un `export` a été ajouté sur ses utilitaires) pour ne
 // jamais risquer une régression dans le chat.
 
-import { isValidElement, memo, type ReactNode } from "react";
+import { isValidElement, memo, useMemo, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import dynamic from "next/dynamic";
 import { BlocCode } from "./BlocCode";
@@ -34,7 +37,11 @@ import { LecteurMedia, typeMedia } from "./LecteurMedia";
 import { NoteTexteChip, estNoteTexteBibliotheque } from "./NoteTexteChip";
 import { LinkPreview } from "./LinkPreview";
 import { Skeleton } from "../Skeleton";
-import { PLUGINS_REHYPE, PLUGINS_REMARK, normaliserLatex, texteBrut } from "./BulleMessage";
+import { SourcesBulle } from "./SourcesBulle";
+import { GalerieImagesBulle } from "./GalerieImagesBulle";
+import { ouvrirPosition } from "./visionneurPositionEvenement";
+import type { ImageCanal, SourceCanal } from "@/lib/contexteCanalEnDirect";
+import { PLUGINS_REHYPE, PLUGINS_REMARK, normaliserCitations, normaliserLatex, texteBrut } from "./BulleMessage";
 
 // Même chargement à la demande que dans BulleMessage.tsx : recharts ne
 // sert que si le texte contient réellement un bloc ```chart.
@@ -43,66 +50,99 @@ const GraphiqueDonnees = dynamic(() => import("./GraphiqueDonnees").then((m) => 
   loading: () => <Skeleton className="h-[260px] w-full rounded-xl border border-dj-bordure" />,
 });
 
-const COMPOSANTS_MARKDOWN = {
-  pre({ children }: { children?: ReactNode }) {
-    const enfant = Array.isArray(children) ? children[0] : children;
-    if (!isValidElement(enfant)) return <pre>{children}</pre>;
-
-    const props = enfant.props as { className?: string; children?: ReactNode };
-    const langage = (props.className || "").replace("language-", "").trim();
-    const code = texteBrut(props.children).replace(/\n$/, "");
-
-    switch (langage) {
-      case "mermaid":
-        return <Mermaid definition={code} />;
-      case "chart":
-        return <GraphiqueDonnees code={code} />;
-      case "carte":
-        return <CarteMessage code={code} />;
-      case "geometrie":
-        return <SchemaGeometrique code={code} />;
-      case "qcm":
-        return <QCMInteractif code={code} />;
-      case "question":
-        // Aucune réponse ne peut partir d'ici (pas de conversation du chat
-        // derrière la bulle) : affichée verrouillée, comme une question
-        // déjà répondue.
-        return <QuestionInteractive code={code} dejaRepondu />;
-      case "fiche":
-        return <FicheRevision code={code} />;
-      case "widget":
-      case "html":
-        return <WidgetSandbox code={code} />;
-      default:
-        return <BlocCode langage={langage} code={code} />;
-    }
-  },
-  code({ children }: { children?: ReactNode }) {
-    return (
-      <code className="rounded bg-dj-surface-haute px-1.5 py-0.5 font-mono text-[13px] text-dj-texte">{children}</code>
-    );
-  },
-  img({ src, alt }: { src?: string | Blob; alt?: string }) {
-    return <ImageMessage src={typeof src === "string" ? src : undefined} alt={alt} />;
-  },
-  table({ children }: { children?: ReactNode }) {
-    return <TableauMessage>{children}</TableauMessage>;
-  },
-  a({ href, children }: { href?: string; children?: ReactNode }) {
-    if (!href) return <>{children}</>;
-    const media = typeMedia(href);
-    if (media) return <LecteurMedia href={href} type={media} />;
-    if (estNoteTexteBibliotheque(href)) return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
-    if (estFichierCodeAffichable(href)) return <FichierCode href={href} nom={texteBrut(children) || href} />;
-    if (extensionFichier(href)) return <FichierChip href={href} nom={texteBrut(children) || href} />;
-    if (/^https?:\/\//i.test(href)) return <LinkPreview href={href} texteLien={texteBrut(children) || href} />;
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="text-dj-texte-muet underline hover:text-dj-texte">
-        {children}
-      </a>
-    );
-  },
+type OptionsComposants = {
+  conversationId?: string;
+  sources: SourceCanal[];
+  onRepondreQuestion?: (texteFinal: string) => void;
+  questionDejaRepondue?: boolean;
 };
+
+function creerComposants({ conversationId, sources, onRepondreQuestion, questionDejaRepondue }: OptionsComposants) {
+  return {
+    pre({ children }: { children?: ReactNode }) {
+      const enfant = Array.isArray(children) ? children[0] : children;
+      if (!isValidElement(enfant)) return <pre>{children}</pre>;
+
+      const props = enfant.props as { className?: string; children?: ReactNode };
+      const langage = (props.className || "").replace("language-", "").trim();
+      const code = texteBrut(props.children).replace(/\n$/, "");
+
+      switch (langage) {
+        case "mermaid":
+          return <Mermaid definition={code} />;
+        case "chart":
+          return <GraphiqueDonnees code={code} />;
+        case "carte":
+          return <CarteMessage code={code} />;
+        case "geometrie":
+          return <SchemaGeometrique code={code} />;
+        case "qcm":
+          return <QCMInteractif code={code} conversationId={conversationId} />;
+        case "question":
+          // La réponse choisie part comme un message de l'étudiant dans la
+          // conversation du canal (voir BulleDialogueAgent.tsx).
+          return <QuestionInteractive code={code} onReponse={onRepondreQuestion} dejaRepondu={questionDejaRepondue} />;
+        case "fiche":
+          return <FicheRevision code={code} />;
+        case "widget":
+        case "html":
+          return <WidgetSandbox code={code} />;
+        default:
+          return <BlocCode langage={langage} code={code} />;
+      }
+    },
+    code({ children }: { children?: ReactNode }) {
+      return (
+        <code className="rounded bg-dj-surface-haute px-1.5 py-0.5 font-mono text-[13px] text-dj-texte">{children}</code>
+      );
+    },
+    img({ src, alt }: { src?: string | Blob; alt?: string }) {
+      return <ImageMessage src={typeof src === "string" ? src : undefined} alt={alt} />;
+    },
+    table({ children }: { children?: ReactNode }) {
+      return <TableauMessage>{children}</TableauMessage>;
+    },
+    a({ href, children }: { href?: string; children?: ReactNode }) {
+      if (!href) return <>{children}</>;
+      const matchCitation = /^citation:(\d+)$/.exec(href);
+      if (matchCitation) {
+        const numero = parseInt(matchCitation[1], 10);
+        const source = sources.find((s) => s.numero === numero);
+        if (!source) return <span className="text-dj-accent-1-texte">{children}</span>;
+        const libelle = source.reperage ? `${source.titre}, ${source.reperage}` : source.titre;
+        return (
+          <button
+            type="button"
+            onClick={() =>
+              ouvrirPosition({
+                url: source.url,
+                titre: libelle,
+                positionType: source.position_type,
+                positionValeur: source.position_valeur,
+                typeMime: source.type_mime,
+              })
+            }
+            title={libelle}
+            className="mx-0.5 rounded border border-dj-bordure px-1.5 py-0.5 align-middle text-[11px] font-medium text-dj-accent-1-texte no-underline hover:underline"
+          >
+            {libelle}
+          </button>
+        );
+      }
+      const media = typeMedia(href);
+      if (media) return <LecteurMedia href={href} type={media} />;
+      if (estNoteTexteBibliotheque(href)) return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
+      if (estFichierCodeAffichable(href)) return <FichierCode href={href} nom={texteBrut(children) || href} />;
+      if (extensionFichier(href)) return <FichierChip href={href} nom={texteBrut(children) || href} />;
+      if (/^https?:\/\//i.test(href)) return <LinkPreview href={href} texteLien={texteBrut(children) || href} />;
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-dj-texte-muet underline hover:text-dj-texte">
+          {children}
+        </a>
+      );
+    },
+  };
+}
 
 // Mêmes classes de mise en forme que le conteneur markdown du chat
 // (BulleMessage.tsx) : listes, paragraphes, titres.
@@ -111,16 +151,33 @@ const CLASSES_CONTENEUR =
 
 export const RenduMarkdownAutonome = memo(function RenduMarkdownAutonome({
   texte,
+  sources = [],
+  images = [],
+  conversationId,
+  onRepondreQuestion,
+  questionDejaRepondue,
   className = "",
 }: {
   texte: string;
+  sources?: SourceCanal[];
+  images?: ImageCanal[];
+  conversationId?: string;
+  onRepondreQuestion?: (texteFinal: string) => void;
+  questionDejaRepondue?: boolean;
   className?: string;
 }) {
+  const composants = useMemo(
+    () => creerComposants({ conversationId, sources, onRepondreQuestion, questionDejaRepondue }),
+    [conversationId, sources, onRepondreQuestion, questionDejaRepondue]
+  );
+
   return (
     <div className={`${CLASSES_CONTENEUR} ${className}`}>
-      <ReactMarkdown remarkPlugins={PLUGINS_REMARK} rehypePlugins={PLUGINS_REHYPE} components={COMPOSANTS_MARKDOWN}>
-        {normaliserLatex(texte)}
+      <ReactMarkdown remarkPlugins={PLUGINS_REMARK} rehypePlugins={PLUGINS_REHYPE} components={composants}>
+        {normaliserCitations(normaliserLatex(texte))}
       </ReactMarkdown>
+      <GalerieImagesBulle images={images} />
+      <SourcesBulle sources={sources} />
     </div>
   );
 });

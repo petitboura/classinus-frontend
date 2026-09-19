@@ -46,6 +46,36 @@ export type ModeInteraction = "voix" | "texte";
 // "navigateur" = Web Speech API du navigateur.
 export type MoteurDictee = "whisper" | "navigateur";
 
+// Réponse finale de Clovis à un message de l'étudiant (décision Bourama,
+// 19/09/2026 : la bulle affiche DEUX choses distinctes). L'information
+// (dernierTexte : ce que Clovis fait, ses petits commentaires) reste du
+// texte simple ; la réponse, elle, peut contenir tout ce que le chat sait
+// afficher (titres, tableaux, code, formules, schémas, QCM, questions...),
+// avec les sources et images trouvées par ses outils pendant ce tour.
+export type SourceCanal = {
+  numero: number;
+  titre: string;
+  url: string;
+  extrait?: string;
+  url_extrait?: string;
+  reperage?: string;
+  position_type?: "page" | "timestamp";
+  position_valeur?: number;
+  type_mime?: string | null;
+};
+
+export type ImageCanal = { titre: string; url: string; miniature: string; credit?: string | null };
+
+export type ReponseCanal = {
+  // Change à chaque nouvelle réponse : sert de clé d'état côté rendu
+  // (une question déjà répondue ne doit pas rester verrouillée sur la
+  // réponse suivante).
+  id: number;
+  texte: string;
+  sources: SourceCanal[];
+  images: ImageCanal[];
+};
+
 export type ValeurCanalEnDirect = {
   actif: boolean;
   activer: () => void;
@@ -73,6 +103,18 @@ export type ValeurCanalEnDirect = {
   // texte est identique au précédent.
   afficherTexte: (texte: string) => void;
   effacerTexte: () => void;
+
+  // Réponse (voir ReponseCanal). derniereReponse est GARDÉE après sa
+  // fermeture : cliquer sur le curseur de Clovis la fait réapparaître
+  // (basculerReponse). Elle se ferme seule après un délai proportionnel à
+  // sa longueur, sauf tant que l'étudiant a le pointeur dessus (lecture,
+  // défilement, réponse à une question).
+  derniereReponse: ReponseCanal | null;
+  reponseVisible: boolean;
+  afficherReponse: (reponse: Omit<ReponseCanal, "id">) => void;
+  basculerReponse: () => void;
+  suspendreMasquageReponse: () => void;
+  reprendreMasquageReponse: () => void;
 
   journal: EntreeJournalCanal[];
   // Renvoie l'id généré, pour permettre un appel ultérieur à
@@ -121,6 +163,10 @@ export function afficherTexteDepuisAgent(texte: string) {
   canalGlobal?.afficherTexte(texte);
 }
 
+export function afficherReponseDepuisAgent(reponse: Omit<ReponseCanal, "id">) {
+  canalGlobal?.afficherReponse(reponse);
+}
+
 /**
  * Lu par lib/canalAgentApplicatif.ts (envoyerTourCanalDirect) pour
  * savoir sur quelle conversation envoyer un message déclenché par le
@@ -133,6 +179,7 @@ export function obtenirConversationIdCanal(): string | null {
 }
 
 let compteurEntreeJournal = 0;
+let compteurReponse = 0;
 
 // Préférences d'affichage du chantier M et N : localStorage suffit pour
 // la v1, pas de table Supabase pour un simple choix d'interface.
@@ -161,6 +208,11 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const [actif, setActif] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [dernierTexte, setDernierTexte] = useState<string | null>(null);
+  const [derniereReponse, setDerniereReponse] = useState<ReponseCanal | null>(null);
+  const [reponseVisible, setReponseVisible] = useState(false);
+  const derniereReponseRef = useRef<ReponseCanal | null>(null);
+  const minuteurReponse = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reponseVisibleRef = useRef(false);
   const [journal, setJournal] = useState<EntreeJournalCanal[]>([]);
   const [modeInteraction, setModeInteraction] = useState<ModeInteraction>("texte");
   const [moteurDictee, setMoteurDictee] = useState<MoteurDictee>("whisper");
@@ -180,6 +232,13 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const DUREE_AFFICHAGE_MS = 5000;
   const DUREE_PAR_CARACTERE_MS = 60;
   const DUREE_AFFICHAGE_MAX_MS = 15000;
+  // Une réponse se lit, se parcourt et peut demander une action (question,
+  // lien) : bien plus longue qu'une simple information. Le curseur de
+  // Clovis la rouvre de toute façon à tout moment.
+  const DUREE_REPONSE_MIN_MS = 10000;
+  const DUREE_REPONSE_PAR_CARACTERE_MS = 40;
+  const DUREE_REPONSE_MAX_MS = 45000;
+  const DUREE_REPONSE_APRES_SURVOL_MS = 5000;
 
   // Lecture des préférences après le montage, jamais pendant le premier
   // rendu : le serveur ne connaît pas localStorage, lire plus tôt
@@ -210,7 +269,31 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     // reste de cet état.
     setConversationId(crypto.randomUUID());
   }, []);
-  const desactiver = useCallback(() => setActif(false), []);
+  useEffect(() => {
+    reponseVisibleRef.current = reponseVisible;
+  }, [reponseVisible]);
+
+  const annulerMasquageReponse = useCallback(() => {
+    if (minuteurReponse.current) clearTimeout(minuteurReponse.current);
+    minuteurReponse.current = null;
+  }, []);
+
+  const programmerMasquageReponse = useCallback(
+    (dureeMs: number) => {
+      annulerMasquageReponse();
+      minuteurReponse.current = setTimeout(() => {
+        minuteurReponse.current = null;
+        setReponseVisible(false);
+      }, dureeMs);
+    },
+    [annulerMasquageReponse]
+  );
+
+  const desactiver = useCallback(() => {
+    setActif(false);
+    annulerMasquageReponse();
+    setReponseVisible(false);
+  }, [annulerMasquageReponse]);
 
   const effacerTexte = useCallback(() => {
     if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
@@ -220,13 +303,58 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
 
   const afficherTexte = useCallback((texte: string) => {
     if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
+    // Une information remplace la réponse affichée (une seule bulle à la
+    // fois) ; la réponse reste rouvrable via le curseur.
+    annulerMasquageReponse();
+    setReponseVisible(false);
     setDernierTexte(texte);
     const duree = Math.min(DUREE_AFFICHAGE_MAX_MS, Math.max(DUREE_AFFICHAGE_MS, texte.length * DUREE_PAR_CARACTERE_MS));
     minuteurEffacement.current = setTimeout(() => {
       minuteurEffacement.current = null;
       setDernierTexte(null);
     }, duree);
-  }, []);
+  }, [annulerMasquageReponse]);
+
+  const dureeReponse = (texte: string) =>
+    Math.min(DUREE_REPONSE_MAX_MS, Math.max(DUREE_REPONSE_MIN_MS, texte.length * DUREE_REPONSE_PAR_CARACTERE_MS));
+
+  const afficherReponse = useCallback(
+    (reponse: Omit<ReponseCanal, "id">) => {
+      compteurReponse += 1;
+      const complete: ReponseCanal = { ...reponse, id: compteurReponse };
+      derniereReponseRef.current = complete;
+      setDerniereReponse(complete);
+      if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
+      minuteurEffacement.current = null;
+      setDernierTexte(null);
+      setReponseVisible(true);
+      programmerMasquageReponse(dureeReponse(complete.texte));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dureeReponse ne dépend que de constantes du hook.
+    [programmerMasquageReponse]
+  );
+
+  const basculerReponse = useCallback(() => {
+    const reponse = derniereReponseRef.current;
+    if (!reponse) return;
+    if (reponseVisibleRef.current) {
+      annulerMasquageReponse();
+      setReponseVisible(false);
+      return;
+    }
+    if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
+    minuteurEffacement.current = null;
+    setDernierTexte(null);
+    setReponseVisible(true);
+    programmerMasquageReponse(dureeReponse(reponse.texte));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dureeReponse ne dépend que de constantes du hook.
+  }, [annulerMasquageReponse, programmerMasquageReponse]);
+
+  const suspendreMasquageReponse = useCallback(() => annulerMasquageReponse(), [annulerMasquageReponse]);
+  const reprendreMasquageReponse = useCallback(() => {
+    if (reponseVisibleRef.current) programmerMasquageReponse(DUREE_REPONSE_APRES_SURVOL_MS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- constante du hook.
+  }, [programmerMasquageReponse]);
 
   const ajouterEntreeJournal = useCallback((description: string, statut: StatutEntreeJournal = "en_cours"): string => {
     compteurEntreeJournal += 1;
@@ -254,6 +382,12 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     dernierTexte,
     afficherTexte,
     effacerTexte,
+    derniereReponse,
+    reponseVisible,
+    afficherReponse,
+    basculerReponse,
+    suspendreMasquageReponse,
+    reprendreMasquageReponse,
     journal,
     ajouterEntreeJournal,
     mettreAJourEntreeJournal,

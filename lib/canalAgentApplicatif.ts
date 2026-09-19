@@ -71,7 +71,10 @@ import { estVisibleEtActif, resoudreElementCliquable } from "./clicGenerique";
 import {
   pousserJournalDepuisAgent,
   mettreAJourJournalDepuisAgent,
+  afficherReponseDepuisAgent,
   afficherTexteDepuisAgent,
+  type ImageCanal,
+  type SourceCanal,
   obtenirConversationIdCanal,
 } from "./contexteCanalEnDirect";
 
@@ -149,7 +152,7 @@ let conversationIdCanalConnu: string | null = null;
  *
  * Jamais de composant de chat monté ni ouvert pour ça : appelerApiStream
  * est une fonction pure, aucun rendu associé. La réponse finale du
- * modèle est affichée dans la bulle (chantier J) -- tout ce que le
+ * modèle est affichée dans la bulle (chantier J), en rendu complet de chat -- tout ce que le
  * modèle dit en cours de route via dire_a_l_etudiant arrive déjà par un
  * autre canal (WebSocket canal_agent_applicatif, indépendant de cet
  * appel HTTP), voir traiterTexteClovis plus haut dans ce fichier.
@@ -169,6 +172,13 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
 
   const idJournal = pousserJournalDepuisAgent(`Toi : ${texteCourt(texte)}`, "en_cours");
   let reponseAccumulee = "";
+  // Sources et images trouvées par les outils pendant ce tour, pour que la
+  // réponse s'affiche comme dans le chat (pastilles de citation [[n]],
+  // liste de sources, galerie d'images). Mêmes événements que ChatIA.tsx,
+  // dédoublonnés de la même façon.
+  const sources: SourceCanal[] = [];
+  const clesSources = new Set<string>();
+  let images: ImageCanal[] = [];
 
   try {
     await appelerApiStream(
@@ -185,6 +195,15 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
       (evenement) => {
         if (evenement?.type === "reponse" && typeof evenement.texte === "string") {
           reponseAccumulee += evenement.texte;
+        } else if (evenement?.type === "sources" && Array.isArray(evenement.sources)) {
+          for (const source of evenement.sources as SourceCanal[]) {
+            const cle = source.url_extrait || source.url;
+            if (clesSources.has(cle)) continue;
+            clesSources.add(cle);
+            sources.push(source);
+          }
+        } else if (evenement?.type === "images" && Array.isArray(evenement.images) && evenement.images.length > 0) {
+          images = evenement.images as ImageCanal[];
         }
       }
     );
@@ -199,7 +218,7 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
     // Filet de sécurité : si Clovis n'a rien dit via dire_a_l_etudiant
     // pendant le tour, sa réponse finale s'affiche quand même dans la
     // bulle -- jamais un tour silencieux du point de vue de l'étudiant.
-    if (reponseAccumulee.trim()) afficherTexteDepuisAgent(reponseAccumulee.trim());
+    if (reponseAccumulee.trim()) afficherReponseDepuisAgent({ texte: reponseAccumulee.trim(), sources, images });
     return true;
   } catch (e) {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");

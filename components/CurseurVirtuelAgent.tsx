@@ -10,6 +10,12 @@
 // une forme calculées ailleurs, il ne déclenche jamais lui même de clic
 // réel.
 //
+// Ajout du 19/09/2026 (demande Bourama) : un clic sur le curseur fait
+// réapparaître la dernière réponse de Clovis (ou la referme si elle est
+// affichée), voir basculerReponse dans lib/contexteCanalEnDirect.tsx.
+// Le curseur reste glissable : onTap ne se déclenche que pour un vrai
+// clic, jamais à la fin d'un glissement.
+//
 // Ajout du 16/09/2026 (demande Bourama) : l'icône change selon la forme
 // du curseur, comme un vrai curseur de souris (flèche par défaut, main
 // au dessus d'un élément cliquable, main qui attrape pour un élément
@@ -18,6 +24,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Grab, MousePointer2, Pointer } from "lucide-react";
 import { useContext } from "react";
+import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteCurseurVirtuel, type FormeCurseur } from "@/lib/contexteCurseurVirtuel";
 
 const ICONE_PAR_FORME: Record<FormeCurseur, typeof MousePointer2> = {
@@ -28,6 +35,7 @@ const ICONE_PAR_FORME: Record<FormeCurseur, typeof MousePointer2> = {
 
 export function CurseurVirtuelAgent() {
   const contexte = useContext(ContexteCurseurVirtuel);
+  const canal = useContext(ContexteCanalEnDirect);
   if (!contexte) return null;
   const { x, y, echelle, visible, forme, enAction } = contexte;
   const Icone = ICONE_PAR_FORME[forme];
@@ -50,6 +58,7 @@ export function CurseurVirtuelAgent() {
           // (pointerEvents "none"), pour ne jamais interférer avec le
           // clic que Clovis est en train d'exécuter.
           drag={!enAction}
+          onTap={() => canal?.basculerReponse()}
           dragMomentum={false}
           dragElastic={0}
           style={{
