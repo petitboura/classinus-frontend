@@ -23,7 +23,7 @@ import {
 import { BoutonRetour } from "./BoutonRetour";
 import { ChampMotDePasse } from "./ChampMotDePasse";
 import { supabase } from "@/lib/supabase";
-import { appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte, exporterMesDonnees, obtenirMonStatut } from "@/lib/api";
+import { appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte, exporterMesDonnees, obtenirMonStatut, obtenirInfosClovis, ID_ELEMENT_CLOVIS } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
 import { Skeleton } from "./Skeleton";
@@ -33,6 +33,8 @@ import { MiseAJourCarte } from "./MiseAJourCarte";
 import { NomAppareilCarte } from "./NomAppareilCarte";
 import { RUBRIQUES_AIDE, trouverRubriqueAide, type RubriqueAide } from "@/lib/aideSections";
 import { EspaceAccessibilite } from "./EspaceAccessibilite";
+import { BoutonEtoile } from "./BoutonEtoile";
+import { SectionCommentairesCatalogue } from "./SectionCommentairesCatalogue";
 
 /**
  * Page Paramètres (22/08/2026, demande Bourama).
@@ -235,6 +237,19 @@ export function EspaceParametres() {
   const [exportEnCours, setExportEnCours] = useState(false);
   const [erreurExport, setErreurExport] = useState<string | null>(null);
   const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
+
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 13 : avis sur Clovis lui-même (voir vue "À propos" plus bas).
+  const [infosClovis, setInfosClovis] = useState<{ etoilesCount: number; monEtoile: boolean } | null>(null);
+
+  useEffect(() => {
+    if (vue !== "a-propos" || infosClovis) return;
+    obtenirInfosClovis()
+      .then((r) => setInfosClovis({ etoilesCount: r.etoiles_count, monEtoile: r.mon_etoile }))
+      .catch(() => {
+        // Silencieux : l'étoile reste juste absente, pas bloquant pour le reste de la page.
+      });
+  }, [vue, infosClovis]);
 
   useEffect(() => {
     lireMonProfil()
@@ -889,7 +904,18 @@ export function EspaceParametres() {
     <div className="flex flex-col gap-4">
       <EnTete titre="À propos" onRetour={() => setVue("liste")} />
       <div className="flex flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4 text-sm">
-        <span className="text-dj-texte">Clovis</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-dj-texte">Clovis</span>
+          {infosClovis && (
+            <BoutonEtoile
+              typeElement="clovis"
+              elementId={ID_ELEMENT_CLOVIS}
+              count={infosClovis.etoilesCount}
+              active={infosClovis.monEtoile}
+              onBascule={(etoile, etoilesCount) => setInfosClovis({ monEtoile: etoile, etoilesCount })}
+            />
+          )}
+        </div>
         <button
           onClick={() => router.push("/cgu")}
           className="w-fit text-dj-texte-muet hover:text-dj-texte hover:underline"
@@ -909,6 +935,8 @@ export function EspaceParametres() {
           Politique de confidentialité
         </button>
       </div>
+
+      <SectionCommentairesCatalogue typeElement="clovis" elementId={ID_ELEMENT_CLOVIS} />
     </div>
   );
 }
