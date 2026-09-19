@@ -191,7 +191,7 @@ export function ChatSection() {
         className="hidden flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5 md:flex"
       >
         <Logo taille={20} />
-        <span className="font-display text-sm font-bold text-dj-texte">Clovis</span>
+        <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
       </div>
 
       <div className="flex min-h-0 flex-1">
@@ -260,7 +260,7 @@ export function ChatSection() {
             <ChatIA
               key={cle}
               agentId={agent.id}
-              nomAgent="Clovis"
+              nomAgent="Classinus"
               titreAccueil={texteAccueilSelonHeure()}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
               iconePersonnalisee={<Logo taille={40} />}
