@@ -10,7 +10,7 @@ import { SuggestionCompte } from "@/components/SuggestionCompte";
 import { ButtonPartager, lienPartage } from "@/components/ButtonPartager";
 import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 
-// Client Component isolé (10/09/2026, Lot B "Clovis ouvert") : la page
+// Client Component isolé (10/09/2026, Lot B "Classinus ouvert") : la page
 // /skills/[id] elle-même est un Server Component (pour generateMetadata),
 // mais "Activer" et "Télécharger" ont besoin d'état (chargement, session
 // Supabase) -- donc extraits ici, même pattern que ComportementsPublics.tsx
@@ -45,12 +45,12 @@ export function ActionsSkillPublic({ skill }: { skill: ComportementPublic }) {
   }
 
   if (sansCompte) {
-    return <CTACompteRequis texte="Crée un compte pour activer ce skill sur ton propre espace Clovis." />;
+    return <CTACompteRequis texte="Crée un compte pour activer ce skill sur ton propre espace Classinus." />;
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <SuggestionCompte texte="Crée un compte pour activer ce skill sur ton propre espace Clovis." />
+      <SuggestionCompte texte="Crée un compte pour activer ce skill sur ton propre espace Classinus." />
       <div className="flex flex-wrap gap-2">
         <button
           onClick={activer}
