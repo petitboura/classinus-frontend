@@ -324,7 +324,13 @@ export function BarreDeSaisie({
   const outilsPourAgent = outilsDisponibles.filter((o) => outilAutorisePourAgent(o));
   // Une appli (ex. GitHub) est autorisée si au moins une de ses actions
   // (ex. explorer_depot_github) fait partie des outils autorisés.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => outilsPourAgent.some((o) => o.appli === a.nom));
+  // GitHub exclu du bouton Applications de la barre de saisie (demande
+  // Bourama, 19/09/2026) : seuls Drive et Notion doivent y apparaitre.
+  // APPLIS_DISPONIBLES (lib/outils.ts) reste inchange -- il sert aussi a
+  // app/dashboard/applications/page.tsx (liste des applis connectables),
+  // qui doit continuer a lister GitHub.
+  const APPLIS_BOUTON_SAISIE = APPLIS_DISPONIBLES.filter((a) => a.nom !== "github");
+  const applisPourAgent = APPLIS_BOUTON_SAISIE.filter((a) => outilsPourAgent.some((o) => o.appli === a.nom));
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
@@ -343,7 +349,10 @@ export function BarreDeSaisie({
   // clovis. Seul le bouton Utilitaires (ex-onglet de ce menu, sorti à
   // part le 01/08) reste actif -- voir estOutilActif/executerActionOutil
   // plus haut, désormais limités aux entrées "ui_*".
-  const AFFICHER_BOUTON_APPLICATIONS = false;
+  // Réactivé le 19/09/2026 (demande Bourama : "aucun bouton pour les
+  // connecter [les applis] hors il existe normalement") -- limité à
+  // Drive + Notion, voir APPLIS_BOUTON_SAISIE ci-dessus.
+  const AFFICHER_BOUTON_APPLICATIONS = true;
 
   const appliButtonVisible = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length > 1;
   const appliSlotUnique = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length === 1 ? applisPourAgent[0] : null;
