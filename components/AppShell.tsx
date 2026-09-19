@@ -22,13 +22,14 @@ import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
+import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
+import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
-import { ConfirmationActionAgentModal } from "@/components/ConfirmationActionAgentModal";
 import {
-  ContexteConfirmationAction,
-  useFournirConfirmationAction,
-  enregistrerDemandeurConfirmation,
-} from "@/lib/contexteConfirmationAction";
+  ContexteCanalEnDirect,
+  useFournirCanalEnDirect,
+  enregistrerCanalEnDirect,
+} from "@/lib/contexteCanalEnDirect";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -79,12 +80,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // dès que la session est confirmée.
   const dossiersCataloguePublicValeur = useFournirDossiersCataloguePublic();
   const curseurVirtuelValeur = useFournirCurseurVirtuel();
-  const confirmationActionValeur = useFournirConfirmationAction();
-  // Chantier C : permet à lib/canalAgentApplicatif.ts (module hors React)
-  // de déclencher la même fenêtre de confirmation que le reste de l'app.
+  // Chantier I (canal en direct) : store global, monté ici au niveau du
+  // layout racine pour survivre à tout changement de section -- voir
+  // lib/contexteCanalEnDirect.tsx.
+  const canalEnDirectValeur = useFournirCanalEnDirect();
   useEffect(() => {
-    enregistrerDemandeurConfirmation(confirmationActionValeur.demanderConfirmation);
-  }, [confirmationActionValeur.demanderConfirmation]);
+    enregistrerCanalEnDirect(canalEnDirectValeur);
+  }, [canalEnDirectValeur]);
   // Chantier F : même principe, pour que lib/canalAgentApplicatif.ts
   // puisse déplacer le curseur virtuel avant un clic générique.
   useEffect(() => {
@@ -148,7 +150,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteCatalogue.Provider value={{ ouvrir: () => setCatalogueOuvert(true) }}>
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
     <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
-    <ContexteConfirmationAction.Provider value={confirmationActionValeur}>
+    <ContexteCanalEnDirect.Provider value={canalEnDirectValeur}>
       <ContexteFenetres.Provider value={fenetres}>
         <div className="flex h-dvh">
           {natif && <BarreOngletsNative />}
@@ -285,7 +287,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
           <FenetresSections />
           <CurseurVirtuelAgent />
-          <ConfirmationActionAgentModal />
+          <BulleDialogueAgent />
+          <BoutonJournalAgent />
           <PaletteCommandes
             connecte={connecte}
             etatChat={etatChat}
@@ -296,7 +299,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
         </div>
       </ContexteFenetres.Provider>
-    </ContexteConfirmationAction.Provider>
+    </ContexteCanalEnDirect.Provider>
     </ContexteCurseurVirtuel.Provider>
     </ContexteDossiersCataloguePublic.Provider>
     </ContexteCatalogue.Provider>

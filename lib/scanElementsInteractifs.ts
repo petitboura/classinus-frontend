@@ -18,11 +18,9 @@ import { estVisibleEtActif } from "./clicGenerique";
 export type ElementInteractifDetecte = {
   id: string;
   description: string;
-  // Défaut prudent (même principe que le chantier F, lib/clicGenerique.ts) :
-  // un élément détecté automatiquement est TOUJOURS sensible, sans
-  // exception -- aucun jugement de sensibilité n'est possible sur un
-  // élément dont on ne sait rien d'autre que sa présence à l'écran.
-  sensible: true;
+  // Champ `sensible` retiré (19/09/2026, décision Bourama) : plus de
+  // confirmation nulle part dans ce chantier, la notion de sensibilité
+  // n'a donc plus d'effet -- voir lib/canalAgentApplicatif.ts.
   continuerEnArrierePlan: false;
 };
 
@@ -106,7 +104,6 @@ export function scannerElementsInteractifs(): ElementInteractifDetecte[] {
     resultat.push({
       id,
       description: decrireElement(element),
-      sensible: true,
       continuerEnArrierePlan: false,
     });
   }

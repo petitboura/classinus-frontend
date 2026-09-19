@@ -61,7 +61,7 @@ export function useCurseurVirtuelAgent(): ValeurCurseurVirtuel {
 // Pont vers lib/canalAgentApplicatif.ts (chantiers C et F), qui n'est
 // pas un composant React et ne peut donc pas appeler
 // useCurseurVirtuelAgent() directement -- même principe que
-// enregistrerDemandeurConfirmation dans lib/contexteConfirmationAction.tsx.
+// enregistrerCanalEnDirect dans lib/contexteCanalEnDirect.tsx.
 // AppShell.tsx enregistre la vraie fonction dès que le Provider est
 // monté.
 let deplacementGlobal: ValeurCurseurVirtuel["deplacerVers"] | null = null;

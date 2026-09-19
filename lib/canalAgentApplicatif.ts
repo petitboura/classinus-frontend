@@ -33,11 +33,17 @@
 // Ajout chantier F (16/09/2026), fusionne ici le 17/09/2026 : meme
 // canal, mode "clic par identifiant genere" -- l'element cible est
 // resolu par son attribut data-agent-id (pose par le scan), jamais
-// invente ni devine par le modele. Aucune metadonnee de sensibilite
-// n'existe sur un element detecte automatiquement : la confirmation est
-// TOUJOURS demandee, sans exception. Deplace aussi le curseur virtuel
+// invente ni devine par le modele. Deplace aussi le curseur virtuel
 // (chantier B) avant le clic reel, via le pont
 // lib/contexteCurseurVirtuel.tsx.
+//
+// Retrait de la confirmation (19/09/2026, decision Bourama) : plus
+// aucune fenetre de validation avant execution, quel que soit le mode
+// (scan ou clic generique) -- l'IA agit directement. Chantier H
+// (bouton "toujours autoriser") annule en consequence, devenu sans
+// objet. Chaque execution est desormais journalisee et sa description
+// poussee vers la bulle de dialogue via lib/contexteCanalEnDirect.tsx
+// (chantier I).
 //
 // Ajout chantier G (16/09/2026, demande Bourama) : mode guidage --
 // troisieme forme de message recue, {"id", "montrer_action_id"} :
@@ -46,9 +52,9 @@
 
 import { supabase } from "./supabase";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
-import { demanderConfirmationDepuisAgent } from "./contexteConfirmationAction";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { estVisibleEtActif, resoudreElementCliquable } from "./clicGenerique";
+import { pousserJournalDepuisAgent, mettreAJourJournalDepuisAgent, afficherTexteDepuisAgent } from "./contexteCanalEnDirect";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
@@ -108,15 +114,13 @@ function envoyerEtatActions() {
 }
 
 /**
- * Chantier C, revise (17/09/2026) pour le scan generique : `actionId`
- * est un identifiant genere par le scan (attribut data-agent-id), pas
- * un identifiant declare a la main. Tout element issu du scan est
- * TOUJOURS sensible (aucun jugement de sensibilite possible sur un
- * element dont on ne sait rien d'autre que sa presence a l'ecran) :
- * la confirmation est donc systematique, sans exception -- meme
- * principe que traiterDemandeClicGenerique ci-dessous, dont ce mode
- * se rapproche desormais beaucoup (difference : l'identifiant est
- * genere par le scan plutot que devine par le modele).
+ * Chantier C, revise (17/09/2026) pour le scan generique, puis a
+ * nouveau (19/09/2026, decision Bourama) : plus aucune confirmation --
+ * l'IA execute directement, sans jamais attendre de validation de
+ * l'etudiant. `actionId` est un identifiant genere par le scan
+ * (attribut data-agent-id), pas un identifiant declare a la main.
+ * Chaque execution est journalisee (chantier I/K) et sa description
+ * poussee vers la bulle de dialogue (chantier I/J).
  */
 async function traiterDemandeAction(id: string, actionId: string) {
   const element = resoudreElementParAgentId(actionId);
@@ -128,46 +132,35 @@ async function traiterDemandeAction(id: string, actionId: string) {
     return;
   }
 
-  // La description est derivee de l'element REEL au moment de la
-  // confirmation (pas transmise par le backend, qui ne connait
-  // l'element que par son id genere) -- toujours a jour, jamais perimee
-  // meme si le texte visible a change depuis le dernier scan.
-  const accepte = await demanderConfirmationDepuisAgent(decrireElement(element));
-  if (!accepte) {
-    envoyerReponse(id, { refuse: true });
-    return;
-  }
-
-  // Revalidation juste avant execution (l'ecran a pu changer pendant
-  // que l'etudiant repondait a la fenetre de confirmation).
-  const elementRevalide = resoudreElementParAgentId(actionId);
-  if (!elementRevalide) {
-    envoyerReponse(id, { erreur: "L'action n'est plus disponible à l'écran (l'écran a changé)." });
-    return;
-  }
+  const description = decrireElement(element);
+  const idJournal = pousserJournalDepuisAgent(description);
+  afficherTexteDepuisAgent(description);
 
   try {
-    elementRevalide.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
-    await deplacerCurseurDepuisAgent(elementRevalide, { cliquer: true, forme: "main" });
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+    await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
 
-    // Toute derniere verification, juste avant le clic physique.
-    if (!document.body.contains(elementRevalide) || !estVisibleEtActif(elementRevalide)) {
+    // Toute derniere verification, juste avant le clic physique --
+    // l'ecran a pu changer pendant le deplacement du curseur.
+    if (!document.body.contains(element) || !estVisibleEtActif(element)) {
+      if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
       envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
       return;
     }
 
-    elementRevalide.click();
+    element.click();
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
     envoyerReponse(id, { succes: true });
   } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors de l'exécution." });
   }
 }
 
 /**
- * Chantier F : mode générique de secours. Contrairement à
- * traiterDemandeAction, aucune métadonnée de sensibilité n'existe ici
- * -- la confirmation est donc TOUJOURS demandée, sans exception (défaut
- * prudent, décision Bourama).
+ * Chantier F : mode générique de secours. Même principe que
+ * traiterDemandeAction depuis le 19/09/2026 : exécution directe, sans
+ * confirmation, journalisée de la même façon.
  */
 async function traiterDemandeClicGenerique(id: string, selecteur: string, description: string) {
   const element = resoudreElementCliquable(selecteur);
@@ -181,35 +174,27 @@ async function traiterDemandeClicGenerique(id: string, selecteur: string, descri
     return;
   }
 
-  const accepte = await demanderConfirmationDepuisAgent(description);
-  if (!accepte) {
-    envoyerReponse(id, { refuse: true });
-    return;
-  }
+  const idJournal = pousserJournalDepuisAgent(description);
+  afficherTexteDepuisAgent(description);
 
-  // Revalidation juste avant le clic reel : l'ecran a pu changer
-  // pendant que l'etudiant repondait a la fenetre de confirmation.
-  const elementRevalide = resoudreElementCliquable(selecteur);
-  if (!elementRevalide) {
-    envoyerReponse(id, { erreur: "L'élément n'est plus disponible à l'écran (l'écran a changé)." });
-    return;
-  }
-
-  elementRevalide.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
-  await deplacerCurseurDepuisAgent(elementRevalide, { cliquer: true, forme: "main" });
+  element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+  await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
 
   // Toute dernière vérification, juste avant le clic physique -- le
   // défilement ou l'animation du curseur pourrait, en théorie, avoir
   // fait disparaître l'élément entre temps.
-  if (!document.body.contains(elementRevalide) || !estVisibleEtActif(elementRevalide)) {
+  if (!document.body.contains(element) || !estVisibleEtActif(element)) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
     return;
   }
 
   try {
-    elementRevalide.click();
+    element.click();
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
     envoyerReponse(id, { succes: true });
   } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors du clic." });
   }
 }
