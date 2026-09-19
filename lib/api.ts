@@ -458,7 +458,23 @@ export type FiltresPublicationBibliothequePublique = {
 // dossier/skill), voir POST /api/etoiles-catalogue-public/basculer
 // côté backend. Toggle : ajoute l'étoile de cet utilisateur si elle
 // n'y est pas encore, la retire sinon.
-export type TypeElementCataloguePublic = "fichier" | "dossier" | "skill";
+// 18/09/2026, étape 13 : "clovis" ajouté pour les avis sur Clovis
+// lui-même (commentaires + étoiles UNIQUEMENT, voir
+// core/etoiles_catalogue_public.py et
+// core/commentaires_catalogue_public.py -- pas de CTA/partages pour ce
+// type, hors scope de l'étape 13, core/compteurs_catalogue_public.py
+// n'a pas été touché).
+export type TypeElementCataloguePublic = "fichier" | "dossier" | "skill" | "clovis";
+
+// L'unique ligne de clovis_infos (voir api/clovis_infos.py côté
+// backend) -- doit rester synchronisée avec ID_CLOVIS là-bas.
+export const ID_ELEMENT_CLOVIS = "00000000-0000-0000-0000-000000000001";
+
+export type ClovisInfos = { etoiles_count: number; mon_etoile: boolean };
+
+export async function obtenirInfosClovis() {
+  return appelerApi("/api/clovis-infos") as Promise<ClovisInfos>;
+}
 
 export async function basculerEtoileCatalogue(typeElement: TypeElementCataloguePublic, elementId: string) {
   const resultat = await appelerApi("/api/etoiles-catalogue-public/basculer", {
