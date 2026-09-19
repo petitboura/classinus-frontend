@@ -78,7 +78,7 @@ export function MaMemoire() {
   async function toutOublier() {
     if (
       !window.confirm(
-        "Effacer toute ta mémoire ? Clovis oubliera tout ce qu'il a retenu de tes échanges passés. Cette action est irréversible."
+        "Effacer toute ta mémoire ? Classinus oubliera tout ce qu'il a retenu de tes échanges passés. Cette action est irréversible."
       )
     )
       return;
@@ -97,7 +97,7 @@ export function MaMemoire() {
   }
 
   if (sansCompte) {
-    return <CTACompteRequis texte="Crée un compte pour que Clovis se souvienne de vos échanges." />;
+    return <CTACompteRequis texte="Crée un compte pour que Classinus se souvienne de vos échanges." />;
   }
 
   return (

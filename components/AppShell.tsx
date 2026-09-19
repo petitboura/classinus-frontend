@@ -37,7 +37,7 @@ import {
 // - la nav principale (AppSidebar)
 // - le chat flottant (ChatFlottant), jamais démonté en changeant de
 //   section -- sinon la conversation en cours serait perdue
-// - le catalogue "Pourquoi Clovis ?", plus ouvert automatiquement à la
+// - le catalogue "Pourquoi Classinus ?", plus ouvert automatiquement à la
 //   première visite depuis le 30/08 (chantier onboarding -- raccourcir le
 //   chemin vers le premier message envoyé, voir audit-ux-mobile-2026).
 //   Reste ouvrable à tout moment via AppSidebar, ChatFlottant et
@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     enregistrerDeplacementCurseur(curseurVirtuelValeur.deplacerVers);
   }, [curseurVirtuelValeur.deplacerVers]);
-  // Le catalogue "Pourquoi Clovis ?" est une modale globale : calque au
+  // Le catalogue "Pourquoi Classinus ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
   // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui
   // lit le contexte via useContext -- AppShell est le composant qui
@@ -185,7 +185,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-dvh">
           {natif && <BarreOngletsNative />}
           {/* 30/08/2026, menu hamburger : reprend Accueil/Connecter
-              Claude/Paramètres/Partager/Avis/Pourquoi Clovis, tout ce qui
+              Claude/Paramètres/Partager/Avis/Pourquoi Classinus, tout ce qui
               n'a pas de place dans les 5 onglets directs. Étape 1 de
               l'audit navigation (30/08/2026) : web mobile a désormais son
               propre déclencheur (MenuHamburgerWeb), même mécanique que le

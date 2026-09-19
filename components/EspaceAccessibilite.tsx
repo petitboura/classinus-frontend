@@ -228,7 +228,7 @@ export function EspaceAccessibilite() {
         <h2 className="font-display text-base font-bold text-dj-texte">Accessibilité</h2>
         <BoutonInfoSection
           rubriqueId="accessibilite"
-          texteCourt="Autorise Clovis à lire et agir dans les apps que tu choisis, une par une."
+          texteCourt="Autorise Classinus à lire et agir dans les apps que tu choisis, une par une."
         />
       </div>
 
@@ -239,7 +239,7 @@ export function EspaceAccessibilite() {
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium text-dj-texte">Service non activé</span>
               <span className="text-xs text-dj-texte-muet">
-                Active le service d&apos;accessibilité de Clovis dans les réglages système pour continuer.
+                Active le service d&apos;accessibilité de Classinus dans les réglages système pour continuer.
               </span>
             </div>
           </div>

@@ -12,7 +12,7 @@ import { clesRequetes } from "@/lib/clesRequetes";
 // "rendre la bibliothèque plus sérieuse". Réservé aux admins
 // (_est_admin côté backend, voir api/signalements.py), aucune
 // vérification client-side du rôle ici volontairement (pas de
-// mécanisme de rôle exposé côté Clovis, voir lib/api.ts) : le 403
+// mécanisme de rôle exposé côté Classinus, voir lib/api.ts) : le 403
 // renvoyé par l'API est la seule porte, affiché tel quel si
 // l'utilisateur courant n'est pas admin.
 export function EspaceAdminSignalements() {

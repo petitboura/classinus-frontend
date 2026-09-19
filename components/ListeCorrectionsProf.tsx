@@ -32,7 +32,7 @@ const CHAMPS: { id: "question" | "reponse" | "conversation"; label: string }[] =
  * "Signalements" (Bureau) -- refonte du 10/09/2026, demande Bourama :
  * plus de type A/B, plus de génération automatique de comportement/skill,
  * plus de bouton "actif". Le traitement se fait en discutant librement
- * avec Clovis dans une conversation dédiée (voir core/outils_signalements.py) --
+ * avec Classinus dans une conversation dédiée (voir core/outils_signalements.py) --
  * ce composant ne fait qu'ouvrir cette conversation avec l'id du
  * signalement en clair dans le message, le modèle le reprend ensuite tel
  * quel comme paramètre de ses outils (voir docstring de consulter_signalement).
@@ -86,7 +86,7 @@ export function ListeCorrectionsProf() {
     // L'id est repris tel quel par le modèle comme paramètre de
     // consulter_signalement/enregistrer_note_signalement (voir
     // core/outils_signalements.py) -- c'est bien le prof qui déclenche,
-    // Clovis n'agit jamais de son propre chef sur un signalement.
+    // Classinus n'agit jamais de son propre chef sur un signalement.
     ouvrirChatAvecTexte(
       `Je veux discuter du signalement pédagogique id ${s.id}. ` +
         `Utilise l'outil consulter_signalement avec cet id pour voir de quoi il s'agit, ` +
@@ -173,7 +173,7 @@ export function ListeCorrectionsProf() {
           <h2 className="text-base font-medium text-dj-texte">Signalements</h2>
           <BoutonInfoSection
             rubriqueId="signalements-prof"
-            texteCourt="Un élève a signalé un problème sur une réponse de Clovis. Clique sur « Discuter » pour ouvrir une conversation avec Clovis et échanger sur ce cas, à ton rythme -- rien n'est automatique, rien n'est traité sans toi."
+            texteCourt="Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme -- rien n'est automatique, rien n'est traité sans toi."
           />
         </div>
       </div>

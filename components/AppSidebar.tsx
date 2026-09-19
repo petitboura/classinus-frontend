@@ -66,7 +66,7 @@ import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 // l'onglet actif (28/08/2026 : trait signature doré sous l'onglet actif
 // retiré à la demande de Bourama, ne reste que ce fond). Les icônes
 // contextuelles avec un sens propre (chevrons, boussole "Pourquoi
-// Clovis ?") gardent leur mouvement dédié, gardé tel quel plus bas :
+// Classinus ?") gardent leur mouvement dédié, gardé tel quel plus bas :
 // seule la nav principale (accueil + 8 onglets) est uniformisée ici.
 
 const AGENT_ID = "clovis";
@@ -96,10 +96,10 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
   { id: "comportements", href: "/comportements", label: "Mes skills", Icone: ScrollText },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
   { id: "memoire", href: "/memoire", label: "Ma mémoire", Icone: Brain },
-  // Guide "Utiliser Clovis dans Claude" (18/08, demande Bourama) :
+  // Guide "Utiliser Classinus dans Claude" (18/08, demande Bourama) :
   // icône Plug ("branchement", demande explicite Bourama) plutôt que le
   // logo Claude, propriété d'Anthropic.
-  { id: "claude", href: "/connecter-claude", label: "Utiliser Clovis dans Claude", Icone: Plug },
+  { id: "claude", href: "/connecter-claude", label: "Utiliser Classinus dans Claude", Icone: Plug },
   // 30/08/2026, audit navigation web mobile vs natif, étape 2 : Concentration
   // (Contrôle de session + Temps d'écran, voir EspaceConcentration.tsx)
   // était un onglet direct côté natif et web mobile mais totalement
@@ -114,13 +114,13 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
 // bouton dédié, c'est peut-être un bouton qui ouvre une liste de cette
 // catégorie", même esprit que la page Paramètres). Bureau, Bibliothèque
 // et Notes restent en accès direct (usage quotidien). Mes skills et Ma
-// mémoire sont regroupés sous "Personnaliser Clovis" (les façons de
-// configurer ce que Clovis sait/fait). "Utiliser Clovis dans Claude" est
+// mémoire sont regroupés sous "Personnaliser Classinus" (les façons de
+// configurer ce que Classinus sait/fait). "Utiliser Classinus dans Claude" est
 // un guide de configuration ponctuel, il descend dans le menu "Plus"
 // plutôt que d'occuper un bouton du rail.
 type Groupe = { id: string; href: string; label: string; Icone: typeof Briefcase; ongletIds: OngletId[] };
 const GROUPES: Groupe[] = [
-  { id: "personnaliser", href: "/personnaliser", label: "Personnaliser Clovis", Icone: Wand2, ongletIds: ["comportements", "memoire"] },
+  { id: "personnaliser", href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2, ongletIds: ["comportements", "memoire"] },
 ];
 
 // Rotation des mouvements pour les icônes de nav (Accueil + les 7
@@ -461,7 +461,7 @@ export function AppSidebar({
   // reste géré uniquement par la largeur d'écran comme avant. false par
   // défaut : le web garde exactement le même comportement qu'avant.
   masquerChromeMobile?: boolean;
-  // "Pourquoi Clovis ?" -- géré au niveau du layout (AppShell.tsx), pas
+  // "Pourquoi Classinus ?" -- géré au niveau du layout (AppShell.tsx), pas
   // ici, pour pouvoir s'ouvrir aussi automatiquement à la première
   // visite (même logique que l'ancien app/page.tsx, 14/08).
   onOuvrirCatalogue: () => void;
@@ -565,7 +565,7 @@ export function AppSidebar({
   );
   // 03/09/2026, correctif Bourama ("même bug, mais sur les sections du
   // tiroir" -- suite du correctif marquerTiroirSansHistorique ci-dessus) :
-  // le groupe Personnaliser Clovis/Scolarité (groupeOuvertId) et le menu
+  // le groupe Personnaliser Classinus/Scolarité (groupeOuvertId) et le menu
   // profil (profilDeplie) sont CHACUN leur propre calque, avec leur
   // propre inscription dans la pile de contexteRetour.tsx -- donc leur
   // propre history.back() par défaut à la fermeture. Marquer le tiroir
@@ -593,7 +593,7 @@ export function AppSidebar({
 
   // Photo + nom affichés en bas de la sidebar (22/08/2026, demande
   // Bourama : "la photo de profil s'affiche en bas dans la sidebar et
-  // est un bouton") -- remplace le bloc "Logo Clovis" non cliquable qui
+  // est un bouton") -- remplace le bloc "Logo Classinus" non cliquable qui
   // s'y trouvait, uniquement pour un utilisateur connecté (rien à
   // afficher pour un visiteur, voir rendu plus bas). Chargé ici (jamais
   // remonté à AppShell, qui ne connaît que le booléen `connecte`) car
@@ -655,7 +655,7 @@ export function AppSidebar({
     const url = `${process.env.NEXT_PUBLIC_APP_URL}/telecharger`;
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: "Télécharger Clovis", url });
+        await navigator.share({ title: "Télécharger Classinus", url });
       } catch {
         // Annulé par la personne.
       }
@@ -688,7 +688,7 @@ export function AppSidebar({
     onglet: { id?: OngletId; href: string; label: string; Icone: typeof Briefcase };
     mouvement: string;
     mobile?: boolean;
-    /** Pour les liens de groupe (Personnaliser Clovis, Scolarité) : reste
+    /** Pour les liens de groupe (Personnaliser Classinus, Scolarité) : reste
      * actif tant qu'on est sur une des sections soeurs, pas seulement sur
      * la page d'atterrissage exacte du groupe (22/08/2026, demande
      * Bourama). */
@@ -740,8 +740,8 @@ export function AppSidebar({
 
   // Accès direct sur le rail : Bureau, Bibliothèque, Concentration (usage
   // quotidien). Mes skills, Ma mémoire et Plugins vivent sous le groupe
-  // "Personnaliser Clovis" ; Mon programme et Audits sous "Scolarité"
-  // (voir GROUPES plus haut). "Utiliser Clovis dans Claude" vit dans le
+  // "Personnaliser Classinus" ; Mon programme et Audits sous "Scolarité"
+  // (voir GROUPES plus haut). "Utiliser Classinus dans Claude" vit dans le
   // menu "Plus". En contexte chat plein écran, Bureau et Concentration
   // descendent aussi dans "Plus" (place prise par Nouvelle conversation +
   // Historique, élargi le 22/08/2026, demande Bourama) : même traitement
@@ -758,7 +758,7 @@ export function AppSidebar({
   // 30/08/2026, demande Bourama : le tiroir mobile du chat (plus bas,
   // ouverte && !masquerChromeMobile) doit reprendre les mêmes 4 boutons
   // que la barre d'onglets mobile -- Bibliothèque, Concentration,
-  // Bureau, Personnaliser Clovis (celui-ci via GROUPES, déjà rendu plus
+  // Bureau, Personnaliser Classinus (celui-ci via GROUPES, déjà rendu plus
   // bas, pas repris ici) -- sans Accueil (rejoint le "Plus" unifié) ni
   // Chat (on y est déjà). Mobile uniquement : ne touche pas
   // navComplete/idsDirects ci-dessus, qui restent la version desktop
@@ -1013,7 +1013,7 @@ export function AppSidebar({
                     }`}
                   >
                     <Star size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
-                    Avis sur Clovis
+                    Avis sur Classinus
                   </button>
                   <div
                     className={`grid transition-[grid-template-rows] duration-300 ease-out ${
@@ -1034,7 +1034,7 @@ export function AppSidebar({
                   className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                 >
                   <Compass size={16} className="flex-shrink-0 transition-transform duration-300 group-hover:rotate-45" />
-                  Pourquoi Clovis ?
+                  Pourquoi Classinus ?
                 </button>
               </div>
             </div>
@@ -1126,7 +1126,7 @@ export function AppSidebar({
           className={
             `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-fond px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
               // 07/09/2026, correctif Bourama (bug "sous-sections de
-              // Personnaliser Clovis ne marchent pas") : groupeOuvertId
+              // Personnaliser Classinus ne marchent pas") : groupeOuvertId
               // manquait ici, contrairement au rail desktop juste plus
               // haut dans ce fichier (ligne ~823) qui l'inclut déjà --
               // le sous-menu (MenuGroupe, position absolute) se
@@ -1242,7 +1242,7 @@ export function AppSidebar({
 
           {/* 30/08/2026, demande Bourama : "il n'y a qu'un plus" -- ce
               "Plus" reprenait avant son propre contenu (Bureau,
-              Concentration, Claude, Partager, Avis, Pourquoi Clovis),
+              Concentration, Claude, Partager, Avis, Pourquoi Classinus),
               divergent de celui du menu principal mobile (SECTIONS_BASE,
               voir EspacePlus.tsx). Bureau et Concentration ont rejoint
               les boutons directs juste au dessus (ongletsMobileDirects) ;

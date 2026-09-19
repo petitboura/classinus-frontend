@@ -408,7 +408,7 @@ export function EspaceParametres() {
     // même doit demander deux fois") -- un premier window.confirm ici,
     // puis la saisie "SUPPRIMER" ci-dessous (déjà en place), pour cette
     // action seule (Exporter/Se déconnecter n'en ont qu'une).
-    if (!window.confirm("Supprimer définitivement ton compte Clovis ?")) return;
+    if (!window.confirm("Supprimer définitivement ton compte Classinus ?")) return;
 
     const saisie = window.prompt(
       'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Classinus seront supprimés. Tape "SUPPRIMER" pour confirmer.'
@@ -564,7 +564,7 @@ export function EspaceParametres() {
           <LigneListe
             icone={Download}
             titre={exportEnCours ? "Export en cours…" : "Exporter mes données"}
-            sousTitre="Télécharger une copie de tout ce que Clovis sait sur toi"
+            sousTitre="Télécharger une copie de tout ce que Classinus sait sur toi"
             onClick={handleExporterMesDonnees}
           />
         </Liste>
@@ -798,7 +798,7 @@ export function EspaceParametres() {
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium text-dj-texte">Relances de Classinus</span>
               <span className="text-xs text-dj-texte-muet">
-                Autorise Clovis à te relancer si tu es inactif, pour ne pas perdre le fil.
+                Autorise Classinus à te relancer si tu es inactif, pour ne pas perdre le fil.
               </span>
             </div>
             <button
@@ -905,7 +905,7 @@ export function EspaceParametres() {
       <EnTete titre="À propos" onRetour={() => setVue("liste")} />
       <div className="flex flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4 text-sm">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-dj-texte">Clovis</span>
+          <span className="text-dj-texte">Classinus</span>
           {infosClovis && (
             <BoutonEtoile
               typeElement="clovis"

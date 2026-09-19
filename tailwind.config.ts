@@ -2,14 +2,14 @@ import type { Config } from "tailwindcss";
 import containerQueries from "@tailwindcss/container-queries";
 
 // Tokens "cgpt-*" (partie 5, traitement "à main levée") : propres à
-// Clovis, n'existent pas dans djiguigne-frontend -- easings sur mesure
+// Classinus, n'existent pas dans djiguigne-frontend -- easings sur mesure
 // (jamais de ease-in-out générique) + rayons de bordure légèrement
 // irréguliers, cf. brief section 4b.
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la palette
 // crème/terracotta héritée de djiguigne-frontend (identifiée comme l'un
 // des trois looks "cliché IA" par défaut : fond crème proche de
 // #F4F1EA + accent terracotta proche de #D97757) au profit d'une
-// direction propre à Clovis, "Nuit d'étude" : fond quasi noir, accent
+// direction propre à Classinus, "Nuit d'étude" : fond quasi noir, accent
 // doré chaud, angles droits par défaut (arrondi réservé aux CTA).
 // Portée : CLOVIS UNIQUEMENT -- djiguigne-frontend et djiguigne-ai
 // gardent leur thème crème/terracotta d'origine, pas de décision prise

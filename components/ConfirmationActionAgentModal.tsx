@@ -38,7 +38,7 @@ export function ConfirmationActionAgentModal() {
           enSortie ? "" : "animate-cgpt-entree-modal"
         }`}
       >
-        <p className="text-sm font-semibold text-dj-texte">Clovis veut effectuer une action</p>
+        <p className="text-sm font-semibold text-dj-texte">Classinus veut effectuer une action</p>
         <p className="mt-2 text-sm text-dj-texte-muet">{demandeEnCours.description}</p>
         <div className="mt-5 flex justify-end gap-3">
           <Bouton variante="fantome" onClick={refuser}>

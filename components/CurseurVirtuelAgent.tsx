@@ -2,7 +2,7 @@
 
 // Créé le 16/09/2026, Bourama : chantier "agent applicatif" (voir
 // plan-agent-applicatif-clovis.md), chantier B. Rendu visuel du curseur
-// virtuel de Clovis (état et trajectoire dans lib/contexteCurseurVirtuel.tsx,
+// virtuel de Classinus (état et trajectoire dans lib/contexteCurseurVirtuel.tsx,
 // même séparation que ChatFlottant pour ContexteChat). Monté une seule
 // fois dans AppShell, à côté de ChatFlottant.
 //

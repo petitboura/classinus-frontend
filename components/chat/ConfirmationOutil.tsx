@@ -29,7 +29,7 @@ export function ConfirmationOutil({
                 Bourama) : "Nucleos veut faire ceci : Modification d'un
                 fichier GitHub", valable pour n'importe quelle action
                 sensible, pas seulement GitHub. */}
-            <span className="font-semibold">{agentNom || "Clovis"}</span> veut faire ceci :{" "}
+            <span className="font-semibold">{agentNom || "Classinus"}</span> veut faire ceci :{" "}
             <span className="font-semibold">{nomLisible}</span>. Confirmer ?
           </p>
           {entrees.length > 0 && (

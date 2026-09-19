@@ -232,7 +232,7 @@ export function BarreDeSaisie({
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleSelectionne?: string | null;
   onModeleChange?: (modeleId: string | null) => void;
-  // Agent "Clovis" / contenu dynamique par matière (06/08/2026, demande
+  // Agent "Classinus" / contenu dynamique par matière (06/08/2026, demande
   // Bourama) -- affiche le bouton "Sans enseignant" (voir sansEnseignant
   // plus bas), qui force le prompt généraliste pour le prochain message,
   // sans utiliser le contenu d'aucun enseignant même si des matières
@@ -281,7 +281,7 @@ export function BarreDeSaisie({
   // généraliste pour LE PROCHAIN message uniquement (voir
   // core/contenu_dynamique_matiere.py côté backend), puis se désactive
   // -- pas un mode permanent. Uniquement affiché si
-  // boutonSansEnseignant (Clovis).
+  // boutonSansEnseignant (Classinus).
   const [sansEnseignant, setSansEnseignant] = useState(false);
   // Bouton "Outils" (2026-07-25, étendu à la MULTI-sélection le 26/07 --
   // voir core/mcp_tools.py:lister_tous_les_outils). AUCUN outil n'est
@@ -1859,7 +1859,7 @@ export function BarreDeSaisie({
 
             {/* Bouton "Sans enseignant" (06/08/2026, demande Bourama) --
                 uniquement pour les agents à contenu dynamique par matière
-                (Clovis) : force le prompt généraliste pour le prochain
+                (Classinus) : force le prompt généraliste pour le prochain
                 message, sans utiliser le contenu d'aucun enseignant même
                 si l'étudiant a des matières débloquées. Même pattern
                 d'icône que rechercheForcee juste au-dessus. */}

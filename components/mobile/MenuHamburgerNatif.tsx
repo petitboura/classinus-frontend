@@ -12,8 +12,8 @@ import { useFermerChat } from "@/lib/contexteChat";
 //
 // Remplace, pour l'appli native, ce que l'onglet Plus de la barre du bas
 // portait avant la tâche 1 (voir BarreOngletsNative.tsx) : Connecter
-// Claude, Bureau, Paramètres, Partager, Avis sur Clovis, Pourquoi Clovis.
-// Personnaliser Clovis n'est PAS repris ici, il est resté dans la barre
+// Claude, Bureau, Paramètres, Partager, Avis sur Classinus, Pourquoi Classinus.
+// Personnaliser Classinus n'est PAS repris ici, il est resté dans la barre
 // du bas (tâche 1) -- exigence explicite du document de tâche.
 //
 // Contenu et comportement 100% repris de BlocsMenuPlus (voir

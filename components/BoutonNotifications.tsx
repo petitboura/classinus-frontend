@@ -13,7 +13,7 @@ import { ecouterNotifications } from "@/lib/canalTempsReel";
 import { dateRelative } from "@/lib/dateRelative";
 
 // Créé le 02/09/2026, demande Bourama : centre de notifications (bouton
-// cloche), couvre les types Clovis (voir api/notifications.py côté
+// cloche), couvre les types Classinus (voir api/notifications.py côté
 // backend : rappel_echu, action_ia_terminee, document_recu_code,
 // message_systeme, audit_hebdomadaire_corrections), pas les anciens
 // types de la table notifications (follow/comment/rating/...), laissés

@@ -2,7 +2,7 @@
 
 // Créé le 16/09/2026, Bourama : chantier "agent applicatif" (voir
 // plan-agent-applicatif-clovis.md), chantier B. État et calcul de
-// trajectoire du curseur virtuel de Clovis ; le rendu visuel vit dans
+// trajectoire du curseur virtuel de Classinus ; le rendu visuel vit dans
 // components/CurseurVirtuelAgent.tsx (même séparation état/rendu que
 // ContexteChat/ChatFlottant dans ce projet).
 //

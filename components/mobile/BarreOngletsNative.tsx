@@ -28,7 +28,7 @@ import { useTheme } from "@/lib/useTheme";
 // etape 2, l'ancienne mention "pas encore construit" etait perimee),
 // Chat (route /chat depuis le 07/09/2026, chantier "chat plein ecran =
 // vraie section", etape 3 -- avant cette date, ouvrait ChatFlottant en
-// calque, aucune route dediee), Personnaliser Clovis (route
+// calque, aucune route dediee), Personnaliser Classinus (route
 // /personnaliser, remplace l'ancien onglet Plus -- le contenu de /plus
 // n'est pas supprime, il devient accessible via le menu hamburger a la
 // tache 2 du meme chantier).
@@ -67,7 +67,7 @@ const ICONES_SVG: Record<string, string> = {
   notes:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.4 2.6a2.1 2.1 0 1 1 3 3L7 15l-4 1 1-4Z"/><path d="M3 22h18"/></svg>',
   // Repris de l'icone Lucide Wand2 (v0.383.0, deja utilisee pour
-  // "Personnaliser Clovis" dans AppSidebar.tsx et EspacePlus.tsx -- meme
+  // "Personnaliser Classinus" dans AppSidebar.tsx et EspacePlus.tsx -- meme
   // convention visuelle reprise ici plutot qu'une nouvelle icone inventee,
   // voir echange avec Bourama du 30/08/2026, tache 1 chantier nav mobile).
   // Wand2 resout en interne vers le trace "WandSparkles" dans cette
@@ -86,7 +86,7 @@ const ICONES_SVG: Record<string, string> = {
 // Partie 1 navigation mobile (29-30/08/2026) : ajoute Bureau comme 5e
 // onglet direct (jusque-la seulement accessible via le menu hamburger,
 // voir EspacePlus.tsx/MenuHamburgerNatif.tsx) -- ne retire rien de la
-// tache 1 du 30/08 (Personnaliser Clovis reste un onglet direct, le
+// tache 1 du 30/08 (Personnaliser Classinus reste un onglet direct, le
 // hamburger reste en place pour Connecter Claude/Parametres). Chat
 // reste au centre exact (3e sur 5), Bureau juste a cote (4e), les deux
 // dans la zone la plus atteignable au pouce -- voir audit UX mobile
@@ -96,14 +96,14 @@ const ONGLETS_NATIFS = [
   { id: "controle-session", titre: "Concentration", route: "/controle-session", icone: ICONES_SVG.controleSession },
   { id: "chat", titre: "Chat", route: "/chat", icone: ICONES_SVG.chat },
   { id: "bureau", titre: "Bureau", route: "/bureau", icone: ICONES_SVG.bureau },
-  { id: "personnaliser", titre: "Personnaliser Clovis", route: "/personnaliser", icone: ICONES_SVG.personnaliser },
+  { id: "personnaliser", titre: "Personnaliser Classinus", route: "/personnaliser", icone: ICONES_SVG.personnaliser },
 ] as const;
 
 // Correctif (26/08/2026, retour "couleurs et icônes qui n'ont rien à voir
 // avec le notre") : setTabbar/configure n'imposaient aucune couleur,
 // le plugin retombe alors sur les teintes système par défaut (bleu
 // Material sur Android), qui n'ont jamais correspondu à l'identité
-// "Nuit d'étude" de Clovis. Valeurs reprises À L'IDENTIQUE des variables
+// "Nuit d'étude" de Classinus. Valeurs reprises À L'IDENTIQUE des variables
 // CSS déjà en place (voir app/globals.css, --dj-fond/--dj-accent-1/
 // --dj-texte-muet, thèmes clair et sombre), pas de nouvelle couleur
 // inventée, juste la même palette appliquée à la barre native.
@@ -201,7 +201,7 @@ export function BarreOngletsNative() {
   }, []);
 
   // Synchronise l'onglet visuellement actif avec la route affichee (ex :
-  // ouvrir Bibliotheque depuis "Personnaliser Clovis" doit aussi mettre a
+  // ouvrir Bibliotheque depuis "Personnaliser Classinus" doit aussi mettre a
   // jour la barre), ET masque/affiche la barre pendant le chat plein
   // ecran. Etape 3 (07/09/2026, chantier "chat plein ecran = vraie
   // section") : /chat est desormais une route comme les autres, donc ce

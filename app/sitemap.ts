@@ -6,7 +6,7 @@ import {
   listerDossiersCataloguePublic,
 } from "@/lib/api";
 
-// Chantier "Clovis ouvert" (10/09/2026, Lot F, dernier lot -- transverse
+// Chantier "Classinus ouvert" (10/09/2026, Lot F, dernier lot -- transverse
 // aux quatre précédents). Un seul fichier suffit : même avec 500+ PDF,
 // le nombre total d'URLs reste très en dessous des 50 000 entrées
 // qu'accepte un sitemap (au-delà, Next.js permettrait de le découper via

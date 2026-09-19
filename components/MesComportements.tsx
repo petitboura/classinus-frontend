@@ -271,7 +271,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
   }
 
   if (sansCompte && vue === "mes-comportements") {
-    return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à Clovis." />;
+    return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à Classinus." />;
   }
 
   return (

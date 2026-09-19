@@ -1,4 +1,4 @@
-// Réponses groupées aux questions posées par Clovis (18/09/2026, demande
+// Réponses groupées aux questions posées par Classinus (18/09/2026, demande
 // Bourama : quand l'IA pose plusieurs questions dans un même tour, chacune
 // envoyait sa réponse toute seule et la première réponse bloquait toutes les
 // autres). Dès qu'un message contient au moins deux blocs ```question, plus
@@ -14,7 +14,7 @@
 
 export type EntreeReponseGroupee = {
   question: string;
-  // Réponse déjà formatée (gabarit_reponse de Clovis, ou "Question :
+  // Réponse déjà formatée (gabarit_reponse de Classinus, ou "Question :
   // réponse" en filet de sécurité), ou null tant que rien n'est répondu.
   texte: string | null;
 };
@@ -28,7 +28,7 @@ export function compterBlocsQuestion(contenu: string): number {
 
 // Assemble le message unique à envoyer, dans l'ordre où les questions
 // apparaissent dans le texte (repli sur l'ordre d'enregistrement si un bloc
-// n'est pas retrouvé). Une question sans réponse est signalée à Clovis pour
+// n'est pas retrouvé). Une question sans réponse est signalée à Classinus pour
 // qu'il sache qu'elle a été laissée de côté, plutôt que de l'oublier.
 export function composerReponsesGroupees(
   contenu: string,

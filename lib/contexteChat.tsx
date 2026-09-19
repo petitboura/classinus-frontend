@@ -311,10 +311,10 @@ export function useOuvrirGuide() {
       // base de connaissance) n'a pas de session -- la route exige un
       // utilisateur authentifie (meme limite que persona_pedagogique).
       // On ouvre quand meme le chat normalement plutot que de bloquer le
-      // clic : Clovis repondra sans le mode guide actif dans ce cas.
+      // clic : Classinus repondra sans le mode guide actif dans ce cas.
       console.error("Erreur activation guide de decouverte:", e);
     }
-    ctx?.setDemandeGuide({ conversationId, texte: "Lance le guide de découverte de Clovis." });
+    ctx?.setDemandeGuide({ conversationId, texte: "Lance le guide de découverte de Classinus." });
     ctx?.fermerAvecFondu();
     router.push("/chat");
   };

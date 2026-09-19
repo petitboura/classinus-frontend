@@ -22,7 +22,7 @@ import { ChampDate } from "./ChampDate";
 // le formulaire est rempli localement puis envoyé en une seule fois, via
 // l'unique bouton Valider en bas. onReponse combine une ligne par
 // sous-champ (voir formaterReponseChampImbrique, lib/questionRiche.ts) :
-// phrase du gabarit_reponse écrit par Clovis pour ce sous-champ si
+// phrase du gabarit_reponse écrit par Classinus pour ce sous-champ si
 // présent, sinon "Question : réponse" en filet de sécurité.
 //
 // Mode groupé (18/09/2026, demande Bourama) : quand plusieurs questions sont
