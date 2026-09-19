@@ -66,10 +66,12 @@ export function EcranAccueil() {
   // "/inscription" (qui garde son lien "Déjà un compte ? Se connecter",
   // donc la connexion reste atteignable). Rien de l'accueil (JSX plus
   // bas) n'est rendu tant que ce check n'a pas tranché -- voir le
-  // `if (verificationSession) return null;` en fin de fonction. Portée
-  // volontairement limitée à cet écran (Bourama a confirmé garder le
-  // mode sans compte inchangé ailleurs -- Bibliothèque, Comportements,
-  // Mes codes, Paramètres, Ma mémoire -- pas de suppression globale).
+  // `if (verificationSession) return null;` en fin de fonction.
+  // Mis à jour le 19/09/2026 (demande Bourama : rien n'est accessible sans
+  // compte, sauf une page d'élément partagé) : la même règle s'applique
+  // désormais à toutes les pages via components/AppShell.tsx (liste des
+  // pages ouvertes dans lib/routesPubliques.ts). Cette vérification propre
+  // à l'accueil est conservée en double sécurité.
   const [verificationSession, setVerificationSession] = useState(true);
   useEffect(() => {
     let annule = false;

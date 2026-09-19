@@ -66,6 +66,7 @@ lib/
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
+  routesPubliques.ts      liste des pages d'élément partagé ouvertes sans compte (voir "Accès sans compte")
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
 android/, ios/            projets Capacitor (capacitor.config.ts minimal, export statique build:capacitor
@@ -88,6 +89,17 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 | `/parametres` | Paramètres (profil, préférences, confidentialité, capacités du téléphone, accessibilité, aide, à propos, zone de danger) |
 | `/plus` | Menu "Plus" en version web (bureau, scolarité, connecter Claude, admin, paramètres) |
 | `/admin/signalements` | Modération des signalements de contenu public |
+
+### Accès sans compte
+
+Rien n'est accessible sans compte, sauf une page d'élément partagé ouverte par
+son lien : fichier, dossier ou skill (version publique ou perso, routes
+`/bibliotheque/[id]`, `/dossiers/[id]`, `/skills/[id]` et leur variante
+`/perso/[id]`) et fiche établissement (`/etablissements/[id]`). Toute autre
+page du groupe `app/(app)` renvoie vers `/inscription`. La garde est posée une
+seule fois, dans `components/AppShell.tsx`, et la liste des pages ouvertes vit
+dans `lib/routesPubliques.ts` : une nouvelle page est donc protégée d'office,
+et il suffit de l'ajouter à cette liste pour l'ouvrir à tout le monde.
 
 ## Navigation mobile
 
