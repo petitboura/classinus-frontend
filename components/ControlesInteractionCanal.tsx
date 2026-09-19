@@ -70,6 +70,20 @@ export function ControlesInteractionCanal() {
     if (panneauOuvert) champRef.current?.focus();
   }, [panneauOuvert]);
 
+  // Auto-agrandissement (19/09/2026, bug signalé Bourama : "il reste
+  // bloqué et défile dans quelques lignes") -- même mécanisme que
+  // components/chat/BarreDeSaisie.tsx:ajusterHauteurTexte, pas
+  // réutilisable tel quel (textarea différent, contexte différent) :
+  // hauteur remise à "auto" puis fixée à scrollHeight à chaque frappe,
+  // le CSS max-h prend le relais au-delà pour repasser en défilement
+  // interne plutôt que de grandir indéfiniment.
+  useEffect(() => {
+    const el = champRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [texteSaisi, panneauOuvert]);
+
   useEffect(
     () => () => {
       if (minuteurErreur.current) clearTimeout(minuteurErreur.current);
@@ -168,10 +182,10 @@ export function ControlesInteractionCanal() {
                   value={texteSaisi}
                   onChange={(e) => setTexteSaisi(e.target.value)}
                   onKeyDown={surToucheChamp}
-                  rows={2}
+                  rows={1}
                   placeholder="Dis quelque chose à Classinus..."
                   aria-label="Message pour Classinus pendant qu'il travaille"
-                  className="min-h-[2.5rem] flex-1 resize-none bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
+                  className="min-h-[2.5rem] max-h-40 flex-1 resize-none overflow-y-auto bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
                 />
                 <button
                   onClick={envoyerTexte}

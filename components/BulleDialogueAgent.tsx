@@ -24,6 +24,8 @@
 
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { useContext, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 
@@ -104,7 +106,18 @@ export function BulleDialogueAgent() {
           }}
           className="rounded-cgpt-bouton bg-dj-surface border border-dj-bordure px-3 py-2 text-sm text-dj-texte shadow-xl"
         >
-          {texte}
+          {/* Correctif (19/09/2026, signalé Bourama : "complètement brut,
+              rien n'est formaté, rien n'est cliquable") : rendu markdown
+              léger (gras, italique, liens, listes -- via remarkGfm),
+              volontairement plus simple que components/chat/BulleMessage.tsx
+              (pas de KaTeX/code ici, la bulle est faite pour une ou deux
+              phrases courtes, voir dire_a_l_etudiant côté backend). Le
+              conteneur garde pointerEvents "none" (il suit le curseur,
+              ne doit jamais bloquer un clic sous lui) -- seuls les liens
+              redeviennent cliquables via [&_a]:pointer-events-auto. */}
+          <div className="dj-markdown break-words [&_p]:m-0 [&_p+p]:mt-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_a]:pointer-events-auto [&_a]:text-dj-accent-1 [&_a]:underline [&_a]:underline-offset-2">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{texte}</ReactMarkdown>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
