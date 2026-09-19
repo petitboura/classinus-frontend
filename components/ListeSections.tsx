@@ -3,7 +3,7 @@ import { ChevronRight, type LucideIcon } from "lucide-react";
 
 // Reprend exactement le motif visuel de la liste de Paramètres
 // (EspaceParametres.tsx : Liste + LigneListe) pour que les pages
-// d'atterrissage de groupe ("Personnaliser Clovis", "Scolarité") soient
+// d'atterrissage de groupe ("Personnaliser Classinus", "Scolarité") soient
 // visuellement reconnaissables comme la même famille de composant
 // (refonte sidebar, 22/08/2026, demande Bourama : "ça doit exister comme
 // pour Paramètres"). Seule différence : ici ce sont de vraies routes
