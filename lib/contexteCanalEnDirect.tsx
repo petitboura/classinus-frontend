@@ -50,6 +50,17 @@ export type ValeurCanalEnDirect = {
   actif: boolean;
   activer: () => void;
   desactiver: () => void;
+  // Ajouté le 19/09/2026 (decision Bourama : le canal doit pouvoir
+  // déclencher lui même un vrai tour de Clovis, "comme si de rien
+  // n'était", sans jamais ouvrir le chat) : conversation dédiée à la
+  // session du canal, générée UNE FOIS à l'activation, réutilisée pour
+  // tous les messages envoyés tant que le canal reste actif -- jamais
+  // celle du chat normal (voir lib/canalAgentApplicatif.ts,
+  // envoyerTourCanalDirect). Distincte à dessein : le canal reste
+  // "quelque chose à part", pas mélangé à une conversation de chat en
+  // cours. Cette conversation reste consultable normalement plus tard
+  // depuis l'historique du chat, comme n'importe quelle autre.
+  conversationId: string | null;
 
   modeInteraction: ModeInteraction;
   choisirModeInteraction: (mode: ModeInteraction) => void;
@@ -110,6 +121,17 @@ export function afficherTexteDepuisAgent(texte: string) {
   canalGlobal?.afficherTexte(texte);
 }
 
+/**
+ * Lu par lib/canalAgentApplicatif.ts (envoyerTourCanalDirect) pour
+ * savoir sur quelle conversation envoyer un message déclenché par le
+ * canal, sans faire dépendre lib/canalAgentApplicatif.ts (module hors
+ * React) de useContext. null si le canal n'a jamais été activé cette
+ * session -- l'appelant doit alors renoncer plutôt que d'inventer un id.
+ */
+export function obtenirConversationIdCanal(): string | null {
+  return canalGlobal?.conversationId ?? null;
+}
+
 let compteurEntreeJournal = 0;
 
 // Préférences d'affichage du chantier M et N : localStorage suffit pour
@@ -137,6 +159,7 @@ function ecrirePreference(cle: string, valeur: string) {
 
 export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const [actif, setActif] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [dernierTexte, setDernierTexte] = useState<string | null>(null);
   const [journal, setJournal] = useState<EntreeJournalCanal[]>([]);
   const [modeInteraction, setModeInteraction] = useState<ModeInteraction>("texte");
@@ -178,7 +201,15 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     ecrirePreference(CLE_MOTEUR_DICTEE, moteur);
   }, []);
 
-  const activer = useCallback(() => setActif(true), []);
+  const activer = useCallback(() => {
+    setActif(true);
+    // Nouvelle conversation dédiée à chaque activation (voir le
+    // commentaire du type ValeurCanalEnDirect plus haut) -- jamais
+    // réutilisée d'une activation à l'autre, cohérent avec la décision
+    // "pas de persistance à travers un rechargement" déjà prise pour le
+    // reste de cet état.
+    setConversationId(crypto.randomUUID());
+  }, []);
   const desactiver = useCallback(() => setActif(false), []);
 
   const effacerTexte = useCallback(() => {
@@ -215,6 +246,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     actif,
     activer,
     desactiver,
+    conversationId,
     modeInteraction,
     choisirModeInteraction,
     moteurDictee,

@@ -64,10 +64,16 @@
 // via le repli enregistre par components/PontMessageCanalVersChat.tsx.
 
 import { supabase } from "./supabase";
+import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { estVisibleEtActif, resoudreElementCliquable } from "./clicGenerique";
-import { pousserJournalDepuisAgent, mettreAJourJournalDepuisAgent, afficherTexteDepuisAgent } from "./contexteCanalEnDirect";
+import {
+  pousserJournalDepuisAgent,
+  mettreAJourJournalDepuisAgent,
+  afficherTexteDepuisAgent,
+  obtenirConversationIdCanal,
+} from "./contexteCanalEnDirect";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
@@ -118,15 +124,110 @@ function texteCourt(texte: string): string {
     : texte;
 }
 
+const AGENT_ID_CANAL = "clovis";
+
+// Historique local de la conversation dédiée au canal (voir
+// lib/contexteCanalEnDirect.tsx, conversationId) -- chat() côté backend
+// ne recharge jamais l'historique depuis la base lui même, il se fie
+// entièrement à ce que le frontend lui passe à chaque appel (voir
+// core/main.py:chat(), `if historique is None: historique = []`). Donc
+// c'est ici, et seulement ici, que la mémoire d'une session du canal
+// vit d'un message au suivant. Réinitialisé dès que conversationId
+// change (nouvelle activation, voir la comparaison plus bas) -- jamais
+// mélangé avec une session précédente du canal ni avec le chat normal.
+let historiqueCanalDirect: { role: "user" | "assistant"; content: string }[] = [];
+let conversationIdCanalConnu: string | null = null;
+
+/**
+ * Déclenche un VRAI tour de Clovis (19/09/2026, décision Bourama : "il
+ * doit pouvoir lui même via le chat écrire et s'envoyer un message... et
+ * faire comme si de rien n'était") -- même route HTTP (/api/chat), même
+ * pipeline, même sauvegarde en base (core/persistance_echanges.py) que
+ * le chat normal, sur la conversation dédiée au canal
+ * (lib/contexteCanalEnDirect.tsx), avec canal_en_direct=true pour que
+ * les outils de clic soient forcés (voir core/main.py:chat()).
+ *
+ * Jamais de composant de chat monté ni ouvert pour ça : appelerApiStream
+ * est une fonction pure, aucun rendu associé. La réponse finale du
+ * modèle est affichée dans la bulle (chantier J) -- tout ce que le
+ * modèle dit en cours de route via dire_a_l_etudiant arrive déjà par un
+ * autre canal (WebSocket canal_agent_applicatif, indépendant de cet
+ * appel HTTP), voir traiterTexteClovis plus haut dans ce fichier.
+ *
+ * Renvoie false si aucune conversation de canal n'existe encore (canal
+ * jamais activé cette session) ou si l'appel échoue -- l'appelant garde
+ * alors le message plutôt que de le perdre (voir envoyerViaRepli).
+ */
+async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
+  const conversationId = obtenirConversationIdCanal();
+  if (!conversationId) return false;
+
+  if (conversationId !== conversationIdCanalConnu) {
+    conversationIdCanalConnu = conversationId;
+    historiqueCanalDirect = [];
+  }
+
+  const idJournal = pousserJournalDepuisAgent(`Toi : ${texteCourt(texte)}`, "en_cours");
+  let reponseAccumulee = "";
+
+  try {
+    await appelerApiStream(
+      "/api/chat",
+      {
+        message: texte,
+        agent_id: AGENT_ID_CANAL,
+        historique: historiqueCanalDirect,
+        conversation_id: conversationId,
+        longueur_reponse: "moyenne",
+        fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        canal_en_direct: true,
+      },
+      (evenement) => {
+        if (evenement?.type === "reponse" && typeof evenement.texte === "string") {
+          reponseAccumulee += evenement.texte;
+        }
+      }
+    );
+
+    historiqueCanalDirect = [
+      ...historiqueCanalDirect,
+      { role: "user", content: texte },
+      { role: "assistant", content: reponseAccumulee },
+    ];
+
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
+    // Filet de sécurité : si Clovis n'a rien dit via dire_a_l_etudiant
+    // pendant le tour, sa réponse finale s'affiche quand même dans la
+    // bulle -- jamais un tour silencieux du point de vue de l'étudiant.
+    if (reponseAccumulee.trim()) afficherTexteDepuisAgent(reponseAccumulee.trim());
+    return true;
+  } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+    return false;
+  }
+}
+
 function envoyerViaRepli(texte: string) {
-  pousserJournalDepuisAgent(`Ton message envoyé dans le chat : ${texteCourt(texte)}`, "succes");
-  repliMessageEtudiant?.(texte);
+  // Priorité (19/09/2026, décision Bourama) : un vrai tour indépendant
+  // sur la conversation du canal, sans jamais ouvrir le chat -- le repli
+  // vers le chat (components/PontMessageCanalVersChat.tsx) ne reste que
+  // pour le cas où le canal n'a jamais été activé cette session (aucune
+  // conversation dédiée) ou pour l'échec réseau, jamais le chemin normal.
+  envoyerTourCanalDirect(texte).then((ok) => {
+    if (ok) return;
+    pousserJournalDepuisAgent(`Ton message envoyé dans le chat : ${texteCourt(texte)}`, "succes");
+    repliMessageEtudiant?.(texte);
+  });
 }
 
 /**
  * Envoie un message ecrit ou dicte par l'etudiant pendant que Clovis
- * travaille. Ne perd jamais le message : canal ferme ou pas d'accuse dans
- * le delai => envoi comme message normal du chat.
+ * travaille. Ne perd jamais le message : si un tour est deja en cours,
+ * il lui est injecte (accuse WebSocket) ; sinon (pas de tour en cours,
+ * ou pas d'accuse dans le delai), un tour independant est declenche
+ * directement sur la conversation du canal (voir envoyerTourCanalDirect) ;
+ * en tout dernier recours seulement (canal jamais active, ou echec
+ * reseau), envoi comme message normal du chat.
  */
 export function envoyerMessageEtudiant(texte: string) {
   const propre = texte.trim();
