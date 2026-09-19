@@ -38,7 +38,6 @@ import {
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
-import { BoutonInfoSection } from "./BoutonInfoSection";
 import { SelectPersonnalise, type OptionMenu } from "./SelectPersonnalise";
 import { PanneauFlottant } from "./PanneauFlottant";
 import { BoutonAvecIA } from "./BoutonAvecIA";
@@ -670,41 +669,45 @@ export function ProgrammeNotions() {
     );
   }
 
+  // 19/09/2026, demande Bourama : Bureau fonctionne comme Personnaliser
+  // Clovis. Le titre et le bouton "i" ne sont plus dans la carte, ils sont
+  // portés par la page (app/(app)/bureau/programme). Il ne reste en haut
+  // que le bouton "Importer un document", présent seulement quand un code
+  // existe ; les marges des blocs suivants s'adaptent pour ne pas laisser
+  // de vide quand ce bouton est absent.
+  const avecBoutonImporter = !!codes && codes.length > 0;
+  const margeApresBouton = avecBoutonImporter ? "mt-4" : "";
+
   return (
     <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
-          <h2 className="font-display text-base font-semibold text-dj-texte">Programme</h2>
-          <BoutonInfoSection
-            rubriqueId="programme-notions"
-            texteCourt="Organise le programme (matière > chapitre > partie > notion) et coche l'avancement."
-          />
-        </div>
-        {codes && codes.length > 0 && (
+      {avecBoutonImporter && (
+        <div className="flex justify-end">
           <button
             onClick={() => setGenererOuvert((v) => !v)}
             className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-2 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
             <Upload size={14} /> Importer un document
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {erreur && <p className="mt-3 text-sm text-[var(--dj-erreur)]">{erreur}</p>}
+      {erreur && (
+        <p className={`${avecBoutonImporter ? "mt-3" : ""} text-sm text-[var(--dj-erreur)]`}>{erreur}</p>
+      )}
 
       {codes === undefined ? (
-        <div className="mt-4 flex flex-col gap-2" aria-hidden>
+        <div className={`${margeApresBouton} flex flex-col gap-2`} aria-hidden>
           <Skeleton className="h-8 w-full rounded-cgpt-bouton" />
           <Skeleton className="h-10 w-full rounded-xl" style={{ animationDelay: "80ms" }} />
           <Skeleton className="h-10 w-4/5 rounded-xl" style={{ animationDelay: "160ms" }} />
         </div>
       ) : codes.length === 0 ? (
-        <p className="mt-4 rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
-          Crée d&apos;abord un code (ci-dessus) pour pouvoir lui associer un programme de notions.
+        <p className={`${margeApresBouton} rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet`}>
+          Crée d&apos;abord un code dans Mes codes pour pouvoir lui associer un programme de notions.
         </p>
       ) : (
         <>
-          <div className="mt-4">
+          <div className={margeApresBouton}>
             <SelectPersonnalise
               options={codes.map((c) => ({ id: c.id, label: c.nom || c.code }))}
               valeur={codeId || ""}

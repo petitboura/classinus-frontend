@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
 import Link from "next/link";
-import { Building2, Check, Clock, Link2, ChevronRight } from "lucide-react";
+import { Check, Clock, Link2, ChevronRight } from "lucide-react";
 import {
   listerEtablissementsPublics,
   listerMesRattachementsEtablissements,
@@ -35,6 +35,13 @@ import { CompteRequisModal } from "./CompteRequisModal";
  * demandent -- gate par action (compteRequisPour), pas par page entière,
  * même principe que BibliothequePublique.tsx.
  */
+// 19/09/2026, demande Bourama : Bureau fonctionne comme Personnaliser
+// Clovis. Le titre "Établissements" n'est plus dans la carte, il est porté
+// par la page qui l'affiche (app/(app)/bureau/etablissements et
+// app/(app)/etablissements). C'était un reste de l'époque où Bureau était
+// une seule page de cartes empilées : la page /etablissements répétait
+// déjà son titre en grand puis dans la carte. La phrase d'explication
+// reste, cet écran n'a pas de bouton "i".
 export function EspaceEtablissements() {
   const queryClient = useQueryClient();
   const { data: liste } = useQuery({
@@ -99,10 +106,7 @@ export function EspaceEtablissements() {
   if (liste === undefined) {
     return (
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5" aria-hidden>
-        <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-5 w-40 rounded" />
-          <Skeleton className="h-3 w-full rounded" style={{ animationDelay: "80ms" }} />
-        </div>
+        <Skeleton className="h-3 w-full rounded" />
         <div className="mt-4 flex flex-col gap-2">
           {[0, 1, 2].map((i) => (
             <div
@@ -120,11 +124,7 @@ export function EspaceEtablissements() {
 
   return (
     <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
-      <div className="flex items-center gap-2">
-        <Building2 size={18} className="text-dj-accent-1" />
-        <h2 className="font-display text-base font-semibold text-dj-texte">Établissements</h2>
-      </div>
-      <p className="mt-1 text-xs text-dj-texte-muet">
+      <p className="text-xs text-dj-texte-muet">
         Suis un établissement pour son contenu public, ou connecte-toi pour demander l&apos;accès à son contenu privé.
       </p>
 

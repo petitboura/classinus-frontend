@@ -116,9 +116,27 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "programme-notions",
     titre: "Programme",
-    texteCourt: "Organise les notions à enseigner pour ce code et coche leur avancement (à venir / en cours / acquis).",
+    // 19/09/2026, demande Bourama : le bouton "i" passe de la carte à la
+    // page (Bureau fonctionne comme Personnaliser Clovis). Le texte court
+    // est aligné sur celui que la carte affichait jusqu'ici, qui décrit
+    // les quatre niveaux du programme (matière, chapitre, partie, notion).
+    texteCourt: "Organise le programme (matière > chapitre > partie > notion) et coche l'avancement.",
     texteComplet:
       "Organise les notions à enseigner pour un code, avec des sous-notions si besoin (renommer, fusionner, réordonner, supprimer). Chaque notion a un statut que tu coches toi-même : à venir, en cours, ou acquis. Tu peux aussi importer un document (sommaire, plan de cours) pour proposer une structure de départ, à valider avant de l'appliquer.",
+  },
+  // 19/09/2026, demande Bourama : rubrique de la page Signalements de
+  // Bureau. La carte l'annonçait déjà (rubriqueId "signalements-prof")
+  // mais elle n'existait pas ici, donc "En savoir plus" ne menait nulle
+  // part. Texte repris de la carte, avec une virgule à la place du
+  // double trait d'union. La rubrique "corrections-prof" plus haut décrit
+  // l'ancien fonctionnement (bouton "Corriger"), elle n'est pas touchée.
+  {
+    id: "signalements-prof",
+    titre: "Signalements",
+    texteCourt:
+      "Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme, rien n'est automatique, rien n'est traité sans toi.",
+    texteComplet:
+      "Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme, rien n'est automatique, rien n'est traité sans toi.",
   },
   // Les 6 rubriques suivantes ajoutées le 02/09/2026 -- écrans oubliés du
   // premier passage du 01/09 (signalé par Bourama), textes repris tels

@@ -78,7 +78,13 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 | Route | Contenu |
 |---|---|
 | `/` | Accueil (raccourcis "Mon espace", activité récente) |
-| `/bureau` | Bureau (Mes codes, entrer un code, corrections pédagogiques reçues) |
+| `/bureau` | Bureau : page d'accueil en liste, même principe que Personnaliser Clovis |
+| `/bureau/audit` | Audit hebdomadaire des signalements des élèves |
+| `/bureau/codes` | Mes codes |
+| `/bureau/programme` | Programme de notions par code |
+| `/bureau/entrer-code` | Entrer un code reçu |
+| `/bureau/etablissements` | Établissements (la fiche `/etablissements/[id]` y ramène) |
+| `/bureau/signalements` | Signalements reçus des élèves |
 | `/bibliotheque` | Bibliothèque : page d'accueil en liste (Perso, Publique, Dossiers du téléphone), même principe que Personnaliser Clovis |
 | `/bibliotheque/perso` | Bibliothèque personnelle |
 | `/bibliotheque/publique` | Bibliothèque publique (catalogue partagé par tout le monde) |
@@ -109,7 +115,7 @@ sont réservés aux pages de liste de la Bibliothèque et ne sont jamais pris
 pour l'identifiant d'un document partagé. Leur liste vient de
 `lib/routesBibliotheque.ts`, la source unique des adresses de la Bibliothèque.
 
-## Sections en groupe (Personnaliser Clovis, Bibliothèque)
+## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau)
 
 Une section en groupe a une page d'accueil en liste (`components/ListeSections.tsx`)
 et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Chaque
@@ -119,7 +125,10 @@ gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en h
 sous forme de pastilles (`OngletsLiens` dans `components/OngletsSegment.tsx`).
 Les deux se branchent via la prop `groupe` de `components/SectionPage.tsx`.
 Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses dans
-`lib/routesBibliotheque.ts`.
+`lib/routesBibliotheque.ts`. Bureau : `lib/sectionsBureau.tsx` et `lib/routesBureau.ts`.
+Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
+et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
+les écrans ne les répètent pas dans leur carte.
 
 ## Navigation mobile
 

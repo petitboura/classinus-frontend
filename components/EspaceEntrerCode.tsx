@@ -25,7 +25,11 @@ import { VoirSkillRecuModal } from "@/components/VoirSkillRecuModal";
  * bloc-ci reste la vue d'ensemble de mes rattachements + le texte libre,
  * qui lui n'a pas d'autre section où vivre.
  */
-export function EspaceEntrerCode() {
+// `sansEnTete` (19/09/2026, demande Bourama : Bureau fonctionne comme
+// Personnaliser Clovis) : sur la vraie page /bureau/entrer-code, le titre
+// et le bouton "i" sont portés par la page, la carte ne les répète plus.
+// Absent (fenêtre flottante Bureau du chat) : affichage inchangé.
+export function EspaceEntrerCode({ sansEnTete = false }: { sansEnTete?: boolean } = {}) {
   const [rattachements, setRattachements] = useState<RattachementCode[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -92,11 +96,15 @@ export function EspaceEntrerCode() {
   if (chargement) {
     return (
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5" aria-hidden>
-        <Skeleton className="h-5 w-40 rounded" />
-        <Skeleton className="mt-2 h-3 w-full rounded" style={{ animationDelay: "80ms" }} />
-        <Skeleton className="h-3 w-3/4 rounded" style={{ animationDelay: "160ms" }} />
+        {!sansEnTete && (
+          <>
+            <Skeleton className="h-5 w-40 rounded" />
+            <Skeleton className="mt-2 h-3 w-full rounded" style={{ animationDelay: "80ms" }} />
+            <Skeleton className="h-3 w-3/4 rounded" style={{ animationDelay: "160ms" }} />
+          </>
+        )}
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${sansEnTete ? "" : "mt-4"}`}>
           <Skeleton className="h-[52px] w-40 flex-shrink-0 rounded-xl" style={{ animationDelay: "240ms" }} />
           <Skeleton className="h-11 w-24 flex-shrink-0 rounded-cgpt-bouton" style={{ animationDelay: "320ms" }} />
         </div>
@@ -128,15 +136,17 @@ export function EspaceEntrerCode() {
 
   return (
     <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
-      <div className="flex items-center gap-1.5">
-        <h2 className="font-display text-base font-semibold text-dj-texte">Entrer un code</h2>
-        <BoutonInfoSection
-          rubriqueId="entrer-code"
-          texteCourt="Quelqu'un t'a donné un code ? Entre-le ici pour recevoir tout ce qu'il partage."
-        />
-      </div>
+      {!sansEnTete && (
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-display text-base font-semibold text-dj-texte">Entrer un code</h2>
+          <BoutonInfoSection
+            rubriqueId="entrer-code"
+            texteCourt="Quelqu'un t'a donné un code ? Entre-le ici pour recevoir tout ce qu'il partage."
+          />
+        </div>
+      )}
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className={`flex items-center gap-2 ${sansEnTete ? "" : "mt-4"}`}>
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}

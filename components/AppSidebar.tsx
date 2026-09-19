@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PAGES_FILLES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
+import { PAGES_FILLES_BUREAU } from "@/lib/routesBureau";
 import { usePathname, useRouter } from "next/navigation";
 import { useFenetres } from "@/lib/contexteFenetres";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -100,7 +101,7 @@ export const ONGLETS: {
   Icone: typeof Briefcase;
   routesFilles?: readonly string[];
 }[] = [
-  { id: "bureau", href: "/bureau", label: "Bureau", Icone: Briefcase },
+  { id: "bureau", href: "/bureau", label: "Bureau", Icone: Briefcase, routesFilles: PAGES_FILLES_BUREAU },
   // Texte affiché "Mes skills" (21/08/2026, demande Bourama) : en
   // interne (route, code, BDD, outils MCP) ça reste "comportement",
   // voir la note dans lib/api.ts. Seul le mot vu par l'utilisateur change.

@@ -49,7 +49,13 @@ const AGENT_ID = "clovis";
  * Vivant : modifier un champ met à jour ce que voient tous les
  * receveurs de ce code, pas besoin d'en générer un nouveau.
  */
-export function MesCodes() {
+// `sansEnTete` (19/09/2026, demande Bourama : Bureau fonctionne comme
+// Personnaliser Clovis) : sur la vraie page /bureau/codes, le titre et le
+// bouton "i" sont portés par la page, la carte ne les répète plus. Seul
+// le bouton "Nouveau code" reste, aligné à droite. Absent (fenêtre
+// flottante Bureau du chat, où deux cartes sont empilées et ont besoin de
+// leur titre) : affichage inchangé.
+export function MesCodes({ sansEnTete = false }: { sansEnTete?: boolean } = {}) {
   // 17/09/2026 (chantier persistance/cache) : `mesComportements` et
   // `mesDossiers` partagent leur clé de cache avec MesComportements.tsx
   // et EspaceBibliotheque.tsx respectivement (même donnée, même clé) --
@@ -216,12 +222,14 @@ export function MesCodes() {
             codes en dessous (pastille de statut + nom + badge code +
             chevron), au lieu d'un titre suivi d'un seul bloc plein qui ne
             représentait ni l'un ni l'autre. */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Skeleton className="h-5 w-28 rounded" />
-            <Skeleton className="h-3 w-full rounded" style={{ animationDelay: "80ms" }} />
-            <Skeleton className="h-3 w-4/5 rounded" style={{ animationDelay: "160ms" }} />
-          </div>
+        <div className={`flex items-center gap-3 ${sansEnTete ? "justify-end" : "justify-between"}`}>
+          {!sansEnTete && (
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Skeleton className="h-5 w-28 rounded" />
+              <Skeleton className="h-3 w-full rounded" style={{ animationDelay: "80ms" }} />
+              <Skeleton className="h-3 w-4/5 rounded" style={{ animationDelay: "160ms" }} />
+            </div>
+          )}
           <Skeleton className="h-8 w-32 flex-shrink-0 rounded-cgpt-bouton" style={{ animationDelay: "240ms" }} />
         </div>
         <div className="mt-4 flex flex-col gap-2">
@@ -250,16 +258,18 @@ export function MesCodes() {
 
   const contenuPrincipal = (
     <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <h2 className="font-display text-base font-semibold text-dj-texte">Mes codes</h2>
-            <BoutonInfoSection
-              rubriqueId="mes-codes"
-              texteCourt="Crée un code et partage-le : tous ceux qui l'entrent reçoivent ce que tu y mets."
-            />
+      <div className={`flex items-center ${sansEnTete ? "justify-end" : "justify-between"}`}>
+        {!sansEnTete && (
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h2 className="font-display text-base font-semibold text-dj-texte">Mes codes</h2>
+              <BoutonInfoSection
+                rubriqueId="mes-codes"
+                texteCourt="Crée un code et partage-le : tous ceux qui l'entrent reçoivent ce que tu y mets."
+              />
+            </div>
           </div>
-        </div>
+        )}
         <button
           onClick={creerVide}
           disabled={creation}

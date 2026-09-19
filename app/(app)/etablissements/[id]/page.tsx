@@ -3,6 +3,7 @@ import { SectionPage } from "@/components/SectionPage";
 import { EtablissementDetail } from "@/components/EtablissementDetail";
 import { obtenirEtablissement } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
+import { ROUTES_BUREAU } from "@/lib/routesBureau";
 
 // Chantier "Classinus ouvert" (10/09/2026, Lot C) : cette route dynamique
 // existait déjà, mais sans generateMetadata (titre/description invisibles
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
 export default function PageEtablissement({ params }: { params: { id: string } }) {
   return (
-    <SectionPage title="Établissement" retour="/etablissements">
+    <SectionPage title="Établissement" retour={ROUTES_BUREAU.etablissements}>
       <EtablissementDetail etablissementId={params.id} />
     </SectionPage>
   );

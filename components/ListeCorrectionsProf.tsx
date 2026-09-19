@@ -19,7 +19,6 @@ import {
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
-import { BoutonInfoSection } from "./BoutonInfoSection";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 
 const CHAMPS: { id: "question" | "reponse" | "conversation"; label: string }[] = [
@@ -41,6 +40,10 @@ const CHAMPS: { id: "question" | "reponse" | "conversation"; label: string }[] =
  * le produit n'expose nulle part le nom d'un élève à partir de son id.
  * Liste triée par date, la plus récente en premier.
  */
+// 19/09/2026, demande Bourama : Bureau fonctionne comme Personnaliser
+// Clovis. Le titre et le bouton "i" ne sont plus dans la carte, ils sont
+// portés par la page (app/(app)/bureau/signalements). C'était un reste de
+// l'époque où Bureau était une seule page de cartes empilées.
 export function ListeCorrectionsProf() {
   const queryClient = useQueryClient();
   const [ongletActif, setOngletActif] = useState<"nouveau" | "discute">("nouveau");
@@ -168,17 +171,7 @@ export function ListeCorrectionsProf() {
 
   return (
     <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
-          <h2 className="text-base font-medium text-dj-texte">Signalements</h2>
-          <BoutonInfoSection
-            rubriqueId="signalements-prof"
-            texteCourt="Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme -- rien n'est automatique, rien n'est traité sans toi."
-          />
-        </div>
-      </div>
-
-      <div className="mt-3 flex gap-1 rounded-cgpt-bouton bg-dj-surface-haute p-1">
+      <div className="flex gap-1 rounded-cgpt-bouton bg-dj-surface-haute p-1">
         {[
           { id: "nouveau" as const, label: "Nouveaux" },
           { id: "discute" as const, label: "En discussion" },
