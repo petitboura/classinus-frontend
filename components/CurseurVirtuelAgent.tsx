@@ -68,7 +68,11 @@ export function CurseurVirtuelAgent() {
             position: "fixed",
             top: 0,
             left: 0,
-            zIndex: 60,
+            // Au dessus de la bulle de dialogue (zIndex 70, voir
+            // BulleDialogueAgent.tsx) : le curseur ne doit jamais passer
+            // derrière, sinon on ne peut plus cliquer dessus pour rouvrir
+            // ou fermer la réponse.
+            zIndex: 80,
             pointerEvents: enAction ? "none" : "auto",
             touchAction: "none",
             cursor: enAction ? undefined : "grab",
