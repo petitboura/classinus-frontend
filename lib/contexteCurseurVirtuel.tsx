@@ -136,6 +136,22 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
   const [forme, setForme] = useState<FormeCurseur>("defaut");
   const [enAction, setEnAction] = useState(false);
   const positionInitialisee = useRef(false);
+  // Correctif du 19/09/2026 (Bourama : "le pointeur est mal synchronise
+  // avec l'intention de Clovis"). Deux references pour garder la
+  // trajectoire du curseur fidele a une seule intention a la fois :
+  // - animationTrajetRef : la trajectoire (position) actuellement en
+  //   cours, pour pouvoir l'arreter si une nouvelle intention arrive
+  //   avant qu'elle soit terminee (sinon deux animate() tournent en
+  //   meme temps sur les memes x/y et le curseur tremble entre les deux
+  //   cibles).
+  // - generationRef : compteur incremente a chaque appel de
+  //   deplacerVers. Le code qui s'execute apres la trajectoire (forme
+  //   finale, pulsation de clic) ne s'applique que si sa generation est
+  //   toujours la plus recente, pour qu'une trajectoire arretee en
+  //   cours de route ne vienne pas ecraser l'etat pose par la
+  //   trajectoire suivante.
+  const animationTrajetRef = useRef<{ stop: () => void } | null>(null);
+  const generationRef = useRef(0);
 
   const masquer = useCallback(() => setVisible(false), []);
 
@@ -155,7 +171,22 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
 
   const deplacerVers = useCallback(
     (cible: PointEcran | HTMLElement, options?: { cliquer?: boolean; forme?: FormeCurseur }): Promise<void> => {
-      const arrivee = resoudrePoint(cible);
+      // Arrete toute trajectoire encore en cours avant d'en lancer une
+      // nouvelle : sans ca, un deplacerVers appele avant la fin du
+      // precedent (ex: pointage juste apres un clic) ferait tourner
+      // deux animate() en meme temps sur les memes x/y, et le curseur
+      // sauterait entre les deux cibles au lieu de suivre une seule
+      // intention.
+      animationTrajetRef.current?.stop();
+      const generation = ++generationRef.current;
+
+      // Point d'arrivee initial, pour calculer la duree et la courbe du
+      // trajet. Recalcule a chaque frame plus bas si `cible` est un
+      // element reel : juste apres un scrollIntoView, le scroll ou une
+      // animation d'entree de l'element peuvent ne pas encore etre
+      // stabilises, donc la position lue ici peut ne plus etre la
+      // bonne au moment ou le curseur arrive.
+      let arrivee = resoudrePoint(cible);
       centrer();
 
       setVisible(true);
@@ -172,15 +203,29 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
       // vitesse perçue raisonnable).
       const duree = Math.min(Math.max(distance / 900, 0.35), 1.1);
 
-      return animate(0, 1, {
+      const controlesTrajet = animate(0, 1, {
         duration: duree,
         ease: "easeInOut",
         onUpdate: (t) => {
+          // Cible reelle re-mesuree a chaque frame : la courbe garde sa
+          // forme initiale, mais le point final suit la position live
+          // de l'element (scroll qui se termine, leger reflow) plutot
+          // qu'une position figee au tout debut du trajet.
+          if (cible instanceof HTMLElement) arrivee = resoudrePoint(cible);
           const point = pointSurCourbe(depart, controle, arrivee, t);
           x.set(point.x);
           y.set(point.y);
         },
-      }).then(() => {
+      });
+      animationTrajetRef.current = controlesTrajet;
+
+      return controlesTrajet.then(() => {
+        // Une trajectoire plus recente a deja pris le relais (celle-ci
+        // a ete arretee par animationTrajetRef.current?.stop() plus
+        // haut) : ne pas ecraser l'etat (forme, echelle) qu'elle a deja
+        // pose.
+        if (generationRef.current !== generation) return;
+
         // À l'arrivée, la forme se met à jour comme un vrai curseur qui
         // vient de passer au dessus d'une zone : "main" par défaut si
         // l'action va cliquer, sinon reste en flèche, sauf forme
@@ -191,6 +236,7 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
           return;
         }
         return animate(echelle, [1, 0.72, 1], { duration: 0.28, ease: "easeOut" }).then(() => {
+          if (generationRef.current !== generation) return;
           setEnAction(false);
         });
       });
