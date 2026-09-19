@@ -11,6 +11,7 @@ import { useFenetreDeplacable, POIGNEES_REDIMENSIONNEMENT } from "@/lib/useFenet
 import { MesCodes } from "@/components/MesCodes";
 import { EspaceEntrerCode } from "@/components/EspaceEntrerCode";
 import { MesComportements } from "@/components/MesComportements";
+import { SkillsPublics } from "@/components/SkillsPublics";
 import { EspaceBibliotheque } from "@/components/EspaceBibliotheque";
 import { MaMemoire } from "@/components/MaMemoire";
 import { EspaceConnecterClaude } from "@/components/EspaceConnecterClaude";
@@ -30,6 +31,12 @@ const CONTENU_PAR_ONGLET: Record<OngletId, React.ReactNode> = {
     </div>
   ),
   comportements: <MesComportements agentId={AGENT_ID} />,
+  // 19/09/2026, ajouté car OngletId (Record exhaustif) inclut désormais
+  // "skills-publics" -- Mes skills (ci-dessus) garde ses deux onglets
+  // inchangés dans ce popup (sansOnglets non passé), donc ce popup
+  // dédié n'est ouvert que si quelqu'un navigue explicitement vers
+  // /skills-publics en contexte chat plein écran.
+  "skills-publics": <SkillsPublics />,
   bibliotheque: <EspaceBibliotheque />,
   memoire: <MaMemoire />,
   claude: <EspaceConnecterClaude />,

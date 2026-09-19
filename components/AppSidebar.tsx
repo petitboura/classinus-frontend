@@ -14,6 +14,7 @@ import {
   Home,
   Briefcase,
   ScrollText,
+  Download,
   Library,
   Brain,
   MoreHorizontal,
@@ -86,6 +87,7 @@ type FilConversation = {
 export type OngletId =
   | "bureau"
   | "comportements"
+  | "skills-publics"
   | "bibliotheque"
   | "memoire"
   | "claude"
@@ -107,6 +109,11 @@ export const ONGLETS: {
   // interne (route, code, BDD, outils MCP) ça reste "comportement",
   // voir la note dans lib/api.ts. Seul le mot vu par l'utilisateur change.
   { id: "comportements", href: "/comportements", label: "Mes skills", Icone: ScrollText },
+  // Ajouté le 19/09/2026 (ancien onglet "Public" de Mes skills, devenu sa
+  // propre page /skills-publics, voir lib/sectionsPersonnaliser.tsx) --
+  // membre du groupe "Personnaliser Classinus" (ongletIds plus bas), pas
+  // un bouton direct du rail (même traitement que "comportements"/"memoire").
+  { id: "skills-publics", href: "/skills-publics", label: "Skills publics", Icone: Download },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library, routesFilles: PAGES_FILLES_BIBLIOTHEQUE },
   { id: "memoire", href: "/memoire", label: "Ma mémoire", Icone: Brain },
   // Guide "Utiliser Classinus dans Claude" (18/08, demande Bourama) :
@@ -133,7 +140,7 @@ export const ONGLETS: {
 // plutôt que d'occuper un bouton du rail.
 type Groupe = { id: string; href: string; label: string; Icone: typeof Briefcase; ongletIds: OngletId[] };
 const GROUPES: Groupe[] = [
-  { id: "personnaliser", href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2, ongletIds: ["comportements", "memoire"] },
+  { id: "personnaliser", href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2, ongletIds: ["comportements", "skills-publics", "memoire"] },
 ];
 
 // Rotation des mouvements pour les icônes de nav (Accueil + les 7
