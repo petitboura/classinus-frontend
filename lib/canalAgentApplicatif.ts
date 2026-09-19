@@ -210,15 +210,20 @@ async function traiterDemandeAction(id: string, actionId: string) {
     element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
     await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
 
-    // Toute derniere verification, juste avant le clic physique --
-    // l'ecran a pu changer pendant le deplacement du curseur.
-    if (!document.body.contains(element) || !estVisibleEtActif(element)) {
+    // Toute derniere verification, juste avant le clic physique -- on
+    // re-resout l'element par son data-agent-id plutot que de verifier
+    // l'ancien objet DOM : React peut l'avoir remplace par un nouveau
+    // noeud, identique visuellement et sous le meme data-agent-id,
+    // pendant le voyage du curseur, ce qui ferait a tort croire que
+    // l'element a disparu si on ne verifiait que l'ancien objet.
+    const elementActuel = resoudreElementParAgentId(actionId);
+    if (!elementActuel) {
       if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
       envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
       return;
     }
 
-    element.click();
+    elementActuel.click();
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
     envoyerReponse(id, { succes: true });
   } catch (e) {
@@ -250,17 +255,19 @@ async function traiterDemandeClicGenerique(id: string, selecteur: string, descri
   element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
   await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
 
-  // Toute dernière vérification, juste avant le clic physique -- le
-  // défilement ou l'animation du curseur pourrait, en théorie, avoir
-  // fait disparaître l'élément entre temps.
-  if (!document.body.contains(element) || !estVisibleEtActif(element)) {
+  // Toute dernière vérification, juste avant le clic physique -- on
+  // re-résout l'élément par son sélecteur CSS plutôt que de vérifier
+  // l'ancien objet DOM (même raison que traiterDemandeAction : React
+  // peut avoir remplacé le nœud entre-temps).
+  const elementActuel = resoudreElementCliquable(selecteur);
+  if (!elementActuel) {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
     return;
   }
 
   try {
-    element.click();
+    elementActuel.click();
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
     envoyerReponse(id, { succes: true });
   } catch (e) {
