@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles, Activity,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -31,6 +31,7 @@ import {
   attacherDossierPublic,
   detacherDossierPublic,
   obtenirContenuDossierCataloguePublic,
+  analytiqueCatalogueEnLot,
   type EntreeBibliothequePublique,
   type DossierCataloguePublic,
   type DemandeDossierCataloguePublic,
@@ -38,6 +39,8 @@ import {
   type FiltresDossierCataloguePublic,
   type ValeursFiltreDossier,
   type ContenuDossierPublic,
+  type CompteursCatalogue,
+  type TypeElementCataloguePublic,
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -56,6 +59,9 @@ import { Skeleton } from "./Skeleton";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { BoutonAvecIA } from "./BoutonAvecIA";
+import { ProfilPublicModal } from "@/components/ProfilPublicModal";
+import { PopupProposerProfilPublic } from "@/components/PopupProposerProfilPublic";
+import { usePremierePublicationCatalogue } from "@/lib/usePremierePublicationCatalogue";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { MenuActionsCarte } from "./MenuActionsCarte";
 import { StatistiquesContenuDossier } from "./StatistiquesContenuDossier";
@@ -493,6 +499,20 @@ export function BibliothequePublique() {
   const searchParams = useSearchParams();
   const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   const [liste, setListe] = useState<EntreeBibliothequePublique[] | undefined>(undefined);
+  // 19/09/2026, correctif Bourama ("le skeleton se recharge à chaque
+  // fois") : charger() (plus bas) remettait TOUJOURS `liste` à undefined
+  // avant de refaire la requête, y compris en rouvrant un dossier déjà
+  // visité dans la session -- le skeleton réapparaissait donc à chaque
+  // navigation, jamais seulement au tout premier chargement. Ce cache
+  // garde le dernier résultat par combinaison exacte (dossier + filtres +
+  // recherche, voir cleListeCourante) : s'il existe déjà, il s'affiche
+  // tout de suite (aucun skeleton), pendant qu'une requête fraîche part
+  // quand même en arrière-plan pour rester à jour -- même principe que le
+  // "rafraîchissement silencieux, jamais de nouveau skeleton" déjà en
+  // place juste au-dessus pour les dossiers (lib/contexteDossiersCatalogue
+  // Public.tsx). Vidé nulle part explicitement : vit seulement pour la
+  // durée du montage de ce composant, comme `liste` elle-même.
+  const cacheListeRef = useRef<Map<string, EntreeBibliothequePublique[]>>(new Map());
   // 09/09/2026 : dossiers + dossiers attachés viennent désormais d'un
   // contexte partagé, préchargé dès l'ouverture de l'app par AppShell.tsx
   // (voir lib/contexteDossiersCataloguePublic.tsx) -- ce composant n'en
@@ -522,6 +542,26 @@ export function BibliothequePublique() {
   const [erreursEnvoi, setErreursEnvoi] = useState<{ nom: string; erreur: string }[]>([]);
   const [sansCompte, setSansCompte] = useState(false);
   const [entreeSignalee, setEntreeSignalee] = useState<EntreeBibliothequePublique | null>(null);
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étapes 8/9 : id du contributeur dont le profil est ouvert (popup),
+  // et compteurs analytiques par élément affiché (clé "type:id"),
+  // chargés en un seul appel par lot (voir l'effet plus bas).
+  // 19/09/2026 (correctif, demande Bourama) : porte maintenant aussi les
+  // compteurs analytiques de l'élément d'où la modale a été ouverte, pour
+  // que ProfilPublicModal affiche les deux ensemble (voir ProfilPublicModal.tsx).
+  const [profilOuvert, setProfilOuvert] = useState<{
+    userId?: string;
+    compteurs?: CompteursCatalogue;
+    element: { typeElement: TypeElementCataloguePublic; elementId: string };
+  } | null>(null);
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11 : voir lib/usePremierePublicationCatalogue.ts.
+  const {
+    popupOuverte: popupProfilPublicOuverte,
+    fermerPopup: fermerPopupProfilPublic,
+    signalerPublication: signalerPublicationCatalogue,
+  } = usePremierePublicationCatalogue();
+  const [analytiqueCatalogue, setAnalytiqueCatalogue] = useState<Record<string, CompteursCatalogue>>({});
   const [entreeOuverte, setEntreeOuverte] = useState<EntreeBibliothequePublique | null>(null);
   const [compteRequisPourCopie, setCompteRequisPourCopie] = useState(false);
   // 13/09/2026, demande Bourama : "Copier dans ma bibliothèque" et
@@ -851,11 +891,36 @@ export function BibliothequePublique() {
 
   // Recharge depuis le début (recherche/filtre/dossier changé, ou ajout/
   // suppression d'une entrée) -- réinitialise la pagination.
+  function cleListeCourante(q?: string) {
+    return JSON.stringify({
+      q: q ?? "",
+      dossierCourantId,
+      filtrePays,
+      filtreNiveau,
+      filtreCategorie,
+      filtreClasse,
+      filtreSpecialite,
+    });
+  }
+
   function charger(q?: string) {
     const idAppel = ++requeteListeRef.current;
-    setListe(undefined);
-    setDecalage(0);
-    setPlusDeResultats(true);
+    // Correctif 19/09/2026 (voir cacheListeRef plus haut) : un résultat
+    // déjà en cache pour cette combinaison exacte s'affiche tout de
+    // suite, sans passer par le skeleton -- la requête fraîche plus bas
+    // s'exécute quand même, pour ne jamais rester sur une version
+    // périmée.
+    const cle = cleListeCourante(q);
+    const enCache = cacheListeRef.current.get(cle);
+    if (enCache) {
+      setListe(enCache);
+      setDecalage(enCache.length);
+      setPlusDeResultats(enCache.length === TAILLE_PAGE_BIBLIO_PUBLIQUE);
+    } else {
+      setListe(undefined);
+      setDecalage(0);
+      setPlusDeResultats(true);
+    }
     listerBibliothequePublique(q, {
       pays: filtrePays,
       niveau: filtreNiveau,
@@ -868,14 +933,17 @@ export function BibliothequePublique() {
     })
       .then((resultat) => {
         if (requeteListeRef.current !== idAppel) return;
+        cacheListeRef.current.set(cle, resultat);
         setListe(resultat);
         setDecalage(resultat.length);
         setPlusDeResultats(resultat.length === TAILLE_PAGE_BIBLIO_PUBLIQUE);
       })
       .catch(() => {
         if (requeteListeRef.current !== idAppel) return;
-        setListe([]);
-        setPlusDeResultats(false);
+        if (!enCache) {
+          setListe([]);
+          setPlusDeResultats(false);
+        }
       });
   }
 
@@ -1133,6 +1201,7 @@ export function BibliothequePublique() {
       charger(recherche);
       chargerDossiers();
       chargerListesFiltres();
+      signalerPublicationCatalogue();
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) {
         setSansCompte(true);
@@ -1172,6 +1241,7 @@ export function BibliothequePublique() {
       charger(recherche);
       chargerDossiers();
       chargerListesFiltres();
+      signalerPublicationCatalogue();
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) {
         setSansCompte(true);
@@ -1219,7 +1289,30 @@ export function BibliothequePublique() {
         cle: "partager",
         label: "Partager",
         icone: <Share2 size={14} />,
-        onClick: () => partagerOuCopierLien(lienPartage("fichier-public", entree.id), entree.nom),
+        onClick: () =>
+          partagerOuCopierLien(lienPartage("fichier-public", entree.id), entree.nom, {
+            typeElement: "fichier",
+            elementId: entree.id,
+          }),
+      },
+      // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+      // étape 8 : ouvre le profil du contributeur (voir ProfilPublicModal.tsx).
+      // 19/09/2026 (correctif, demande Bourama) : regroupe aussi les 4
+      // analytiques (plus affichées directement sur la carte) et les
+      // commentaires (SectionCommentairesCatalogue, étape 10) -- toujours
+      // affiché désormais (plus conditionné à ajoute_par/compteurs) car les
+      // commentaires restent consultables même sans contributeur connu ou
+      // avant que le lot d'analytiques ait chargé.
+      {
+        cle: "details",
+        label: "Activité",
+        icone: <Activity size={14} />,
+        onClick: () =>
+          setProfilOuvert({
+            userId: entree.ajoute_par as string | undefined,
+            compteurs: analytiqueCatalogue[`fichier:${entree.id}`],
+            element: { typeElement: "fichier", elementId: entree.id },
+          }),
       },
       {
         cle: "signaler",
@@ -1284,6 +1377,7 @@ export function BibliothequePublique() {
       setCreationDossierOuverte(false);
       chargerDossiers();
       chargerListesFiltres();
+      signalerPublicationCatalogue();
     } catch (e) {
       window.alert(messageErreur(e));
     }
@@ -1592,6 +1686,29 @@ export function BibliothequePublique() {
   // panneau.
   const listeFichiersVisible = ongletBiblioPublique === "tous" || !!dossierCourantId;
 
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 9 : un seul appel pour toute la page affichée (note
+  // performance de l'étape 7), jamais un appel par carte. Dépendance
+  // sur une clé texte stable (pas les tableaux eux-mêmes, recréés à
+  // chaque rendu par les .filter()/.map() ci-dessus) pour ne relancer
+  // l'appel que quand le contenu réellement affiché change.
+  const idsAnalytiqueCatalogue = [
+    ...(listeAffichee ?? []).map((e) => `fichier:${e.id}`),
+    ...sousDossiersAffiches.map((d) => `dossier:${d.id}`),
+  ].join(",");
+
+  useEffect(() => {
+    if (!idsAnalytiqueCatalogue) return;
+    const elements = idsAnalytiqueCatalogue.split(",").map((cle) => {
+      const [typeElement, id] = cle.split(":") as ["fichier" | "dossier", string];
+      return { typeElement, id };
+    });
+    analytiqueCatalogueEnLot(elements)
+      .then((res) => setAnalytiqueCatalogue((prev) => ({ ...prev, ...res })))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsAnalytiqueCatalogue]);
+
   // 12/09/2026, demande Bourama : sélection multiple, même principe que
   // EspaceBibliotheque.tsx -- idsElementsAffiches reflète ce qui est
   // réellement visible (donc après filtre/recherche), condition pour que
@@ -1776,6 +1893,7 @@ export function BibliothequePublique() {
                   `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
                   `puis discutons-en ensemble.`
                 }
+                compterCta={{ typeElement: "dossier", elementId: dossierCourantId }}
               />
             </div>
           )}
@@ -1983,7 +2101,29 @@ export function BibliothequePublique() {
                           cle: "partager",
                           label: "Partager",
                           icone: <Share2 size={14} />,
-                          onClick: () => partagerOuCopierLien(lienPartage("dossier-public", d.id), d.nom),
+                          onClick: () =>
+                            partagerOuCopierLien(lienPartage("dossier-public", d.id), d.nom, {
+                              typeElement: "dossier",
+                              elementId: d.id,
+                            }),
+                        },
+                        // 18/09/2026, chantier "profil contributeur
+                        // bibliotheque publique", étape 8 : ouvre le profil
+                        // du créateur du dossier (voir ProfilPublicModal.tsx).
+                        // 19/09/2026 (correctif, demande Bourama) : regroupe
+                        // aussi les 4 analytiques et les commentaires
+                        // (SectionCommentairesCatalogue) -- toujours affiché,
+                        // voir le même correctif côté fichier plus haut.
+                        {
+                          cle: "details",
+                          label: "Activité",
+                          icone: <Activity size={14} />,
+                          onClick: () =>
+                            setProfilOuvert({
+                              userId: d.cree_par as string | undefined,
+                              compteurs: analytiqueCatalogue[`dossier:${d.id}`],
+                              element: { typeElement: "dossier", elementId: d.id },
+                            }),
                         },
                         {
                           cle: "attacher",
@@ -2176,6 +2316,7 @@ export function BibliothequePublique() {
                     {entree.description && (
                       <p className="truncate text-xs text-dj-texte-muet">{entree.description}</p>
                     )}
+
                   </div>
                 </button>
                 <BoutonEtoile
@@ -2302,6 +2443,17 @@ export function BibliothequePublique() {
           onFermer={() => setEntreeSignalee(null)}
         />
       )}
+
+      {profilOuvert && (
+        <ProfilPublicModal
+          userId={profilOuvert.userId}
+          compteurs={profilOuvert.compteurs}
+          element={profilOuvert.element}
+          onFermer={() => setProfilOuvert(null)}
+        />
+      )}
+
+      {popupProfilPublicOuverte && <PopupProposerProfilPublic onFermer={fermerPopupProfilPublic} />}
 
       {cibleDeplacement && cibleDeplacement.type === "fichier" && (
         <GererDossiersFichierModal

@@ -145,7 +145,21 @@ function ChipComportement({
   );
 }
 
-export function MesComportements({ agentId }: { agentId: string }) {
+export function MesComportements({
+  agentId,
+  sansOnglets = false,
+}: {
+  agentId: string;
+  // 19/09/2026, demande Bourama : l'onglet "Public" sort en page à part
+  // entière (/skills-publics, voir components/SkillsPublics.tsx et
+  // lib/sectionsPersonnaliser.tsx) -- ce prop masque la barre d'onglets et
+  // le rendu inline de ComportementsPublics quand ce composant est ouvert
+  // depuis sa vraie page (/comportements). Faux par défaut : la fenêtre
+  // flottante du chat (components/chat/FenetresSections.tsx) continue
+  // d'afficher ce composant SANS le prop, donc garde les deux onglets dans
+  // un seul popup, comportement inchangé pour elle.
+  sansOnglets?: boolean;
+}) {
   // 17/09/2026 (chantier persistance/cache) : `liste` vient de React Query
   // au lieu d'un useState local -- clé partagée avec MesCodes.tsx qui lit
   // les mêmes comportements (clesRequetes.comportements), donc les deux
@@ -167,13 +181,20 @@ export function MesComportements({ agentId }: { agentId: string }) {
   // entre la liste perso (comportement par défaut) et le catalogue
   // public (nouveau composant ComportementsPublics.tsx, même esprit que
   // EspacePlugins.tsx pour les plugins).
+  //
+  // 19/09/2026 : l'onglet "public" n'est plus atteignable que sans
+  // sansOnglets (fenêtre flottante du chat) -- sur la vraie page
+  // (/comportements, sansOnglets=true), le catalogue public vit sur sa
+  // propre page (/skills-publics, voir components/SkillsPublics.tsx),
+  // donc `vue` y reste toujours "mes-comportements".
   const [vue, setVue] = useState<"mes-comportements" | "public">("mes-comportements");
 
   // Description fixe remplacée par le bouton "i" du titre de page,
   // différente selon l'onglet ouvert (voir lib/aideSections.tsx,
   // rubriques "mes-skills" / "skills-publics") -- correctif 02/09/2026,
-  // suite audit Bourama.
-  useInfoSection(vue === "public" ? "skills-publics" : "mes-skills");
+  // suite audit Bourama. Toujours "mes-skills" avec sansOnglets (l'onglet
+  // "public" est hors service dans ce mode, voir plus haut).
+  useInfoSection(!sansOnglets && vue === "public" ? "skills-publics" : "mes-skills");
 
   // 22/08/2026, demande Bourama : distinguer les origines d'un skill
   // (créé directement / téléchargé du public) par des onglets-filtres
@@ -270,25 +291,29 @@ export function MesComportements({ agentId }: { agentId: string }) {
     }
   }
 
-  if (sansCompte && vue === "mes-comportements") {
-    return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à Clovis." />;
+  if (sansCompte && (sansOnglets || vue === "mes-comportements")) {
+    return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à Classinus." />;
   }
 
   return (
     <div className="flex flex-col gap-4">
       {/* Onglets passés en composant partagé OngletsSegment le 31/08/2026,
-          voir OngletsSegment.tsx (fini le pattern soulignement web). */}
-      <OngletsSegment
-        ariaLabel="Section des comportements"
-        valeur={vue}
-        onChange={(v) => setVue(v as typeof vue)}
-        onglets={[
-          { valeur: "mes-comportements", libelle: "Mes comportements" },
-          { valeur: "public", libelle: "Public" },
-        ]}
-      />
+          voir OngletsSegment.tsx (fini le pattern soulignement web).
+          19/09/2026 : masqués avec sansOnglets, l'onglet "Public" vit
+          désormais sur sa propre page (voir plus haut). */}
+      {!sansOnglets && (
+        <OngletsSegment
+          ariaLabel="Section des comportements"
+          valeur={vue}
+          onChange={(v) => setVue(v as typeof vue)}
+          onglets={[
+            { valeur: "mes-comportements", libelle: "Mes comportements" },
+            { valeur: "public", libelle: "Public" },
+          ]}
+        />
+      )}
 
-      {vue === "public" ? (
+      {!sansOnglets && vue === "public" ? (
         <ComportementsPublics onActive={charger} />
       ) : liste === undefined ? (
         /* Skeleton précis (30/08, audit) : le vrai contenu n'est pas une

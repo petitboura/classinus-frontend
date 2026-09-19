@@ -12,12 +12,12 @@
 // specs-question-riche.md, "Schéma JSON commun").
 
 // gabarit_reponse (optionnel, tous types) : phrase naturelle écrite par
-// Clovis lui-même pour ce champ précis, avec le placeholder générique
+// Classinus lui-même pour ce champ précis, avec le placeholder générique
 // {reponse} à l'endroit où insérer la réponse formatée de l'étudiant (ex.
 // "Je veux réviser {reponse}"). Ajouté le 15/09/2026 (demande Bourama,
 // "Option A avec filet de sécurité") : un seul placeholder générique,
 // volontairement pas un placeholder différent par type, pour rester
-// simple à générer côté prompt et limiter le risque d'erreur de Clovis.
+// simple à générer côté prompt et limiter le risque d'erreur de Classinus.
 // Si absent, invalide, ou sans {reponse} : filet de sécurité, voir
 // formaterReponseChamp plus bas -- jamais de crash, jamais de message vide.
 export type QuestionChoixUnique = {
@@ -234,7 +234,7 @@ function valeurBrute(champ: ChampSimple, valeur: ValeurChamp): string {
   }
 }
 
-// Insère la valeur brute dans le gabarit écrit par Clovis. Renvoie null
+// Insère la valeur brute dans le gabarit écrit par Classinus. Renvoie null
 // (jamais une chaîne vide ou bizarre) si le gabarit est inutilisable, pour
 // déclencher le filet de sécurité chez l'appelant -- gabarit absent, pas
 // une chaîne, ou sans le placeholder {reponse}.
@@ -247,7 +247,7 @@ function remplirGabarit(gabarit: unknown, brute: string): string | null {
 // Transforme la valeur d'édition d'un champ en texte final, prêt à être
 // envoyé comme un message normal de l'étudiant (usage standalone -- voir
 // ChampStandalone dans QuestionInteractive.tsx). Priorité au
-// gabarit_reponse écrit par Clovis (Option A) ; filet de sécurité
+// gabarit_reponse écrit par Classinus (Option A) ; filet de sécurité
 // générique sinon (Option B, "Réponse : ...", validé par Bourama).
 export function formaterReponseChamp(champ: ChampSimple, valeur: ValeurChamp): string {
   const brute = valeurBrute(champ, valeur);
@@ -257,7 +257,7 @@ export function formaterReponseChamp(champ: ChampSimple, valeur: ValeurChamp): s
 
 // Même chose, pour un champ imbriqué dans multi_champs (voir
 // QuestionMultiChamps.tsx). Filet de sécurité différent : la question du
-// champ reste le contexte le plus utile quand Clovis n'a pas fourni de
+// champ reste le contexte le plus utile quand Classinus n'a pas fourni de
 // gabarit_reponse pour ce sous-champ précis (plutôt que "Réponse : ..."
 // générique, ambigu une fois plusieurs sous-réponses combinées).
 export function formaterReponseChampImbrique(champ: ChampSimple, valeur: ValeurChamp): string {

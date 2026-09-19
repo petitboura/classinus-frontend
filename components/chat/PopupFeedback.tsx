@@ -148,7 +148,7 @@ export function PopupFeedback({
         <div className="mt-3 space-y-2">
           <label className="flex items-center gap-2 text-sm text-dj-texte-muet">
             <CaseACocher checked={reponsePartagee} onChange={setReponsePartagee} />
-            Envoyer la réponse de Clovis
+            Envoyer la réponse de Classinus
           </label>
           <label className="flex items-center gap-2 text-sm text-dj-texte-muet">
             <CaseACocher checked={questionPartagee} onChange={setQuestionPartagee} />

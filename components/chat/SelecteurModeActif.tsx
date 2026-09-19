@@ -41,7 +41,7 @@ import {
  * 11/09/2026 (demande Bourama, majeurs uniquement) : une vraie option
  * "Aucun mode" est proposée dans la liste, en plus des rattachements --
  * jusqu'ici impossible à choisir, le sélecteur ne listait que les codes
- * reçus. Choisie, Clovis redevient pour cette conversation exactement
+ * reçus. Choisie, Classinus redevient pour cette conversation exactement
  * comme si l'utilisateur n'avait aucun code (mêmes documents personnels
  * reçus par dossier, tout le reste -- comportements, programme, notes du
  * prof -- ignoré, voir core/mode_actif_conversation.py::MODE_DESACTIVE
@@ -148,7 +148,7 @@ export function SelecteurModeActif({
     const bandeau = (
       <div className="flex items-center gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte-muet shadow-sm">
         <Lock size={13} className="flex-shrink-0" />
-        <span>Entre le code reçu de ton professeur ou établissement pour pouvoir discuter avec Clovis.</span>
+        <span>Entre le code reçu de ton professeur ou établissement pour pouvoir discuter avec Classinus.</span>
       </div>
     );
     return (
@@ -192,7 +192,7 @@ export function SelecteurModeActif({
             >
               <span className="min-w-0">
                 <span className="block truncate">Aucun mode</span>
-                <span className="block truncate text-xs text-dj-texte-muet">Clovis sans code pour cette conversation</span>
+                <span className="block truncate text-xs text-dj-texte-muet">Classinus sans code pour cette conversation</span>
               </span>
               {aucunModeChoisi && <Check size={14} className="flex-shrink-0 text-dj-accent-1-texte" />}
             </button>

@@ -27,20 +27,30 @@ export function extensionCode(href: string): string | null {
 // fichier html") : extensionCode() ci-dessus ne regarde QUE l'extension
 // dans l'URL, jamais son origine -- n'importe quel lien web externe se
 // terminant par .html (fréquent, beaucoup de sites l'utilisent encore),
-// .md, .py, etc. était donc affiché comme un fichier de code Clovis à
+// .md, .py, etc. était donc affiché comme un fichier de code Classinus à
 // dérouler (markup brut, souvent illisible), au lieu d'un aperçu de site
 // normal. Restreint à notre propre stockage (comme estOrigineDeConfiance
 // dans FichierChip.tsx et estNoteTexteBibliotheque dans NoteTexteChip.tsx,
 // dupliqué volontairement ici -- convention du projet, pas de dépendance
 // croisée entre petits composants) : un vrai fichier de code généré par
-// Clovis vient toujours de ce stockage ; un lien externe, même en .html,
+// Classinus vient toujours de ce stockage ; un lien externe, même en .html,
 // retombe désormais sur le comportement normal (LinkPreview) dans
 // BulleMessage.tsx.
+// 18/09/2026 : stockage migré de Supabase vers R2 (clovis-backend,
+// core/stockage_r2.py) -- NEXT_PUBLIC_API_URL ajouté comme origine de
+// confiance en plus de Supabase (anciens fichiers non migrés).
 function estOrigineDeConfiance(href: string): boolean {
   const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!urlSupabase) return false;
+  const urlApi = process.env.NEXT_PUBLIC_API_URL;
+  const originesFiables = [urlSupabase, urlApi].filter(Boolean).map((u) => {
+    try {
+      return new URL(u as string).origin;
+    } catch {
+      return null;
+    }
+  });
   try {
-    return new URL(href).origin === new URL(urlSupabase).origin;
+    return originesFiables.includes(new URL(href).origin);
   } catch {
     return false;
   }

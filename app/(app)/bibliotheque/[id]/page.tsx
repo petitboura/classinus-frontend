@@ -4,13 +4,15 @@ import { FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { SectionPageRetourDepuis } from "@/components/SectionPageRetourDepuis";
 import { ActionsFichierPublic } from "@/components/ActionsFichierPublic";
+import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCatalogue";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
 import { LinkPreview } from "@/components/chat/LinkPreview";
 import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { obtenirEntreeBibliothequePublique, type EntreeBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
-// Chantier "Clovis ouvert" (10/09/2026, demande Bourama : chaque PDF de
+// Chantier "Classinus ouvert" (10/09/2026, demande Bourama : chaque PDF de
 // la bibliothèque publique retrouvable par son nom, indexable par
 // Google, et téléchargeable via un lien propre -- jusqu'ici cette
 // entrée n'existait que dans la liste côté client, aucune URL dédiée).
@@ -60,11 +62,11 @@ async function chargerEntree(id: string): Promise<EntreeBibliothequePublique | n
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const entree = await chargerEntree(params.id);
   if (!entree) {
-    return { title: "Document introuvable · Bibliothèque Clovis" };
+    return { title: "Document introuvable · Bibliothèque Classinus" };
   }
   return {
-    title: `${entree.nom} · Bibliothèque Clovis`,
-    description: entree.description || `Document partagé sur la bibliothèque publique de Clovis : ${entree.nom}.`,
+    title: `${entree.nom} · Bibliothèque Classinus`,
+    description: entree.description || `Document partagé sur la bibliothèque publique de Classinus : ${entree.nom}.`,
     openGraph: {
       title: entree.nom,
       description: entree.description || undefined,
@@ -118,8 +120,8 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
       </p>
     );
     return (
-      <Suspense fallback={<SectionPage title="Document introuvable" retour="/bibliotheque">{messageIntrouvable}</SectionPage>}>
-        <SectionPageRetourDepuis title="Document introuvable" routeParDefaut="/bibliotheque">
+      <Suspense fallback={<SectionPage title="Document introuvable" retour={ROUTES_BIBLIOTHEQUE.publique}>{messageIntrouvable}</SectionPage>}>
+        <SectionPageRetourDepuis title="Document introuvable" routeParDefaut={ROUTES_BIBLIOTHEQUE.publique}>
           {messageIntrouvable}
         </SectionPageRetourDepuis>
       </Suspense>
@@ -184,12 +186,14 @@ export default async function PageEntreeBibliothequePublique({ params }: { param
           <VisionneurPdf url={entree.url_publique} />
         </section>
       )}
+
+      <SectionCommentairesCatalogue typeElement="fichier" elementId={entree.id} />
     </>
   );
 
   return (
-    <Suspense fallback={<SectionPage title={entree.nom} retour="/bibliotheque">{contenu}</SectionPage>}>
-      <SectionPageRetourDepuis title={entree.nom} routeParDefaut="/bibliotheque">
+    <Suspense fallback={<SectionPage title={entree.nom} retour={ROUTES_BIBLIOTHEQUE.publique}>{contenu}</SectionPage>}>
+      <SectionPageRetourDepuis title={entree.nom} routeParDefaut={ROUTES_BIBLIOTHEQUE.publique}>
         {contenu}
       </SectionPageRetourDepuis>
     </Suspense>

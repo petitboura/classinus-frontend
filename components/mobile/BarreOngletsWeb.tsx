@@ -14,7 +14,7 @@ import { Library, Hourglass, MessageCircle, Briefcase, Wand2, type LucideIcon } 
 // Bourama : faire converger vers le natif partout où c'est possible) :
 // les 5 onglets sont désormais identiques à BarreOngletsNative.tsx, même
 // ordre, mêmes icônes (Bibliothèque, Concentration, Chat, Bureau,
-// Personnaliser Clovis). Accueil et Plus, qui occupaient deux onglets
+// Personnaliser Classinus). Accueil et Plus, qui occupaient deux onglets
 // directs ici mais n'existaient pas côté natif, rejoignent le menu Plus
 // unifié (voir MenuHamburgerWeb.tsx, nouveau, même mécanique que le
 // natif, remplace l'ancienne page /plus, désormais une redirection).
@@ -44,7 +44,7 @@ const ONGLETS_WEB: { href: string; label: string; Icone: LucideIcon }[] = [
   { href: "/controle-session", label: "Concentration", Icone: Hourglass },
   { href: "/chat", label: "Chat", Icone: MessageCircle },
   { href: "/bureau", label: "Bureau", Icone: Briefcase },
-  { href: "/personnaliser", label: "Personnaliser Clovis", Icone: Wand2 },
+  { href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2 },
 ];
 
 export function BarreOngletsWeb() {

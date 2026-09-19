@@ -30,7 +30,7 @@ export function PopupExplorationDossier() {
       className="fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] left-1/2 z-40 flex -translate-x-1/2 animate-dj-fade-in-rapide items-center gap-2 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-sm text-dj-texte shadow-[0_4px_20px_rgba(0,0,0,0.35)]"
     >
       <FolderSearch size={16} className="flex-shrink-0 animate-pulse text-dj-accent-1" />
-      Clovis explore {dossierNom}…
+      Classinus explore {dossierNom}…
     </div>
   );
 }

@@ -7,10 +7,9 @@
 // executer_action_application, et n'utiliser ce mode qu'en dernier
 // recours (rappelé dans le docstring de l'outil côté backend).
 //
-// Contrairement au chantier A, aucune métadonnée de sensibilité n'est
-// déclarée ici : par cohérence avec le défaut prudent décidé avec
-// Bourama, un clic générique est TOUJOURS considéré sensible, sans
-// exception (voir lib/canalAgentApplicatif.ts).
+// Depuis le 19/09/2026 (décision Bourama), aucune confirmation n'est
+// demandée avant un clic : l'exécution est directe (voir
+// lib/canalAgentApplicatif.ts).
 
 /**
  * Vrai si l'élément est réellement visible et actionnable à l'instant

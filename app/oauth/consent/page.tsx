@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/Skeleton";
 /**
  * Écran de consentement OAuth 2.1 (voir Authentication > OAuth Server dans
  * le tableau de bord Supabase). Quand un client MCP externe (ex. Claude)
- * demande l'accès au compte d'un utilisateur Clovis, Supabase Auth
+ * demande l'accès au compte d'un utilisateur Classinus, Supabase Auth
  * redirige l'utilisateur ICI avec un paramètre `authorization_id`, avant
  * de renvoyer le contrôle au client externe une fois la décision prise.
  *
@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/Skeleton";
  * /connexion avec un retour vers cette page (même `authorization_id`), et
  * on revient ici automatiquement après connexion.
  *
- * IMPORTANT (branding Clovis) : cette page ne doit jamais mentionner
+ * IMPORTANT (branding Classinus) : cette page ne doit jamais mentionner
  * "Djiguignè" -- voir README section identité produit. Seul le nom
  * du client OAuth (ex. "Claude"), fourni par Supabase, est affiché.
  */
@@ -64,7 +64,7 @@ export default function PageConsentementOAuth() {
           <div className="w-full max-w-sm" aria-hidden>
             <div className="mb-8 flex items-center justify-center gap-2.5">
               <Logo taille={32} />
-              <span className="font-display text-lg font-bold tracking-tight text-dj-texte">Clovis</span>
+              <span className="font-display text-lg font-bold tracking-tight text-dj-texte">Classinus</span>
             </div>
             <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">
               <Skeleton className="h-6 w-3/4 rounded-lg" />
@@ -163,7 +163,7 @@ function EcranConsentement() {
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <Logo taille={32} />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
-            Clovis
+            Classinus
           </span>
         </div>
 
@@ -213,7 +213,7 @@ function EcranConsentement() {
                 Autoriser {nomClient} ?
               </h1>
               <p className="mt-2 text-sm text-dj-texte-muet">
-                {nomClient} demande à accéder à votre compte Clovis.
+                {nomClient} demande à accéder à votre compte Classinus.
               </p>
 
               {scopes.length > 0 && (

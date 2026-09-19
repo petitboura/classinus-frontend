@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Folder as IconDossier,
   FolderPlus,
@@ -93,20 +93,51 @@ export function EspaceDossiers() {
 
   const dossierCourant = pile[pile.length - 1] ?? null;
 
+  // 19/09/2026, correctif Bourama ("corrige le partout" -- même défaut
+  // que celui trouvé et corrigé dans la bibliothèque publique, voir
+  // BibliothequePublique.tsx) : rafraichir() remettait TOUJOURS
+  // `chargement` à true avant de recharger, y compris en revenant sur un
+  // dossier du téléphone déjà consulté dans la session -- le skeleton
+  // réapparaissait donc à chaque navigation. Même principe de cache que
+  // côté bibliothèque publique : le dernier contenu connu de chaque
+  // dossier (clé = son uri, "__racine__" pour la liste des dossiers
+  // désignés) s'affiche tout de suite en le rouvrant, pendant qu'une
+  // requête fraîche part quand même en arrière-plan.
+  const cacheDossiersDesignesRef = useRef<DossierDesigne[] | null>(null);
+  const cacheElementsRef = useRef<Map<string, ElementDossier[]>>(new Map());
+
   const rafraichir = useCallback(() => {
     if (!plugin) return;
-    setChargement(true);
     setErreur(null);
     if (!dossierCourant) {
+      if (cacheDossiersDesignesRef.current) {
+        setDossiersDesignes(cacheDossiersDesignesRef.current);
+        setChargement(false);
+      } else {
+        setChargement(true);
+      }
       plugin
         .listerDossiersDesignes()
-        .then((r) => setDossiersDesignes(r.dossiers))
+        .then((r) => {
+          cacheDossiersDesignesRef.current = r.dossiers;
+          setDossiersDesignes(r.dossiers);
+        })
         .catch((e) => setErreur(messageErreurPlugin(e)))
         .finally(() => setChargement(false));
     } else {
+      const enCache = cacheElementsRef.current.get(dossierCourant.uri);
+      if (enCache) {
+        setElements(enCache);
+        setChargement(false);
+      } else {
+        setChargement(true);
+      }
       plugin
         .listerContenu({ uri: dossierCourant.uri })
-        .then((r) => setElements(r.elements))
+        .then((r) => {
+          cacheElementsRef.current.set(dossierCourant.uri, r.elements);
+          setElements(r.elements);
+        })
         .catch((e) => setErreur(messageErreurPlugin(e)))
         .finally(() => setChargement(false));
     }
@@ -732,14 +763,31 @@ function PickerDeplacement({
 
   const courant = pile[pile.length - 1] ?? null;
 
+  // 19/09/2026, correctif Bourama ("corrige le partout") : même défaut
+  // que rafraichir() plus haut dans ce fichier -- garde le dernier
+  // contenu connu par dossier (clé = son uri) pour ne plus remontrer le
+  // skeleton en revenant sur un dossier déjà ouvert PENDANT cette
+  // utilisation du sélecteur (vidé à chaque nouvelle ouverture du
+  // sélecteur, comme `items`/`pile` eux-mêmes).
+  const cacheItemsRef = useRef<Map<string, { uri: string; nom: string }[]>>(new Map());
+
   useEffect(() => {
     if (!plugin) return;
-    setChargement(true);
+    const cle = courant?.uri ?? "__racine__";
+    const enCache = cacheItemsRef.current.get(cle);
+    if (enCache) {
+      setItems(enCache);
+      setChargement(false);
+    } else {
+      setChargement(true);
+    }
     const requete = courant ? plugin.listerContenu({ uri: courant.uri }) : plugin.listerDossiersDesignes();
     requete
       .then((r) => {
         const liste = "dossiers" in r ? r.dossiers : r.elements.filter((e) => e.estDossier);
-        setItems(liste.filter((d) => !exclureUris.includes(d.uri)));
+        const filtree = liste.filter((d) => !exclureUris.includes(d.uri));
+        cacheItemsRef.current.set(cle, filtree);
+        setItems(filtree);
       })
       .finally(() => setChargement(false));
   }, [plugin, courant, exclureUris]);

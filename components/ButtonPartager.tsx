@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Share2 } from "lucide-react";
+import { incrementerPartageCatalogue, type TypeElementCataloguePublic } from "@/lib/api";
 
 /**
  * 11/09/2026, demande Bourama : bouton "Partager" commun, réutilisé
@@ -26,8 +27,23 @@ import { Share2 } from "lucide-react";
  * you mean to call it instead?", suivi d'un TS2339 en cascade sur
  * `navigator.clipboard`). Constaté et corrigé le jour même après un
  * premier échec de build.
+ *
+ * 18/09/2026, `compterPartage` (optionnel, sur les deux fonctions
+ * ci-dessous) : chantier "profil contributeur bibliotheque publique",
+ * demande Bourama ("ces boutons ne servent qu'à partager rien d'autre,
+ * donc il doit les compter rien d'autre") -- incrémente partages_count
+ * pour un élément du catalogue PUBLIC uniquement (jamais pour la
+ * bibliothèque perso, qui n'a pas ce compteur). Fire-and-forget : ne
+ * doit jamais retarder ni faire échouer le partage lui-même.
  */
-export async function partagerOuCopierLien(lien: string, titre?: string) {
+export async function partagerOuCopierLien(
+  lien: string,
+  titre?: string,
+  compterPartage?: { typeElement: TypeElementCataloguePublic; elementId: string }
+) {
+  if (compterPartage) {
+    incrementerPartageCatalogue(compterPartage.typeElement, compterPartage.elementId).catch(() => {});
+  }
   if (typeof navigator !== "undefined" && navigator.share) {
     try {
       await navigator.share({ title: titre, url: lien });
@@ -48,18 +64,24 @@ export function ButtonPartager({
   titre,
   variante = "texte",
   className = "",
+  compterPartage,
 }: {
   lien: string;
   titre?: string;
   /** "texte" : bouton avec libellé (listes/panneaux). "icone" : simple icône (lignes compactes). */
   variante?: "texte" | "icone";
   className?: string;
+  /** Catalogue public uniquement, voir docstring plus haut. */
+  compterPartage?: { typeElement: TypeElementCataloguePublic; elementId: string };
 }) {
   const [copie, setCopie] = useState(false);
 
   async function partager(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
+    if (compterPartage) {
+      incrementerPartageCatalogue(compterPartage.typeElement, compterPartage.elementId).catch(() => {});
+    }
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title: titre, url: lien });

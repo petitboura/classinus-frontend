@@ -263,7 +263,7 @@ export async function listerBibliothequePersonnelle() {
 export type ResultatDiffusion = { diffuse_a: number; total_receveurs: number; echecs: string[] };
 // MonRole/lireMonRole/diffuserDocumentEtablissement/diffuserLien/
 // listerMesDiffusions retirés le 09/08 (demande Bourama : plus de rôle
-// pour Clovis) -- voir plus bas dans ce fichier les nouvelles
+// pour Classinus) -- voir plus bas dans ce fichier les nouvelles
 // fonctions basées sur /api/agents/clovis/contenus-matiere et
 // /rattachements (contenu dynamique par matière, système déjà existant
 // et partagé avec Djiguignè, pas de vérification de rôle dessus).
@@ -415,6 +415,11 @@ export type EntreeBibliothequePublique = {
   // plus bas -- une étoile par personne, seul le total compte.
   etoiles_count?: number;
   mon_etoile?: boolean;
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 8 : id du contributeur, pour le bouton "détails" -> popup
+  // profil (voir ProfilPublicModal.tsx). Soumis à profil_public côté
+  // profil visé, jamais l'id d'un tiers exposé sans ce garde-fou.
+  ajoute_par?: string | null;
 };
 
 // 03/09/2026, demande Bourama : filtres pays/niveau/catégorie en plus de
@@ -453,7 +458,23 @@ export type FiltresPublicationBibliothequePublique = {
 // dossier/skill), voir POST /api/etoiles-catalogue-public/basculer
 // côté backend. Toggle : ajoute l'étoile de cet utilisateur si elle
 // n'y est pas encore, la retire sinon.
-export type TypeElementCataloguePublic = "fichier" | "dossier" | "skill";
+// 18/09/2026, étape 13 : "clovis" ajouté pour les avis sur Classinus
+// lui-même (commentaires + étoiles UNIQUEMENT, voir
+// core/etoiles_catalogue_public.py et
+// core/commentaires_catalogue_public.py -- pas de CTA/partages pour ce
+// type, hors scope de l'étape 13, core/compteurs_catalogue_public.py
+// n'a pas été touché).
+export type TypeElementCataloguePublic = "fichier" | "dossier" | "skill" | "clovis";
+
+// L'unique ligne de clovis_infos (voir api/clovis_infos.py côté
+// backend) -- doit rester synchronisée avec ID_CLOVIS là-bas.
+export const ID_ELEMENT_CLOVIS = "00000000-0000-0000-0000-000000000001";
+
+export type ClovisInfos = { etoiles_count: number; mon_etoile: boolean };
+
+export async function obtenirInfosClovis() {
+  return appelerApi("/api/clovis-infos") as Promise<ClovisInfos>;
+}
 
 export async function basculerEtoileCatalogue(typeElement: TypeElementCataloguePublic, elementId: string) {
   const resultat = await appelerApi("/api/etoiles-catalogue-public/basculer", {
@@ -461,6 +482,103 @@ export async function basculerEtoileCatalogue(typeElement: TypeElementCatalogueP
     body: JSON.stringify({ type_element: typeElement, element_id: elementId }),
   });
   return resultat as { etoile: boolean; etoiles_count: number };
+}
+
+// 18/09/2026, chantier "profil contributeur bibliotheque publique",
+// étapes 6/7/9 : compteurs bruts (partages, CTA) et lecture agrégée en
+// lot pour l'analytique affichée sur chaque carte. Best-effort côté
+// appelant -- ces deux incréments ne doivent jamais faire échouer
+// l'action utilisateur (partager/discuter avec l'IA), voir usages dans
+// ButtonPartager.tsx et BoutonAvecIA.tsx.
+export async function incrementerCtaCatalogue(typeElement: TypeElementCataloguePublic, elementId: string) {
+  const resultat = await appelerApi("/api/compteurs-catalogue-public/cta", {
+    method: "POST",
+    body: JSON.stringify({ type_element: typeElement, element_id: elementId }),
+  });
+  return resultat as { total: number };
+}
+
+export async function incrementerPartageCatalogue(typeElement: TypeElementCataloguePublic, elementId: string) {
+  const resultat = await appelerApi("/api/compteurs-catalogue-public/partages", {
+    method: "POST",
+    body: JSON.stringify({ type_element: typeElement, element_id: elementId }),
+  });
+  return resultat as { total: number };
+}
+
+export type CompteursCatalogue = {
+  partages_count: number;
+  etoiles_count: number;
+  cta_count: number;
+  enregistrements_count: number;
+};
+
+// Un seul appel pour toute une page de cartes (note performance étape
+// 7 du chantier) -- jamais un appel par carte. La clé de retour est
+// "type_element:id", voir core/analytique_catalogue_public.py.
+export async function analytiqueCatalogueEnLot(elements: { typeElement: TypeElementCataloguePublic; id: string }[]) {
+  if (elements.length === 0) return {} as Record<string, CompteursCatalogue>;
+  const resultat = await appelerApi("/api/analytique-catalogue-public/lot", {
+    method: "POST",
+    body: JSON.stringify({ elements: elements.map((e) => ({ type_element: e.typeElement, id: e.id })) }),
+  });
+  return resultat as Record<string, CompteursCatalogue>;
+}
+
+// 18/09/2026, même chantier, étapes 4/8 : profil public d'un
+// contributeur (bio/nom/photo), vide si la personne n'a pas activé son
+// profil public -- voir GET /api/profiles/{user_id} côté backend
+// (réutilise l'endpoint existant de "Mon espace", pas de nouvelle
+// route). Le popup (étape 8) n'affiche que les 4 champs ci-dessous.
+export type ProfilPublicContributeur = {
+  user_id: string;
+  nom_affiche: string;
+  bio: string;
+  avatar_url: string | null;
+  profil_public: boolean;
+};
+
+export async function lireProfilPublicContributeur(userId: string) {
+  const resultat = await appelerApi(`/api/profiles/${userId}`);
+  return resultat as ProfilPublicContributeur;
+}
+
+// Commentaires sur un élément du catalogue public (étape 5/10).
+export type CommentaireCatalogue = {
+  id: string;
+  contenu: string;
+  created_at: string;
+  utilisateur_id: string;
+  auteur_nom: string;
+  auteur_avatar_url: string | null;
+};
+
+export async function listerCommentairesCatalogue(
+  typeElement: TypeElementCataloguePublic,
+  elementId: string,
+  decalage = 0,
+  limite = 20
+) {
+  const resultat = await appelerApi(
+    `/api/commentaires-catalogue-public/${typeElement}/${elementId}?decalage=${decalage}&limite=${limite}`
+  );
+  return resultat as { commentaires: CommentaireCatalogue[]; total: number };
+}
+
+export async function creerCommentaireCatalogue(
+  typeElement: TypeElementCataloguePublic,
+  elementId: string,
+  contenu: string
+) {
+  const resultat = await appelerApi("/api/commentaires-catalogue-public", {
+    method: "POST",
+    body: JSON.stringify({ type_element: typeElement, element_id: elementId, contenu }),
+  });
+  return resultat as CommentaireCatalogue;
+}
+
+export async function supprimerCommentaireCatalogue(commentaireId: string) {
+  return appelerApi(`/api/commentaires-catalogue-public/${commentaireId}`, { method: "DELETE" });
 }
 
 export async function listerBibliothequePublique(q?: string, filtres?: FiltresBibliothequePublique) {
@@ -479,7 +597,7 @@ export async function listerBibliothequePublique(q?: string, filtres?: FiltresBi
   return resultat as EntreeBibliothequePublique[];
 }
 
-// 10/09/2026, chantier "Clovis ouvert" (demande Bourama : chaque PDF de
+// 10/09/2026, chantier "Classinus ouvert" (demande Bourama : chaque PDF de
 // la bibliothèque publique retrouvable par son nom et téléchargeable via
 // un lien propre) -- détail d'une seule entrée, pour /bibliotheque/[id]
 // (page publique, y compris generateMetadata côté serveur). Lance une
@@ -706,7 +824,7 @@ export async function listerDossiersCataloguePublic() {
   return appelerApi("/api/bibliotheque-publique/dossiers") as Promise<DossierCataloguePublic[]>;
 }
 
-// 10/09/2026, chantier "Clovis ouvert" -- détail public d'un seul dossier
+// 10/09/2026, chantier "Classinus ouvert" -- détail public d'un seul dossier
 // (aucune auth requise, contrairement à listerDossiersCataloguePublic
 // ci-dessus), pour /dossiers/[id] (page publique, generateMetadata côté
 // serveur). Lance une ErreurApi(404) si le dossier n'existe pas, voir
@@ -1170,6 +1288,21 @@ export async function demarrerConnexion(service: string, agentId?: string) {
 }
 
 /**
+ * Termine une connexion à une application : appelée par la page de retour
+ * (app/oauth/retour/page.tsx) avec le code et le state que le fournisseur a
+ * ajoutés à l'adresse. Le service n'est pas à préciser, le serveur le
+ * retrouve grâce au state. Un échec de connexion (code expiré, refus) revient
+ * avec succes à false et un message, sans lever d'erreur : la page l'affiche.
+ */
+export async function finaliserConnexion(code: string, state: string) {
+  const resultat = await appelerApi("/api/connexions/finaliser", {
+    method: "POST",
+    body: JSON.stringify({ code, state }),
+  });
+  return resultat as { succes: boolean; message: string; service: string | null };
+}
+
+/**
  * Liste les dépôts GitHub (publics et privés) de la personne connectée --
  * voir api/connexions.py:depots_github, utilisé par le sélecteur de dépôt
  * dans BarreDeSaisie.tsx. Voir demarrerConnexion ci-dessus pour la même
@@ -1234,7 +1367,7 @@ export async function creerPageNotion(titre: string, contenu: string) {
 }
 
 /**
- * Contenu dynamique par matière -- agent "Clovis" (06/08/2026, demande
+ * Contenu dynamique par matière -- agent "Classinus" (06/08/2026, demande
  * Bourama). Voir djiguigne-backend/api/contenu_dynamique_matiere.py.
  * "Enseignant" et "étudiant" ici ne sont pas des rôles de compte : ce
  * sont juste les deux rôles qu'on joue sur CET agent précis en écrivant
@@ -1242,7 +1375,7 @@ export async function creerPageNotion(titre: string, contenu: string) {
  * peut faire les deux. Fonctions ci-dessous ajoutées le 09/08 (le bloc
  * repris tel quel de djiguigne-frontend au bootstrap du projet n'avait
  * jamais été câblé nulle part, retiré) -- toujours agent_id="clovis"
- * en dur, Clovis n'ayant qu'une seule IA (contrairement à
+ * en dur, Classinus n'ayant qu'une seule IA (contrairement à
  * djiguigne-frontend, générique sur plusieurs agents).
  */
 
@@ -1326,7 +1459,7 @@ export async function rechercherComportementsPublics(q?: string) {
   return resultat as ComportementPublic[];
 }
 
-// 10/09/2026, chantier "Clovis ouvert" -- détail d'un seul skill public,
+// 10/09/2026, chantier "Classinus ouvert" -- détail d'un seul skill public,
 // pour /skills/[id] (page publique, generateMetadata côté serveur).
 // Lance une ErreurApi(404) si le skill n'existe pas ou a été retiré par
 // son auteur, voir GET /api/comportements-publics/{id} côté backend.
@@ -1531,6 +1664,10 @@ export async function enregistrerMonProfil(payload: {
   popup_chat_y?: number;
   popup_chat_largeur?: number;
   popup_chat_hauteur?: number;
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11 : conditionne l'affichage de bio/nom/photo à un visiteur
+  // externe (voir api/profiles.py::obtenir_profil_public).
+  profil_public?: boolean;
 }) {
   return appelerApi("/api/profiles/me", {
     method: "PATCH",
@@ -1920,7 +2057,7 @@ export async function listerReceveurs(contenuId: string) {
 
 /** Diffuse un fichier à tous ceux qui ont entré mon code pour ce
  * contenu_id -- ajouté à la bibliothèque personnelle de chacun, pas à
- * la base partagée de Clovis. */
+ * la base partagée de Classinus. */
 export async function diffuserDocumentMatiere(
   contenuId: string,
   fichier: File,
@@ -2096,7 +2233,7 @@ export async function obtenirUsage(jours = 7) {
 
 // 02/09/2026, Bourama : centre de notifications (bouton cloche, header,
 // web + mobile). Voir api/notifications.py côté backend -- ne couvre
-// que les 4 nouveaux types Clovis (rappel_echu, action_ia_terminee,
+// que les 4 nouveaux types Classinus (rappel_echu, action_ia_terminee,
 // document_recu_code, message_systeme), pas les anciens types de la
 // table (follow/comment/rating/...), laissés de côté pour l'instant.
 export type NotificationClovis = {

@@ -3,11 +3,13 @@ import Link from "next/link";
 import { Folder, FileText, Link as IconLien } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { ActionsDossierPublic } from "@/components/ActionsDossierPublic";
+import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCatalogue";
 import { StatistiquesContenuDossier } from "@/components/StatistiquesContenuDossier";
 import { obtenirDossierCataloguePublic, listerBibliothequePublique } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
-// Chantier "Clovis ouvert" (10/09/2026, Lot E) : même principe que les
+// Chantier "Classinus ouvert" (10/09/2026, Lot E) : même principe que les
 // lots précédents. Server Component pour generateMetadata + premier
 // rendu HTML non vide.
 //
@@ -35,11 +37,11 @@ async function chargerDossier(id: string) {
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const dossier = await chargerDossier(params.id);
   if (!dossier) {
-    return { title: "Dossier introuvable · Bibliothèque Clovis" };
+    return { title: "Dossier introuvable · Bibliothèque Classinus" };
   }
   return {
-    title: `${dossier.nom} · Bibliothèque Clovis`,
-    description: dossier.description || `Dossier de la bibliothèque publique Clovis : ${dossier.nom}.`,
+    title: `${dossier.nom} · Bibliothèque Classinus`,
+    description: dossier.description || `Dossier de la bibliothèque publique Classinus : ${dossier.nom}.`,
     openGraph: {
       title: dossier.nom,
       description: dossier.description || undefined,
@@ -53,7 +55,7 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
 
   if (!dossier) {
     return (
-      <SectionPage title="Dossier introuvable" retour="/bibliotheque">
+      <SectionPage title="Dossier introuvable" retour={ROUTES_BIBLIOTHEQUE.publique}>
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce dossier est introuvable sur la bibliothèque publique.
         </p>
@@ -73,7 +75,7 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
   }
 
   return (
-    <SectionPage title={dossier.nom} retour={dossier.dossier_parent_id ? `/dossiers/${dossier.dossier_parent_id}` : "/bibliotheque"}>
+    <SectionPage title={dossier.nom} retour={dossier.dossier_parent_id ? `/dossiers/${dossier.dossier_parent_id}` : ROUTES_BIBLIOTHEQUE.publique}>
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-center gap-2">
           <Folder size={18} className="flex-shrink-0 text-dj-accent-1" />
@@ -149,6 +151,8 @@ export default async function PageDossierCataloguePublic({ params }: { params: {
           )}
         </section>
       )}
+
+      <SectionCommentairesCatalogue typeElement="dossier" elementId={dossier.id} />
     </SectionPage>
   );
 }

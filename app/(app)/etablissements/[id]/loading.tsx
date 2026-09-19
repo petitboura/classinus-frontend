@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/Skeleton";
 
-// Skeleton de la route (10/09/2026, Lot C "Clovis ouvert") : même forme
+// Skeleton de la route (10/09/2026, Lot C "Classinus ouvert") : même forme
 // que le skeleton déjà présent dans EtablissementDetail.tsx pour son
 // propre chargement client -- celui-ci ne couvre que la toute première
 // fraction de seconde avant que le Server Component ne rende la page.

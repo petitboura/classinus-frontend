@@ -1,19 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, ScrollText, Download, Check, Upload, Plus, Loader2, Trash2 } from "lucide-react";
+import { Search, ScrollText, Download, Check, Upload, Plus, Trash2, Activity } from "lucide-react";
 import {
   rechercherComportementsPublics,
   activerComportementPublic,
   uploaderSkillPublic,
   retirerSkillPublic,
+  analytiqueCatalogueEnLot,
   type ComportementPublic,
+  type CompteursCatalogue,
 } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { telechargerTexte, nomFichierDepuis } from "@/lib/telechargerTexte";
 import { Skeleton } from "./Skeleton";
 import { VoirSkillRecuModal } from "@/components/VoirSkillRecuModal";
+import { ProfilPublicModal } from "@/components/ProfilPublicModal";
+import { MenuActionsCarte } from "@/components/MenuActionsCarte";
 import { lienPartage } from "@/components/ButtonPartager";
 import { BulleSurvol } from "@/components/BulleSurvol";
 import { BoutonEtoile } from "@/components/BoutonEtoile";
@@ -44,6 +48,19 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   // retrait possible pour son propre auteur (aucun des deux n'existait).
   const [apercu, setApercu] = useState<ComportementPublic | null>(null);
   const [retraitEnCours, setRetraitEnCours] = useState<string | null>(null);
+  // 19/09/2026 (correctif, demande Bourama) : même principe "Détails"
+  // (analytiques + profil contributeur + commentaires) déjà appliqué aux
+  // fichiers/dossiers de BibliothequePublique.tsx, mais oublié côté
+  // skills publics jusqu'ici -- voir ProfilPublicModal.tsx. Pas de
+  // `userId` disponible sur ComportementPublic (pas de champ
+  // auteur/contributeur exposé par l'API pour les skills), donc la
+  // section profil sera simplement absente (ProfilPublicModal gère déjà
+  // ce cas), seules les analytiques + les commentaires apparaissent.
+  const [analytiqueCatalogue, setAnalytiqueCatalogue] = useState<Record<string, CompteursCatalogue>>({});
+  const [profilOuvert, setProfilOuvert] = useState<{
+    compteurs?: CompteursCatalogue;
+    element: { typeElement: "skill"; elementId: string };
+  } | null>(null);
 
   function charger(q?: string) {
     rechercherComportementsPublics(q)
@@ -60,6 +77,21 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recherche]);
+
+  // 19/09/2026 : même pattern que BibliothequePublique.tsx (étape 9) --
+  // un seul appel en lot pour toute la liste affichée, jamais un appel
+  // par carte. Dépendance sur une clé texte stable plutôt que le
+  // tableau `liste` lui-même (recréé à chaque rendu).
+  const idsAnalytiqueSkills = (liste ?? []).map((c) => c.id).join(",");
+
+  useEffect(() => {
+    if (!idsAnalytiqueSkills) return;
+    const elements = idsAnalytiqueSkills.split(",").map((id) => ({ typeElement: "skill" as const, id }));
+    analytiqueCatalogueEnLot(elements)
+      .then((res) => setAnalytiqueCatalogue((prev) => ({ ...prev, ...res })))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsAnalytiqueSkills]);
 
   async function activer(c: ComportementPublic) {
     if (activationEnCours) return;
@@ -373,47 +405,48 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
                     )
                   }
                 />
-                {c.est_a_moi && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      retirer(c);
-                    }}
-                    disabled={retraitEnCours === c.id}
-                    title="Retirer du catalogue public"
-                    className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-[var(--dj-erreur)] hover:text-[var(--dj-erreur)] disabled:opacity-60"
-                  >
-                    {retraitEnCours === c.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                  </button>
-                )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    activer(c);
-                  }}
-                  disabled={activationEnCours === c.id || dejaActive}
-                  className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-60"
-                >
-                  {dejaActive ? (
-                    <>
-                      <Check size={13} /> Activé
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={13} /> {activationEnCours === c.id ? "Activation…" : "Activer"}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    telechargerSkill(c);
-                  }}
-                  title="Télécharger en .md"
-                  className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
-                >
-                  <Download size={13} />
-                </button>
+                <MenuActionsCarte
+                  ariaLabel={`Actions pour ${c.nom}`}
+                  actions={[
+                    {
+                      cle: "activer",
+                      label: dejaActive ? "Activé" : activationEnCours === c.id ? "Activation…" : "Activer ce skill",
+                      icone: dejaActive ? <Check size={14} /> : <Plus size={14} />,
+                      onClick: () => activer(c),
+                    },
+                    {
+                      cle: "telecharger",
+                      label: "Télécharger (.md)",
+                      icone: <Download size={14} />,
+                      onClick: () => telechargerSkill(c),
+                    },
+                    // 19/09/2026, même principe "Détails" que fichiers/dossiers
+                    // (voir ProfilPublicModal.tsx plus haut) -- analytiques +
+                    // commentaires ici, pas de section profil (pas de champ
+                    // contributeur exposé pour les skills publics).
+                    {
+                      cle: "details",
+                      label: "Activité",
+                      icone: <Activity size={14} />,
+                      onClick: () =>
+                        setProfilOuvert({
+                          compteurs: analytiqueCatalogue[`skill:${c.id}`],
+                          element: { typeElement: "skill", elementId: c.id },
+                        }),
+                    },
+                    ...(c.est_a_moi
+                      ? [
+                          {
+                            cle: "retirer",
+                            label: "Retirer du catalogue public",
+                            icone: <Trash2 size={14} />,
+                            destructif: true,
+                            onClick: () => retirer(c),
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
               </div>
             );
           })}
@@ -431,7 +464,15 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
             `Utilise l'outil gerer_comportement_public (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
             `puis discutons-en ensemble.`
           }
+          compterCatalogue={{ typeElement: "skill", elementId: apercu.id }}
           onFermer={() => setApercu(null)}
+        />
+      )}
+      {profilOuvert && (
+        <ProfilPublicModal
+          compteurs={profilOuvert.compteurs}
+          element={profilOuvert.element}
+          onFermer={() => setProfilOuvert(null)}
         />
       )}
     </div>

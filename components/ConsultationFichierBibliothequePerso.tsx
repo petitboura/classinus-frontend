@@ -13,6 +13,7 @@ import { TexteAvecLiens } from "@/components/TexteAvecLiens";
 import { Skeleton } from "@/components/Skeleton";
 import { obtenirFichierBibliothequeConsultation, type FichierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
 /**
  * 11/09/2026, demande Bourama : lien de partage direct pour un fichier
@@ -63,7 +64,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
 
   if (erreur) {
     return (
-      <SectionPage title="Document partagé" retour="/bibliotheque">
+      <SectionPage title="Document partagé" retour={ROUTES_BIBLIOTHEQUE.perso}>
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">{erreur}</p>
       </SectionPage>
     );
@@ -71,7 +72,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
 
   if (fichier === undefined) {
     return (
-      <SectionPage title="Document partagé" retour="/bibliotheque">
+      <SectionPage title="Document partagé" retour={ROUTES_BIBLIOTHEQUE.perso}>
         <Skeleton className="h-32 w-full rounded-cgpt-carte" />
       </SectionPage>
     );
@@ -79,7 +80,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
 
   if (fichier === null) {
     return (
-      <SectionPage title="Document introuvable" retour="/bibliotheque">
+      <SectionPage title="Document introuvable" retour={ROUTES_BIBLIOTHEQUE.perso}>
         <p className="rounded-xl border border-dashed border-dj-bordure px-3 py-4 text-center text-xs text-dj-texte-muet">
           Ce document est introuvable, ou a été supprimé par son propriétaire.
         </p>
@@ -94,7 +95,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
   const estLien = fichier.type_mime === "text/uri-list";
 
   return (
-    <SectionPage title={fichier.nom_fichier} retour="/bibliotheque">
+    <SectionPage title={fichier.nom_fichier} retour={ROUTES_BIBLIOTHEQUE.perso}>
       <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -140,7 +141,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
         )}
 
         <div className="mt-4">
-          <SuggestionCompte texte="Crée un compte Clovis pour retrouver tes propres documents." />
+          <SuggestionCompte texte="Crée un compte Classinus pour retrouver tes propres documents." />
         </div>
       </section>
 

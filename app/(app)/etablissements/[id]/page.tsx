@@ -3,8 +3,9 @@ import { SectionPage } from "@/components/SectionPage";
 import { EtablissementDetail } from "@/components/EtablissementDetail";
 import { obtenirEtablissement } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
+import { ROUTES_BUREAU } from "@/lib/routesBureau";
 
-// Chantier "Clovis ouvert" (10/09/2026, Lot C) : cette route dynamique
+// Chantier "Classinus ouvert" (10/09/2026, Lot C) : cette route dynamique
 // existait déjà, mais sans generateMetadata (titre/description invisibles
 // pour Google et les partages de lien) ni generateStaticParams. Le
 // contenu affiché à l'écran (EtablissementDetail) reste inchangé --
@@ -29,8 +30,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   try {
     const etablissement = await obtenirEtablissement(params.id);
     return {
-      title: `${etablissement.nom} · Établissements Clovis`,
-      description: etablissement.description || `Fiche établissement Clovis : ${etablissement.nom}.`,
+      title: `${etablissement.nom} · Établissements Classinus`,
+      description: etablissement.description || `Fiche établissement Classinus : ${etablissement.nom}.`,
       openGraph: {
         title: etablissement.nom,
         description: etablissement.description || undefined,
@@ -39,15 +40,15 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     };
   } catch (e) {
     if (e instanceof ErreurApi && e.statusCode === 404) {
-      return { title: "Établissement introuvable · Clovis" };
+      return { title: "Établissement introuvable · Classinus" };
     }
-    return { title: "Établissement · Clovis" };
+    return { title: "Établissement · Classinus" };
   }
 }
 
 export default function PageEtablissement({ params }: { params: { id: string } }) {
   return (
-    <SectionPage title="Établissement" retour="/etablissements">
+    <SectionPage title="Établissement" retour={ROUTES_BUREAU.etablissements}>
       <EtablissementDetail etablissementId={params.id} />
     </SectionPage>
   );

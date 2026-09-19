@@ -146,7 +146,17 @@ function origineDe(f: FichierBiblio): OrigineOnglet {
   return "privee";
 }
 
-export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: string } = {}) {
+// `sansOnglets` (19/09/2026, demande Bourama : la Bibliothèque fonctionne
+// comme Personnaliser Clovis) : sur la vraie page /bibliotheque/perso, le
+// choix entre Perso, Publique et Dossiers du téléphone se fait désormais
+// par de vraies pages voisines (voir lib/sectionsBibliotheque.tsx), donc
+// la rangée d'onglets interne n'a plus à s'afficher et le composant reste
+// sur la vue Perso. Absent (fenêtre flottante du chat, Mes codes) : le
+// comportement d'avant est inchangé, onglets internes compris.
+export function EspaceBibliotheque({
+  dossierInitialId,
+  sansOnglets = false,
+}: { dossierInitialId?: string; sansOnglets?: boolean } = {}) {
   // 21/08/2026, demande Bourama : "un bibliothèque publique dans la
   // section bibliothèque" -- bascule entre la bibliothèque perso
   // (comportement par défaut, inchangé ci-dessous) et le catalogue
@@ -215,7 +225,7 @@ export function EspaceBibliotheque({ dossierInitialId }: { dossierInitialId?: st
   // mobile, PAS dans l'app native Capacitor (limite de la plateforme,
   // pas du code -- pas de plugin natif dédié pour l'instant, décision de
   // Bourama). L'arborescence exacte du dossier importé (sous-dossiers
-  // compris) est recréée dans Clovis -- voir envoyerDossierDirect plus
+  // compris) est recréée dans Classinus -- voir envoyerDossierDirect plus
   // bas pour le détail et son historique de correctifs.
   //
   // 30/08/2026, audit navigation web mobile vs natif, étape 3 : le bouton
@@ -939,20 +949,22 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           voir OngletsSegment.tsx pour le détail. Fusion Dossiers du
           téléphone (26/08/2026, décision Bourama) : même plugin natif que
           la bibliothèque perso/publique mais source différente (SAF
-          système, pas les fichiers Clovis), voir /areas/clovis.md. Le
+          système, pas les fichiers Classinus), voir /areas/clovis.md. Le
           composant lui-même gère déjà son état "disponible seulement sur
           mobile" (usePluginNatif), donc pas de logique conditionnelle à
           dupliquer ici. */}
-      <OngletsSegment
-        ariaLabel="Section de la bibliothèque"
-        valeur={vue}
-        onChange={(v) => setVue(v as typeof vue)}
-        onglets={[
-          { valeur: "perso", libelle: "Perso" },
-          { valeur: "publique", libelle: "Publique" },
-          { valeur: "dossiers", libelle: "Dossiers du téléphone" },
-        ]}
-      />
+      {!sansOnglets && (
+        <OngletsSegment
+          ariaLabel="Section de la bibliothèque"
+          valeur={vue}
+          onChange={(v) => setVue(v as typeof vue)}
+          onglets={[
+            { valeur: "perso", libelle: "Perso" },
+            { valeur: "publique", libelle: "Publique" },
+            { valeur: "dossiers", libelle: "Dossiers du téléphone" },
+          ]}
+        />
+      )}
 
       {vue === "publique" ? (
         <BibliothequePublique />

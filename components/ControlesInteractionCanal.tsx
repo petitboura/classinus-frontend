@@ -169,8 +169,8 @@ export function ControlesInteractionCanal() {
                   onChange={(e) => setTexteSaisi(e.target.value)}
                   onKeyDown={surToucheChamp}
                   rows={2}
-                  placeholder="Dis quelque chose à Clovis..."
-                  aria-label="Message pour Clovis pendant qu'il travaille"
+                  placeholder="Dis quelque chose à Classinus..."
+                  aria-label="Message pour Classinus pendant qu'il travaille"
                   className="min-h-[2.5rem] flex-1 resize-none bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
                 />
                 <button

@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { obtenirAuditCorrections, type AuditCorrections } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
-import { BoutonInfoSection } from "./BoutonInfoSection";
 import { dateRelative } from "@/lib/dateRelative";
 import { clesRequetes } from "@/lib/clesRequetes";
 
@@ -16,6 +15,11 @@ import { clesRequetes } from "@/lib/clesRequetes";
  * du 10/09/2026). Regroupe par notion en difficulté quand un
  * rattachement existe (voir core/audit_hebdomadaire_corrections.py).
  * Les signalements encore "nouveau" sont mis en avant, séparément.
+ *
+ * 19/09/2026, demande Bourama : Bureau fonctionne comme Personnaliser
+ * Clovis. Le titre et le bouton "i" ne sont plus dans la carte, ils sont
+ * portés par la page (app/(app)/bureau/audit). C'était un reste de
+ * l'époque où Bureau était une seule page de cartes empilées.
  */
 export function AuditCorrections() {
   const [erreur, setErreur] = useState<string | null>(null);
@@ -40,15 +44,6 @@ export function AuditCorrections() {
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-4">
-      <div className="flex items-center gap-2">
-        <ClipboardList size={18} className="text-dj-texte-muet" />
-        <h2 className="text-sm font-medium text-dj-texte">Audit hebdomadaire</h2>
-        <BoutonInfoSection
-          rubriqueId="audit-corrections"
-          texteCourt="Une fois par semaine, un résumé des signalements de tes élèves, même s'il n'y en a aucun."
-        />
-      </div>
-
       {erreur && <p className="text-sm text-dj-texte-muet">{erreur}</p>}
 
       {!audit && !erreur && (

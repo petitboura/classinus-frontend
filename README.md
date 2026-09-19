@@ -66,6 +66,7 @@ lib/
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
+  routesPubliques.ts      liste des pages d'élément partagé ouvertes sans compte (voir "Accès sans compte")
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
 android/, ios/            projets Capacitor (capacitor.config.ts minimal, export statique build:capacitor
@@ -77,17 +78,63 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 | Route | Contenu |
 |---|---|
 | `/` | Accueil (raccourcis "Mon espace", activité récente) |
-| `/bureau` | Bureau (Mes codes, entrer un code, corrections pédagogiques reçues) |
-| `/bibliotheque` | Bibliothèque personnelle (+ sous-section Dossiers du téléphone) |
+| `/bureau` | Bureau : page d'accueil en liste, même principe que Personnaliser Clovis |
+| `/bureau/audit` | Audit hebdomadaire des signalements des élèves |
+| `/bureau/codes` | Mes codes |
+| `/bureau/programme` | Programme de notions par code |
+| `/bureau/entrer-code` | Entrer un code reçu |
+| `/bureau/etablissements` | Établissements (la fiche `/etablissements/[id]` y ramène) |
+| `/bureau/signalements` | Signalements reçus des élèves |
+| `/bibliotheque` | Bibliothèque : page d'accueil en liste (Perso, Publique, Dossiers du téléphone), même principe que Personnaliser Clovis |
+| `/bibliotheque/perso` | Bibliothèque personnelle |
+| `/bibliotheque/publique` | Bibliothèque publique (catalogue partagé par tout le monde) |
+| `/bibliotheque/telephone` | Dossiers du téléphone (appli mobile uniquement) |
 | `/memoire` | Ma mémoire |
 | `/comportements` | Mes skills ("comportements" en interne) |
-| `/personnaliser` | Personnaliser Clovis (skills, mémoire, plugins) — onglet central du menu natif |
-| `/controle-session` | Contrôle de session |
+| `/skills-publics` | Skills publics (catalogue partagé par les autres étudiants) |
+| `/personnaliser` | Personnaliser Clovis : page d'accueil en liste (Mes skills, Skills publics, Ma mémoire) — onglet central du menu natif |
+| `/controle-session` | Concentration : page d'accueil en liste, même principe que Personnaliser Clovis |
+| `/controle-session/session` | Contrôle de session |
+| `/controle-session/temps-ecran` | Temps d'écran |
 | `/rappels` | Notes / rappels |
 | `/connecter-claude` | Connexion du serveur MCP public comme connecteur externe |
 | `/parametres` | Paramètres (profil, préférences, confidentialité, capacités du téléphone, accessibilité, aide, à propos, zone de danger) |
 | `/plus` | Menu "Plus" en version web (bureau, scolarité, connecter Claude, admin, paramètres) |
 | `/admin/signalements` | Modération des signalements de contenu public |
+
+### Accès sans compte
+
+Rien n'est accessible sans compte, sauf une page d'élément partagé ouverte par
+son lien : fichier, dossier ou skill (version publique ou perso, routes
+`/bibliotheque/[id]`, `/dossiers/[id]`, `/skills/[id]` et leur variante
+`/perso/[id]`) et fiche établissement (`/etablissements/[id]`). Toute autre
+page du groupe `app/(app)` renvoie vers `/inscription`. La garde est posée une
+seule fois, dans `components/AppShell.tsx`, et la liste des pages ouvertes vit
+dans `lib/routesPubliques.ts` : une nouvelle page est donc protégée d'office,
+et il suffit de l'ajouter à cette liste pour l'ouvrir à tout le monde.
+
+Les mots `perso`, `publique` et `telephone`, seuls après `/bibliotheque/`,
+sont réservés aux pages de liste de la Bibliothèque et ne sont jamais pris
+pour l'identifiant d'un document partagé. Leur liste vient de
+`lib/routesBibliotheque.ts`, la source unique des adresses de la Bibliothèque.
+
+## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau, Concentration)
+
+Une section en groupe a une page d'accueil en liste (`components/ListeSections.tsx`)
+et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Chaque
+page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
+l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
+gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut
+sous forme de pastilles (`OngletsLiens` dans `components/OngletsSegment.tsx`).
+Les deux se branchent via la prop `groupe` de `components/SectionPage.tsx`.
+Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses dans
+`lib/routesBibliotheque.ts`. Bureau : `lib/sectionsBureau.tsx` et `lib/routesBureau.ts`. Concentration :
+`lib/sectionsConcentration.tsx` et `lib/routesConcentration.ts`. Personnaliser Clovis :
+`lib/sectionsPersonnaliser.tsx` et `lib/routesPersonnaliser.ts` (`/comportements` et `/memoire` gardent
+leurs adresses historiques hors de `/personnaliser`, seul `/skills-publics` est nouveau).
+Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
+et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
+les écrans ne les répètent pas dans leur carte.
 
 ## Navigation mobile
 

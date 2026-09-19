@@ -18,6 +18,12 @@ import { OngletsSegment } from "./OngletsSegment";
  * voir OngletsSegment.tsx (fini le pattern soulignement web).
  */
 
+// 19/09/2026, demande Bourama : Concentration fonctionne comme
+// Personnaliser Clovis. La vraie page /controle-session est maintenant une
+// liste et ses deux écrans sont de vraies pages (voir
+// lib/sectionsConcentration.tsx). Ce composant à onglets sert désormais
+// seulement à la fenêtre flottante du chat (components/chat/
+// FenetresSections.tsx), où il n'y a pas de route.
 type SousSection = "session" | "temps-ecran";
 
 export function EspaceConcentration() {

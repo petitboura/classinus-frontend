@@ -85,7 +85,7 @@ export function ChatFlottant({
   etat: EtatChat;
   setEtat: (etat: EtatChat) => void;
   // Transmise à AppSidebar en mode plein écran (voir plus bas) -- "Pourquoi
-  // Clovis ?" vit dans le dropdown Actions de la sidebar, mais l'état
+  // Classinus ?" vit dans le dropdown Actions de la sidebar, mais l'état
   // catalogueOuvert lui-même reste au niveau du layout (AppShell.tsx).
   onOuvrirCatalogue: () => void;
   // Ref pont vers PaletteCommandes.tsx (22/08/2026, chantier "grandes
@@ -325,6 +325,20 @@ export function ChatFlottant({
     setHistoriqueOuvert(false);
   }
 
+  // Corrige un bug signalé par Bourama le 18/09/2026 (voir le commentaire
+  // sur onNouvelleConversationDemarree, ChatIA.tsx) : ajoute tout de suite
+  // le nouveau fil en tête d'historique (comme le ferait un rechargement
+  // de page, qui refait l'appel réseau trié par activité récente) --
+  // garde-fou sur conversation_id pour ne jamais dupliquer une entrée déjà
+  // présente si ce callback était appelé deux fois pour la même conversation.
+  function ajouterConversationHistorique(fil: { conversationId: string; titre: string }) {
+    if (historique.some((f) => f.conversation_id === fil.conversationId)) return;
+    setHistorique([
+      { conversation_id: fil.conversationId, titre: fil.titre, derniere_activite: new Date().toISOString() },
+      ...historique,
+    ]);
+  }
+
   // Pont vers PaletteCommandes.tsx (voir la prop ci-dessus) -- placé
   // avant le early return de la bulle fermée pour que les hooks
   // s'exécutent dans le même ordre à chaque rendu, peu importe `etat`.
@@ -490,7 +504,18 @@ export function ChatFlottant({
       // qu'avant (bas-droite, taille fixe), pas de style inline.
       style={estDesktop ? { left: popup.x, top: popup.y, width: popup.largeur, height: popup.hauteur } : undefined}
       className={
-        "fixed z-40 flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)]" +
+        // 18/09/2026, correctif Bourama ("la barre de saisie perd des
+        // morceaux quand on rétrécit la popup") : "@container" (plugin
+        // @tailwindcss/container-queries) fait de CETTE boîte la
+        // référence pour les classes "@[...]:" utilisées plus loin dans
+        // BarreDeSaisie.tsx -- avant, ces classes étaient en "md:", basées
+        // sur la largeur de la fenêtre du navigateur entière, jamais sur
+        // celle, réellement disponible, de cette popup redimensionnable
+        // (voir style inline plus haut, popup.largeur) : rétrécir la
+        // popup ne faisait donc jamais basculer vers la mise en page
+        // pensée pour un espace étroit, même quand il ne restait plus
+        // assez de place pour la version "large".
+        "@container fixed z-40 flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)]" +
         // Classes de position/taille : uniquement sur mobile désormais
         // (desktop les reçoit via le style inline ci-dessus -- voir
         // commentaire juste au-dessus). 28/08/2026, chantier "web mobile
@@ -536,7 +561,7 @@ export function ChatFlottant({
         }
       >
         <Logo taille={20} />
-        <span className="font-display text-sm font-bold text-dj-texte">Clovis</span>
+        <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
 
         <div className="ml-auto flex items-center gap-1">
           {nbMessages > 0 && (
@@ -654,7 +679,7 @@ export function ChatFlottant({
             <ChatIA
               key={cle}
               agentId={agent.id}
-              nomAgent="Clovis"
+              nomAgent="Classinus"
               titreAccueil={texteAccueilSelonHeure()}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
               iconePersonnalisee={<Logo taille={40} />}
@@ -667,6 +692,8 @@ export function ChatFlottant({
               outilsActifsAgent={outilsActifsAgent}
               boutonSansEnseignant={false}
               avantEnvoi={verifierLimiteInvite}
+              onMessagesSync={setMessagesInitiaux}
+              onNouvelleConversationDemarree={ajouterConversationHistorique}
               natif={natif}
             />
           )}

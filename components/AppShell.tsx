@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { estPageElementPartage } from "@/lib/routesPubliques";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
 import { FenetresSections } from "@/components/chat/FenetresSections";
@@ -39,7 +40,7 @@ import {
 // - la nav principale (AppSidebar)
 // - le chat flottant (ChatFlottant), jamais démonté en changeant de
 //   section -- sinon la conversation en cours serait perdue
-// - le catalogue "Pourquoi Clovis ?", plus ouvert automatiquement à la
+// - le catalogue "Pourquoi Classinus ?", plus ouvert automatiquement à la
 //   première visite depuis le 30/08 (chantier onboarding -- raccourcir le
 //   chemin vers le premier message envoyé, voir audit-ux-mobile-2026).
 //   Reste ouvrable à tout moment via AppSidebar, ChatFlottant et
@@ -47,7 +48,14 @@ import {
 //   accessibilité, juste plus imposé par défaut.
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [connecte, setConnecte] = useState(false);
+  // 19/09/2026, demande Bourama : rien n'est accessible sans compte, sauf
+  // une page d'élément partagé ouverte par son lien (voir
+  // lib/routesPubliques.ts). Tant que la session n'a pas répondu, on ne
+  // sait pas encore si la personne a un compte : `connecte` vaut false
+  // aussi bien "pas encore su" que "pas de compte", d'où cet état à part.
+  const [sessionVerifiee, setSessionVerifiee] = useState(false);
   const [catalogueOuvert, setCatalogueOuvert] = useState(false);
   // Ajouté le 26/08/2026, Bourama : refonte navigation mobile native.
   // false par défaut (donc web/desktop inchangés) tant que le check
@@ -94,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     enregistrerDeplacementCurseur(curseurVirtuelValeur.deplacerVers);
   }, [curseurVirtuelValeur.deplacerVers]);
-  // Le catalogue "Pourquoi Clovis ?" est une modale globale : calque au
+  // Le catalogue "Pourquoi Classinus ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
   // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui
   // lit le contexte via useContext -- AppShell est le composant qui
@@ -109,13 +117,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let annule = false;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!annule) setConnecte(!!session);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (annule) return;
+        setConnecte(!!session);
+        setSessionVerifiee(true);
+      })
+      .catch(() => {
+        // Session illisible : traitée comme "pas de compte", sinon la
+        // page resterait vide pour toujours (voir la garde plus bas).
+        if (annule) return;
+        setConnecte(false);
+        setSessionVerifiee(true);
+      });
     return () => {
       annule = true;
     };
   }, []);
+
+  // Garde d'accès posée une seule fois pour toutes les pages du groupe
+  // (app). Une page d'élément partagé s'ouvre sans compte ; toute autre
+  // page envoie vers l'inscription (même destination que l'écran
+  // d'accueil, qui garde sa propre vérification, voir EcranAccueil.tsx).
+  // Rien du contenu de la page n'est rendu tant que l'accès n'est pas
+  // confirmé, voir `accesAutorise` plus bas.
+  const pageOuverteSansCompte = estPageElementPartage(pathname ?? "");
+  const accesAutorise = pageOuverteSansCompte || (sessionVerifiee && connecte);
+  useEffect(() => {
+    if (!sessionVerifiee || connecte || pageOuverteSansCompte) return;
+    router.replace("/inscription");
+  }, [sessionVerifiee, connecte, pageOuverteSansCompte, router]);
 
   // 09/09/2026 : préchargement en arrière-plan dès que la session est
   // confirmée (route protégée côté serveur, voir api/dossiers_catalogue_
@@ -157,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-dvh">
           {natif && <BarreOngletsNative />}
           {/* 30/08/2026, menu hamburger : reprend Accueil/Connecter
-              Claude/Paramètres/Partager/Avis/Pourquoi Clovis, tout ce qui
+              Claude/Paramètres/Partager/Avis/Pourquoi Classinus, tout ce qui
               n'a pas de place dans les 5 onglets directs. Étape 1 de
               l'audit navigation (30/08/2026) : web mobile a désormais son
               propre déclencheur (MenuHamburgerWeb), même mécanique que le
@@ -277,7 +309,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   }
             }
           >
-            <TransitionPage>{children}</TransitionPage>
+            <TransitionPage>{accesAutorise ? children : null}</TransitionPage>
           </main>
           <ChatFlottant
             connecte={connecte}

@@ -2,10 +2,10 @@
 // tout au tout premier instant -- il fallait "quelque chose de dingue qui
 // éblouit l'user"). La plume se dessine comme si elle était en train
 // d'écrire, dans l'esprit "à main levée" déjà en place sur tout le reste
-// de l'identité Clovis (brief section 4b : jamais un tracé qui apparaît
+// de l'identité Classinus (brief section 4b : jamais un tracé qui apparaît
 // d'un coup, jamais deux barbes identiques). Puis (28/08) elle "prend
 // vie" -- petit sursaut + rotation comme si elle venait de se réveiller,
-// zigzag vers la droite comme si c'est elle qui écrivait le mot "Clovis"
+// zigzag vers la droite comme si c'est elle qui écrivait le mot "Classinus"
 // qui apparaît en même temps, puis sursaute à nouveau et revient se
 // poser à sa position finale à gauche du mot.
 //
@@ -28,7 +28,7 @@
 // components/Logo.tsx -- même plume, juste redécoupée en étapes animées.
 //
 // Mise en page : #clovis-splash-scene est une boîte de taille fixe
-// (280x150px, contenu connu et fixe -- "Clovis" -- donc pas besoin de
+// (340x150 unités, contenu connu et fixe, "Classinus", donc pas besoin de
 // mesurer quoi que ce soit en JS) qui contient la plume ET le mot, tous
 // deux positionnés en absolu selon LEUR position finale (plume à gauche,
 // mot à droite). Le mouvement de la plume (centrage initial, sursauts,
@@ -39,6 +39,13 @@
 // encore visible) et revient à translate(0,0) à la fin. Distances
 // choisies à l'oeil (pas de rendu visuel possible ici) -- à ajuster une
 // fois vu en vrai.
+// Unité de longueur de la scène : 1px sur les écrans d'au moins 370px de
+// large, puis proportionnelle en dessous, pour que la plume et le mot
+// ("Classinus", plus long que l'ancien nom) tiennent toujours dans l'écran.
+// Toutes les dimensions de la scène et les déplacements de la plume (voir
+// cv-vit dans globals.css) sont exprimés en multiples de cette unité.
+const UNITE = { ["--u" as string]: "min(1px, 0.27vw)" } as React.CSSProperties;
+
 export function SplashOuverture() {
   return (
     <div
@@ -47,15 +54,16 @@ export function SplashOuverture() {
     >
       <div
         id="clovis-splash-scene"
-        className="relative h-[150px] w-[280px]"
+        className="relative"
+        style={{ ...UNITE, width: "calc(340 * var(--u))", height: "calc(150 * var(--u))" }}
       >
         <div
           id="clovis-splash-logo"
-          className="absolute left-0 top-1/2 -mt-[66px] animate-[cv-vit_2.2s_cubic-bezier(.36,0,.2,1.04)_1.6s_forwards]"
+          className="absolute left-0 top-1/2 animate-[cv-vit_2.2s_cubic-bezier(.36,0,.2,1.04)_1.6s_both]"
+          style={{ marginTop: "calc(-66 * var(--u))" }}
         >
           <svg
-            width="132"
-            height="132"
+            style={{ width: "calc(132 * var(--u))", height: "calc(132 * var(--u))" }}
             viewBox="0 0 64 64"
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
@@ -133,9 +141,10 @@ export function SplashOuverture() {
             laissait le mot derrière elle. */}
         <span
           id="clovis-splash-mot"
-          className="absolute left-[122px] top-1/2 -mt-[24px] animate-[cv-mot_1.7s_cubic-bezier(.25,.8,.35,1)_1.9s_forwards] font-display text-[44px] font-bold leading-none text-dj-texte [clip-path:inset(0_100%_0_0)]"
+          className="absolute top-1/2 animate-[cv-mot_1.7s_cubic-bezier(.25,.8,.35,1)_1.9s_forwards] whitespace-nowrap font-display font-bold leading-none text-dj-texte [clip-path:inset(0_100%_0_0)]"
+          style={{ left: "calc(122 * var(--u))", marginTop: "calc(-24 * var(--u))", fontSize: "calc(44 * var(--u))" }}
         >
-          Clovis
+          Classinus
         </span>
       </div>
     </div>

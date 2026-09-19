@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-// Chantier "Clovis ouvert" (10/09/2026, Lot F). N'existait pas du tout
+// Chantier "Classinus ouvert" (10/09/2026, Lot F). N'existait pas du tout
 // avant ce chantier -- sans lui, un moteur de recherche n'a même pas le
 // droit implicite de venir lire /sitemap.xml en confiance.
 //

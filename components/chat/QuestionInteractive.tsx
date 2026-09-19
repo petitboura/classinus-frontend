@@ -9,7 +9,9 @@ import {
   valeurComplete,
   erreurStructure,
   formaterReponseChamp,
+  formaterReponseChampImbrique,
 } from "@/lib/questionRiche";
+import type { EntreeReponseGroupee } from "@/lib/questionsGroupees";
 import { ChampChoix } from "./ChampChoix";
 import { ChampTexte } from "./ChampTexte";
 import { ChampOuiNon } from "./ChampOuiNon";
@@ -45,6 +47,12 @@ import { QuestionMultiChamps } from "./QuestionMultiChamps";
 // fois répondu, comme QCMInteractif.tsx -- sans lien avec la persistance
 // au rechargement, hors scope ici.
 //
+// Mode groupé (18/09/2026, demande Bourama) : quand le message contient
+// plusieurs blocs question, BulleMessage passe modeGroupe. Plus aucun
+// envoi au clic, plus aucun bouton Valider par question : chaque question
+// signale sa réponse courante via onChangementGroupe, et c'est BulleMessage
+// qui envoie tout d'un coup (voir lib/questionsGroupees.ts).
+//
 // Pas de mécanisme i18n branché sur ce projet à ce jour (même constat que
 // QCMInteractif.tsx/FicheRevision.tsx) : textes fixes en français.
 
@@ -72,12 +80,26 @@ function ChampStandalone({
   champ,
   onReponse,
   desactive,
+  modeGroupe = false,
+  onChangementGroupe,
 }: {
   champ: ChampSimple;
   onReponse: (texteFinal: string) => void;
   desactive: boolean;
+  modeGroupe?: boolean;
+  onChangementGroupe?: (entree: EntreeReponseGroupee | null) => void;
 }) {
   const [valeur, setValeur] = useState<ValeurChamp>(() => valeurInitiale(champ));
+
+  // Mode groupé : à chaque changement de valeur, on signale la réponse
+  // courante (ou null tant que la question n'est pas répondue).
+  useEffect(() => {
+    if (!modeGroupe) return;
+    onChangementGroupe?.({
+      question: champ.question,
+      texte: valeurComplete(champ, valeur) ? formaterReponseChampImbrique(champ, valeur) : null,
+    });
+  }, [valeur, modeGroupe]);
 
   function envoyer(v: ValeurChamp) {
     onReponse(formaterReponseChamp(champ, v));
@@ -99,11 +121,11 @@ function ChampStandalone({
               // "Un clic suffit" seulement pour un choix normal -- si
               // "Autre" est activé, on attend la confirmation du texte
               // libre (bouton Valider ci-dessous).
-              if (!v.autreActif && v.indices.length === 1) envoyer(nouvelle);
+              if (!modeGroupe && !v.autreActif && v.indices.length === 1) envoyer(nouvelle);
             }}
             desactive={desactive}
           />
-          {valeur.autreActif && (
+          {valeur.autreActif && !modeGroupe && (
             <button
               type="button"
               disabled={desactive || !valeurComplete(champ, valeur)}
@@ -128,14 +150,16 @@ function ChampStandalone({
             onChange={(v) => setValeur({ champType: "choix_multiple", ...v })}
             desactive={desactive}
           />
-          <button
-            type="button"
-            disabled={desactive || !valeurComplete(champ, valeur)}
-            onClick={() => envoyer(valeur)}
-            className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
-          >
-            Valider
-          </button>
+          {!modeGroupe && (
+            <button
+              type="button"
+              disabled={desactive || !valeurComplete(champ, valeur)}
+              onClick={() => envoyer(valeur)}
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+            >
+              Valider
+            </button>
+          )}
         </>
       );
 
@@ -149,14 +173,16 @@ function ChampStandalone({
             onChange={(texte) => setValeur({ champType: "texte", texte })}
             desactive={desactive}
           />
-          <button
-            type="button"
-            disabled={desactive || !valeurComplete(champ, valeur)}
-            onClick={() => envoyer(valeur)}
-            className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
-          >
-            Valider
-          </button>
+          {!modeGroupe && (
+            <button
+              type="button"
+              disabled={desactive || !valeurComplete(champ, valeur)}
+              onClick={() => envoyer(valeur)}
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+            >
+              Valider
+            </button>
+          )}
         </>
       );
 
@@ -168,7 +194,7 @@ function ChampStandalone({
           onChange={(reponse) => {
             const nouvelle: ValeurChamp = { champType: "oui_non", reponse };
             setValeur(nouvelle);
-            envoyer(nouvelle); // un clic suffit
+            if (!modeGroupe) envoyer(nouvelle); // un clic suffit (sauf en mode groupé)
           }}
           desactive={desactive}
         />
@@ -187,14 +213,16 @@ function ChampStandalone({
             onChange={(v) => setValeur({ champType: "echelle", valeur: v })}
             desactive={desactive}
           />
-          <button
-            type="button"
-            disabled={desactive || !valeurComplete(champ, valeur)}
-            onClick={() => envoyer(valeur)}
-            className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
-          >
-            Valider
-          </button>
+          {!modeGroupe && (
+            <button
+              type="button"
+              disabled={desactive || !valeurComplete(champ, valeur)}
+              onClick={() => envoyer(valeur)}
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+            >
+              Valider
+            </button>
+          )}
         </>
       );
 
@@ -208,14 +236,16 @@ function ChampStandalone({
             onChange={(ordre) => setValeur({ champType: "classement", ordre })}
             desactive={desactive}
           />
-          <button
-            type="button"
-            disabled={desactive || !valeurComplete(champ, valeur)}
-            onClick={() => envoyer(valeur)}
-            className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
-          >
-            Valider
-          </button>
+          {!modeGroupe && (
+            <button
+              type="button"
+              disabled={desactive || !valeurComplete(champ, valeur)}
+              onClick={() => envoyer(valeur)}
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+            >
+              Valider
+            </button>
+          )}
         </>
       );
 
@@ -229,14 +259,16 @@ function ChampStandalone({
             onChange={(v) => setValeur({ champType: "date", valeur: v })}
             desactive={desactive}
           />
-          <button
-            type="button"
-            disabled={desactive || !valeurComplete(champ, valeur)}
-            onClick={() => envoyer(valeur)}
-            className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
-          >
-            Valider
-          </button>
+          {!modeGroupe && (
+            <button
+              type="button"
+              disabled={desactive || !valeurComplete(champ, valeur)}
+              onClick={() => envoyer(valeur)}
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+            >
+              Valider
+            </button>
+          )}
         </>
       );
   }
@@ -246,6 +278,8 @@ export function QuestionInteractive({
   code,
   onReponse,
   dejaRepondu,
+  modeGroupe = false,
+  onChangementGroupe,
 }: {
   code: string;
   // Branchée par ChatIA.tsx (Lot 3) sur envoyerMessage : la réponse choisie
@@ -259,6 +293,11 @@ export function QuestionInteractive({
   // une bulle de message normale -- on se contente de verrouiller les
   // contrôles pour ne pas permettre une seconde réponse au rechargement.
   dejaRepondu?: boolean;
+  // Mode groupé (18/09/2026) : voir l'en tête de ce fichier. La réponse
+  // n'est plus envoyée ici, elle est signalée à BulleMessage via
+  // onChangementGroupe (null = cette question n'existe plus, à retirer).
+  modeGroupe?: boolean;
+  onChangementGroupe?: (entree: EntreeReponseGroupee | null) => void;
 }) {
   const [donnee, setDonnee] = useState<QuestionRiche | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -285,6 +324,14 @@ export function QuestionInteractive({
     }, 500);
     return () => clearTimeout(delai);
   }, [code]);
+
+  // Mode groupé : retire la réponse mémorisée de cette question quand elle
+  // disparaît de l'écran (bloc régénéré ou message remplacé), pour ne jamais
+  // envoyer la réponse à une question qui n'existe plus.
+  useEffect(() => {
+    if (!modeGroupe) return;
+    return () => onChangementGroupe?.(null);
+  }, [modeGroupe, code]);
 
   // Remise à zéro si le bloc change de contenu (nouvelle question générée
   // dans le même message, cas rare mais possible pendant un streaming qui
@@ -328,9 +375,22 @@ export function QuestionInteractive({
       <p className="text-sm font-semibold text-dj-texte">{donnee.question}</p>
 
       {donnee.type === "multi_champs" ? (
-        <QuestionMultiChamps champs={donnee.champs} onReponse={gererReponse} desactive={aRepondu} />
+        <QuestionMultiChamps
+          champs={donnee.champs}
+          onReponse={gererReponse}
+          desactive={aRepondu}
+          question={donnee.question}
+          modeGroupe={modeGroupe}
+          onChangementGroupe={onChangementGroupe}
+        />
       ) : (
-        <ChampStandalone champ={donnee} onReponse={gererReponse} desactive={aRepondu} />
+        <ChampStandalone
+          champ={donnee}
+          onReponse={gererReponse}
+          desactive={aRepondu}
+          modeGroupe={modeGroupe}
+          onChangementGroupe={onChangementGroupe}
+        />
       )}
 
       {reponseEnvoyee !== null && (

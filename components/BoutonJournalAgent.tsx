@@ -62,7 +62,7 @@ export function BoutonJournalAgent() {
     <div ref={ref} className="fixed bottom-4 right-4 z-[65]">
       <button
         onClick={() => setOuvert((v) => !v)}
-        aria-label="Journal des actions de Clovis"
+        aria-label="Journal des actions de Classinus"
         aria-expanded={ouvert}
         className="flex h-10 w-10 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet shadow-lg transition-colors hover:text-dj-texte"
       >
@@ -79,7 +79,7 @@ export function BoutonJournalAgent() {
             className="absolute bottom-12 right-0 flex max-h-80 w-72 flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-xl"
           >
             <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-2">
-              <p className="text-xs font-semibold text-dj-texte">Actions de Clovis</p>
+              <p className="text-xs font-semibold text-dj-texte">Actions de Classinus</p>
               <button onClick={() => setOuvert(false)} aria-label="Fermer" className="text-dj-texte-muet hover:text-dj-texte">
                 <X size={14} />
               </button>

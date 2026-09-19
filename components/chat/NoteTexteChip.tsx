@@ -22,11 +22,21 @@ import { Skeleton } from "@/components/Skeleton";
 // n'est pas automatiquement fetché (CORS non garanti, et surtout ce
 // n'est probablement pas une note de bibliothèque) -- il retombe sur le
 // comportement normal (lien classique) dans BulleMessage.tsx.
+// 18/09/2026 : stockage migré de Supabase vers R2 (clovis-backend,
+// core/stockage_r2.py) -- NEXT_PUBLIC_API_URL ajouté comme origine de
+// confiance en plus de Supabase (anciens fichiers non migrés).
 export function estNoteTexteBibliotheque(href: string): boolean {
   const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!urlSupabase) return false;
+  const urlApi = process.env.NEXT_PUBLIC_API_URL;
+  const originesFiables = [urlSupabase, urlApi].filter(Boolean).map((u) => {
+    try {
+      return new URL(u as string).origin;
+    } catch {
+      return null;
+    }
+  });
   try {
-    if (new URL(href).origin !== new URL(urlSupabase).origin) return false;
+    if (!originesFiables.includes(new URL(href).origin)) return false;
   } catch {
     return false;
   }

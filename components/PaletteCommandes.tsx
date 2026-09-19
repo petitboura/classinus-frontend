@@ -140,7 +140,7 @@ export function PaletteCommandes({
       { id: "ouvrir-chat", label: "Ouvrir le chat", Icone: MessageCircle, action: () => setEtatChat("mini") },
       {
         id: "chat-plein-ecran",
-        label: "Ouvrir Clovis en plein écran",
+        label: "Ouvrir Classinus en plein écran",
         Icone: Maximize2,
         // Étape 4 (07/09/2026, chantier "chat plein écran = vraie
         // section") : navigue vers la vraie route /chat (voir
@@ -160,7 +160,7 @@ export function PaletteCommandes({
         Icone: ICONE_THEME[choix],
         action: suivantTheme,
       },
-      { id: "pourquoi-clovis", label: "Pourquoi Clovis ?", Icone: Compass, action: onOuvrirCatalogue },
+      { id: "pourquoi-clovis", label: "Pourquoi Classinus ?", Icone: Compass, action: onOuvrirCatalogue },
       {
         id: "compte",
         label: connecte ? "Se déconnecter" : "Se connecter",

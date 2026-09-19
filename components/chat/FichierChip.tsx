@@ -110,15 +110,30 @@ const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp"]);
 // pas garanti de pointer vers notre stockage (le system prompt le lui
 // interdit, mais ce n'est qu'une consigne, pas une contrainte technique). On
 // vérifie donc l'origine avant d'intégrer quoi que ce soit en iframe :
-// seul notre propre stockage Supabase a droit à l'aperçu intégré,
-// n'importe quelle autre origine retombe sur une carte de téléchargement
-// simple (pas d'iframe du tout) -- sans jamais toucher au rendu normal
-// des vrais PDF générés, qui viennent toujours de cette origine.
+// seul notre propre stockage a droit à l'aperçu intégré, n'importe
+// quelle autre origine retombe sur une carte de téléchargement simple
+// (pas d'iframe du tout) -- sans jamais toucher au rendu normal des
+// vrais PDF générés, qui viennent toujours d'une de ces origines.
+//
+// 18/09/2026 : le stockage a été migré de Supabase vers R2 (backend
+// clovis-backend, core/stockage_r2.py, étapes 1 à 5) -- les nouveaux
+// fichiers sont servis depuis notre propre backend (NEXT_PUBLIC_API_URL,
+// route /fichiers/r2/...), plus depuis Supabase. Origine tout aussi
+// fiable (c'est notre backend), donc ajoutée à la liste des origines de
+// confiance au lieu de remplacer Supabase (anciens fichiers non migrés).
 function estOrigineDeConfiance(href: string): boolean {
   const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!urlSupabase) return false;
+  const urlApi = process.env.NEXT_PUBLIC_API_URL;
+  const originesFiables = [urlSupabase, urlApi].filter(Boolean).map((u) => {
+    try {
+      return new URL(u as string).origin;
+    } catch {
+      return null;
+    }
+  });
   try {
-    return new URL(href).origin === new URL(urlSupabase).origin;
+    const origine = new URL(href).origin;
+    return originesFiables.includes(origine);
   } catch {
     return false;
   }

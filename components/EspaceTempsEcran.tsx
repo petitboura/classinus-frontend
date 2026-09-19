@@ -43,7 +43,12 @@ function formaterDuree(secondes: number): string {
   return `${h} h ${m.toString().padStart(2, "0")}`;
 }
 
-export function EspaceTempsEcran() {
+// `sansEnTete` (19/09/2026, demande Bourama : Concentration fonctionne
+// comme Personnaliser Clovis) : sur la vraie page
+// /controle-session/temps-ecran, le titre et le bouton "i" sont portés par
+// la page, l'écran ne les répète plus. Absent (fenêtre flottante du chat,
+// via EspaceConcentration) : affichage inchangé.
+export function EspaceTempsEcran({ sansEnTete = false }: { sansEnTete?: boolean } = {}) {
   const { natif, plugin } = usePluginNatif<PluginTempsEcran>("TempsEcran");
 
   const [chargementPermission, setChargementPermission] = useState(true);
@@ -113,11 +118,13 @@ export function EspaceTempsEcran() {
   if (natif === null) {
     return (
       <div className="flex flex-col gap-4 p-4" aria-hidden>
-        <div>
-          <Skeleton className="h-4 w-32 rounded" />
-          <Skeleton className="mt-1 h-3 w-full rounded" style={{ animationDelay: "60ms" }} />
-          <Skeleton className="h-3 w-2/3 rounded" style={{ animationDelay: "120ms" }} />
-        </div>
+        {!sansEnTete && (
+          <div>
+            <Skeleton className="h-4 w-32 rounded" />
+            <Skeleton className="mt-1 h-3 w-full rounded" style={{ animationDelay: "60ms" }} />
+            <Skeleton className="h-3 w-2/3 rounded" style={{ animationDelay: "120ms" }} />
+          </div>
+        )}
 
         <div className="flex flex-col items-center gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
           <Skeleton className="h-7 w-24 rounded" style={{ animationDelay: "180ms" }} />
@@ -179,13 +186,15 @@ export function EspaceTempsEcran() {
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4 p-4">
-      <div className="flex items-center gap-1.5">
-        <h2 className="font-display text-base font-bold text-dj-texte">Temps d&apos;écran</h2>
-        <BoutonInfoSection
-          rubriqueId="temps-ecran"
-          texteCourt="Temps passé aujourd'hui dans chaque app, et les 7 derniers jours."
-        />
-      </div>
+      {!sansEnTete && (
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-display text-base font-bold text-dj-texte">Temps d&apos;écran</h2>
+          <BoutonInfoSection
+            rubriqueId="temps-ecran"
+            texteCourt="Temps passé aujourd'hui dans chaque app, et les 7 derniers jours."
+          />
+        </div>
+      )}
 
       {chargementPermission ? (
         <div className="flex flex-col gap-4" aria-hidden>
@@ -232,7 +241,7 @@ export function EspaceTempsEcran() {
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium text-dj-texte">Permission requise</span>
               <span className="text-xs text-dj-texte-muet">
-                Accorde l&apos;accès à l&apos;usage des apps pour que Clovis puisse afficher ton temps d&apos;écran.
+                Accorde l&apos;accès à l&apos;usage des apps pour que Classinus puisse afficher ton temps d&apos;écran.
               </span>
             </div>
           </div>

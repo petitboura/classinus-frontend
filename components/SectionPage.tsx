@@ -6,10 +6,11 @@ import { ChevronRight } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { BoutonRetour } from "./BoutonRetour";
 import { BoutonInfoSection } from "./BoutonInfoSection";
+import { OngletsLiens } from "./OngletsSegment";
 import { trouverRubriqueAide } from "@/lib/aideSections";
 
 // Conteneur partagé par les sections de l'app (refonte "Mon espace =
-// l'app", 15/08/2026). Remplace le conteneur à onglets d'EspaceClovis.tsx
+// l'app", 15/08/2026). Remplace le conteneur à onglets d'EspaceClassinus.tsx
 // (lien "Retour au chat" et barre d'onglets en state local) -- la
 // navigation entre sections passe désormais par AppSidebar.tsx (vraies
 // routes), plus besoin de rien de tout ça ici.
@@ -22,7 +23,7 @@ import { trouverRubriqueAide } from "@/lib/aideSections";
 // y a une vraie profondeur -- pas ajouté ici pour cette raison.
 //
 // Prop `groupe` réintroduite le 22/08/2026 (demande Bourama, sidebar
-// regroupée) : ici la profondeur existe vraiment (Personnaliser Clovis ->
+// regroupée) : ici la profondeur existe vraiment (Personnaliser Classinus ->
 // Mes skills), donc la même logique justifie cette fois d'afficher le fil
 // d'Ariane, plus une colonne de navigation persistante vers les sections
 // soeurs (comme une vraie page de paramètres avec sidebar, pas un popup
@@ -84,7 +85,7 @@ function TitreSection({ title, infoRubriqueId, className, retour }: { title: str
 // un signalement, un établissement) : ils n'avaient jusqu'ici aucun
 // moyen de remonter d'un niveau, puisque le bouton retour de ce
 // composant n'existait que dans la branche `groupe` (fil d'Ariane
-// "Personnaliser Clovis -> Mes skills").
+// "Personnaliser Classinus -> Mes skills").
 //
 // Volontairement un href fixe, pas un router.back() : l'app pousse des
 // entrées d'historique factices pour fermer menus et panneaux (voir
@@ -93,6 +94,15 @@ function TitreSection({ title, infoRubriqueId, className, retour }: { title: str
 // entrées-là. Une destination explicite est déterministe, et reste
 // correcte quand la page est ouverte directement depuis un lien de
 // partage (cas où il n'y a aucun historique à remonter).
+// Pages voisines sur téléphone (19/09/2026, demande Bourama : le menu des
+// pages voisines lui plaît sur PC mais pas sur mobile, où il fallait
+// revenir à la liste puis entrer dans l'autre page). Sur écran étroit, la
+// même liste de pages voisines s'affiche donc en haut de la page sous
+// forme d'une rangée de pastilles, un seul toucher pour changer de page
+// (voir OngletsLiens dans OngletsSegment.tsx). Sur PC, le menu à gauche
+// reste tel quel. Les liens du menu de gauche passent aussi en `replace`,
+// pour qu'aller d'une page voisine à l'autre n'empile pas d'entrées dans
+// l'historique et que le retour ramène toujours à la liste du groupe.
 export function SectionPage({
   title,
   children,
@@ -136,6 +146,12 @@ export function SectionPage({
       <TitreSection title={title} infoRubriqueId={infoRubriqueId} className="mb-4" />
 
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
+        <div className="-mb-2 md:hidden">
+          <OngletsLiens
+            ariaLabel={groupe.label}
+            onglets={groupe.soeurs.map((s) => ({ href: s.href, libelle: s.label }))}
+          />
+        </div>
         <nav className="hidden w-48 flex-shrink-0 flex-col gap-1 md:flex">
           {groupe.soeurs.map((s) => {
             const actif = pathname === s.href;
@@ -143,6 +159,7 @@ export function SectionPage({
               <Link
                 key={s.href}
                 href={s.href}
+                replace
                 className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
                   actif
                     ? "bg-dj-surface-haute font-medium text-dj-texte"

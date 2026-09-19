@@ -151,7 +151,7 @@ function traiterAccuseMessageEtudiant(idMessage: unknown, prisEnCompte: unknown)
   clearTimeout(attente.minuteur);
   messagesEnAttenteAccuse.delete(idMessage);
   if (prisEnCompte === true) {
-    pousserJournalDepuisAgent(`Ton message à Clovis : ${texteCourt(attente.texte)}`, "succes");
+    pousserJournalDepuisAgent(`Ton message à Classinus : ${texteCourt(attente.texte)}`, "succes");
   } else {
     envoyerViaRepli(attente.texte);
   }
@@ -173,7 +173,7 @@ function envoyerEtatActionsMaintenant() {
  * Poussee chantier D : un court debounce (200ms) evite d'envoyer un
  * message par action quand plusieurs se (dé)montent dans le meme cycle
  * de rendu (ex: changement de page qui démonte 5 boutons d'un coup),
- * sans introduire de latence perceptible pour Clovis.
+ * sans introduire de latence perceptible pour Classinus.
  */
 function envoyerEtatActions() {
   if (debounceEtatActions) clearTimeout(debounceEtatActions);

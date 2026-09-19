@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Check, Copy } from "lucide-react";
 import { useInfoSection } from "./SectionPage";
 
-// Guide "Utiliser Clovis dans Claude" (18/08, demande Bourama).
+// Guide "Utiliser Classinus dans Claude" (18/08, demande Bourama).
 //
 // v2 (18/08, même jour) : Bourama a fourni ses propres captures d'écran
 // du vrai flux Claude -- remplace les mockups SVG dessinés à la main de
@@ -15,7 +15,7 @@ import { useInfoSection } from "./SectionPage";
 // écrans de transition sans contenu -- écartées, pas de trou dans la
 // numérotation ni doublon inventé).
 //
-// URL du serveur MCP Clovis confirmée par Bourama le 18/08 :
+// URL du serveur MCP Classinus confirmée par Bourama le 18/08 :
 // https://clovis-backend-production.up.railway.app/mcp/espace
 
 const URL_MCP_CLOVIS = "https://clovis-backend-production.up.railway.app/mcp/espace";
@@ -62,7 +62,7 @@ export function EspaceConnecterClaude() {
 
       <EtapeGuide numero={3} titre="Remplis le formulaire">
         <p>
-          Un formulaire s&apos;ouvre. Mets <span className="font-semibold text-dj-texte">Clovis</span> dans{" "}
+          Un formulaire s&apos;ouvre. Mets <span className="font-semibold text-dj-texte">Classinus</span> dans{" "}
           <span className="font-semibold text-dj-texte">Nom</span>, et colle l&apos;URL ci-dessous dans{" "}
           <span className="font-semibold text-dj-texte">URL du serveur MCP distant</span>.
         </p>
@@ -78,7 +78,7 @@ export function EspaceConnecterClaude() {
             src="/guide-clovis-claude/5-formulaire-rempli.png"
             largeur={532}
             hauteur={612}
-            alt="Formulaire rempli avec le nom Clovis et l'URL du serveur MCP"
+            alt="Formulaire rempli avec le nom Classinus et l'URL du serveur MCP"
           />
         </div>
         <p>
@@ -86,40 +86,40 @@ export function EspaceConnecterClaude() {
         </p>
       </EtapeGuide>
 
-      <EtapeGuide numero={4} titre="Autorise l'accès à ton compte Clovis">
+      <EtapeGuide numero={4} titre="Autorise l'accès à ton compte Classinus">
         <p>
-          Claude t&apos;envoie vers Clovis. Connecte-toi à ton compte si besoin, vérifie les accès demandés, puis
+          Claude t&apos;envoie vers Classinus. Connecte-toi à ton compte si besoin, vérifie les accès demandés, puis
           clique <span className="font-semibold text-dj-texte">Autoriser</span>.
         </p>
         <Capture
           src="/guide-clovis-claude/6-autoriser-claude.png"
           largeur={488}
           hauteur={629}
-          alt="Écran Clovis « Autoriser Claude ? » avec la liste des accès demandés"
+          alt="Écran Classinus « Autoriser Claude ? » avec la liste des accès demandés"
         />
       </EtapeGuide>
 
-      <EtapeGuide numero={5} titre="Vérifie que Clovis est bien activé">
+      <EtapeGuide numero={5} titre="Vérifie que Classinus est bien activé">
         <p>
           De retour dans Claude, rouvre le <span className="font-semibold text-dj-texte">+</span> à côté de la zone
-          de texte, puis <span className="font-semibold text-dj-texte">Connecteurs</span> : Clovis doit apparaître
+          de texte, puis <span className="font-semibold text-dj-texte">Connecteurs</span> : Classinus doit apparaître
           dans la liste, activé.
         </p>
         <Capture
           src="/guide-clovis-claude/7-connecteur-actif.png"
           largeur={581}
           hauteur={431}
-          alt="Liste des connecteurs avec Clovis activé"
+          alt="Liste des connecteurs avec Classinus activé"
         />
       </EtapeGuide>
 
       <EtapeGuide numero={6} titre="C'est prêt : demande-lui ce qu'il peut faire" dernier>
-        <p>Dans une conversation, tu peux directement demander à Claude ce qu&apos;il peut faire avec Clovis.</p>
+        <p>Dans une conversation, tu peux directement demander à Claude ce qu&apos;il peut faire avec Classinus.</p>
         <Capture
           src="/guide-clovis-claude/8-exemple-usage.png"
           largeur={734}
           hauteur={488}
-          alt="Exemple de conversation Claude listant ce qu'il peut faire avec Clovis"
+          alt="Exemple de conversation Claude listant ce qu'il peut faire avec Classinus"
         />
       </EtapeGuide>
     </div>

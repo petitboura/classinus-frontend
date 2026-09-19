@@ -48,7 +48,7 @@ export function ActionsDossierPublic({ dossierId, nom }: { dossierId: string; no
 
   return (
     <div className="flex flex-col gap-2">
-      <SuggestionCompte texte="Crée un compte pour ajouter ce dossier à ton espace Clovis." />
+      <SuggestionCompte texte="Crée un compte pour ajouter ce dossier à ton espace Classinus." />
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={ajouter}
@@ -65,8 +65,13 @@ export function ActionsDossierPublic({ dossierId, nom }: { dossierId: string; no
             `Utilise l'outil gerer_dossier_catalogue_public (action "consulter") avec cet id pour voir ce qu'il contient, ` +
             `puis discutons-en ensemble.`
           }
+          compterCta={{ typeElement: "dossier", elementId: dossierId }}
         />
-        <ButtonPartager lien={lienPartage("dossier-public", dossierId)} titre={nom} />
+        <ButtonPartager
+          lien={lienPartage("dossier-public", dossierId)}
+          titre={nom}
+          compterPartage={{ typeElement: "dossier", elementId: dossierId }}
+        />
       </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
     </div>

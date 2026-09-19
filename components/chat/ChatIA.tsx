@@ -48,6 +48,8 @@ export function ChatIA({
   messagesInitiaux = [],
   texteInitial,
   onMessagesChange,
+  onMessagesSync,
+  onNouvelleConversationDemarree,
   modelesDisponibles = [],
   modeleChoisi = null,
   boutonSansEnseignant = false,
@@ -73,6 +75,24 @@ export function ChatIA({
   // tous les autres cas d'usage de ChatIA, comportement inchangé.
   texteInitial?: string;
   onMessagesChange?: (nbMessages: number) => void;
+  // Corrige un bug signalé par Bourama le 18/09/2026 : passer du popup
+  // mini au plein écran (vraie route /chat, voir ChatSection.tsx) démonte
+  // ce composant puis en remonte un autre, tous deux initialisés à partir
+  // de messagesInitiaux -- sans ce callback, la conversation en cours
+  // (messages envoyés depuis le dernier chargement de messagesInitiaux)
+  // n'était jamais reportée dans le contexte partagé, donc le nouveau
+  // montage repartait avec une conversation vide. Reporte le tableau
+  // complet à chaque changement (même fréquence qu'onMessagesChange
+  // ci-dessus, aucun coût supplémentaire), pour que le parent puisse le
+  // garder synchronisé dans ContexteChat.messagesInitiaux.
+  onMessagesSync?: (messages: MessageAffiche[]) => void;
+  // Corrige un bug signalé par Bourama le 18/09/2026 : une conversation
+  // tout juste commencée n'apparaissait dans "Historique" qu'après avoir
+  // rechargé la page (la liste n'est chargée qu'une fois, voir
+  // lib/contexteChat.tsx). Appelé une seule fois, au tout premier message
+  // envoyé d'une conversation (jamais aux suivants), pour que le parent
+  // ajoute l'entrée immédiatement dans ContexteChat.historique.
+  onNouvelleConversationDemarree?: (fil: { conversationId: string; titre: string }) => void;
   // Modeles premium (02/08/2026, voir core/fournisseurs_llm.py) : liste
   // vide = agent sans abonnement premium debloque, BarreDeSaisie
   // n'affiche alors AUCUN selecteur (comportement identique a avant
@@ -81,7 +101,7 @@ export function ChatIA({
   // l'utilisateur peut la changer pour la session via le selecteur.
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleChoisi?: string | null;
-  // Agent "Clovis" / contenu dynamique par matière (06/08/2026) -- voir
+  // Agent "Classinus" / contenu dynamique par matière (06/08/2026) -- voir
   // core/contenu_dynamique_matiere.py. Passé jusqu'à BarreDeSaisie pour
   // afficher le bouton "Sans enseignant" (forcer le prompt généraliste
   // pour un message précis, sans passer par le routeur de matière).
@@ -94,10 +114,10 @@ export function ChatIA({
   // comme si la prop n'existait pas.
   avantEnvoi?: () => boolean;
   // Écran de démarrage : remplace iconeUrl/IconeGenerique par cet
-  // élément quand fourni (09/08, demande Bourama : sur Clovis, l'IA
+  // élément quand fourni (09/08, demande Bourama : sur Classinus, l'IA
   // "étudiant autonome" ne doit montrer ni le nom technique de l'agent
   // réel -- déjà géré via nomAgent -- ni son icône réelle, remplacée ici
-  // par le logo Clovis).
+  // par le logo Classinus).
   iconePersonnalisee?: React.ReactNode;
   // Outils autorisés pour cet agent (14/08, demande Bourama) -- chargés
   // par le parent (page.tsx) EN MÊME TEMPS que le détail de l'agent,
@@ -161,6 +181,13 @@ export function ChatIA({
   // "niveau2" dans main.py -- toujours un seul à la fois, jamais de
   // vrai parallélisme) garde l'ancien comportement par repli.
   const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; texte: string; etat: EtatStatut }[]>([]);
+  // Ajouté (18/09/2026, demande Bourama : statut d'outil incohérent) :
+  // texte "X effectuée" reçu dans "statut_termine", gardé par id_appel
+  // jusqu'à l'événement "outil_resultat" du même appel, qui l'emporte avec
+  // le résultat. Sert à afficher l'étape "effectuée" sur la MÊME ligne que
+  // l'outil (voir LigneOutil.tsx). Simple table de correspondance (pas un
+  // state) : lue et vidée dans la même suite d'événements, dans l'ordre.
+  const textesTermineRef = useRef<Map<string, string>>(new Map());
   // Correctif 09/09/2026 (Bourama : l'exécution d'un outil coupait une
   // phrase en cours d'affichage) : les événements outils (statut/
   // statut_termine/outil_resultat/sources/images) qui arrivent PENDANT
@@ -249,6 +276,7 @@ export function ChatIA({
     setMessages((prec) => {
       const suivant = fabriqueSuivant(prec);
       onMessagesChange?.(suivant.length);
+      onMessagesSync?.(suivant);
       return suivant;
     });
   }
@@ -409,13 +437,19 @@ export function ChatIA({
                 const iDernierEnCours = [...copie].reverse().findIndex((s) => s.etat === "en_cours");
                 return iDernierEnCours === -1 ? -1 : copie.length - 1 - iDernierEnCours;
               })();
+        // "a échoué" traité comme "annulée" (18/09/2026) : une ligne d'outil
+        // ne doit jamais afficher de coche verte pour un échec.
+        const estEchecOuAnnulation = evenement.texte.includes("annulée") || evenement.texte.includes("échoué");
         if (i === -1) {
           copie.push({ texte: evenement.texte, etat: "termine" });
         } else {
-          copie[i] = { ...copie[i], texte: evenement.texte, etat: evenement.texte.includes("annulée") ? "annule" : "termine" };
+          copie[i] = { ...copie[i], texte: evenement.texte, etat: estEchecOuAnnulation ? "annule" : "termine" };
         }
         return copie;
       });
+      if (evenement.id_appel && !(evenement.texte.includes("annulée") || evenement.texte.includes("échoué"))) {
+        textesTermineRef.current.set(evenement.id_appel, evenement.texte);
+      }
     } else if (item.type === "sources") {
       majMessages((prec) => {
         const copie = [...prec];
@@ -470,14 +504,24 @@ export function ChatIA({
       // (ordre non garanti en vrai parallèle, voir core/execution_outils.py),
       // l'entrée resterait sinon affichée "en cours" indéfiniment à côté
       // de son propre résultat déjà affiché juste au-dessus.
+      // Texte "effectuée" du même appel, lu ICI (hors du updater de
+      // majMessages, qui peut être appelé deux fois en mode dev) puis vidé.
+      const texteTermine = evenement.id_appel ? textesTermineRef.current.get(evenement.id_appel) : undefined;
       if (evenement.id_appel) {
+        textesTermineRef.current.delete(evenement.id_appel);
         setStatuts((prec) => prec.filter((s) => s.id !== evenement.id_appel));
       }
       majMessages((prec) => {
         const copie = [...prec];
         const dernier = copie[copie.length - 1];
         const existants = dernier.outilsResultats || [];
-        const nouvelEntree = { nomOutil: evenement.nom_outil, nomLisible: evenement.nom_lisible, resultat: evenement.resultat };
+        const nouvelEntree = {
+          nomOutil: evenement.nom_outil,
+          nomLisible: evenement.nom_lisible,
+          resultat: evenement.resultat,
+          idAppel: evenement.id_appel as string | undefined,
+          texteTermine,
+        };
         copie[copie.length - 1] = {
           ...dernier,
           outilsResultats: [...existants, nouvelEntree],
@@ -698,6 +742,7 @@ export function ChatIA({
     reinitialiserAffichageControle();
     setGenEnCours(true);
     setStatuts([]);
+    textesTermineRef.current.clear();
     setRaisonnementEnCours(false);
 
     try {
@@ -819,6 +864,21 @@ export function ChatIA({
           : undefined,
     }));
 
+    // Corrige un bug signalé par Bourama le 18/09/2026 : "Historique" ne
+    // montrait une nouvelle conversation qu'après rechargement de la page
+    // (liste chargée une seule fois, voir lib/contexteChat.tsx). `messages`
+    // vide ici = c'est le tout premier message de cette conversation ->
+    // même règle de titre que côté serveur (api/historique.py,
+    // LONGUEUR_MAX_TITRE = 42), pour que le titre affiché tout de suite
+    // soit identique à celui qu'un rechargement afficherait.
+    if (messages.length === 0) {
+      const LONGUEUR_MAX_TITRE = 42;
+      const brut = texte.trim();
+      const titre =
+        brut.length > LONGUEUR_MAX_TITRE ? brut.slice(0, LONGUEUR_MAX_TITRE).trimEnd() + "…" : brut || "Conversation sans titre";
+      onNouvelleConversationDemarree?.({ conversationId, titre });
+    }
+
     // Si on arrive ici, soit il n'y avait pas d'état de reprise en
     // attente, soit on est dans le cas de secours (fichier joint,
     // intercepté plus haut) qui bypass le contexte enrichi -- dans les
@@ -832,6 +892,7 @@ export function ChatIA({
     reinitialiserAffichageControle();
     setGenEnCours(true);
     setStatuts([]);
+    textesTermineRef.current.clear();
     setRaisonnementEnCours(false);
     setConfirmation(null);
 
@@ -980,7 +1041,7 @@ export function ChatIA({
           ignorer_suggestion_outils: false,
           // Bouton "Sans enseignant" (06/08/2026, demande Bourama) --
           // uniquement pour les agents à contenu dynamique par matière
-          // (Clovis) : force le prompt généraliste pour CE message
+          // (Classinus) : force le prompt généraliste pour CE message
           // précis, sans passer par le routeur de matière ni utiliser le
           // contenu d'aucun enseignant, même si l'étudiant a des
           // matières débloquées. Voir core/contenu_dynamique_matiere.py.
@@ -1154,9 +1215,18 @@ export function ChatIA({
   // anciens/rares : lecture d'image, "niveau2" dans main.py -- toujours un
   // seul à la fois) gardent l'ancien affichage flottant en bas de la
   // liste, inchangé.
+  // Étendu (18/09/2026, demande Bourama : statut d'outil incohérent) :
+  // inclut aussi l'état "termine" (l'outil a fini, son résultat n'est pas
+  // encore arrivé) pour que la ligne ne disparaisse pas un instant entre les
+  // deux événements. "annule" (annulation ou échec) reste exclu, comme avant.
   const outilsEnCoursTrackes: OutilEnCours[] = statuts
-    .filter((s) => !!s.id && s.etat === "en_cours")
-    .map((s) => ({ id: s.id as string, nomOutil: s.nomOutil, texte: s.texte }));
+    .filter((s) => !!s.id && (s.etat === "en_cours" || s.etat === "termine"))
+    .map((s) => ({
+      id: s.id as string,
+      nomOutil: s.nomOutil,
+      texte: s.texte,
+      etat: s.etat === "termine" ? ("termine" as const) : ("en_cours" as const),
+    }));
   const statutsFlottants = statuts.filter((s) => !s.id);
 
   return (
@@ -1217,7 +1287,7 @@ export function ChatIA({
                   ? () =>
                       message.id
                         ? setPopupFeedback({ type: "positif", messageId: message.id!, questionMessageId: messages[index - 1]?.id ?? null })
-                        : alert("Connecte-toi pour noter Clovis.")
+                        : alert("Connecte-toi pour noter Classinus.")
                   : undefined
               }
               onDislike={
@@ -1225,7 +1295,7 @@ export function ChatIA({
                   ? () =>
                       message.id
                         ? setPopupFeedback({ type: "negatif", messageId: message.id!, questionMessageId: messages[index - 1]?.id ?? null })
-                        : alert("Connecte-toi pour noter Clovis.")
+                        : alert("Connecte-toi pour noter Classinus.")
                   : undefined
               }
               onSignalerCorrection={

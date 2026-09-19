@@ -23,7 +23,7 @@ import {
 import { BoutonRetour } from "./BoutonRetour";
 import { ChampMotDePasse } from "./ChampMotDePasse";
 import { supabase } from "@/lib/supabase";
-import { appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte, exporterMesDonnees, obtenirMonStatut } from "@/lib/api";
+import { appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte, exporterMesDonnees, obtenirMonStatut, obtenirInfosClovis, ID_ELEMENT_CLOVIS } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
 import { Skeleton } from "./Skeleton";
@@ -33,6 +33,8 @@ import { MiseAJourCarte } from "./MiseAJourCarte";
 import { NomAppareilCarte } from "./NomAppareilCarte";
 import { RUBRIQUES_AIDE, trouverRubriqueAide, type RubriqueAide } from "@/lib/aideSections";
 import { EspaceAccessibilite } from "./EspaceAccessibilite";
+import { BoutonEtoile } from "./BoutonEtoile";
+import { SectionCommentairesCatalogue } from "./SectionCommentairesCatalogue";
 
 /**
  * Page Paramètres (22/08/2026, demande Bourama).
@@ -59,7 +61,7 @@ import { EspaceAccessibilite } from "./EspaceAccessibilite";
  *
  * Deux sections minimales par manque de contenu réel (signalé à Bourama
  * plutôt qu'inventé) : Aide et support (pas d'adresse dédiée trouvée dans
- * le projet), À propos (pas de CGU propres à Clovis, liens vers les pages
+ * le projet), À propos (pas de CGU propres à Classinus, liens vers les pages
  * légales déjà en ligne sur la vitrine).
  *
  * Pas de mécanisme i18n branché ici (même constat que MesComportements.tsx
@@ -74,6 +76,9 @@ type ProfilMoi = {
   bio: string;
   avatar_url: string | null;
   notifications_proactives_actives: boolean;
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11.
+  profil_public: boolean;
 };
 
 const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
@@ -196,6 +201,12 @@ export function EspaceParametres() {
   const [nomAffiche, setNomAffiche] = useState("");
   const [bio, setBio] = useState("");
   const [notifsActives, setNotifsActives] = useState(false);
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11 : bio/nom/photo visibles par un visiteur externe (voir
+  // GET /api/profiles/{user_id}) seulement si ce réglage est actif.
+  const [profilPublicActif, setProfilPublicActif] = useState(false);
+  const [enregistrementProfilPublic, setEnregistrementProfilPublic] = useState(false);
+  const [messageProfilPublic, setMessageProfilPublic] = useState<string | null>(null);
   // Partie 7 (06/09/2026, plan confiance pédagogique, Point 3) : null =
   // jamais répondu, ne vient pas de ProfilMoi (public, voir
   // api/profiles.py::ProfilPublic -- volontairement absent de ce modèle
@@ -227,6 +238,19 @@ export function EspaceParametres() {
   const [erreurExport, setErreurExport] = useState<string | null>(null);
   const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
 
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 13 : avis sur Classinus lui-même (voir vue "À propos" plus bas).
+  const [infosClovis, setInfosClovis] = useState<{ etoilesCount: number; monEtoile: boolean } | null>(null);
+
+  useEffect(() => {
+    if (vue !== "a-propos" || infosClovis) return;
+    obtenirInfosClovis()
+      .then((r) => setInfosClovis({ etoilesCount: r.etoiles_count, monEtoile: r.mon_etoile }))
+      .catch(() => {
+        // Silencieux : l'étoile reste juste absente, pas bloquant pour le reste de la page.
+      });
+  }, [vue, infosClovis]);
+
   useEffect(() => {
     lireMonProfil()
       .then((p: ProfilMoi) => {
@@ -234,6 +258,7 @@ export function EspaceParametres() {
         setNomAffiche(p.nom_affiche || "");
         setBio(p.bio || "");
         setNotifsActives(!!p.notifications_proactives_actives);
+        setProfilPublicActif(!!p.profil_public);
       })
       .catch((e) => {
         if (e instanceof ErreurApi && e.statusCode === 401) {
@@ -295,6 +320,26 @@ export function EspaceParametres() {
     }
   }
 
+  async function basculerProfilPublic(nouvelleValeur: boolean) {
+    if (nouvelleValeur === profilPublicActif) return;
+    setProfilPublicActif(nouvelleValeur); // optimiste, même pattern que basculerNotifs
+    setEnregistrementProfilPublic(true);
+    setMessageProfilPublic(null);
+    try {
+      await enregistrerMonProfil({ profil_public: nouvelleValeur });
+      setMessageProfilPublic(
+        nouvelleValeur
+          ? "Ton profil est désormais visible sur les éléments publics que tu ajoutes."
+          : "Ton profil n'est plus visible publiquement.",
+      );
+    } catch (e) {
+      setProfilPublicActif(!nouvelleValeur);
+      setMessageProfilPublic(messageErreur(e));
+    } finally {
+      setEnregistrementProfilPublic(false);
+    }
+  }
+
   async function choisirMajeur(valeur: boolean) {
     if (valeur === estMajeur) return;
     const precedent = estMajeur;
@@ -338,7 +383,7 @@ export function EspaceParametres() {
   }
 
   async function handleExporterMesDonnees() {
-    if (!window.confirm("Télécharger une copie de toutes tes données Clovis ?")) return;
+    if (!window.confirm("Télécharger une copie de toutes tes données Classinus ?")) return;
 
     setExportEnCours(true);
     setErreurExport(null);
@@ -352,7 +397,7 @@ export function EspaceParametres() {
   }
 
   async function seDeconnecter() {
-    if (!window.confirm("Se déconnecter de Clovis ?")) return;
+    if (!window.confirm("Se déconnecter de Classinus ?")) return;
 
     await supabase.auth.signOut();
     window.location.href = "/connexion";
@@ -363,10 +408,10 @@ export function EspaceParametres() {
     // même doit demander deux fois") -- un premier window.confirm ici,
     // puis la saisie "SUPPRIMER" ci-dessous (déjà en place), pour cette
     // action seule (Exporter/Se déconnecter n'en ont qu'une).
-    if (!window.confirm("Supprimer définitivement ton compte Clovis ?")) return;
+    if (!window.confirm("Supprimer définitivement ton compte Classinus ?")) return;
 
     const saisie = window.prompt(
-      'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Clovis seront supprimés. Tape "SUPPRIMER" pour confirmer.'
+      'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Classinus seront supprimés. Tape "SUPPRIMER" pour confirmer.'
     );
     if (saisie !== "SUPPRIMER") return;
 
@@ -519,7 +564,7 @@ export function EspaceParametres() {
           <LigneListe
             icone={Download}
             titre={exportEnCours ? "Export en cours…" : "Exporter mes données"}
-            sousTitre="Télécharger une copie de tout ce que Clovis sait sur toi"
+            sousTitre="Télécharger une copie de tout ce que Classinus sait sur toi"
             onClick={handleExporterMesDonnees}
           />
         </Liste>
@@ -676,6 +721,32 @@ export function EspaceParametres() {
             {erreurMajeur && <p className="text-sm text-[var(--dj-erreur)]">{erreurMajeur}</p>}
           </div>
 
+          <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-dj-texte">Profil public</span>
+              <span className="text-xs text-dj-texte-muet">
+                Ta photo, ton nom et ta bio deviennent visibles sur les fichiers, dossiers et skills que tu publies.
+                Obligatoire pour pouvoir commenter. Sans ça, tu restes anonyme sur la bibliothèque publique.
+              </span>
+            </div>
+            <button
+              role="switch"
+              aria-checked={profilPublicActif}
+              onClick={() => basculerProfilPublic(!profilPublicActif)}
+              disabled={enregistrementProfilPublic}
+              className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                profilPublicActif ? "bg-dj-accent-1" : "bg-dj-inactif"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  profilPublicActif ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+          {messageProfilPublic && <span className="text-sm text-dj-texte-muet">{messageProfilPublic}</span>}
+
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={enregistrerProfil}
@@ -725,9 +796,9 @@ export function EspaceParametres() {
 
           <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-dj-texte">Relances de Clovis</span>
+              <span className="text-sm font-medium text-dj-texte">Relances de Classinus</span>
               <span className="text-xs text-dj-texte-muet">
-                Autorise Clovis à te relancer si tu es inactif, pour ne pas perdre le fil.
+                Autorise Classinus à te relancer si tu es inactif, pour ne pas perdre le fil.
               </span>
             </div>
             <button
@@ -804,7 +875,7 @@ export function EspaceParametres() {
             className="flex items-center gap-2 rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
             <MessageCircle size={16} />
-            Poser une question à Clovis
+            Poser une question à Classinus
           </button>
         </div>
         <div>
@@ -833,7 +904,18 @@ export function EspaceParametres() {
     <div className="flex flex-col gap-4">
       <EnTete titre="À propos" onRetour={() => setVue("liste")} />
       <div className="flex flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4 text-sm">
-        <span className="text-dj-texte">Clovis</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-dj-texte">Classinus</span>
+          {infosClovis && (
+            <BoutonEtoile
+              typeElement="clovis"
+              elementId={ID_ELEMENT_CLOVIS}
+              count={infosClovis.etoilesCount}
+              active={infosClovis.monEtoile}
+              onBascule={(etoile, etoilesCount) => setInfosClovis({ monEtoile: etoile, etoilesCount })}
+            />
+          )}
+        </div>
         <button
           onClick={() => router.push("/cgu")}
           className="w-fit text-dj-texte-muet hover:text-dj-texte hover:underline"
@@ -853,6 +935,8 @@ export function EspaceParametres() {
           Politique de confidentialité
         </button>
       </div>
+
+      <SectionCommentairesCatalogue typeElement="clovis" elementId={ID_ELEMENT_CLOVIS} />
     </div>
   );
 }

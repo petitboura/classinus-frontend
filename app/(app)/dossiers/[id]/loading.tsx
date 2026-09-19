@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/Skeleton";
 
-// Skeleton de la route (10/09/2026, Lot E "Clovis ouvert") : forme
+// Skeleton de la route (10/09/2026, Lot E "Classinus ouvert") : forme
 // fidèle à page.tsx (titre du dossier + sous-dossiers + liste de
 // fichiers).
 //

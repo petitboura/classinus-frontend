@@ -5,11 +5,12 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { ScrollText } from "lucide-react";
 import { SectionPage } from "@/components/SectionPage";
 import { ActionsSkillPublic } from "@/components/ActionsSkillPublic";
+import { SectionCommentairesCatalogue } from "@/components/SectionCommentairesCatalogue";
 import { extraireCorpsSkill } from "@/components/VoirSkillRecuModal";
 import { obtenirComportementPublic, type ComportementPublic } from "@/lib/api";
 import { ErreurApi } from "@/lib/erreurs";
 
-// Chantier "Clovis ouvert" (10/09/2026, Lot B, même principe que le
+// Chantier "Classinus ouvert" (10/09/2026, Lot B, même principe que le
 // Lot A bibliothèque publique) : chaque skill publique retrouvable par
 // son nom, indexable, avec sa propre URL. Server Component pour
 // generateMetadata + premier rendu HTML non vide (les robots ne voient
@@ -40,11 +41,11 @@ async function chargerSkill(id: string): Promise<ComportementPublic | null> {
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const skill = await chargerSkill(params.id);
   if (!skill) {
-    return { title: "Skill introuvable · Skills Clovis" };
+    return { title: "Skill introuvable · Skills Classinus" };
   }
   return {
-    title: `${skill.nom} · Skills Clovis`,
-    description: skill.description || `Skill publique partagée sur Clovis : ${skill.nom}.`,
+    title: `${skill.nom} · Skills Classinus`,
+    description: skill.description || `Skill publique partagée sur Classinus : ${skill.nom}.`,
     openGraph: {
       title: skill.nom,
       description: skill.description || undefined,
@@ -90,6 +91,8 @@ export default async function PageSkillPublique({ params }: { params: { id: stri
           </ReactMarkdown>
         </div>
       </section>
+
+      <SectionCommentairesCatalogue typeElement="skill" elementId={skill.id} />
     </SectionPage>
   );
 }

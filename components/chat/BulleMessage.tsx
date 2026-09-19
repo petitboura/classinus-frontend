@@ -19,6 +19,11 @@ import { IndicateurReflexion } from "@/components/IndicateurReflexion";
 import { SchemaGeometrique } from "./SchemaGeometrique";
 import { QCMInteractif } from "./QCMInteractif";
 import { QuestionInteractive } from "./QuestionInteractive";
+import {
+  compterBlocsQuestion,
+  composerReponsesGroupees,
+  type EntreeReponseGroupee,
+} from "@/lib/questionsGroupees";
 import { FicheRevision } from "./FicheRevision";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { ImageMessage } from "./ImageMessage";
@@ -270,7 +275,7 @@ export interface MessageAffiche {
   // séparé du message) : elles doivent apparaître juste après le
   // résultat de leur outil, pas dans un bloc "Sources" à part à la fin
   // -- voir OutilResultatBulle.tsx.
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
   // Ajouté 30/08/2026 (audit UX mobile, partie 5 : "pas de chemin de
   // récupération après une erreur") : la génération a échoué avant la
   // moindre réponse persistée -- message.id reste donc null pour
@@ -327,6 +332,9 @@ export type SegmentMessage =
       nomOutil: string;
       nomLisible: string;
       resultat: string;
+      // Ajoutés (18/09/2026, statut d'outil unifié) : voir OutilResultatBulle.tsx.
+      idAppel?: string;
+      texteTermine?: string;
       sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[];
       images?: { titre: string; url: string; miniature: string; credit?: string | null }[];
     };
@@ -480,7 +488,7 @@ function BulleMessageInterne({
   estEnCoursDeGeneration?: boolean;
   raisonnement?: string;
   raisonnementEnCours?: boolean;
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
   outilsEnCours?: OutilEnCours[];
   // Persona pédagogique / jonction "QCM complet" (14/09/2026) : transmis
   // tel quel à QCMInteractif (voir le case "qcm" du switch plus bas) --
@@ -579,6 +587,31 @@ function BulleMessageInterne({
   // dans la bulle assistant, pas un nouveau composant de sélection custom.
   const conteneurRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useState<{ texte: string; x: number; y: number } | null>(null);
+
+  // Réponses groupées aux questions (18/09/2026, demande Bourama : quand
+  // l'IA pose plusieurs questions dans un même tour, chacune envoyait sa
+  // réponse toute seule et la première bloquait toutes les autres). Dès que
+  // le message contient au moins deux blocs question ET que l'envoi est
+  // branché (onRepondreQuestion), rien ne part au clic : chaque question
+  // mémorise sa réponse dans cette ref (pas un state, pour ne pas refaire
+  // tout le rendu à chaque lettre tapée) et le bouton "Valider mes
+  // réponses" en bas du message envoie tout en un seul message, répondu
+  // ou non. Voir lib/questionsGroupees.ts.
+  const reponsesGroupeesRef = useRef<Map<string, EntreeReponseGroupee>>(new Map());
+  const [reponsesGroupeesEnvoyees, setReponsesGroupeesEnvoyees] = useState(false);
+  const modeQuestionsGroupees = !estUtilisateur && !!onRepondreQuestion && compterBlocsQuestion(message.content) >= 2;
+
+  function enregistrerReponseGroupee(code: string, entree: EntreeReponseGroupee | null) {
+    if (entree) reponsesGroupeesRef.current.set(code, entree);
+    else reponsesGroupeesRef.current.delete(code);
+  }
+
+  function validerReponsesGroupees() {
+    const texte = composerReponsesGroupees(message.content, reponsesGroupeesRef.current);
+    if (!texte.trim()) return;
+    setReponsesGroupeesEnvoyees(true);
+    onRepondreQuestion?.(texte);
+  }
 
   function gererFinSelection() {
     if (!onExpliquerSelection || estUtilisateur) return;
@@ -721,7 +754,9 @@ function BulleMessageInterne({
                   <QuestionInteractive
                     code={code}
                     onReponse={onRepondreQuestion}
-                    dejaRepondu={questionDejaRepondue}
+                    dejaRepondu={questionDejaRepondue || reponsesGroupeesEnvoyees}
+                    modeGroupe={modeQuestionsGroupees}
+                    onChangementGroupe={(entree) => enregistrerReponseGroupee(code, entree)}
                   />
                 );
               case "fiche":
@@ -825,10 +860,10 @@ function BulleMessageInterne({
           la réponse, ce qui ne reflétait pas l'ordre réel "le modèle
           réfléchit D'ABORD, répond ENSUITE". */}
       {!estUtilisateur && enAttente && (
-        <IndicateurReflexion nomAgent={nomAgent ?? "Clovis"} />
+        <IndicateurReflexion nomAgent={nomAgent ?? "Classinus"} />
       )}
       {!estUtilisateur && !enTimeline && raisonnement && (
-        <RaisonnementBulle nomAgent={nomAgent ?? "Clovis"} texte={raisonnement} enCours={!!raisonnementEnCours} />
+        <RaisonnementBulle nomAgent={nomAgent ?? "Classinus"} texte={raisonnement} enCours={!!raisonnementEnCours} />
       )}
       <div
         className={
@@ -880,7 +915,7 @@ function BulleMessageInterne({
                 </div>
               ) : (
                 // 04/09/2026, demande Bourama : window.open(_blank)
-                // faisait sortir de Clovis (surtout gênant sur mobile/
+                // faisait sortir de Classinus (surtout gênant sur mobile/
                 // appli native) -- remplacé par le même visionneur
                 // interne que pour un fichier reçu/de bibliothèque
                 // (VisionneurPositionGlobal), jamais de nouvel onglet.
@@ -955,7 +990,7 @@ function BulleMessageInterne({
                       Bourama) -- une même génération peut contenir plusieurs
                       segments "raisonnement" (le modèle réfléchit, appelle un
                       outil, réfléchit encore...), ce qui affichait avant
-                      autant de bulles "Raisonnement de Clovis" séparées et
+                      autant de bulles "Raisonnement de Classinus" séparées et
                       éparpillées dans le message. On calcule ici une seule
                       fois l'index du PREMIER segment de raisonnement et le
                       texte de TOUS les segments de raisonnement concaténé :
@@ -1022,7 +1057,7 @@ function BulleMessageInterne({
                         elements.push(
                           <RaisonnementBulle
                             key={`raisonnement-${premierIndexRaisonnement}`}
-                            nomAgent={nomAgent ?? "Clovis"}
+                            nomAgent={nomAgent ?? "Classinus"}
                             texte={texteRaisonnementFusionne}
                             enCours={raisonnementFusionEnCours}
                           />,
@@ -1041,22 +1076,24 @@ function BulleMessageInterne({
                       const enCoursDuRun = dernierRun ? outilsEnCours : undefined;
                       if (enCoursDuRun && enCoursDuRun.length > 0) enCoursAttache = true;
 
+                      // Clé identique que le run ait 1 outil ou plusieurs
+                      // (18/09/2026, demande Bourama : statut d'outil
+                      // incohérent) : avant, "outil-N" pour un seul outil
+                      // et "outils-N" pour un groupe, donc React démontait
+                      // tout le bloc au passage du 1er au 2e outil (repli,
+                      // ouverture et animations remis à zéro). Le repli
+                      // automatique du groupe n'a lieu que si du texte
+                      // suit ce run, ou si ce message n'est plus le
+                      // message en cours (outilsEnCours absent).
                       const total = outilsDuRun.length + (enCoursDuRun?.length ?? 0);
-                      if (total === 1) {
-                        elements.push(
-                          <OutilResultatBulle
-                            key={`outil-${debutRun}`}
-                            resultats={outilsDuRun.length ? outilsDuRun : undefined}
-                            enCours={enCoursDuRun}
-                          />,
-                        );
-                      } else if (total > 1) {
+                      if (total >= 1) {
                         elements.push(
                           <OutilResultatBulle
                             key={`outils-${debutRun}`}
                             resultats={outilsDuRun.length ? outilsDuRun : undefined}
                             enCours={enCoursDuRun}
-                            groupe
+                            groupe={total > 1}
+                            peutSeReplier={!dernierRun || outilsEnCours === undefined}
                           />,
                         );
                       }
@@ -1066,13 +1103,17 @@ function BulleMessageInterne({
                     // timeline se termine sur un segment "texte", ou est
                     // encore complètement vide pour le tout premier outil
                     // du message) -- on les affiche quand même, dans leur
-                    // propre colonne icône/ligne, à la toute fin.
+                    // propre colonne icône/ligne, à la toute fin. La clé est
+                    // celle que le run aura quand son premier segment
+                    // arrivera (segments.length), pour que le bloc reste le
+                    // même élément quand le résultat vient s'y attacher.
                     if (!enCoursAttache && outilsEnCours && outilsEnCours.length > 0) {
                       elements.push(
                         <OutilResultatBulle
-                          key="outils-en-cours-fin"
+                          key={`outils-${segments.length}`}
                           enCours={outilsEnCours}
                           groupe={outilsEnCours.length > 1}
+                          peutSeReplier={false}
                         />,
                       );
                     }
@@ -1084,6 +1125,15 @@ function BulleMessageInterne({
                 rendreMarkdown(normaliserCitations(normaliserLatex(message.content)), !!estEnCoursDeGeneration)
               )}
             </div>
+            {modeQuestionsGroupees && !estEnCoursDeGeneration && !questionDejaRepondue && !reponsesGroupeesEnvoyees && (
+              <button
+                type="button"
+                onClick={validerReponsesGroupees}
+                className="mt-2 animate-dj-fade-in-rapide rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02]"
+              >
+                Valider mes réponses
+              </button>
+            )}
           </div>
         </div>
 
