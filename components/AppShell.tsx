@@ -24,6 +24,7 @@ import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
+import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import {
   ContexteCanalEnDirect,
@@ -289,6 +290,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <CurseurVirtuelAgent />
           <BulleDialogueAgent />
           <BoutonJournalAgent />
+          <CanalEnDirectFlottant />
           <PaletteCommandes
             connecte={connecte}
             etatChat={etatChat}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Compass } from "lucide-react";
+import { useContext, useEffect, useRef, useState } from "react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Compass, Radio } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -20,6 +20,7 @@ import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
 import { useOuvrirGuide } from "@/lib/contexteChat";
+import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -469,6 +470,10 @@ export function BarreDeSaisie({
   // /chat (deja la page courante ici, donc sans effet visible autre que
   // le changement de conversation/cle).
   const ouvrirGuide = useOuvrirGuide();
+  // Canal en direct, chantier L (19/09/2026) : point d'entree depuis le
+  // chat, en plus du bouton flottant (masque sur /chat). Contexte
+  // nullable : la barre de saisie peut etre montee hors AppShell.
+  const canalEnDirect = useContext(ContexteCanalEnDirect);
 
   useEffect(() => {
     if (!menuPlusOuvert) return;
@@ -1902,6 +1907,19 @@ export function BarreDeSaisie({
                   <Compass size={14} />
                   <span className="flex-1">Guide de découverte</span>
                 </button>
+                {canalEnDirect && (
+                  <button
+                    onClick={() => {
+                      if (canalEnDirect.actif) canalEnDirect.desactiver();
+                      else canalEnDirect.activer();
+                      setMenuUtilitairesOuvert(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                  >
+                    <Radio size={14} />
+                    <span className="flex-1">{canalEnDirect.actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}</span>
+                  </button>
+                )}
               </div>
             </div>
             )}
@@ -2280,6 +2298,19 @@ export function BarreDeSaisie({
               >
                 <Compass size={16} /> Guide de découverte
               </button>
+              {canalEnDirect && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (canalEnDirect.actif) canalEnDirect.desactiver();
+                    else canalEnDirect.activer();
+                    setMenuPlusOuvert(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                >
+                  <Radio size={16} /> {canalEnDirect.actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {

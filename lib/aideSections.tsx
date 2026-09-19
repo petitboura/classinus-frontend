@@ -46,6 +46,15 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Chaque semaine, Clovis t'envoie un résumé des signalements reçus de tes élèves, même s'il n'y en a aucun. Les signalements de type A (correctif de fond) encore en attente sont listés en priorité, avec un accès direct pour les corriger.",
   },
   {
+    // Chantier "canal en direct" (19/09/2026) : bouton flottant en bas à
+    // gauche, et entrée dans le menu du chat.
+    id: "canal-en-direct",
+    titre: "Canal en direct",
+    texteCourt: "Reste en contact avec Clovis pendant qu'il agit dans l'app, à la voix ou à l'écrit.",
+    texteComplet:
+      "Le canal en direct te permet de rester en contact avec Clovis pendant qu'il agit dans l'app. Active le avec le bouton rond en bas à gauche de l'écran, ou depuis le menu du chat. Une fois actif, deux boutons apparaissent : un micro pour dicter et un crayon pour écrire. Pour la dictée, tu peux choisir entre le moteur de ton navigateur et Whisper, quand ton navigateur sait le faire. Un petit bouton en bas à droite garde la liste de ce que Clovis a fait pendant la session. Le canal en direct repart de zéro à chaque ouverture de l'app.",
+  },
+  {
     id: "controle-session",
     titre: "Contrôle de session",
     texteCourt: "Coupe les sonneries et notifications, et active Ne pas déranger le temps de ta session.",

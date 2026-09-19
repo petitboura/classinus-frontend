@@ -850,6 +850,7 @@ export function AppSidebar({
 
       <div
         ref={asideRef}
+        data-rail-lateral
         className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${ouverte ? "md:w-72" : "md:w-14"}`}

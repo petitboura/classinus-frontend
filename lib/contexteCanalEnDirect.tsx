@@ -24,7 +24,7 @@
 // zéro à chaque ouverture de l'app, cohérent avec le reste du
 // chantier.
 
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 // "refuse" retiré (19/09/2026) : plus aucune confirmation ne peut
 // produire cet état, voir lib/canalAgentApplicatif.ts.
@@ -37,10 +37,39 @@ export type EntreeJournalCanal = {
   horodatage: number;
 };
 
+// Chantier M : dernier mode d'interaction utilisé par l'user pendant que
+// Clovis travaille (un des deux boutons, voix ou écriture).
+export type ModeInteraction = "voix" | "texte";
+
+// Chantier N : moteur de dictée choisi. "whisper" = enregistrement micro
+// transcrit par Whisper/Groq côté backend (déjà utilisé dans le chat),
+// "navigateur" = Web Speech API du navigateur.
+export type MoteurDictee = "whisper" | "navigateur";
+
+// Message écrit ou dicté par l'user via les boutons du chantier M.
+// Horodatage et id inclus pour que le futur consommateur (chantiers O et
+// P) distingue deux messages au texte identique.
+export type MessageUtilisateurCanal = {
+  id: string;
+  texte: string;
+  horodatage: number;
+};
+
 export type ValeurCanalEnDirect = {
   actif: boolean;
   activer: () => void;
   desactiver: () => void;
+
+  modeInteraction: ModeInteraction;
+  choisirModeInteraction: (mode: ModeInteraction) => void;
+  moteurDictee: MoteurDictee;
+  choisirMoteurDictee: (moteur: MoteurDictee) => void;
+
+  // Dernier message de l'user pendant le travail de Clovis. Personne ne le
+  // lit encore : la destination (chat, tour en cours de Clovis) relève des
+  // chantiers O et P.
+  dernierMessageUtilisateur: MessageUtilisateurCanal | null;
+  soumettreMessageUtilisateur: (texte: string) => void;
 
   dernierTexte: string | null;
   // Remplace le texte affiché ; horodatage inclus pour que la bulle
@@ -97,11 +126,38 @@ export function afficherTexteDepuisAgent(texte: string) {
 }
 
 let compteurEntreeJournal = 0;
+let compteurMessageUtilisateur = 0;
+
+// Préférences d'affichage du chantier M et N : localStorage suffit pour
+// la v1, pas de table Supabase pour un simple choix d'interface.
+const CLE_MODE_INTERACTION = "canalEnDirect.modeInteraction";
+const CLE_MOTEUR_DICTEE = "canalEnDirect.moteurDictee";
+
+function lirePreference<T extends string>(cle: string, valides: readonly T[]): T | null {
+  try {
+    const valeur = window.localStorage.getItem(cle);
+    return valeur && (valides as readonly string[]).includes(valeur) ? (valeur as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function ecrirePreference(cle: string, valeur: string) {
+  try {
+    window.localStorage.setItem(cle, valeur);
+  } catch {
+    // Stockage indisponible (navigation privée, quota) : la préférence
+    // reste valable pour la session en cours, sans mémorisation.
+  }
+}
 
 export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const [actif, setActif] = useState(false);
   const [dernierTexte, setDernierTexte] = useState<string | null>(null);
   const [journal, setJournal] = useState<EntreeJournalCanal[]>([]);
+  const [modeInteraction, setModeInteraction] = useState<ModeInteraction>("texte");
+  const [moteurDictee, setMoteurDictee] = useState<MoteurDictee>("whisper");
+  const [dernierMessageUtilisateur, setDernierMessageUtilisateur] = useState<MessageUtilisateurCanal | null>(null);
   // Ref plutôt que de dépendre de `journal` dans les callbacks : évite
   // de recréer ajouterEntreeJournal/mettreAJourEntreeJournal à chaque
   // changement de journal.
@@ -113,6 +169,33 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   // précédent.
   const minuteurEffacement = useRef<ReturnType<typeof setTimeout> | null>(null);
   const DUREE_AFFICHAGE_MS = 5000;
+
+  // Lecture des préférences après le montage, jamais pendant le premier
+  // rendu : le serveur ne connaît pas localStorage, lire plus tôt
+  // créerait un écart entre le HTML serveur et le premier rendu client.
+  useEffect(() => {
+    const mode = lirePreference<ModeInteraction>(CLE_MODE_INTERACTION, ["voix", "texte"]);
+    if (mode) setModeInteraction(mode);
+    const moteur = lirePreference<MoteurDictee>(CLE_MOTEUR_DICTEE, ["whisper", "navigateur"]);
+    if (moteur) setMoteurDictee(moteur);
+  }, []);
+
+  const choisirModeInteraction = useCallback((mode: ModeInteraction) => {
+    setModeInteraction(mode);
+    ecrirePreference(CLE_MODE_INTERACTION, mode);
+  }, []);
+
+  const choisirMoteurDictee = useCallback((moteur: MoteurDictee) => {
+    setMoteurDictee(moteur);
+    ecrirePreference(CLE_MOTEUR_DICTEE, moteur);
+  }, []);
+
+  const soumettreMessageUtilisateur = useCallback((texte: string) => {
+    const propre = texte.trim();
+    if (!propre) return;
+    compteurMessageUtilisateur += 1;
+    setDernierMessageUtilisateur({ id: `message-utilisateur-${compteurMessageUtilisateur}`, texte: propre, horodatage: Date.now() });
+  }, []);
 
   const activer = useCallback(() => setActif(true), []);
   const desactiver = useCallback(() => setActif(false), []);
@@ -150,6 +233,12 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     actif,
     activer,
     desactiver,
+    modeInteraction,
+    choisirModeInteraction,
+    moteurDictee,
+    choisirMoteurDictee,
+    dernierMessageUtilisateur,
+    soumettreMessageUtilisateur,
     dernierTexte,
     afficherTexte,
     effacerTexte,
