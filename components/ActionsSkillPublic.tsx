@@ -80,8 +80,13 @@ export function ActionsSkillPublic({ skill }: { skill: ComportementPublic }) {
             `Utilise l'outil gerer_comportement_public (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
             `puis discutons-en ensemble.`
           }
+          compterCta={{ typeElement: "skill", elementId: skill.id }}
         />
-        <ButtonPartager lien={lienPartage("skill-public", skill.id)} titre={skill.nom} />
+        <ButtonPartager
+          lien={lienPartage("skill-public", skill.id)}
+          titre={skill.nom}
+          compterPartage={{ typeElement: "skill", elementId: skill.id }}
+        />
       </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
     </div>

@@ -96,8 +96,13 @@ export function ActionsFichierPublic({
             `Utilise l'outil gerer_document_bibliotheque (action "lire_catalogue_public") avec cet id pour voir de quoi il s'agit, ` +
             `puis discutons-en ensemble.`
           }
+          compterCta={{ typeElement: "fichier", elementId: entreeId }}
         />
-        <ButtonPartager lien={lienPartage("fichier-public", entreeId)} titre={nom} />
+        <ButtonPartager
+          lien={lienPartage("fichier-public", entreeId)}
+          titre={nom}
+          compterPartage={{ typeElement: "fichier", elementId: entreeId }}
+        />
       </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
     </div>

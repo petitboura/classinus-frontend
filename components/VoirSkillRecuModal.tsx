@@ -10,6 +10,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { ButtonPartager } from "@/components/ButtonPartager";
 import { BoutonAvecIA } from "@/components/BoutonAvecIA";
+import type { TypeElementCataloguePublic } from "@/lib/api";
 
 /**
  * 07/09/2026, demande Bourama (bug remonté : un skill reçu via un code
@@ -41,6 +42,7 @@ export function VoirSkillRecuModal({
   sousTitre,
   lienPartage,
   texteAvecIA,
+  compterCatalogue,
   onFermer,
 }: {
   comportementId?: string;
@@ -57,6 +59,12 @@ export function VoirSkillRecuModal({
   // dépend du contexte (skill reçu vs aperçu du catalogue public, id et
   // outil différents), construit par l'appelant plutôt que deviné ici.
   texteAvecIA?: string;
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 12 : id du skill PUBLIC pour compter partage/CTA -- fourni
+  // uniquement par ComportementsPublics.tsx (même garde-fou que
+  // lienPartage ci-dessus, un skill reçu via un code n'est pas dans le
+  // catalogue public).
+  compterCatalogue?: { typeElement: TypeElementCataloguePublic; elementId: string };
   onFermer: () => void;
 }) {
   const [skillMd, setSkillMd] = useState<string | null>(skillMdInitial ?? null);
@@ -94,8 +102,12 @@ export function VoirSkillRecuModal({
             <span className="truncate">{nom}</span>
           </h4>
           <div className="flex flex-shrink-0 items-center gap-2">
-            {texteAvecIA && <BoutonAvecIA variante="icone" libelle="Utiliser avec l'IA" texte={texteAvecIA} />}
-            {lienPartage && <ButtonPartager lien={lienPartage} titre={nom} variante="icone" />}
+            {texteAvecIA && (
+              <BoutonAvecIA variante="icone" libelle="Utiliser avec l'IA" texte={texteAvecIA} compterCta={compterCatalogue} />
+            )}
+            {lienPartage && (
+              <ButtonPartager lien={lienPartage} titre={nom} variante="icone" compterPartage={compterCatalogue} />
+            )}
             <button onClick={fermer} className="text-dj-texte-muet hover:text-dj-texte">
               <X size={16} />
             </button>

@@ -26,6 +26,8 @@ import { BulleSurvol } from "./BulleSurvol";
 import { ButtonPartager, lienPartage } from "./ButtonPartager";
 import { BoutonAvecIA } from "./BoutonAvecIA";
 import { SelecteurCodesPartage } from "./SelecteurCodesPartage";
+import { PopupProposerProfilPublic } from "./PopupProposerProfilPublic";
+import { usePremierePublicationCatalogue } from "@/lib/usePremierePublicationCatalogue";
 
 // Même découpage que côté backend (core/comportements_etudiants.py) :
 // un skill_md valide est "---\n<frontmatter>\n---\n<corps>".
@@ -95,6 +97,13 @@ export function EditeurComportement({
   const [detachementEnCours, setDetachementEnCours] = useState(false);
 
   const [publicationEnCours, setPublicationEnCours] = useState(false);
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11 : voir lib/usePremierePublicationCatalogue.ts.
+  const {
+    popupOuverte: popupProfilPublicOuverte,
+    fermerPopup: fermerPopupProfilPublic,
+    signalerPublication: signalerPublicationCatalogue,
+  } = usePremierePublicationCatalogue();
   const [publie, setPublie] = useState(false);
   const [erreurPublication, setErreurPublication] = useState<string | null>(null);
 
@@ -268,6 +277,7 @@ export function EditeurComportement({
     try {
       await publierComportement(agentId, comportementActuel.id);
       setPublie(true);
+      signalerPublicationCatalogue();
     } catch (e) {
       setErreurPublication(messageErreur(e));
     } finally {
@@ -567,6 +577,8 @@ export function EditeurComportement({
           </div>
         </>
       )}
+
+      {popupProfilPublicOuverte && <PopupProposerProfilPublic onFermer={fermerPopupProfilPublic} />}
     </div>
   );
 }

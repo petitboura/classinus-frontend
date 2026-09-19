@@ -74,6 +74,9 @@ type ProfilMoi = {
   bio: string;
   avatar_url: string | null;
   notifications_proactives_actives: boolean;
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11.
+  profil_public: boolean;
 };
 
 const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
@@ -196,6 +199,12 @@ export function EspaceParametres() {
   const [nomAffiche, setNomAffiche] = useState("");
   const [bio, setBio] = useState("");
   const [notifsActives, setNotifsActives] = useState(false);
+  // 18/09/2026, chantier "profil contributeur bibliotheque publique",
+  // étape 11 : bio/nom/photo visibles par un visiteur externe (voir
+  // GET /api/profiles/{user_id}) seulement si ce réglage est actif.
+  const [profilPublicActif, setProfilPublicActif] = useState(false);
+  const [enregistrementProfilPublic, setEnregistrementProfilPublic] = useState(false);
+  const [messageProfilPublic, setMessageProfilPublic] = useState<string | null>(null);
   // Partie 7 (06/09/2026, plan confiance pédagogique, Point 3) : null =
   // jamais répondu, ne vient pas de ProfilMoi (public, voir
   // api/profiles.py::ProfilPublic -- volontairement absent de ce modèle
@@ -234,6 +243,7 @@ export function EspaceParametres() {
         setNomAffiche(p.nom_affiche || "");
         setBio(p.bio || "");
         setNotifsActives(!!p.notifications_proactives_actives);
+        setProfilPublicActif(!!p.profil_public);
       })
       .catch((e) => {
         if (e instanceof ErreurApi && e.statusCode === 401) {
@@ -292,6 +302,26 @@ export function EspaceParametres() {
       setMessageNotifs(messageErreur(e));
     } finally {
       setEnregistrementNotifs(false);
+    }
+  }
+
+  async function basculerProfilPublic(nouvelleValeur: boolean) {
+    if (nouvelleValeur === profilPublicActif) return;
+    setProfilPublicActif(nouvelleValeur); // optimiste, même pattern que basculerNotifs
+    setEnregistrementProfilPublic(true);
+    setMessageProfilPublic(null);
+    try {
+      await enregistrerMonProfil({ profil_public: nouvelleValeur });
+      setMessageProfilPublic(
+        nouvelleValeur
+          ? "Ton profil est désormais visible sur les éléments publics que tu ajoutes."
+          : "Ton profil n'est plus visible publiquement.",
+      );
+    } catch (e) {
+      setProfilPublicActif(!nouvelleValeur);
+      setMessageProfilPublic(messageErreur(e));
+    } finally {
+      setEnregistrementProfilPublic(false);
     }
   }
 
@@ -675,6 +705,32 @@ export function EspaceParametres() {
             </div>
             {erreurMajeur && <p className="text-sm text-[var(--dj-erreur)]">{erreurMajeur}</p>}
           </div>
+
+          <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-dj-texte">Profil public</span>
+              <span className="text-xs text-dj-texte-muet">
+                Ta photo, ton nom et ta bio deviennent visibles sur les fichiers, dossiers et skills que tu publies.
+                Obligatoire pour pouvoir commenter. Sans ça, tu restes anonyme sur la bibliothèque publique.
+              </span>
+            </div>
+            <button
+              role="switch"
+              aria-checked={profilPublicActif}
+              onClick={() => basculerProfilPublic(!profilPublicActif)}
+              disabled={enregistrementProfilPublic}
+              className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                profilPublicActif ? "bg-dj-accent-1" : "bg-dj-inactif"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  profilPublicActif ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+          {messageProfilPublic && <span className="text-sm text-dj-texte-muet">{messageProfilPublic}</span>}
 
           <div className="flex flex-wrap items-center gap-3">
             <button

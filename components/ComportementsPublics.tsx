@@ -431,6 +431,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
             `Utilise l'outil gerer_comportement_public (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
             `puis discutons-en ensemble.`
           }
+          compterCatalogue={{ typeElement: "skill", elementId: apercu.id }}
           onFermer={() => setApercu(null)}
         />
       )}
