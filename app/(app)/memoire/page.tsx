@@ -9,7 +9,7 @@ const SOEURS = [
 
 export default function PageMemoire() {
   return (
-    <SectionPage title="Ma mémoire" groupe={{ label: "Personnaliser Clovis", href: "/personnaliser", soeurs: SOEURS }}>
+    <SectionPage title="Ma mémoire" groupe={{ label: "Personnaliser Classinus", href: "/personnaliser", soeurs: SOEURS }}>
       <MaMemoire />
     </SectionPage>
   );
