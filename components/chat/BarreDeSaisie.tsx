@@ -363,7 +363,9 @@ export function BarreDeSaisie({
   // Réactivé le 19/09/2026 (demande Bourama : "aucun bouton pour les
   // connecter [les applis] hors il existe normalement") -- limité à
   // Drive + Notion, voir APPLIS_BOUTON_SAISIE ci-dessus.
-  const AFFICHER_BOUTON_APPLICATIONS = false;
+  // Réactivé le 19/09/2026 après ajout des routes de connexion côté serveur
+  // et de la page de retour /oauth/retour (demande Bourama).
+  const AFFICHER_BOUTON_APPLICATIONS = true;
 
   const appliButtonVisible = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length > 1;
   const appliSlotUnique = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length === 1 ? applisPourAgent[0] : null;
