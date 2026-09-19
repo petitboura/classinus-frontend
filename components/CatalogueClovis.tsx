@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
-// Catalogue "Ce qui différencie Clovis" (14/08, demande Bourama : "un
+// Catalogue "Ce qui différencie Classinus" (14/08, demande Bourama : "un
 // catalogue qui explique les choses différentes des autres IA quand on
 // arrive dans le chat"). Contenu audité directement sur le code réel des
 // deux dépôts (clovis-backend + classgpt-frontend), pas un texte marketing
@@ -55,7 +55,7 @@ const FONCTIONNALITES: Fonctionnalite[] = [
     Icone: Bot,
     titre: "Une IA qui agit, pas juste qui répond",
     description:
-      "Clovis peut naviguer dans l'appli comme toi, ajouter des documents dans ta bibliothèque, et mettre à jour sa mémoire de toi sans que tu aies à tout faire à la main.",
+      "Classinus peut naviguer dans l'appli comme toi, ajouter des documents dans ta bibliothèque, et mettre à jour sa mémoire de toi sans que tu aies à tout faire à la main.",
   },
   {
     Icone: Share2,
@@ -67,7 +67,7 @@ const FONCTIONNALITES: Fonctionnalite[] = [
     Icone: Plug,
     titre: "Connectable à Claude",
     description:
-      "Une fois connecté, Claude peut naviguer dans Clovis exactement comme toi, dans la bibliothèque et la mémoire, pas juste lire des données en vrac.",
+      "Une fois connecté, Claude peut naviguer dans Classinus exactement comme toi, dans la bibliothèque et la mémoire, pas juste lire des données en vrac.",
   },
 ];
 
@@ -89,7 +89,7 @@ const SORTIES = [
   "Rappels programmés",
 ];
 
-export function CatalogueClovis({ onFerme }: { onFerme: () => void }) {
+export function CatalogueClassinus({ onFerme }: { onFerme: () => void }) {
   // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
   // brut") : ce panneau animait son ouverture (animate-cgpt-entree-modal)
   // mais le parent (AppShell.tsx) le démonte via `{catalogueOuvert && ...}`,
@@ -125,7 +125,7 @@ export function CatalogueClovis({ onFerme }: { onFerme: () => void }) {
             <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1/10 text-dj-accent-1-texte">
               <Compass size={18} />
             </span>
-            <h2 className="font-display text-lg font-bold tracking-[-0.01em] text-dj-texte">Ce qui différencie Clovis</h2>
+            <h2 className="font-display text-lg font-bold tracking-[-0.01em] text-dj-texte">Ce qui différencie Classinus</h2>
           </div>
           <button
             onClick={fermer}
