@@ -49,6 +49,12 @@
 // troisieme forme de message recue, {"id", "montrer_action_id"} :
 // deplace uniquement le curseur vers l'element cible, sans jamais
 // l'executer.
+//
+// Ajout chantier P (19/09/2026, decision Bourama) : quatrieme forme de
+// message recue, {"texte_clovis": "..."} : commentaire libre pousse par
+// le modele du tour de conversation en cours (outil dire_a_l_etudiant
+// cote backend), sans reponse attendue. Affiche dans la bulle de dialogue
+// et garde dans le journal, quelle que soit la section de l'app.
 
 import { supabase } from "./supabase";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
@@ -217,16 +223,32 @@ async function traiterDemandeMontrer(id: string, actionId: string) {
   envoyerReponse(id, { succes: true });
 }
 
+/**
+ * Chantier P : commentaire libre de Clovis. Aucune reponse envoyee, le
+ * serveur n'en attend pas. Un texte vide ou non textuel est ignore
+ * plutot que d'afficher une bulle vide.
+ */
+function traiterTexteClovis(texte: unknown) {
+  if (typeof texte !== "string") return;
+  const propre = texte.trim();
+  if (!propre) return;
+  pousserJournalDepuisAgent(`Message : ${propre}`, "succes");
+  afficherTexteDepuisAgent(propre);
+}
+
 function traiterMessage(message: unknown) {
   if (!message || typeof message !== "object") return;
   const m = message as {
+    texte_clovis?: unknown;
     id?: string;
     action_id?: string;
     selecteur_generique?: string;
     description?: string;
     montrer_action_id?: string;
   };
-  if (m.id && m.action_id) {
+  if (m.texte_clovis !== undefined) {
+    traiterTexteClovis(m.texte_clovis);
+  } else if (m.id && m.action_id) {
     traiterDemandeAction(m.id, m.action_id);
   } else if (m.id && m.selecteur_generique) {
     traiterDemandeClicGenerique(m.id, m.selecteur_generique, m.description ?? "une action dans l'application");

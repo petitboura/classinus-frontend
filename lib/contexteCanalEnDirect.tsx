@@ -168,7 +168,12 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   // passe. Un nouveau texte reporte le délai plutôt que de s'ajouter au
   // précédent.
   const minuteurEffacement = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Durée minimale, allongée selon la longueur du texte (chantier P) :
+  // un commentaire libre de deux phrases ne se lit pas en 5 secondes.
+  // Plafonnée pour qu'un texte long ne bloque pas la bulle indéfiniment.
   const DUREE_AFFICHAGE_MS = 5000;
+  const DUREE_PAR_CARACTERE_MS = 60;
+  const DUREE_AFFICHAGE_MAX_MS = 15000;
 
   // Lecture des préférences après le montage, jamais pendant le premier
   // rendu : le serveur ne connaît pas localStorage, lire plus tôt
@@ -209,10 +214,11 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const afficherTexte = useCallback((texte: string) => {
     if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
     setDernierTexte(texte);
+    const duree = Math.min(DUREE_AFFICHAGE_MAX_MS, Math.max(DUREE_AFFICHAGE_MS, texte.length * DUREE_PAR_CARACTERE_MS));
     minuteurEffacement.current = setTimeout(() => {
       minuteurEffacement.current = null;
       setDernierTexte(null);
-    }, DUREE_AFFICHAGE_MS);
+    }, duree);
   }, []);
 
   const ajouterEntreeJournal = useCallback((description: string, statut: StatutEntreeJournal = "en_cours"): string => {
