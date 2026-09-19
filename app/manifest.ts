@@ -65,8 +65,8 @@ export default function manifest(): MetadataRoute.Manifest {
 
   return {
     id: "/",
-    name: "Clovis",
-    short_name: "Clovis",
+    name: "Classinus",
+    short_name: "Classinus",
     description: "Ton compagnon d'études pour la classe.",
     start_url: "/",
     scope: "/",
