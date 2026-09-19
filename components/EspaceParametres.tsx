@@ -23,7 +23,7 @@ import {
 import { BoutonRetour } from "./BoutonRetour";
 import { ChampMotDePasse } from "./ChampMotDePasse";
 import { supabase } from "@/lib/supabase";
-import { appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte, exporterMesDonnees, obtenirMonStatut, obtenirInfosClovis, ID_ELEMENT_CLOVIS } from "@/lib/api";
+import { appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte, exporterMesDonnees, obtenirMonStatut, obtenirInfosClassinus, ID_ELEMENT_CLOVIS } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
 import { Skeleton } from "./Skeleton";
@@ -61,7 +61,7 @@ import { SectionCommentairesCatalogue } from "./SectionCommentairesCatalogue";
  *
  * Deux sections minimales par manque de contenu réel (signalé à Bourama
  * plutôt qu'inventé) : Aide et support (pas d'adresse dédiée trouvée dans
- * le projet), À propos (pas de CGU propres à Clovis, liens vers les pages
+ * le projet), À propos (pas de CGU propres à Classinus, liens vers les pages
  * légales déjà en ligne sur la vitrine).
  *
  * Pas de mécanisme i18n branché ici (même constat que MesComportements.tsx
@@ -239,17 +239,17 @@ export function EspaceParametres() {
   const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
 
   // 18/09/2026, chantier "profil contributeur bibliotheque publique",
-  // étape 13 : avis sur Clovis lui-même (voir vue "À propos" plus bas).
-  const [infosClovis, setInfosClovis] = useState<{ etoilesCount: number; monEtoile: boolean } | null>(null);
+  // étape 13 : avis sur Classinus lui-même (voir vue "À propos" plus bas).
+  const [infosClassinus, setInfosClassinus] = useState<{ etoilesCount: number; monEtoile: boolean } | null>(null);
 
   useEffect(() => {
-    if (vue !== "a-propos" || infosClovis) return;
-    obtenirInfosClovis()
-      .then((r) => setInfosClovis({ etoilesCount: r.etoiles_count, monEtoile: r.mon_etoile }))
+    if (vue !== "a-propos" || infosClassinus) return;
+    obtenirInfosClassinus()
+      .then((r) => setInfosClassinus({ etoilesCount: r.etoiles_count, monEtoile: r.mon_etoile }))
       .catch(() => {
         // Silencieux : l'étoile reste juste absente, pas bloquant pour le reste de la page.
       });
-  }, [vue, infosClovis]);
+  }, [vue, infosClassinus]);
 
   useEffect(() => {
     lireMonProfil()
@@ -383,7 +383,7 @@ export function EspaceParametres() {
   }
 
   async function handleExporterMesDonnees() {
-    if (!window.confirm("Télécharger une copie de toutes tes données Clovis ?")) return;
+    if (!window.confirm("Télécharger une copie de toutes tes données Classinus ?")) return;
 
     setExportEnCours(true);
     setErreurExport(null);
@@ -397,7 +397,7 @@ export function EspaceParametres() {
   }
 
   async function seDeconnecter() {
-    if (!window.confirm("Se déconnecter de Clovis ?")) return;
+    if (!window.confirm("Se déconnecter de Classinus ?")) return;
 
     await supabase.auth.signOut();
     window.location.href = "/connexion";
@@ -408,10 +408,10 @@ export function EspaceParametres() {
     // même doit demander deux fois") -- un premier window.confirm ici,
     // puis la saisie "SUPPRIMER" ci-dessous (déjà en place), pour cette
     // action seule (Exporter/Se déconnecter n'en ont qu'une).
-    if (!window.confirm("Supprimer définitivement ton compte Clovis ?")) return;
+    if (!window.confirm("Supprimer définitivement ton compte Classinus ?")) return;
 
     const saisie = window.prompt(
-      'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Clovis seront supprimés. Tape "SUPPRIMER" pour confirmer.'
+      'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Classinus seront supprimés. Tape "SUPPRIMER" pour confirmer.'
     );
     if (saisie !== "SUPPRIMER") return;
 
@@ -564,7 +564,7 @@ export function EspaceParametres() {
           <LigneListe
             icone={Download}
             titre={exportEnCours ? "Export en cours…" : "Exporter mes données"}
-            sousTitre="Télécharger une copie de tout ce que Clovis sait sur toi"
+            sousTitre="Télécharger une copie de tout ce que Classinus sait sur toi"
             onClick={handleExporterMesDonnees}
           />
         </Liste>
@@ -796,9 +796,9 @@ export function EspaceParametres() {
 
           <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-dj-texte">Relances de Clovis</span>
+              <span className="text-sm font-medium text-dj-texte">Relances de Classinus</span>
               <span className="text-xs text-dj-texte-muet">
-                Autorise Clovis à te relancer si tu es inactif, pour ne pas perdre le fil.
+                Autorise Classinus à te relancer si tu es inactif, pour ne pas perdre le fil.
               </span>
             </div>
             <button
@@ -875,7 +875,7 @@ export function EspaceParametres() {
             className="flex items-center gap-2 rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
             <MessageCircle size={16} />
-            Poser une question à Clovis
+            Poser une question à Classinus
           </button>
         </div>
         <div>
@@ -905,14 +905,14 @@ export function EspaceParametres() {
       <EnTete titre="À propos" onRetour={() => setVue("liste")} />
       <div className="flex flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4 text-sm">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-dj-texte">Clovis</span>
-          {infosClovis && (
+          <span className="text-dj-texte">Classinus</span>
+          {infosClassinus && (
             <BoutonEtoile
               typeElement="clovis"
               elementId={ID_ELEMENT_CLOVIS}
-              count={infosClovis.etoilesCount}
-              active={infosClovis.monEtoile}
-              onBascule={(etoile, etoilesCount) => setInfosClovis({ monEtoile: etoile, etoilesCount })}
+              count={infosClassinus.etoilesCount}
+              active={infosClassinus.monEtoile}
+              onBascule={(etoile, etoilesCount) => setInfosClassinus({ monEtoile: etoile, etoilesCount })}
             />
           )}
         </div>
