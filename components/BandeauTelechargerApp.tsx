@@ -50,10 +50,10 @@ export function BandeauTelechargerApp({ titre }: { titre: string }) {
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col items-center gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-6 text-center">
       <Smartphone size={22} className="text-dj-texte-muet" />
-      <p className="text-sm text-dj-texte-muet">{titre} a besoin de l&apos;app Clovis pour fonctionner.</p>
+      <p className="text-sm text-dj-texte-muet">{titre} a besoin de l&apos;app Classinus pour fonctionner.</p>
       <Link
         href="/telecharger"
-        aria-label="Accéder à l'application Clovis"
+        aria-label="Accéder à l'application Classinus"
         className="mt-1 flex h-[26px] items-center gap-2 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
       >
         {appareil === null ? (
