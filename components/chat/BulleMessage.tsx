@@ -53,7 +53,7 @@ const GraphiqueDonnees = dynamic(() => import("./GraphiqueDonnees").then((m) => 
 // nouvelle référence à chaque rendu -- donc à chaque chunk reçu en
 // streaming pour le message en cours -- alors que leur contenu ne
 // change jamais. Même valeurs qu'avant, juste calculées une seule fois.
-const PLUGINS_REMARK: PluggableList = [remarkGfm, remarkMath];
+export const PLUGINS_REMARK: PluggableList = [remarkGfm, remarkMath];
 // rehype-sanitize retire par défaut tout href dont le "protocole" n'est
 // pas dans une liste blanche (http/https/mailto...) -- il faut y ajouter
 // "citation" explicitement, sinon [n](citation:n) (26/08, voir a() plus
@@ -67,7 +67,7 @@ const SCHEMA_SANITIZE = {
   },
 };
 
-const PLUGINS_REHYPE: PluggableList = [rehypeRaw, [rehypeSanitize, SCHEMA_SANITIZE], rehypeKatex];
+export const PLUGINS_REHYPE: PluggableList = [rehypeRaw, [rehypeSanitize, SCHEMA_SANITIZE], rehypeKatex];
 
 // Noeud HAST minimal -- on ne type que ce dont pluginMotsFade a besoin,
 // pas la forme complète de hast.Node (évite d'ajouter @types/hast comme
@@ -146,7 +146,7 @@ function pluginMotsFade(options: { seuil: number; rapporterTotal: (n: number) =>
 // Extrait le texte brut d'un enfant React -- nécessaire pour récupérer le
 // contenu source d'un bloc de code (```lang ... ```) tel que ReactMarkdown
 // le structure : <pre><code className="language-xxx">texte brut</code></pre>.
-function texteBrut(node: ReactNode): string {
+export function texteBrut(node: ReactNode): string {
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(texteBrut).join("");
   if (isValidElement(node)) return texteBrut((node.props as { children?: ReactNode }).children);
@@ -208,7 +208,7 @@ function nettoyerMarkdownPourLecture(source: string): string {
 // juste porté ici côté JS). On convertit donc systématiquement vers les
 // délimiteurs $ $ / $$ $$, que remark-math sait consommer directement et
 // que CommonMark ne touche pas (le $ n'a pas de sens spécial pour lui).
-function normaliserLatex(texte: string): string {
+export function normaliserLatex(texte: string): string {
   return texte
     .replace(/\\\[([\s\S]*?)\\\]/g, (_, formule) => `$$${formule}$$`)
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, formule) => `$${formule}$`);
