@@ -269,6 +269,7 @@ export function BulleDialogueAgent() {
         <motion.div
           ref={refBulle}
           key="bulle"
+          data-agent-superposition="true"
           role="status"
           aria-live="polite"
           initial={{ opacity: 0, scale: 0.92 }}
@@ -279,7 +280,9 @@ export function BulleDialogueAgent() {
             position: "fixed",
             top: haut,
             left: gauche,
-            zIndex: 70,
+            // Au dessus des popups de l'application (z-index jusqu'à 999),
+            // juste sous le curseur de Clovis (10000).
+            zIndex: 9990,
             pointerEvents: "none",
             maxWidth: tailleAppliquee
               ? `calc(100vw - ${MARGE_BORD * 2}px)`

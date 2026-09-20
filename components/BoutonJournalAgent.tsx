@@ -59,7 +59,7 @@ export function BoutonJournalAgent() {
   const { journal } = contexte;
 
   return (
-    <div ref={ref} className="fixed bottom-4 right-4 z-[65]">
+    <div ref={ref} data-agent-superposition="true" className="fixed bottom-4 right-4 z-[65]">
       <button
         onClick={() => setOuvert((v) => !v)}
         aria-label="Journal des actions de Classinus"

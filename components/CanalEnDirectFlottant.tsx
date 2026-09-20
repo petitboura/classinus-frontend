@@ -50,6 +50,7 @@ export function CanalEnDirectFlottant() {
 
   return (
     <div
+      data-agent-superposition="true"
       className={`fixed z-[65] flex flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
       style={{ left: `calc(${decalageRail}px + 1rem)` }}
     >

@@ -182,14 +182,101 @@ function estAfficheALEcran(element: HTMLElement, rect: DOMRect, cache?: CacheAff
   return true;
 }
 
+// Attribut posé sur les éléments que le canal en direct superpose lui même
+// à l'application (curseur de Clovis, bulle, boutons du canal). Ils ne
+// comptent jamais comme "un élément qui en masque un autre" : sinon un
+// bouton de la page passerait pour masqué dès que la bulle est au dessus.
+export const ATTRIBUT_SUPERPOSITION = "data-agent-superposition";
+
+// Points testés dans l'élément (fractions de sa partie visible) : le
+// centre et les quatre quarts.
+const POINTS_TEST_MASQUAGE: ReadonlyArray<readonly [number, number]> = [
+  [0.5, 0.5],
+  [0.25, 0.25],
+  [0.75, 0.25],
+  [0.25, 0.75],
+  [0.75, 0.75],
+];
+
+/**
+ * Vrai si l'élément est recouvert par un AUTRE élément de l'application
+ * (fenêtre, popup, menu ouvert, fond opaque) : un vrai clic à cet endroit
+ * tomberait sur ce qui le recouvre, pas sur lui. Ajouté le 20/09/2026
+ * (Bourama : "les popups passent en dessus, ce qui empêche l'IA de voir
+ * et de cliquer") : sans ça, Clovis voyait dans sa liste les boutons de la
+ * page cachés derrière une popup, alors qu'il ne pouvait pas les atteindre.
+ *
+ * Réponse "masqué" seulement quand c'est CERTAIN : les cinq points testés
+ * dans la partie visible de l'élément sont tous recouverts par un élément
+ * sans rapport avec lui. Si un seul point montre l'élément (ou l'un de ses
+ * parents ou enfants, ou son libellé), il reste disponible. Comme
+ * elementsFromPoint, le test suit la même règle que la souris : un
+ * élément en pointer-events none ne masque rien, et les éléments
+ * superposés par le canal lui même sont ignorés.
+ */
+export function estMasqueParAutreElement(element: HTMLElement, cache?: CacheAffichage): boolean {
+  if (typeof document === "undefined") return false;
+  const rect = element.getBoundingClientRect();
+  let gauche = Math.max(rect.left, 0);
+  let droite = Math.min(rect.right, window.innerWidth);
+  let haut = Math.max(rect.top, 0);
+  let bas = Math.min(rect.bottom, window.innerHeight);
+
+  // Partie de l'élément réellement visible : on retire ce que coupent ou
+  // font défiler ses parents. Un élément dont la partie visible est vide
+  // est simplement hors de sa zone de défilement (le scrollIntoView de
+  // l'appelant le ramène), pas masqué : sans ça, tout ce qui est en bas
+  // d'une longue liste passerait à tort pour recouvert par ce qu'il y a
+  // sous la liste.
+  const cacheLocal = cache ?? new Map<HTMLElement, InfoNoeud>();
+  let parent = element.parentElement;
+  while (parent && parent !== document.body && parent !== document.documentElement) {
+    const info = lireInfoNoeud(parent, cacheLocal);
+    if (info.rect && (info.coupeX || info.coupeY || info.defile)) {
+      gauche = Math.max(gauche, info.rect.left);
+      droite = Math.min(droite, info.rect.right);
+      haut = Math.max(haut, info.rect.top);
+      bas = Math.min(bas, info.rect.bottom);
+    }
+    parent = parent.parentElement;
+  }
+
+  // Rien (ou presque rien) de visible : ce cas relève de estAfficheALEcran
+  // et du défilement, pas du masquage.
+  if (droite - gauche < 2 || bas - haut < 2) return false;
+
+  for (const [fx, fy] of POINTS_TEST_MASQUAGE) {
+    const x = gauche + (droite - gauche) * fx;
+    const y = haut + (bas - haut) * fy;
+    const dessus = document
+      .elementsFromPoint(x, y)
+      .find((candidat) => !candidat.closest(`[${ATTRIBUT_SUPERPOSITION}]`));
+    // Aucun élément de l'application à ce point : incertain, on ne conclut pas.
+    if (!dessus) return false;
+    if (dessus === element || element.contains(dessus) || dessus.contains(element)) return false;
+    if (dessus instanceof HTMLLabelElement && dessus.control === element) return false;
+  }
+  return true;
+}
+
 /**
  * Vrai si l'élément est réellement visible et actionnable à l'instant
  * présent -- jamais mémorisé, toujours recalculé au moment de l'appel
  * (même principe que obtenirActionsDisponibles pour le chantier A).
  * `cache` est facultatif : le scan en fournit un pour ne lire qu'une
- * fois le style de chaque parent commun.
+ * fois le style de chaque parent commun. Un élément recouvert par une
+ * popup ou une fenêtre n'est PAS disponible (voir estMasqueParAutreElement).
  */
 export function estVisibleEtActif(element: HTMLElement, cache?: CacheAffichage): boolean {
+  return estVisibleEtActifSansMasquage(element, cache) && !estMasqueParAutreElement(element, cache);
+}
+
+/**
+ * Mêmes vérifications que estVisibleEtActif, sauf celle du masquage :
+ * sert à savoir si un élément est bien là mais recouvert (pour le dire
+ * clairement à Clovis) plutôt que simplement absent.
+ */
+export function estVisibleEtActifSansMasquage(element: HTMLElement, cache?: CacheAffichage): boolean {
   if (element.hasAttribute("disabled")) return false;
   if (element.getAttribute("aria-disabled") === "true") return false;
 

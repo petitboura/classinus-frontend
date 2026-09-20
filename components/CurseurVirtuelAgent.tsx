@@ -44,6 +44,7 @@ export function CurseurVirtuelAgent() {
     <AnimatePresence>
       {visible && (
         <motion.div
+          data-agent-superposition="true"
           role="presentation"
           aria-hidden="true"
           initial={{ opacity: 0 }}
@@ -68,11 +69,12 @@ export function CurseurVirtuelAgent() {
             position: "fixed",
             top: 0,
             left: 0,
-            // Au dessus de la bulle de dialogue (zIndex 70, voir
-            // BulleDialogueAgent.tsx) : le curseur ne doit jamais passer
-            // derrière, sinon on ne peut plus cliquer dessus pour rouvrir
-            // ou fermer la réponse.
-            zIndex: 80,
+            // Au dessus de la bulle de dialogue (voir BulleDialogueAgent.tsx)
+            // ET de toutes les popups de l'application (leurs z-index vont
+            // jusqu'à 999) : le curseur ne doit jamais passer derrière,
+            // sinon on ne le voit plus cliquer dans une popup et on ne peut
+            // plus cliquer dessus pour rouvrir ou fermer la réponse.
+            zIndex: 10000,
             pointerEvents: enAction ? "none" : "auto",
             touchAction: "none",
             cursor: enAction ? undefined : "grab",

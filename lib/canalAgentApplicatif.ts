@@ -67,7 +67,12 @@ import { supabase } from "./supabase";
 import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
-import { estVisibleEtActif, resoudreElementCliquable } from "./clicGenerique";
+import {
+  estMasqueParAutreElement,
+  estVisibleEtActif,
+  estVisibleEtActifSansMasquage,
+  resoudreElementCliquable,
+} from "./clicGenerique";
 import {
   pousserJournalDepuisAgent,
   mettreAJourJournalDepuisAgent,
@@ -98,6 +103,21 @@ function resoudreElementParAgentId(agentId: string): HTMLElement | null {
   if (!(element instanceof HTMLElement)) return null;
   if (!estVisibleEtActif(element)) return null;
   return element;
+}
+
+// Texte renvoyé à Clovis quand l'élément visé est bien à l'écran mais
+// recouvert par une fenêtre ou une popup ouverte (correctif du 20/09/2026).
+const ERREUR_ELEMENT_MASQUE =
+  "Cet élément est masqué par une fenêtre, un menu ou une popup ouverte : un clic tomberait dessus, pas sur lui. Ferme d'abord ce qui le recouvre (bouton fermer, annuler ou retour visible dans ta liste), puis réessaie.";
+
+/**
+ * L'élément visé est-il monté ICI, visible et actif, mais recouvert ?
+ * Seul ce cas donne une vraie erreur : un élément absent ou indisponible
+ * reste un "ignore", pour laisser une autre connexion du même compte
+ * répondre.
+ */
+function estPresentMaisMasque(element: HTMLElement | null): boolean {
+  return !!element && estVisibleEtActifSansMasquage(element) && estMasqueParAutreElement(element);
 }
 
 function urlWebSocket(token: string): string | null {
@@ -317,7 +337,13 @@ async function traiterDemandeAction(id: string, actionId: string) {
 
   // Pas montee ICI (autre onglet/appareil, ou element deja disparu) :
   // "ignore", jamais une erreur -- laisse la vraie connexion repondre.
+  // Exception : monte ici mais recouvert par une popup, vraie erreur.
   if (!element) {
+    const brut = document.querySelector(`[${ATTRIBUT_AGENT_ID}="${CSS.escape(actionId)}"]`);
+    if (brut instanceof HTMLElement && estPresentMaisMasque(brut)) {
+      envoyerReponse(id, { erreur: ERREUR_ELEMENT_MASQUE });
+      return;
+    }
     envoyerReponse(id, { ignore: true });
     return;
   }
