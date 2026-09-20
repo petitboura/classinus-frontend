@@ -148,10 +148,12 @@ class ClovisApiClient(private val context: Context) {
         return reponse.body()
     }
 
-    suspend fun obtenirAction(actionId: String): ActionAppareil {
-        val reponse: HttpResponse = http.get("$BASE_URL/api/appareils-mobiles/actions/$actionId") {
+    suspend fun prendreAction(actionId: String, appareilId: String): ActionAppareil? {
+        val reponse: HttpResponse = http.post("$BASE_URL/api/appareils-mobiles/actions/$actionId/prise-en-charge") {
             avecAuth(this)
+            parameter("appareil_id", appareilId)
         }
+        if (reponse.status.value == 404 || reponse.status.value == 409) return null
         return reponse.body()
     }
 
