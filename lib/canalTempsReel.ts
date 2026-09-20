@@ -447,18 +447,18 @@ async function ouvrirCanal() {
       appareilIdCourant = "";
     } else if (pluginDossiers) {
       try {
-        appareilIdCourant = (await pluginDossiers.obtenirInfosAppareil()).appareilId;
+        const infos = await pluginDossiers.obtenirInfosAppareil();
+        appareilIdCourant = infos.appareilId || undefined;
       } catch {
-        // Echec inattendu (plugin enregistre mais methode indisponible,
-        // ex. ancienne version de l'app pas encore mise a jour) : ""
-        // reste un repli sur, jamais un blocage de l'ouverture du canal.
-        appareilIdCourant = "";
+        // Sans identité native fiable, on n'ouvre pas le canal : un "" de
+        // repli ferait de deux téléphones du même compte la même connexion.
+        appareilIdCourant = undefined;
       }
     }
-    // Sinon (natif mais plugin pas encore enregistre) : appareilIdCourant
-    // reste undefined, reessaye au prochain ouvrirCanal() (ex. prochain
-    // visibilitychange), sans bloquer CETTE ouverture -- utilise "" pour
-    // cette premiere connexion seulement, non mis en cache plus bas.
+    // Natif sans plugin prêt ou sans identité : réessai au prochain cycle.
+  }
+  if (appareilIdCourant === undefined && Boolean((window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.())) {
+    return;
   }
   const appareilIdPourCetteConnexion = appareilIdCourant ?? "";
 
