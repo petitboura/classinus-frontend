@@ -352,17 +352,48 @@ export function useOuvrirGuide() {
   };
 }
 
+// Démo (20/09/2026, décision Bourama : "la démo se passe dans le chat
+// normal et ouvre le canal seulement quand il est temps de lui démontrer
+// lui") : même mécanisme que useOuvrirGuide ci-dessus (nouvelle
+// conversation dédiée, mode activé côté serveur avant que le chat
+// n'adopte le même id, texte initial envoyé dans le chat normal), avec
+// sous_mode "demo". Le canal en direct n'est PAS activé ici : c'est
+// Clovis qui le demande plus tard (outil ouvrir_canal_en_direct côté
+// backend, reçu par lib/canalAgentApplicatif.ts).
+export function useOuvrirDemo() {
+  const ctx = useContext(ContexteChat);
+  const router = useRouter();
+  return async () => {
+    const conversationId = crypto.randomUUID();
+    try {
+      await appelerApi(`/api/conversations/${conversationId}/guide-actif`, {
+        method: "PUT",
+        body: JSON.stringify({ actif: true, sous_mode: "demo" }),
+      });
+    } catch (e) {
+      // Même choix que useOuvrirGuide : un utilisateur non connecté n'a
+      // pas de session, on ouvre quand même le chat plutôt que de
+      // bloquer le clic (Classinus répondra sans le mode démo).
+      console.error("Erreur activation démo:", e);
+    }
+    ctx?.setDemandeGuide({ conversationId, texte: "Lance la démo de Classinus." });
+    ctx?.fermerAvecFondu();
+    router.push("/chat");
+  };
+}
+
 // Chantier "demo + guide visuel" (20/09/2026, demande Bourama, voir
-// specs-demo-decouverte.md dans clovis-frontend) : ouvre le Guide visuel
-// ou la Demo, tous deux portés par le canal en direct (curseur + bulle
-// par-dessus l'appli, voir lib/contexteCanalEnDirect.tsx) plutôt que par
-// le panneau de chat classique -- même raison technique que le canal en
-// direct "assistant autonome" : canal_en_direct doit valoir true dès le
-// tout premier message pour que les outils de clic soient forcés (voir
-// core/main.py, condition `if canal_en_direct:`), ce que seule une
-// session du canal sait faire, pas une conversation de chat normale.
-// D'où ce hook séparé de useOuvrirGuide ci-dessus (qui, lui, reste sur
-// le chat classique pour le guide textuel -- comportement inchangé).
+// specs-demo-decouverte.md dans clovis-frontend) : ouvre le Guide visuel,
+// porté par le canal en direct (curseur + bulle par-dessus l'appli, voir
+// lib/contexteCanalEnDirect.tsx) plutôt que par le panneau de chat
+// classique -- même raison technique que le canal en direct "assistant
+// autonome" : canal_en_direct doit valoir true dès le tout premier
+// message pour que les outils de clic soient forcés (voir core/main.py,
+// condition `if canal_en_direct:`), ce que seule une session du canal
+// sait faire, pas une conversation de chat normale. D'où ce hook séparé
+// de useOuvrirGuide ci-dessus (qui, lui, reste sur le chat classique
+// pour le guide textuel -- comportement inchangé). La Démo n'utilise
+// plus ce hook (voir useOuvrirDemo ci-dessus).
 //
 // Même id choisi AVANT activation que useOuvrirGuide, pour pouvoir
 // activer le mode découverte côté serveur (PUT .../guide-actif, avec
@@ -372,7 +403,7 @@ export function useOuvrirGuide() {
 // lib/canalAgentApplicatif.ts).
 export function useOuvrirDecouverteCanal() {
   const canal = useCanalEnDirect();
-  return async (sousMode: "visuel" | "demo") => {
+  return async (sousMode: "visuel") => {
     const conversationId = crypto.randomUUID();
     try {
       await appelerApi(`/api/conversations/${conversationId}/guide-actif`, {
@@ -388,10 +419,7 @@ export function useOuvrirDecouverteCanal() {
       console.error("Erreur activation découverte (canal):", e);
     }
     canal.activer(conversationId);
-    const texte =
-      sousMode === "visuel"
-        ? "Lance le guide de découverte visuel de Classinus."
-        : "Lance la démo de Classinus.";
+    const texte = "Lance le guide de découverte visuel de Classinus.";
     // setTimeout(0) volontaire, pas un oubli : canal.activer() ci-dessus
     // ne fait que programmer les setState (actif, conversationId) --
     // envoyerMessageEtudiant lit conversationId via obtenirConversationIdCanal

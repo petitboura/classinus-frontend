@@ -166,6 +166,17 @@ export function mettreAJourJournalDepuisAgent(id: string, statut: StatutEntreeJo
   canalGlobal?.mettreAJourEntreeJournal(id, statut);
 }
 
+/**
+ * Démo (20/09/2026) : Clovis demande d'ouvrir le canal en direct (outil
+ * ouvrir_canal_en_direct côté backend). Sans effet si le canal est déjà
+ * actif ou si aucun Provider n'est monté. conversationId : celle de la
+ * démo, pour que le mode démo continue dans le canal.
+ */
+export function activerCanalDepuisAgent(conversationId?: string) {
+  if (!canalGlobal || canalGlobal.actif) return;
+  canalGlobal.activer(conversationId);
+}
+
 export function afficherTexteDepuisAgent(texte: string) {
   canalGlobal?.afficherTexte(texte);
 }

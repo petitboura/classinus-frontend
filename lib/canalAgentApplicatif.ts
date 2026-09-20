@@ -85,6 +85,7 @@ import {
   mettreAJourJournalDepuisAgent,
   afficherReponseDepuisAgent,
   afficherTexteDepuisAgent,
+  activerCanalDepuisAgent,
   type ImageCanal,
   type SourceCanal,
   obtenirConversationIdCanal,
@@ -556,6 +557,20 @@ function traiterTexteClovis(texte: unknown) {
   afficherTexteDepuisAgent(propre);
 }
 
+/**
+ * Démo (20/09/2026) : Clovis demande d'ouvrir le canal en direct au
+ * moment de le démontrer. Aucune réponse envoyée, le serveur n'en attend
+ * pas. Le message de suite de la démo arrive plus tard, à la fin du tour
+ * de Clovis, comme un message normal du chat (message_etudiant_renvoye).
+ */
+function traiterOuvertureCanal(valeur: unknown) {
+  const conversationId =
+    valeur && typeof valeur === "object" && typeof (valeur as { conversation_id?: unknown }).conversation_id === "string"
+      ? ((valeur as { conversation_id: string }).conversation_id)
+      : undefined;
+  activerCanalDepuisAgent(conversationId);
+}
+
 function traiterMessage(message: unknown) {
   if (!message || typeof message !== "object") return;
   const m = message as {
@@ -563,6 +578,7 @@ function traiterMessage(message: unknown) {
     pris_en_compte?: unknown;
     message_etudiant_renvoye?: unknown;
     texte_clovis?: unknown;
+    ouvrir_canal_en_direct?: unknown;
     id?: string;
     action_id?: string;
     texte_a_ecrire?: string;
@@ -578,6 +594,8 @@ function traiterMessage(message: unknown) {
     envoyerViaRepli(m.message_etudiant_renvoye);
   } else if (m.texte_clovis !== undefined) {
     traiterTexteClovis(m.texte_clovis);
+  } else if (m.ouvrir_canal_en_direct !== undefined) {
+    traiterOuvertureCanal(m.ouvrir_canal_en_direct);
   } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
     traiterDemandeEcriture(m.id, m.action_id, m.texte_a_ecrire);
   } else if (m.id && m.action_id) {

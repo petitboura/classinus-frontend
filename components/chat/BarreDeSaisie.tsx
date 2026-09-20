@@ -19,7 +19,7 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
-import { useOuvrirGuide, useOuvrirDecouverteCanal } from "@/lib/contexteChat";
+import { useOuvrirGuide, useOuvrirDemo, useOuvrirDecouverteCanal } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
@@ -512,6 +512,9 @@ export function BarreDeSaisie({
   // visuel et Demo passent par le canal en direct, voir
   // useOuvrirDecouverteCanal dans lib/contexteChat.tsx.
   const ouvrirDecouverteCanal = useOuvrirDecouverteCanal();
+  // Démo : chat normal, le canal ne s'ouvre que quand Clovis le demande
+  // (20/09/2026, décision Bourama), voir useOuvrirDemo.
+  const ouvrirDemo = useOuvrirDemo();
   // Canal en direct, chantier L (19/09/2026) : point d'entree depuis le
   // chat, en plus du bouton flottant (masque sur /chat). Contexte
   // nullable : la barre de saisie peut etre montee hors AppShell.
@@ -1964,7 +1967,7 @@ export function BarreDeSaisie({
                 {[
                   { Icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
                   { Icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
-                  { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDecouverteCanal("demo") },
+                  { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDemo() },
                 ].map(({ Icone, label, onClick }, i) => (
                   <button
                     key={label}
@@ -2365,7 +2368,7 @@ export function BarreDeSaisie({
               {[
                 { Icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
                 { Icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
-                { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDecouverteCanal("demo") },
+                { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDemo() },
               ].map(({ Icone, label, onClick }) => (
                 <button
                   key={label}

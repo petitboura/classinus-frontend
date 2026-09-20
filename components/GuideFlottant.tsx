@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Compass, MessageSquareText, Eye, Sparkles } from "lucide-react";
-import { useOuvrirGuide, useOuvrirDecouverteCanal } from "@/lib/contexteChat";
+import { useOuvrirGuide, useOuvrirDemo, useOuvrirDecouverteCanal } from "@/lib/contexteChat";
 
 // Bouton flottant "Guide de decouverte", etape 4 du chantier (voir
 // specs-guide-decouverte.md a la racine de ce depot), 16/09/2026, demande
@@ -41,6 +41,9 @@ const SEUIL_GLISSEMENT = 4;
 export function GuideFlottant() {
   const ouvrirGuide = useOuvrirGuide();
   const ouvrirDecouverteCanal = useOuvrirDecouverteCanal();
+  // Démo : chat normal, le canal ne s'ouvre que quand Clovis le demande
+  // (20/09/2026, décision Bourama), voir useOuvrirDemo.
+  const ouvrirDemo = useOuvrirDemo();
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   // Chantier "demo + guide visuel" (20/09/2026) : menu a trois choix,
   // voir commentaire d'en-tete du fichier.
@@ -93,7 +96,7 @@ export function GuideFlottant() {
   const optionsMenu: { icone: typeof Compass; label: string; onClick: () => void }[] = [
     { icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
     { icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
-    { icone: Sparkles, label: "Démo", onClick: () => ouvrirDecouverteCanal("demo") },
+    { icone: Sparkles, label: "Démo", onClick: () => ouvrirDemo() },
   ];
 
   return (
