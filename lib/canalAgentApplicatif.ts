@@ -143,7 +143,7 @@ type PluginInfosAppareil = {
   obtenirInfosAppareil(): Promise<{ appareilId: string }>;
 };
 
-async function obtenirAppareilIdPourCanal(): Promise<string> {
+async function obtenirAppareilIdPourCanal(): Promise<string | null> {
   try {
     const { Capacitor, registerPlugin } = await import("@capacitor/core");
     if (!Capacitor.isNativePlatform()) return "";
