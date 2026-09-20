@@ -322,6 +322,17 @@ export interface MessageAffiche {
   // BulleMessage l'utilise à la place de l'affichage groupé pour CE
   // message précis.
   segments?: SegmentMessage[];
+  // Ajouté 20/09/2026 (demande Bourama : bouton arrêter, jusque-là
+  // inexistant, voir lib/api.ts:appelerApiStream et
+  // ChatIA.tsx:arreterGeneration) : true quand cette réponse précise a
+  // été coupée par l'étudiant en plein streaming (AbortController côté
+  // frontend). Le texte déjà reçu reste affiché tel quel (fait partie
+  // de la conversation, jamais effacé) ; ce champ sert uniquement à
+  // afficher le bandeau "Réponse interrompue" avec ses actions sous ce
+  // message précis (voir BandeauReponseInterrompue.tsx). Devient
+  // obsolète (ignoré) dès qu'un nouveau message est envoyé, même
+  // principe que repriseDisponible ci-dessus.
+  interrompue?: boolean;
 }
 
 // Un bloc de la timeline en direct (voir MessageAffiche.segments). `texte`
@@ -463,10 +474,23 @@ function BulleMessageInterne({
   conversationId,
   onRepondreQuestion,
   questionDejaRepondue,
+  declencherEdition,
 }: {
   message: MessageAffiche;
   onRegenerer?: () => void;
   onEditer?: (nouveauTexte: string) => void;
+  // Ajouté 20/09/2026 (demande Bourama, bouton "Modifier" du bandeau
+  // "Réponse interrompue" sur le message ASSISTANT suivant, voir
+  // BandeauReponseInterrompue.tsx et ChatIA.tsx:modifierApresInterruption)
+  // : déclencheur externe pour ouvrir le mode édition de CE message
+  // utilisateur précis, depuis un composant frère (donc en dehors de ce
+  // composant-ci, qui gère enEdition en state local). Un simple booléen
+  // ne suffit pas, deux clics de suite sur "Modifier" avec le même
+  // index ne redéclencheraient rien puisque la prop resterait à `true`
+  // sans jamais redevenir `false` entre les deux, donc un NOMBRE qui
+  // change à chaque demande (peu importe sa valeur), comparé à la
+  // dernière valeur traitée dans un ref ci-dessous.
+  declencherEdition?: number;
   onLike?: () => void;
   onDislike?: () => void;
   // Refonte du 10/09/2026 : undefined tant que le message n'a pas d'id
@@ -513,6 +537,18 @@ function BulleMessageInterne({
   const [copie, setCopie] = useState(false);
   const [pieceJointeOuverteIndex, setPieceJointeOuverteIndex] = useState<number | null>(null);
   const [enEdition, setEnEdition] = useState(false);
+  // Voir le commentaire sur la prop declencherEdition plus haut : ce ref
+  // garde la dernière valeur déjà traitée pour ignorer les re-rendus où
+  // la prop n'a pas changé (elle est recréée à chaque rendu de ChatIA.tsx
+  // pour les AUTRES messages, mais garde la même valeur tant que ce
+  // message précis n'est pas visé).
+  const declencherEditionTraiteRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (declencherEdition !== undefined && declencherEdition !== declencherEditionTraiteRef.current) {
+      declencherEditionTraiteRef.current = declencherEdition;
+      setEnEdition(true);
+    }
+  }, [declencherEdition]);
 
   // Citations inline dans le texte (26/08, demande Bourama : les sources
   // doivent apparaître à la fois AU FIL DU TEXTE, là où le modèle les
@@ -1326,7 +1362,8 @@ function memeApparence(
     precedent.raisonnementEnCours === suivant.raisonnementEnCours &&
     precedent.outilsResultats === suivant.outilsResultats &&
     precedent.outilsEnCours === suivant.outilsEnCours &&
-    precedent.conversationId === suivant.conversationId
+    precedent.conversationId === suivant.conversationId &&
+    precedent.declencherEdition === suivant.declencherEdition
   );
 }
 

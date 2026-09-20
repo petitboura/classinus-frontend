@@ -202,6 +202,8 @@ const TYPES_FICHIERS_ACCEPTES =
 export function BarreDeSaisie({
   onEnvoyer,
   desactive,
+  genererEnCours = false,
+  onArreter,
   agentId,
   modelesDisponibles = [],
   modeleSelectionne = null,
@@ -221,6 +223,14 @@ export function BarreDeSaisie({
     sansEnseignant: boolean
   ) => void;
   desactive?: boolean;
+  // Ajouté 20/09/2026 (demande Bourama : bouton arrêter, jusque-là
+  // inexistant, le bouton d'envoi se contentait de se désactiver
+  // pendant la génération, sans aucun moyen de la couper). true pendant
+  // qu'une réponse est en train de streamer : fait passer le bouton
+  // d'envoi en bouton "arrêter" (voir plus bas), qui appelle onArreter
+  // au clic au lieu d'envoyer un message.
+  genererEnCours?: boolean;
+  onArreter?: () => void;
   agentId?: string;
   // Selecteur de modele premium (02/08/2026, voir ChatIA.tsx et
   // core/fournisseurs_llm.py) -- liste vide = agent sans abonnement
@@ -2245,6 +2255,14 @@ export function BarreDeSaisie({
               >
                 <Square size={14} />
               </button>
+            ) : genererEnCours ? (
+              <button
+                onClick={onArreter}
+                aria-label="Arrêter la génération"
+                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02]"
+              >
+                <Square size={14} />
+              </button>
             ) : texte.trim() || texteColle ? (
               <button
                 onClick={envoyer}
@@ -2503,6 +2521,14 @@ export function BarreDeSaisie({
             onClick={arreterDictee}
             aria-label="Arrêter la dictée"
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-2 text-white"
+          >
+            <Square size={14} />
+          </button>
+        ) : genererEnCours ? (
+          <button
+            onClick={onArreter}
+            aria-label="Arrêter la génération"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02]"
           >
             <Square size={14} />
           </button>

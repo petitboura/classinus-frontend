@@ -120,7 +120,8 @@ export async function appelerApi(chemin: string, options: RequestInit = {}) {
 export async function appelerApiStream(
   chemin: string,
   corps: unknown,
-  surEvenement: (evenement: any) => void
+  surEvenement: (evenement: any) => void,
+  signal?: AbortSignal
 ) {
   const {
     data: { session },
@@ -136,6 +137,7 @@ export async function appelerApiStream(
     method: "POST",
     headers: entetes,
     body: JSON.stringify(corps),
+    signal,
   });
 
   if (!reponse.ok || !reponse.body) {
@@ -147,6 +149,14 @@ export async function appelerApiStream(
   let tampon = "";
 
   while (true) {
+    // Ajouté 20/09/2026 (demande Bourama : bouton arrêter) : si le
+    // signal est déjà annulé pile entre deux morceaux reçus, .read()
+    // ne le détecte pas forcément tout de suite selon le navigateur,
+    // vérification explicite pour couper au plus vite plutôt que
+    // d'attendre le prochain morceau réseau. Une fois annulé, .read()
+    // lève de toute façon une AbortError que l'appelant (ChatIA.tsx)
+    // distingue des vraies erreurs réseau.
+    if (signal?.aborted) return;
     const { done, value } = await lecteur.read();
     if (done) break;
     tampon += decodeur.decode(value, { stream: true });

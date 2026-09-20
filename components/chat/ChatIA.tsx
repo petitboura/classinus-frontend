@@ -11,6 +11,7 @@ import { PopupFeedback } from "./PopupFeedback";
 import { StatutOutil, EtatStatut } from "./StatutOutil";
 import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
+import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { SelecteurModeActif } from "./SelecteurModeActif";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat } from "@/lib/contexteChat";
@@ -192,6 +193,20 @@ export function ChatIA({
   // l'outil (voir LigneOutil.tsx). Simple table de correspondance (pas un
   // state) : lue et vidée dans la même suite d'événements, dans l'ordre.
   const textesTermineRef = useRef<Map<string, string>>(new Map());
+  // Ajouté 20/09/2026 (demande Bourama : bouton arrêter, voir
+  // arreterGeneration plus bas) : AbortController de la génération EN
+  // COURS, un seul à la fois (reprendreAgent, envoyerMessage et
+  // repriseApresConfirmation partagent ce même ref, un seul de ces
+  // trois peut streamer à la fois). null tant qu'aucune génération
+  // n'est en cours.
+  const controleurAbandonRef = useRef<AbortController | null>(null);
+  // Ajouté 20/09/2026 (bouton "Modifier" du bandeau réponse interrompue,
+  // voir BandeauReponseInterrompue.tsx et BulleMessage.tsx:declencherEdition) :
+  // déclenche l'ouverture du mode édition du message UTILISATEUR à cet
+  // index précis. jeton incrémenté à chaque demande (voir le commentaire
+  // sur la prop declencherEdition dans BulleMessage.tsx pour la raison).
+  const [indexAEditer, setIndexAEditer] = useState<number | null>(null);
+  const [jetonEdition, setJetonEdition] = useState(0);
   // Correctif 09/09/2026 (Bourama : l'exécution d'un outil coupait une
   // phrase en cours d'affichage) : les événements outils (statut/
   // statut_termine/outil_resultat/sources/images) qui arrivent PENDANT
@@ -750,6 +765,8 @@ export function ChatIA({
     setRaisonnementEnCours(false);
 
     try {
+      const controleur = new AbortController();
+      controleurAbandonRef.current = controleur;
       await appelerApiStream(
         "/api/chat",
         {
@@ -759,20 +776,30 @@ export function ChatIA({
             message_utilisateur: messageUtilisateur || null,
           },
         },
-        (evenement) => traiterEvenement(evenement)
+        (evenement) => traiterEvenement(evenement),
+        controleur.signal
       );
     } catch (e) {
       reinitialiserAffichageControle();
-      majMessages((prec) => {
-        const copie = [...prec];
-        copie[copie.length - 1] = {
-          ...copie[copie.length - 1],
-          content: "Une erreur est survenue, réessaie dans un instant.",
-          erreur: true,
-        };
-        return copie;
-      });
+      if (e instanceof DOMException && e.name === "AbortError") {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = { ...copie[copie.length - 1], interrompue: true };
+          return copie;
+        });
+      } else {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = {
+            ...copie[copie.length - 1],
+            content: "Une erreur est survenue, réessaie dans un instant.",
+            erreur: true,
+          };
+          return copie;
+        });
+      }
     } finally {
+      controleurAbandonRef.current = null;
       setGenEnCours(false);
       // Même filet que dans les autres finally de fin de génération (voir
       // envoyerMessage plus bas) : évite que la bulle de raisonnement
@@ -921,7 +948,9 @@ export function ChatIA({
     // deux cas, on nettoie les éventuels vieux boutons Continuer/Réessayer
     // restants pour ne pas laisser un bouton obsolète affiché.
     majMessages((prec) => [
-      ...prec.map((m) => (m.repriseDisponible ? { ...m, repriseDisponible: null } : m)),
+      ...prec.map((m) =>
+        m.repriseDisponible || m.interrompue ? { ...m, repriseDisponible: null, interrompue: false } : m
+      ),
       messageUtilisateur,
       { id: null, role: "assistant", content: "", segments: [] },
     ]);
@@ -1050,6 +1079,8 @@ export function ChatIA({
     }
 
     try {
+      const controleur = new AbortController();
+      controleurAbandonRef.current = controleur;
       await appelerApiStream(
         "/api/chat",
         {
@@ -1098,20 +1129,30 @@ export function ChatIA({
           // cote backend avant d'etre honore (api/chat.py:_resoudre_modele_force).
           modele: modeleSelectionne,
         },
-        (evenement) => traiterEvenement(evenement)
+        (evenement) => traiterEvenement(evenement),
+        controleur.signal
       );
     } catch (e) {
       reinitialiserAffichageControle();
-      majMessages((prec) => {
-        const copie = [...prec];
-        copie[copie.length - 1] = {
-          ...copie[copie.length - 1],
-          content: "Une erreur est survenue, réessaie dans un instant.",
-          erreur: true,
-        };
-        return copie;
-      });
+      if (e instanceof DOMException && e.name === "AbortError") {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = { ...copie[copie.length - 1], interrompue: true };
+          return copie;
+        });
+      } else {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = {
+            ...copie[copie.length - 1],
+            content: "Une erreur est survenue, réessaie dans un instant.",
+            erreur: true,
+          };
+          return copie;
+        });
+      }
     } finally {
+      controleurAbandonRef.current = null;
       setGenEnCours(false);
       // Correctif 12/09/2026 (voir appliquerEvenementOutil, cas
       // "raisonnement") : si le tout dernier événement de la génération
@@ -1147,29 +1188,75 @@ export function ChatIA({
     envoyerMessage(`Peux-tu expliquer ce passage : "${texteSelectionne}"`, "moyenne", []);
   }
 
+  // Ajouté 20/09/2026 (demande Bourama : "les boutons pour l'arrêter, là
+  // il est ininterrompable", jusque-là aucun mécanisme n'existait du
+  // tout, le bouton d'envoi se contentait de se désactiver pendant la
+  // génération). Coupe la requête /api/chat en cours via l'AbortController
+  // créé au démarrage de la génération (voir controleurAbandonRef,
+  // reprendreAgent/envoyerMessage/repriseApresConfirmation plus haut).
+  // Décision Bourama : le texte déjà affiché reste tel quel, il fait
+  // partie de la conversation, on ne l'efface jamais, on marque juste
+  // le message `interrompue: true` (voir le catch AbortError de chacune
+  // des trois fonctions ci-dessus) pour afficher le bandeau "Réponse
+  // interrompue" (BandeauReponseInterrompue.tsx). Rien à faire ici pour
+  // CE marquage : .abort() déclenche l'AbortError qui, lui, s'en charge
+  // dans le catch de la fonction en cours.
+  function arreterGeneration() {
+    controleurAbandonRef.current?.abort();
+  }
+
+  function continuerApresInterruption() {
+    // Le nettoyage de `interrompue` est déjà géré par envoyerMessage
+    // lui-même (voir plus haut, même filet que pour repriseDisponible).
+    envoyerMessage("Continue exactement où tu t'es arrêté, sans tout reprendre depuis le début.", "moyenne", []);
+  }
+
+  // Bouton "Modifier" du bandeau (choix Bourama, 20/09/2026, parmi les
+  // deux lectures possibles) : reprend le message UTILISATEUR précédent
+  // pour correction, exactement comme le crayon habituel sur ce message,
+  // pas une édition du texte déjà écrit par Clovis. `index` est celui du
+  // message assistant interrompu, le message à éditer est donc juste
+  // avant.
+  function modifierApresInterruption(index: number) {
+    setIndexAEditer(index - 1);
+    setJetonEdition((j) => j + 1);
+  }
+
   async function repriseApresConfirmation(approuve: boolean) {
     if (!confirmation) return;
     setConfirmationEnAttente(true);
     reinitialiserAffichageControle();
     setGenEnCours(true);
     try {
+      const controleur = new AbortController();
+      controleurAbandonRef.current = controleur;
       await appelerApiStream(
         "/api/chat",
         { reprise: { etat_reprise: confirmation.etatReprise, approuve } },
-        (evenement) => traiterEvenement(evenement)
+        (evenement) => traiterEvenement(evenement),
+        controleur.signal
       );
     } catch (e) {
       reinitialiserAffichageControle();
-      majMessages((prec) => {
-        const copie = [...prec];
-        copie[copie.length - 1] = {
-          ...copie[copie.length - 1],
-          content: "Une erreur est survenue, réessaie dans un instant.",
-          erreur: true,
-        };
-        return copie;
-      });
+      if (e instanceof DOMException && e.name === "AbortError") {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = { ...copie[copie.length - 1], interrompue: true };
+          return copie;
+        });
+      } else {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = {
+            ...copie[copie.length - 1],
+            content: "Une erreur est survenue, réessaie dans un instant.",
+            erreur: true,
+          };
+          return copie;
+        });
+      }
     } finally {
+      controleurAbandonRef.current = null;
       setConfirmation(null);
       setConfirmationEnAttente(false);
       setGenEnCours(false);
@@ -1241,6 +1328,8 @@ export function ChatIA({
           <BarreDeSaisie
             onEnvoyer={envoyerMessage}
             desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+            genererEnCours={genEnCours}
+            onArreter={arreterGeneration}
             agentId={agentId}
             texteInitial={texteInitial}
             modelesDisponibles={modelesDisponibles}
@@ -1297,6 +1386,7 @@ export function ChatIA({
                 message={message}
                 nomAgent={nomAgent}
                 conversationId={conversationId}
+                declencherEdition={index === indexAEditer ? jetonEdition : undefined}
                 // Lot 3 (chantier "question riche dans le chat", voir
                 // specs-question-riche.md) : réutilise envoyerMessage comme
                 // pour "renvoyer"/"reformuler" plus haut, la réponse
@@ -1376,6 +1466,14 @@ export function ChatIA({
                   onReprendre={() => reprendreAgent(index)}
                 />
               )}
+              {message.interrompue && !genEnCours && (
+                <BandeauReponseInterrompue
+                  enAttente={genEnCours}
+                  onModifier={() => modifierApresInterruption(index)}
+                  onContinuer={() => continuerApresInterruption()}
+                  onReessayer={() => regenererDepuis(index)}
+                />
+              )}
             </div>
           );
         })}
@@ -1423,6 +1521,8 @@ export function ChatIA({
         <BarreDeSaisie
           onEnvoyer={envoyerMessage}
           desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+          genererEnCours={genEnCours}
+          onArreter={arreterGeneration}
           agentId={agentId}
           modelesDisponibles={modelesDisponibles}
           modeleSelectionne={modeleSelectionne}
