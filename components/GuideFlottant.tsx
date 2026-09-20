@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Compass } from "lucide-react";
-import { useOuvrirGuide } from "@/lib/contexteChat";
+import { Compass, MessageSquareText, Eye, Sparkles } from "lucide-react";
+import { useOuvrirGuide, useOuvrirDecouverteCanal } from "@/lib/contexteChat";
 
 // Bouton flottant "Guide de decouverte", etape 4 du chantier (voir
 // specs-guide-decouverte.md a la racine de ce depot), 16/09/2026, demande
@@ -10,6 +10,16 @@ import { useOuvrirGuide } from "@/lib/contexteChat";
 // /chat (meme condition que le reste de la nav globale masquee sur
 // /chat, voir AppShell.tsx) -- le chat a deja son propre point d'entree
 // du guide, dans le menu "+" (etape 5, pas ce fichier).
+//
+// ETENDU le 20/09/2026 (chantier "demo + guide visuel", demande Bourama,
+// voir specs-demo-decouverte.md dans ce depot) : reste UN SEUL bouton
+// (decision Bourama : "unique bouton"), mais un vrai clic (pas un
+// glissement) ouvre desormais un petit menu a trois choix -- Guide
+// textuel (comportement d'origine, inchange), Guide visuel, Demo --
+// plutot que de lancer directement le guide textuel comme avant. Meme
+// convention de popover maison que AjoutContenuPopover
+// (components/MesCodes.tsx) : etat local + overlay plein ecran pour
+// fermer au clic exterieur, rien de nouveau importe.
 //
 // Deplacable par glisser-deposer (souris ET tactile, via les evenements
 // Pointer). Position remise a sa valeur par defaut a chaque chargement
@@ -30,7 +40,11 @@ const SEUIL_GLISSEMENT = 4;
 
 export function GuideFlottant() {
   const ouvrirGuide = useOuvrirGuide();
+  const ouvrirDecouverteCanal = useOuvrirDecouverteCanal();
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  // Chantier "demo + guide visuel" (20/09/2026) : menu a trois choix,
+  // voir commentaire d'en-tete du fichier.
+  const [menuOuvert, setMenuOuvert] = useState(false);
   const enGlissement = useRef(false);
   const aBouge = useRef(false);
   const origine = useRef({ x: 0, y: 0, boutonX: 0, boutonY: 0 });
@@ -63,25 +77,67 @@ export function GuideFlottant() {
 
   function onPointerUp() {
     enGlissement.current = false;
-    // Un vrai clic (pas de glissement) ouvre le guide -- useOuvrirGuide()
-    // active le mode guide cote serveur puis navigue vers /chat (voir
-    // lib/contexteChat.tsx).
-    if (!aBouge.current) ouvrirGuide();
+    // Un vrai clic (pas de glissement) ouvre desormais le petit menu a
+    // trois choix, plus le guide textuel directement (voir commentaire
+    // d'en-tete du fichier).
+    if (!aBouge.current) setMenuOuvert((p) => !p);
   }
 
   if (!position) return null;
 
+  // Menu a droite du bouton par defaut (le bouton est ancre au bord
+  // droit de l'ecran, voir MARGE plus haut) -- bascule a gauche si le
+  // bouton a ete glisse trop pres du bord droit pour que le menu tienne.
+  const LARGEUR_MENU = 208;
+  const ouvrirAGauche = position.x + TAILLE + LARGEUR_MENU + MARGE > window.innerWidth;
+  const optionsMenu: { icone: typeof Compass; label: string; onClick: () => void }[] = [
+    { icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
+    { icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
+    { icone: Sparkles, label: "Démo", onClick: () => ouvrirDecouverteCanal("demo") },
+  ];
+
   return (
-    <button
-      type="button"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      aria-label="Guide de découverte"
-      style={{ left: position.x, top: position.y, width: TAILLE, height: TAILLE }}
-      className="fixed z-40 flex touch-none select-none items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2"
-    >
-      <Compass size={22} />
-    </button>
+    <>
+      <button
+        type="button"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        aria-label="Découvrir Classinus"
+        style={{ left: position.x, top: position.y, width: TAILLE, height: TAILLE }}
+        className="fixed z-40 flex touch-none select-none items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2"
+      >
+        <Compass size={22} />
+      </button>
+
+      {menuOuvert && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenuOuvert(false)} />
+          <div
+            style={{
+              left: ouvrirAGauche ? position.x - LARGEUR_MENU - 8 : position.x + TAILLE + 8,
+              top: position.y,
+              width: LARGEUR_MENU,
+            }}
+            className="fixed z-40 flex flex-col gap-0.5 rounded-xl border border-dj-bordure bg-dj-surface p-1.5 shadow-lg"
+          >
+            {optionsMenu.map(({ icone: Icone, label, onClick }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  setMenuOuvert(false);
+                  onClick();
+                }}
+                className="flex items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+              >
+                <Icone size={16} className="shrink-0 text-dj-texte-muet" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </>
   );
 }
