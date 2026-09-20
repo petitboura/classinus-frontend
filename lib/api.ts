@@ -2320,6 +2320,7 @@ export type AuditComplet = {
   heures_pointe: HeuresPointe;
   outils_top: ElementCompte[];
   visuels_top: ElementCompte[];
+  modes_top: ElementCompte[];
 };
 
 export async function obtenirAuditComplet(codeId: string) {

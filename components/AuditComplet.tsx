@@ -153,6 +153,8 @@ function TableauDeBord({ audit }: { audit: AuditCompletType }) {
         <BarresHorizontales titre="Outils les plus utilisés" donnees={audit.outils_top} />
         <BarresHorizontales titre="Affichages les plus utilisés" donnees={audit.visuels_top} />
       </div>
+
+      <BarresHorizontales titre="Modes pédagogiques les plus choisis" donnees={audit.modes_top} />
     </div>
   );
 }
