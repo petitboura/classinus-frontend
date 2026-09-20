@@ -130,13 +130,29 @@ function estPresentMaisMasque(element: HTMLElement | null): boolean {
   return !!element && estVisibleEtActifSansMasquage(element) && estMasqueParAutreElement(element);
 }
 
-function urlWebSocket(token: string): string | null {
+function urlWebSocket(): string | null {
   if (!API_URL) return null;
   const base = API_URL.replace(/^http/, "ws");
-  // appareil_id volontairement absent (pas de cible a identifier, voir
-  // core/canal_agent_applicatif.py) -- le backend n'utilise cette
-  // connexion que pour diffuser, jamais pour cibler.
-  return `${base}/api/canal-agent-applicatif/ws?token=${encodeURIComponent(token)}`;
+  // Le jeton n'est plus placé dans l'URL : il est envoyé comme premier
+  // message après l'ouverture. Cela évite qu'un bearer token se retrouve
+  // dans les logs d'URL de proxies/serveurs.
+  return `${base}/api/canal-agent-applicatif/ws`;
+}
+
+type PluginInfosAppareil = {
+  obtenirInfosAppareil(): Promise<{ appareilId: string }>;
+};
+
+async function obtenirAppareilIdPourCanal(): Promise<string> {
+  try {
+    const { Capacitor, registerPlugin } = await import("@capacitor/core");
+    if (!Capacitor.isNativePlatform()) return "";
+    const plugin = registerPlugin<PluginInfosAppareil>("Dossiers");
+    const infos = await plugin.obtenirInfosAppareil();
+    return infos.appareilId || "";
+  } catch {
+    return "";
+  }
 }
 
 let repliMessageEtudiant: ((texte: string) => void) | null = null;
@@ -651,13 +667,19 @@ async function ouvrirCanal() {
     if (document.visibilityState !== "visible") return;
     if (canalDejaOuvertOuEnCours()) return;
 
-    const url = urlWebSocket(session.access_token);
+    const url = urlWebSocket();
     if (!url) return;
 
     fermetureVoulue = false;
     const ws = new WebSocket(url);
 
-    ws.onopen = () => {
+    ws.onopen = async () => {
+      // Authentification applicative après l'ouverture : le bearer token
+      // ne transite plus dans l'URL.
+      const appareilId = await obtenirAppareilIdPourCanal();
+      if (ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId }));
+      
       // Etat initial des actions disponibles pour CETTE connexion, sans
       // attendre un changement (chantier D), sinon le backend n'a rien
       // tant qu'aucune action ne se (dé)monte apres l'ouverture.
