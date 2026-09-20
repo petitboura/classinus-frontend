@@ -749,6 +749,15 @@ function arreterObservationDom() {
   observateurDom = null;
 }
 
+function reconnecterApresRafraichissementToken() {
+  if (document.visibilityState !== "visible") return;
+  fermetureVoulue = true;
+  socket?.close();
+  socket = null;
+  fermetureVoulue = false;
+  void ouvrirCanal();
+}
+
 function fermerCanal() {
   fermetureVoulue = true;
   if (tentativeReconnexion) {
@@ -778,7 +787,9 @@ export function initialiserCanalAgentApplicatif() {
   });
 
   supabase.auth.onAuthStateChange((event, session) => {
-    if (session?.access_token) {
+    if (event === "TOKEN_REFRESHED" && session?.access_token) {
+      reconnecterApresRafraichissementToken();
+    } else if (session?.access_token) {
       ouvrirCanal();
     } else if (event === "SIGNED_OUT") {
       fermerCanal();
