@@ -39,6 +39,7 @@ export function BlocExpansible({
   chargement,
   onPremiereOuverture,
   contenuEnIframe,
+  actionsSupplementaires,
 }: {
   titre: string;
   icone: LucideIcon;
@@ -65,6 +66,14 @@ export function BlocExpansible({
   // rien changer pour le code/PDF/texte/markdown (de vrais éléments de
   // page, où le tap fonctionne normalement).
   contenuEnIframe?: boolean;
+  // 20/09/2026, demande Bourama : permet à un type de contenu précis
+  // (pour l'instant seulement ContenuMarkdown, voir FichierChip.tsx)
+  // d'ajouter ses propres boutons dans la MÊME rangée du haut et le MÊME
+  // rail sticky que Copier/Télécharger/Agrandir, au lieu d'un bandeau
+  // séparé -- reçoit avecTexte pour rendre soit une version avec texte
+  // (rangée du haut), soit icône seule (rail), exactement comme
+  // BoutonsActions ci-dessous.
+  actionsSupplementaires?: (avecTexte: boolean) => ReactNode;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [pleinEcran, setPleinEcran] = useState(false);
@@ -155,6 +164,7 @@ export function BlocExpansible({
       : "flex h-8 w-8 items-center justify-center rounded-lg border border-dj-bordure bg-dj-surface-haute text-dj-texte-muet hover:text-dj-texte";
     return (
       <>
+        {actionsSupplementaires?.(avecTexte)}
         {texteACopier && (
           <button onClick={copier} className={classe} aria-label="Copier">
             {copie ? <Check size={14} /> : <Copy size={14} />}

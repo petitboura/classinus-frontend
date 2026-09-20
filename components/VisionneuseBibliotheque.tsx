@@ -169,20 +169,47 @@ export function ContenuTexte({ href }: { href: string }) {
   );
 }
 
-export function ContenuMarkdown({ href }: { href: string }) {
+export function ContenuMarkdown({
+  href,
+  masquerEntete = false,
+  vueBrute: vueBruteControlee,
+  onTexteCharge,
+}: {
+  href: string;
+  // 20/09/2026, demande Bourama : dans le chat (FichierChip.tsx), les
+  // boutons Formaté/Brut/Copier rejoignent la rangée Copier/Télécharger/
+  // Agrandir de BlocExpansible au lieu d'un bandeau séparé ici --
+  // masquerEntete retire ce bandeau interne, vueBrute/onTexteCharge
+  // laissent le parent piloter l'état depuis l'extérieur. Bibliothèque
+  // (VisionneuseBibliotheque.tsx plus bas) et visionneur de citation
+  // (VisionneurPositionGlobal.tsx) n'étaient pas concernés par la demande
+  // -- ni prop passée, comportement inchangé (bandeau interne, état local).
+  masquerEntete?: boolean;
+  vueBrute?: boolean;
+  onTexteCharge?: (texte: string) => void;
+}) {
   const [texte, setTexte] = useState<string | null>(null);
   const [enErreur, setEnErreur] = useState(false);
-  const [vueBrute, setVueBrute] = useState(false);
+  const [vueBruteLocale, setVueBruteLocale] = useState(false);
+  const vueBrute = masquerEntete ? (vueBruteControlee ?? false) : vueBruteLocale;
 
   useEffect(() => {
     let annule = false;
     fetch(href)
       .then((r) => (r.ok ? r.text() : Promise.reject()))
-      .then((t) => !annule && setTexte(t))
+      .then((t) => {
+        if (annule) return;
+        setTexte(t);
+        onTexteCharge?.(t);
+      })
       .catch(() => !annule && setEnErreur(true));
     return () => {
       annule = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onTexteCharge
+    // volontairement exclu : FichierChip.tsx passe setTexteMarkdown, stable
+    // entre rendus (useState), un ajout ici ne changerait rien sauf risque
+    // de re-fetch si un jour un parent passe une fonction inline instable.
   }, [href]);
 
   if (enErreur) {
@@ -198,27 +225,29 @@ export function ContenuMarkdown({ href }: { href: string }) {
 
   return (
     <div className="flex w-full max-w-full min-w-0 flex-col">
-      <div className="sticky top-0 z-10 flex justify-between gap-1 border-b border-dj-bordure bg-dj-surface px-3 py-2">
-        <div className="flex gap-1">
-          <button
-            onClick={() => setVueBrute(false)}
-            className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
-              !vueBrute ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"
-            }`}
-          >
-            Formaté
-          </button>
-          <button
-            onClick={() => setVueBrute(true)}
-            className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
-              vueBrute ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"
-            }`}
-          >
-            Brut
-          </button>
+      {!masquerEntete && (
+        <div className="sticky top-0 z-10 flex justify-between gap-1 border-b border-dj-bordure bg-dj-surface px-3 py-2">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setVueBruteLocale(false)}
+              className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                !vueBruteLocale ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"
+              }`}
+            >
+              Formaté
+            </button>
+            <button
+              onClick={() => setVueBruteLocale(true)}
+              className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+                vueBruteLocale ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"
+              }`}
+            >
+              Brut
+            </button>
+          </div>
+          <BoutonCopier texte={texte} />
         </div>
-        <BoutonCopier texte={texte} />
-      </div>
+      )}
       {vueBrute ? (
         <pre className="whitespace-pre-wrap break-words p-5 font-sans text-sm text-dj-texte">{texte}</pre>
       ) : (

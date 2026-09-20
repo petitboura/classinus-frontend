@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, Download, ImageOff, Loader2 } from "lucide-react";
+import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, Download, ImageOff, Loader2, Eye, Code2 } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuTexte, ContenuMarkdown, ContenuOffice } from "../VisionneuseBibliotheque";
@@ -216,6 +216,36 @@ function ImageGenereeChip({ href, nom, idBibliothequePublique }: { href: string;
   );
 }
 
+// 20/09/2026, demande Bourama : Formaté/Brut d'un fichier markdown
+// rejoignent la rangée Copier/Télécharger/Agrandir de BlocExpansible
+// (rangée du haut avec texte + rail sticky icône seule qui défile),
+// au lieu du bandeau séparé de ContenuMarkdown (masqué via masquerEntete
+// dans ce cas précis, voir VisionneuseBibliotheque.tsx). Style dupliqué
+// volontairement de BoutonsActions dans BlocExpansible.tsx (même
+// convention que estOrigineDeConfiance ci-dessus) pour que ces deux
+// boutons soient visuellement indissociables des autres, actif/inactif
+// rendu par la couleur de fond comme l'existant de ContenuMarkdown.
+function BoutonsFormatBrut({ avecTexte, vueBrute, onChanger }: { avecTexte: boolean; vueBrute: boolean; onChanger: (v: boolean) => void }) {
+  function classe(actif: boolean) {
+    const base = avecTexte
+      ? "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs"
+      : "flex h-8 w-8 items-center justify-center rounded-lg border";
+    return `${base} ${actif ? "border-dj-bordure-forte bg-dj-surface-haute text-dj-texte" : "border-dj-bordure bg-dj-surface-haute text-dj-texte-muet hover:text-dj-texte"}`;
+  }
+  return (
+    <>
+      <button onClick={() => onChanger(false)} className={classe(!vueBrute)} aria-label="Formaté">
+        <Eye size={14} />
+        {avecTexte && "Formaté"}
+      </button>
+      <button onClick={() => onChanger(true)} className={classe(vueBrute)} aria-label="Brut">
+        <Code2 size={14} />
+        {avecTexte && "Brut"}
+      </button>
+    </>
+  );
+}
+
 export function FichierChip({ href, nom }: { href: string; nom: string }) {
   const infos = extensionFichier(href);
   const { icone: Icone, libelle } = infos ? EXTENSIONS_FICHIER[infos] : { icone: File, libelle: "Fichier" };
@@ -234,6 +264,12 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
   // qui n'est de toute façon pas dans notre stockage (origineFiable=false)
   // ne peut pas être une entrée publiée, inutile d'appeler le serveur.
   const idBibliothequePublique = useEntreePubliqueParUrl(href, origineFiable);
+
+  // 20/09/2026, demande Bourama, voir BoutonsFormatBrut ci-dessus --
+  // déclarés sans condition (règle des Hooks) même si seule la branche
+  // markdown plus bas les utilise réellement.
+  const [texteMarkdown, setTexteMarkdown] = useState<string | null>(null);
+  const [vueBruteMarkdown, setVueBruteMarkdown] = useState(false);
 
   // Image (png/jpg/jpeg/webp) : vignette + zoom, voir ImageGenereeChip
   // ci-dessus. Inchangé par le correctif du 09/10 -- déjà un bon aperçu.
@@ -261,7 +297,22 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
   if (origineFiable && infos && infos in TYPE_MIME_PAR_EXTENSION) {
     const typeMime = TYPE_MIME_PAR_EXTENSION[infos];
     if (estFichierMarkdown(nom, typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuMarkdown href={href} />} />;
+      return (
+        <BlocExpansible
+          titre={nom}
+          icone={Icone}
+          sousTitre={libelle}
+          hrefTelechargement={href}
+          idBibliothequePublique={idBibliothequePublique}
+          texteACopier={texteMarkdown ?? undefined}
+          actionsSupplementaires={(avecTexte) => (
+            <BoutonsFormatBrut avecTexte={avecTexte} vueBrute={vueBruteMarkdown} onChanger={setVueBruteMarkdown} />
+          )}
+          enfant={
+            <ContenuMarkdown href={href} masquerEntete vueBrute={vueBruteMarkdown} onTexteCharge={setTexteMarkdown} />
+          }
+        />
+      );
     }
     if (TYPES_MIME_OFFICE.has(typeMime)) {
       return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={href} titre={nom} />} />;
