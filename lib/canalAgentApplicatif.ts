@@ -148,7 +148,10 @@ async function obtenirAppareilIdPourCanal(): Promise<string> {
     const { Capacitor, registerPlugin } = await import("@capacitor/core");
     if (!Capacitor.isNativePlatform()) return "";
     const plugin = registerPlugin<PluginInfosAppareil>("Dossiers");
-    const infos = await plugin.obtenirInfosAppareil();
+    const infos = await Promise.race([
+      plugin.obtenirInfosAppareil(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout appareil")), 3000)),
+    ]);
     return infos.appareilId || "";
   } catch {
     return "";
