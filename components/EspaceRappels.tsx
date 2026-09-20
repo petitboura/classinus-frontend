@@ -16,7 +16,7 @@ import { BoutonInfoSection } from "./BoutonInfoSection";
  * méthodes que la version iOS : ce composant fonctionne donc sur les deux
  * plateformes sans code spécifique, sauf `ouvrirApp` (voir plus bas).
  *
- * Pas de mécanisme i18n branché (voir EspaceParametres.tsx) : textes en
+ * Pas de mécanisme i18n branché (voir ParametresAccueil.tsx) : textes en
  * dur en français.
  */
 

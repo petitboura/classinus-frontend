@@ -29,7 +29,7 @@ import { enregistrerReponseQCM } from "@/lib/api";
 // (ex. aperçu hors conversation), l'appel est simplement sauté.
 //
 // Pas de mécanisme i18n branché sur ce projet à ce jour (voir même constat
-// dans EspaceParametres.tsx) : textes fixes en français, comme le reste de
+// dans ParametresAccueil.tsx) : textes fixes en français, comme le reste de
 // l'app.
 
 type QCM = {

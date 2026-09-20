@@ -18,7 +18,7 @@ import { EcranAutonome } from "@/components/EcranAutonome";
 //
 // CORRECTIF (29/08, audit boutons retour) : ces pages sont AUSSI
 // ouvertes depuis Paramètres -> À propos (router.push("/cgu"), voir
-// EspaceParametres.tsx) par un utilisateur connecté -- avant ce
+// ParametresAPropos.tsx) par un utilisateur connecté -- avant ce
 // correctif, seul le logo (-> accueil) permettait de "revenir", ce qui
 // faisait perdre tout chemin retour vers Paramètres. router.back()
 // choisi plutôt qu'un href fixe vers /parametres : cette page est

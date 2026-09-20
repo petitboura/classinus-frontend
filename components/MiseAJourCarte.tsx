@@ -16,7 +16,7 @@ import { Skeleton } from "./Skeleton";
  *
  * Construit le 26/08/2026, groupe "Capacités du téléphone", carte simple
  * (statut + bouton), pas un écran à part. Pas de mécanisme i18n branché
- * (voir EspaceParametres.tsx) : textes en dur en français.
+ * (voir ParametresAccueil.tsx) : textes en dur en français.
  */
 
 type InfoMiseAJour = {

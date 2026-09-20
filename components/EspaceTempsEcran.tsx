@@ -20,7 +20,7 @@ import { BoutonInfoSection } from "./BoutonInfoSection";
  * listant les interfaces manquantes) : composant fonctionnel autonome, pas
  * de route ni de placement dans la navigation imposé.
  *
- * Pas de mécanisme i18n branché (voir EspaceParametres.tsx) : textes en
+ * Pas de mécanisme i18n branché (voir ParametresAccueil.tsx) : textes en
  * dur en français.
  */
 

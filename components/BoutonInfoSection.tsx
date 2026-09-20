@@ -14,7 +14,7 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 // second écran". Motif exact ("infotip", eBay/Balsamiq) : petit bouton
 // "i" à côté du titre -> bulle courte au tap -> lien "En savoir plus"
 // vers le second écran (ici : Aide et support, voir
-// components/EspaceParametres.tsx, vue "aide").
+// components/ParametresAide.tsx).
 //
 // Remplace, sur les écrans concernés, le paragraphe
 // `<p className="mt-1 text-xs text-dj-texte-muet">...</p>` qui suivait
@@ -23,10 +23,12 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 // support pour ne jamais diverger).
 //
 // Lien profond vers la bonne rubrique (pas juste la liste générale) :
-// /parametres?aide=<id>, lu par EspaceParametres.tsx pour ouvrir
-// directement la vue "aide" ET scroller/mettre en avant la rubrique --
-// EspaceParametres.tsx n'a pas de route par écran (état interne `vue`),
-// d'où le paramètre de requête plutôt qu'une ancre de page classique.
+// /parametres/aide?aide=<id>, lu par components/ParametresAide.tsx pour
+// scroller/mettre en avant directement la bonne rubrique -- 19/09/2026 :
+// Aide et support est devenue sa propre page (voir
+// lib/sectionsParametres.tsx), d'où /parametres/aide plutôt que
+// /parametres?vue=... comme du temps de l'ancien EspaceParametres.tsx à
+// état interne `vue` (supprimé).
 export function BoutonInfoSection({ rubriqueId, texteCourt }: { rubriqueId: string; texteCourt: React.ReactNode }) {
   const [ouvert, setOuvert] = useState(false);
   // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
@@ -66,7 +68,7 @@ export function BoutonInfoSection({ rubriqueId, texteCourt }: { rubriqueId: stri
           >
             <p className="text-xs leading-relaxed text-dj-texte-muet">{texteCourt}</p>
             <Link
-              href={`/parametres?aide=${rubriqueId}`}
+              href={`/parametres/aide?aide=${rubriqueId}`}
               onClick={fermer}
               className="mt-2 inline-block text-xs font-medium text-dj-accent-1-texte hover:underline"
             >

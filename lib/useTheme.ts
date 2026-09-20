@@ -77,7 +77,7 @@ export function useTheme() {
     // Correctif (09/09/2026, Bourama : "la barre d'onglets ne change pas
     // en fonction du theme") : useTheme() n'est pas un contexte partage,
     // chaque composant qui l'appelle a son propre state resolu/choix.
-    // Quand ThemeToggle.tsx (ou EspaceParametres.tsx/PaletteCommandes.tsx)
+    // Quand ThemeToggle.tsx (ou ParametresPreferences.tsx/PaletteCommandes.tsx)
     // appelle changerTheme(), ca ne met a jour QUE le state de CETTE
     // instance-la du hook -- les autres instances (ex. BarreOngletsNative,
     // qui lit resolu pour recolorer la barre native) ne l'apprenaient

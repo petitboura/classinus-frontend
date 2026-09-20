@@ -21,7 +21,7 @@ import { Skeleton } from "./Skeleton";
  * utilise lui-même une fois connecté, pas une action que l'utilisateur
  * déclenche depuis cette carte.
  *
- * Pas de mécanisme i18n branché (voir EspaceParametres.tsx) : textes en
+ * Pas de mécanisme i18n branché (voir ParametresAccueil.tsx) : textes en
  * dur en français.
  */
 

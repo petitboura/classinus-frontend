@@ -5,8 +5,9 @@ import { ChevronLeft } from "lucide-react";
 
 // Bouton retour partagé (29/08/2026, demande Bourama : uniformiser les
 // boutons retour de toute l'app). Avant ce composant, deux
-// implémentations différentes coexistaient : ArrowLeft dans
-// EspaceParametres.tsx, ChevronLeft dans EspaceDossiers.tsx. Chevron
+// implémentations différentes coexistaient : ArrowLeft dans l'ancien
+// EspaceParametres.tsx (supprimé le 19/09/2026, voir
+// components/ParametresAccueil.tsx), ChevronLeft dans EspaceDossiers.tsx. Chevron
 // retenu (déjà majoritaire dans le code, norme iOS pour ce type de
 // retour, plus léger visuellement qu'une flèche pleine) -- un seul
 // composant réutilisé partout plutôt que du code dupliqué, pour que

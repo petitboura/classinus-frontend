@@ -210,7 +210,7 @@ export function SectionCommentairesCatalogue({
               {profilPublicRequis && (
                 <p className="text-xs text-dj-texte-muet">
                   Active ton profil public pour pouvoir commenter --{" "}
-                  <Link href="/parametres?vue=profil" className="text-dj-accent-1 underline-offset-2 hover:underline">
+                  <Link href="/parametres/profil" className="text-dj-accent-1 underline-offset-2 hover:underline">
                     ouvrir Paramètres
                   </Link>
                   .
