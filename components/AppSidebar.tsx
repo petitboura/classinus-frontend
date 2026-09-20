@@ -399,6 +399,7 @@ function MenuGroupe({
           à ouvrir : le clic bascule juste le popup, comme avant. */}
       <Link
         href={groupe.href}
+        aria-current={actif ? "page" : undefined}
         onClick={(e) => {
           if (contexteChat) {
             e.preventDefault();
@@ -430,12 +431,13 @@ function MenuGroupe({
               <Link
                 key={o.href}
                 href={o.href}
+                aria-current={estActif ? "page" : undefined}
                 onClick={(e) => {
                   onFermer();
                   onNaviguer?.();
                   // Fenêtre flottante réservée au desktop (mobile=false) --
                   // sur mobile (tiroir plein écran chat), fermer le chat et
-                  // naviguer vraiment, même mécanique que LienOnglet.
+                  // naviguer vraiment, même mécanique que rendreLienOnglet.
                   if (contexteChat) {
                     e.preventDefault();
                     if (mobile) {
@@ -574,7 +576,7 @@ export function AppSidebar({
   // correctif "menu Plus" -- lib/contexteRetour.tsx expose désormais
   // marquerFermetureSansHistorique pour ça). Ce tiroir-ci se ferme aussi
   // suite à une vraie navigation (clic sur un lien, un groupe, "Plus" ou
-  // "Paramètres" -- voir LienOnglet/MenuGroupe/naviguerDepuisPlusMobile/
+  // "Paramètres", voir rendreLienOnglet/MenuGroupe/naviguerDepuisPlusMobile/
   // onNaviguerVersParametres plus bas), donc chacun de ces points
   // d'appel doit marquer la fermeture "sans historique" juste avant,
   // sinon le history.back() déclenché à la fermeture du tiroir annule la
@@ -699,7 +701,16 @@ export function AppSidebar({
     window.location.href = "/connexion";
   }
 
-  function LienOnglet({
+  // Correctif du 20/09/2026 (Bourama : "l'IA voit les éléments mais clique
+  // au mauvais endroit"). Ce bloc était un composant déclaré à l'intérieur
+  // de AppSidebar : à chaque rendu de la barre latérale, React le voyait
+  // comme un composant différent, retirait tous les boutons du rail de
+  // l'écran puis en recréait de nouveaux. Le bouton que Clovis venait de
+  // choisir était donc remplacé au moment où son curseur partait vers lui,
+  // d'où un curseur envoyé dans le coin de l'écran et un clic perdu. C'est
+  // maintenant une simple fonction appelée sur place : les boutons restent
+  // les mêmes d'un rendu à l'autre.
+  function rendreLienOnglet({
     onglet,
     mouvement,
     mobile = false,
@@ -717,7 +728,9 @@ export function AppSidebar({
     const actif = pathname === onglet.href || actifSupplementaire || Boolean(onglet.routesFilles?.includes(pathname));
     return (
       <Link
+        key={onglet.href}
         href={onglet.href}
+        aria-current={actif ? "page" : undefined}
         onClick={(e) => {
           // 03/09/2026 : ce clic navigue toujours vraiment (Link par
           // défaut, ou naviguerVersSection juste plus bas) -- marquer
@@ -790,11 +803,11 @@ export function AppSidebar({
   // Navigation depuis le "Plus" unifié du tiroir mobile (BlocsMenuPlus
   // + SECTIONS_BASE, voir plus bas) : "Connecter Claude" a un vrai id
   // de section (claude), donc s'ouvre en fenêtre flottante par-dessus
-  // le chat comme les autres (même mécanique que LienOnglet). Les
+  // le chat comme les autres (même mécanique que rendreLienOnglet). Les
   // autres (Accueil, Paramètres, Rappels) n'ont pas d'id de section
   // (pas de fenêtre flottante possible), donc naviguent directement.
   function naviguerDepuisPlusMobile(href: string) {
-    // 03/09/2026, même correctif que LienOnglet plus haut : marquer
+    // 03/09/2026, même correctif que rendreLienOnglet plus haut : marquer
     // avant de fermer, sinon le history.back() différé annule le
     // router.push de naviguerVersSection juste en dessous.
     marquerTiroirSansHistorique();
@@ -871,6 +884,7 @@ export function AppSidebar({
       <div
         ref={asideRef}
         data-rail-lateral
+        data-agent-zone="Barre latérale"
         className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${ouverte ? "md:w-72" : "md:w-14"}`}
@@ -942,9 +956,7 @@ export function AppSidebar({
           </>
         )}
 
-        {navComplete.map((o) => (
-          <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENT_NAV} />
-        ))}
+        {navComplete.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV }))}
 
         {GROUPES.map((g) => (
           <MenuGroupe
@@ -991,6 +1003,7 @@ export function AppSidebar({
                       <Link
                         key={o.href}
                         href={o.href}
+                        aria-current={actif ? "page" : undefined}
                         onClick={(e) => {
                           // 07/09/2026, correctif Bourama : ce dropdown
                           // s'enregistre dans la pile de contexteRetour.tsx
@@ -1144,6 +1157,7 @@ export function AppSidebar({
           de gestes du téléphone qui le recouvrait. */}
       {(ouverte || tiroirEnSortie) && !masquerChromeMobile && (
         <div
+          data-agent-zone="Menu latéral"
           className={
             `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-fond px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
               // 07/09/2026, correctif Bourama (bug "sous-sections de
@@ -1211,9 +1225,7 @@ export function AppSidebar({
               </>
             )}
 
-            {ongletsMobileDirects.map((o) => (
-              <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENT_NAV} mobile />
-            ))}
+            {ongletsMobileDirects.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV, mobile: true }))}
 
             {GROUPES.map((g) =>
               contexteChat ? (
@@ -1232,7 +1244,7 @@ export function AppSidebar({
                   onFermer={() => setGroupeOuvertId((v) => (v === g.id ? null : v))}
                   onBasculer={() => setGroupeOuvertId((v) => (v === g.id ? null : g.id))}
                   onNaviguer={() => {
-                    // 03/09/2026, même correctif que LienOnglet plus
+                    // 03/09/2026, même correctif que rendreLienOnglet plus
                     // haut : ce callback est toujours suivi d'une vraie
                     // navigation (naviguerVersSection, voir MenuGroupe).
                     marquerTiroirSansHistorique();
@@ -1246,13 +1258,12 @@ export function AppSidebar({
                   }}
                 />
               ) : (
-                <LienOnglet
-                  key={g.id}
-                  onglet={{ href: g.href, label: g.label, Icone: g.Icone }}
-                  mouvement={MOUVEMENT_NAV}
-                  mobile
-                  actifSupplementaire={g.ongletIds.some((id) => pathname === ONGLETS.find((o) => o.id === id)?.href)}
-                />
+                rendreLienOnglet({
+                  onglet: { href: g.href, label: g.label, Icone: g.Icone },
+                  mouvement: MOUVEMENT_NAV,
+                  mobile: true,
+                  actifSupplementaire: g.ongletIds.some((id) => pathname === ONGLETS.find((o) => o.id === id)?.href),
+                })
               )
             )}
           </div>
@@ -1312,7 +1323,7 @@ export function AppSidebar({
                   // navigation, même raison que marquerTiroirSansHistorique.
                   marquerProfilSansHistorique();
                   setProfilDeplie(false);
-                  // 03/09/2026, même correctif que LienOnglet/
+                  // 03/09/2026, même correctif que rendreLienOnglet/
                   // naviguerDepuisPlusMobile plus haut.
                   marquerTiroirSansHistorique();
                   fermerTiroirMobile(() => setOuverte(false));

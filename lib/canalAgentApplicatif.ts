@@ -465,50 +465,71 @@ function planifierReconnexion() {
   }, 3000);
 }
 
+function canalDejaOuvertOuEnCours(): boolean {
+  return Boolean(socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING));
+}
+
+// Vrai pendant qu'une ouverture attend la session. Correctif du
+// 20/09/2026 (Bourama : "l'IA voit les éléments mais clique au mauvais
+// endroit") : au démarrage, ouvrirCanal est appelé deux fois presque en
+// même temps (directement, puis par l'événement de session de Supabase).
+// Les deux vérifiaient "aucune connexion" AVANT d'attendre la session,
+// donc les deux ouvraient un WebSocket : la page avait deux connexions
+// et chaque action de Clovis (déplacement du curseur, clic) était
+// exécutée deux fois, le second clic pouvant défaire le premier.
+let ouvertureEnCours = false;
+
 async function ouvrirCanal() {
   if (document.visibilityState !== "visible") return;
-  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
-    return;
+  if (ouvertureEnCours || canalDejaOuvertOuEnCours()) return;
+
+  ouvertureEnCours = true;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    // L'onglet a pu être masqué ou une connexion ouverte pendant l'attente.
+    if (document.visibilityState !== "visible") return;
+    if (canalDejaOuvertOuEnCours()) return;
+
+    const url = urlWebSocket(session.access_token);
+    if (!url) return;
+
+    fermetureVoulue = false;
+    const ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      // Etat initial des actions disponibles pour CETTE connexion, sans
+      // attendre un changement (chantier D), sinon le backend n'a rien
+      // tant qu'aucune action ne se (dé)monte apres l'ouverture.
+      envoyerEtatActionsMaintenant();
+      demarrerObservationDom();
+    };
+
+    ws.onmessage = (evenement) => {
+      try {
+        traiterMessage(JSON.parse(evenement.data));
+      } catch {
+        // Message mal forme : ignore, meme principe que canalTempsReel.ts.
+      }
+    };
+
+    ws.onclose = () => {
+      if (socket === ws) socket = null;
+      arreterObservationDom();
+      planifierReconnexion();
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+
+    socket = ws;
+  } finally {
+    ouvertureEnCours = false;
   }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) return;
-
-  const url = urlWebSocket(session.access_token);
-  if (!url) return;
-
-  fermetureVoulue = false;
-  const ws = new WebSocket(url);
-
-  ws.onopen = () => {
-    // Etat initial des actions disponibles pour CETTE connexion, sans
-    // attendre un changement (chantier D) -- sinon le backend n'a rien
-    // tant qu'aucune action ne se (dé)monte apres l'ouverture.
-    envoyerEtatActionsMaintenant();
-    demarrerObservationDom();
-  };
-
-  ws.onmessage = (evenement) => {
-    try {
-      traiterMessage(JSON.parse(evenement.data));
-    } catch {
-      // Message mal forme : ignore, meme principe que canalTempsReel.ts.
-    }
-  };
-
-  ws.onclose = () => {
-    if (socket === ws) socket = null;
-    arreterObservationDom();
-    planifierReconnexion();
-  };
-
-  ws.onerror = () => {
-    ws.close();
-  };
-
-  socket = ws;
 }
 
 /**

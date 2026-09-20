@@ -102,6 +102,14 @@ function resoudrePoint(cible: PointEcran | HTMLElement): PointEcran {
   return cible;
 }
 
+// Point visé par le curseur. Pour un élément qui n'est plus dans la page
+// (remplacé par React pendant le trajet), garde `dernierPointValide` au
+// lieu du point (0, 0) que renvoie alors getBoundingClientRect.
+function pointValide(cible: PointEcran | HTMLElement, dernierPointValide: PointEcran): PointEcran {
+  if (cible instanceof HTMLElement && !cible.isConnected) return dernierPointValide;
+  return resoudrePoint(cible);
+}
+
 // Point de contrôle décalé perpendiculairement au segment départ/arrivée,
 // pour obtenir une courbe de Bézier quadratique plutôt qu'une ligne
 // droite. Décision explicite de Bourama (15/09/2026) : le curseur ne se
@@ -186,8 +194,13 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
       // animation d'entree de l'element peuvent ne pas encore etre
       // stabilises, donc la position lue ici peut ne plus etre la
       // bonne au moment ou le curseur arrive.
-      let arrivee = resoudrePoint(cible);
       centrer();
+      // Correctif du 20/09/2026 (Bourama : "il va complètement ailleurs").
+      // Un élément que React vient de retirer de la page renvoie une
+      // position à zéro : le curseur partait alors dans le coin en haut à
+      // gauche de l'écran. Tant que la cible n'est plus dans la page, le
+      // curseur garde le dernier point valide.
+      let arrivee = pointValide(cible, { x: x.get(), y: y.get() });
 
       setVisible(true);
       setEnAction(true);
@@ -211,7 +224,7 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
           // forme initiale, mais le point final suit la position live
           // de l'element (scroll qui se termine, leger reflow) plutot
           // qu'une position figee au tout debut du trajet.
-          if (cible instanceof HTMLElement) arrivee = resoudrePoint(cible);
+          arrivee = pointValide(cible, arrivee);
           const point = pointSurCourbe(depart, controle, arrivee, t);
           x.set(point.x);
           y.set(point.y);

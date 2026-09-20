@@ -66,6 +66,7 @@ export function BarreOngletsWeb() {
       className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch justify-around border-t border-dj-bordure bg-dj-fond md:hidden"
       style={{ paddingBottom: "var(--safe-bottom)" }}
       aria-label="Navigation principale"
+      data-agent-zone="Barre du bas"
     >
       {ONGLETS_WEB.map((o) => {
         const actif = pathname === o.href || pathname.startsWith(o.href + "/");
@@ -73,6 +74,7 @@ export function BarreOngletsWeb() {
           <Link
             key={o.href}
             href={o.href}
+            aria-current={actif ? "page" : undefined}
             className={`group flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors ${
               actif ? "text-dj-accent-1-texte" : "text-dj-texte-muet"
             }`}

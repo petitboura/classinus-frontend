@@ -270,6 +270,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               n'est pas nécessaire, même logique que le padding-bottom
               déjà posé sur la barre de saisie (ChatIA.tsx). */}
           <main
+            data-agent-zone="Page"
             className="flex-1 overflow-y-auto"
             style={
               natif

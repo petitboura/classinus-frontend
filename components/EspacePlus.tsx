@@ -79,10 +79,10 @@ function LigneSection({
   pointRouge?: boolean;
   // 30/08/2026, audit "bouton Plus mal aligné" (tiroir mobile du chat
   // plein écran, AppSidebar.tsx) : ce tiroir a déjà son propre style de
-  // ligne (LienOnglet, même composant) -- le style carte pensé pour le
+  // ligne (rendreLienOnglet dans AppSidebar.tsx), le style carte pensé pour le
   // menu hamburger natif/web (bordure/fond/coins arrondis, sous-titre,
   // chevron) y fait doublon visuel. `plat` retire tout ça et aligne la
-  // ligne comme LienOnglet (même hauteur h-10 w-10 pour l'icône, mêmes
+  // ligne comme rendreLienOnglet (même hauteur h-10 w-10 pour l'icône, mêmes
   // marges px-2 py-2, pas de sous-titre ni de chevron). Uniquement activé
   // par ce troisième appelant (AppSidebar.tsx) -- MenuHamburgerNatif.tsx
   // et MenuHamburgerWeb.tsx gardent le style carte par défaut.

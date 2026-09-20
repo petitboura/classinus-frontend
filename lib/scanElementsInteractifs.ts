@@ -13,7 +13,7 @@
 // L'intégration dans lib/canalAgentApplicatif.ts fait l'objet d'une
 // étape séparée du plan.
 
-import { estVisibleEtActif } from "./clicGenerique";
+import { estVisibleEtActif, type CacheAffichage } from "./clicGenerique";
 
 export type ElementInteractifDetecte = {
   id: string;
@@ -89,6 +89,41 @@ export function decrireElement(element: HTMLElement): string {
   return `élément ${balise} sans texte visible`;
 }
 
+// Nom de l'attribut posé par les composants sur leur zone principale
+// (barre latérale, page, fenêtre flottante...). Le libellé vient donc du
+// composant lui même, jamais d'une liste écrite ici.
+const ATTRIBUT_ZONE = "data-agent-zone";
+
+// Longueur maximale d'une ligne de la liste vue par Clovis, alignée sur
+// la coupe faite côté backend.
+const LONGUEUR_MAX_POUR_IA = 100;
+
+/**
+ * Description destinée à Clovis dans la liste des éléments à l'écran
+ * (jamais affichée à l'étudiant, elle ne remplace donc pas
+ * decrireElement pour la bulle et le journal). Ajoutée le 20/09/2026
+ * (Bourama : "il décide d'ouvrir des sections là où il est déjà") :
+ * jusque là, Clovis ne recevait que le nom du bouton, sans savoir où il
+ * se trouve (deux boutons de même nom sont indiscernables) ni si la
+ * page qu'il représente est celle qui est déjà ouverte.
+ */
+export function decrirePourIA(element: HTMLElement): string {
+  const base = decrireElement(element);
+  const zone = nettoyerTexte(element.closest(`[${ATTRIBUT_ZONE}]`)?.getAttribute(ATTRIBUT_ZONE));
+  const courant = element.getAttribute("aria-current");
+  const estPageActuelle = Boolean(courant) && courant !== "false";
+
+  const prefixe = zone ? `${zone}, ` : "";
+  const suffixe = estPageActuelle ? " (page actuelle, déjà ouverte)" : "";
+  // Le backend coupe chaque ligne à 100 caractères quand il construit la
+  // liste de Clovis (core/construction_system_prompt.py) : on raccourcit
+  // le nom du bouton plutôt que de laisser cette coupe effacer la fin de
+  // la ligne, où se trouve l'indication de page actuelle.
+  const place = LONGUEUR_MAX_POUR_IA - prefixe.length - suffixe.length;
+  const nom = base.length > place ? `${base.slice(0, Math.max(place - 1, 10)).trimEnd()}…` : base;
+  return `${prefixe}${nom}${suffixe}`;
+}
+
 /**
  * Scanne le DOM actuel et renvoie la liste des éléments réellement
  * visibles, actifs et potentiellement cliquables à cet instant précis
@@ -116,9 +151,11 @@ export function scannerElementsInteractifs(): ElementInteractifDetecte[] {
 
   const elements = document.querySelectorAll<HTMLElement>(SELECTEURS_ELEMENTS_INTERACTIFS);
   const resultat: ElementInteractifDetecte[] = [];
+  // Un seul cache par scan : les éléments partagent les mêmes parents.
+  const cache: CacheAffichage = new Map();
 
   for (const element of elements) {
-    if (!estVisibleEtActif(element)) continue;
+    if (!estVisibleEtActif(element, cache)) continue;
 
     let id = idsConnus.get(element);
     if (!id) {
@@ -130,7 +167,7 @@ export function scannerElementsInteractifs(): ElementInteractifDetecte[] {
 
     resultat.push({
       id,
-      description: decrireElement(element),
+      description: decrirePourIA(element),
       continuerEnArrierePlan: false,
     });
   }
