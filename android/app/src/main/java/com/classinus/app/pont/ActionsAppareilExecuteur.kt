@@ -32,12 +32,13 @@ object ActionsAppareilExecuteur {
 
     suspend fun executerAction(context: Context, actionId: String) {
         val client = ClovisApiClient(context)
+        val appareilId = IdentifiantAppareil.obtenirId(context)
         val action = try {
-            client.obtenirAction(actionId)
+            client.prendreAction(actionId, appareilId)
         } catch (e: Exception) {
-            Log.w(TAG, "Echec recuperation action $actionId, abandon (pas de retry ici).", e)
+            Log.w(TAG, "Echec prise en charge de l'action $actionId.", e)
             return
-        }
+        } ?: return
 
         val resultat = try {
             dispatcher(context, action.type_action, action.parametres)
@@ -46,10 +47,15 @@ object ActionsAppareilExecuteur {
             ResultatAction(false, "Erreur inattendue pendant l'exécution : ${e.message}")
         }
 
-        try {
-            client.rapporterResultatAction(actionId, resultat)
-        } catch (e: Exception) {
-            Log.w(TAG, "Echec rapport resultat pour action $actionId (pas de retry ici).", e)
+        // On retente uniquement le rapport, jamais l'exécution elle-même.
+        repeat(3) { tentative ->
+            try {
+                client.rapporterResultatAction(actionId, resultat)
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "Echec rapport resultat action $actionId (tentative ${tentative + 1}/3).", e)
+                if (tentative < 2) kotlinx.coroutines.delay(1000L * (tentative + 1))
+            }
         }
     }
 
