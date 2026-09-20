@@ -72,6 +72,9 @@ class ControleSessionRepository(private val context: Context) {
         if (!permissionAccordee()) {
             return Result.failure(Exception("Permission 'Accès à la Politique de notification' non accordée."))
         }
+        if (lireEtatInitialSauvegarde() != null) {
+            return Result.failure(Exception("Une session de concentration est déjà en cours."))
+        }
         val etat = EtatInitialSession(
             filtreInterruptionInitial = notificationManager.currentInterruptionFilter,
             volumeSonnerieInitial = audioManager.getStreamVolume(AudioManager.STREAM_RING),
