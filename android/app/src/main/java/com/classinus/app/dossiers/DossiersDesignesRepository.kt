@@ -26,6 +26,8 @@ import androidx.documentfile.provider.DocumentFile
 
 private const val PREFS_NOM = "dossiers_designes"
 private const val CLE_URIS = "uris"
+private const val PROFONDEUR_MAX_VECTORIZATION = 20
+private const val TAILLE_MAX_VECTORIZATION_OCTETS = 50L * 1024L * 1024L
 
 data class DossierDesigne(val uri: Uri, val nom: String)
 
@@ -179,18 +181,19 @@ class DossiersDesignesRepository(private val context: Context) {
     // chaque niveau, l'URI enfant est deja valide dans l'arbre accorde).
     fun listerRecursif(dossierUri: Uri): List<FichierAVectoriser> {
         val racine = DocumentFile.fromTreeUri(context, dossierUri) ?: return emptyList()
-        return parcourirRecursivement(racine, emptyList())
+        return parcourirRecursivement(racine, emptyList(), 0)
     }
 
-    private fun parcourirRecursivement(dossier: DocumentFile, chemin: List<String>): List<FichierAVectoriser> {
+    private fun parcourirRecursivement(dossier: DocumentFile, chemin: List<String>, profondeur: Int): List<FichierAVectoriser> {
         val resultat = mutableListOf<FichierAVectoriser>()
+        if (profondeur >= PROFONDEUR_MAX_VECTORIZATION) return resultat
         dossier.listFiles().forEach { enfant ->
             val nom = enfant.name ?: return@forEach
             if (enfant.isDirectory) {
-                resultat.addAll(parcourirRecursivement(enfant, chemin + nom))
+                resultat.addAll(parcourirRecursivement(enfant, chemin + nom, profondeur + 1))
             } else {
                 val typeMime = enfant.type ?: "application/octet-stream"
-                if (!typeMime.startsWith("video/")) {
+                if (!typeMime.startsWith("video/") && enfant.length() in 1..TAILLE_MAX_VECTORIZATION_OCTETS) {
                     resultat.add(FichierAVectoriser(enfant.uri, nom, chemin, typeMime, enfant.length()))
                 }
             }
