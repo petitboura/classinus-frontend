@@ -10,11 +10,20 @@ import { BlocExpansible } from "./BlocExpansible";
 // un .py seul n'est plus forcé dans un .zip) se déroule dans le fil au
 // clic (voir BlocExpansible.tsx) -- plus de panneau latéral, retiré à la
 // demande de Bourama.
+//
+// 20/09/2026, demande Bourama : "md" n'est plus dans cette liste. Un
+// fichier .md passait ici (texte brut, police à chasse fixe, lignes jamais
+// coupées donc défilement sur le côté) AVANT d'atteindre le lecteur de
+// texte formaté de FichierChip.tsx (vrais titres et tableaux, boutons
+// Formaté/Brut, Brut qui coupe les lignes) : ce dernier n'était donc jamais
+// utilisé pour les .md venant de notre stockage. Sans "md" ici,
+// estFichierCodeAffichable() répond faux et le fichier tombe sur
+// FichierChip, dans BulleMessage.tsx comme dans RenduMarkdownAutonome.tsx.
 const LANGAGE_PAR_EXTENSION: Record<string, string> = {
   py: "python", js: "javascript", jsx: "javascript", ts: "typescript", tsx: "typescript",
   html: "xml", css: "css", sh: "bash", bash: "bash", sql: "sql", java: "java", c: "c",
   cpp: "cpp", go: "go", rs: "rust", php: "php", rb: "ruby", yml: "yaml", yaml: "yaml",
-  md: "markdown", toml: "ini",
+  toml: "ini",
 };
 
 export function extensionCode(href: string): string | null {
