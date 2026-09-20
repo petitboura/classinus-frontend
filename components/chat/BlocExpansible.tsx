@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, ReactNode } from "react";
 import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
-import { PanneauFlottant } from "@/components/PanneauFlottant";
+import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
@@ -77,7 +77,7 @@ export function BlocExpansible({
   // exclusifs -- le rail n'a de sens que quand la rangée du haut est
   // scrollée hors champ. `hautVisible` suit ça via IntersectionObserver
   // sur `topRowRef` (rangée du haut, mode non-plein-écran uniquement --
-  // l'en-tête du mode plein écran est fixe dans PanneauFlottant, donc
+  // l'en-tête du mode plein écran est fixe dans PleinEcranApercu, donc
   // hors sujet ici).
   const topRowRef = useRef<HTMLDivElement | null>(null);
   const [hautVisible, setHautVisible] = useState(true);
@@ -122,9 +122,8 @@ export function BlocExpansible({
   }, []);
 
   // 18/08/2026, voir lib/useFermetureAnimee.ts : anime la fermeture du
-  // panneau plein écran (PanneauFlottant) -- ne concerne QUE ce mode,
-  // pas le repli inline (contenuPrincipal), qui ne passe pas par
-  // PanneauFlottant.
+  // plein écran (PleinEcranApercu) -- ne concerne QUE ce mode, pas le
+  // repli inline (contenuPrincipal), qui ne passe pas par lui.
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
 
   function basculerOuvert() {
@@ -281,9 +280,9 @@ export function BlocExpansible({
   if (pleinEcran) {
     return (
       <>
-        <PanneauFlottant
+        <PleinEcranApercu
+          titre={titre}
           onFerme={() => demarrerFermeture(fermer)}
-          pleine
           enSortie={enSortie}
           entete={
             <div className="flex items-center justify-between gap-2">
@@ -331,8 +330,10 @@ export function BlocExpansible({
               {enfant}
             </GardeApercu>
           </div>
-        </PanneauFlottant>
-        {modaleTelechargement}
+          {/* Dans le plein écran (et non à côté) : la fenêtre de
+              téléchargement doit rester au dessus de lui. */}
+          {modaleTelechargement}
+        </PleinEcranApercu>
       </>
     );
   }

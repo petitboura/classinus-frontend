@@ -48,7 +48,10 @@ components/
                           ChatSection.tsx (07/09/2026) : version "page normale" du chat plein écran
                           pour la route /chat (chantier en cours "chat plein écran = vraie section" --
                           ChatFlottant.tsx gère encore l'ancien overlay fixed en parallèle tant que le
-                          chantier n'est pas terminé)
+                          chantier n'est pas terminé) ;
+                          PleinEcranApercu.tsx (20/09/2026) : vrai plein écran de bord à bord du bouton
+                          Agrandir des aperçus (BlocExpansible.tsx : widget, PDF, Office, texte), monté
+                          dans <body> par un portail pour ne jamais être recadré par le message
     minuteurs/           minuteurs du chat (20/09/2026) : DockMinuteurs.tsx (zone en haut du chat, montée
                           par ChatIA.tsx), CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
                           LanceurMinuteur.tsx (bouton horloge : lancer, retrouver les masqués),

@@ -154,7 +154,7 @@ export function VisionneurPositionGlobal() {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 ${pleinEcran ? "" : "p-4"} ${
+      className={`fixed inset-0 z-[170] flex items-center justify-center bg-black/60 ${pleinEcran ? "" : "p-4"} ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
       onClick={pleinEcran ? undefined : fermer}
