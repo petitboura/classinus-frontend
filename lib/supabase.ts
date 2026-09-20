@@ -53,8 +53,13 @@ if (typeof window !== "undefined") {
     if (!Capacitor.isNativePlatform()) return;
     console.log("PontNatif (JS): plateforme native detectee, initialisation du pont.");
 
-    import("./canalTempsReel").then(({ enregistrerPluginDossiers }) => {
+    import("./canalTempsReel").then(({ enregistrerPluginDossiers, initialiserCanalTempsReel }) => {
       enregistrerPluginDossiers(registerPlugin);
+      // Le plugin natif peut être enregistré après le premier appel
+      // d'initialisation du canal. Relancer l'initialisation ici permet de
+      // récupérer l'identité appareil sans jamais ouvrir une connexion
+      // native sous la clé vide.
+      initialiserCanalTempsReel();
     });
 
     const PontNatif = registerPlugin<{
