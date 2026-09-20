@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Compass, Radio, MessageSquareText, Eye, Sparkles } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio, MessageSquareText, Eye, Sparkles } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -1961,16 +1961,26 @@ export function BarreDeSaisie({
                     Entree fixe, pas issue de outilsUtilitairesPourAgent
                     (pas un vrai outil backend) -- meme hook que les deux
                     autres points d'entree, voir lib/contexteChat.tsx. */}
-                <button
-                  onClick={() => {
-                    ouvrirGuide();
-                    setMenuUtilitairesOuvert(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl border-t border-dj-bordure px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                >
-                  <Compass size={14} />
-                  <span className="flex-1">Guide de découverte</span>
-                </button>
+                {[
+                  { Icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
+                  { Icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
+                  { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDecouverteCanal("demo") },
+                ].map(({ Icone, label, onClick }, i) => (
+                  <button
+                    key={label}
+                    onClick={() => {
+                      onClick();
+                      setMenuUtilitairesOuvert(false);
+                    }}
+                    className={
+                      "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute" +
+                      (i === 0 ? " border-t border-dj-bordure" : "")
+                    }
+                  >
+                    <Icone size={14} />
+                    <span className="flex-1">{label}</span>
+                  </button>
+                ))}
                 {canalEnDirect && (
                   <button
                     onClick={() => {
