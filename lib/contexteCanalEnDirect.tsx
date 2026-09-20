@@ -76,6 +76,17 @@ export type ReponseCanal = {
   images: ImageCanal[];
 };
 
+// Options d'affichage d'un texte dans la bulle (20/09/2026, demande Bourama :
+// la bulle disparaissait trop tot). `commentaire` : le texte vient de Clovis
+// lui même (outil dire_a_l_etudiant), pas du nom d'une action ; il reste
+// affiché pendant sa durée sans être remplacé par le nom d'une action.
+// `dureeMs` : durée voulue par Clovis, qui connaît la longueur de son
+// message ; absente, la durée automatique (selon la longueur) s'applique.
+export type OptionsAfficherTexte = {
+  commentaire?: boolean;
+  dureeMs?: number;
+};
+
 export type ValeurCanalEnDirect = {
   actif: boolean;
   // conversationId optionnel (chantier "demo + guide visuel", 20/09/2026,
@@ -108,7 +119,7 @@ export type ValeurCanalEnDirect = {
   // Remplace le texte affiché ; horodatage inclus pour que la bulle
   // (chantier J) puisse redémarrer une animation même si le nouveau
   // texte est identique au précédent.
-  afficherTexte: (texte: string) => void;
+  afficherTexte: (texte: string, options?: OptionsAfficherTexte) => void;
   effacerTexte: () => void;
 
   // Réponse (voir ReponseCanal). derniereReponse est GARDÉE après sa
@@ -177,8 +188,8 @@ export function activerCanalDepuisAgent(conversationId?: string) {
   canalGlobal.activer(conversationId);
 }
 
-export function afficherTexteDepuisAgent(texte: string) {
-  canalGlobal?.afficherTexte(texte);
+export function afficherTexteDepuisAgent(texte: string, options?: OptionsAfficherTexte) {
+  canalGlobal?.afficherTexte(texte, options);
 }
 
 export function afficherReponseDepuisAgent(reponse: Omit<ReponseCanal, "id">) {
@@ -244,12 +255,21 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   // passe. Un nouveau texte reporte le délai plutôt que de s'ajouter au
   // précédent.
   const minuteurEffacement = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Instant jusqu'auquel un commentaire de Clovis est « épinglé » : tant qu'il
+  // n'est pas dépassé, le nom d'une action ne remplace pas la bulle (il reste
+  // dans le journal). 0 = rien d'épinglé.
+  const epingleJusqua = useRef(0);
   // Durée minimale, allongée selon la longueur du texte (chantier P) :
   // un commentaire libre de deux phrases ne se lit pas en 5 secondes.
   // Plafonnée pour qu'un texte long ne bloque pas la bulle indéfiniment.
   const DUREE_AFFICHAGE_MS = 5000;
   const DUREE_PAR_CARACTERE_MS = 60;
   const DUREE_AFFICHAGE_MAX_MS = 15000;
+  // Bornes de sécurité sur la durée demandée par Clovis (le serveur applique
+  // les mêmes, voir core/outils_action_agent.py) : un texte ne disparaît jamais
+  // instantanément et ne reste jamais indéfiniment.
+  const DUREE_TEXTE_DEMANDEE_MIN_MS = 1000;
+  const DUREE_TEXTE_DEMANDEE_MAX_MS = 60000;
   // Une réponse se lit, se parcourt et peut demander une action (question,
   // lien) : bien plus longue qu'une simple information. Le curseur de
   // Clovis la rouvre de toute façon à tout moment.
@@ -311,6 +331,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
 
   const desactiver = useCallback(() => {
     setActif(false);
+    epingleJusqua.current = 0;
     annulerMasquageReponse();
     setReponseVisible(false);
   }, [annulerMasquageReponse]);
@@ -318,21 +339,33 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   const effacerTexte = useCallback(() => {
     if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
     minuteurEffacement.current = null;
+    epingleJusqua.current = 0;
     setDernierTexte(null);
   }, []);
 
-  const afficherTexte = useCallback((texte: string) => {
+  const afficherTexte = useCallback((texte: string, options?: OptionsAfficherTexte) => {
+    // Un commentaire de Clovis encore dans sa durée d'affichage n'est pas
+    // remplacé par le nom d'une action (20/09/2026, demande Bourama : la
+    // bulle disparaissait avant d'être lue). Un autre commentaire, lui, le
+    // remplace normalement.
+    if (!options?.commentaire && Date.now() < epingleJusqua.current) return;
     if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
     // Une information remplace la réponse affichée (une seule bulle à la
     // fois) ; la réponse reste rouvrable via le curseur.
     annulerMasquageReponse();
     setReponseVisible(false);
     setDernierTexte(texte);
-    const duree = Math.min(DUREE_AFFICHAGE_MAX_MS, Math.max(DUREE_AFFICHAGE_MS, texte.length * DUREE_PAR_CARACTERE_MS));
+    const duree =
+      options?.dureeMs !== undefined
+        ? Math.min(DUREE_TEXTE_DEMANDEE_MAX_MS, Math.max(DUREE_TEXTE_DEMANDEE_MIN_MS, options.dureeMs))
+        : Math.min(DUREE_AFFICHAGE_MAX_MS, Math.max(DUREE_AFFICHAGE_MS, texte.length * DUREE_PAR_CARACTERE_MS));
+    epingleJusqua.current = options?.commentaire ? Date.now() + duree : 0;
     minuteurEffacement.current = setTimeout(() => {
       minuteurEffacement.current = null;
+      epingleJusqua.current = 0;
       setDernierTexte(null);
     }, duree);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- les durées sont des constantes du hook.
   }, [annulerMasquageReponse]);
 
   const dureeReponse = (texte: string) =>
@@ -346,6 +379,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
       setDerniereReponse(complete);
       if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
       minuteurEffacement.current = null;
+      epingleJusqua.current = 0;
       setDernierTexte(null);
       setReponseVisible(true);
       programmerMasquageReponse(dureeReponse(complete.texte));

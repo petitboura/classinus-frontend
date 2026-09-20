@@ -54,7 +54,9 @@
 // message recue, {"texte_clovis": "..."} : commentaire libre pousse par
 // le modele du tour de conversation en cours (outil dire_a_l_etudiant
 // cote backend), sans reponse attendue. Affiche dans la bulle de dialogue
-// et garde dans le journal, quelle que soit la section de l'app.
+// et garde dans le journal, quelle que soit la section de l'app. Depuis le
+// 20/09/2026 (demande Bourama), le message peut porter "duree_secondes" : le
+// temps d'affichage voulu par le modele.
 //
 // Ajout du 20/09/2026 (demande Bourama : donner a Classinus la
 // possibilite d'ecrire dans les champs) : cinquieme forme de message
@@ -549,12 +551,16 @@ async function traiterDemandeMontrer(id: string, actionId: string) {
  * serveur n'en attend pas. Un texte vide ou non textuel est ignore
  * plutot que d'afficher une bulle vide.
  */
-function traiterTexteClovis(texte: unknown) {
+function traiterTexteClovis(texte: unknown, dureeSecondes?: unknown) {
   if (typeof texte !== "string") return;
   const propre = texte.trim();
   if (!propre) return;
+  // Durée d'affichage voulue par Clovis (20/09/2026, demande Bourama) :
+  // absente ou invalide, la durée automatique selon la longueur s'applique.
+  const dureeMs =
+    typeof dureeSecondes === "number" && Number.isFinite(dureeSecondes) && dureeSecondes > 0 ? dureeSecondes * 1000 : undefined;
   pousserJournalDepuisAgent(`Message : ${propre}`, "succes");
-  afficherTexteDepuisAgent(propre);
+  afficherTexteDepuisAgent(propre, { commentaire: true, dureeMs });
 }
 
 /**
@@ -578,6 +584,7 @@ function traiterMessage(message: unknown) {
     pris_en_compte?: unknown;
     message_etudiant_renvoye?: unknown;
     texte_clovis?: unknown;
+    duree_secondes?: unknown;
     ouvrir_canal_en_direct?: unknown;
     id?: string;
     action_id?: string;
@@ -593,7 +600,7 @@ function traiterMessage(message: unknown) {
     // qu'un accuse negatif.
     envoyerViaRepli(m.message_etudiant_renvoye);
   } else if (m.texte_clovis !== undefined) {
-    traiterTexteClovis(m.texte_clovis);
+    traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
   } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
