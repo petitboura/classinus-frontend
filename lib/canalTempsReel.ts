@@ -98,13 +98,12 @@ export function ecouterNotifications(cb: (n: NotificationClovis) => void): () =>
   return () => ecouteursNotifications.delete(cb);
 }
 
-function urlWebSocket(token: string, appareilId: string): string | null {
+function urlWebSocket(): string | null {
   if (!API_URL) return null;
   const base = API_URL.replace(/^http/, "ws");
-  // "" reste une cle valide et distincte de tout vrai telephone cote
-  // backend (core/canal_temps_reel.py) -- utilisee pour une session web
-  // ou tant que l'appareil_id natif n'est pas encore resolu.
-  return `${base}/api/canal-temps-reel/ws?token=${encodeURIComponent(token)}&appareil_id=${encodeURIComponent(appareilId)}`;
+  // Le bearer token est envoyé comme premier message WebSocket, jamais
+  // dans l'URL, afin de ne pas l'exposer aux journaux d'URL des proxies.
+  return `${base}/api/canal-temps-reel/ws`;
 }
 
 function envoyerReponse(id: string, reponse: unknown) {
@@ -468,11 +467,19 @@ async function ouvrirCanal() {
   } = await supabase.auth.getSession();
   if (!session?.access_token) return;
 
-  const url = urlWebSocket(session.access_token, appareilIdPourCetteConnexion);
+  const url = urlWebSocket();
   if (!url) return;
 
   fermetureVoulue = false;
   const ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({
+      auth_token: session.access_token,
+      appareil_id: appareilIdPourCetteConnexion,
+    }));
+  };
 
   ws.onmessage = (evenement) => {
     try {
