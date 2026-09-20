@@ -39,7 +39,7 @@ import com.getcapacitor.PermissionState
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
 import com.getcapacitor.annotation.PermissionCallback
-import kotlin.random.Random
+
 
 @CapacitorPlugin(
     name = "Notifications",
@@ -102,7 +102,7 @@ class NotificationsPlugin : Plugin() {
         }
         val pending = PendingIntent.getBroadcast(
             context,
-            Random.nextInt(),
+            (titre + "\u0000" + corps + "\u0000" + dateEpochMs.toLong()).hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
