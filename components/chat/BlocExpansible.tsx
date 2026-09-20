@@ -312,7 +312,21 @@ export function BlocExpansible({
               `w-full max-w-full min-w-0` empêchent tout élément interne de
               forcer une largeur plus grande que le panneau plutôt que de
               déborder proprement dans son propre `overflow-x-auto` local. */}
-          <div className="min-h-0 w-full max-w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div
+            className={`min-h-0 w-full max-w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${
+              // 20/09/2026, bug remonté par Bourama : "Agrandir" sur un
+              // widget/aperçu Office ouvrait bien le grand panneau, mais
+              // l'iframe elle-même gardait sa hauteur fixe pensée pour la
+              // vue repliée dans le fil (h-96 pour le widget, 75vh pour
+              // Office) -- le contenu réel restait donc minuscule au milieu
+              // d'un panneau presque vide, comme si "Agrandir" n'avait rien
+              // fait. Force l'iframe à remplir tout l'espace vertical
+              // réellement disponible ici, seulement pour ce cas précis
+              // (code/PDF/texte/markdown gèrent déjà leur propre hauteur
+              // correctement).
+              contenuEnIframe ? "[&_iframe]:!h-full [&_iframe]:!min-h-0" : ""
+            }`}
+          >
             <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
               {enfant}
             </GardeApercu>
