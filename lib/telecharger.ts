@@ -43,7 +43,12 @@ function estAndroid(): boolean {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
 }
 
-export async function telecharger(href: string, nom: string) {
+// 20/09/2026, demande Bourama : un lien de téléchargement télécharge, il
+// ne sort JAMAIS de l'appli. Avant, le dernier repli (fetch impossible)
+// ouvrait le fichier dans un nouvel onglet, c'est ce qui faisait quitter
+// le site. Ce repli est supprimé : si rien ne fonctionne, l'échec est
+// simplement journalisé, jamais de sortie de l'appli.
+export async function telecharger(href: string, nom: string): Promise<void> {
   if (!href) {
     console.error("[telecharger] URL vide");
     return;
@@ -75,7 +80,6 @@ export async function telecharger(href: string, nom: string) {
     telechargerViaBlobWeb(await reponse.blob(), nom);
   } catch (e) {
     console.error("[telecharger] échec téléchargement web :", e);
-    window.open(href, "_blank", "noopener,noreferrer");
   }
 }
 

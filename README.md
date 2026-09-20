@@ -73,6 +73,11 @@ lib/
                           minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par
                           langue), useMaintenantMs.ts (horloge locale des affichages)
   canalTempsReel.ts      client du canal temps réel avec le backend (exploration de dossier mobile...)
+  liensSortants.ts        règle unique des liens qui veulent sortir de l'appli (20/09/2026) : un fichier se
+                          télécharge vraiment (lib/telecharger.ts), tout autre lien passe par l'aperçu interne
+                          (VisionneurPositionGlobal) qui demande ensuite d'ouvrir le site ; appliquée à tous les
+                          clics par components/GardienLiensSortants.tsx (layout racine). data-lien-libre sur un
+                          lien = garde son comportement natif. Seul ouvrirSiteExterieur quitte réellement l'appli
   usePluginNatif.ts       hook d'accès générique aux plugins Capacitor
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)

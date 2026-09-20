@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ExternalLink, Play, X } from "lucide-react";
 import { Skeleton } from "../Skeleton";
 import { API_URL } from "@/lib/api";
+import { traiterLienSortant } from "@/lib/liensSortants";
 
 // Aperçu de lien dans le chat -- demande de Bourama (2026-07-20) : "n'importe
 // quel lien génère un aperçu... comme dans n'importe quelle plateforme"
@@ -179,7 +180,7 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
     }
     return (
       <button
-        onClick={() => (idVideo ? setEnLecture(true) : window.open(href, "_blank"))}
+        onClick={() => (idVideo ? setEnLecture(true) : traiterLienSortant(href, { titre: apercu?.titre || texteLien }))}
         className="my-2 flex w-full max-w-sm animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
       >
         {apercu!.image && (

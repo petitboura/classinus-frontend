@@ -14,6 +14,8 @@ import { SplashOuverture } from "@/components/SplashOuverture";
 import { SplashPret } from "@/components/SplashPret";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
+import { GardienLiensSortants } from "@/components/GardienLiensSortants";
+import { VisionneurGlobalRacine } from "@/components/VisionneurGlobalRacine";
 import { FournisseurRequetes } from "@/lib/reactQuery";
 
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
@@ -180,6 +182,8 @@ export default function RacineLayout({
         <FournisseurRequetes>{children}</FournisseurRequetes>
         <BoutonFlottantTelecharger />
         <PopupExplorationDossier />
+        <GardienLiensSortants />
+        <VisionneurGlobalRacine />
         <SplashPret />
       </body>
     </html>

@@ -141,7 +141,7 @@ export default async function PageTelecharger() {
                       <span className="block text-xs text-dj-texte-muet">{formatTaille(apk.size)}</span>
                     </div>
                   </div>
-                  <a href={apk.browser_download_url} className="mt-4 block">
+                  <a href={apk.browser_download_url} data-lien-libre className="mt-4 block">
                     <Bouton className="flex w-full items-center justify-center gap-2">
                       <Download size={16} />
                       Télécharger l&apos;APK

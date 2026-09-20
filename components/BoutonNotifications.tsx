@@ -11,6 +11,7 @@ import {
 } from "@/lib/api";
 import { ecouterNotifications } from "@/lib/canalTempsReel";
 import { dateRelative } from "@/lib/dateRelative";
+import { traiterLienSortant } from "@/lib/liensSortants";
 
 // Créé le 02/09/2026, demande Bourama : centre de notifications (bouton
 // cloche), couvre les types Classinus (voir api/notifications.py côté
@@ -92,7 +93,7 @@ export function BoutonNotifications({ connecte }: { connecte: boolean }) {
     // interne de l'app -- router.push casserait dessus (voir le bouton
     // dédié plus bas dans le rendu, même logique d'ouverture).
     if (n.type === "nouvelle_version_disponible") {
-      if (n.lien) window.open(n.lien, "_blank");
+      if (n.lien) traiterLienSortant(n.lien, { titre: n.titre });
       return;
     }
     if (n.lien) router.push(n.lien);

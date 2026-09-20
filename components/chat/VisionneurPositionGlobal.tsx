@@ -50,6 +50,7 @@ import {
 
 import { DetailOuverturePosition, EVENEMENT_OUVRIR_POSITION } from "./visionneurPositionEvenement";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { ouvrirSiteExterieur } from "@/lib/liensSortants";
 
 function LecteurAudioPosition({ url, debutSecondes }: { url: string; debutSecondes: number }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -90,10 +91,12 @@ function VisionneurImage({ url, titre }: { url: string; titre: string }) {
 // explicite pour sortir si l'utilisateur le veut vraiment.
 function CarteSiteExterne({ url, titre }: { url: string; titre: string }) {
   return (
-    <div className="p-5">
+    // data-apercu-actif : GardienLiensSortants.tsx laisse la carte inerte ici,
+    // la seule sortie est le bouton "Ouvrir le site" ci dessous.
+    <div className="p-5" data-apercu-actif>
       <LinkPreview href={url} texteLien={titre} />
       <button
-        onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+        onClick={() => ouvrirSiteExterieur(url)}
         className="mt-3 flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
       >
         <ExternalLink size={13} /> Ouvrir le site

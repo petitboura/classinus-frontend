@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { LinkPreview } from "./chat/LinkPreview";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
+import { ouvrirSiteExterieur } from "@/lib/liensSortants";
 import { TelechargerCopierModal } from "./TelechargerCopierModal";
 
 // Chargé dynamiquement, ssr:false (01/09) : ce fichier-ci est importé
@@ -496,10 +497,10 @@ export function VisionneuseBibliotheque({
           {estAutre && <ContenuNonPrevisualisable href={f.url_publique} nom={f.nom_fichier} />}
 
           {estLien && (
-            <div className="p-5">
+            <div className="p-5" data-apercu-actif>
               <LinkPreview href={f.url_publique} texteLien={titre} />
               <button
-                onClick={() => window.open(f.url_publique, "_blank", "noopener,noreferrer")}
+                onClick={() => ouvrirSiteExterieur(f.url_publique)}
                 className="mt-3 flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
               >
                 <ExternalLink size={13} /> Ouvrir le site
