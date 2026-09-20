@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, ReactNode } from "react";
 import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
 import { PleinEcranApercu } from "./PleinEcranApercu";
+import { BlocLarge } from "./BlocLarge";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
@@ -40,6 +41,7 @@ export function BlocExpansible({
   onPremiereOuverture,
   contenuEnIframe,
   actionsSupplementaires,
+  elargissable,
 }: {
   titre: string;
   icone: LucideIcon;
@@ -74,6 +76,12 @@ export function BlocExpansible({
   // (rangée du haut), soit icône seule (rail), exactement comme
   // BoutonsActions ci-dessous.
   actionsSupplementaires?: (avecTexte: boolean) => ReactNode;
+  // 20/09/2026, demande Bourama : la carte ouverte s'élargit des deux
+  // côtés de la colonne de texte quand un tableau ou un bloc de code à
+  // l'intérieur est plus large qu'elle (voir BlocLarge.tsx). Réservé au
+  // markdown et au code : un PDF, un widget ou un aperçu Office ont une
+  // taille propre qu'il ne faut pas laisser piloter la largeur de la carte.
+  elargissable?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [pleinEcran, setPleinEcran] = useState(false);
@@ -350,7 +358,12 @@ export function BlocExpansible({
 
   return (
     <>
-      <div className="my-2 max-w-full animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface p-2">{contenuPrincipal}</div>
+      <BlocLarge
+        actif={!!elargissable}
+        className="my-2 max-w-full animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface p-2"
+      >
+        {contenuPrincipal}
+      </BlocLarge>
       {modaleTelechargement}
     </>
   );

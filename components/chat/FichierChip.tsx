@@ -305,6 +305,7 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
           hrefTelechargement={href}
           idBibliothequePublique={idBibliothequePublique}
           texteACopier={texteMarkdown ?? undefined}
+          elargissable
           actionsSupplementaires={(avecTexte) => (
             <BoutonsFormatBrut avecTexte={avecTexte} vueBrute={vueBruteMarkdown} onChanger={setVueBruteMarkdown} />
           )}

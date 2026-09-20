@@ -6,6 +6,7 @@ import hljs from "@/lib/coloration";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telechargerContenuLocal } from "@/lib/telecharger";
+import { BlocLarge } from "./BlocLarge";
 
 // Rendu des blocs ```lang ... ``` "code réel" du markdown (les langages
 // spéciaux -- mermaid/chart/carte/html -- sont interceptés un niveau plus
@@ -146,7 +147,7 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
   }
 
   return (
-    <div className="dj-bloc-code group/code relative my-3 animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
+    <BlocLarge className="dj-bloc-code group/code relative my-3 animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
       <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
         <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
           {langage || "texte"}
@@ -154,6 +155,6 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
         <div className="flex items-center gap-2">{boutonsActions}</div>
       </div>
       {blocPre}
-    </div>
+    </BlocLarge>
   );
 }

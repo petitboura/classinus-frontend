@@ -249,9 +249,16 @@ export function ContenuMarkdown({
         </div>
       )}
       {vueBrute ? (
-        <pre className="whitespace-pre-wrap break-words p-5 font-sans text-sm text-dj-texte">{texte}</pre>
+        // [contain:inline-size] : un paragraphe très long ne doit pas
+        // décider de la largeur de la carte (voir BlocLarge.tsx), sinon
+        // toute carte s'élargirait au maximum. Sans effet ailleurs : un
+        // bloc de texte se remplit de toute façon à la largeur disponible.
+        <pre className="whitespace-pre-wrap break-words p-5 font-sans text-sm text-dj-texte [contain:inline-size]">{texte}</pre>
       ) : (
-        <div className="flex w-full max-w-full min-w-0 flex-col gap-3 p-5 text-sm leading-relaxed text-dj-texte">
+        // Même principe : tous les enfants directs (titres, paragraphes,
+        // listes, citations) ne comptent pas dans la largeur voulue, sauf
+        // les tableaux (div) et les blocs de code (pre), qui la pilotent.
+        <div className="flex w-full max-w-full min-w-0 flex-col gap-3 p-5 text-sm leading-relaxed text-dj-texte [&>:not(div):not(pre)]:[contain:inline-size]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{

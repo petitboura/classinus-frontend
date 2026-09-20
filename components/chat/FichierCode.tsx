@@ -108,6 +108,7 @@ export function FichierCode({ href, nom }: { href: string; nom: string }) {
       texteACopier={contenu || undefined}
       hrefTelechargement={href}
       onPremiereOuverture={charger}
+      elargissable
       enfant={
         erreur ? (
           <p className="px-1 py-4 text-center text-xs text-dj-texte-muet">Aperçu indisponible, utilise Télécharger.</p>

@@ -51,7 +51,11 @@ components/
                           chantier n'est pas terminé) ;
                           PleinEcranApercu.tsx (20/09/2026) : vrai plein écran de bord à bord du bouton
                           Agrandir des aperçus (BlocExpansible.tsx : widget, PDF, Office, texte), monté
-                          dans <body> par un portail pour ne jamais être recadré par le message
+                          dans <body> par un portail pour ne jamais être recadré par le message ;
+                          BlocLarge.tsx (20/09/2026) : règle des blocs larges (tableaux, blocs de code,
+                          aperçus md et code) qui s'élargissent des deux côtés de la colonne de texte sans
+                          bouger le texte ; toute nouvelle zone de chat doit porter data-zone-chat (voir
+                          ChatIA.tsx) et tout futur bloc large s'envelopper dans BlocLarge
     minuteurs/           minuteurs du chat (20/09/2026) : DockMinuteurs.tsx (zone en haut du chat, montée
                           par ChatIA.tsx), CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
                           LanceurMinuteur.tsx (bouton horloge : lancer, retrouver les masqués),

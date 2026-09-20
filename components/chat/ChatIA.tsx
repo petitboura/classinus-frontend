@@ -1359,14 +1359,25 @@ export function ChatIA({
   const statutsFlottants = statuts.filter((s) => !s.id);
 
   return (
-    <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col">
-      <DockMinuteurs conversationId={conversationId} />
+    // 20/09/2026, demande Bourama (blocs larges, voir BlocLarge.tsx) : le
+    // conteneur extérieur et la zone de défilement prennent toute la
+    // largeur disponible, et la colonne de texte (48rem au plus) est
+    // recréée par le remplissage latéral de la zone de défilement, avec le
+    // même résultat visuel qu'avant pour le texte. L'espace libre de chaque
+    // côté sert aux tableaux et blocs de code plus larges que le texte. Le
+    // dock des minuteurs et la barre de saisie gardent, eux, leur propre
+    // colonne de 48rem centrée.
+    <div className="relative flex h-full w-full flex-col">
+      <div className="mx-auto w-full max-w-3xl flex-none">
+        <DockMinuteurs conversationId={conversationId} />
+      </div>
       <div
         ref={conteneurMessagesRef}
+        data-zone-chat
         onScroll={() => {
           collePresBasRef.current = estPresDuBas();
         }}
-        className="flex-1 space-y-5 overflow-y-auto px-4 py-6">
+        className="flex-1 space-y-5 overflow-y-auto py-6 [padding-inline:max(1rem,calc((100%_-_48rem)/2_+_1rem))]">
         {messages.map((message, index) => {
           const estDernier = index === messages.length - 1;
           // Message envoyé par l'appli (fin de minuteur), jamais montré comme
@@ -1506,7 +1517,7 @@ export function ChatIA({
           toute façon toujours 0px (voir explication complète dans
           app/globals.css). Retiré : --safe-bottom seul couvre le vrai
           besoin (la zone système du bas). */}
-      <div className="px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]">
+      <div className="mx-auto w-full max-w-3xl px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]">
         {/* Mode actif (Partie 6, 06/09) : voir le commentaire équivalent
             dans la branche d'accueil ci-dessus. */}
         <SelecteurModeActif conversationId={conversationId} onAccesBloqueChange={setAccesBloqueMineur} />
