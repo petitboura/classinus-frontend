@@ -625,6 +625,26 @@ function BulleMessageInterne({
     setSelection({ texte, x: rect.left + rect.width / 2, y: rect.top });
   }
 
+  // Correctif du 20/09/2026 (signalé par Bourama : le bouton "Expliquer"
+  // ne disparaissait jamais tant qu'on ne cliquait pas dessus, même en
+  // passant à autre chose). gererFinSelection ne se déclenche QUE sur un
+  // mouseup dans cette bulle précise, rien n'écoutait la disparition de
+  // la sélection (clic ailleurs, sélection démarrée dans une autre bulle,
+  // touche Echap...). selectionchange est un évenement document, déclenché
+  // partout où la sélection change sur la page : si elle est vide/repliée,
+  // ou si elle ne pointe plus dans CETTE bulle, on referme son bouton.
+  useEffect(() => {
+    if (!onExpliquerSelection || estUtilisateur) return;
+    function gererChangementSelection() {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !conteneurRef.current?.contains(sel.anchorNode)) {
+        setSelection(null);
+      }
+    }
+    document.addEventListener("selectionchange", gererChangementSelection);
+    return () => document.removeEventListener("selectionchange", gererChangementSelection);
+  }, [onExpliquerSelection, estUtilisateur]);
+
   function copier() {
     navigator.clipboard.writeText(message.content).then(() => {
       setCopie(true);
