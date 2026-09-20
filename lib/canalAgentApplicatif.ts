@@ -56,6 +56,13 @@
 // cote backend), sans reponse attendue. Affiche dans la bulle de dialogue
 // et garde dans le journal, quelle que soit la section de l'app.
 //
+// Ajout du 20/09/2026 (demande Bourama : donner a Classinus la
+// possibilite d'ecrire dans les champs) : cinquieme forme de message
+// recue, {"id", "action_id", "texte_a_ecrire"} : remplit le champ de
+// saisie vise avec une frappe visible (voir traiterDemandeEcriture),
+// au lieu du clic de traiterDemandeAction pour un {"id", "action_id"}
+// simple.
+//
 // Ajout du 19/09/2026 (decision Bourama : le message de l'etudiant doit
 // etre envoye) : envoyerMessageEtudiant. Le message part sur ce canal ;
 // si un tour de Clovis est en cours, le backend le lui fait lire a son
@@ -379,10 +386,106 @@ async function traiterDemandeAction(id: string, actionId: string) {
 }
 
 /**
- * Chantier F : mode générique de secours. Même principe que
- * traiterDemandeAction depuis le 19/09/2026 : exécution directe, sans
- * confirmation, journalisée de la même façon.
+ * Change la valeur d'un input/textarea en passant par le setter natif
+ * du DOM plutot que par l'attribut .value classique, necessaire pour
+ * que React (qui intercepte son propre setter sur les elements
+ * controles) detecte vraiment le changement quand l'evenement "input"
+ * est ensuite emis, sinon la valeur affichee change a l'ecran mais
+ * l'etat React du composant ne bouge pas (le champ reviendrait a son
+ * ancienne valeur au prochain re-render).
  */
+function definirValeurNative(element: HTMLInputElement | HTMLTextAreaElement, valeur: string) {
+  const prototype = element instanceof HTMLTextAreaElement ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+  const descripteur = Object.getOwnPropertyDescriptor(prototype, "value");
+  descripteur?.set?.call(element, valeur);
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function attendre(ms: number): Promise<void> {
+  return new Promise((resoudre) => setTimeout(resoudre, ms));
+}
+
+// Délai entre deux lettres d'une frappe simulée (20/09/2026, demande
+// Bourama : la frappe doit être visible pour l'étudiant, pas
+// instantanée). Léger aléa pour ne pas paraître robotique, même
+// principe que le curseur virtuel qui ne se déplace jamais en ligne
+// droite (voir lib/contexteCurseurVirtuel.tsx).
+const DELAI_FRAPPE_MIN_MS = 18;
+const DELAI_FRAPPE_MAX_MS = 42;
+
+async function simulerFrappeVisible(element: HTMLInputElement | HTMLTextAreaElement, texte: string) {
+  definirValeurNative(element, "");
+  let accumule = "";
+  for (const caractere of texte) {
+    accumule += caractere;
+    definirValeurNative(element, accumule);
+    await attendre(DELAI_FRAPPE_MIN_MS + Math.random() * (DELAI_FRAPPE_MAX_MS - DELAI_FRAPPE_MIN_MS));
+  }
+  element.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+/**
+ * Ajouté le 20/09/2026 (demande Bourama : donner à Classinus la
+ * possibilité d'écrire dans les champs, pas seulement cliquer). Même
+ * principe que traiterDemandeAction, mais remplit un champ de saisie
+ * avec une frappe visible au lieu de cliquer. Aucune confirmation,
+ * même règle que le reste de ce chantier depuis le 19/09/2026.
+ */
+async function traiterDemandeEcriture(id: string, actionId: string, texteAEcrire: string) {
+  const element = resoudreElementParAgentId(actionId);
+
+  // Pas montee ICI (autre onglet/appareil, ou element deja disparu) :
+  // "ignore", jamais une erreur, laisse la vraie connexion repondre.
+  // Exception : monte ici mais recouvert par une popup, vraie erreur.
+  if (!element) {
+    const brut = document.querySelector(`[${ATTRIBUT_AGENT_ID}="${CSS.escape(actionId)}"]`);
+    if (brut instanceof HTMLElement && estPresentMaisMasque(brut)) {
+      envoyerReponse(id, { erreur: ERREUR_ELEMENT_MASQUE });
+      return;
+    }
+    envoyerReponse(id, { ignore: true });
+    return;
+  }
+
+  if (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement)) {
+    envoyerReponse(id, {
+      erreur: "Cet élément n'est pas un champ de saisie (input ou zone de texte) : utilise executer_action_application pour ce type d'élément.",
+    });
+    return;
+  }
+
+  const description = decrireElement(element);
+  const idJournal = pousserJournalDepuisAgent(`Écrit dans ${description}`);
+  afficherTexteDepuisAgent(`Écrit dans ${description}`);
+
+  try {
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+    await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
+
+    // Toute derniere verification, juste avant de commencer a taper,
+    // meme raison que traiterDemandeAction (React a pu remplacer le
+    // noeud pendant le voyage du curseur).
+    const elementActuel = resoudreElementParAgentId(actionId);
+    if (
+      !elementActuel ||
+      (!(elementActuel instanceof HTMLInputElement) && !(elementActuel instanceof HTMLTextAreaElement))
+    ) {
+      if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+      envoyerReponse(id, { erreur: "Le champ a disparu juste avant l'écriture." });
+      return;
+    }
+
+    elementActuel.focus();
+    await simulerFrappeVisible(elementActuel, texteAEcrire);
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
+    envoyerReponse(id, { succes: true });
+  } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors de l'écriture." });
+  }
+}
+
+
 async function traiterDemandeClicGenerique(id: string, selecteur: string, description: string) {
   const element = resoudreElementCliquable(selecteur);
 
@@ -462,6 +565,7 @@ function traiterMessage(message: unknown) {
     texte_clovis?: unknown;
     id?: string;
     action_id?: string;
+    texte_a_ecrire?: string;
     selecteur_generique?: string;
     description?: string;
     montrer_action_id?: string;
@@ -474,6 +578,8 @@ function traiterMessage(message: unknown) {
     envoyerViaRepli(m.message_etudiant_renvoye);
   } else if (m.texte_clovis !== undefined) {
     traiterTexteClovis(m.texte_clovis);
+  } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
+    traiterDemandeEcriture(m.id, m.action_id, m.texte_a_ecrire);
   } else if (m.id && m.action_id) {
     traiterDemandeAction(m.id, m.action_id);
   } else if (m.id && m.selecteur_generique) {
