@@ -78,7 +78,14 @@ export type ReponseCanal = {
 
 export type ValeurCanalEnDirect = {
   actif: boolean;
-  activer: () => void;
+  // conversationId optionnel (chantier "demo + guide visuel", 20/09/2026,
+  // demande Bourama) : permet a un appelant de CHOISIR l'id AVANT
+  // d'activer le canal, meme besoin et meme raison que demandeGuide dans
+  // lib/contexteChat.tsx -- pour pouvoir activer le mode decouverte cote
+  // serveur (PUT .../guide-actif) avec ce meme id avant le tout premier
+  // message. Undefined (usage normal, bouton canal en direct) : id
+  // genere ici comme avant, comportement inchange.
+  activer: (conversationId?: string) => void;
   desactiver: () => void;
   // Ajouté le 19/09/2026 (decision Bourama : le canal doit pouvoir
   // déclencher lui même un vrai tour de Clovis, "comme si de rien
@@ -260,14 +267,16 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     ecrirePreference(CLE_MOTEUR_DICTEE, moteur);
   }, []);
 
-  const activer = useCallback(() => {
+  const activer = useCallback((conversationId?: string) => {
     setActif(true);
     // Nouvelle conversation dédiée à chaque activation (voir le
     // commentaire du type ValeurCanalEnDirect plus haut) -- jamais
     // réutilisée d'une activation à l'autre, cohérent avec la décision
     // "pas de persistance à travers un rechargement" déjà prise pour le
-    // reste de cet état.
-    setConversationId(crypto.randomUUID());
+    // reste de cet état. conversationId fourni par l'appelant (chantier
+    // "demo + guide visuel", 20/09/2026) : utilisé tel quel plutôt que
+    // d'en générer un nouveau, sinon comportement inchangé.
+    setConversationId(conversationId ?? crypto.randomUUID());
   }, []);
   useEffect(() => {
     reponseVisibleRef.current = reponseVisible;

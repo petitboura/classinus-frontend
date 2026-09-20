@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Compass, Radio } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio, MessageSquareText, Eye, Sparkles } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -19,7 +19,7 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
-import { useOuvrirGuide } from "@/lib/contexteChat";
+import { useOuvrirGuide, useOuvrirDecouverteCanal } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
@@ -507,6 +507,11 @@ export function BarreDeSaisie({
   // /chat (deja la page courante ici, donc sans effet visible autre que
   // le changement de conversation/cle).
   const ouvrirGuide = useOuvrirGuide();
+  // Menu "+" (mobile) : meme menu a 3 choix que le bouton flottant
+  // (components/GuideFlottant.tsx), demande Bourama 20/09/2026. Guide
+  // visuel et Demo passent par le canal en direct, voir
+  // useOuvrirDecouverteCanal dans lib/contexteChat.tsx.
+  const ouvrirDecouverteCanal = useOuvrirDecouverteCanal();
   // Canal en direct, chantier L (19/09/2026) : point d'entree depuis le
   // chat, en plus du bouton flottant (masque sur /chat). Contexte
   // nullable : la barre de saisie peut etre montee hors AppShell.
@@ -1956,16 +1961,26 @@ export function BarreDeSaisie({
                     Entree fixe, pas issue de outilsUtilitairesPourAgent
                     (pas un vrai outil backend) -- meme hook que les deux
                     autres points d'entree, voir lib/contexteChat.tsx. */}
-                <button
-                  onClick={() => {
-                    ouvrirGuide();
-                    setMenuUtilitairesOuvert(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl border-t border-dj-bordure px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                >
-                  <Compass size={14} />
-                  <span className="flex-1">Guide de découverte</span>
-                </button>
+                {[
+                  { Icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
+                  { Icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
+                  { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDecouverteCanal("demo") },
+                ].map(({ Icone, label, onClick }, i) => (
+                  <button
+                    key={label}
+                    onClick={() => {
+                      onClick();
+                      setMenuUtilitairesOuvert(false);
+                    }}
+                    className={
+                      "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute" +
+                      (i === 0 ? " border-t border-dj-bordure" : "")
+                    }
+                  >
+                    <Icone size={14} />
+                    <span className="flex-1">{label}</span>
+                  </button>
+                ))}
                 {canalEnDirect && (
                   <button
                     onClick={() => {
@@ -2347,16 +2362,23 @@ export function BarreDeSaisie({
               ref={menuPlusRef}
               className="absolute bottom-full left-0 z-30 mb-2 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  ouvrirGuide();
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <Compass size={16} /> Guide de découverte
-              </button>
+              {[
+                { Icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
+                { Icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
+                { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDecouverteCanal("demo") },
+              ].map(({ Icone, label, onClick }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    onClick();
+                    setMenuPlusOuvert(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                >
+                  <Icone size={16} /> {label}
+                </button>
+              ))}
               {canalEnDirect && (
                 <button
                   type="button"

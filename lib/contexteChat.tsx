@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import type { MessageAffiche } from "@/components/chat/BulleMessage";
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+// Chantier "demo + guide visuel" (20/09/2026) : le Guide visuel et la
+// Demo tournent tous deux sur le canal en direct, voir useOuvrirDecouverteCanal
+// plus bas dans ce fichier.
+import { useCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 
 // "plein_ecran" retiré du type le 07/09/2026 (chantier "chat plein écran
 // = vraie section", étape 5) : /chat est désormais une route comme les
@@ -344,6 +349,60 @@ export function useOuvrirGuide() {
     ctx?.setDemandeGuide({ conversationId, texte: "Lance le guide de découverte de Classinus." });
     ctx?.fermerAvecFondu();
     router.push("/chat");
+  };
+}
+
+// Chantier "demo + guide visuel" (20/09/2026, demande Bourama, voir
+// specs-demo-decouverte.md dans clovis-frontend) : ouvre le Guide visuel
+// ou la Demo, tous deux portés par le canal en direct (curseur + bulle
+// par-dessus l'appli, voir lib/contexteCanalEnDirect.tsx) plutôt que par
+// le panneau de chat classique -- même raison technique que le canal en
+// direct "assistant autonome" : canal_en_direct doit valoir true dès le
+// tout premier message pour que les outils de clic soient forcés (voir
+// core/main.py, condition `if canal_en_direct:`), ce que seule une
+// session du canal sait faire, pas une conversation de chat normale.
+// D'où ce hook séparé de useOuvrirGuide ci-dessus (qui, lui, reste sur
+// le chat classique pour le guide textuel -- comportement inchangé).
+//
+// Même id choisi AVANT activation que useOuvrirGuide, pour pouvoir
+// activer le mode découverte côté serveur (PUT .../guide-actif, avec
+// sous_mode cette fois) avec ce même id avant que le canal envoie son
+// tout premier message (canal.activer(conversationId), puis
+// envoyerMessageEtudiant déclenche ce premier message, voir
+// lib/canalAgentApplicatif.ts).
+export function useOuvrirDecouverteCanal() {
+  const canal = useCanalEnDirect();
+  return async (sousMode: "visuel" | "demo") => {
+    const conversationId = crypto.randomUUID();
+    try {
+      await appelerApi(`/api/conversations/${conversationId}/guide-actif`, {
+        method: "PUT",
+        body: JSON.stringify({ actif: true, sous_mode: sousMode }),
+      });
+    } catch (e) {
+      // Même choix que useOuvrirGuide ci-dessus : un utilisateur non
+      // connecté n'a pas de session, la route exige un utilisateur
+      // authentifié. On active quand même le canal plutôt que de
+      // bloquer le clic -- Classinus répondra sans le mode découverte
+      // actif dans ce cas (comportement normal du canal en direct).
+      console.error("Erreur activation découverte (canal):", e);
+    }
+    canal.activer(conversationId);
+    const texte =
+      sousMode === "visuel"
+        ? "Lance le guide de découverte visuel de Classinus."
+        : "Lance la démo de Classinus.";
+    // setTimeout(0) volontaire, pas un oubli : canal.activer() ci-dessus
+    // ne fait que programmer les setState (actif, conversationId) --
+    // envoyerMessageEtudiant lit conversationId via obtenirConversationIdCanal
+    // (lib/canalAgentApplicatif.ts), qui lit le pont canalGlobal, lui-même
+    // mis à jour par l'effet enregistrerCanalEnDirect de AppShell.tsx
+    // (déclenché par ce même setState). Un appel synchrone ici lirait
+    // encore l'ancienne valeur (null) et échouerait silencieusement. Le
+    // report d'un tick (après le prochain rendu + effets passifs de
+    // React, garanti avant tout setTimeout(0)) laisse le pont se mettre
+    // à jour avant l'envoi du tout premier message.
+    setTimeout(() => envoyerMessageEtudiant(texte), 0);
   };
 }
 

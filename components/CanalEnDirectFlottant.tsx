@@ -59,7 +59,7 @@ export function CanalEnDirectFlottant() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.15 }}
-        onClick={actif ? desactiver : activer}
+        onClick={() => (actif ? desactiver() : activer())}
         aria-pressed={actif}
         aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
         title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
