@@ -33,7 +33,7 @@ import { BoutonInfoSection } from "./BoutonInfoSection";
  * travail).
  *
  * Pas de mécanisme i18n branché dans ce projet (même constat que
- * EspaceParametres.tsx/EspacePlugins.tsx) : textes en dur en français.
+ * ParametresAccueil.tsx/EspacePlugins.tsx) : textes en dur en français.
  */
 
 type PluginControleSession = {

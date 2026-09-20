@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
-// Reprend exactement le motif visuel de la liste de Paramètres
-// (EspaceParametres.tsx : Liste + LigneListe) pour que les pages
+// Reprend exactement le motif visuel de la liste de Paramètres (Liste +
+// LigneLien dans components/ParametresAccueil.tsx) pour que les pages
 // d'atterrissage de groupe ("Personnaliser Classinus", "Scolarité") soient
 // visuellement reconnaissables comme la même famille de composant
 // (refonte sidebar, 22/08/2026, demande Bourama : "ça doit exister comme
-// pour Paramètres"). Seule différence : ici ce sont de vraies routes
-// (Link), pas un switch d'état interne à une seule page, donc chaque
-// ligne mène vers sa propre section avec son propre historique de
-// navigateur.
+// pour Paramètres"). 19/09/2026 : Paramètres utilise lui aussi de vraies
+// routes désormais (ex-EspaceParametres.tsx, état `vue` interne,
+// supprimé) -- ce composant-ci reste séparé plutôt que réutilisé tel
+// quel par Paramètres, qui mélange des lignes de navigation avec une
+// carte de profil différente et des lignes d'action (voir
+// ParametresAccueil.tsx).
 export function ListeSections({
   sections,
 }: {

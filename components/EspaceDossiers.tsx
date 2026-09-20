@@ -37,7 +37,7 @@ import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
  * dans la navigation (fusion avec Bibliothèque décidée par Bourama, mais
  * l'intégration concrète est un autre chantier).
  *
- * Pas de mécanisme i18n branché (voir EspaceParametres.tsx) : textes en
+ * Pas de mécanisme i18n branché (voir ParametresAccueil.tsx) : textes en
  * dur en français.
  */
 

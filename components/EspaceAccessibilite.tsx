@@ -29,7 +29,7 @@ import { BoutonInfoSection } from "./BoutonInfoSection";
  * ajoutés aussi sur listerAppsAutorisees()/journalAccessibilite()/
  * journalActions() (avant : nom de paquet technique brut affiché partout).
  *
- * Pas de mécanisme i18n branché (voir EspaceParametres.tsx) : textes en
+ * Pas de mécanisme i18n branché (voir ParametresAccueil.tsx) : textes en
  * dur en français.
  */
 

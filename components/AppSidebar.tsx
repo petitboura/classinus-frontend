@@ -208,7 +208,9 @@ function MenuProfil({
   // bouton "Paramètres" juste en dessous, au lieu d'aller directement sur
   // la section Profil (photo/nom/bio) à l'intérieur de Paramètres. Prop
   // séparée, même principe que onNaviguerVersParametres, mais vers
-  // "/parametres?vue=profil" (voir EspaceParametres.tsx).
+  // "/parametres/profil" (19/09/2026 : devenue une vraie page, voir
+  // lib/sectionsParametres.tsx -- avant, paramètre de requête
+  // "/parametres?vue=profil" lu par l'ancien EspaceParametres.tsx).
   onNaviguerVersProfil: () => void;
   onSeDeconnecter: () => void;
   // 09/09/2026, demande Bourama : petit point rouge sur l'avatar tant
@@ -280,7 +282,7 @@ function MenuProfil({
               eux-mêmes de router.push -- la navigation vient maintenant
               du href du Link. */}
           <Link
-            href="/parametres?vue=profil"
+            href="/parametres/profil"
             onClick={() => {
               fermer();
               onNaviguerVersProfil();
@@ -1120,8 +1122,8 @@ export function AppSidebar({
             }}
             onNaviguerVersProfil={() => {
               // Même besoin que onNaviguerVersParametres juste au dessus,
-              // mais vers la section Profil directement (voir
-              // EspaceParametres.tsx, ?vue=profil).
+              // mais vers la section Profil directement (/parametres/profil,
+              // voir lib/sectionsParametres.tsx).
               marquerProfilSansHistorique();
             }}
             onSeDeconnecter={seDeconnecter}
@@ -1346,8 +1348,8 @@ export function AppSidebar({
                 }}
                 onNaviguerVersProfil={() => {
                   // Même besoin que onNaviguerVersParametres juste au
-                  // dessus, mais vers la section Profil directement (voir
-                  // EspaceParametres.tsx, ?vue=profil).
+                  // dessus, mais vers la section Profil directement
+                  // (/parametres/profil, voir lib/sectionsParametres.tsx).
                   marquerProfilSansHistorique();
                   setProfilDeplie(false);
                   marquerTiroirSansHistorique();

@@ -1637,7 +1637,7 @@ export async function mettreAJourMonProfil(nomAffiche: string) {
 // (api/profiles.py) : rien de nouveau à créer côté FastAPI. Le mot de
 // passe n'est PAS géré ici (voir lib/supabase.ts : "le backend FastAPI ne
 // gère jamais de mot de passe", supabase.auth.updateUser() appelé
-// directement depuis EspaceParametres.tsx).
+// directement depuis components/ParametresConfidentialite.tsx).
 
 /** GET /api/profiles/{user_id} avec l'id de la session en cours -- pas de
  * endpoint "GET /me" dédié côté backend, voir api/profiles.py. */

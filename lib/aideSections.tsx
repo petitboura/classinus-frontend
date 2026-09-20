@@ -13,10 +13,11 @@ import Link from "next/link";
 // Ce fichier est la SOURCE UNIQUE des textes : la bulle (texteCourt) et
 // la page Aide et support (texteComplet) lisent le même id ici, pour ne
 // jamais avoir deux versions du même texte qui divergent avec le temps.
-// EspaceParametres.tsx lit ce registre pour construire la liste des
-// rubriques de "Aide et support", et pour savoir sur quelle rubrique
-// scroller/ouvrir quand on y arrive via ?aide=<id> (lien "En savoir plus"
-// depuis une bulle).
+// ParametresAide.tsx (ex-EspaceParametres.tsx, devenue sa propre page le
+// 19/09/2026) lit ce registre pour construire la liste des rubriques de
+// "Aide et support", et pour savoir sur quelle rubrique scroller/ouvrir
+// quand on y arrive via ?aide=<id> (lien "En savoir plus" depuis une
+// bulle).
 //
 // texteCourt/texteComplet en React.ReactNode, pas juste string (passage
 // en .tsx le 02/09/2026, suite audit Bourama sur les 6 écrans oubliés du
