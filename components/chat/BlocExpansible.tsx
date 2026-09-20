@@ -38,6 +38,7 @@ export function BlocExpansible({
   enfant,
   chargement,
   onPremiereOuverture,
+  contenuEnIframe,
 }: {
   titre: string;
   icone: LucideIcon;
@@ -53,6 +54,17 @@ export function BlocExpansible({
   enfant: ReactNode;
   chargement?: boolean;
   onPremiereOuverture?: () => void;
+  // 20/09/2026, correctif Bourama : quand `enfant` est une <iframe>
+  // (widget interactif, aperçu Office), un tap DANS le contenu est
+  // entièrement capté par l'iframe et ne remonte jamais à
+  // basculerRailTactile ci-dessous -- sur mobile, il n'existe alors
+  // aucun moyen de faire apparaître le rail d'icônes une fois la rangée
+  // du haut scrollée hors champ (bouton Agrandir bloqué derrière
+  // l'iframe). Ce drapeau retire la dépendance au tap/survol pour ce
+  // cas précis : le rail reste visible dès que hautVisible=false, sans
+  // rien changer pour le code/PDF/texte/markdown (de vrais éléments de
+  // page, où le tap fonctionne normalement).
+  contenuEnIframe?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [pleinEcran, setPleinEcran] = useState(false);
@@ -199,13 +211,17 @@ export function BlocExpansible({
   // de partagé en base) pour éviter un conflit d'ordre entre classes
   // Tailwind contradictoires (pointer-events-auto/none) qui coexisteraient
   // sinon dans la même chaîne.
-  const classeRail = `flex flex-col gap-1.5 transition-opacity duration-200 ${
-    hautVisible
-      ? "opacity-0 pointer-events-none"
-      : railVisible
-        ? "opacity-100 pointer-events-auto"
-        : "opacity-0 pointer-events-none group-hover/rail:opacity-100 group-hover/rail:pointer-events-auto"
-  }`;
+  const classeRail = contenuEnIframe
+    ? `flex flex-col gap-1.5 transition-opacity duration-200 ${
+        hautVisible ? "opacity-0 pointer-events-none" : "opacity-100 pointer-events-auto"
+      }`
+    : `flex flex-col gap-1.5 transition-opacity duration-200 ${
+        hautVisible
+          ? "opacity-0 pointer-events-none"
+          : railVisible
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none group-hover/rail:opacity-100 group-hover/rail:pointer-events-auto"
+      }`;
 
   const contenuPrincipal = (
     <>

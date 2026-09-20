@@ -264,7 +264,7 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
       return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuMarkdown href={href} />} />;
     }
     if (TYPES_MIME_OFFICE.has(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuOffice href={href} titre={nom} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={href} titre={nom} />} />;
     }
     if (estTypeTexteLisible(typeMime)) {
       return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuTexte href={href} />} />;

@@ -92,6 +92,7 @@ export function WidgetSandbox({ code }: { code: string }) {
       icone={AppWindow}
       sousTitre="HTML"
       texteACopier={code}
+      contenuEnIframe
       enfant={
         <iframe
           sandbox="allow-scripts allow-forms allow-modals"
