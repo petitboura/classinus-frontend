@@ -1293,6 +1293,8 @@ export function ChatIA({
           <BarreDeSaisie
             onEnvoyer={envoyerMessage}
             desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+            genererEnCours={genEnCours}
+            onArreter={arreterGeneration}
             agentId={agentId}
             texteInitial={texteInitial}
             modelesDisponibles={modelesDisponibles}
@@ -1425,6 +1427,14 @@ export function ChatIA({
                   onReprendre={() => reprendreAgent(index)}
                 />
               )}
+              {message.interrompue && !genEnCours && (
+                <BandeauReponseInterrompue
+                  enAttente={genEnCours}
+                  onModifier={() => modifierApresInterruption(index)}
+                  onContinuer={() => continuerApresInterruption()}
+                  onReessayer={() => regenererDepuis(index)}
+                />
+              )}
             </div>
           );
         })}
@@ -1472,6 +1482,8 @@ export function ChatIA({
         <BarreDeSaisie
           onEnvoyer={envoyerMessage}
           desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+          genererEnCours={genEnCours}
+          onArreter={arreterGeneration}
           agentId={agentId}
           modelesDisponibles={modelesDisponibles}
           modeleSelectionne={modeleSelectionne}
