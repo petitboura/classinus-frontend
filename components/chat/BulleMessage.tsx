@@ -229,6 +229,11 @@ export interface MessageAffiche {
   role: "user" | "assistant";
   content: string;
   created_at?: string;
+  // Ajouté 20/09/2026 (minuteurs du chat, demande Bourama) : message envoyé
+  // par l'appli et non par l'étudiant (fin d'un minuteur). Gardé dans la
+  // liste pour que l'historique envoyé au modèle reste cohérent, mais
+  // jamais affiché comme une bulle (voir ChatIA.tsx).
+  automatique?: boolean;
   // Ajouté 2026-07-20 (bug trouvé par Bourama : aucun aperçu du fichier
   // envoyé, ni avant ni après envoi) -- previewUrl est une URL locale
   // (URL.createObjectURL, voir BarreDeSaisie.tsx) pour une image, donc

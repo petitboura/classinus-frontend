@@ -49,6 +49,10 @@ components/
                           pour la route /chat (chantier en cours "chat plein écran = vraie section" --
                           ChatFlottant.tsx gère encore l'ancien overlay fixed en parallèle tant que le
                           chantier n'est pas terminé)
+    minuteurs/           minuteurs du chat (20/09/2026) : DockMinuteurs.tsx (zone en haut du chat, montée
+                          par ChatIA.tsx), CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
+                          LanceurMinuteur.tsx (bouton horloge : lancer, retrouver les masqués),
+                          AnneauMinuteur.tsx
   icones/, icons/        icônes du produit
 
 lib/
@@ -61,6 +65,10 @@ lib/
                           qu'il soit lisible à la fois par ChatFlottant.tsx et par la future route
                           /chat (ChatSection.tsx) sans dupliquer le chargement initial
   contexteCatalogue.tsx, contexteFenetres.tsx, contexteRetour.tsx  autres contextes React globaux
+  contexteMinuteurs.tsx   minuteurs du chat (20/09/2026) : liste, actions de l'étudiant, prise en charge
+                          de la fin (message automatique invisible envoyé à Clovis par le chat ouvert) ;
+                          minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par
+                          langue), useMaintenantMs.ts (horloge locale des affichages)
   canalTempsReel.ts      client du canal temps réel avec le backend (exploration de dossier mobile...)
   usePluginNatif.ts       hook d'accès générique aux plugins Capacitor
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,

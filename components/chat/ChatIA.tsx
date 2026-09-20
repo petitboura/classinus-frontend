@@ -15,6 +15,9 @@ import { SelecteurModeActif } from "./SelecteurModeActif";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
+import { texteMessageAutomatique } from "@/lib/minuteurs";
+import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import dynamic from "next/dynamic";
@@ -801,6 +804,25 @@ export function ChatIA({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbMessagesEnAttenteCanal, genEnCours, affichageEnCours, accesBloqueMineur]);
 
+  // Minuteurs du chat (20/09/2026, demande Bourama). Tant que ce chat est
+  // ouvert, il peut recevoir la fin d'un minuteur (sans lui, le serveur
+  // envoie une notification à la place, voir core/minuteurs.py). Quand un
+  // minuteur se termine, on envoie à Clovis un message AUTOMATIQUE, jamais
+  // affiché comme une bulle de l'étudiant, qui lui rappelle ce qu'il avait
+  // prévu de faire : sa réponse apparaît ensuite normalement dans la
+  // conversation. Attend que le chat soit libre, comme la file du canal.
+  const ctxMinuteurs = useContext(ContexteMinuteurs);
+  const enregistrerChatMinuteurs = ctxMinuteurs?.enregistrerChat;
+  const nbFinsMinuteurs = ctxMinuteurs?.nbFinsEnAttente ?? 0;
+  useEffect(() => enregistrerChatMinuteurs?.(), [enregistrerChatMinuteurs]);
+  useEffect(() => {
+    if (!ctxMinuteurs || nbFinsMinuteurs === 0) return;
+    if (genEnCours || affichageEnCours || accesBloqueMineur) return;
+    const fin = ctxMinuteurs.prendreFinEnAttente();
+    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, null, false, false, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
+  }, [nbFinsMinuteurs, genEnCours, affichageEnCours, accesBloqueMineur]);
+
   async function envoyerMessage(
     texte: string,
     longueur: LongueurReponse,
@@ -808,13 +830,18 @@ export function ChatIA({
     localisation: LocalisationJointe = null,
     texteColle: string | null = null,
     rechercheForcee: boolean = false,
-    sansEnseignant: boolean = false
+    sansEnseignant: boolean = false,
+    // Minuteurs du chat (20/09/2026) : true quand l'appli, et non
+    // l'étudiant, réveille Clovis (fin d'un minuteur). Le message part et
+    // est enregistré comme les autres mais n'est jamais affiché comme une
+    // bulle de l'étudiant, ni maintenant ni au rechargement.
+    automatique: boolean = false
   ) {
     // Doit être le tout premier test de la fonction : si le parent
     // bloque (limite invité atteinte), on sort avant de toucher à quoi
     // que ce soit -- pas de message ajouté, pas d'appel réseau, pas de
     // proposition de notifications push.
-    if (avantEnvoi && !avantEnvoi()) {
+    if (!automatique && avantEnvoi && !avantEnvoi()) {
       return;
     }
 
@@ -829,7 +856,7 @@ export function ChatIA({
     // seul, sans fichier joint) : reprendreAgent ne gère pas encore
     // l'upload de fichiers sur ce chemin, voir sa docstring.
     const dernierMessage = messages[messages.length - 1];
-    if (dernierMessage?.repriseDisponible && fichiers.length === 0 && !texteColle) {
+    if (!automatique && dernierMessage?.repriseDisponible && fichiers.length === 0 && !texteColle) {
       await reprendreAgent(messages.length - 1, texte);
       return;
     }
@@ -839,7 +866,7 @@ export function ChatIA({
     // message = utiliser l'IA), pas au chargement de la page -- voir
     // proposerNotificationsPushUneFois pour le garde-fou "une seule
     // fois par appareil, jamais si déjà répondu avant".
-    proposerNotificationsPushUneFois(activerNotificationsPush);
+    if (!automatique) proposerNotificationsPushUneFois(activerNotificationsPush);
 
     const typeDeFichier = (f: File): "image" | "document" | "video" | "audio" =>
       f.type.startsWith("image/") ? "image" : f.type.startsWith("video/") ? "video" : f.type.startsWith("audio/") ? "audio" : "document";
@@ -849,6 +876,7 @@ export function ChatIA({
       role: "user",
       content: texte,
       created_at: new Date().toISOString(),
+      automatique: automatique || undefined,
       piecesJointes: fichiers.length
         ? fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) }))
         : null,
@@ -879,7 +907,7 @@ export function ChatIA({
     // même règle de titre que côté serveur (api/historique.py,
     // LONGUEUR_MAX_TITRE = 42), pour que le titre affiché tout de suite
     // soit identique à celui qu'un rechargement afficherait.
-    if (messages.length === 0) {
+    if (messages.length === 0 && !automatique) {
       const LONGUEUR_MAX_TITRE = 42;
       const brut = texte.trim();
       const titre =
@@ -1061,6 +1089,9 @@ export function ChatIA({
           // le canal est actif, sur ce message comme sur tous les
           // autres pendant ce temps.
           canal_en_direct: canalEnDirectActif,
+          // Minuteurs du chat (20/09/2026) : voir le paramètre `automatique`
+          // de envoyerMessage, et message_automatique dans api/chat.py.
+          message_automatique: automatique,
           // Selecteur de modele premium (02/08/2026) -- null tant que
           // l'agent n'a rien debloque ou que l'utilisateur n'a pas
           // change le defaut, voir modeleSelectionne plus haut. Revalide
@@ -1099,7 +1130,7 @@ export function ChatIA({
     const messageUtilisateur = messages[index - 1];
     if (!messageUtilisateur) return;
     majMessages((prec) => prec.slice(0, index - 1));
-    envoyerMessage(messageUtilisateur.content, "moyenne", []);
+    envoyerMessage(messageUtilisateur.content, "moyenne", [], null, null, false, false, messageUtilisateur.automatique === true);
   }
 
   function editerMessage(index: number, nouveauTexte: string) {
@@ -1179,7 +1210,11 @@ export function ChatIA({
   // bas dans ce fichier.
   if (messages.length === 0) {
     return (
-      <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center px-4">
+      <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center px-4">
+        {/* Minuteurs (20/09/2026) : visibles aussi sur l'écran d'accueil, par exemple un minuteur lancé dans une conversation précédente. */}
+        <div className="absolute inset-x-0 top-0">
+          <DockMinuteurs conversationId={conversationId} />
+        </div>
         <div className="w-full max-w-xl animate-dj-fade-up">
           {titreAccueil ? (
             <div className="mb-8 flex flex-col items-center text-center">
@@ -1243,7 +1278,8 @@ export function ChatIA({
   const statutsFlottants = statuts.filter((s) => !s.id);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-3xl flex-col">
+    <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col">
+      <DockMinuteurs conversationId={conversationId} />
       <div
         ref={conteneurMessagesRef}
         onScroll={() => {
@@ -1252,6 +1288,9 @@ export function ChatIA({
         className="flex-1 space-y-5 overflow-y-auto px-4 py-6">
         {messages.map((message, index) => {
           const estDernier = index === messages.length - 1;
+          // Message envoyé par l'appli (fin de minuteur), jamais montré comme
+          // une bulle de l'étudiant (20/09/2026).
+          if (message.automatique) return null;
           return (
             <div key={index}>
               <BulleMessage

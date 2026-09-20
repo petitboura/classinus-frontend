@@ -9,7 +9,7 @@
 // suffit, émis par ChatIA.tsx dès qu'un outil_resultat correspond à une
 // écriture (voir PORTEE_PAR_OUTIL ci-dessous).
 
-export type PorteeDonnees = "comportements";
+export type PorteeDonnees = "comportements" | "minuteurs";
 
 const NOM_EVENEMENT = "clovis:donnees_modifiees";
 
@@ -29,6 +29,9 @@ const PORTEE_PAR_OUTIL: Record<string, PorteeDonnees[]> = {
   // sécurité, le coût est négligeable (une poignée de petits GET,
   // uniquement si la section est déjà montée).
   annuler_derniere_modification: ["comportements"],
+  // Minuteurs du chat (20/09/2026) : quand Clovis lance, modifie ou arrête
+  // un minuteur, la liste affichée est relue tout de suite.
+  gerer_minuteur: ["minuteurs"],
 };
 
 export function emettreDonneesModifieesPourOutil(nomOutil: string) {

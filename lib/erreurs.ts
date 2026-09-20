@@ -14,6 +14,13 @@ export const LOCALE_ACTIVE: Locale = "fr";
 export const MESSAGES: Record<Locale, Record<string, string>> = {
   fr: {
     PRECISE_MATIERE_AUTRE: "Précise la matière dans \"Autre\".",
+    // 20/09/2026, minuteurs du chat : codes à garder synchronisés avec
+    // core/erreurs.py côté backend (voir core/minuteurs.py).
+    MINUTEUR_DUREE_INVALIDE: "Cette durée de minuteur n'est pas valide.",
+    MINUTEUR_TROP_NOMBREUX: "Trop de minuteurs sont en cours en même temps, arrête en un d'abord.",
+    MINUTEUR_INTROUVABLE: "Ce minuteur est introuvable.",
+    MINUTEUR_DEJA_TERMINE: "Ce minuteur est déjà terminé ou arrêté.",
+    MINUTEUR_ECHEC: "Impossible de mettre à jour ce minuteur pour le moment.",
     PRECISE_LA_VALEUR_POUR: "Précise la valeur pour {libelle}.",
     EST_DEJA_PRISE_PAR_UNE: "{libelle} est déjà prise.",
     AUCUNE_FORMULE_DETECTEE_DANS_CETTE_IMAGE: "Aucune formule détectée dans cette image.",

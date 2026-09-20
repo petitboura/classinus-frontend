@@ -138,6 +138,9 @@ export function ChatSection() {
           // rétro-remplissage), qui gardent donc l'ancien affichage
           // groupé ci-dessous en repli.
           segments?: SegmentMessage[];
+          // Ajouté 20/09/2026 (minuteurs du chat) : voir le même champ dans
+          // ChatFlottant.tsx.
+          automatique?: boolean;
         } | null;
       }[] = await appelerApi(`/api/historique/${agent.id}/conversations/${cheminId}`);
       setCle(fil.conversation_id ?? crypto.randomUUID());
@@ -160,6 +163,7 @@ export function ChatSection() {
             content: texte,
             created_at: l.created_at,
             piecesJointes: piecesJointes ?? l.meta?.pieces_jointes ?? undefined,
+            automatique: l.meta?.automatique === true ? true : undefined,
           };
         })
       );
