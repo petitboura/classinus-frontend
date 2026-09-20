@@ -400,6 +400,10 @@ export function ChatFlottant({
           // ChatSection.tsx -- absent pour les échanges antérieurs à ce
           // chantier, repli sur l'affichage groupé dans ce cas.
           segments?: SegmentMessage[];
+          // Ajouté 20/09/2026 (minuteurs du chat, demande Bourama) : message
+          // envoyé par l'appli à la fin d'un minuteur, jamais affiché comme
+          // une bulle de l'étudiant (voir message_automatique dans api/chat.py).
+          automatique?: boolean;
         } | null;
       }[] = await appelerApi(`/api/historique/${agent.id}/conversations/${cheminId}`);
       setCle(fil.conversation_id ?? crypto.randomUUID());
@@ -426,6 +430,7 @@ export function ChatFlottant({
             // cas qu'ils ne couvrent pas encore (ex: image envoyée via
             // le chemin vision dédié).
             piecesJointes: piecesJointes ?? l.meta?.pieces_jointes ?? undefined,
+            automatique: l.meta?.automatique === true ? true : undefined,
           };
         })
       );
