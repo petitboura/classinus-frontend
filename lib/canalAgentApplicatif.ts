@@ -515,10 +515,21 @@ async function ouvrirCanal() {
  * Remplace l'ancien evenement "clovis:actions_modifiees" (declaration
  * manuelle) par une observation generique du DOM : tout changement de
  * structure (montage/demontage) ou d'etat (disabled, aria-disabled,
- * hidden) declenche un rescan debounce -- coherent avec le principe
- * "rien a decrire, rien a cabler a la main" du scan generique. Actif
- * uniquement pendant qu'une connexion est ouverte, pour eviter du
+ * hidden, style, class) declenche un rescan debounce. Coherent avec le
+ * principe "rien a decrire, rien a cabler a la main" du scan generique.
+ * Actif uniquement pendant qu'une connexion est ouverte, pour eviter du
  * travail inutile quand personne n'ecoute cote backend.
+ *
+ * Correctif du 19/09/2026 (Bourama : "Clovis peut cliquer avant un
+ * changement d'ecran mais plus du tout apres") : "style" et "class"
+ * ajoutes a attributeFilter. estVisibleEtActif (clicGenerique.ts)
+ * traite un parent a opacity:0 comme invisible, mais un changement
+ * d'opacite pilote par un style inline ou une classe CSS (transition
+ * d'ecran, popup anime) n'est ni un ajout/retrait de noeud ni un
+ * disabled/hidden : sans "style"/"class" ici, aucun rescan n'etait
+ * declenche quand l'opacite revenait a 1, et un scan tombe pendant la
+ * fenetre a opacity:0 figeait une liste d'actions vide ou tronquee cote
+ * backend jusqu'au prochain changement de structure ailleurs.
  */
 function demarrerObservationDom() {
   if (observateurDom || typeof document === "undefined") return;
@@ -529,7 +540,7 @@ function demarrerObservationDom() {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["disabled", "aria-disabled", "hidden", "aria-hidden"],
+    attributeFilter: ["disabled", "aria-disabled", "hidden", "aria-hidden", "style", "class"],
   });
 }
 
