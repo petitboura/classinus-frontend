@@ -65,6 +65,9 @@ lib/
                           qu'il soit lisible à la fois par ChatFlottant.tsx et par la future route
                           /chat (ChatSection.tsx) sans dupliquer le chargement initial
   contexteCatalogue.tsx, contexteFenetres.tsx, contexteRetour.tsx  autres contextes React globaux
+  useDeplacable.ts        éléments flottants déplaçables au doigt ou à la souris (20/09/2026) : décalage par
+                          rapport à l'emplacement d'origine, bornes à l'écran, clic ignoré après un glissement ;
+                          utilisé par CanalEnDirectFlottant.tsx (canal + dictée + écriture) et BoutonJournalAgent.tsx
   contexteMinuteurs.tsx   minuteurs du chat (20/09/2026) : liste, actions de l'étudiant, prise en charge
                           de la fin (message automatique invisible envoyé à Clovis par le chat ouvert) ;
                           minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par

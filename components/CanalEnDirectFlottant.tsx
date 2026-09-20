@@ -31,6 +31,7 @@ import { useContext } from "react";
 import { ControlesInteractionCanal } from "@/components/ControlesInteractionCanal";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { useDecalageRailLateral } from "@/lib/useDecalageRailLateral";
+import { useDeplacable } from "@/lib/useDeplacable";
 
 // Classes écrites en toutes lettres : Tailwind ne génère que les classes
 // qu'il trouve telles quelles dans le code, jamais celles assemblées par
@@ -43,6 +44,9 @@ export function CanalEnDirectFlottant() {
   const contexte = useContext(ContexteCanalEnDirect);
   const pathname = usePathname();
   const decalageRail = useDecalageRailLateral();
+  // Déplaçable (20/09/2026, demande Bourama) : le groupe entier (bouton du
+  // canal, dictée, écriture) se déplace ensemble, voir lib/useDeplacable.ts.
+  const deplacement = useDeplacable<HTMLDivElement>();
 
   if (!contexte) return null;
   const { actif, activer, desactiver } = contexte;
@@ -50,9 +54,11 @@ export function CanalEnDirectFlottant() {
 
   return (
     <div
+      ref={deplacement.ref}
       data-agent-superposition="true"
-      className={`fixed z-[65] flex flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
-      style={{ left: `calc(${decalageRail}px + 1rem)` }}
+      {...deplacement.poignee}
+      className={`fixed z-[65] flex touch-none flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
+      style={{ left: `calc(${decalageRail}px + 1rem)`, ...deplacement.style }}
     >
       <motion.button
         key="activation"
