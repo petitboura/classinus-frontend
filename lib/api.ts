@@ -2298,6 +2298,34 @@ export async function obtenirAuditCorrections() {
   return appelerApi("/api/audit-corrections/mon-audit") as Promise<AuditCorrections>;
 }
 
+// Audit complet d'un code (20/09/2026, demande Bourama) : voir
+// api/audit_complet_bureau.py. Phase 1 -- les points qui demandent un
+// nouveau suivi (temps d'utilisation, niveau étudiant, notions
+// demandées/temps par notion) ne sont pas encore construits.
+export type HeuresPointe = {
+  jours: string[];
+  grille: number[][];
+  jour_plus_frequente: string | null;
+};
+
+export type ElementCompte = { nom: string; nombre: number };
+
+export type AuditComplet = {
+  total_rattaches: number;
+  actifs: number;
+  inactifs: number;
+  conversations_total: number;
+  questions_total: number;
+  signalements_non_traites: number;
+  heures_pointe: HeuresPointe;
+  outils_top: ElementCompte[];
+  visuels_top: ElementCompte[];
+};
+
+export async function obtenirAuditComplet(codeId: string) {
+  return appelerApi(`/api/audit-complet/${codeId}`) as Promise<AuditComplet>;
+}
+
 // Fondations du système établissement (Partie 9, 06/09/2026) : voir
 // api/etablissements.py côté backend pour les endpoints, core/etablissements.py
 // pour la logique et les trois états de rattachement (suivi / demande_en_attente

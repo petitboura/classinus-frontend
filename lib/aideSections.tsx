@@ -44,7 +44,19 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     titre: "Audit hebdomadaire",
     texteCourt: "Une fois par semaine, un résumé des signalements de tes élèves, même s'il n'y en a aucun.",
     texteComplet:
-      "Chaque semaine, Classinus t'envoie un résumé des signalements reçus de tes élèves, même s'il n'y en a aucun. Les signalements de type A (correctif de fond) encore en attente sont listés en priorité, avec un accès direct pour les corriger.",
+      "Chaque semaine, Classinus t'envoie un résumé des signalements reçus de tes élèves, même s'il n'y en a aucun. Les signalements encore en attente sont listés en priorité, avec un accès direct pour les corriger.",
+  },
+  {
+    // 20/09/2026, demande Bourama : tableau de bord par code, phase 1
+    // (voir components/AuditComplet.tsx). Les points qui demandent un
+    // nouveau suivi (temps d'utilisation, niveau des élèves, notions
+    // les plus demandées) ne sont pas encore là -- à ne pas décrire ici
+    // tant qu'ils ne sont pas construits.
+    id: "audit-complet-code",
+    titre: "Audit complet",
+    texteCourt: "Le tableau de bord d'un de tes codes : activité, signalements, outils et affichages utilisés.",
+    texteComplet:
+      "Choisis un de tes codes pour voir son tableau de bord : combien d'élèves rattachés l'utilisent vraiment, le nombre de conversations et de questions, les heures où ils sont le plus actifs, et les outils et affichages les plus utilisés dans leurs échanges avec Classinus. Les chiffres se mettent à jour automatiquement.",
   },
   {
     // Chantier "canal en direct" (19/09/2026) : bouton flottant en bas à
