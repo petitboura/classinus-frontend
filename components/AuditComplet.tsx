@@ -154,7 +154,10 @@ function TableauDeBord({ audit }: { audit: AuditCompletType }) {
         <BarresHorizontales titre="Affichages les plus utilisés" donnees={audit.visuels_top} />
       </div>
 
-      <BarresHorizontales titre="Modes pédagogiques les plus choisis" donnees={audit.modes_top} />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <BarresHorizontales titre="Modes pédagogiques les plus choisis" donnees={audit.modes_top} />
+        <BarresHorizontales titre="Modes source les plus choisis" donnees={audit.modes_source_top} />
+      </div>
     </div>
   );
 }

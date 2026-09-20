@@ -56,7 +56,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     titre: "Audit complet",
     texteCourt: "Le tableau de bord d'un de tes codes : activité, signalements, outils et affichages utilisés.",
     texteComplet:
-      "Choisis un de tes codes pour voir son tableau de bord : combien d'élèves rattachés l'utilisent vraiment, le nombre de conversations et de questions, les heures où ils sont le plus actifs, les outils et affichages les plus utilisés, et les modes pédagogiques (Socratique, Professeur, Tuteur, Examinateur) qu'ils choisissent le plus dans leurs échanges avec Classinus. Les chiffres se mettent à jour automatiquement.",
+      "Choisis un de tes codes pour voir son tableau de bord : combien d'élèves rattachés l'utilisent vraiment, le nombre de conversations et de questions, les heures où ils sont le plus actifs, les outils et affichages les plus utilisés, les modes pédagogiques (Socratique, Professeur, Tuteur, Examinateur) et les modes source (Recherche, Sur pièces) qu'ils choisissent le plus dans leurs échanges avec Classinus. Les chiffres se mettent à jour automatiquement.",
   },
   {
     // Chantier "canal en direct" (19/09/2026) : bouton flottant en bas à

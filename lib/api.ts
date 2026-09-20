@@ -2321,6 +2321,7 @@ export type AuditComplet = {
   outils_top: ElementCompte[];
   visuels_top: ElementCompte[];
   modes_top: ElementCompte[];
+  modes_source_top: ElementCompte[];
 };
 
 export async function obtenirAuditComplet(codeId: string) {
