@@ -551,7 +551,11 @@ function fermerCanal() {
  * web.
  */
 export function initialiserCanalTempsReel() {
-  if (dejaInitialise || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
+  if (dejaInitialise) {
+    void ouvrirCanal();
+    return;
+  }
   dejaInitialise = true;
 
   document.addEventListener("visibilitychange", () => {
