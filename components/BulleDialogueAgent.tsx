@@ -32,11 +32,12 @@
 // se réduire.
 //
 // Taille voulue (demande Bourama, 19/09/2026) : la RÉPONSE se redimensionne
-// avec la poignée en bas à droite, et la taille choisie est sauvegardée
-// (localStorage, comme les autres préférences d'affichage du canal) pour
-// toutes les réponses suivantes, même après un rechargement. Double clic
-// sur la poignée : retour à la taille automatique. L'information reste
-// toujours en taille automatique.
+// avec la poignée en bas à droite. La taille choisie n'est JAMAIS gardée
+// (décision explicite de Bourama) : elle ne vaut que tant que cette
+// réponse reste affichée, et disparaît dès que la bulle se ferme ou
+// qu'une autre réponse arrive. Rien n'est écrit dans le stockage du
+// navigateur. Double clic sur la poignée : retour immédiat à la taille
+// automatique. L'information reste toujours en taille automatique.
 //
 // Le curseur de Clovis est affiché AU DESSUS de la bulle (voir
 // CurseurVirtuelAgent.tsx) : avant, la bulle pouvait le recouvrir et
@@ -67,37 +68,13 @@ const POSITION_REPLI_Y = 72;
 const LARGEUR_MAX_INFO = 320;
 const LARGEUR_MAX_REPONSE = 440;
 
-const CLE_TAILLE_BULLE = "canalEnDirect.tailleBulleReponse";
 const LARGEUR_MIN_REPONSE = 240;
 const HAUTEUR_MIN_REPONSE = 120;
 // Padding vertical + bordures de la bulle (py-2.5 x 2 + 2 px de bordure) :
-// la hauteur sauvegardée est celle de la zone de contenu, sans eux.
+// la hauteur choisie est celle de la zone de contenu, sans eux.
 const PADDING_VERTICAL_BULLE = 22;
 
 type TailleBulle = { largeur: number; hauteur: number };
-
-function lireTailleSauvegardee(): TailleBulle | null {
-  try {
-    const brut = window.localStorage.getItem(CLE_TAILLE_BULLE);
-    if (!brut) return null;
-    const valeur = JSON.parse(brut) as Partial<TailleBulle>;
-    if (typeof valeur.largeur === "number" && typeof valeur.hauteur === "number") {
-      return { largeur: valeur.largeur, hauteur: valeur.hauteur };
-    }
-  } catch {
-    // Stockage indisponible ou valeur illisible : taille automatique.
-  }
-  return null;
-}
-
-function ecrireTailleSauvegardee(taille: TailleBulle | null) {
-  try {
-    if (taille) window.localStorage.setItem(CLE_TAILLE_BULLE, JSON.stringify(taille));
-    else window.localStorage.removeItem(CLE_TAILLE_BULLE);
-  } catch {
-    // Stockage indisponible (navigation privée, quota) : valable pour la session seulement.
-  }
-}
 
 function limiter(valeur: number, min: number, max: number): number {
   return Math.min(Math.max(valeur, min), Math.max(min, max));
@@ -137,18 +114,29 @@ export function BulleDialogueAgent() {
   const positionConnue = useRef(false);
   const dimensions = useRef({ largeur: LARGEUR_MAX_INFO, hauteur: 80 });
 
-  // Taille choisie par l'étudiant (null = automatique), lue après le
-  // montage pour ne jamais créer d'écart avec le rendu serveur.
+  // Taille choisie par l'étudiant pour la réponse affichée en ce moment
+  // (null = automatique). Jamais sauvegardée : remise à null dès que la
+  // bulle de réponse se ferme ou change (voir l'effet plus bas).
   const [taille, setTaille] = useState<TailleBulle | null>(null);
   const tailleRef = useRef<TailleBulle | null>(null);
   const redimensionnement = useRef<{ x: number; y: number; largeur: number; hauteur: number } | null>(null);
   const positionGelee = useRef(false);
   const elementBulle = useRef<HTMLDivElement | null>(null);
   const elementContenu = useRef<HTMLDivElement | null>(null);
+  const reponseAffichee = reponse !== null;
   useEffect(() => {
-    const sauvegardee = lireTailleSauvegardee();
-    tailleRef.current = sauvegardee;
-    setTaille(sauvegardee);
+    tailleRef.current = null;
+    setTaille(null);
+  }, [idReponse, reponseAffichee]);
+
+  // Nettoyage unique : une version précédente écrivait la taille dans le
+  // stockage du navigateur (19/09/2026, retiré sur demande de Bourama).
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem("canalEnDirect.tailleBulleReponse");
+    } catch {
+      // Stockage indisponible : rien à nettoyer.
+    }
   }, []);
 
   const recalculer = useCallback(() => {
@@ -256,7 +244,6 @@ export function BulleDialogueAgent() {
     redimensionnement.current = null;
     positionGelee.current = false;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    ecrireTailleSauvegardee(tailleRef.current);
     recalculer();
     contexte?.reprendreMasquageReponse();
   };
@@ -264,7 +251,6 @@ export function BulleDialogueAgent() {
   const retablirTailleAutomatique = () => {
     tailleRef.current = null;
     setTaille(null);
-    ecrireTailleSauvegardee(null);
   };
 
   if (!contexte) return null;
