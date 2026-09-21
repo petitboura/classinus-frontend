@@ -1,7 +1,7 @@
 // Cree le 25/08/2026, Bourama : Lot 3B Partie 3 mobile (fusion Capacitor).
 // Porte depuis clovis-mobile/android-legacy-natif (Lot 5, ConnecteursScreen.kt
 // + OAuthCallbackActivity.kt + ClovisApiClient methodes Notion) : meme flow
-// Custom Tabs + retour sur clovismobile://oauth-callback, ecran retire.
+// Custom Tabs + retour sur classinusmobile://oauth-callback, ecran retire.
 //
 // Cote JS :
 //   const Connecteurs = registerPlugin<any>('Connecteurs');

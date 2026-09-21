@@ -33,7 +33,7 @@
             android:excludeFromRecents="true" />
 
         <!-- Lot 5 (porte 25/08/2026) : recoit la redirection OAuth (Notion,
-             puis autres connecteurs) sur clovismobile://oauth-callback, ouvert
+             puis autres connecteurs) sur classinusmobile://oauth-callback, ouvert
              via Custom Tabs depuis ConnecteursPlugin.kt. singleTask pour ne
              pas empiler une nouvelle instance par-dessus MainActivity. -->
         <activity
@@ -45,7 +45,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="clovismobile" android:host="oauth-callback" />
+                <data android:scheme="classinusmobile" android:host="oauth-callback" />
             </intent-filter>
         </activity>
 

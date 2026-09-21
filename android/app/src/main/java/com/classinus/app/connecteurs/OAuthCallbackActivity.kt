@@ -1,6 +1,6 @@
 // Porte depuis clovis-mobile/android-legacy-natif (Lot 5, OAuthCallbackActivity.kt)
 // dans le plugin Capacitor (Lot 3B, 25/08/2026). Logique inchangee : active
-// invisible (theme translucide) dediee a intercepter clovismobile://oauth-callback,
+// invisible (theme translucide) dediee a intercepter classinusmobile://oauth-callback,
 // declenchee par Android apres que Custom Tabs a suivi la redirection depuis
 // Notion. Ne montre aucune UI : extrait code/state, les publie via
 // RetourOAuth (collecte par ConnecteursPlugin), relance MainActivity, se termine.

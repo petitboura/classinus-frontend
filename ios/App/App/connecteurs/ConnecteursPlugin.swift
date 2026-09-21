@@ -1,6 +1,6 @@
 // Cree le 25/08/2026, Bourama : Lot 3B Partie 3 mobile (fusion Capacitor), iOS.
 // Porte depuis clovis-mobile/ios-legacy-natif (Lot 5, ConnecteursScreen.swift) :
-// meme mecanisme ASWebAuthenticationSession (callbackURLScheme="clovismobile"),
+// meme mecanisme ASWebAuthenticationSession (callbackURLScheme="classinusmobile"),
 // qui n'a PAS besoin d'etre declare dans Info.plist (CFBundleURLTypes) :
 // contrairement a l'equivalent Android (Custom Tabs + intent-filter dans
 // AndroidManifest.xml), la session intercepte elle-meme sa propre navigation
@@ -73,7 +73,7 @@ public class ConnecteursPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthentication
     @MainActor
     private func lancerSessionOAuth(url: URL) async throws -> (code: String, state: String) {
         try await withCheckedThrowingContinuation { continuation in
-            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "clovismobile") { callbackURL, error in
+            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: "classinusmobile") { callbackURL, error in
                 if let error {
                     continuation.resume(throwing: error)
                     return
