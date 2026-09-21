@@ -918,10 +918,14 @@ export async function creerDossierCataloguePublic(
   }) as Promise<DossierCataloguePublic>;
 }
 
-export async function renommerDossierCataloguePublic(dossierId: string, nom: string) {
+// 20/09/2026, demande Bourama : la description rejoint le nom dans
+// cette même route PATCH (voir api/dossiers_catalogue_public.py) --
+// paramètre optionnel pour ne pas casser les appels existants qui ne
+// passaient que le nom.
+export async function renommerDossierCataloguePublic(dossierId: string, nom: string, description?: string) {
   return appelerApi(`/api/bibliotheque-publique/dossiers/${dossierId}`, {
     method: "PATCH",
-    body: JSON.stringify({ nom }),
+    body: JSON.stringify(description === undefined ? { nom } : { nom, description }),
   });
 }
 
@@ -1046,6 +1050,17 @@ export async function deplacerFichierDossierCataloguePublic(dossierId: string, f
 
 export async function supprimerDeBibliothequePublique(entreeId: string) {
   return appelerApi(`/api/bibliotheque-publique/${entreeId}`, { method: "DELETE" });
+}
+
+// 20/09/2026, demande Bourama ("beaucoup de paramètres ne sont pas
+// éditables aujourd'hui") : nom et description d'un fichier/lien/texte
+// déjà publié, réservé au contributeur d'origine côté backend (même
+// règle que /filtres juste en dessous).
+export async function modifierEntreeBibliothequePublique(entreeId: string, champs: { nom?: string; description?: string }) {
+  return appelerApi(`/api/bibliotheque-publique/${entreeId}`, {
+    method: "PATCH",
+    body: JSON.stringify(champs),
+  }) as Promise<EntreeBibliothequePublique>;
 }
 
 // 15/09/2026, demande Bourama : les filtres d'un fichier/lien/texte
@@ -1513,6 +1528,20 @@ export async function uploaderSkillPublic(fichier: File, nom: string, descriptio
   }
 
   return (await reponse.json()) as ComportementPublic;
+}
+
+// 20/09/2026, demande Bourama : rien n'était modifiable après
+// publication d'un skill (copie figée) -- nom/description/texte/
+// skill_md, réservé à l'auteur d'origine côté backend. Bourama a été
+// prévenu que modifier texte/skill_md n'affecte que les activations
+// FUTURES (les copies déjà activées par d'autres restent inchangées),
+// voir core/comportements_etudiants.py::modifier_comportement_public.
+export async function modifierComportementPublic(comportementPublicId: string, champs: { nom?: string; description?: string; texte?: string; skill_md?: string }) {
+  const resultat = await appelerApi(`/api/comportements-publics/${comportementPublicId}`, {
+    method: "PATCH",
+    body: JSON.stringify(champs),
+  });
+  return resultat as ComportementPublic;
 }
 
 // 07/09/2026, demande Bourama : l'auteur d'un skill public peut le

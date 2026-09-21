@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, ScrollText, Download, Check, Upload, Plus, Trash2, Activity } from "lucide-react";
+import { Search, ScrollText, Download, Check, Upload, Plus, Trash2, Activity, Pencil } from "lucide-react";
 import {
   rechercherComportementsPublics,
   activerComportementPublic,
@@ -21,6 +21,7 @@ import { MenuActionsCarte } from "@/components/MenuActionsCarte";
 import { lienPartage } from "@/components/ButtonPartager";
 import { BulleSurvol } from "@/components/BulleSurvol";
 import { BoutonEtoile } from "@/components/BoutonEtoile";
+import { ModifierSkillPublicModal } from "@/components/ModifierSkillPublicModal";
 
 // Catalogue public des comportements (21/08/2026, demande Bourama : "les
 // comportements aussi, je veux un onglet public, c'est à dire quelqu'un
@@ -35,6 +36,9 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   const [actives, setActives] = useState<Set<string>>(new Set());
   const [sansCompte, setSansCompte] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  // 20/09/2026, demande Bourama ("pouvoir modifier le contenu réel") :
+  // voir ModifierSkillPublicModal.tsx.
+  const [skillEnEdition, setSkillEnEdition] = useState<ComportementPublic | null>(null);
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [fichierUpload, setFichierUpload] = useState<File | null>(null);
   const [fichiersUploadLot, setFichiersUploadLot] = useState<File[]>([]);
@@ -437,6 +441,12 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
                     ...(c.est_a_moi
                       ? [
                           {
+                            cle: "modifier",
+                            label: "Modifier (nom, description, contenu)",
+                            icone: <Pencil size={14} />,
+                            onClick: () => setSkillEnEdition(c),
+                          },
+                          {
                             cle: "retirer",
                             label: "Retirer du catalogue public",
                             icone: <Trash2 size={14} />,
@@ -473,6 +483,15 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
           compteurs={profilOuvert.compteurs}
           element={profilOuvert.element}
           onFermer={() => setProfilOuvert(null)}
+        />
+      )}
+      {skillEnEdition && (
+        <ModifierSkillPublicModal
+          skill={skillEnEdition}
+          onModifie={(skillModifie) => {
+            setListe((prev) => prev?.map((x) => (x.id === skillModifie.id ? skillModifie : x)));
+          }}
+          onFermer={() => setSkillEnEdition(null)}
         />
       )}
     </div>

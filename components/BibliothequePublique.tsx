@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
   Flag, FolderPlus, Check, Link as IconLien, Upload, FolderX, X, Globe, Lock, Loader2, Download, ChevronLeft,
-  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles, Activity,
+  SlidersHorizontal, Move, FolderMinus, Bell, XCircle, CheckSquare, Share2, Tags, FolderTree, Sparkles, Activity, Pencil,
 } from "lucide-react";
 import {
   listerBibliothequePublique,
@@ -51,6 +51,8 @@ import { DeplacerVersModal } from "@/components/DeplacerVersModal";
 import { GererDossiersFichierModal } from "@/components/GererDossiersFichierModal";
 import { EditionFiltresFichierModal } from "@/components/EditionFiltresFichierModal";
 import { EditionFiltresDossierModal } from "@/components/EditionFiltresDossierModal";
+import { ModifierEntreePubliqueModal } from "@/components/ModifierEntreePubliqueModal";
+import { ModifierDossierPubliqueModal } from "@/components/ModifierDossierPubliqueModal";
 import { VisionneuseBibliotheque } from "@/components/VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
@@ -580,6 +582,10 @@ export function BibliothequePublique() {
   const [cibleDeplacement, setCibleDeplacement] = useState<CibleDeplacement | null>(null);
   // 15/09/2026, demande Bourama (modifier les filtres après publication) :
   const [fichierEditionFiltres, setFichierEditionFiltres] = useState<EntreeBibliothequePublique | null>(null);
+  // 20/09/2026, demande Bourama ("beaucoup de paramètres ne sont pas
+  // éditables aujourd'hui") : nom/description, distinct des filtres
+  // ci-dessus (modale séparée, voir ModifierEntreePubliqueModal.tsx).
+  const [fichierEnEdition, setFichierEnEdition] = useState<EntreeBibliothequePublique | null>(null);
   const [demandesEnAttente, setDemandesEnAttente] = useState<DemandeDossierCataloguePublic[]>([]);
   const [panneauDemandesOuvert, setPanneauDemandesOuvert] = useState(false);
   const [demandeEnCoursId, setDemandeEnCoursId] = useState<string | null>(null);
@@ -602,6 +608,9 @@ export function BibliothequePublique() {
   // seul dossier à la fois, pré-rempli avec ses valeurs et réglages
   // d'héritage actuels (voir filtresDossierDepuis dans lib/api.ts).
   const [dossierEditionFiltres, setDossierEditionFiltres] = useState<DossierCataloguePublic | null>(null);
+  // 20/09/2026, demande Bourama : nom/description, distinct des filtres
+  // ci-dessus (modale séparée, voir ModifierDossierPubliqueModal.tsx).
+  const [dossierEnEdition, setDossierEnEdition] = useState<DossierCataloguePublic | null>(null);
   const [editionFiltres, setEditionFiltres] = useState<FiltresDossierCataloguePublic>(filtresDossierVides());
   const [enregistrementFiltresEnCours, setEnregistrementFiltresEnCours] = useState(false);
 
@@ -1322,6 +1331,12 @@ export function BibliothequePublique() {
       },
       ...(entree.est_a_moi
         ? [
+            {
+              cle: "modifier",
+              label: "Modifier (nom, description)",
+              icone: <Pencil size={14} />,
+              onClick: () => setFichierEnEdition(entree),
+            },
             {
               cle: "modifier-filtres",
               label: "Modifier les filtres",
@@ -2140,6 +2155,12 @@ export function BibliothequePublique() {
                           onClick: () => setCibleDeplacement({ type: "dossier", dossier: d }),
                         },
                         {
+                          cle: "modifier",
+                          label: "Modifier (nom, description)",
+                          icone: <Pencil size={14} />,
+                          onClick: () => setDossierEnEdition(d),
+                        },
+                        {
                           // 13/09/2026, demande Bourama : filtres (pays/niveau/
                           // catégorie/classe/spécialité) modifiables après
                           // coup -- réservé au créateur côté backend (403
@@ -2481,6 +2502,16 @@ export function BibliothequePublique() {
         />
       )}
 
+      {fichierEnEdition && (
+        <ModifierEntreePubliqueModal
+          entree={fichierEnEdition}
+          onModifie={(entreeModifiee) => {
+            setListe((precedent) => (precedent ?? []).map((e) => (e.id === entreeModifiee.id ? entreeModifiee : e)));
+          }}
+          onFermer={() => setFichierEnEdition(null)}
+        />
+      )}
+
       {fichierEditionFiltres && (
         <EditionFiltresFichierModal
           entree={fichierEditionFiltres}
@@ -2489,6 +2520,16 @@ export function BibliothequePublique() {
             setListe((precedent) => (precedent ?? []).map((e) => (e.id === entreeModifiee.id ? entreeModifiee : e)));
           }}
           onFermer={() => setFichierEditionFiltres(null)}
+        />
+      )}
+
+      {dossierEnEdition && (
+        <ModifierDossierPubliqueModal
+          dossier={dossierEnEdition}
+          onModifie={(nom, description) => {
+            setDossiers((prev) => prev?.map((x) => (x.id === dossierEnEdition.id ? { ...x, nom, description } : x)));
+          }}
+          onFermer={() => setDossierEnEdition(null)}
         />
       )}
 
