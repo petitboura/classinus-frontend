@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:950974138724:android:2f7d04561bb3044dcbd271",
+        "android_client_info": {
+          "package_name": "com.classinus.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpry-myl5cMZKVid0MWiCcL35Tu5pgffQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:950974138724:android:392e52557b67382dcbd271",
         "android_client_info": {
           "package_name": "com.clovis.app"
