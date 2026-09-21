@@ -18,8 +18,30 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  // Correctif (21/09/2026, signalé Bourama : clics et navigations qui ne
+  // font "rien" -- notamment les boutons "Avec l'IA" dans Programme et
+  // Skills, mais le symptôme touchait potentiellement toute navigation
+  // vers une page pas encore en cache). Une requête de NAVIGATION
+  // (event.request.mode === "navigate" -- ouverture directe d'une page,
+  // rechargement, ou un changement de route qui nécessite une vraie
+  // navigation) ne peut PAS être repassée telle quelle à fetch() : le
+  // navigateur interdit d'utiliser un Request dont le mode vaut
+  // "navigate" comme entrée de fetch(). Ça faisait donc échouer cette
+  // requête réseau à coup sûr pour CE type de requête précis -- et comme
+  // rien n'était encore en cache pour la page visée (premier passage),
+  // le repli du .catch() plus bas renvoyait une vraie erreur réseau
+  // (Response.error()) : navigation qui échoue en silence, sans aucun
+  // message visible à l'écran (voir le message DevTools "the promise
+  // was resolved with an error response object", qui correspond
+  // exactement à ce repli). Pour une requête de navigation, on refait
+  // donc la requête à partir de l'URL seule (fetch(event.request.url)),
+  // qui elle n'a pas cette restriction -- comportement inchangé pour
+  // toutes les autres requêtes (JS, CSS, images, appels API...).
+  const requeteReseau =
+    event.request.mode === "navigate" ? () => fetch(event.request.url) : () => fetch(event.request);
+
   event.respondWith(
-    fetch(event.request)
+    requeteReseau()
       .then((reponse) => {
         const copie = reponse.clone();
         caches.open(CACHE).then((cache) => cache.put(event.request, copie));
