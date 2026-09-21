@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { lireMonProfil, mettreAJourMonProfil } from "@/lib/api";
 import { estPageElementPartage } from "@/lib/routesPubliques";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
@@ -101,6 +102,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     enregistrerCanalEnDirect(canalEnDirectValeur);
   }, [canalEnDirectValeur]);
+  // Ajouté le 21/09/2026 (connexion Google) : un compte cree via "Continuer
+  // avec Google" n'a jamais rempli le formulaire d'inscription (qui est ce
+  // qui donne d'habitude nom_affiche, voir app/inscription/page.tsx), donc
+  // sans ca son nom reste vide partout dans l'app. On complete une seule
+  // fois avec le nom que Google a fourni. Ne fait rien pour un compte deja
+  // nomme (email/telephone ou reconnexion Google), ni si Google n'a donne
+  // aucun nom.
+  useEffect(() => {
+    if (!connecte) return;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const nomGoogle = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name;
+        if (!nomGoogle) return;
+        const profil = await lireMonProfil();
+        if (profil?.nom_affiche) return;
+        await mettreAJourMonProfil(nomGoogle);
+      } catch {
+        // Pas grave : au pire l'utilisateur complete son nom lui-meme
+        // dans Parametres > Profil, comme n'importe quel compte incomplet.
+      }
+    })();
+  }, [connecte]);
   // Chantier F : même principe, pour que lib/canalAgentApplicatif.ts
   // puisse déplacer le curseur virtuel avant un clic générique.
   useEffect(() => {

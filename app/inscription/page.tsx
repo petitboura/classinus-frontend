@@ -13,6 +13,7 @@ import { Bouton } from "@/components/Bouton";
 import { Skeleton } from "@/components/Skeleton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
 import { ChampTelephone } from "@/components/ChampTelephone";
+import { BoutonGoogle } from "@/components/BoutonGoogle";
 
 type MethodeAuth = "email" | "telephone";
 
@@ -144,7 +145,17 @@ export default function PageInscription() {
         <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">
           <h1 className="font-display text-xl font-bold text-dj-texte">Créer un compte</h1>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute p-1">
+          <div className="mt-4">
+            <BoutonGoogle retour="/" />
+          </div>
+
+          <div className="my-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-dj-bordure" />
+            <span className="text-xs text-dj-texte-muet">ou</span>
+            <div className="h-px flex-1 bg-dj-bordure" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute p-1">
             <button
               type="button"
               onClick={() => setMethode("email")}
