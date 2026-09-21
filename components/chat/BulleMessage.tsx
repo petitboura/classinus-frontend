@@ -485,6 +485,12 @@ export interface LigneHistorique {
     outils?: MessageAffiche["outilsResultats"];
     pieces_jointes?: MessageAffiche["piecesJointes"];
     segments?: SegmentMessage[];
+    // Minuteurs du chat (20/09/2026, ajouté sur main pendant que cette
+    // branche vivait à part) : message envoyé par l'appli à la fin d'un
+    // minuteur, jamais affiché comme une bulle de l'étudiant. Repris ici
+    // pour que construireMessagesDepuisHistorique ne le fasse pas
+    // réapparaître comme une bulle normale au rechargement.
+    automatique?: boolean;
   } | null;
 }
 
@@ -506,6 +512,7 @@ function ligneVersMessage(l: LigneHistorique): MessageAffiche {
     content: texte,
     created_at: l.created_at,
     piecesJointes: piecesJointes ?? l.meta?.pieces_jointes ?? undefined,
+    automatique: l.meta?.automatique === true ? true : undefined,
   };
 }
 

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Bird, X, Maximize2, MessageSquarePlus, History } from "lucide-react";
 import { appelerApi, lireMonProfil, enregistrerMonProfil } from "@/lib/api";
 import { ChatIA } from "./ChatIA";
-import { MessageAffiche, SegmentMessage, nettoyerMessageHistorique } from "./BulleMessage";
+import { MessageAffiche, SegmentMessage, construireMessagesDepuisHistorique, LigneHistorique } from "./BulleMessage";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
@@ -384,56 +384,17 @@ export function ChatFlottant({
     setChargementFilConversation(true);
     try {
       const cheminId = fil.conversation_id ?? "legacy";
-      const lignes: {
-        role: "user" | "assistant";
-        content: string;
-        created_at: string;
-        // Ajouté 28/08/2026 (Bourama : outils exécutés/sources/pièces
-        // jointes disparaissaient à la réouverture d'une conversation --
-        // voir core/main.py:_sauvegarder_echange). Structure déjà alignée
-        // sur MessageAffiche.outilsResultats/piecesJointes côté backend,
-        // aucune transformation nécessaire au-delà du renommage de champ.
-        meta?: {
-          outils?: MessageAffiche["outilsResultats"];
-          pieces_jointes?: MessageAffiche["piecesJointes"];
-          // Ajouté 15/09/2026 (demande Bourama) : voir le même champ côté
-          // ChatSection.tsx -- absent pour les échanges antérieurs à ce
-          // chantier, repli sur l'affichage groupé dans ce cas.
-          segments?: SegmentMessage[];
-          // Ajouté 20/09/2026 (minuteurs du chat, demande Bourama) : message
-          // envoyé par l'appli à la fin d'un minuteur, jamais affiché comme
-          // une bulle de l'étudiant (voir message_automatique dans api/chat.py).
-          automatique?: boolean;
-        } | null;
-      }[] = await appelerApi(`/api/historique/${agent.id}/conversations/${cheminId}`);
-      setCle(fil.conversation_id ?? crypto.randomUUID());
-      setMessagesInitiaux(
-        lignes.map((l) => {
-          if (l.role !== "user") {
-            return {
-              id: null,
-              role: l.role,
-              content: l.content,
-              created_at: l.created_at,
-              outilsResultats: l.meta?.outils ?? undefined,
-              segments: l.meta?.segments && l.meta.segments.length > 0 ? l.meta.segments : undefined,
-            };
-          }
-          const { texte, piecesJointes } = nettoyerMessageHistorique(l.content);
-          return {
-            id: null,
-            role: l.role,
-            content: texte,
-            created_at: l.created_at,
-            // Les marqueurs texte (nettoyerMessageHistorique) restent la
-            // source principale ; meta.pieces_jointes ne comble que les
-            // cas qu'ils ne couvrent pas encore (ex: image envoyée via
-            // le chemin vision dédié).
-            piecesJointes: piecesJointes ?? l.meta?.pieces_jointes ?? undefined,
-            automatique: l.meta?.automatique === true ? true : undefined,
-          };
-        })
+      // Versions navigables (20/09/2026) : construireMessagesDepuisHistorique
+      // reconstruit l'arbre (id/parent_id) et choisit la version la plus
+      // recente a chaque embranchement, au lieu de l'ancien .map() plat
+      // qui affichait TOUTES les lignes a la suite sans distinguer les
+      // versions alternatives. Gère aussi meta.automatique (minuteurs),
+      // voir LigneHistorique/ligneVersMessage dans BulleMessage.tsx.
+      const lignes: LigneHistorique[] = await appelerApi(
+        `/api/historique/${agent.id}/conversations/${cheminId}`
       );
+      setCle(fil.conversation_id ?? crypto.randomUUID());
+      setMessagesInitiaux(construireMessagesDepuisHistorique(lignes));
       setNbMessages(lignes.length);
       setHistoriqueOuvert(false);
     } catch {
