@@ -476,8 +476,8 @@ export function nettoyerMessageHistorique(content: string): {
 // conversation, toutes branches confondues, pas seulement le chemin
 // affiché (voir construireMessagesDepuisHistorique juste en dessous).
 export interface LigneHistorique {
-  id?: string | null;
-  parent_id?: string | null;
+  id?: number | null;
+  parent_id?: number | null;
   role: "user" | "assistant";
   content: string;
   created_at: string;
@@ -526,7 +526,10 @@ function ligneVersMessage(l: LigneHistorique): MessageAffiche {
 export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): MessageAffiche[] {
   const enfantsParParent = new Map<string, LigneHistorique[]>();
   for (const l of lignes) {
-    const cle = l.parent_id ?? "__racine__";
+    // Clés de map en string uniquement (id/parent_id sont des bigint
+    // Postgres, donc des `number` côté TypeScript), "__racine__" ne
+    // collisionne jamais avec un id réel puisque ce n'est pas un nombre.
+    const cle = l.parent_id !== null && l.parent_id !== undefined ? String(l.parent_id) : "__racine__";
     if (!enfantsParParent.has(cle)) enfantsParParent.set(cle, []);
     enfantsParParent.get(cle)!.push(l);
   }
@@ -546,16 +549,17 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
     const indexActif = candidats.length - 1; // le plus récent, par défaut
     if (candidats.length === 1) {
       const seul = ligneVersMessage(candidats[0]);
-      return [seul, ...resoudreSuite(candidats[0].id ?? "__sans_id__")];
+      return [seul, ...resoudreSuite(candidats[0].id !== null && candidats[0].id !== undefined ? String(candidats[0].id) : "__sans_id__")];
     }
 
-    const suiteActive = resoudreSuite(candidats[indexActif].id ?? "__sans_id__");
+    const cleActif = candidats[indexActif].id !== null && candidats[indexActif].id !== undefined ? String(candidats[indexActif].id) : "__sans_id__";
+    const suiteActive = resoudreSuite(cleActif);
     const messageActif = ligneVersMessage(candidats[indexActif]);
-    const versions: VersionAlternative[] = candidats.map((c, i) =>
-      i === indexActif
-        ? { message: messageActif, suite: suiteActive }
-        : { message: ligneVersMessage(c), suite: resoudreSuite(c.id ?? "__sans_id__") }
-    );
+    const versions: VersionAlternative[] = candidats.map((c, i) => {
+      if (i === indexActif) return { message: messageActif, suite: suiteActive };
+      const cle = c.id !== null && c.id !== undefined ? String(c.id) : "__sans_id__";
+      return { message: ligneVersMessage(c), suite: resoudreSuite(cle) };
+    });
     messageActif.versions = versions;
     messageActif.versionActive = indexActif;
     return [messageActif, ...suiteActive];
