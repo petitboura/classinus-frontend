@@ -1018,7 +1018,16 @@ function BulleMessageInterne({
           className="grid transition-[grid-template-rows] duration-300 ease-in-out"
           style={{ gridTemplateRows: message.enRepli ? "0fr" : "1fr" }}
         >
-          <div className="min-h-0 [clip-path:inset(0)]">
+          {/* 20/09/2026, bug signalé par Bourama (blocs larges, voir
+              BlocLarge.tsx) : ce découpage rognait aussi les côtés, donc
+              tout tableau ou bloc élargi hors de la colonne de texte était
+              coupé (colonne de gauche invisible). inset(0 -100vw) ne
+              découpe plus que le haut et le bas, ce qui suffit à l'animation
+              de repli (verticale).
+              min-w-0 : sans lui, la largeur d'un bloc élargi imposait sa
+              largeur minimale à cette cellule de grille, et le texte du
+              message se serait élargi avec lui au lieu de rester en place. */}
+          <div className="min-h-0 min-w-0 [clip-path:inset(0_-100vw)]">
             {/* Rendu Markdown unique et cohérent (gras/liens/tableaux/listes en
                 une seule fois) : ceci règle définitivement le bug hérité de
                 Streamlit (bloc HTML brut qui empêchait toute transformation
