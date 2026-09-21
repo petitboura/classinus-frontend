@@ -591,7 +591,7 @@ function BulleMessageInterne({
   onEditer?: (nouveauTexte: string) => void;
   // Ajouté 20/09/2026 (chantier "versions navigables") : appelé avec
   // -1 (précédente) ou +1 (suivante) quand l'étudiant clique une des
-  // deux flèches -- rendu uniquement si message.versions a plus d'une
+  // deux flèches, rendu uniquement si message.versions a plus d'une
   // entrée (voir MessageAffiche.versions). ChatIA.tsx:naviguerVersion
   // fait le remplacement réel dans le tableau `messages`.
   onNaviguerVersion?: (direction: -1 | 1) => void;
@@ -1394,7 +1394,7 @@ function BulleMessageInterne({
           Bourama) : flèches + compteur, uniquement quand ce message
           précis a plusieurs versions (voir MessageAffiche.versions).
           Toujours visible (pas seulement au survol comme la barre
-          d'actions juste en dessous) -- c'est une info d'état, pas
+          d'actions juste en dessous), c'est une info d'état, pas
           juste une action secondaire. */}
       {message.versions && message.versions.length > 1 && (
         <div className="mt-1 flex items-center gap-1 text-[11px] text-dj-texte-muet">
