@@ -8,7 +8,7 @@ import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeKatex from "rehype-katex";
-import { Copy, RotateCw, Pencil, Volume2, ThumbsUp, ThumbsDown, Check, MessageSquareQuote, FileText, AlertTriangle } from "lucide-react";
+import { Copy, RotateCw, Pencil, Volume2, ThumbsUp, ThumbsDown, Check, MessageSquareQuote, FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { formaterHeure } from "@/lib/formatageHeure";
 import dynamic from "next/dynamic";
 import { BlocCode } from "./BlocCode";
@@ -333,6 +333,29 @@ export interface MessageAffiche {
   // obsolète (ignoré) dès qu'un nouveau message est envoyé, même
   // principe que repriseDisponible ci-dessus.
   interrompue?: boolean;
+  // Ajouté 20/09/2026 (demande Bourama, chantier "versions navigables",
+  // tout en une fois : réessayer/modifier partout dans la conversation,
+  // versions persistées, voir construireMessagesDepuisHistorique
+  // plus bas et ChatIA.tsx:regenererDepuis/editerMessage/naviguerVersion).
+  // Présent UNIQUEMENT sur le message qui a effectivement plusieurs
+  // versions (jamais sur les autres) : `versions` contient TOUTES les
+  // versions à cet endroit précis (celle actuellement affichée incluse,
+  // à l'index `versionActive`), chacune avec sa PROPRE suite complète
+  // (tout ce qui vient après elle dans cette branche précise), naviguer
+  // entre versions remplace donc `messages.slice(0, index)` + la version
+  // choisie + sa suite stockée, sans jamais toucher aux autres branches.
+  versions?: VersionAlternative[];
+  versionActive?: number;
+}
+
+// Une version alternative d'un message (voir MessageAffiche.versions
+// ci-dessus) : le message lui-même à cet endroit, et tout ce qui le
+// suivait dans CETTE branche précise (peut être vide si cette version
+// n'a jamais eu de suite, par exemple une version jamais explorée plus
+// loin par l'étudiant).
+export interface VersionAlternative {
+  message: MessageAffiche;
+  suite: MessageAffiche[];
 }
 
 // Un bloc de la timeline en direct (voir MessageAffiche.segments). `texte`
@@ -448,6 +471,92 @@ export function nettoyerMessageHistorique(content: string): {
   return { texte, piecesJointes: piecesJointes.length ? piecesJointes : null };
 }
 
+// Une ligne brute renvoyée par GET /api/historique/.../conversations/{id}
+// (voir api/historique.py, MessageHistorique), TOUTES les lignes de la
+// conversation, toutes branches confondues, pas seulement le chemin
+// affiché (voir construireMessagesDepuisHistorique juste en dessous).
+export interface LigneHistorique {
+  id?: string | null;
+  parent_id?: string | null;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+  meta?: {
+    outils?: MessageAffiche["outilsResultats"];
+    pieces_jointes?: MessageAffiche["piecesJointes"];
+    segments?: SegmentMessage[];
+  } | null;
+}
+
+function ligneVersMessage(l: LigneHistorique): MessageAffiche {
+  if (l.role !== "user") {
+    return {
+      id: l.id ?? null,
+      role: l.role,
+      content: l.content,
+      created_at: l.created_at,
+      outilsResultats: l.meta?.outils ?? undefined,
+      segments: l.meta?.segments && l.meta.segments.length > 0 ? l.meta.segments : undefined,
+    };
+  }
+  const { texte, piecesJointes } = nettoyerMessageHistorique(l.content);
+  return {
+    id: l.id ?? null,
+    role: l.role,
+    content: texte,
+    created_at: l.created_at,
+    piecesJointes: piecesJointes ?? l.meta?.pieces_jointes ?? undefined,
+  };
+}
+
+// Ajouté 20/09/2026 (chantier "versions navigables", demande Bourama).
+// Reconstruit l'arbre complet à partir des lignes plates renvoyées par le
+// backend (id/parent_id), et choisit un chemin à afficher par défaut (la
+// version la plus récente à chaque embranchement, comme ChatGPT/Claude.ai)
+// utilisé à la place de l'ancien .map() plat par ChatSection.tsx et
+// ChatFlottant.tsx quand une conversation est rouverte. Voir
+// MessageAffiche.versions pour la forme du résultat.
+export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): MessageAffiche[] {
+  const enfantsParParent = new Map<string, LigneHistorique[]>();
+  for (const l of lignes) {
+    const cle = l.parent_id ?? "__racine__";
+    if (!enfantsParParent.has(cle)) enfantsParParent.set(cle, []);
+    enfantsParParent.get(cle)!.push(l);
+  }
+
+  // Résout la suite affichée à partir d'un point de l'arbre (racine ou
+  // n'importe quel id de message) : choisit le frère le plus récent comme
+  // version active, et si plusieurs frères existent, construit le
+  // tableau `versions` complet (chacun avec SA PROPRE suite, résolue
+  // récursivement de la même façon, donc même une version inactive garde
+  // ses propres embranchements internes s'il y en avait).
+  function resoudreSuite(cleParent: string): MessageAffiche[] {
+    const candidats = (enfantsParParent.get(cleParent) ?? [])
+      .slice()
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    if (candidats.length === 0) return [];
+
+    const indexActif = candidats.length - 1; // le plus récent, par défaut
+    if (candidats.length === 1) {
+      const seul = ligneVersMessage(candidats[0]);
+      return [seul, ...resoudreSuite(candidats[0].id ?? "__sans_id__")];
+    }
+
+    const suiteActive = resoudreSuite(candidats[indexActif].id ?? "__sans_id__");
+    const messageActif = ligneVersMessage(candidats[indexActif]);
+    const versions: VersionAlternative[] = candidats.map((c, i) =>
+      i === indexActif
+        ? { message: messageActif, suite: suiteActive }
+        : { message: ligneVersMessage(c), suite: resoudreSuite(c.id ?? "__sans_id__") }
+    );
+    messageActif.versions = versions;
+    messageActif.versionActive = indexActif;
+    return [messageActif, ...suiteActive];
+  }
+
+  return resoudreSuite("__racine__");
+}
+
 // - heure affichée sous le message UTILISATEUR uniquement
 // - boutons différents selon le rôle
 function BulleMessageInterne({
@@ -475,10 +584,17 @@ function BulleMessageInterne({
   onRepondreQuestion,
   questionDejaRepondue,
   declencherEdition,
+  onNaviguerVersion,
 }: {
   message: MessageAffiche;
   onRegenerer?: () => void;
   onEditer?: (nouveauTexte: string) => void;
+  // Ajouté 20/09/2026 (chantier "versions navigables") : appelé avec
+  // -1 (précédente) ou +1 (suivante) quand l'étudiant clique une des
+  // deux flèches -- rendu uniquement si message.versions a plus d'une
+  // entrée (voir MessageAffiche.versions). ChatIA.tsx:naviguerVersion
+  // fait le remplacement réel dans le tableau `messages`.
+  onNaviguerVersion?: (direction: -1 | 1) => void;
   // Ajouté 20/09/2026 (demande Bourama, bouton "Modifier" du bandeau
   // "Réponse interrompue" sur le message ASSISTANT suivant, voir
   // BandeauReponseInterrompue.tsx et ChatIA.tsx:modifierApresInterruption)
@@ -1272,6 +1388,36 @@ function BulleMessageInterne({
           2026-07-15 -- pas sous l'assistant, voir section 3.1). */}
       {estUtilisateur && message.created_at && (
         <span className="mt-1 text-[11px] text-dj-inactif">{formaterHeure(message.created_at)}</span>
+      )}
+
+      {/* Ajouté 20/09/2026 (chantier "versions navigables", demande
+          Bourama) : flèches + compteur, uniquement quand ce message
+          précis a plusieurs versions (voir MessageAffiche.versions).
+          Toujours visible (pas seulement au survol comme la barre
+          d'actions juste en dessous) -- c'est une info d'état, pas
+          juste une action secondaire. */}
+      {message.versions && message.versions.length > 1 && (
+        <div className="mt-1 flex items-center gap-1 text-[11px] text-dj-texte-muet">
+          <button
+            onClick={() => onNaviguerVersion?.(-1)}
+            disabled={(message.versionActive ?? 0) <= 0}
+            aria-label="Version précédente"
+            className="rounded-md p-1 hover:text-dj-texte disabled:opacity-30"
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <span>
+            {(message.versionActive ?? 0) + 1}/{message.versions.length}
+          </span>
+          <button
+            onClick={() => onNaviguerVersion?.(1)}
+            disabled={(message.versionActive ?? 0) >= message.versions.length - 1}
+            aria-label="Version suivante"
+            className="rounded-md p-1 hover:text-dj-texte disabled:opacity-30"
+          >
+            <ChevronRight size={13} />
+          </button>
+        </div>
       )}
 
       {/* Boutons d'action (31/07, demande Bourama) : pour l'assistant,
