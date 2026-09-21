@@ -4,7 +4,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { appelerApiStream, uploaderImageChat, uploaderDocumentChat, uploaderVideoChat, transcrireAudioChat, signalerPedagogique } from "@/lib/api";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
-import { BulleMessage, MessageAffiche, SegmentMessage } from "./BulleMessage";
+import { BulleMessage, MessageAffiche, SegmentMessage, VersionAlternative } from "./BulleMessage";
 import type { OutilEnCours } from "./OutilResultatBulle";
 import { BarreDeSaisie, LongueurReponse, LocalisationJointe } from "./BarreDeSaisie";
 import { PopupFeedback } from "./PopupFeedback";
@@ -939,6 +939,10 @@ export function ChatIA({
     // intercepté plus haut) qui bypass le contexte enrichi -- dans les
     // deux cas, on nettoie les éventuels vieux boutons Continuer/Réessayer
     // restants pour ne pas laisser un bouton obsolète affiché.
+    // Versions navigables (20/09/2026) : parent_id du NOUVEAU tour = id du
+    // dernier message actuellement affiché (avant l'ajout ci-dessous),
+    // capturé maintenant car `messages` va changer juste en dessous.
+    const parentIdPourEnvoi = messages[messages.length - 1]?.id ?? null;
     majMessages((prec) => [
       ...prec.map((m) =>
         m.repriseDisponible || m.interrompue ? { ...m, repriseDisponible: null, interrompue: false } : m
@@ -1080,6 +1084,7 @@ export function ChatIA({
           agent_id: agentId,
           historique: historiquePourApi,
           conversation_id: conversationId,
+          parent_id: parentIdPourEnvoi,
           longueur_reponse: longueur,
           image_url: null,
           image_urls: imageUrls.length ? imageUrls : null,
@@ -1156,21 +1161,226 @@ export function ChatIA({
     }
   }
 
-  function regenererDepuis(index: number) {
-    // index = position du message ASSISTANT à régénérer ; on renvoie le
-    // message utilisateur juste avant, et on retire les deux de la liste
-    // affichée avant de les recréer via envoyerMessage.
+  // Chantier "versions navigables" (20/09/2026, demande Bourama : tout en
+  // une fois, réessayer/modifier partout dans la conversation, versions
+  // persistées). Réécrit entièrement le 20/09 : au lieu de tronquer
+  // `messages` et de perdre l'ancienne réponse, on la range dans
+  // `versions` (voir MessageAffiche.versions) avant de lancer la
+  // nouvelle. Court-circuite envoyerMessage (trop de logique fichiers/
+  // enrichissement hors sujet ici) au profit d'un appel direct à
+  // appelerApiStream, même structure que les 3 sites d'envoyerMessage.tsx.
+  async function regenererDepuis(index: number) {
     const messageUtilisateur = messages[index - 1];
-    if (!messageUtilisateur) return;
-    majMessages((prec) => prec.slice(0, index - 1));
-    envoyerMessage(messageUtilisateur.content, "moyenne", [], null, null, false, false, messageUtilisateur.automatique === true);
+    const ancienneReponse = messages[index];
+    if (!messageUtilisateur || !ancienneReponse) return;
+    const ancienneSuite = messages.slice(index);
+
+    const versionsExistantes: VersionAlternative[] =
+      ancienneReponse.versions && ancienneReponse.versions.length > 0
+        ? ancienneReponse.versions
+        : [{ message: { ...ancienneReponse, versions: undefined, versionActive: undefined }, suite: ancienneSuite.slice(1) }];
+    const nouvelIndex = versionsExistantes.length;
+    const historiquePourApi = messages.slice(0, index - 1).map((m) => ({
+      role: m.role,
+      content: m.content,
+      outils:
+        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
+          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
+          : undefined,
+    }));
+
+    majMessages((prec) => [
+      ...prec.slice(0, index),
+      {
+        id: null,
+        role: "assistant",
+        content: "",
+        segments: [],
+        versions: [...versionsExistantes, { message: { id: null, role: "assistant", content: "", segments: [] }, suite: [] }],
+        versionActive: nouvelIndex,
+      },
+    ]);
+    reinitialiserAffichageControle();
+    setGenEnCours(true);
+
+    try {
+      const controleur = new AbortController();
+      controleurAbandonRef.current = controleur;
+      await appelerApiStream(
+        "/api/chat",
+        {
+          message: messageUtilisateur.content,
+          agent_id: agentId,
+          historique: historiquePourApi,
+          conversation_id: conversationId,
+          parent_id: messageUtilisateur.id,
+          regenerer: true,
+          longueur_reponse: "moyenne",
+          sans_enseignant: false,
+          // Champs ajoutés côté main pendant que cette branche vivait à part
+          // (minuteurs, canal en direct, appli installée) : repris ici pour
+          // qu'une régénération se comporte comme un envoi normal sur ces
+          // trois points, au lieu de retomber silencieusement sur leurs
+          // valeurs par défaut.
+          natif,
+          canal_en_direct: canalEnDirectActif,
+          message_automatique: messageUtilisateur.automatique === true,
+          modele: modeleSelectionne,
+        },
+        (evenement) => traiterEvenement(evenement),
+        controleur.signal
+      );
+      // Synchronise le contenu final dans versions[versionActive], sans
+      // ça, la version resterait figée sur son placeholder vide dès
+      // qu'on navigue ailleurs puis qu'on revient dessus.
+      majMessages((prec) => {
+        const dernier = prec[prec.length - 1];
+        if (!dernier.versions || dernier.versionActive === undefined) return prec;
+        const versions = dernier.versions.map((v, i) =>
+          i === dernier.versionActive
+            ? { message: { ...dernier, versions: undefined, versionActive: undefined }, suite: [] as MessageAffiche[] }
+            : v
+        );
+        return [...prec.slice(0, -1), { ...dernier, versions }];
+      });
+    } catch (e) {
+      reinitialiserAffichageControle();
+      if (e instanceof DOMException && e.name === "AbortError") {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = { ...copie[copie.length - 1], interrompue: true };
+          return copie;
+        });
+      } else {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = {
+            ...copie[copie.length - 1],
+            content: "Une erreur est survenue, réessaie dans un instant.",
+            erreur: true,
+          };
+          return copie;
+        });
+      }
+    } finally {
+      controleurAbandonRef.current = null;
+      setGenEnCours(false);
+      setRaisonnementEnCours(false);
+    }
   }
 
-  function editerMessage(index: number, nouveauTexte: string) {
-    // Tronque tout ce qui suit (y compris la réponse assistant concernée)
-    // et relance avec le message modifié -- section 3.1.
-    majMessages((prec) => prec.slice(0, index));
-    envoyerMessage(nouveauTexte, "moyenne", []);
+  // Même principe que regenererDepuis ci-dessus, côté message UTILISATEUR
+  // cette fois : la branche point est le message édité lui-même (pas
+  // celui d'après), et une nouvelle ligne "user" est bien créée cette
+  // fois (pas de `regenerer: true`, voir core/main.py:chat()).
+  async function editerMessage(index: number, nouveauTexte: string) {
+    const ancienMessage = messages[index];
+    if (!ancienMessage) return;
+    const ancienneSuite = messages.slice(index);
+    const parentIdPourNouvelle = messages[index - 1]?.id ?? null;
+
+    const versionsExistantes: VersionAlternative[] =
+      ancienMessage.versions && ancienMessage.versions.length > 0
+        ? ancienMessage.versions
+        : [{ message: { ...ancienMessage, versions: undefined, versionActive: undefined }, suite: ancienneSuite.slice(1) }];
+    const nouvelIndex = versionsExistantes.length;
+    const historiquePourApi = messages.slice(0, index).map((m) => ({
+      role: m.role,
+      content: m.content,
+      outils:
+        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
+          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
+          : undefined,
+    }));
+
+    majMessages((prec) => [
+      ...prec.slice(0, index),
+      {
+        id: null,
+        role: "user",
+        content: nouveauTexte,
+        versions: [...versionsExistantes, { message: { id: null, role: "user", content: nouveauTexte }, suite: [] }],
+        versionActive: nouvelIndex,
+      },
+      { id: null, role: "assistant", content: "", segments: [] },
+    ]);
+    reinitialiserAffichageControle();
+    setGenEnCours(true);
+
+    try {
+      const controleur = new AbortController();
+      controleurAbandonRef.current = controleur;
+      await appelerApiStream(
+        "/api/chat",
+        {
+          message: nouveauTexte,
+          agent_id: agentId,
+          historique: historiquePourApi,
+          conversation_id: conversationId,
+          parent_id: parentIdPourNouvelle,
+          longueur_reponse: "moyenne",
+          sans_enseignant: false,
+          // Même raison que dans regenererDepuis ci-dessus.
+          natif,
+          canal_en_direct: canalEnDirectActif,
+          modele: modeleSelectionne,
+        },
+        (evenement) => traiterEvenement(evenement),
+        controleur.signal
+      );
+      majMessages((prec) => {
+        const utilisateurMsg = prec[prec.length - 2];
+        if (!utilisateurMsg || !utilisateurMsg.versions || utilisateurMsg.versionActive === undefined) return prec;
+        const versions = utilisateurMsg.versions.map((v, i) =>
+          i === utilisateurMsg.versionActive
+            ? { message: { ...utilisateurMsg, versions: undefined, versionActive: undefined }, suite: [] as MessageAffiche[] }
+            : v
+        );
+        const copie = [...prec];
+        copie[copie.length - 2] = { ...utilisateurMsg, versions };
+        return copie;
+      });
+    } catch (e) {
+      reinitialiserAffichageControle();
+      if (e instanceof DOMException && e.name === "AbortError") {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = { ...copie[copie.length - 1], interrompue: true };
+          return copie;
+        });
+      } else {
+        majMessages((prec) => {
+          const copie = [...prec];
+          copie[copie.length - 1] = {
+            ...copie[copie.length - 1],
+            content: "Une erreur est survenue, réessaie dans un instant.",
+            erreur: true,
+          };
+          return copie;
+        });
+      }
+    } finally {
+      controleurAbandonRef.current = null;
+      setGenEnCours(false);
+      setRaisonnementEnCours(false);
+    }
+  }
+
+  // Flèches gauche/droite de BulleMessage.tsx (voir onNaviguerVersion) :
+  // remplace `messages.slice(0, index)` + la version choisie + SA suite
+  // stockée, ne touche jamais aux autres branches, ni aux versions
+  // situées plus loin dans la conversation.
+  function naviguerVersion(index: number, direction: -1 | 1) {
+    const message = messages[index];
+    if (!message?.versions || message.versionActive === undefined) return;
+    const nouvelIndex = message.versionActive + direction;
+    const cible = message.versions[nouvelIndex];
+    if (!cible) return;
+    majMessages((prec) => [
+      ...prec.slice(0, index),
+      { ...cible.message, versions: message.versions, versionActive: nouvelIndex },
+      ...cible.suite,
+    ]);
   }
 
   function expliquerSelection(texteSelectionne: string) {
@@ -1390,6 +1600,7 @@ export function ChatIA({
                 nomAgent={nomAgent}
                 conversationId={conversationId}
                 declencherEdition={index === indexAEditer ? jetonEdition : undefined}
+                onNaviguerVersion={(direction) => naviguerVersion(index, direction)}
                 // Lot 3 (chantier "question riche dans le chat", voir
                 // specs-question-riche.md) : réutilise envoyerMessage comme
                 // pour "renvoyer"/"reformuler" plus haut, la réponse
