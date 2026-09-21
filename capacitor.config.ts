@@ -9,12 +9,12 @@
 //
 // appId reutilise tel quel : c'est le meme identifiant que le socle
 // natif deja existant (clovis-mobile/android, applicationId
-// "com.clovis.app") -- meme app aux yeux du Play Store, pas une nouvelle
+// "com.classinus.app") -- meme app aux yeux du Play Store, pas une nouvelle
 // fiche/signature a recreer.
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.clovis.app",
+  appId: "com.classinus.app",
   appName: "Clovis",
   webDir: "out",
   // Tache 4 (30/08/2026, zones de securite) : "css" est deja la valeur

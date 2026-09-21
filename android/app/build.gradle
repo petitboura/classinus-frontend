@@ -14,7 +14,7 @@ apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 // pour la suite). Isolation au niveau du build, pas d'un simple interrupteur
 // en code : "externe" est le flavor qui embarque le service d'accessibilite
 // (lots 6-7) et la mise a jour hors-store (lot 8), tous deux migres en
-// plugins Capacitor depuis (voir app/src/externe/java/com/clovis/app/).
+// plugins Capacitor depuis (voir app/src/externe/java/com/classinus/app/).
 def fichierKeystore = rootProject.file('keystore.properties')
 def proprietesKeystore = new Properties()
 if (fichierKeystore.exists()) {
@@ -22,10 +22,10 @@ if (fichierKeystore.exists()) {
 }
 
 android {
-    namespace = "com.clovis.app"
+    namespace = "com.classinus.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.clovis.app"
+        applicationId "com.classinus.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
