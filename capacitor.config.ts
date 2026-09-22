@@ -15,7 +15,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.classinus.app",
-  appName: "Clovis",
+  appName: "Classinus",
   webDir: "out",
   // Tache 4 (30/08/2026, zones de securite) : "css" est deja la valeur
   // par defaut du plugin System Bars (bundle dans @capacitor/core depuis
