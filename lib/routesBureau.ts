@@ -6,9 +6,6 @@
 // Ce fichier est la seule source de ces adresses. Il est lu par les pages
 // (app/(app)/bureau) et par la sidebar (pour garder Bureau en surbrillance
 // sur ses pages filles).
-//
-// Ces pages sont des pages de compte : la racine "bureau" ne figure pas
-// dans lib/routesPubliques.ts, donc toute cette branche exige un compte.
 export const ROUTES_BUREAU = {
   accueil: "/bureau",
   audit: "/bureau/audit",

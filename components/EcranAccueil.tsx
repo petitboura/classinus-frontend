@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bird, MessageSquare, Library, type LucideIcon } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { appelerApi } from "@/lib/api";
 import { dateRelative } from "@/lib/dateRelative";
 import { useOuvrirChat, useOuvrirConversation } from "@/lib/contexteChat";
@@ -53,41 +51,17 @@ type ActiviteItem = {
 const MOUVEMENT_CARTE = "group-hover:-translate-y-1";
 
 export function EcranAccueil() {
-  const router = useRouter();
   const ouvrirChat = useOuvrirChat();
   const ouvrirConversation = useOuvrirConversation();
   const [activite, setActivite] = useState<ActiviteItem[] | null>(null);
 
-  // 31/08/2026, demande Bourama : "plus de tolérance", création de
-  // compte demandée directement à l'arrivée, automatiquement -- fini le
-  // mode invité sur l'écran d'accueil. Même pattern que la vérification
-  // de session déjà en place sur app/inscription/page.tsx et
-  // app/connexion/page.tsx (les deux redirigent déjà l'inverse : session
-  // active -> "/"). Ici : pas de session -> redirection bloquante vers
-  // "/inscription" (qui garde son lien "Déjà un compte ? Se connecter",
-  // donc la connexion reste atteignable). Rien de l'accueil (JSX plus
-  // bas) n'est rendu tant que ce check n'a pas tranché -- voir le
-  // `if (verificationSession) return null;` en fin de fonction.
-  // Mis à jour le 19/09/2026 (demande Bourama : rien n'est accessible sans
-  // compte, sauf une page d'élément partagé) : la même règle s'applique
-  // désormais à toutes les pages via components/AppShell.tsx (liste des
-  // pages ouvertes dans lib/routesPubliques.ts). Cette vérification propre
-  // à l'accueil est conservée en double sécurité.
-  const [verificationSession, setVerificationSession] = useState(true);
-  useEffect(() => {
-    let annule = false;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (annule) return;
-      if (!session) {
-        router.replace("/inscription");
-        return;
-      }
-      setVerificationSession(false);
-    });
-    return () => {
-      annule = true;
-    };
-  }, [router]);
+  // 31/08/2026, demande Bourama : redirection bloquante vers
+  // "/inscription" si pas de session -- décision propre à cet écran,
+  // distincte de la garde globale ajoutée le 19/09 dans AppShell.tsx
+  // (retirée le 22/09). Retirée à son tour le 22/09/2026 (demande
+  // Bourama) : l'accueil s'affiche désormais aussi sans compte, la
+  // section "activité récente" ci-dessous gère déjà le cas invité
+  // (catch silencieux -- section ignorée plutôt qu'erreur).
 
   // Titre d'accueil variable selon l'heure + révélation lettre par lettre
   // (18/08/2026, demande Bourama : "on fait pareil" que le chat, voir
@@ -170,8 +144,6 @@ export function EcranAccueil() {
   // instant (session déjà en cache côté supabase-js), pas besoin d'un
   // état de chargement visible ici contrairement à app/inscription/page.tsx
   // (formulaire complexe) qui en a un pour éviter un flash de mise en page.
-  if (verificationSession) return null;
-
   return (
     // animate-dj-fade-in retiré le 01/09/2026 : voir le même correctif
     // et la même explication dans components/SectionPage.tsx

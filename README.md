@@ -89,7 +89,6 @@ lib/
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
-  routesPubliques.ts      liste des pages d'élément partagé ouvertes sans compte (voir "Accès sans compte")
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
 android/, ios/            projets Capacitor (capacitor.config.ts minimal, export statique build:capacitor
@@ -127,19 +126,17 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 
 ### Accès sans compte
 
-Rien n'est accessible sans compte, sauf une page d'élément partagé ouverte par
-son lien : fichier, dossier ou skill (version publique ou perso, routes
-`/bibliotheque/[id]`, `/dossiers/[id]`, `/skills/[id]` et leur variante
-`/perso/[id]`) et fiche établissement (`/etablissements/[id]`). Toute autre
-page du groupe `app/(app)` renvoie vers `/inscription`. La garde est posée une
-seule fois, dans `components/AppShell.tsx`, et la liste des pages ouvertes vit
-dans `lib/routesPubliques.ts` : une nouvelle page est donc protégée d'office,
-et il suffit de l'ajouter à cette liste pour l'ouvrir à tout le monde.
+Toutes les pages du groupe `app/(app)` s'affichent sans compte (mode invité).
+Seules les actions qui ont vraiment besoin d'un compte le demandent, via
+`components/CompteRequisModal.tsx` (déjà utilisé par la Bibliothèque publique,
+les établissements, les notes/commentaires...). Le chat garde sa propre
+limite invité (5 messages, `ChatSection.tsx`/`ChatFlottant.tsx`) avant
+d'afficher cette même modale.
 
-Les mots `perso`, `publique` et `telephone`, seuls après `/bibliotheque/`,
-sont réservés aux pages de liste de la Bibliothèque et ne sont jamais pris
-pour l'identifiant d'un document partagé. Leur liste vient de
-`lib/routesBibliotheque.ts`, la source unique des adresses de la Bibliothèque.
+Historique : une garde globale bloquant toute page sans compte (sauf les
+pages d'élément partagé) a existé du 19/09/2026 au 22/09/2026
+(`components/AppShell.tsx`, liste dans l'ex-`lib/routesPubliques.ts`) --
+retirée à la demande de Bourama, qui bloquait aussi le chat invité.
 
 ## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau, Concentration)
 

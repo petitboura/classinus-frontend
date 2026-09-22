@@ -7,10 +7,6 @@
 // L'adresse de la section reste /controle-session (elle est déjà celle
 // des barres du bas web et native, voir BarreOngletsWeb.tsx et
 // BarreOngletsNative.tsx), seul le nom affiché est "Concentration".
-//
-// Ces pages sont des pages de compte : la racine "controle-session" ne
-// figure pas dans lib/routesPubliques.ts, donc toute cette branche exige
-// un compte.
 export const ROUTES_CONCENTRATION = {
   accueil: "/controle-session",
   session: "/controle-session/session",

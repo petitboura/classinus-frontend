@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { lireMonProfil, mettreAJourMonProfil } from "@/lib/api";
-import { estPageElementPartage } from "@/lib/routesPubliques";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
 import { FenetresSections } from "@/components/chat/FenetresSections";
@@ -52,12 +51,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [connecte, setConnecte] = useState(false);
-  // 19/09/2026, demande Bourama : rien n'est accessible sans compte, sauf
-  // une page d'élément partagé ouverte par son lien (voir
-  // lib/routesPubliques.ts). Tant que la session n'a pas répondu, on ne
-  // sait pas encore si la personne a un compte : `connecte` vaut false
-  // aussi bien "pas encore su" que "pas de compte", d'où cet état à part.
-  const [sessionVerifiee, setSessionVerifiee] = useState(false);
   const [catalogueOuvert, setCatalogueOuvert] = useState(false);
   // Ajouté le 26/08/2026, Bourama : refonte navigation mobile native.
   // false par défaut (donc web/desktop inchangés) tant que le check
@@ -162,32 +155,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       .then(({ data: { session } }) => {
         if (annule) return;
         setConnecte(!!session);
-        setSessionVerifiee(true);
       })
       .catch(() => {
-        // Session illisible : traitée comme "pas de compte", sinon la
-        // page resterait vide pour toujours (voir la garde plus bas).
+        // Session illisible : traitée comme "pas de compte".
         if (annule) return;
         setConnecte(false);
-        setSessionVerifiee(true);
       });
     return () => {
       annule = true;
     };
   }, []);
 
-  // Garde d'accès posée une seule fois pour toutes les pages du groupe
-  // (app). Une page d'élément partagé s'ouvre sans compte ; toute autre
-  // page envoie vers l'inscription (même destination que l'écran
-  // d'accueil, qui garde sa propre vérification, voir EcranAccueil.tsx).
-  // Rien du contenu de la page n'est rendu tant que l'accès n'est pas
-  // confirmé, voir `accesAutorise` plus bas.
-  const pageOuverteSansCompte = estPageElementPartage(pathname ?? "");
-  const accesAutorise = pageOuverteSansCompte || (sessionVerifiee && connecte);
-  useEffect(() => {
-    if (!sessionVerifiee || connecte || pageOuverteSansCompte) return;
-    router.replace("/inscription");
-  }, [sessionVerifiee, connecte, pageOuverteSansCompte, router]);
+  // CORRECTIF (22/09/2026, demande Bourama) : la garde globale posée le
+  // 19/09/2026 (rien n'est accessible sans compte, sauf une page
+  // d'élément partagé) est retirée -- elle bloquait TOUTE page, y compris
+  // le chat (donc le mode invité 5 messages de ChatSection.tsx/
+  // ChatFlottant.tsx n'était plus jamais atteignable : redirection
+  // immédiate vers /inscription avant le moindre message, sur mobile
+  // comme sur web puisque l'onglet Chat pointe directement sur /chat,
+  // page à l'intérieur du groupe protégé). Chaque page/action qui a
+  // réellement besoin d'un compte le demande elle-même via
+  // CompteRequisModal (déjà le pattern existant, voir ce composant) au
+  // lieu que la coquille entière bloque tout en amont.
 
   // 09/09/2026 : préchargement en arrière-plan dès que la session est
   // confirmée (route protégée côté serveur, voir api/dossiers_catalogue_
@@ -351,7 +340,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   }
             }
           >
-            <TransitionPage>{accesAutorise ? children : null}</TransitionPage>
+            <TransitionPage>{children}</TransitionPage>
           </main>
           <ChatFlottant
             connecte={connecte}
