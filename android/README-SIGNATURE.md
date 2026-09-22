@@ -7,9 +7,13 @@ générée là-bas, **réutilise le même fichier `.jks`** plutôt que d'en cré
 nouveau — deux clés différentes empêcheraient toute mise à jour de
 s'installer par-dessus l'app existante.
 
-**Ce point (réutiliser la clé existante vs en générer une nouvelle) n'a pas
-encore été confirmé explicitement par Bourama** : à trancher avant de
-générer un premier APK `externe` signé depuis ce conteneur.
+**Confirmé par Bourama (22/09/2026) : la signature est déjà en place.**
+L'app a déjà été publiée plusieurs fois et des mises à jour ont déjà été
+livrées via GitHub Releases, ce qui veut dire qu'un `.jks` et un
+`keystore.properties` fonctionnels existent déjà quelque part sur sa
+machine (ce fichier n'a jamais été et ne sera jamais dans ce dépôt, voir
+partie 2). Rien à générer ni à trancher : réutiliser tel quel ce qui a déjà
+servi aux publications précédentes.
 
 Le flavor `play` sera signé automatiquement par Google (App Signing) au
 moment de la publication sur le Play Store, rien à faire ici pour lui. Ce
@@ -52,10 +56,11 @@ Avant de générer un nouvel APK à publier sur GitHub Releases :
    `android/app/build.gradle` (`defaultConfig`).
 2. Générer l'APK signé (Android Studio → Build → Generate Signed APK, flavor
    `externe`).
-3. Créer une nouvelle Release GitHub sur `petitboura/clovis-mobile` (dépôt de
-   référence pour `VerificateurMiseAJour.kt`, inchangé), avec un tag
-   correspondant à `versionName` (ex. `v0.2.0`), et joindre l'APK en pièce
-   jointe de la release.
+3. Créer une nouvelle Release GitHub sur `petitboura/clovis-frontend` (dépôt
+   réellement interrogé par `VerificateurMiseAJour.kt` : `URL_DERNIERE_RELEASE`
+   pointe vers `api.github.com/repos/petitboura/clovis-frontend/releases/latest`,
+   pas `clovis-mobile`), avec un tag correspondant à `versionName`
+   (ex. `v0.2.0`), et joindre l'APK en pièce jointe de la release.
 
 L'app vérifie elle-même s'il existe une release plus récente que celle
 installée (voir `VerificateurMiseAJour.kt`) — pas la peine d'en informer
