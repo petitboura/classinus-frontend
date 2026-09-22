@@ -15,10 +15,12 @@ import { useInfoSection } from "./SectionPage";
 // écrans de transition sans contenu -- écartées, pas de trou dans la
 // numérotation ni doublon inventé).
 //
-// URL du serveur MCP Classinus confirmée par Bourama le 18/08 :
-// https://clovis-backend-production.up.railway.app/mcp/espace
+// URL du serveur MCP Classinus confirmée par Bourama le 18/08, mise à
+// jour le 22/09 suite au passage du backend au domaine api.classinus.com
+// (à la place de l'ancien domaine Railway par défaut) :
+// https://api.classinus.com/mcp/espace
 
-const URL_MCP_CLOVIS = "https://clovis-backend-production.up.railway.app/mcp/espace";
+const URL_MCP_CLOVIS = "https://api.classinus.com/mcp/espace";
 
 export function EspaceConnecterClaude() {
   // Description fixe remplacée par le bouton "i" du titre de page (voir
