@@ -52,18 +52,49 @@ export function bornerDeplacement(
   return { x: Math.min(Math.max(dx, minDx), maxDx), y: Math.min(Math.max(dy, minDy), maxDy) };
 }
 
-export function useDeplacable<T extends HTMLElement>() {
+function lireDecalageStocke(cleStockage?: string): Decalage {
+  if (!cleStockage) return { x: 0, y: 0 };
+  try {
+    const brut = window.localStorage.getItem(cleStockage);
+    if (!brut) return { x: 0, y: 0 };
+    const valeur = JSON.parse(brut);
+    if (typeof valeur?.x === "number" && typeof valeur?.y === "number") return valeur;
+  } catch {
+    // localStorage indisponible ou valeur corrompue : position d'origine.
+  }
+  return { x: 0, y: 0 };
+}
+
+/**
+ * `cleStockage` (optionnel) : quand fourni, le décalage est initialisé
+ * depuis `localStorage` et réécrit à chaque déplacement, pour un élément
+ * dont la position doit survivre aux rechargements (contrairement au
+ * comportement par défaut décrit plus haut). Omis, rien ne change pour les
+ * usages existants (canal en direct, journal des actions).
+ */
+export function useDeplacable<T extends HTMLElement>(cleStockage?: string) {
   const [element, setElement] = useState<T | null>(null);
-  const [decalage, setDecalage] = useState<Decalage>({ x: 0, y: 0 });
-  const decalageRef = useRef<Decalage>({ x: 0, y: 0 });
+  const [decalage, setDecalage] = useState<Decalage>(() => lireDecalageStocke(cleStockage));
+  const decalageRef = useRef<Decalage>(decalage);
   // Vrai pendant un glissement et jusqu'à la fin du clic qui le suit.
   const aGlisse = useRef(false);
   const arreterEcoute = useRef<(() => void) | null>(null);
 
-  const appliquer = useCallback((valeur: Decalage) => {
-    decalageRef.current = valeur;
-    setDecalage(valeur);
-  }, []);
+  const appliquer = useCallback(
+    (valeur: Decalage) => {
+      decalageRef.current = valeur;
+      setDecalage(valeur);
+      if (cleStockage) {
+        try {
+          window.localStorage.setItem(cleStockage, JSON.stringify(valeur));
+        } catch {
+          // localStorage indisponible : la position ne survivra pas au
+          // rechargement, tant pis, le glissement en cours reste fonctionnel.
+        }
+      }
+    },
+    [cleStockage]
+  );
 
   const surPointerDown = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {

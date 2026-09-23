@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Download, X } from "lucide-react";
+import { Download } from "lucide-react";
+import { useDeplacable } from "@/lib/useDeplacable";
 
 // Créé le 29/08/2026, mission Bourama : rendre l'appli téléchargeable hors
 // Play Store. Remplace les liens texte dispersés (page connexion, Paramètres)
@@ -16,19 +17,21 @@ import { Download, X } from "lucide-react";
 // 2. PAS dans l'appli déjà installée (Capacitor.isNativePlatform() === false)
 //    -- même logique que usePluginNatif.ts, mais un simple appel direct
 //    suffit ici, pas besoin d'enregistrer un plugin.
-// 3. Pas déjà caché par l'utilisateur (mémorisé dans localStorage, clé
-//    dédiée -- une fois fermé, ne réapparaît plus jamais sur cet appareil).
-const CLE_CACHE = "clovis-telecharger-apk-cache";
+//
+// Décision Bourama (23/09/2026) : le bouton ne peut plus être masqué. Il
+// reste seulement déplaçable (voir lib/useDeplacable.ts), position mémorisée
+// pour toujours via la clé de stockage ci-dessous.
+const CLE_POSITION = "clovis-telecharger-apk-position";
 
 export function BoutonFlottantTelecharger() {
   const [visible, setVisible] = useState(false);
+  const deplacement = useDeplacable<HTMLDivElement>(CLE_POSITION);
 
   useEffect(() => {
     let annule = false;
 
     async function verifier() {
       try {
-        if (window.localStorage.getItem(CLE_CACHE) === "1") return;
         if (!/Android/i.test(navigator.userAgent)) return;
 
         const { Capacitor } = await import("@capacitor/core");
@@ -49,29 +52,15 @@ export function BoutonFlottantTelecharger() {
     };
   }, []);
 
-  function cacher() {
-    try {
-      window.localStorage.setItem(CLE_CACHE, "1");
-    } catch {
-      // localStorage indisponible (navigation privée stricte, etc.) :
-      // le bouton réapparaîtra à la prochaine visite, tant pis.
-    }
-    setVisible(false);
-  }
-
   if (!visible) return null;
 
   return (
     <div
-      className="fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] left-5 z-40 flex animate-dj-fade-in-rapide items-center gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface py-2 pl-1 pr-2 shadow-[0_4px_20px_rgba(0,0,0,0.35)]"
+      ref={deplacement.ref}
+      style={deplacement.style}
+      {...deplacement.poignee}
+      className="fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] left-5 z-40 flex animate-dj-fade-in-rapide cursor-grab items-center rounded-cgpt-bouton border border-dj-bordure bg-dj-surface shadow-[0_4px_20px_rgba(0,0,0,0.35)] active:cursor-grabbing"
     >
-      <button
-        onClick={cacher}
-        aria-label="Cacher"
-        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-      >
-        <X size={14} />
-      </button>
       <Link
         href="/telecharger"
         className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
