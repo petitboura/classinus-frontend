@@ -81,11 +81,33 @@ export function BlocLarge({
       el.style.marginLeft = `${gauche - gaucheNaturelle}px`;
     }
 
+    // 23/09/2026, correctif Bourama ("le code tremble tant qu'il n'est
+    // pas fini") : pendant le streaming, le contenu du bloc (code, ligne
+    // par ligne) change en permanence, donc le ResizeObserver ci-dessous
+    // se redéclenchait à chaque changement de taille -- recalcul de
+    // largeur ET repositionnement (marge gauche) à chaque fois, d'où le
+    // tremblement visuel tant que le bloc grandit. Le tout premier calcul
+    // (appelé juste en dessous, hors ResizeObserver) reste immédiat pour
+    // éviter le flash documenté plus haut (bloc d'abord étroit puis
+    // élargi) ; seuls les recalculs déclenchés par le ResizeObserver
+    // ensuite (donc pendant que le contenu continue de bouger) attendent
+    // désormais 500ms sans nouveau redimensionnement avant de s'appliquer
+    // -- même principe de stabilité que QCMInteractif.tsx/CarteMessage.tsx/
+    // WidgetSandbox.tsx. Le bloc grandit toujours normalement en largeur
+    // naturelle pendant ce temps (rien ne bloque le flux visuel), seul le
+    // repositionnement/recentrage est différé.
+    let delaiRecalcul: ReturnType<typeof setTimeout> | null = null;
+    function appliquerAvecDelai() {
+      if (delaiRecalcul) clearTimeout(delaiRecalcul);
+      delaiRecalcul = setTimeout(appliquer, 500);
+    }
+
     appliquer();
-    const observateur = new ResizeObserver(appliquer);
+    const observateur = new ResizeObserver(appliquerAvecDelai);
     observateur.observe(zone);
     observateur.observe(el);
     return () => {
+      if (delaiRecalcul) clearTimeout(delaiRecalcul);
       observateur.disconnect();
       el.style.marginLeft = "";
       el.style.width = "";
