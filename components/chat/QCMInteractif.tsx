@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { enregistrerReponseQCM } from "@/lib/api";
 
@@ -49,10 +49,26 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
   // pendant 500ms avant de tenter le parsing, pour ne pas confondre un
   // JSON encore incomplet (streaming en cours) avec un JSON réellement
   // cassé.
+  //
+  // 23/09/2026, correctif Bourama ("la réponse cochée disparaît") : la
+  // sélection de l'étudiant n'est remise à zéro que si la QUESTION
+  // affichée change réellement (nouveau QCM généré dans le même
+  // message), pas à chaque fois que le texte brut du bloc bouge un peu.
+  // Avant ce correctif, un `useEffect` séparé remettait la sélection à
+  // zéro sur tout changement de `code`, y compris une reformulation
+  // strictement identique renvoyée par une réinterprétation du markdown
+  // pendant que le reste du message continue de streamer -- ce qui
+  // effaçait la réponse de l'étudiant même longtemps après qu'il ait
+  // répondu.
+  const questionPrecedenteRef = useRef<string | null>(null);
   useEffect(() => {
     const delai = setTimeout(() => {
       try {
         const valeur = JSON.parse(code);
+        if (questionPrecedenteRef.current !== null && questionPrecedenteRef.current !== valeur.question) {
+          setChoixSelectionne(null);
+        }
+        questionPrecedenteRef.current = valeur.question;
         setQcm(valeur);
         setErreur(null);
       } catch (e) {
@@ -60,13 +76,6 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
       }
     }, 500);
     return () => clearTimeout(delai);
-  }, [code]);
-
-  // Remise à zéro de la sélection si le bloc change de contenu (nouveau
-  // QCM généré dans le même message, cas rare mais possible pendant un
-  // streaming qui régénère le JSON).
-  useEffect(() => {
-    setChoixSelectionne(null);
   }, [code]);
 
   if (!qcm) {

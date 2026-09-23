@@ -138,12 +138,31 @@ export function ContenuTexte({ href }: { href: string }) {
   const [texte, setTexte] = useState<string | null>(null);
   const [enErreur, setEnErreur] = useState(false);
 
+  // 23/09/2026, correctif Bourama ("ça ne marche plus") : voir le même
+  // correctif et sa justification dans VisionneurPdf.tsx -- ce composant
+  // ne remonte plus qu'une fois par bloc depuis la stabilisation de
+  // composantsMarkdown (BulleMessage.tsx), donc un fichier tout juste
+  // généré peut ne pas encore être disponible au moment de ce seul essai.
+  // 3 tentatives espacées de 800ms avant d'afficher l'erreur.
   useEffect(() => {
     let annule = false;
-    fetch(href)
-      .then((r) => (r.ok ? r.text() : Promise.reject()))
-      .then((t) => !annule && setTexte(t))
-      .catch(() => !annule && setEnErreur(true));
+    const TENTATIVES_MAX = 3;
+    const DELAI_ENTRE_TENTATIVES_MS = 800;
+
+    function charger(tentative: number) {
+      fetch(href)
+        .then((r) => (r.ok ? r.text() : Promise.reject()))
+        .then((t) => !annule && setTexte(t))
+        .catch(() => {
+          if (annule) return;
+          if (tentative < TENTATIVES_MAX) {
+            setTimeout(() => !annule && charger(tentative + 1), DELAI_ENTRE_TENTATIVES_MS);
+          } else {
+            setEnErreur(true);
+          }
+        });
+    }
+    charger(1);
     return () => {
       annule = true;
     };
@@ -193,16 +212,34 @@ export function ContenuMarkdown({
   const [vueBruteLocale, setVueBruteLocale] = useState(false);
   const vueBrute = masquerEntete ? (vueBruteControlee ?? false) : vueBruteLocale;
 
+  // 23/09/2026, correctif Bourama ("les markdown ne marchent plus") :
+  // même correctif et même raison que ContenuTexte ci-dessus et
+  // VisionneurPdf.tsx -- un seul essai de fetch ne suffit plus à couvrir
+  // le cas d'un fichier tout juste généré, depuis que ce composant ne
+  // remonte plus qu'une fois par bloc.
   useEffect(() => {
     let annule = false;
-    fetch(href)
-      .then((r) => (r.ok ? r.text() : Promise.reject()))
-      .then((t) => {
-        if (annule) return;
-        setTexte(t);
-        onTexteCharge?.(t);
-      })
-      .catch(() => !annule && setEnErreur(true));
+    const TENTATIVES_MAX = 3;
+    const DELAI_ENTRE_TENTATIVES_MS = 800;
+
+    function charger(tentative: number) {
+      fetch(href)
+        .then((r) => (r.ok ? r.text() : Promise.reject()))
+        .then((t) => {
+          if (annule) return;
+          setTexte(t);
+          onTexteCharge?.(t);
+        })
+        .catch(() => {
+          if (annule) return;
+          if (tentative < TENTATIVES_MAX) {
+            setTimeout(() => !annule && charger(tentative + 1), DELAI_ENTRE_TENTATIVES_MS);
+          } else {
+            setEnErreur(true);
+          }
+        });
+    }
+    charger(1);
     return () => {
       annule = true;
     };

@@ -72,10 +72,46 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
   // laisse VisionneurPdfCharge faire le vrai essai ; le timeout plus bas
   // (DELAI_ERREUR_MS) reste le seul garde-fou pour un fichier réellement
   // cassé, comme avant l'ajout de cette pré-vérification.
+  //
+  // 23/09/2026, correctif Bourama ("les PDF ne marchent plus") : depuis
+  // que BulleMessage.tsx ne remonte plus ce composant à chaque chunk de
+  // streaming (voir composantsMarkdown), cette pré-vérification ne
+  // s'exécute plus qu'UNE seule fois, au moment réel où le bloc apparaît.
+  // Pour un PDF tout juste généré, le fichier peut ne pas être encore
+  // pleinement disponible côté stockage à ce moment précis (course avec
+  // Supabase) -- avant ce correctif, l'ancien remontage répété masquait
+  // ce cas en réessayant sans le vouloir à chaque chunk suivant ; un seul
+  // essai le transforme en erreur permanente. Ajout de 3 tentatives
+  // espacées de 800ms avant d'abandonner et d'afficher l'erreur.
   useEffect(() => {
     let annule = false;
     setErreur(false);
     setPretAVerifier(false);
+
+    const TENTATIVES_MAX = 3;
+    const DELAI_ENTRE_TENTATIVES_MS = 800;
+
+    function verifier(tentative: number) {
+      fetch(url, { method: "HEAD" })
+        .then((reponse) => {
+          if (annule) return;
+          if (reponse.ok) {
+            setPretAVerifier(true);
+          } else if (tentative < TENTATIVES_MAX) {
+            setTimeout(() => !annule && verifier(tentative + 1), DELAI_ENTRE_TENTATIVES_MS);
+          } else {
+            setErreur(true);
+          }
+        })
+        .catch(() => {
+          if (annule) return;
+          if (tentative < TENTATIVES_MAX) {
+            setTimeout(() => !annule && verifier(tentative + 1), DELAI_ENTRE_TENTATIVES_MS);
+          } else {
+            setErreur(true);
+          }
+        });
+    }
 
     import("@capacitor/core").then(({ Capacitor }) => {
       if (annule) return;
@@ -83,18 +119,7 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
         setPretAVerifier(true);
         return;
       }
-      fetch(url, { method: "HEAD" })
-        .then((reponse) => {
-          if (annule) return;
-          if (!reponse.ok) {
-            setErreur(true);
-          } else {
-            setPretAVerifier(true);
-          }
-        })
-        .catch(() => {
-          if (!annule) setErreur(true);
-        });
+      verifier(1);
     });
 
     return () => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { AppWindow } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AppWindow, Loader2 } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { useTheme } from "@/lib/useTheme";
 
@@ -84,8 +85,27 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
     </body></html>`;
 }
 
+// 23/09/2026, correctif Bourama ("le widget tremble tant que son propre
+// code n'est pas fini") : contrairement à QCMInteractif.tsx/
+// CarteMessage.tsx/GraphiqueDonnees.tsx/SchemaGeometrique.tsx, ce
+// composant construisait et injectait un nouveau `srcDoc` dans l'iframe
+// à CHAQUE rendu -- or changer `srcDoc` recharge entièrement le document
+// de l'iframe, même sans démontage React. Tant que le bloc ```widget/
+// ```html n'était pas fini de streamer, `code` grandissait caractère par
+// caractère, donc l'iframe rechargeait à chaque caractère. Même principe
+// que les autres blocs riches : on attend 500ms sans changement de
+// `code` avant de considérer le widget comme prêt à afficher, avec un
+// simple indicateur de chargement entre-temps.
 export function WidgetSandbox({ code }: { code: string }) {
   const { resolu } = useTheme();
+  const [codeStable, setCodeStable] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCodeStable(null);
+    const delai = setTimeout(() => setCodeStable(code), 500);
+    return () => clearTimeout(delai);
+  }, [code]);
+
   return (
     <BlocExpansible
       titre="Widget interactif"
@@ -93,13 +113,21 @@ export function WidgetSandbox({ code }: { code: string }) {
       sousTitre="HTML"
       texteACopier={code}
       contenuEnIframe
+      chargement={codeStable === null}
       enfant={
-        <iframe
-          sandbox="allow-scripts allow-forms allow-modals"
-          srcDoc={construireDocumentWidget(code, resolu)}
-          className="h-96 w-full rounded-lg border border-dj-bordure"
-          title="Widget interactif"
-        />
+        codeStable === null ? (
+          <div className="flex h-96 w-full items-center justify-center gap-2 rounded-lg border border-dj-bordure text-xs text-dj-texte-muet">
+            <Loader2 size={16} className="animate-spin" />
+            Préparation du widget...
+          </div>
+        ) : (
+          <iframe
+            sandbox="allow-scripts allow-forms allow-modals"
+            srcDoc={construireDocumentWidget(codeStable, resolu)}
+            className="h-96 w-full rounded-lg border border-dj-bordure"
+            title="Widget interactif"
+          />
+        )
       }
     />
   );
