@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, isValidElement, ReactNode, memo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback, isValidElement, ReactNode, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import type { PluggableList } from "unified";
 import remarkGfm from "remark-gfm";
@@ -769,10 +769,15 @@ function BulleMessageInterne({
   const [reponsesGroupeesEnvoyees, setReponsesGroupeesEnvoyees] = useState(false);
   const modeQuestionsGroupees = !estUtilisateur && !!onRepondreQuestion && compterBlocsQuestion(message.content) >= 2;
 
-  function enregistrerReponseGroupee(code: string, entree: EntreeReponseGroupee | null) {
+  // useCallback (correctif du 23/09/2026, bug remonté par Bourama -- voir
+  // composantsMarkdown plus bas) : cette fonction est utilisée à l'intérieur
+  // de composantsMarkdown, qui doit garder une identité stable. Une fonction
+  // recréée à chaque rendu casserait cette stabilité. Ne dépend que d'un ref
+  // (reponsesGroupeesRef), donc jamais besoin d'être recréée.
+  const enregistrerReponseGroupee = useCallback((code: string, entree: EntreeReponseGroupee | null) => {
     if (entree) reponsesGroupeesRef.current.set(code, entree);
     else reponsesGroupeesRef.current.delete(code);
-  }
+  }, []);
 
   function validerReponsesGroupees() {
     const texte = composerReponsesGroupees(message.content, reponsesGroupeesRef.current);
@@ -897,6 +902,143 @@ function BulleMessageInterne({
   // grandit encore -- les précédents sont déjà figés), avec sa propre clé
   // (son index) pour ne pas mélanger son seuil d'animation avec celui d'un
   // autre segment -- voir motsDejaAnimesRef/totalMotsCourantRef plus haut.
+  // useMemo (correctif du 23/09/2026, bug remonté par Bourama : pendant le
+  // streaming d'une réponse, tout élément riche -- fichier, aperçu de lien,
+  // code, diagramme, fiche, QCM -- tremblait tant que le chargement n'était
+  // pas fini, se rechargeait plusieurs fois, et un aperçu ouvert/agrandi se
+  // refermait tout seul). Cause : cet objet "components" (avec ses fonctions
+  // pre/code/img/table/a) était recréé EN ENTIER à chaque rendu de la bulle,
+  // dans le corps de rendreMarkdown ci-dessous. Pour le message en cours de
+  // génération, la bulle se re-rend à CHAQUE chunk de streaming (c'est le
+  // seul message que memo() laisse re-rendre aussi souvent, voir plus bas) :
+  // react-markdown utilise ces fonctions comme "type" de composant pour
+  // chaque élément riche qu'il affiche, donc une nouvelle référence à chaque
+  // chunk force React à DÉMONTER PUIS REMONTER ces composants à chaque fois,
+  // même quand rien n'a réellement changé pour eux -- d'où le chargement qui
+  // repart de zéro et l'état interne (aperçu ouvert, réponse saisie...) qui
+  // se réinitialise. En gardant cet objet stable tant que les valeurs qu'il
+  // utilise réellement n'ont pas changé, chaque élément riche ne se monte
+  // plus qu'une seule fois pour toute la durée du streaming.
+  const composantsMarkdown = useMemo(
+    () => ({
+      pre({ children }: { children?: ReactNode }) {
+        const enfant = Array.isArray(children) ? children[0] : children;
+        if (!isValidElement(enfant)) return <pre>{children}</pre>;
+
+        const props = enfant.props as { className?: string; children?: ReactNode };
+        const langage = (props.className || "").replace("language-", "").trim();
+        const code = texteBrut(props.children).replace(/\n$/, "");
+
+        switch (langage) {
+          case "mermaid":
+            return <Mermaid definition={code} />;
+          case "chart":
+            return <GraphiqueDonnees code={code} />;
+          case "carte":
+            return <CarteMessage code={code} />;
+          case "geometrie":
+            return <SchemaGeometrique code={code} />;
+          case "qcm":
+            return <QCMInteractif code={code} conversationId={conversationId} />;
+          case "question":
+            return (
+              <QuestionInteractive
+                code={code}
+                onReponse={onRepondreQuestion}
+                dejaRepondu={questionDejaRepondue || reponsesGroupeesEnvoyees}
+                modeGroupe={modeQuestionsGroupees}
+                onChangementGroupe={(entree) => enregistrerReponseGroupee(code, entree)}
+              />
+            );
+          case "fiche":
+            return <FicheRevision code={code} />;
+          case "widget":
+          case "html":
+            return <WidgetSandbox code={code} />;
+          default:
+            return <BlocCode langage={langage} code={code} />;
+        }
+      },
+      code({ children }: { children?: ReactNode }) {
+        return (
+          <code className="rounded bg-dj-surface-haute px-1.5 py-0.5 font-mono text-[13px] text-dj-texte">
+            {children}
+          </code>
+        );
+      },
+      img({ src, alt }: { src?: string; alt?: string }) {
+        return <ImageMessage src={typeof src === "string" ? src : undefined} alt={alt} />;
+      },
+      table({ children }: { children?: ReactNode }) {
+        return <TableauMessage>{children}</TableauMessage>;
+      },
+      a({ href, children }: { href?: string; children?: ReactNode }) {
+        if (!href) return <>{children}</>;
+        const matchCitation = /^citation:(\d+)$/.exec(href);
+        if (matchCitation) {
+          const numero = parseInt(matchCitation[1], 10);
+          const source = sourcesAplaties.find((s) => s.numero === numero);
+          if (!source) {
+            return <span className="text-dj-accent-1-texte">{children}</span>;
+          }
+          const libelle = source.reperage ? `${source.titre}, ${source.reperage}` : source.titre;
+          return (
+            <button
+              type="button"
+              onClick={() =>
+                ouvrirPosition({
+                  url: source.url,
+                  titre: libelle,
+                  positionType: source.position_type,
+                  positionValeur: source.position_valeur,
+                  typeMime: source.type_mime,
+                })
+              }
+              title={libelle}
+              className="mx-0.5 rounded border border-dj-bordure px-1.5 py-0.5 align-middle text-[11px] font-medium text-dj-accent-1-texte no-underline hover:underline"
+            >
+              {libelle}
+            </button>
+          );
+        }
+        const media = typeMedia(href);
+        if (media) return <LecteurMedia href={href} type={media} />;
+        if (estNoteTexteBibliotheque(href)) {
+          return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
+        }
+        if (estFichierCodeAffichable(href)) {
+          return <FichierCode href={href} nom={texteBrut(children) || href} />;
+        }
+        if (extensionFichier(href)) {
+          return <FichierChip href={href} nom={texteBrut(children) || href} />;
+        }
+        if (/^https?:\/\//i.test(href)) {
+          return <LinkPreview href={href} texteLien={texteBrut(children) || href} compact={estUtilisateur} />;
+        }
+        return (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-dj-texte-muet underline hover:text-dj-texte"
+          >
+            {children}
+          </a>
+        );
+      },
+    }),
+    [
+      conversationId,
+      onRepondreQuestion,
+      questionDejaRepondue,
+      reponsesGroupeesEnvoyees,
+      modeQuestionsGroupees,
+      enregistrerReponseGroupee,
+      sourcesAplaties,
+      estUtilisateur,
+    ]
+  );
+
   function rendreMarkdown(texte: string, avecFade: boolean, cle: number = -1) {
     return (
       <ReactMarkdown
@@ -917,113 +1059,7 @@ function BulleMessageInterne({
               ]
             : PLUGINS_REHYPE
         }
-        components={{
-          pre({ children }) {
-            const enfant = Array.isArray(children) ? children[0] : children;
-            if (!isValidElement(enfant)) return <pre>{children}</pre>;
-
-            const props = enfant.props as { className?: string; children?: ReactNode };
-            const langage = (props.className || "").replace("language-", "").trim();
-            const code = texteBrut(props.children).replace(/\n$/, "");
-
-            switch (langage) {
-              case "mermaid":
-                return <Mermaid definition={code} />;
-              case "chart":
-                return <GraphiqueDonnees code={code} />;
-              case "carte":
-                return <CarteMessage code={code} />;
-              case "geometrie":
-                return <SchemaGeometrique code={code} />;
-              case "qcm":
-                return <QCMInteractif code={code} conversationId={conversationId} />;
-              case "question":
-                return (
-                  <QuestionInteractive
-                    code={code}
-                    onReponse={onRepondreQuestion}
-                    dejaRepondu={questionDejaRepondue || reponsesGroupeesEnvoyees}
-                    modeGroupe={modeQuestionsGroupees}
-                    onChangementGroupe={(entree) => enregistrerReponseGroupee(code, entree)}
-                  />
-                );
-              case "fiche":
-                return <FicheRevision code={code} />;
-              case "widget":
-              case "html":
-                return <WidgetSandbox code={code} />;
-              default:
-                return <BlocCode langage={langage} code={code} />;
-            }
-          },
-          code({ children }) {
-            return (
-              <code className="rounded bg-dj-surface-haute px-1.5 py-0.5 font-mono text-[13px] text-dj-texte">
-                {children}
-              </code>
-            );
-          },
-          img({ src, alt }) {
-            return <ImageMessage src={typeof src === "string" ? src : undefined} alt={alt} />;
-          },
-          table({ children }) {
-            return <TableauMessage>{children}</TableauMessage>;
-          },
-          a({ href, children }) {
-            if (!href) return <>{children}</>;
-            const matchCitation = /^citation:(\d+)$/.exec(href);
-            if (matchCitation) {
-              const numero = parseInt(matchCitation[1], 10);
-              const source = sourcesAplaties.find((s) => s.numero === numero);
-              if (!source) {
-                return <span className="text-dj-accent-1-texte">{children}</span>;
-              }
-              const libelle = source.reperage ? `${source.titre}, ${source.reperage}` : source.titre;
-              return (
-                <button
-                  type="button"
-                  onClick={() =>
-                    ouvrirPosition({
-                      url: source.url,
-                      titre: libelle,
-                      positionType: source.position_type,
-                      positionValeur: source.position_valeur,
-                      typeMime: source.type_mime,
-                    })
-                  }
-                  title={libelle}
-                  className="mx-0.5 rounded border border-dj-bordure px-1.5 py-0.5 align-middle text-[11px] font-medium text-dj-accent-1-texte no-underline hover:underline"
-                >
-                  {libelle}
-                </button>
-              );
-            }
-            const media = typeMedia(href);
-            if (media) return <LecteurMedia href={href} type={media} />;
-            if (estNoteTexteBibliotheque(href)) {
-              return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
-            }
-            if (estFichierCodeAffichable(href)) {
-              return <FichierCode href={href} nom={texteBrut(children) || href} />;
-            }
-            if (extensionFichier(href)) {
-              return <FichierChip href={href} nom={texteBrut(children) || href} />;
-            }
-            if (/^https?:\/\//i.test(href)) {
-              return <LinkPreview href={href} texteLien={texteBrut(children) || href} compact={estUtilisateur} />;
-            }
-            return (
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-dj-texte-muet underline hover:text-dj-texte"
-              >
-                {children}
-              </a>
-            );
-          },
-        }}
+        components={composantsMarkdown}
       >
         {texte}
       </ReactMarkdown>
