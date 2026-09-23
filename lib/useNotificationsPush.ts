@@ -194,6 +194,17 @@ export function proposerNotificationsPushUneFois(activer: () => Promise<boolean>
   // soit affiché à l'écran ou qu'une requête parte vers le backend. Sortie
   // immédiate en natif, avant tout accès à `Notification`.
   if (Capacitor.isNativePlatform()) return;
+  // Correctif du 23/09/2026 (Bourama : "le message ne s'envoie pas dans un
+  // navigateur sur iPhone"). Cause réelle : sur Safari iOS en onglet normal
+  // (app non installée sur l'écran d'accueil), l'objet global `Notification`
+  // n'existe pas du tout (les notifications web ne sont supportées par iOS
+  // que pour une app ajoutée à l'écran d'accueil, depuis iOS 16.4). La ligne
+  // plus bas y accédait sans protection, plantait immédiatement (erreur non
+  // interceptée), et cette fonction est appelée en tout premier dans l'envoi
+  // d'un message : le plantage empêchait le message d'être ajouté à l'écran
+  // et empêchait la requête de partir vers le serveur. Sortie immédiate si
+  // l'objet n'existe pas, comme pour l'app native.
+  if (typeof Notification === "undefined") return;
   if (window.localStorage.getItem(CLE_DEJA_PROPOSE)) return;
   if (Notification.permission !== "default") return; // déjà répondu avant
   window.localStorage.setItem(CLE_DEJA_PROPOSE, "true");
