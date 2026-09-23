@@ -89,7 +89,7 @@ export function estFichierMarkdown(nomFichier: string, typeMime: string) {
 // côté app, texte (note, type_mime="text/plain") et lien
 // (type_mime="text/uri-list", voir core/bibliotheque_fichiers.py).
 
-type FichierBiblio = {
+export type FichierBiblio = {
   id: string;
   nom_fichier: string;
   type_mime: string;

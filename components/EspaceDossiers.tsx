@@ -25,6 +25,7 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { CaseACocher } from "./CaseACocher";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
+import { VisionneuseBibliotheque, type FichierBiblio } from "./VisionneuseBibliotheque";
 
 /**
  * Écran autonome pour le plugin natif Dossiers (Lot 3B Partie 3 mobile,
@@ -49,12 +50,25 @@ type PluginDossiers = {
   choisirDossier(): Promise<DossierDesigne>;
   retirerDossierDesigne(options: { uri: string }): Promise<void>;
   listerContenu(options: { uri: string }): Promise<{ elements: ElementDossier[] }>;
+  lireFichier(options: { uri: string }): Promise<{
+    contenuBase64: string;
+    typeMime: string;
+    nomFichier: string;
+    tailleOctets: number;
+  }>;
   creerSousDossier(options: { parentUri: string; nom: string }): Promise<void>;
   creerFichier(options: { parentUri: string; nom: string; typeMime?: string }): Promise<void>;
   renommer(options: { elementUri: string; nouveauNom: string }): Promise<void>;
   supprimer(options: { elementUri: string }): Promise<void>;
   deplacer(options: { elementUri: string; ancienParentUri: string; nouveauParentUri: string }): Promise<void>;
 };
+
+function base64VersBlob(base64: string, typeMime: string): Blob {
+  const octets = atob(base64);
+  const tampon = new Uint8Array(octets.length);
+  for (let i = 0; i < octets.length; i++) tampon[i] = octets.charCodeAt(i);
+  return new Blob([tampon], { type: typeMime || "application/octet-stream" });
+}
 
 function formaterTaille(octets: number): string {
   if (octets < 1024) return `${octets} o`;
@@ -79,6 +93,52 @@ export function EspaceDossiers() {
   const [valeurSaisie, setValeurSaisie] = useState("");
   const [dialoguePicker, setDialoguePicker] = useState<ElementDossier | null>(null);
   const [action, setAction] = useState(false);
+
+  // 23/09/2026, demande Bourama ("les fichiers du dossier choisi ne sont
+  // pas ouvrables") : jusque là, cliquer sur un fichier (par opposition à
+  // un sous-dossier) ne faisait rien -- seul plugin.lireFichier existait
+  // déjà côté natif (utilisé par le canal IA, lib/canalTempsReel.ts),
+  // jamais câblé pour un clic humain. Réutilise directement
+  // VisionneuseBibliotheque (même aperçu que la Bibliothèque perso/
+  // publique) : le contenu lu en base64 est converti en Blob puis en URL
+  // d'objet locale (jamais de réseau, jamais d'upload), passée comme
+  // "url_publique" -- la visionneuse ne fait aucune différence entre une
+  // vraie URL Supabase et une URL d'objet locale (fetch/<img>/<video>
+  // fonctionnent pareil avec les deux).
+  const [fichierOuvert, setFichierOuvert] = useState<FichierBiblio | null>(null);
+  const [ouvertureEnCours, setOuvertureEnCours] = useState<string | null>(null);
+  const urlObjetRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (urlObjetRef.current) URL.revokeObjectURL(urlObjetRef.current);
+    };
+  }, []);
+
+  async function ouvrirFichier(el: ElementDossier) {
+    if (!plugin) return;
+    setErreur(null);
+    setOuvertureEnCours(el.uri);
+    try {
+      const lecture = await plugin.lireFichier({ uri: el.uri });
+      const url = URL.createObjectURL(base64VersBlob(lecture.contenuBase64, lecture.typeMime));
+      const urlPrecedente = urlObjetRef.current;
+      if (urlPrecedente) setTimeout(() => URL.revokeObjectURL(urlPrecedente), 1000);
+      urlObjetRef.current = url;
+      setFichierOuvert({
+        id: el.uri,
+        nom_fichier: lecture.nomFichier || el.nom,
+        type_mime: lecture.typeMime || "application/octet-stream",
+        description: null,
+        url_publique: url,
+        created_at: "",
+      });
+    } catch (e) {
+      setErreur(messageErreurPlugin(e));
+    } finally {
+      setOuvertureEnCours(null);
+    }
+  }
 
   // Ajoute le 04/09/2026, Bourama : "étape 5" de la vectorisation en
   // masse (voir clovis-backend/api/dossiers_designes.py::progression_dossier)
@@ -565,12 +625,16 @@ export function EspaceDossiers() {
                   onClick={(e) =>
                     selectionElements.actif
                       ? selectionElements.basculer(el.uri, { shiftKey: e.shiftKey })
-                      : el.estDossier && setPile((p) => [...p, { uri: el.uri, nom: el.nom }])
+                      : el.estDossier
+                        ? setPile((p) => [...p, { uri: el.uri, nom: el.nom }])
+                        : ouvrirFichier(el)
                   }
                   className="flex flex-1 items-center gap-3 overflow-hidden text-left"
                 >
                   {el.estDossier ? (
                     <IconDossier size={18} className="flex-shrink-0 text-dj-texte-muet" />
+                  ) : ouvertureEnCours === el.uri ? (
+                    <Loader2 size={18} className="flex-shrink-0 animate-spin text-dj-texte-muet" />
                   ) : (
                     <IconFichier size={18} className="flex-shrink-0 text-dj-texte-muet" />
                   )}
@@ -686,6 +750,8 @@ export function EspaceDossiers() {
           onFerme={() => setDialoguePicker(null)}
         />
       )}
+
+      <VisionneuseBibliotheque fichier={fichierOuvert} onFermer={() => setFichierOuvert(null)} />
 
       {deplacementGroupeOuvert && (
         <PickerDeplacement
