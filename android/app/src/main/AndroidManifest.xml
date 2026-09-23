@@ -26,6 +26,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- 23/09/2026 : retour de la connexion Google dans l'appli
+                 (voir lib/connexionGoogleNative.ts). Reçu directement par
+                 MainActivity, distinct du retour des connecteurs Notion et
+                 Drive (classinusmobile://oauth-callback, plus bas). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="classinusmobile" android:host="connexion" />
+            </intent-filter>
+
         </activity>
 
         <activity

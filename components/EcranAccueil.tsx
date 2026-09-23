@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { Carte } from "@/components/Carte";
 import { ONGLETS } from "@/components/AppSidebar";
 import { BandeauMiseAJour } from "@/components/BandeauMiseAJour";
+import { BoutonsCompteVisiteur } from "@/components/BoutonsCompteVisiteur";
 import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
 // Écran d'accueil réel de l'app (16/08/2026, demande Bourama : "faut une
@@ -178,6 +179,7 @@ export function EcranAccueil() {
             <Bird size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
             Ouvrir le chat
           </button>
+          <BoutonsCompteVisiteur />
         </div>
       </div>
 

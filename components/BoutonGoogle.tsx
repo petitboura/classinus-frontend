@@ -2,17 +2,38 @@
 
 // Bouton "Continuer avec Google", partagé entre les pages connexion et
 // inscription. Supabase gère tout : redirige vers Google, puis ramène
-// l'utilisateur sur `retour` (chemin interne, deja valide par l'appelant)
-// avec une session active -- pas de route de callback a ecrire cote
-// Classinus, supabase-js detecte la session dans l'URL au retour.
+// l'utilisateur sur `retour` (chemin interne, déjà validé par l'appelant)
+// avec une session active. Pas de route de callback à écrire côté
+// Classinus, supabase-js détecte la session dans l'URL au retour.
+//
+// Dans l'appli installée, le retour passe par un lien qui rouvre l'appli
+// (voir lib/connexionGoogleNative.ts), sinon l'utilisateur finissait sur le
+// site au lieu de revenir dans l'appli.
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { connexionGoogleNative, estAppliNative } from "@/lib/connexionGoogleNative";
 
 export function BoutonGoogle({ retour }: { retour: string }) {
+  const router = useRouter();
   const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
 
   async function continuerAvecGoogle() {
     setEnCours(true);
+    setErreur("");
+
+    if (await estAppliNative()) {
+      const resultat = await connexionGoogleNative();
+      if (resultat.ok) {
+        router.push(retour);
+        return;
+      }
+      setEnCours(false);
+      setErreur(resultat.erreur);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -26,6 +47,7 @@ export function BoutonGoogle({ retour }: { retour: string }) {
   }
 
   return (
+    <div>
     <button
       type="button"
       onClick={continuerAvecGoogle}
@@ -40,5 +62,11 @@ export function BoutonGoogle({ retour }: { retour: string }) {
       </svg>
       {enCours ? "Redirection…" : "Continuer avec Google"}
     </button>
+    {erreur && (
+      <p role="alert" className="mt-2 animate-dj-fade-in-rapide text-center text-xs text-dj-texte-muet">
+        {erreur}
+      </p>
+    )}
+    </div>
   );
 }
