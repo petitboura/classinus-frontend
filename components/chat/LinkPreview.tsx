@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Play, X } from "lucide-react";
 import { Skeleton } from "../Skeleton";
+import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { API_URL } from "@/lib/api";
 import { traiterLienSortant } from "@/lib/liensSortants";
 
@@ -75,27 +76,36 @@ function LecteurYoutubeInline({ idVideo, onFermer }: { idVideo: string; onFermer
   );
 }
 
+// Mémoire (23/09/2026) : un aperçu déjà chargé réapparaît tout de suite s'il
+// se remonte, sans nouvel appel réseau ni écran de chargement.
+const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: boolean }>();
+
 export function LinkPreview({ href, texteLien, compact }: { href: string; texteLien: string; compact?: boolean }) {
-  const [apercu, setApercu] = useState<Apercu | null>(null);
-  const [echec, setEchec] = useState(false);
-  const [charge, setCharge] = useState(false);
+  const [apercu, setApercu] = useState<Apercu | null>(() => memoireApercus.lire(href)?.apercu ?? null);
+  const [echec, setEchec] = useState(() => memoireApercus.lire(href)?.echec ?? false);
+  const [charge, setCharge] = useState(() => memoireApercus.lire(href) !== undefined);
   const [enLecture, setEnLecture] = useState(false);
   const idVideo = idYoutube(href);
 
   useEffect(() => {
     let annule = false;
 
+    // Déjà chargé auparavant : rien à redemander.
+    if (memoireApercus.lire(href)) return;
+
     if (idVideo) {
       fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(href)}&format=json`)
         .then((r) => (r.ok ? r.json() : Promise.reject()))
         .then((data) => {
-          if (annule) return;
-          setApercu({
+          const resultat = {
             titre: data.title || null,
             image: `https://img.youtube.com/vi/${idVideo}/hqdefault.jpg`,
             description: data.author_name ? `YouTube · ${data.author_name}` : "YouTube",
             siteName: "YouTube",
-          });
+          };
+          memoireApercus.ecrire(href, { apercu: resultat, echec: false });
+          if (annule) return;
+          setApercu(resultat);
         })
         .catch(() => !annule && setEchec(true))
         .finally(() => !annule && setCharge(true));
@@ -107,11 +117,13 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
     fetch(`${API_URL}/api/apercu-lien?url=${encodeURIComponent(href)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
+        const vide = !data?.titre && !data?.image;
+        memoireApercus.ecrire(href, { apercu: vide ? null : data, echec: vide });
         if (annule) return;
         // Le backend renvoie {} (200, pas d'erreur HTTP) quand aucune
         // métadonnée n'est trouvée -- distinct d'une erreur réseau, mais
         // même repli côté affichage : lien texte brut, jamais de carte vide.
-        if (!data?.titre && !data?.image) {
+        if (vide) {
           setEchec(true);
         } else {
           setApercu(data);

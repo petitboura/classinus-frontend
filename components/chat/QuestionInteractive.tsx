@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import {
   type QuestionRiche,
   type ChampSimple,
@@ -274,6 +275,11 @@ function ChampStandalone({
   }
 }
 
+// Mémoire (23/09/2026) : une question qui se remonte retrouve tout de suite
+// son contenu et la réponse déjà envoyée.
+const memoireQuestions = creerMemoireElements<QuestionRiche>();
+const memoireReponses = creerMemoireElements<string>();
+
 export function QuestionInteractive({
   code,
   onReponse,
@@ -299,9 +305,14 @@ export function QuestionInteractive({
   modeGroupe?: boolean;
   onChangementGroupe?: (entree: EntreeReponseGroupee | null) => void;
 }) {
-  const [donnee, setDonnee] = useState<QuestionRiche | null>(null);
+  const [donnee, setDonnee] = useState<QuestionRiche | null>(() => memoireQuestions.lire(code) ?? null);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [reponseEnvoyee, setReponseEnvoyee] = useState<string | null>(null);
+  const [reponseEnvoyee, setReponseEnvoyeeBrut] = useState<string | null>(() => memoireReponses.lire(code) ?? null);
+  function setReponseEnvoyee(texte: string | null) {
+    if (texte === null) memoireReponses.effacer(code);
+    else memoireReponses.ecrire(code, texte);
+    setReponseEnvoyeeBrut(texte);
+  }
 
   function gererReponse(texte: string) {
     setReponseEnvoyee(texte);
@@ -316,6 +327,7 @@ export function QuestionInteractive({
     const delai = setTimeout(() => {
       try {
         const valeur = JSON.parse(code);
+        memoireQuestions.ecrire(code, valeur);
         setDonnee(valeur);
         setErreur(null);
       } catch (e) {
@@ -336,7 +348,12 @@ export function QuestionInteractive({
   // Remise à zéro si le bloc change de contenu (nouvelle question générée
   // dans le même message, cas rare mais possible pendant un streaming qui
   // régénère le JSON) -- même garde que QCMInteractif.tsx.
+  // Ignoré au premier rendu : sinon la réponse retrouvée dans la mémoire
+  // serait effacée dès l'affichage.
+  const codePrecedentRef = useRef(code);
   useEffect(() => {
+    if (codePrecedentRef.current === code) return;
+    codePrecedentRef.current = code;
     setReponseEnvoyee(null);
   }, [code]);
 

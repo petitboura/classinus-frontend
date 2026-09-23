@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { FicheFormules } from "./FicheFormules";
 import { FicheDates } from "./FicheDates";
 import { FicheVocabulaire } from "./FicheVocabulaire";
@@ -99,8 +100,11 @@ function EtatErreur({ texte }: { texte: string }) {
   );
 }
 
+// Mémoire (23/09/2026) : une fiche qui se remonte réapparaît tout de suite.
+const memoireFiches = creerMemoireElements<Fiche>();
+
 export function FicheRevision({ code }: { code: string }) {
-  const [fiche, setFiche] = useState<Fiche | null>(null);
+  const [fiche, setFiche] = useState<Fiche | null>(() => memoireFiches.lire(code) ?? null);
   const [erreur, setErreur] = useState<string | null>(null);
 
   // Même principe que QCMInteractif.tsx/CarteMessage.tsx/GraphiqueDonnees.tsx :
@@ -111,6 +115,7 @@ export function FicheRevision({ code }: { code: string }) {
     const delai = setTimeout(() => {
       try {
         const valeur = JSON.parse(code);
+        memoireFiches.ecrire(code, valeur);
         setFiche(valeur);
         setErreur(null);
       } catch (e) {

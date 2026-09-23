@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { enregistrerReponseQCM } from "@/lib/api";
 
@@ -39,10 +40,21 @@ type QCM = {
   explication?: string;
 };
 
+// Mémoire (23/09/2026) : un QCM qui se remonte retrouve tout de suite sa
+// question et la réponse cochée, sans écran de préparation.
+const memoireQcm = creerMemoireElements<QCM>();
+const memoireChoix = creerMemoireElements<number>();
+
 export function QCMInteractif({ code, conversationId }: { code: string; conversationId?: string }) {
-  const [qcm, setQcm] = useState<QCM | null>(null);
+  const cleChoix = `${conversationId ?? ""}|${code}`;
+  const [qcm, setQcm] = useState<QCM | null>(() => memoireQcm.lire(code) ?? null);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [choixSelectionne, setChoixSelectionne] = useState<number | null>(null);
+  const [choixSelectionne, setChoixSelectionneBrut] = useState<number | null>(() => memoireChoix.lire(cleChoix) ?? null);
+  function setChoixSelectionne(valeur: number | null) {
+    if (valeur === null) memoireChoix.effacer(cleChoix);
+    else memoireChoix.ecrire(cleChoix, valeur);
+    setChoixSelectionneBrut(valeur);
+  }
 
   // Même principe que CarteMessage.tsx/GraphiqueDonnees.tsx/
   // SchemaGeometrique.tsx : on attend que le texte arrête de changer
@@ -69,6 +81,7 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
           setChoixSelectionne(null);
         }
         questionPrecedenteRef.current = valeur.question;
+        memoireQcm.ecrire(code, valeur);
         setQcm(valeur);
         setErreur(null);
       } catch (e) {
