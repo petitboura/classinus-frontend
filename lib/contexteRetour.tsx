@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 // 31/08/2026, demande Bourama : "le bouton retour du téléphone, toute
 // l'appli est comptée comme un tout, donc peu importe où t'es le bouton
@@ -55,6 +56,37 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
   // interprété comme une pression du bouton retour et fermerait un
   // second calque en plus de celui déjà fermé.
   const ignorerProchainPopstate = useRef(false);
+
+  // 23/09/2026, correctif Bourama ("dans l'appli installée, le bouton
+  // retour ferme l'appli peu importe où on est ou d'où on vient") : le
+  // bouton matériel natif (backButton, plus bas) ne dépilait QUE les
+  // calques (popup/tiroir/modale) et minimisait direct dès qu'aucun
+  // calque n'était ouvert -- une vraie navigation de page en page
+  // (Bureau -> Bibliothèque -> un fichier, etc.) n'avait jamais la
+  // moindre chance d'être "remontée" par le bouton retour sur natif,
+  // contrairement au web où le geste retour déclenche le popstate natif
+  // du navigateur qui fait déjà remonter les pages toute seule.
+  //
+  // Pile de chemins visités, tenue nous-mêmes puisque le bouton matériel
+  // natif est indépendant de l'historique de la WebView. `naviguerRetourEnCours`
+  // évite de repousser une entrée quand LE CHANGEMENT de chemin vient de
+  // notre propre navigation retour (router.push ci-dessous) plutôt que
+  // d'une navigation normale de l'utilisateur.
+  const pathname = usePathname();
+  const router = useRouter();
+  const pilePages = useRef<string[]>([]);
+  const pathnamePrecedent = useRef(pathname);
+  const naviguerRetourEnCours = useRef(false);
+
+  useEffect(() => {
+    if (pathnamePrecedent.current === pathname) return;
+    if (naviguerRetourEnCours.current) {
+      naviguerRetourEnCours.current = false;
+    } else {
+      pilePages.current = [...pilePages.current, pathnamePrecedent.current];
+    }
+    pathnamePrecedent.current = pathname;
+  }, [pathname]);
 
   const empiler = useCallback((id: string, fermer: () => void) => {
     pile.current = [...pile.current.filter((c) => c.id !== id), { id, fermer }];
@@ -125,8 +157,17 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
           sommet.fermer();
           return;
         }
-        // Rien d'ouvert : comportement natif normal -- minimise l'appli
-        // (convention Android standard) plutôt que de la tuer.
+        if (pilePages.current.length > 0) {
+          const precedent = pilePages.current[pilePages.current.length - 1];
+          pilePages.current = pilePages.current.slice(0, -1);
+          naviguerRetourEnCours.current = true;
+          router.push(precedent);
+          return;
+        }
+        // Rien d'ouvert et plus aucune page à remonter (on est sur la
+        // toute première page de cette session) : comportement natif
+        // normal -- minimise l'appli (convention Android standard)
+        // plutôt que de la tuer.
         App.minimizeApp();
       });
       if (annule) {
