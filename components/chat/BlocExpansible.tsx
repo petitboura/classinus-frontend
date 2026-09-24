@@ -302,6 +302,7 @@ export function BlocExpansible({
           titre={titre}
           onFerme={() => demarrerFermeture(fermer)}
           enSortie={enSortie}
+          pleineLargeur={contenuEnIframe}
           entete={
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>

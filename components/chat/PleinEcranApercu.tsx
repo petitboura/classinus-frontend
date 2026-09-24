@@ -31,17 +31,27 @@ import { useFermetureAuRetour } from "@/lib/contexteRetour";
 // animation avec transform garderait un transform actif après la fin
 // (fill-mode both) et recadrerait à son tour les fenêtres qu'elle
 // contient.
+// Largeur maximale de la colonne centrée (72rem), commune à l'en-tête et au
+// contenu pour qu'ils restent alignés.
+const LARGEUR_COLONNE = "max-w-6xl";
+
 export function PleinEcranApercu({
   titre,
   entete,
   onFerme,
   enSortie = false,
+  pleineLargeur = false,
   children,
 }: {
   titre: string;
   entete: ReactNode;
   onFerme: () => void;
   enSortie?: boolean;
+  // Contenu qui doit occuper toute la largeur (aperçu en iframe : widget,
+  // Office). Par défaut, l'en-tête et le contenu sont centrés dans une
+  // colonne à largeur plafonnée (24/09/2026, demande Bourama : rien collé à
+  // gauche sur un grand écran).
+  pleineLargeur?: boolean;
   children: ReactNode;
 }) {
   // document n'existe pas pendant le rendu serveur : le portail n'est
@@ -75,12 +85,20 @@ export function PleinEcranApercu({
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
     >
-      <div className="flex-shrink-0 border-b border-dj-bordure px-4 py-3 sm:px-6">{entete}</div>
+      <div className="flex-shrink-0 border-b border-dj-bordure px-4 py-3 sm:px-6">
+        <div className={`mx-auto w-full ${pleineLargeur ? "" : LARGEUR_COLONNE}`}>{entete}</div>
+      </div>
       {/* font-lecture : le contenu (markdown, texte) gardait la police du
           message parce qu'il était rendu dedans, ce que le portail ne
           permet plus d'hériter. */}
       <div className="flex min-h-0 flex-1 flex-col p-3 font-lecture text-[16px] leading-relaxed sm:p-4">
-        {children}
+        {/* Colonne centrée (mx-auto) : sur un grand écran, le contenu ne colle
+            plus au bord gauche. Même comportement flex que le parent
+            (flex-col, flex-1, min-h-0) pour que les enfants gardent leur
+            hauteur. */}
+        <div className={`mx-auto flex min-h-0 w-full flex-1 flex-col ${pleineLargeur ? "" : LARGEUR_COLONNE}`}>
+          {children}
+        </div>
       </div>
     </div>,
     document.body
