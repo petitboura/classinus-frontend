@@ -474,7 +474,7 @@ export type FiltresPublicationBibliothequePublique = {
 // core/commentaires_catalogue_public.py -- pas de CTA/partages pour ce
 // type, hors scope de l'étape 13, core/compteurs_catalogue_public.py
 // n'a pas été touché).
-export type TypeElementCataloguePublic = "fichier" | "dossier" | "skill" | "clovis";
+export type TypeElementCataloguePublic = "fichier" | "dossier" | "skill" | "clovis" | "programme"; // 22/09/2026, catalogue public du Programme
 
 // L'unique ligne de clovis_infos (voir api/clovis_infos.py côté
 // backend) -- doit rester synchronisée avec ID_CLOVIS là-bas.
@@ -1556,6 +1556,122 @@ export async function retirerSkillPublic(comportementPublicId: string) {
 // skill) ; sinon nom choisi par l'étudiant, gardé tel quel. lienType/
 // lienId optionnels (20/08) : rattache dès la création à un emplacement
 // du programme.
+// 22/09/2026, demande Bourama : catalogue public du Programme, même
+// principe que ComportementPublic ci-dessus mais pour une arborescence
+// de notions entière (voir components/ProgrammesCataloguePublic.tsx).
+export type NotionPublique = {
+  id: string;
+  notion_parent_id: string | null;
+  nom: string;
+  ordre: number;
+  regle_comportement: string | null;
+  consigne_llm: string | null;
+};
+
+export type ProgrammePublic = {
+  id: string;
+  publie_par: string;
+  nom: string;
+  description: string;
+  inclut_regles_consignes: boolean;
+  pays: string[];
+  niveau: string[];
+  categorie: string[];
+  classe: string[];
+  specialite: string[];
+  etoiles_count: number;
+  created_at: string;
+  est_a_moi: boolean;
+  mon_etoile: boolean;
+};
+
+export type ProgrammePublicDetail = ProgrammePublic & { notions: NotionPublique[] };
+
+export type FiltresProgrammeCataloguePublic = {
+  pays?: string;
+  niveau?: string;
+  categorie?: string;
+  classe?: string;
+  specialite?: string;
+};
+
+export async function rechercherProgrammesCataloguePublic(q?: string, nombre?: number, filtres?: FiltresProgrammeCataloguePublic) {
+  const params = new URLSearchParams();
+  if (q?.trim()) params.set("q", q.trim());
+  if (nombre) params.set("nombre", String(nombre));
+  if (filtres?.pays) params.set("pays", filtres.pays);
+  if (filtres?.niveau) params.set("niveau", filtres.niveau);
+  if (filtres?.categorie) params.set("categorie", filtres.categorie);
+  if (filtres?.classe) params.set("classe", filtres.classe);
+  if (filtres?.specialite) params.set("specialite", filtres.specialite);
+  const suffixe = params.toString() ? `?${params.toString()}` : "";
+  const resultat = await appelerApi(`/api/programmes-catalogue-public${suffixe}`);
+  return resultat as { programmes: ProgrammePublic[]; total: number };
+}
+
+export async function obtenirProgrammeCataloguePublic(entreeId: string) {
+  const resultat = await appelerApi(`/api/programmes-catalogue-public/${entreeId}`);
+  return resultat as ProgrammePublicDetail;
+}
+
+export async function publierProgrammeCataloguePublic(champs: {
+  codeId: string;
+  nom: string;
+  description?: string;
+  inclureReglesConsignes?: boolean;
+  pays?: string[];
+  niveau?: string[];
+  categorie?: string[];
+  classe?: string[];
+  specialite?: string[];
+}) {
+  const resultat = await appelerApi(`/api/programmes-catalogue-public`, {
+    method: "POST",
+    body: JSON.stringify({
+      code_id: champs.codeId,
+      nom: champs.nom,
+      description: champs.description || "",
+      inclure_regles_consignes: champs.inclureReglesConsignes ?? false,
+      pays: champs.pays || [],
+      niveau: champs.niveau || [],
+      categorie: champs.categorie || [],
+      classe: champs.classe || [],
+      specialite: champs.specialite || [],
+    }),
+  });
+  return resultat as ProgrammePublic;
+}
+
+export async function modifierProgrammeCataloguePublic(
+  entreeId: string,
+  champs: { nom?: string; description?: string; pays?: string[]; niveau?: string[]; categorie?: string[]; classe?: string[]; specialite?: string[] }
+) {
+  const resultat = await appelerApi(`/api/programmes-catalogue-public/${entreeId}`, {
+    method: "PATCH",
+    body: JSON.stringify(champs),
+  });
+  return resultat as ProgrammePublicDetail;
+}
+
+export async function supprimerProgrammeCataloguePublic(entreeId: string) {
+  return appelerApi(`/api/programmes-catalogue-public/${entreeId}/supprimer`, { method: "POST" });
+}
+
+export async function copierProgrammeCataloguePublicVersPerso(
+  entreeId: string,
+  champs: { codeId?: string; nouveauCodeNom?: string; inclureReglesConsignes?: boolean }
+) {
+  const resultat = await appelerApi(`/api/programmes-catalogue-public/${entreeId}/copier-vers-perso`, {
+    method: "POST",
+    body: JSON.stringify({
+      code_id: champs.codeId || null,
+      nouveau_code_nom: champs.nouveauCodeNom || null,
+      inclure_regles_consignes: champs.inclureReglesConsignes ?? false,
+    }),
+  });
+  return resultat as { code_id: string; nb_notions: number };
+}
+
 export async function ajouterComportement(
   agentId: string,
   texte: string,
