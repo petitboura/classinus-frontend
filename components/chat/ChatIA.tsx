@@ -177,7 +177,7 @@ export function ChatIA({
   // statut sans id (chemins plus anciens/rares : lecture d'image,
   // "niveau2" dans main.py -- toujours un seul à la fois, jamais de
   // vrai parallélisme) garde l'ancien comportement par repli.
-  const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; texte: string; etat: EtatStatut }[]>([]);
+  const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; nomLisible?: string; action?: string; texte: string; etat: EtatStatut }[]>([]);
   // Ajouté (18/09/2026, demande Bourama : statut d'outil incohérent) :
   // texte "X effectuée" reçu dans "statut_termine", gardé par id_appel
   // jusqu'à l'événement "outil_resultat" du même appel, qui l'emporte avec
@@ -428,7 +428,14 @@ export function ChatIA({
     if (item.type === "statut") {
       setStatuts((prec) => [
         ...prec,
-        { id: evenement.id_appel, nomOutil: evenement.nom_outil, texte: evenement.texte, etat: "en_cours" as EtatStatut },
+        {
+          id: evenement.id_appel,
+          nomOutil: evenement.nom_outil,
+          nomLisible: evenement.nom_lisible,
+          action: evenement.action,
+          texte: evenement.texte,
+          etat: "en_cours" as EtatStatut,
+        },
       ]);
     } else if (item.type === "statut_termine") {
       setStatuts((prec) => {
@@ -529,6 +536,7 @@ export function ChatIA({
         const nouvelEntree = {
           nomOutil: evenement.nom_outil,
           nomLisible: evenement.nom_lisible,
+          action: (evenement.action as string | undefined) || undefined,
           resultat: evenement.resultat,
           idAppel: evenement.id_appel as string | undefined,
           texteTermine,
@@ -1563,6 +1571,8 @@ export function ChatIA({
     .map((s) => ({
       id: s.id as string,
       nomOutil: s.nomOutil,
+      nomLisible: s.nomLisible,
+      action: s.action,
       texte: s.texte,
       etat: s.etat === "termine" ? ("termine" as const) : ("en_cours" as const),
     }));

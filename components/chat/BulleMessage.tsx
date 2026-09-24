@@ -253,7 +253,7 @@ export interface MessageAffiche {
   // séparé du message) : elles doivent apparaître juste après le
   // résultat de leur outil, pas dans un bloc "Sources" à part à la fin
   // -- voir OutilResultatBulle.tsx.
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
   // Ajouté 30/08/2026 (audit UX mobile, partie 5 : "pas de chemin de
   // récupération après une erreur") : la génération a échoué avant la
   // moindre réponse persistée -- message.id reste donc null pour
@@ -345,6 +345,9 @@ export type SegmentMessage =
       nomLisible: string;
       resultat: string;
       // Ajoutés (18/09/2026, statut d'outil unifié) : voir OutilResultatBulle.tsx.
+      // `action` (24/09/2026) : action de l'appel pour les outils à actions,
+      // absente pour les autres et pour les messages plus anciens.
+      action?: string;
       idAppel?: string;
       texteTermine?: string;
       sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[];
@@ -617,7 +620,7 @@ function BulleMessageInterne({
   estEnCoursDeGeneration?: boolean;
   raisonnement?: string;
   raisonnementEnCours?: boolean;
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[] }[];
   outilsEnCours?: OutilEnCours[];
   // Persona pédagogique / jonction "QCM complet" (14/09/2026) : transmis
   // tel quel à QCMInteractif (voir le case "qcm" du switch plus bas) --

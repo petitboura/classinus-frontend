@@ -89,20 +89,48 @@ function resoudreIcone(nomIcone: string): typeof Search {
 
 type OutilBrut = { nom: string; label: string; icone: string; onglet?: OngletOutil | null; appli?: string };
 
-let promesseRegistre: Promise<OutilAffichage[]> | null = null;
+// Verbe d'action -> petite icône (24/09/2026, demande Bourama : regroupement
+// des outils qui s'enchaînent et petite icône d'action posée sur l'icône de
+// l'outil). Servi par le backend (core/registre_outils.py:VERBES_ACTIONS,
+// clé "verbes_actions" de GET /api/outils/registre) : un nouveau verbe = une
+// ligne côté backend, rien à toucher ici.
+export type VerbesActions = Record<string, typeof Search>;
 
-async function chargerRegistreOutilsAvecRepli(): Promise<OutilAffichage[]> {
+type RegistreOutils = { outils: OutilAffichage[]; verbes: VerbesActions };
+
+// Comme resoudreIcone, mais sans repli sur Wrench : une petite icône
+// inconnue ne s'affiche pas du tout plutôt que d'afficher une clé à molette
+// trompeuse dans le coin (la règle est "pas de petite icône si le sens n'est
+// pas reconnu").
+function resoudreSousIcone(nomIcone: string): typeof Search | null {
+  return (IconesLucide as unknown as Record<string, typeof Search>)[nomIcone] ?? null;
+}
+
+let promesseRegistre: Promise<RegistreOutils> | null = null;
+
+async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
   const NB_TENTATIVES = 3;
   for (let tentative = 0; tentative < NB_TENTATIVES; tentative++) {
     try {
-      const reponse = (await lireRegistreOutils()) as { outils: OutilBrut[] };
-      return reponse.outils.map((o) => ({
-        nom: o.nom,
-        label: o.label,
-        Icone: resoudreIcone(o.icone),
-        onglet: o.onglet,
-        appli: o.appli,
-      }));
+      const reponse = (await lireRegistreOutils()) as {
+        outils: OutilBrut[];
+        verbes_actions?: Record<string, { icone: string }>;
+      };
+      const verbes: VerbesActions = {};
+      for (const [verbe, { icone }] of Object.entries(reponse.verbes_actions ?? {})) {
+        const composant = resoudreSousIcone(icone);
+        if (composant) verbes[verbe] = composant;
+      }
+      return {
+        outils: reponse.outils.map((o) => ({
+          nom: o.nom,
+          label: o.label,
+          Icone: resoudreIcone(o.icone),
+          onglet: o.onglet,
+          appli: o.appli,
+        })),
+        verbes,
+      };
     } catch {
       if (tentative < NB_TENTATIVES - 1) {
         await new Promise((resoudre) => setTimeout(resoudre, 400 * (tentative + 1)));
@@ -114,7 +142,8 @@ async function chargerRegistreOutilsAvecRepli(): Promise<OutilAffichage[]> {
   // ci-dessous plutôt que de casser le menu Outils -- un outil ajouté
   // depuis ce figeage manquerait juste d'icône/libellé ce jour-là, rien
   // d'autre ne casse. Voir OUTILS_DISPONIBLES plus bas dans ce fichier.
-  return OUTILS_DISPONIBLES;
+  // Sans le backend, aucune petite icône d'action (verbes vide).
+  return { outils: OUTILS_DISPONIBLES, verbes: {} };
 }
 
 /**
@@ -127,16 +156,18 @@ async function chargerRegistreOutilsAvecRepli(): Promise<OutilAffichage[]> {
  * ce hook. Ajouter un outil = une seule ligne dans le registre backend,
  * plus rien à toucher ici (c'est tout le sens de ce hook).
  */
-export function useOutilsRegistre(): { outils: OutilAffichage[]; charge: boolean } {
+export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesActions; charge: boolean } {
   const [outils, setOutils] = useState<OutilAffichage[]>(OUTILS_DISPONIBLES);
+  const [verbes, setVerbes] = useState<VerbesActions>({});
   const [charge, setCharge] = useState(false);
 
   useEffect(() => {
     let actif = true;
     if (!promesseRegistre) promesseRegistre = chargerRegistreOutilsAvecRepli();
-    promesseRegistre.then((liste) => {
+    promesseRegistre.then((registre) => {
       if (actif) {
-        setOutils(liste);
+        setOutils(registre.outils);
+        setVerbes(registre.verbes);
         setCharge(true);
       }
     });
@@ -145,7 +176,51 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; charge: boolean
     };
   }, []);
 
-  return { outils, charge };
+  return { outils, verbes, charge };
+}
+
+// Petite icône d'action d'une ligne d'outil (24/09/2026, demande Bourama).
+// Deux sources, dans cet ordre :
+// - l'action de l'appel (outil à actions : bibliothèque, dossiers, skills...),
+//   ex. "chercher_par_contenu" -> loupe ;
+// - sinon, seulement pour un outil d'appli connectée (champ `appli` du
+//   registre : Notion, GitHub, Drive), le verbe lu dans son nom, ex.
+//   "notion-search" -> loupe, "create_file" -> plus.
+// Premier mot reconnu l'emporte. Aucun mot reconnu, ou verbes pas encore
+// chargés : null, donc pas de petite icône (jamais une icône devinée).
+export function sousIconePour(
+  action: string | undefined,
+  nomOutil: string | undefined,
+  appli: string | undefined,
+  verbes: VerbesActions,
+): typeof Search | null {
+  const texte = action || (appli ? nomOutil : undefined);
+  if (!texte) return null;
+  for (const mot of texte.replace(/-/g, "_").split("_")) {
+    if (verbes[mot]) return verbes[mot];
+  }
+  return null;
+}
+
+// Icône principale d'une ligne d'outil. Un outil d'appli connectée porte
+// l'icône de son appli (Notion, GitHub, Drive), c'est la petite icône qui dit
+// ce qu'il y fait ; tous les autres gardent l'icône de leur entrée du
+// registre. Pour un outil à actions, l'entrée composite "outil:action"
+// (ex. "Catalogue public") prime sur l'entrée de l'outil, comme pour le
+// libellé côté backend.
+export function iconePrincipalePour(
+  outils: OutilAffichage[],
+  nomOutil: string | undefined,
+  action: string | undefined,
+): { Icone: typeof Search; appli?: string } {
+  const entree =
+    (action ? outils.find((o) => o.nom === `${nomOutil}:${action}`) : undefined) ??
+    outils.find((o) => o.nom === nomOutil);
+  if (entree?.appli) {
+    const appli = APPLIS_DISPONIBLES.find((a) => a.nom === entree.appli);
+    if (appli) return { Icone: appli.Icone, appli: entree.appli };
+  }
+  return { Icone: entree?.Icone ?? Wrench, appli: entree?.appli };
 }
 
 export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Search; onglet: OngletOutil; appli?: string }[] = [
