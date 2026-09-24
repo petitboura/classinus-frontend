@@ -32,6 +32,8 @@ import {
   detacherDossierPublic,
   obtenirContenuDossierCataloguePublic,
   analytiqueCatalogueEnLot,
+  resumerUploadBibliotheque,
+  libelleErreurZip,
   type EntreeBibliothequePublique,
   type DossierCataloguePublic,
   type DemandeDossierCataloguePublic,
@@ -1142,7 +1144,9 @@ export function BibliothequePublique() {
           } catch {
             ligne = await ajouterABibliothequePublique(fichier, "", "", dossierId);
           }
-          if (ligne?.statut_vectorisation === "en_attente" && ligne.id) idsAVectoriser.push(ligne.id);
+          const resume = resumerUploadBibliotheque(ligne);
+          idsAVectoriser.push(...resume.idsAVectoriser);
+          for (const e of resume.erreurs ?? []) erreurs.push({ nom: `${chemin} › ${e.nom}`, erreur: libelleErreurZip(e.raison) });
         } catch (e) {
           erreurs.push({ nom: chemin, erreur: messageErreur(e) });
         }
@@ -1186,7 +1190,9 @@ export function BibliothequePublique() {
           classe: champClasse,
           specialite: champSpecialite,
         });
-        if (ligne?.statut_vectorisation === "en_attente" && ligne.id) suivreVectorisation([ligne.id]);
+        const resume = resumerUploadBibliotheque(ligne);
+        suivreVectorisation(resume.idsAVectoriser);
+        if (resume.erreurs?.length) setErreursEnvoi(resume.erreurs.map((e) => ({ nom: e.nom, erreur: libelleErreurZip(e.raison) })));
       } else {
         const { erreurs, idsAVectoriser } = await ajouterFichiersABibliothequePublique(
           fichiers,

@@ -178,9 +178,10 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "bibliotheque-perso",
     titre: "Bibliothèque",
-    texteCourt: "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation.",
+    texteCourt:
+      "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
     texteComplet:
-      "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation.",
+      "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
   },
   {
     id: "bibliotheque-publique",
@@ -188,7 +189,8 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: (
       <>
         Un catalogue de documents partagé par tout le monde : ajoute un fichier, un lien ou une note avec un nom et
-        une description pour que les autres le retrouvent facilement. En publiant, tu garantis détenir les droits sur
+        une description pour que les autres le retrouvent facilement. Un .zip envoyé est automatiquement déplié dans
+        un nouveau dossier. En publiant, tu garantis détenir les droits sur
         ce contenu, voir les{" "}
         <Link href="/cgu" className="underline hover:text-dj-texte">
           CGU
@@ -203,7 +205,8 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteComplet: (
       <>
         Un catalogue de documents partagé par tout le monde : ajoute un fichier, un lien ou une note avec un nom et
-        une description pour que les autres le retrouvent facilement. En publiant, tu garantis détenir les droits sur
+        une description pour que les autres le retrouvent facilement. Un .zip envoyé est automatiquement déplié dans
+        un nouveau dossier. En publiant, tu garantis détenir les droits sur
         ce contenu, voir les{" "}
         <Link href="/cgu" className="underline hover:text-dj-texte">
           CGU
