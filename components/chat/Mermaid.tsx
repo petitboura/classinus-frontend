@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { BlocLarge } from "./BlocLarge";
 
 let compteurMermaid = 0;
+
+// Largeur naturelle du diagramme, lue dans le viewBox du SVG produit par
+// mermaid ("x y largeur hauteur"). 0 si absente, ce qui garde le simple
+// remplissage du cadre.
+function largeurNaturelle(svg: string): number {
+  const m = svg.match(/viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+[\d.]+\s*"/);
+  const largeur = m ? parseFloat(m[1]) : 0;
+  return Number.isFinite(largeur) ? Math.round(largeur) : 0;
+}
 
 // Rend un diagramme Mermaid (flowchart, sequence, gantt, state...) à
 // partir du texte source d'un bloc ```mermaid détecté dans BlocCode.tsx.
@@ -21,7 +31,10 @@ let compteurMermaid = 0;
 // mermaid.render() que quand le texte a fini de changer pendant 400ms,
 // pas à chaque caractère (un diagramme incomplet ne parse de toute façon
 // pas, et re-render en boucle est coûteux).
-export function Mermaid({ definition }: { definition: string }) {
+// sansCadre : quand le diagramme est déjà dans un cadre parent (carte mentale
+// d'une fiche de révision), on ne dessine ni bordure ni marge ici, et c'est le
+// parent qui enveloppe son propre cadre dans BlocLarge.
+export function Mermaid({ definition, sansCadre = false }: { definition: string; sansCadre?: boolean }) {
   const [svg, setSvg] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sourceAffichee, setSourceAffichee] = useState(false);
@@ -112,22 +125,20 @@ export function Mermaid({ definition }: { definition: string }) {
   }, [definition, signalTheme]);
 
   return (
-    <div className="my-3 overflow-x-auto rounded-xl border border-dj-bordure bg-dj-surface p-4">
+    <Enveloppe sansCadre={sansCadre}>
       {svg ? (
-        // CORRECTIF 2026-09-14 (bug remonté par Bourama : "les diagrammes
-        // dans les fiches sont tellement moins visibles qu'on ne peut pas
-        // les lire") -- mermaid.render() (useMaxWidth activé par défaut)
-        // pose un style inline `max-width: Npx` sur la racine <svg>, où N
-        // est la largeur NATURELLE calculée du diagramme (pas un
-        // pourcentage) : ça plafonne le rendu à sa taille de contenu, sans
-        // jamais l'étirer pour remplir le conteneur -- petit pour un
-        // diagramme avec peu de noeuds/libellés courts (typiquement les
-        // cartes mentales des fiches de révision, avec 3-5 branches
-        // courtes). Une classe Tailwind normale ne suffit pas à
-        // l'écraser : un style inline gagne sur une règle de feuille de
-        // style, sauf avec !important -- d'où les variantes `!` ci-dessous.
+        // Taille du diagramme (24/09/2026, bug remonté par Bourama : les
+        // cartes mentales des fiches restent dans un cadre et deviennent
+        // illisibles). Le SVG prend sa largeur naturelle, donc le texte
+        // garde une taille lisible, et le cadre s'élargit hors de la
+        // colonne de texte comme un tableau ou un bloc de code (voir
+        // BlocLarge.tsx). min-w-full : un petit diagramme remplit quand même
+        // le cadre. Si le diagramme dépasse la place disponible, le cadre
+        // défile. mermaid pose un style inline max-width sur le SVG : un
+        // style inline gagne sur une classe normale, d'où les variantes avec !.
         <div
-          className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-full [&_svg]:!max-w-full [&_svg]:!h-auto [&_svg]:min-h-[160px]"
+          className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-[var(--largeur-naturelle,100%)] [&_svg]:!min-w-full [&_svg]:!max-w-none [&_svg]:!h-auto [&_svg]:min-h-[160px]"
+          style={{ "--largeur-naturelle": `${largeurNaturelle(svg)}px` } as CSSProperties}
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       ) : erreur ? (
@@ -153,6 +164,16 @@ export function Mermaid({ definition }: { definition: string }) {
           Rendu du diagramme...
         </div>
       )}
-    </div>
+    </Enveloppe>
   );
 }
+
+function Enveloppe({ sansCadre, children }: { sansCadre: boolean; children: ReactNode }) {
+  if (sansCadre) return <div>{children}</div>;
+  return (
+    <BlocLarge className="my-3 overflow-x-auto rounded-xl border border-dj-bordure bg-dj-surface p-4">
+      {children}
+    </BlocLarge>
+  );
+}
+

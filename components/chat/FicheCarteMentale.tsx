@@ -1,6 +1,7 @@
 "use client";
 
 import { Network } from "lucide-react";
+import { BlocLarge } from "./BlocLarge";
 import { Mermaid } from "./Mermaid";
 import type { BrancheMentale, FicheCarteMentaleData } from "./FicheRevision";
 
@@ -46,14 +47,14 @@ function construireDefinition(fiche: FicheCarteMentaleData): string {
 
 export function FicheCarteMentale({ fiche }: { fiche: FicheCarteMentaleData }) {
   return (
-    <div className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
+    <BlocLarge className="my-3 animate-dj-fade-in overflow-x-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur text-dj-accent-1-texte">
           <Network size={14} />
         </span>
         <p className="text-sm font-semibold text-dj-texte">{fiche.titre || "Carte mentale"}</p>
       </div>
-      <Mermaid definition={construireDefinition(fiche)} />
-    </div>
+      <Mermaid definition={construireDefinition(fiche)} sansCadre />
+    </BlocLarge>
   );
 }
