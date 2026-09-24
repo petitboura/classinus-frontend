@@ -23,9 +23,8 @@ import { LecteurMedia } from "./LecteurMedia";
 import { RaisonnementBulle } from "./RaisonnementBulle";
 import { OutilResultatBulle, OutilEnCours } from "./OutilResultatBulle";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
-import { COMPOSANTS_MARKDOWN, ContexteFenceOuverte, ContexteRenduBulle, type EtatRenduBulle } from "./composantsMarkdownRiches";
+import { COMPOSANTS_MARKDOWN, ContexteRenduBulle, type EtatRenduBulle } from "./composantsMarkdownRiches";
 import { texteBrut } from "./texteBrut";
-import { ligneFenceOuverte } from "@/lib/fencesMarkdown";
 import { Skeleton } from "../Skeleton";
 
 // Perf (10/08) : listes de plugins ReactMarkdown constantes, sorties du
@@ -893,12 +892,8 @@ function BulleMessageInterne({
   };
 
   function rendreMarkdown(texte: string, avecFade: boolean, cle: number = -1) {
-    // Bloc de code encore ouvert dans le texte qui grandit : les éléments
-    // riches attendent que leur code soit complet avant de se monter.
-    const ligneOuverte = avecFade ? ligneFenceOuverte(texte) : null;
     return (
       <ContexteRenduBulle.Provider value={etatRendu}>
-        <ContexteFenceOuverte.Provider value={ligneOuverte}>
           <ReactMarkdown
             remarkPlugins={PLUGINS_REMARK}
             rehypePlugins={
@@ -921,7 +916,6 @@ function BulleMessageInterne({
           >
             {texte}
           </ReactMarkdown>
-        </ContexteFenceOuverte.Provider>
       </ContexteRenduBulle.Provider>
     );
   }
