@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, Wrench, Layers } from "lucide-react";
-import { useOutilsRegistre } from "@/lib/outils";
+import { ChevronDown, ChevronRight, Layers } from "lucide-react";
+import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 
@@ -20,7 +20,11 @@ import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 // distingue "en_cours" (texte "X...") de "termine" (texte "X effectuée",
 // l'outil a fini mais son résultat n'est pas encore arrivé). Absent =
 // "en_cours", comme avant.
-export type OutilEnCours = { id: string; nomOutil?: string; texte: string; etat?: "en_cours" | "termine" };
+//
+// Étendu (24/09/2026, regroupement) : `nomLisible` et `action` viennent de
+// l'événement "statut" du backend, pour fusionner les appels identiques à la
+// suite et poser la petite icône d'action dès la phase "en cours".
+export type OutilEnCours = { id: string; nomOutil?: string; nomLisible?: string; action?: string; texte: string; etat?: "en_cours" | "termine" };
 
 // Affiche, pour CHAQUE outil utilisé, ce qu'il a concrètement exécuté /
 // retourné -- dans sa propre section, avec l'icône de cet outil précis,
@@ -59,14 +63,12 @@ export type OutilEnCours = { id: string; nomOutil?: string; texte: string; etat?
 // d'où vient une réponse. Bouton dédié, son propre état ouvert/fermé,
 // visible directement à côté du résultat de l'outil plutôt que niché
 // dedans.
-function iconePourOutil(outils: ReturnType<typeof useOutilsRegistre>["outils"], nomOutil: string) {
-  return outils.find((o) => o.nom === nomOutil)?.Icone ?? Wrench;
-}
-
 type ResultatOutil = {
   nomOutil: string;
   nomLisible: string;
   resultat: string;
+  // Action de l'appel pour les outils à actions (24/09/2026), absente sinon.
+  action?: string;
   // Ajoutés (18/09/2026) : idAppel recolle le résultat à la ligne "en cours"
   // du même outil (même clé, donc même élément, plus de remplacement) ;
   // texteTermine est le texte "effectuée" reçu juste avant le résultat.
@@ -76,7 +78,59 @@ type ResultatOutil = {
   images?: { titre: string; url: string; miniature: string; credit?: string | null }[];
 };
 
-type Rangee = { cle: string; nomOutil?: string; donnees: DonneesLigneOutil };
+type Rangee = { cle: string; nomOutil?: string; nomLisible?: string; action?: string; donnees: DonneesLigneOutil };
+
+// Une ligne affichée = un ou plusieurs appels identiques à la suite
+// (24/09/2026, demande Bourama : dix fois le même outil = une ligne "x 10").
+type Ligne = { cle: string; nomOutil?: string; action?: string; membres: Rangee[] };
+
+// Deux rangées se fusionnent seulement si elles se suivent ET portent le même
+// outil et le même libellé (le libellé porte déjà le verbe de l'action, voir
+// core/profils_agents.py:_nom_lisible). Sans libellé connu : jamais fusionnée.
+function cleFusion(rangee: Rangee): string | null {
+  return rangee.nomLisible ? `${rangee.nomOutil ?? ""}|${rangee.nomLisible}` : null;
+}
+
+// Regroupe les rangées qui se suivent en lignes. Une série interrompue par un
+// autre outil donne donc plusieurs lignes, dans l'ordre réel des appels.
+function fusionnerRangees(rangees: Rangee[]): Ligne[] {
+  const lignes: Ligne[] = [];
+  for (const rangee of rangees) {
+    const derniere = lignes[lignes.length - 1];
+    const cle = cleFusion(rangee);
+    if (derniere && cle && cleFusion(derniere.membres[0]) === cle) {
+      derniere.membres.push(rangee);
+    } else {
+      lignes.push({ cle: rangee.cle, nomOutil: rangee.nomOutil, action: rangee.action, membres: [rangee] });
+    }
+  }
+  return lignes;
+}
+
+// Ce que la ligne affiche. Un seul appel : tel quel. Plusieurs : tous
+// terminés = résultats mis bout à bout (dépliables), sinon texte de
+// progression "k sur N" (k terminés sur N appels connus à cet instant).
+function donneesDeLigne(ligne: Ligne): DonneesLigneOutil {
+  const membres = ligne.membres;
+  if (membres.length === 1) return membres[0].donnees;
+  const total = membres.length;
+  const termines = membres.filter((m) => m.donnees.etat === "resultat");
+  const restants = membres.filter((m) => m.donnees.etat !== "resultat");
+  if (restants.length === 0) {
+    const sources = termines.flatMap((m) => m.donnees.sources ?? []);
+    const images = termines.flatMap((m) => m.donnees.images ?? []);
+    return {
+      etat: "resultat",
+      nomLisible: membres[0].donnees.nomLisible,
+      resultat: termines.map((m, i) => `(${i + 1}/${total})\n${m.donnees.resultat ?? ""}`).join("\n\n"),
+      sources: sources.length ? sources : undefined,
+      images: images.length ? images : undefined,
+    };
+  }
+  const courant = restants[restants.length - 1].donnees;
+  const base = (courant.texteEnCours ?? courant.texteTermine ?? membres[0].nomLisible ?? "").replace(/(\.{3}|…)$/, "");
+  return { etat: "en_cours", texteEnCours: `${base}, ${termines.length} sur ${total}` };
+}
 
 export function OutilResultatBulle({
   resultats,
@@ -110,7 +164,7 @@ export function OutilResultatBulle({
   // encore recevoir un nouvel outil au tour suivant du modèle.
   peutSeReplier?: boolean;
 }) {
-  const { outils } = useOutilsRegistre();
+  const { outils, verbes } = useOutilsRegistre();
 
   // Rangées unifiées, terminés puis en cours (ordre d'arrivée réel : un
   // outil encore en cours est forcément plus récent que tout outil déjà
@@ -133,6 +187,8 @@ export function OutilResultatBulle({
     ...(resultats ?? []).map((r, index) => ({
       cle: cleUnique(r.idAppel ? `o-${r.idAppel}` : `t-${index}`),
       nomOutil: r.nomOutil,
+      nomLisible: r.nomLisible,
+      action: r.action,
       donnees: {
         etat: "resultat" as const,
         nomLisible: r.nomLisible,
@@ -147,6 +203,8 @@ export function OutilResultatBulle({
       .map((e) => ({
         cle: cleUnique(`o-${e.id}`),
         nomOutil: e.nomOutil,
+        nomLisible: e.nomLisible,
+        action: e.action,
         donnees:
           e.etat === "termine"
             ? { etat: "termine" as const, texteTermine: e.texte }
@@ -154,8 +212,7 @@ export function OutilResultatBulle({
       })),
   ];
 
-  const nbTermines = rangees.filter((r) => r.donnees.etat === "resultat").length;
-  const nbEnCours = rangees.length - nbTermines;
+  const nbEnCours = rangees.filter((r) => r.donnees.etat !== "resultat").length;
 
   // Ligne groupée : ouverte automatiquement, se replie seule quelques
   // secondes après la fin de TOUS les outils (voir peutSeReplier plus haut),
@@ -177,21 +234,30 @@ export function OutilResultatBulle({
 
   if (rangees.length === 0) return null;
 
+  // `estGroupe` reste décidé sur le nombre d'APPELS (deux appels identiques
+  // = une seule ligne, mais sous l'en-tête "1 outil utilisé"), le compteur de
+  // l'en-tête compte les LIGNES affichées.
   const estGroupe = groupe && rangees.length >= 2;
+  const lignes = fusionnerRangees(rangees);
   const groupeOuvert = groupeOuvertManuel ?? groupeOuvertAuto;
 
   // Même icône d'outil dès qu'on la connaît (nomOutil transmis dès
   // l'événement "statut" par ChatIA.tsx). Repli Wrench pour tout outil
   // absent du registre (voir iconePourOutil).
-  const elementsResultats = rangees.map((rangee, position) => (
-    <LigneOutil
-      key={rangee.cle}
-      donnees={rangee.donnees}
-      Icone={iconePourOutil(outils, rangee.nomOutil ?? "")}
-      estDerniere={position === rangees.length - 1}
-      estGroupe={estGroupe}
-    />
-  ));
+  const elementsResultats = lignes.map((ligne, position) => {
+    const { Icone, appli } = iconePrincipalePour(outils, ligne.nomOutil, ligne.action);
+    return (
+      <LigneOutil
+        key={ligne.cle}
+        donnees={donneesDeLigne(ligne)}
+        Icone={Icone}
+        SousIcone={sousIconePour(ligne.action, ligne.nomOutil, appli, verbes)}
+        nombre={ligne.membres.length}
+        estDerniere={position === lignes.length - 1}
+        estGroupe={estGroupe}
+      />
+    );
+  });
 
   if (!estGroupe) {
     return <div className="my-1.5 flex max-w-[85%] flex-col">{elementsResultats}</div>;
@@ -215,8 +281,7 @@ export function OutilResultatBulle({
       >
         <Layers size={13} />
         <span>
-          {nbTermines} outil{nbTermines > 1 ? "s" : ""} utilisé{nbTermines > 1 ? "s" : ""}
-          {nbEnCours > 0 ? ` (${nbEnCours} en cours)` : ""}
+          {lignes.length} outil{lignes.length > 1 ? "s" : ""} utilisé{lignes.length > 1 ? "s" : ""}
         </span>
         {groupeOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
       </button>

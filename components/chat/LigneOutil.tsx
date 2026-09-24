@@ -54,11 +54,19 @@ function phaseInitiale(etat: EtatLigneOutil): Phase {
 export function LigneOutil({
   donnees,
   Icone,
+  SousIcone,
+  nombre = 1,
   estDerniere,
   estGroupe,
 }: {
   donnees: DonneesLigneOutil;
   Icone: typeof Loader2;
+  // Petite icône d'action posée dans le coin de l'icône principale
+  // (24/09/2026, demande Bourama) : null/absente = pas de petite icône.
+  SousIcone?: typeof Loader2 | null;
+  // Nombre d'appels fusionnés dans cette ligne (même outil, même action, à
+  // la suite) : affiché en pastille "x N" dès que N > 1.
+  nombre?: number;
   estDerniere: boolean;
   estGroupe: boolean;
 }) {
@@ -85,7 +93,12 @@ export function LigneOutil({
   }
 
   useEffect(() => {
-    if (etat === "en_cours") return;
+    if (etat === "en_cours") {
+      // Une ligne déjà terminée qui reçoit un nouvel appel du même outil
+      // (24/09/2026, fusion) repasse en cours au lieu de rester figée.
+      if (phaseRef.current === "final") changerPhase("en_cours");
+      return;
+    }
 
     if (etat === "termine") {
       if (phaseRef.current === "en_cours") {
@@ -122,6 +135,13 @@ export function LigneOutil({
       visible ? "scale-100 opacity-100" : "pointer-events-none scale-75 opacity-0"
     }`;
 
+  const pastille =
+    nombre > 1 ? (
+      <span className="shrink-0 rounded-full border border-dj-bordure px-1.5 text-[11px] leading-4 text-dj-texte-muet">
+        ×{nombre}
+      </span>
+    ) : null;
+
   const texteAffiche =
     phase === "en_cours" ? texteEnCours ?? dernierTexteEnCours.current : texteTermine ?? dernierTexteTermine.current;
 
@@ -137,6 +157,11 @@ export function LigneOutil({
           </span>
           <span className={couche(phase === "final")} aria-hidden={phase !== "final"}>
             <Icone size={13} className="text-dj-texte-muet" />
+            {SousIcone && (
+              <span className="absolute -bottom-1 -right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-dj-fond">
+                <SousIcone size={8} className="text-dj-texte-muet" />
+              </span>
+            )}
           </span>
         </div>
         {/* Ligne connectrice (chantier du 15/09/2026, demande Bourama) : se
@@ -153,8 +178,9 @@ export function LigneOutil({
 
       <div className={`min-w-0 flex-1 ${estDerniere ? "" : "pb-3"}`}>
         {phase !== "final" ? (
-          <span key={phase} className="block animate-dj-fade-in-rapide text-[13px] text-dj-texte-muet">
-            {texteAffiche}
+          <span key={phase} className="flex animate-dj-fade-in-rapide items-center gap-x-2 text-[13px] text-dj-texte-muet">
+            <span>{texteAffiche}</span>
+            {pastille}
           </span>
         ) : (
           <div className={demarreEnFinal ? "" : "animate-dj-fade-in-rapide"}>
@@ -164,6 +190,7 @@ export function LigneOutil({
                 className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
                 <span>{nomLisible}</span>
+                {pastille}
                 {ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               </button>
               {aDesSources && (
