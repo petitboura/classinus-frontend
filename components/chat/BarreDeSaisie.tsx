@@ -15,6 +15,7 @@ import katex from "katex";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "../Skeleton";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
+import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
@@ -2957,9 +2958,16 @@ export function BarreDeSaisie({
         // 2026-07-23). Coloration des liens reprise ici aussi (2026-07-23,
         // suite) via le même calque que le composer compact, juste sur des
         // refs séparées.
-        <PanneauFlottant
+        // 24/09/2026 (bug remonté par Bourama : le cadre de la saisie agrandie
+        // ne montrait que deux lignes, plus petit que la saisie normale) :
+        // PanneauFlottant est une carte à hauteur de contenu (max-h), donc la
+        // zone de texte en flex-1/h-full n'avait aucune hauteur définie et
+        // s'écrasait ; en plus, rendue dans le chat flottant animé, elle y
+        // restait enfermée. PleinEcranApercu est un vrai plein écran dans
+        // <body> (hauteur définie), comme pour les blocs de code et les aperçus.
+        <PleinEcranApercu
+          titre="Écris ton message"
           onFerme={() => fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false))}
-          pleine
           enSortie={pleinEcranSaisieEnSortie}
           entete={
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3030,7 +3038,7 @@ export function BarreDeSaisie({
               Envoyer <ArrowUp size={16} />
             </button>
           </div>
-        </PanneauFlottant>
+        </PleinEcranApercu>
       )}
     </div>
   );

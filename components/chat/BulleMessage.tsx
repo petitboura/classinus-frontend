@@ -680,6 +680,17 @@ function BulleMessageInterne({
     return toutes;
   }, [outilsResultats]);
   const [texteEdition, setTexteEdition] = useState(message.content);
+  // 24/09/2026 (bug remonté par Bourama : le champ "Modifier le message" restait
+  // sur quelques lignes, plus petit que le message affiché) : la zone grandit
+  // avec son contenu, comme la saisie normale (voir BarreDeSaisie.tsx,
+  // ajusterHauteurTexte), avec un plafond au delà duquel elle défile.
+  const zoneEditionRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = zoneEditionRef.current;
+    if (!enEdition || !el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [enEdition, texteEdition]);
   const [enLecture, setEnLecture] = useState(false);
   const estUtilisateur = message.role === "user";
 
@@ -838,9 +849,10 @@ function BulleMessageInterne({
     return (
       <div className="ml-auto max-w-[80%] rounded-cgpt-carte bg-dj-surface p-3">
         <textarea
+          ref={zoneEditionRef}
           value={texteEdition}
           onChange={(e) => setTexteEdition(e.target.value)}
-          className="w-full resize-none rounded-lg bg-transparent text-sm text-dj-texte outline-none"
+          className="max-h-[60vh] w-full resize-none overflow-y-auto rounded-lg bg-transparent text-sm text-dj-texte outline-none"
           rows={3}
           autoFocus
         />
