@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Copy, Check, Download, Maximize2, Minimize2, X } from "lucide-react";
 import hljs from "@/lib/coloration";
-import { PanneauFlottant } from "@/components/PanneauFlottant";
+import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telechargerContenuLocal } from "@/lib/telecharger";
 import { BlocLarge } from "./BlocLarge";
@@ -119,9 +119,9 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
 
   if (pleinEcran) {
     return (
-      <PanneauFlottant
+      <PleinEcranApercu
+        titre={langage || "texte"}
         onFerme={() => demarrerFermeture(() => setPleinEcran(false))}
-        pleine
         enSortie={enSortie}
         entete={
           <div className="flex items-center justify-between gap-2">
@@ -142,7 +142,7 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
         }
       >
         <div className="min-h-0 flex-1 overflow-auto">{blocPre}</div>
-      </PanneauFlottant>
+      </PleinEcranApercu>
     );
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Download } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
@@ -33,6 +34,16 @@ export function VisionneuseImage({
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onFermer);
 
+  // 24/09/2026 (même bug que PleinEcranApercu.tsx, corrigé le 20/09) : rendu
+  // dans l'arbre du message, un "position: fixed" est recadré par tout
+  // parent animé (transform), et le chat flottant en est un : l'image
+  // restait coincée dans la petite zone du chat. Montée via un portail
+  // directement dans <body>, au-dessus du chat flottant (z-[150]) : z-[160],
+  // même niveau que PleinEcranApercu. Le rendu ne se fait qu'une fois monté
+  // côté navigateur (document n'existe pas au rendu serveur).
+  const [monte, setMonte] = useState(false);
+  useEffect(() => setMonte(true), []);
+
   useEffect(() => {
     function surTouche(e: KeyboardEvent) {
       if (e.key === "Escape") fermer();
@@ -42,12 +53,19 @@ export function VisionneuseImage({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fermer recrée une fonction stable via demarrerFermeture (useCallback) + onFermer du parent
   }, [onFermer]);
 
-  return (
+  if (!monte) return null;
+
+  return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 ${
+      className={`fixed inset-0 z-[160] flex items-center justify-center bg-black/85 p-6 ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in"
       }`}
-      onClick={fermer}
+      // stopPropagation : l'arbre React traverse le portail, un clic ici ne
+      // doit pas remonter au message d'origine (ex: rouvrir l'image).
+      onClick={(e) => {
+        e.stopPropagation();
+        fermer();
+      }}
     >
       {onTelecharger && (
         <button
@@ -73,6 +91,7 @@ export function VisionneuseImage({
       </button>
       {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique, pas un asset local optimisable */}
       <img src={src} alt={alt} className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain" />
-    </div>
+    </div>,
+    document.body
   );
 }
