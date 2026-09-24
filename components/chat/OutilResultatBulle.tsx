@@ -239,6 +239,9 @@ export function OutilResultatBulle({
   // l'en-tête compte les LIGNES affichées.
   const estGroupe = groupe && rangees.length >= 2;
   const lignes = fusionnerRangees(rangees);
+  // Le "(N en cours)" de l'en-tête compte aussi les LIGNES (pas les appels) :
+  // dix appels du même outil dont un tourne encore = "(1 en cours)".
+  const nbLignesEnCours = lignes.filter((l) => l.membres.some((m) => m.donnees.etat !== "resultat")).length;
   const groupeOuvert = groupeOuvertManuel ?? groupeOuvertAuto;
 
   // Même icône d'outil dès qu'on la connaît (nomOutil transmis dès
@@ -282,6 +285,7 @@ export function OutilResultatBulle({
         <Layers size={13} />
         <span>
           {lignes.length} outil{lignes.length > 1 ? "s" : ""} utilisé{lignes.length > 1 ? "s" : ""}
+          {nbLignesEnCours > 0 ? ` (${nbLignesEnCours} en cours)` : ""}
         </span>
         {groupeOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
       </button>
