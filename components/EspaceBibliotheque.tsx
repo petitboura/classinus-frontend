@@ -42,6 +42,8 @@ import {
   supprimerDossierBibliotheque,
   rangerFichierDansDossier,
   retirerFichierDuDossier,
+  resumerUploadBibliotheque,
+  libelleErreurZip,
   type DossierBibliotheque,
 } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -579,10 +581,13 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
     try {
       for (const fichier of liste) {
         try {
-          const ligne = await ajouterFichierBibliothequePersonnelle(fichier, "", "");
-          if (ligne?.statut_vectorisation === "en_attente" && ligne.id) idsAVectoriser.push(ligne.id);
-          if (dossierCourantId && ligne?.id) {
-            await rangerFichierDansDossier(dossierCourantId, ligne.id);
+          const ligne = await ajouterFichierBibliothequePersonnelle(fichier, "", "", dossierCourantId ?? undefined);
+          const resume = resumerUploadBibliotheque(ligne);
+          idsAVectoriser.push(...resume.idsAVectoriser);
+          if (resume.estZip) {
+            for (const e of resume.erreurs ?? []) erreurs.push({ nom: `${fichier.name} › ${e.nom}`, erreur: libelleErreurZip(e.raison) });
+          } else if (dossierCourantId && (ligne as { id?: string })?.id) {
+            await rangerFichierDansDossier(dossierCourantId, (ligne as { id: string }).id);
           }
         } catch (e) {
           erreurs.push({ nom: fichier.name, erreur: messageErreur(e) });
@@ -664,17 +669,20 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         try {
           const segmentsDossier = chemin.split("/").slice(0, -1);
           const dossierId = await obtenirDossierPourChemin(segmentsDossier);
-          const ligne = await ajouterFichierBibliothequePersonnelle(fichier, "", "");
-          if (ligne?.statut_vectorisation === "en_attente" && ligne.id) idsAVectoriser.push(ligne.id);
-          if (ligne?.id && dossierId) {
+          const ligne = await ajouterFichierBibliothequePersonnelle(fichier, "", "", dossierId ?? undefined);
+          const resume = resumerUploadBibliotheque(ligne);
+          idsAVectoriser.push(...resume.idsAVectoriser);
+          if (resume.estZip) {
+            for (const e of resume.erreurs ?? []) erreurs.push({ nom: `${chemin} › ${e.nom}`, erreur: libelleErreurZip(e.raison) });
+          } else if ((ligne as { id?: string })?.id && dossierId) {
             // Léger réessai (26/08 -- aléa réseau ponctuel observé sur
             // de longs envois séquentiels) : un fichier déjà envoyé ne
             // doit pas finir orphelin (non rangé, donc "à plat") pour
             // un simple blip -- 1 nouvelle tentative avant d'abandonner.
             try {
-              await rangerFichierDansDossier(dossierId, ligne.id);
+              await rangerFichierDansDossier(dossierId, (ligne as { id: string }).id);
             } catch {
-              await rangerFichierDansDossier(dossierId, ligne.id);
+              await rangerFichierDansDossier(dossierId, (ligne as { id: string }).id);
             }
           }
         } catch (e) {
@@ -921,9 +929,14 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
     try {
       for (const fichier of liste) {
         try {
-          const ligne = await ajouterFichierBibliothequePersonnelle(fichier, "", "");
-          if (ligne?.statut_vectorisation === "en_attente" && ligne.id) idsAVectoriser.push(ligne.id);
-          if (ligne?.id) await rangerFichierDansDossier(dossierCourantId, ligne.id);
+          const ligne = await ajouterFichierBibliothequePersonnelle(fichier, "", "", dossierCourantId);
+          const resume = resumerUploadBibliotheque(ligne);
+          idsAVectoriser.push(...resume.idsAVectoriser);
+          if (resume.estZip) {
+            for (const e of resume.erreurs ?? []) window.alert(`${fichier.name} › ${e.nom} : ${libelleErreurZip(e.raison)}`);
+          } else if ((ligne as { id?: string })?.id) {
+            await rangerFichierDansDossier(dossierCourantId, (ligne as { id: string }).id);
+          }
         } catch (e) {
           window.alert(`${fichier.name} : ${messageErreur(e)}`);
         }

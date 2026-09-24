@@ -307,14 +307,87 @@ export async function obtenirProgressionDossierDesigne(dossierNom: string, plate
 }
 
 /**
+ * Réponse renvoyée par POST /api/bibliotheque, POST
+ * /api/bibliotheque-publique et POST /api/dossiers-designes/upload
+ * quand le fichier envoyé était un .zip déplié (23/09/2026, voir
+ * core/import_zip.py côté backend) -- au lieu d'un seul document, une
+ * liste de fichiers créés (au même format que si chacun avait été
+ * uploadé seul) plus le dossier qui les range. "erreurs" liste les
+ * fichiers du zip ignorés (nom déjà utilisé, contenu illisible...)
+ * sans que ça bloque l'import des autres.
+ */
+export type ReponseZipDeplie = {
+  dossier: { id?: string; nom: string };
+  fichiers: (FichierBibliothequePersonnelle | Record<string, unknown>)[];
+  erreurs: { nom: string; raison: string }[];
+};
+
+export function estReponseZipDeplie(reponse: unknown): reponse is ReponseZipDeplie {
+  return !!reponse && typeof reponse === "object" && Array.isArray((reponse as ReponseZipDeplie).fichiers);
+}
+
+// Libellés des raisons d'échec renvoyées par erreurs[].raison dans
+// ReponseZipDeplie (voir core/import_zip.py côté backend).
+const LIBELLES_ERREUR_ZIP: Record<string, string> = {
+  ZIP_ILLISIBLE: "zip illisible",
+  LECTURE_ECHOUEE: "lecture échouée",
+  NOM_DEJA_UTILISE: "nom déjà utilisé",
+  ECHEC_STOCKAGE: "échec d'enregistrement",
+};
+
+export function libelleErreurZip(raison: string): string {
+  return LIBELLES_ERREUR_ZIP[raison] ?? raison;
+}
+
+/**
+ * Traite la réponse d'un upload (fichier normal OU zip déplié en
+ * plusieurs fichiers, voir ReponseZipDeplie) de façon uniforme -- les 3
+ * points d'upload (bibliothèque perso, bibliothèque publique, dossiers
+ * désignés) partagent cette fonction plutôt que de dupliquer la
+ * vérification trois fois. Volontairement PAS de traitement spécial
+ * pour l'affichage : le backend enregistre les fichiers d'un zip comme
+ * des fichiers tout à fait normaux, rangés dans un dossier tout à fait
+ * normal -- un simple rechargement de la liste (déjà fait après chaque
+ * upload) les fait apparaître avec exactement les mêmes actions que
+ * n'importe quel autre fichier ou dossier : renommer, déplacer,
+ * supprimer, télécharger, joindre au chat, rechercher, partager...
+ */
+export function resumerUploadBibliotheque(
+  reponse: { id?: string; statut_vectorisation?: string } | ReponseZipDeplie
+): { estZip: boolean; idsAVectoriser: string[]; nomDossier?: string; nbFichiers?: number; erreurs?: { nom: string; raison: string }[] } {
+  if (estReponseZipDeplie(reponse)) {
+    const idsAVectoriser = reponse.fichiers
+      .filter((f): f is FichierBibliothequePersonnelle => !!f && typeof f === "object" && "id" in f && (f as FichierBibliothequePersonnelle).statut_vectorisation === "en_attente")
+      .map((f) => f.id);
+    return {
+      estZip: true,
+      idsAVectoriser,
+      nomDossier: reponse.dossier?.nom,
+      nbFichiers: reponse.fichiers.length,
+      erreurs: reponse.erreurs,
+    };
+  }
+  const idsAVectoriser = reponse?.statut_vectorisation === "en_attente" && reponse.id ? [reponse.id] : [];
+  return { estZip: false, idsAVectoriser };
+}
+
+/**
  * Upload vers la bibliothèque PERSONNELLE de l'utilisateur connecté
  * (2026-08-01, nouvelle section "Mon espace" -- voir
  * api/bibliotheque_utilisateur.py:uploader_document). Même mécanique que
  * ajouterFichierBibliotheque ci-dessus, sans agentId : ces documents ne
  * sont liés à aucun agent, consultables depuis n'importe quelle
  * conversation via l'outil consulter_bibliotheque.
+ *
+ * 23/09/2026 (demande Bourama, "voir ce qu'il y a dans les zip") : si
+ * fichier est un .zip, le backend le déplie et renvoie une forme
+ * différente ({ dossier, fichiers, erreurs } au lieu d'un seul document)
+ * -- voir ReponseZipDeplie plus bas et son usage dans
+ * EspaceBibliotheque.tsx. dossierParentId (optionnel) range directement
+ * le nouveau dossier créé pour le zip dans le dossier courant, sans
+ * appel séparé.
  */
-export async function ajouterFichierBibliothequePersonnelle(fichier: File, description: string, titre?: string) {
+export async function ajouterFichierBibliothequePersonnelle(fichier: File, description: string, titre?: string, dossierParentId?: string) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -340,6 +413,7 @@ export async function ajouterFichierBibliothequePersonnelle(fichier: File, descr
   corps.append("fichier", fichier, nomSeul);
   if (titre?.trim()) corps.append("titre", titre.trim());
   corps.append("description", description);
+  if (dossierParentId) corps.append("dossier_parent_id", dossierParentId);
 
   const reponse = await fetch(`${API_URL}/api/bibliotheque`, {
     method: "POST",
@@ -351,7 +425,7 @@ export async function ajouterFichierBibliothequePersonnelle(fichier: File, descr
     throw await construireErreurApi(reponse, "/api/bibliotheque");
   }
 
-  return reponse.json();
+  return reponse.json() as Promise<FichierBibliothequePersonnelle | ReponseZipDeplie>;
 }
 
 /**
@@ -691,7 +765,7 @@ export async function ajouterABibliothequePublique(
     throw await construireErreurApi(reponse, "/api/bibliotheque-publique");
   }
 
-  return (await reponse.json()) as EntreeBibliothequePublique;
+  return (await reponse.json()) as EntreeBibliothequePublique | ReponseZipDeplie;
 }
 
 // 28/08/2026, demande Bourama : "le bouton + doit être comme en privé"
@@ -1114,7 +1188,9 @@ export async function ajouterFichiersABibliothequePublique(
     const nomAuto = fichier.name.replace(/\.[^/.]+$/, "");
     try {
       const ligne = await ajouterABibliothequePublique(fichier, nomAuto, "", dossierId);
-      if (ligne?.statut_vectorisation === "en_attente" && ligne.id) idsAVectoriser.push(ligne.id);
+      const resume = resumerUploadBibliotheque(ligne);
+      idsAVectoriser.push(...resume.idsAVectoriser);
+      for (const e of resume.erreurs ?? []) erreurs.push({ nom: `${fichier.name} › ${e.nom}`, erreur: libelleErreurZip(e.raison) });
     } catch (e) {
       erreurs.push({ nom: fichier.name, erreur: messageErreur(e) });
     }
