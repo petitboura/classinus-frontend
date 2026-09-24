@@ -12,7 +12,7 @@
 // qui changent tout le temps (fonction de réponse recréée à chaque rendu par
 // ChatIA, nombre de questions du message...).
 //
-// Ici, l'objet COMPOSANTS_MARKDOWN est créé une seule fois pour toute la vie
+// Ici, l objet COMPOSANTS_MARKDOWN est créé une seule fois pour toute la vie
 // de l'application et ne change jamais. Les valeurs qui varient passent par
 // des contextes : un contexte qui change remet à jour les composants sans
 // jamais les démonter.
@@ -34,7 +34,6 @@ import { LecteurMedia, typeMedia } from "./LecteurMedia";
 import { NoteTexteChip, estNoteTexteBibliotheque } from "./NoteTexteChip";
 import { LinkPreview } from "./LinkPreview";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
-import { ElementRicheEnAttente, LANGAGES_RICHES } from "./ElementRicheEnAttente";
 import { texteBrut } from "./texteBrut";
 import { Skeleton } from "../Skeleton";
 import type { EntreeReponseGroupee } from "@/lib/questionsGroupees";
@@ -75,13 +74,8 @@ export type EtatRenduBulle = {
 
 export const ContexteRenduBulle = createContext<EtatRenduBulle | null>(null);
 
-// Ligne d'ouverture du bloc de code encore ouvert dans le texte en cours de
-// génération (null si aucun). Voir lib/fencesMarkdown.ts.
-export const ContexteFenceOuverte = createContext<number | null>(null);
-
-function PreMarkdown({ children, node }: { children?: ReactNode; node?: { position?: { start?: { line?: number } } } }) {
+function PreMarkdown({ children }: { children?: ReactNode }) {
   const etat = useContext(ContexteRenduBulle);
-  const ligneOuverte = useContext(ContexteFenceOuverte);
 
   const enfant = Array.isArray(children) ? children[0] : children;
   if (!isValidElement(enfant)) return <pre>{children}</pre>;
@@ -89,15 +83,6 @@ function PreMarkdown({ children, node }: { children?: ReactNode; node?: { positi
   const props = enfant.props as { className?: string; children?: ReactNode };
   const langage = (props.className || "").replace("language-", "").trim();
   const code = texteBrut(props.children).replace(/\n$/, "");
-
-  // Bloc encore en train de s'écrire : un élément riche ne se monte qu'une
-  // fois son code complet, jamais sur un code partiel qui changerait à chaque
-  // morceau reçu. Un bloc de code simple, lui, continue de s'afficher au fil
-  // de l'écriture.
-  const ligneDuBloc = node?.position?.start?.line;
-  if (ligneOuverte !== null && ligneDuBloc === ligneOuverte && LANGAGES_RICHES.has(langage)) {
-    return <ElementRicheEnAttente langage={langage} />;
-  }
 
   switch (langage) {
     case "mermaid":
