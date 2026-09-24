@@ -73,6 +73,7 @@
 // via le repli enregistre par components/PontMessageCanalVersChat.tsx.
 
 import { supabase } from "./supabase";
+import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
@@ -100,6 +101,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 let socket: WebSocket | null = null;
 let tentativeReconnexion: ReturnType<typeof setTimeout> | null = null;
 let fermetureVoulue = false;
+const reconnexion = creerReconnexionProgressive();
 let dejaInitialise = false;
 let observateurDom: MutationObserver | null = null;
 
@@ -638,7 +640,7 @@ function planifierReconnexion() {
   tentativeReconnexion = setTimeout(() => {
     tentativeReconnexion = null;
     ouvrirCanal();
-  }, 3000);
+  }, reconnexion.delai());
 }
 
 function canalDejaOuvertOuEnCours(): boolean {
@@ -677,6 +679,7 @@ async function ouvrirCanal() {
     const ws = new WebSocket(url);
 
     ws.onopen = async () => {
+      reconnexion.ouverte();
       // Authentification applicative après l'ouverture : le bearer token
       // ne transite plus dans l'URL.
       const appareilId = await obtenirAppareilIdPourCanal();
@@ -701,6 +704,7 @@ async function ouvrirCanal() {
     ws.onclose = () => {
       if (socket === ws) socket = null;
       arreterObservationDom();
+      if (!fermetureVoulue) reconnexion.fermeeSansLeVouloir();
       planifierReconnexion();
     };
 
