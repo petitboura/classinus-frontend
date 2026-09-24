@@ -127,6 +127,12 @@ export default function RacineLayout({
   return (
     <html
       lang="fr"
+      // Ajout du 24/09/2026, demande de Bourama : le traducteur automatique
+      // des navigateurs (Safari, Chrome, Edge) bloquait l'appli chez
+      // certains utilisateurs. translate="no" dit au navigateur de ne pas
+      // proposer la traduction de la page. À retirer le jour où l'appli
+      // aura de vraies langues à elle.
+      translate="no"
       // suppressHydrationWarning : le script ci-dessous modifie l'attribut
       // data-theme de <html> AVANT l'hydratation React (lecture directe du
       // DOM, hors du cycle React) -- sans ça, React comparerait le HTML
