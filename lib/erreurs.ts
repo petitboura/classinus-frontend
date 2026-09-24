@@ -154,6 +154,12 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     // préfixe NOTION_PROGRAMME_ pour ne jamais se confondre avec les
     // codes NOTION_... de l'intégration Notion (voir core/erreurs.py).
     NOTION_PROGRAMME_CODE_INTROUVABLE: "Ce code de partage est introuvable.",
+    // 22/09/2026, catalogue public du Programme.
+    CODE_INTROUVABLE: "Ce code de partage est introuvable.",
+    NOM_REQUIS: "Un nom est requis.",
+    PROGRAMME_VIDE: "Ce Programme est vide.",
+    AUCUNE_MODIFICATION_FOURNIE: "Indique au moins une chose à modifier.",
+    PROGRAMME_PUBLIC_INTROUVABLE: "Cette entrée du catalogue public est introuvable.",
     NOTION_PROGRAMME_INTROUVABLE: "Cette notion est introuvable.",
     NOTION_PROGRAMME_NOM_MANQUANT: "Donne un nom à cette notion.",
     NOTION_PROGRAMME_STATUT_INVALIDE: "Statut de notion invalide.",
@@ -268,6 +274,12 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     VIDEO_TROP_LONGUE: "Video too long ({duree}s, {maximum}s max).",
     VIDEO_TROP_LOURDE_40_MO_MAX: "Video too large (40 MB max).",
     NOTION_PROGRAMME_CODE_INTROUVABLE: "This share code was not found.",
+    // 22/09/2026, Programme public catalogue.
+    CODE_INTROUVABLE: "This share code was not found.",
+    NOM_REQUIS: "A name is required.",
+    PROGRAMME_VIDE: "This Programme is empty.",
+    AUCUNE_MODIFICATION_FOURNIE: "Give at least one thing to change.",
+    PROGRAMME_PUBLIC_INTROUVABLE: "This public catalogue entry was not found.",
     NOTION_PROGRAMME_INTROUVABLE: "This topic was not found.",
     NOTION_PROGRAMME_NOM_MANQUANT: "Give this topic a name.",
     NOTION_PROGRAMME_STATUT_INVALIDE: "Invalid topic status.",
