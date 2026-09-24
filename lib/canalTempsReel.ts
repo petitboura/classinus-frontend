@@ -1,3 +1,4 @@
+import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { supabase } from "./supabase";
 import type { NotificationClovis } from "./api";
 
@@ -70,6 +71,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 let socket: WebSocket | null = null;
 let tentativeReconnexion: ReturnType<typeof setTimeout> | null = null;
 let fermetureVoulue = false;
+const reconnexion = creerReconnexionProgressive();
 let dejaInitialise = false;
 let pluginDossiers: PluginDossiers | null = null;
 // Resolu paresseusement au premier ouvrirCanal() natif (voir plus bas) :
@@ -421,7 +423,7 @@ function planifierReconnexion() {
   tentativeReconnexion = setTimeout(() => {
     tentativeReconnexion = null;
     ouvrirCanal();
-  }, 3000);
+  }, reconnexion.delai());
 }
 
 async function ouvrirCanal() {
@@ -475,6 +477,7 @@ async function ouvrirCanal() {
 
   ws.onopen = () => {
     if (ws.readyState !== WebSocket.OPEN) return;
+    reconnexion.ouverte();
     ws.send(JSON.stringify({
       auth_token: session.access_token,
       appareil_id: appareilIdPourCetteConnexion,
@@ -505,6 +508,7 @@ async function ouvrirCanal() {
 
   ws.onclose = () => {
     if (socket === ws) socket = null;
+    if (!fermetureVoulue) reconnexion.fermeeSansLeVouloir();
     planifierReconnexion();
   };
 
