@@ -4,6 +4,20 @@
 // Le code tourne dans un Worker (public/pyodide-worker.mjs), sur l'appareil
 // de l'étudiant. Ce fichier gère le worker : un seul à la fois, les
 // exécutions se mettent en file, et un code trop long est coupé net.
+//
+// input() (24/09/2026, demande Bourama : pouvoir répondre pendant
+// l'exécution, comme dans Thonny) : le téléphone doit savoir suspendre le
+// code exactement à l'appel d'input() puis reprendre avec la réponse. Cette
+// capacité (JSPI) est encore absente de certains téléphones (Safari/iOS et
+// Android un peu anciens, Firefox). Détection ici une seule fois ; si le
+// téléphone en est capable, `interactif` demande à input() de suspendre le
+// code et d'attendre. Sinon, `executionPreparee` détecte les appels input()
+// à l'avance et demande toutes les valeurs avant de lancer le code (voir
+// useExecutionPython.ts) : moins fidèle à Thonny, mais fonctionne partout.
+export const jspiDisponible: boolean =
+  typeof WebAssembly !== "undefined" &&
+  typeof WebAssembly === "object" &&
+  ("Suspending" in WebAssembly || "Suspender" in WebAssembly);
 
 export type EtatExecution =
   | "inactif"
@@ -11,6 +25,7 @@ export type EtatExecution =
   | "chargement"
   | "paquets"
   | "execution"
+  | "attente_saisie"
   | "termine"
   | "erreur"
   | "interrompu";
@@ -20,9 +35,21 @@ export type RappelsExecution = {
   surSortie: (flux: "stdout" | "stderr", texte: string) => void;
   surImage: (base64Png: string) => void;
   surErreur: (texte: string) => void;
+  // input() interactif (téléphone compatible JSPI) : le code s'est arrêté
+  // sur un input(invite) et attend une réponse via la fonction repondre().
+  surSaisieDemandee: (invite: string) => void;
 };
 
-// Durée maximale d'un code, chargement de Python et des bibliothèques exclus.
+export type ControleExecution = {
+  /** Interrompt l'exécution en cours (ou celle en attente dans la file). */
+  arreter: () => void;
+  /** Répond à la demande de saisie interactive en cours (voir surSaisieDemandee). */
+  repondre: (valeur: string) => void;
+};
+
+// Durée maximale d'un code, chargement de Python et des bibliothèques
+// exclus, et en dehors du temps passé à attendre que l'étudiant réponde à
+// un input() (ce temps-là n'est jamais limité).
 export const DELAI_MAX_EXECUTION_MS = 30000;
 // Au delà, la sortie est coupée et l'exécution arrêtée (boucle d'affichage infinie).
 export const LIMITE_SORTIE_CARACTERES = 20000;
@@ -44,13 +71,22 @@ function arreterWorker() {
 }
 
 /**
- * Lance un code Python. Renvoie une fonction pour l'interrompre. Les
- * rappels reçoivent l'état, la sortie, les images et l'erreur au fil de
- * l'exécution.
+ * Lance un code Python, avec ou sans input() interactif :
+ * - interactif=true : le code se met en pause à chaque input(), voir
+ *   surSaisieDemandee et ControleExecution.repondre.
+ * - interactif=false : entreesPrealables fournit d'avance les réponses
+ *   qu'input() renverra dans l'ordre (file vide -> EOFError côté Python).
  */
-export function lancerPython(code: string, rappels: RappelsExecution): () => void {
+export function lancerPython(
+  code: string,
+  options: { interactif: boolean; entreesPrealables: string[] },
+  rappels: RappelsExecution
+): ControleExecution {
   let interrompu = false;
-  const suivi: { terminer: (() => void) | null } = { terminer: null };
+  const suivi: { terminer: (() => void) | null; repondreSaisie: ((valeur: string) => void) | null } = {
+    terminer: null,
+    repondreSaisie: null,
+  };
 
   rappels.surStatut("attente");
 
@@ -86,6 +122,14 @@ export function lancerPython(code: string, rappels: RappelsExecution): () => voi
         }
 
         suivi.terminer = () => conclure("interrompu", undefined, true);
+        suivi.repondreSaisie = (valeur) => {
+          if (minuteur) clearTimeout(minuteur);
+          minuteur = setTimeout(
+            () => conclure("erreur", "Le code a tourné trop longtemps et a été arrêté.", true),
+            DELAI_MAX_EXECUTION_MS
+          );
+          w.postMessage({ id, type: "reponse_entree", valeur });
+        };
 
         function surMessage(evenement: MessageEvent) {
           const m = evenement.data;
@@ -111,6 +155,14 @@ export function lancerPython(code: string, rappels: RappelsExecution): () => voi
             case "image":
               rappels.surImage(m.base64);
               break;
+            case "entree_demandee":
+              // Le temps d'attente d'une réponse de l'étudiant n'est jamais
+              // limité (voir repondreSaisie, qui relance le minuteur).
+              if (minuteur) clearTimeout(minuteur);
+              minuteur = null;
+              rappels.surStatut("attente_saisie");
+              rappels.surSaisieDemandee(String(m.invite ?? ""));
+              break;
             case "fin":
               conclure("termine");
               break;
@@ -129,14 +181,17 @@ export function lancerPython(code: string, rappels: RappelsExecution): () => voi
 
         w.addEventListener("message", surMessage);
         w.addEventListener("error", surErreurWorker);
-        w.postMessage({ id, code });
+        w.postMessage({ id, code, interactif: options.interactif, entreesPrealables: options.entreesPrealables });
       })
   );
   fileAttente = execution;
 
-  return () => {
-    interrompu = true;
-    if (suivi.terminer) suivi.terminer();
-    else rappels.surStatut("interrompu");
+  return {
+    arreter: () => {
+      interrompu = true;
+      if (suivi.terminer) suivi.terminer();
+      else rappels.surStatut("interrompu");
+    },
+    repondre: (valeur) => suivi.repondreSaisie?.(valeur),
   };
 }

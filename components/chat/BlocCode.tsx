@@ -7,7 +7,7 @@ import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telechargerContenuLocal } from "@/lib/telecharger";
 import { BlocLarge } from "./BlocLarge";
-import { SortieExecutionCode } from "./SortieExecutionCode";
+import { FormulaireValeursPrealables, SortieExecutionCode } from "./SortieExecutionCode";
 import { useExecutionPython } from "@/lib/useExecutionPython";
 
 // Rendu des blocs ```lang ... ``` "code réel" du markdown (les langages
@@ -135,14 +135,24 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
   );
 
   const sortieExecution = executable ? (
-    <SortieExecutionCode
-      etat={execution.etat}
-      lignes={execution.lignes}
-      images={execution.images}
-      erreur={execution.erreur}
-      enCours={execution.enCours}
-      onEffacer={execution.effacer}
-    />
+    execution.invitesPrealables ? (
+      <FormulaireValeursPrealables
+        invites={execution.invitesPrealables}
+        onValider={execution.lancerAvecValeursPrealables}
+        onAnnuler={execution.annulerValeursPrealables}
+      />
+    ) : (
+      <SortieExecutionCode
+        etat={execution.etat}
+        lignes={execution.lignes}
+        images={execution.images}
+        erreur={execution.erreur}
+        inviteSaisie={execution.inviteSaisie}
+        enCours={execution.enCours}
+        onRepondreSaisie={execution.repondreSaisie}
+        onEffacer={execution.effacer}
+      />
+    )
   ) : null;
 
   if (pleinEcran) {

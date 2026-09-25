@@ -18,11 +18,6 @@ import builtins, os, json, sys, io, base64
 # récupérées après l'exécution et envoyées comme images.
 os.environ["MPLBACKEND"] = "Agg"
 
-def _input_indisponible(*args, **kwargs):
-    raise RuntimeError("input() n'est pas disponible ici : écris la valeur directement dans le code.")
-
-builtins.input = _input_indisponible
-
 def _figures_png():
     if "matplotlib.pyplot" not in sys.modules:
         return "[]"
@@ -34,6 +29,40 @@ def _figures_png():
         images.append(base64.b64encode(tampon.getvalue()).decode())
     plt.close("all")
     return json.dumps(images)
+`;
+
+// Prépare input() pour une exécution donnée (24/09/2026, demande Bourama :
+// pouvoir répondre pendant l'exécution, comme dans Thonny).
+//
+// interactif=true (téléphone compatible JSPI, voir jspiDisponible côté
+// lib/executionPython.ts) : chaque input() suspend vraiment le code Python
+// en cours -- pas de nouveau thread, la pause se passe entièrement dans
+// cette exécution -- et n'envoie sa réponse qu'au réveil.
+//
+// interactif=false : les réponses ont déjà été demandées à l'étudiant AVANT
+// de lancer le code (voir useExecutionPython.ts) ; input() les distribue
+// dans l'ordre depuis cette liste.
+const PREPARER_ENTREE_INTERACTIVE = `
+from pyodide.ffi import run_sync
+
+async def _entree_coro(invite):
+    return await _demander_entree_js(invite)
+
+def _entree_interactive(invite=""):
+    return run_sync(_entree_coro(invite))
+
+builtins.input = _entree_interactive
+`;
+
+const PREPARER_ENTREE_PREALABLE = `
+_file_entrees_prealables = list(_valeurs_entrees_js)
+
+def _entree_prealable(invite=""):
+    if _file_entrees_prealables:
+        return _file_entrees_prealables.pop(0)
+    raise EOFError("Il n'y a plus de valeur disponible pour input().")
+
+builtins.input = _entree_prealable
 `;
 
 let promessePyodide = null;
@@ -65,7 +94,21 @@ function nettoyerTraceback(message) {
 }
 
 self.onmessage = async (evenement) => {
-  const { id, code } = evenement.data;
+  const donnees = evenement.data;
+
+  // Réponse à une demande de saisie interactive en cours (voir
+  // _demanderEntreeJs plus bas) : ne fait que débloquer la promesse en
+  // attente, ne relance pas d'exécution.
+  if (donnees.type === "reponse_entree") {
+    const resoudre = self._enAttenteEntree?.get(donnees.id);
+    if (resoudre) {
+      self._enAttenteEntree.delete(donnees.id);
+      resoudre(donnees.valeur);
+    }
+    return;
+  }
+
+  const { id, code, interactif, entreesPrealables } = donnees;
   const envoyer = (type, extra) => self.postMessage({ id, type, ...extra });
 
   let pyodide;
@@ -85,7 +128,22 @@ self.onmessage = async (evenement) => {
   const globals = pyodide.globals.get("dict")();
   // Sans ça, le classique if __name__ == "__main__": ne s'exécuterait jamais.
   globals.set("__name__", "__main__");
+
   try {
+    if (interactif) {
+      if (!self._enAttenteEntree) self._enAttenteEntree = new Map();
+      self._demanderEntreeJs = (invite) =>
+        new Promise((resoudre) => {
+          self._enAttenteEntree.set(id, resoudre);
+          envoyer("entree_demandee", { invite });
+        });
+      globals.set("_demander_entree_js", self._demanderEntreeJs);
+      pyodide.runPython(PREPARER_ENTREE_INTERACTIVE, { globals });
+    } else {
+      globals.set("_valeurs_entrees_js", entreesPrealables || []);
+      pyodide.runPython(PREPARER_ENTREE_PREALABLE, { globals });
+    }
+
     envoyer("statut", { etat: "paquets" });
     // Télécharge seulement les bibliothèques réellement importées par le code
     // (numpy, sympy, matplotlib...). Les erreurs de résolution sont ignorées ici :
@@ -100,6 +158,9 @@ self.onmessage = async (evenement) => {
     }
 
     envoyer("statut", { etat: "execution" });
+    // runPythonAsync (et non runPython) : nécessaire pour que run_sync
+    // (input() interactif, voir PREPARER_ENTREE_INTERACTIVE) puisse
+    // suspendre le code en cours d'exécution.
     await pyodide.runPythonAsync(code, { globals });
     pyodide.runPython("sys.stdout.flush(); sys.stderr.flush()");
 
@@ -114,6 +175,7 @@ self.onmessage = async (evenement) => {
     }
     envoyer("erreur", { texte: nettoyerTraceback(erreur && erreur.message ? erreur.message : erreur) });
   } finally {
+    self._enAttenteEntree?.delete(id);
     globals.destroy();
   }
 };
