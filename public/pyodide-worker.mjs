@@ -43,6 +43,7 @@ def _figures_png():
 // de lancer le code (voir useExecutionPython.ts) ; input() les distribue
 // dans l'ordre depuis cette liste.
 const PREPARER_ENTREE_INTERACTIVE = `
+import builtins
 from pyodide.ffi import run_sync
 
 async def _entree_coro(invite):
@@ -55,6 +56,7 @@ builtins.input = _entree_interactive
 `;
 
 const PREPARER_ENTREE_PREALABLE = `
+import builtins
 _file_entrees_prealables = list(_valeurs_entrees_js)
 
 def _entree_prealable(invite=""):
