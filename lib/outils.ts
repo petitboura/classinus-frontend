@@ -41,6 +41,7 @@ import {
   Library,
   Wrench,
   HardDrive,
+  Camera,
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { useEffect, useState } from "react";
@@ -311,6 +312,12 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // pas branché ("Pas disponible pour le moment" au clic), déplacé ici
   // en attendant une vraie implémentation.
   { nom: "ui_mode_vocal", label: "Mode vocal (bientôt disponible)", Icone: AudioLines, onglet: "utilitaires" },
+  // Retiré de la barre comme boutons dédiés le 26/09 (Bourama) : deux
+  // boutons codés en dur (desktop et menu "+" mobile) déclenchaient
+  // déjà inputPhotoRef, remplacés ici par une action ponctuelle au
+  // même titre que les autres utilitaires (voir executerActionOutil
+  // dans BarreDeSaisie.tsx).
+  { nom: "ui_photo", label: "Prendre une photo", Icone: Camera, onglet: "utilitaires" },
 ];
 
 // "utilitaires" retiré de cette liste le 01/08 (demande Bourama : "les

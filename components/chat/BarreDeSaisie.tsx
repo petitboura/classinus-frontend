@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio, Camera } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -623,6 +623,9 @@ export function BarreDeSaisie({
       case "ui_mode_vocal":
         pasDisponible();
         break;
+      case "ui_photo":
+        inputPhotoRef.current?.click();
+        break;
     }
     enregistrerUtilisationOutil(nom);
   }
@@ -723,14 +726,16 @@ export function BarreDeSaisie({
     }
   }
   const inputFichierRef = useRef<HTMLInputElement>(null);
-  // Bouton "prendre une photo" (25/09/2026, demande Bourama) -- input
-  // séparé du sélecteur de fichier normal (inputFichierRef juste
-  // au-dessus) : `capture="environment"` ouvre directement l'appareil
-  // photo sur mobile au lieu du sélecteur de fichiers/galerie (support
-  // navigateur : Chrome/Safari mobile ; ignoré sans effet néfaste sur
-  // desktop, où l'input ouvre le sélecteur de fichier habituel, avec
-  // webcam si le navigateur en propose un). Réutilise ajouterFichiers,
-  // même chemin que le fichier joint normalement.
+  // Input "prendre une photo" (25/09/2026, demande Bourama ; devenu
+  // l'utilitaire ui_photo le 26/09, voir lib/outils.ts et
+  // executerActionOutil) -- séparé du sélecteur de fichier normal
+  // (inputFichierRef juste au-dessus) : `capture="environment"` ouvre
+  // directement l'appareil photo sur mobile au lieu du sélecteur de
+  // fichiers/galerie (support navigateur : Chrome/Safari mobile ;
+  // ignoré sans effet néfaste sur desktop, où l'input ouvre le
+  // sélecteur de fichier habituel, avec webcam si le navigateur en
+  // propose un). Réutilise ajouterFichiers, même chemin que le fichier
+  // joint normalement.
   const inputPhotoRef = useRef<HTMLInputElement>(null);
   const zoneTexteRef = useRef<HTMLTextAreaElement>(null);
   // Ref séparée pour le composeur mobile (2026-07-28) -- même état
@@ -1725,17 +1730,9 @@ export function BarreDeSaisie({
               }}
             />
 
-            {/* Prendre une photo (25/09/2026, demande Bourama) -- bouton
-                distinct de "Joindre un fichier", voir inputPhotoRef plus
-                haut pour le détail de capture="environment". */}
-            <button
-              onClick={() => inputPhotoRef.current?.click()}
-              aria-label="Prendre une photo"
-              title="Prendre une photo"
-              className="text-dj-texte-muet transition-colors hover:text-dj-texte"
-            >
-              <Camera size={18} />
-            </button>
+            {/* Input caché pour l'utilitaire ui_photo, déclenché depuis
+                executerActionOutil (voir sa déclaration plus haut pour
+                le détail de capture="environment"). */}
             <input
               ref={inputPhotoRef}
               type="file"
@@ -2405,16 +2402,6 @@ export function BarreDeSaisie({
                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
               >
                 <Pin size={16} /> Joindre un fichier
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  inputPhotoRef.current?.click();
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <Camera size={16} /> Prendre une photo
               </button>
               {/* Longueur de réponse + Mode pédagogique (14/09/2026, bug
                   remonté par Bourama : sur mobile, aucun moyen d'atteindre
