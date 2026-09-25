@@ -83,7 +83,7 @@ function statutSuivant(s: StatutNotion): StatutNotion {
   return CYCLE_STATUT[(CYCLE_STATUT.indexOf(s) + 1) % CYCLE_STATUT.length];
 }
 
-const LIBELLES_REGLE: Record<RegleComportementNotion, string> = {
+export const LIBELLES_REGLE: Record<RegleComportementNotion, string> = {
   bloquer: "Bloquer",
   contourner: "Contourner",
   signaler: "Signaler",
@@ -99,7 +99,7 @@ const OPTIONS_REGLE: OptionMenu[] = [
 /** 5 teintes cyclées par index de matière -- voir app/globals.css pour
  * la justification de cette dérogation scopée à "usage mesuré des
  * couleurs" (la couleur EST l'information ici, pas de la décoration). */
-const COULEURS_MATIERE = [1, 2, 3, 4, 5].map((n) => ({
+export const COULEURS_MATIERE = [1, 2, 3, 4, 5].map((n) => ({
   conteneur: `var(--dj-mat-${n}-conteneur)`,
   texte: `var(--dj-mat-${n})`,
 }));

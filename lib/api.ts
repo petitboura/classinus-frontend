@@ -1640,7 +1640,7 @@ export type NotionPublique = {
   notion_parent_id: string | null;
   nom: string;
   ordre: number;
-  regle_comportement: string | null;
+  regle_comportement: RegleComportementNotion | null;
   consigne_llm: string | null;
 };
 
