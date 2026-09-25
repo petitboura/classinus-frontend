@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Copy, Check, Download, Maximize2, Minimize2, X } from "lucide-react";
+import { Copy, Check, Download, Maximize2, Minimize2, Play, Square, X } from "lucide-react";
 import hljs from "@/lib/coloration";
 import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telechargerContenuLocal } from "@/lib/telecharger";
 import { BlocLarge } from "./BlocLarge";
+import { SortieExecutionCode } from "./SortieExecutionCode";
+import { useExecutionPython } from "@/lib/useExecutionPython";
 
 // Rendu des blocs ```lang ... ``` "code réel" du markdown (les langages
 // spéciaux -- mermaid/chart/carte/html -- sont interceptés un niveau plus
@@ -37,7 +39,12 @@ const EXTENSION_PAR_LANGAGE: Record<string, string> = {
   json: "json",
 };
 
+// Langages exécutables avec le bouton Exécuter (Python seulement pour l'instant).
+const LANGAGES_PYTHON = new Set(["python", "py", "python3"]);
+
 export function BlocCode({ langage, code }: { langage: string; code: string }) {
+  const executable = LANGAGES_PYTHON.has((langage || "").toLowerCase());
+  const execution = useExecutionPython(code);
   const [copie, setCopie] = useState(false);
   const [pleinEcran, setPleinEcran] = useState(false);
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
@@ -92,6 +99,16 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
 
   const boutonsActions = (
     <>
+      {executable && (
+        <button
+          onClick={execution.enCours ? execution.arreter : execution.executer}
+          aria-label={execution.enCours ? "Arrêter l'exécution" : "Exécuter le code"}
+          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-dj-accent-1-texte transition-colors hover:opacity-80"
+        >
+          {execution.enCours ? <Square size={12} /> : <Play size={12} />}
+          {execution.enCours ? "Arrêter" : "Exécuter"}
+        </button>
+      )}
       <button onClick={copier} aria-label="Copier le code" className={boutonClasse}>
         {copie ? (
           <>
@@ -117,6 +134,17 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
     </>
   );
 
+  const sortieExecution = executable ? (
+    <SortieExecutionCode
+      etat={execution.etat}
+      lignes={execution.lignes}
+      images={execution.images}
+      erreur={execution.erreur}
+      enCours={execution.enCours}
+      onEffacer={execution.effacer}
+    />
+  ) : null;
+
   if (pleinEcran) {
     return (
       <PleinEcranApercu
@@ -141,7 +169,10 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
           </div>
         }
       >
-        <div className="min-h-0 flex-1 overflow-auto">{blocPre}</div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          {blocPre}
+          {sortieExecution}
+        </div>
       </PleinEcranApercu>
     );
   }
@@ -155,6 +186,7 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
         <div className="flex items-center gap-2">{boutonsActions}</div>
       </div>
       {blocPre}
+      {sortieExecution}
     </BlocLarge>
   );
 }
