@@ -18,6 +18,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ListChecks, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ContexteCanalEnDirect, type StatutEntreeJournal } from "@/lib/contexteCanalEnDirect";
 import { useDeplacable } from "@/lib/useDeplacable";
@@ -36,6 +37,7 @@ const COULEUR_PAR_STATUT: Record<StatutEntreeJournal, string> = {
 
 export function BoutonJournalAgent() {
   const contexte = useContext(ContexteCanalEnDirect);
+  const pathname = usePathname();
   const [ouvert, setOuvert] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   // Déplaçable (20/09/2026, demande Bourama) : le bouton se glisse où l'on
@@ -75,7 +77,10 @@ export function BoutonJournalAgent() {
   }, [ouvert]);
 
   if (!contexte) return null;
-  const { journal } = contexte;
+  const { journal, actif } = contexte;
+  // Masqué sur /chat sauf si le canal est déjà actif, même règle et même
+  // décision (25/09/2026, Bourama) que CanalEnDirectFlottant.tsx.
+  if (pathname === "/chat" && !actif) return null;
 
   return (
     <div

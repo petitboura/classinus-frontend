@@ -7,6 +7,14 @@
 // - au dessus, quand le canal est actif, les boutons d'interaction du
 //   chantier M et N (ControlesInteractionCanal.tsx).
 //
+// Revirement (25/09/2026, decision Bourama) : sur /chat, ce bouton (et
+// BoutonJournalAgent) sont maintenant masqués par défaut -- SAUF si le
+// canal est déjà actif, auquel cas il reste affiché pour ne pas perdre
+// la main dessus pendant qu'il tourne. Le canal lui-même (son
+// fonctionnement une fois actif) n'est pas désactivé par /chat, seul
+// le POINT D'ENTRÉE (ce bouton) est masqué quand il est inactif ici.
+// Ça annule la décision du 19/09 ci-dessous, gardée en historique.
+//
 // Correctif (19/09/2026, decision Bourama : "on ne désactive rien de
 // son fonctionnement parce qu'il est dans le chat, [le canal] doit être
 // tellement indépendant que...") : plus AUCUNE condition liée à /chat
@@ -51,6 +59,8 @@ export function CanalEnDirectFlottant() {
   if (!contexte) return null;
   const { actif, activer, desactiver } = contexte;
   const surChat = pathname === "/chat";
+
+  if (surChat && !actif) return null;
 
   return (
     <div

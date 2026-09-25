@@ -1,7 +1,7 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio, MessageSquareText, Eye, Sparkles } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio, Camera } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -20,7 +20,6 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
-import { useOuvrirGuide, useOuvrirDemo, useOuvrirDecouverteCanal } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
@@ -511,21 +510,9 @@ export function BarreDeSaisie({
   const [menuPlusOuvert, setMenuPlusOuvert] = useState(false);
   const menuPlusRef = useRef<HTMLDivElement>(null);
   const boutonPlusRef = useRef<HTMLButtonElement>(null);
-  // Guide de decouverte, etape 5 (16/09/2026, demande Bourama, voir
-  // specs-guide-decouverte.md) : meme hook que le bouton flottant
-  // (etape 4, components/GuideFlottant.tsx) -- active le mode guide cote
-  // serveur pour une NOUVELLE conversation dediee, puis navigue vers
-  // /chat (deja la page courante ici, donc sans effet visible autre que
-  // le changement de conversation/cle).
-  const ouvrirGuide = useOuvrirGuide();
-  // Menu "+" (mobile) : meme menu a 3 choix que le bouton flottant
-  // (components/GuideFlottant.tsx), demande Bourama 20/09/2026. Guide
-  // visuel et Demo passent par le canal en direct, voir
-  // useOuvrirDecouverteCanal dans lib/contexteChat.tsx.
-  const ouvrirDecouverteCanal = useOuvrirDecouverteCanal();
-  // Démo : chat normal, le canal ne s'ouvre que quand Clovis le demande
-  // (20/09/2026, décision Bourama), voir useOuvrirDemo.
-  const ouvrirDemo = useOuvrirDemo();
+  // Guide/Démo (etape 5, 16/09 et 20/09/2026) retirés du chat le
+  // 25/09/2026 (demande Bourama) -- useOuvrirGuide/useOuvrirDemo/
+  // useOuvrirDecouverteCanal ne sont plus appelés depuis ce fichier.
   // Canal en direct, chantier L (19/09/2026) : point d'entree depuis le
   // chat, en plus du bouton flottant (masque sur /chat). Contexte
   // nullable : la barre de saisie peut etre montee hors AppShell.
@@ -736,6 +723,15 @@ export function BarreDeSaisie({
     }
   }
   const inputFichierRef = useRef<HTMLInputElement>(null);
+  // Bouton "prendre une photo" (25/09/2026, demande Bourama) -- input
+  // séparé du sélecteur de fichier normal (inputFichierRef juste
+  // au-dessus) : `capture="environment"` ouvre directement l'appareil
+  // photo sur mobile au lieu du sélecteur de fichiers/galerie (support
+  // navigateur : Chrome/Safari mobile ; ignoré sans effet néfaste sur
+  // desktop, où l'input ouvre le sélecteur de fichier habituel, avec
+  // webcam si le navigateur en propose un). Réutilise ajouterFichiers,
+  // même chemin que le fichier joint normalement.
+  const inputPhotoRef = useRef<HTMLInputElement>(null);
   const zoneTexteRef = useRef<HTMLTextAreaElement>(null);
   // Ref séparée pour le composeur mobile (2026-07-28) -- même état
   // `texte`, DOM distinct.
@@ -1729,6 +1725,29 @@ export function BarreDeSaisie({
               }}
             />
 
+            {/* Prendre une photo (25/09/2026, demande Bourama) -- bouton
+                distinct de "Joindre un fichier", voir inputPhotoRef plus
+                haut pour le détail de capture="environment". */}
+            <button
+              onClick={() => inputPhotoRef.current?.click()}
+              aria-label="Prendre une photo"
+              title="Prendre une photo"
+              className="text-dj-texte-muet transition-colors hover:text-dj-texte"
+            >
+              <Camera size={18} />
+            </button>
+            <input
+              ref={inputPhotoRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                ajouterFichiers(Array.from(e.target.files ?? []));
+                e.target.value = "";
+              }}
+            />
+
             {/* Slots variables "Utilitaires récents" (2026-07-28, refonte
                 demandée par Bourama -- révisé le 2026-08-20 lors du
                 nettoyage du menu Outils manuel mort). Jusqu'à 3 raccourcis
@@ -1967,34 +1986,12 @@ export function BarreDeSaisie({
                       </button>
                     );
                   })}
-                {/* Guide de decouverte, ajoute ici le 16/09/2026 (demande
-                    Bourama : "ajoute le dans le bouton utilitaire") --
-                    seul point d'entree desktop du guide depuis /chat, le
-                    bouton flottant (etape 4) etant masque sur cette page
-                    et le menu "+" (etape 5) etant mobile uniquement.
-                    Entree fixe, pas issue de outilsUtilitairesPourAgent
-                    (pas un vrai outil backend) -- meme hook que les deux
-                    autres points d'entree, voir lib/contexteChat.tsx. */}
-                {[
-                  { Icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
-                  { Icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
-                  { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDemo() },
-                ].map(({ Icone, label, onClick }, i) => (
-                  <button
-                    key={label}
-                    onClick={() => {
-                      onClick();
-                      setMenuUtilitairesOuvert(false);
-                    }}
-                    className={
-                      "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute" +
-                      (i === 0 ? " border-t border-dj-bordure" : "")
-                    }
-                  >
-                    <Icone size={14} />
-                    <span className="flex-1">{label}</span>
-                  </button>
-                ))}
+                {/* Guide/Démo retirés du chat (25/09/2026, demande Bourama)
+                    -- ces 3 entrées ("Guide (texte)", "Guide (visuel)",
+                    "Démo") étaient le seul point d'entrée du guide depuis
+                    /chat (voir historique juste au-dessus : bouton flottant
+                    déjà masqué sur cette page). Il n'y a donc plus d'accès
+                    au guide/à la démo depuis /chat, décision assumée. */}
                 {canalEnDirect && (
                   <button
                     onClick={() => {
@@ -2384,23 +2381,8 @@ export function BarreDeSaisie({
               ref={menuPlusRef}
               className="absolute bottom-full left-0 z-30 mb-2 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl"
             >
-              {[
-                { Icone: MessageSquareText, label: "Guide (texte)", onClick: () => ouvrirGuide() },
-                { Icone: Eye, label: "Guide (visuel)", onClick: () => ouvrirDecouverteCanal("visuel") },
-                { Icone: Sparkles, label: "Démo", onClick: () => ouvrirDemo() },
-              ].map(({ Icone, label, onClick }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => {
-                    onClick();
-                    setMenuPlusOuvert(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                >
-                  <Icone size={16} /> {label}
-                </button>
-              ))}
+              {/* Guide/Démo retirés du chat (25/09/2026, demande Bourama),
+                  même décision que dans le menu "Utilitaires" desktop. */}
               {canalEnDirect && (
                 <button
                   type="button"
@@ -2423,6 +2405,16 @@ export function BarreDeSaisie({
                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
               >
                 <Pin size={16} /> Joindre un fichier
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  inputPhotoRef.current?.click();
+                  setMenuPlusOuvert(false);
+                }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+              >
+                <Camera size={16} /> Prendre une photo
               </button>
               {/* Longueur de réponse + Mode pédagogique (14/09/2026, bug
                   remonté par Bourama : sur mobile, aucun moyen d'atteindre
