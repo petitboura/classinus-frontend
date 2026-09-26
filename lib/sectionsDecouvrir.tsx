@@ -26,6 +26,12 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     titre: "Bibliothèque",
     description: "Tes documents personnels, le catalogue partagé par tous les élèves, et les dossiers de ton téléphone.",
   },
+  {
+    slug: "personnaliser",
+    href: ROUTES_DECOUVRIR.personnaliser.accueil,
+    titre: "Personnaliser Classinus",
+    description: "Tes propres consignes, les skills partagés par les élèves, et ce que l'IA retient de vos échanges.",
+  },
 ];
 
 // Les trois volets de la Bibliothèque, textes validés par Bourama le
@@ -50,5 +56,30 @@ export const SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE: CarteDecouvrir[] = [
     href: ROUTES_DECOUVRIR.bibliotheque.telephone,
     titre: "Dossiers du téléphone",
     description: "Sur l'appli mobile, plus besoin d'uploader tes fichiers un par un : Classinus explore tes dossiers directement.",
+  },
+];
+
+// Les trois volets de Personnaliser Classinus, textes validés par
+// Bourama le 26/09/2026 (revus une première fois pour préciser le rôle
+// de l'IA : créer/modifier une skill perso, chercher/trouver une skill
+// publique).
+export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
+  {
+    slug: "mes-skills",
+    href: ROUTES_DECOUVRIR.personnaliser.mesSkills,
+    titre: "Mes skills",
+    description: "Crée et modifie tes propres consignes pour Classinus avec l'aide de l'IA, en plus de celles de ton enseignant.",
+  },
+  {
+    slug: "skills-publics",
+    href: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
+    titre: "Skills publics",
+    description: "Cherche et trouve avec l'IA les skills publiées par d'autres élèves, active celle qui t'intéresse.",
+  },
+  {
+    slug: "memoire",
+    href: ROUTES_DECOUVRIR.personnaliser.memoire,
+    titre: "Ma mémoire",
+    description: "Ce que Classinus retient de vos échanges passés, à consulter, corriger ou effacer à tout moment.",
   },
 ];
