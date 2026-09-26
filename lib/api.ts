@@ -1899,6 +1899,8 @@ export async function enregistrerMonProfil(payload: {
   // étape 11 : conditionne l'affichage de bio/nom/photo à un visiteur
   // externe (voir api/profiles.py::obtenir_profil_public).
   profil_public?: boolean;
+  // 26/09/2026, voir api/profiles.py:MettreAJourProfilPayload.
+  est_professeur?: boolean;
 }) {
   return appelerApi("/api/profiles/me", {
     method: "PATCH",
@@ -1913,6 +1915,9 @@ export async function obtenirMonStatut() {
   return appelerApi("/api/profiles/moi/statut") as Promise<{
     est_createur: boolean;
     est_majeur: boolean | null;
+    // 26/09/2026, voir api/profiles.py:MonStatutReponse -- bouton "je
+    // suis prof" en haut de la page Bureau. True par défaut.
+    est_professeur: boolean;
   }>;
 }
 
