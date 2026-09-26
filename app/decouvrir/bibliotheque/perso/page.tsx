@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EnTeteDecouvrirBibliotheque } from "@/components/EnTeteDecouvrirBibliotheque";
+import { MiseEnPageDecouvrirBibliotheque } from "@/components/EnTeteDecouvrirBibliotheque";
 
 // Chantier SEO/AEO de Classinus (25 26/09/2026). Titre, description et
 // contenu validés par Bourama le 25/09/2026, repris ici mot pour mot.
@@ -11,10 +11,8 @@ export const metadata: Metadata = {
 
 export default function PageDecouvrirBibliothequePerso() {
   return (
-    <main>
-      <EnTeteDecouvrirBibliotheque />
-
-      <h1 className="mt-6 font-display text-2xl font-bold text-dj-texte">Bibliothèque personnelle</h1>
+    <MiseEnPageDecouvrirBibliotheque>
+      <h1 className="font-display text-2xl font-bold text-dj-texte">Bibliothèque personnelle</h1>
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
         Les documents que tu ajoutes ici sont personnels, toi seul y as accès. Elle sert surtout à éviter le hors
         programme : en t&apos;appuyant dessus, Classinus reste sur ce que tu étudies vraiment, plutôt que d&apos;aller
@@ -22,6 +20,6 @@ export default function PageDecouvrirBibliothequePerso() {
         s&apos;y retrouve aussi automatiquement, et tu peux y ajouter un document directement depuis la bibliothèque
         publique. L&apos;IA peut y naviguer et y agir exactement comme toi.
       </p>
-    </main>
+    </MiseEnPageDecouvrirBibliotheque>
   );
 }

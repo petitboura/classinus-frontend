@@ -249,6 +249,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
     texteComplet:
       "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
+    lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.mesSkills,
   },
   {
     id: "skills-publics",
@@ -257,6 +258,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Des comportements publiés par d'autres étudiants. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi.",
     texteComplet:
       "Des comportements publiés par d'autres étudiants. Clique sur l'un d'eux pour voir son contenu complet avant de l'activer. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi. Si c'est toi qui l'as publié, tu peux le retirer du catalogue à tout moment.",
+    lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
   },
   {
     id: "connecter-claude",
@@ -273,6 +275,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
     texteComplet:
       "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
+    lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.memoire,
   },
 ];
 

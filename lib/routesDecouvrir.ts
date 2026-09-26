@@ -17,4 +17,10 @@ export const ROUTES_DECOUVRIR = {
     publique: "/decouvrir/bibliotheque/publique",
     telephone: "/decouvrir/bibliotheque/telephone",
   },
+  personnaliser: {
+    accueil: "/decouvrir/personnaliser",
+    mesSkills: "/decouvrir/personnaliser/mes-skills",
+    skillsPublics: "/decouvrir/personnaliser/skills-publics",
+    memoire: "/decouvrir/personnaliser/memoire",
+  },
 } as const;

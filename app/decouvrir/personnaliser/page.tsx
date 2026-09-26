@@ -2,18 +2,17 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
-import { SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE } from "@/lib/sectionsDecouvrir";
+import { SOUS_PAGES_DECOUVRIR_PERSONNALISER } from "@/lib/sectionsDecouvrir";
 
-// Chantier SEO/AEO de Classinus (25 26/09/2026). Titre, description et
-// texte de présentation validés par Bourama le 25/09/2026 (document de
-// contexte remis ce jour là), repris ici mot pour mot.
+// Chantier SEO/AEO de Classinus (26/09/2026). Titre, description et
+// texte validés par Bourama.
 export const metadata: Metadata = {
-  title: "Bibliothèque Classinus : tes documents, organisés et accessibles à l'IA",
+  title: "Personnaliser Classinus : adapte l'IA à ta façon d'étudier",
   description:
-    "Découvre la Bibliothèque de Classinus : tes documents personnels, le catalogue partagé par tous les élèves, et les dossiers de ton téléphone.",
+    "Découvre comment personnaliser Classinus : tes propres consignes, les skills partagés par les élèves, et ce que l'IA retient de vos échanges.",
 };
 
-export default function PageDecouvrirBibliotheque() {
+export default function PageDecouvrirPersonnaliser() {
   return (
     <main className="mx-auto max-w-2xl">
       <Link
@@ -25,15 +24,14 @@ export default function PageDecouvrirBibliotheque() {
       </Link>
 
       <h1 className="mt-4 font-display text-2xl font-bold text-dj-texte">
-        Bibliothèque Classinus : tes documents, organisés et accessibles à l&apos;IA
+        Personnaliser Classinus : adapte l&apos;IA à ta façon d&apos;étudier
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">
-        Découvre la Bibliothèque de Classinus : tes documents personnels, le catalogue partagé par tous les élèves,
-        et les dossiers de ton téléphone.
+        Classinus peut s&apos;adapter à ta façon de travailler. Voici les trois façons de le personnaliser.
       </p>
 
       <ul className="mt-8 flex flex-col gap-3">
-        {SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE.map((sousPage) => (
+        {SOUS_PAGES_DECOUVRIR_PERSONNALISER.map((sousPage) => (
           <li key={sousPage.slug}>
             <Link
               href={sousPage.href}
