@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function PageDecouvrirBibliotheque() {
   return (
-    <main>
+    <main className="mx-auto max-w-2xl">
       <Link
         href={ROUTES_DECOUVRIR.accueil}
         className="flex items-center gap-1 text-xs font-medium text-dj-texte-muet hover:text-dj-texte hover:underline"
