@@ -1,8 +1,7 @@
-import { SectionPage } from "@/components/SectionPage";
+import { SectionPageBureau } from "@/components/SectionPageBureau";
 import { AuditComplet } from "@/components/AuditComplet";
 import { AuditCorrections } from "@/components/AuditCorrections";
 import { DefinirInfoSection } from "@/components/DefinirInfoSection";
-import { groupeBureau } from "@/lib/sectionsBureau";
 
 // 19/09/2026, demande Bourama : ancien onglet "Audit hebdomadaire" de
 // Bureau, devenu une vraie page.
@@ -12,13 +11,13 @@ import { groupeBureau } from "@/lib/sectionsBureau";
 // reste en dessous, inchangé, complémentaire plutôt que remplacé.
 export default function PageBureauAudit() {
   return (
-    <SectionPage title="Audit hebdomadaire" groupe={groupeBureau()}>
+    <SectionPageBureau title="Audit hebdomadaire">
       <DefinirInfoSection id="audit-complet-code" />
       <AuditComplet />
       <div className="mt-6 flex flex-col gap-2">
         <p className="text-sm font-semibold text-dj-texte">Tous tes signalements</p>
         <AuditCorrections />
       </div>
-    </SectionPage>
+    </SectionPageBureau>
   );
 }

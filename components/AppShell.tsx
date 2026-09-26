@@ -34,6 +34,7 @@ import {
   useFournirCanalEnDirect,
   enregistrerCanalEnDirect,
 } from "@/lib/contexteCanalEnDirect";
+import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -92,6 +93,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);
+  // 26/09/2026, demande Bourama : est_professeur ("Es-tu prof ?", voir
+  // BureauAccueil.tsx) lu UNE SEULE FOIS ici pour toute la session
+  // d'appli, plutôt que rappelé par chaque composant qui en a besoin --
+  // voir lib/contexteStatutUtilisateur.tsx. Ne prend pas `connecte` en
+  // argument (contrairement à useFournirMinuteurs juste au-dessus) :
+  // volontairement indépendant, voir le commentaire dans ce fichier.
+  const statutUtilisateurValeur = useFournirStatutUtilisateur();
   useEffect(() => {
     enregistrerCanalEnDirect(canalEnDirectValeur);
   }, [canalEnDirectValeur]);
@@ -215,6 +223,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
     <ContexteCanalEnDirect.Provider value={canalEnDirectValeur}>
     <ContexteMinuteurs.Provider value={minuteursValeur}>
+    <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
         <div className="flex h-dvh">
           {natif && <BarreOngletsNative />}
@@ -366,6 +375,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
         </div>
       </ContexteFenetres.Provider>
+    </ContexteStatutUtilisateur.Provider>
     </ContexteMinuteurs.Provider>
     </ContexteCanalEnDirect.Provider>
     </ContexteCurseurVirtuel.Provider>
