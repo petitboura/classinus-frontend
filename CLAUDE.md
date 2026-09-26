@@ -15,3 +15,10 @@ parenthèse, ou reformuler la phrase.
 
 Cette règle est un standing instruction : la vérifier avant de livrer tout
 texte destiné à être affiché, sans que Bourama ait à la répéter.
+
+## Toujours tenir à jour la base FAQ/AEO de Classinus
+
+Dès qu'une fonctionnalité, un comportement, un affichage, un bouton ou une
+icône est ajouté, modifié ou supprimé, la documentation SEO/AEO
+correspondante (pages `/decouvrir/...`, futures entrées FAQ/AEO) doit être
+mise à jour dans le même geste, sans que Bourama ait à le redemander.

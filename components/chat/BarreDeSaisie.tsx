@@ -212,6 +212,7 @@ export function BarreDeSaisie({
   outilsActifsAgent = null,
   texteInitial,
   conversationId,
+  eleveChoisitMode = true,
 }: {
   onEnvoyer: (
     texte: string,
@@ -269,6 +270,13 @@ export function BarreDeSaisie({
   // conversationId sur SelecteurModeActif (monté à côté de ce
   // composant dans ChatIA.tsx, pas dedans).
   conversationId?: string;
+  // 25/09/2026, demande Bourama : réglage eleve_choisit_mode du code
+  // actif, remonté par SelecteurModeActif via ChatIA.tsx (même
+  // principe que conversationId juste au-dessus). true par défaut
+  // (aucun code actif, ou réglage non décoché) -- décoché par
+  // l'enseignant -> SelecteurPersonaPedagogique ne doit plus être
+  // affiché du tout, ni son bouton d'ouverture mobile.
+  eleveChoisitMode?: boolean;
 }) {
   const [texte, setTexte] = useState(() => texteInitial ?? "");
   const [longueur, setLongueur] = useState<LongueurReponse>("moyenne");
@@ -2228,8 +2236,10 @@ export function BarreDeSaisie({
 
             {/* Persona pédagogique (jonction items 1+8+9 des specs
                 indépendantes, 14/09/2026) -- voir SelecteurPersonaPedagogique.tsx
-                pour le détail (branché sur le stockage backend). */}
-            <SelecteurPersonaPedagogique conversationId={conversationId} />
+                pour le détail (branché sur le stockage backend). Masqué si
+                l'enseignant a décoché "l'élève peut choisir son mode"
+                (25/09/2026, voir eleveChoisitMode ci-dessus). */}
+            {eleveChoisitMode && <SelecteurPersonaPedagogique conversationId={conversationId} />}
 
             <button
               type="button"
@@ -2422,16 +2432,21 @@ export function BarreDeSaisie({
               >
                 <AlignLeft size={16} /> Longueur de réponse
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuPersonaMobileOuvert(true);
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <GraduationCap size={16} /> Mode pédagogique
-              </button>
+              {/* Masquée si l'enseignant a décoché "l'élève peut choisir
+                  son mode" (25/09/2026) -- même réglage que la feuille
+                  elle-même plus bas dans ce fichier. */}
+              {eleveChoisitMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuPersonaMobileOuvert(true);
+                    setMenuPlusOuvert(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                >
+                  <GraduationCap size={16} /> Mode pédagogique
+                </button>
+              )}
               {/* CORRECTION (2026-07-30, flux 3) : cette entrée n'a de
                   sens que si le bouton dropdown Applications existe
                   (>1 appli) -- sinon une entrée directe suffit
@@ -2743,13 +2758,16 @@ export function BarreDeSaisie({
           de SelecteurPersonaPedagogique.tsx, pilotée depuis ici
           (menuPersonaMobileOuvert), même famille visuelle. Voir ce fichier
           pour le détail (chargement/persistance backend inchangés, seule la
-          présentation change selon la variante). */}
-      <SelecteurPersonaPedagogique
-        conversationId={conversationId}
-        variante="feuille"
-        ouvert={menuPersonaMobileOuvert}
-        onFermer={() => setMenuPersonaMobileOuvert(false)}
-      />
+          présentation change selon la variante). Masquée si l'enseignant a
+          décoché "l'élève peut choisir son mode" (25/09/2026). */}
+      {eleveChoisitMode && (
+        <SelecteurPersonaPedagogique
+          conversationId={conversationId}
+          variante="feuille"
+          ouvert={menuPersonaMobileOuvert}
+          onFermer={() => setMenuPersonaMobileOuvert(false)}
+        />
+      )}
 
       {/* Panneau Applications mobile (2026-07-28) -- même principe,
           même état `menuAppliOuvert` que l'icône desktop. */}
