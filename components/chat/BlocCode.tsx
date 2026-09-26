@@ -266,8 +266,8 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
   }`;
 
   return (
-    <BlocLarge className="dj-bloc-code group/code relative my-3 animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
-      <div ref={topRowRef} className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
+    <BlocLarge className="dj-bloc-code group/code relative my-3 animate-dj-fade-in rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
+      <div ref={topRowRef} className="flex items-center justify-between overflow-hidden rounded-t-xl border-b border-dj-bordure px-3 py-1.5">
         <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
           {langage || "texte"}
         </span>
@@ -276,14 +276,26 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
         </div>
       </div>
 
+      {/* 26/09/2026 -- overflow-hidden ICI (pas sur BlocLarge au-dessus) :
+          Bourama a remonté que le rail sticky ne bougeait jamais, restait
+          planté en haut. Cause : tout ancêtre avec un overflow différent
+          de visible (même overflow-hidden, même sans jamais scroller
+          lui-même) désactive position:sticky pour ses descendants -- ils
+          se calent sur CET ancêtre-là plutôt que sur le vrai scroll de la
+          page. L'ancien overflow-hidden était sur BlocLarge, juste
+          au-dessus, ancêtre direct du rail -- déplacé ici, sur un wrapper
+          qui ne contient plus que blocPre+résultat (pas le rail), pour
+          garder les coins arrondis en bas sans casser le sticky. */}
       <div className="group/rail relative" onClick={basculerRailTactile}>
         <div className="pointer-events-none absolute inset-0 z-10 flex justify-end">
           <div className={`sticky top-2 mr-1 self-start ${classeRail}`} onClick={(e) => e.stopPropagation()}>
             <BoutonsActions avecTexte={false} />
           </div>
         </div>
-        {blocPre}
-        <div ref={resultatRef}>{sortieExecution}</div>
+        <div className="overflow-hidden rounded-b-xl">
+          {blocPre}
+          <div ref={resultatRef}>{sortieExecution}</div>
+        </div>
       </div>
     </BlocLarge>
   );
