@@ -51,9 +51,17 @@ import {
 export function SelecteurModeActif({
   conversationId,
   onAccesBloqueChange,
+  onEleveChoisitModeChange,
 }: {
   conversationId: string;
   onAccesBloqueChange?: (bloque: boolean) => void;
+  // 25/09/2026, demande Bourama : réglage "l'élève peut choisir lui-même
+  // son mode" du code actif (codes_partage.eleve_choisit_mode), remonté
+  // au parent pour piloter la visibilité de SelecteurPersonaPedagogique
+  // (même pattern que onAccesBloqueChange ci-dessus). true par défaut
+  // (aucun code actif, ou réglage non décoché) -- appelé dès que le
+  // rattachement actif change, pas seulement au chargement.
+  onEleveChoisitModeChange?: (autorise: boolean) => void;
 }) {
   const [rattachements, setRattachements] = useState<RattachementCode[]>([]);
   const [modeActifId, setModeActifId] = useState<string | null>(null);
@@ -111,6 +119,19 @@ export function SelecteurModeActif({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
+
+  // 25/09/2026, demande Bourama : remonte au parent le réglage
+  // eleve_choisit_mode du rattachement actuellement actif, à chaque
+  // fois qu'il change (chargement initial ou choix d'un autre code via
+  // choisir() plus bas) -- même esprit que onAccesBloqueChange, mais
+  // réactif plutôt qu'appelé une seule fois dans le chargement initial,
+  // puisque l'élève peut changer de code actif en cours de conversation.
+  // true par défaut (aucun rattachement actif, ou réglage non décoché).
+  useEffect(() => {
+    const actifPourReglage = rattachements.find((r) => r.rattachement_id === modeActifId);
+    onEleveChoisitModeChange?.(actifPourReglage ? actifPourReglage.eleve_choisit_mode !== false : true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modeActifId, rattachements]);
 
   async function choisir(rattachementId: string | null) {
     if (verrouille) return;

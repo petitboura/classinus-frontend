@@ -1968,6 +1968,11 @@ export type CodePartage = {
   dossiers: DossierLie[];
   texte_libre: string | null;
   actif: boolean;
+  // 25/09/2026, demande Bourama : "l'élève peut choisir lui-même son
+  // mode source et son mode pédagogique", coché par défaut. Décoché ->
+  // le sélecteur disparaît côté élève (voir SelecteurModeActif.tsx /
+  // SelecteurPersonaPedagogique.tsx / BarreDeSaisie.tsx).
+  eleve_choisit_mode: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -1977,6 +1982,7 @@ export type CodePartagePayload = {
   comportement_ids?: string[];
   dossier_ids?: string[];
   texte_libre?: string | null;
+  eleve_choisit_mode?: boolean;
 };
 
 export async function listerMesCodes() {
@@ -2011,6 +2017,9 @@ export type RattachementCode = {
   a_dossier: boolean;
   dossiers: DossierLie[];
   texte_libre: string | null;
+  // 25/09/2026, demande Bourama -- voir CodePartage ci-dessus, même
+  // réglage vu côté élève pour ce rattachement précis.
+  eleve_choisit_mode: boolean;
 };
 
 /** Ce que J'AI reçu en entrant des codes d'autres utilisateurs. */

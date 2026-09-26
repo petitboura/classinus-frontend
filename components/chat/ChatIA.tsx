@@ -151,6 +151,11 @@ export function ChatIA({
   const { activer: activerNotificationsPush } = useNotificationsPush();
   const [genEnCours, setGenEnCours] = useState(false);
   const [accesBloqueMineur, setAccesBloqueMineur] = useState(false);
+  // 25/09/2026, demande Bourama : réglage eleve_choisit_mode du code
+  // actif, remonté par SelecteurModeActif -- true par défaut (aucun code
+  // actif, ou réglage non décoché par l'enseignant), pilote la
+  // visibilité de SelecteurPersonaPedagogique dans BarreDeSaisie.
+  const [eleveChoisitMode, setEleveChoisitMode] = useState(true);
   // Rythme d'affichage du texte de réponse DÉCOUPLÉ de son arrivée
   // réseau (demande Bourama : "le streaming n'est pas contrôlé, si
   // plusieurs textes sont donnés ils s'affichent [tous d'un coup]").
@@ -1534,7 +1539,11 @@ export function ChatIA({
           {/* Mode actif (Partie 6, 06/09) : rendu fixe sur mobile (peu
               importe l'emplacement DOM), juste au-dessus de la barre de
               saisie sur PC -- voir SelecteurModeActif.tsx. */}
-          <SelecteurModeActif conversationId={conversationId} onAccesBloqueChange={setAccesBloqueMineur} />
+          <SelecteurModeActif
+            conversationId={conversationId}
+            onAccesBloqueChange={setAccesBloqueMineur}
+            onEleveChoisitModeChange={setEleveChoisitMode}
+          />
           <BarreDeSaisie
             onEnvoyer={envoyerMessage}
             desactive={genEnCours || affichageEnCours || accesBloqueMineur}
@@ -1548,6 +1557,7 @@ export function ChatIA({
             boutonSansEnseignant={boutonSansEnseignant}
             outilsActifsAgent={outilsActifsAgent}
             conversationId={conversationId}
+            eleveChoisitMode={eleveChoisitMode}
           />
         </div>
       </div>
@@ -1741,7 +1751,11 @@ export function ChatIA({
       <div className="mx-auto w-full max-w-3xl px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]">
         {/* Mode actif (Partie 6, 06/09) : voir le commentaire équivalent
             dans la branche d'accueil ci-dessus. */}
-        <SelecteurModeActif conversationId={conversationId} onAccesBloqueChange={setAccesBloqueMineur} />
+        <SelecteurModeActif
+          conversationId={conversationId}
+          onAccesBloqueChange={setAccesBloqueMineur}
+          onEleveChoisitModeChange={setEleveChoisitMode}
+        />
         <BarreDeSaisie
           onEnvoyer={envoyerMessage}
           desactive={genEnCours || affichageEnCours || accesBloqueMineur}
@@ -1754,6 +1768,7 @@ export function ChatIA({
           boutonSansEnseignant={boutonSansEnseignant}
           outilsActifsAgent={outilsActifsAgent}
           conversationId={conversationId}
+          eleveChoisitMode={eleveChoisitMode}
         />
       </div>
 

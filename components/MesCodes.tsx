@@ -302,6 +302,7 @@ export function MesCodes({ sansEnTete = false }: { sansEnTete?: boolean } = {}) 
             onSauverTexte={(texte_libre) => sauvegarder(c.id, { texte_libre })}
             onSauverComportements={(comportement_ids) => sauvegarder(c.id, { comportement_ids })}
             onSauverDossiers={(dossier_ids) => sauvegarder(c.id, { dossier_ids })}
+            onSauverEleveChoisitMode={(eleve_choisit_mode) => sauvegarder(c.id, { eleve_choisit_mode })}
             mesComportements={mesComportements}
             mesDossiers={mesDossiers}
             onDossierCree={chargerDossiers}
@@ -419,6 +420,7 @@ function CarteCode({
   onSauverTexte,
   onSauverComportements,
   onSauverDossiers,
+  onSauverEleveChoisitMode,
   mesComportements,
   mesDossiers,
   onDossierCree,
@@ -436,6 +438,12 @@ function CarteCode({
   onSauverTexte: (v: string) => void;
   onSauverComportements: (ids: string[]) => void;
   onSauverDossiers: (ids: string[]) => void;
+  // 25/09/2026, demande Bourama : "l'élève peut choisir lui-même son
+  // mode source et son mode pédagogique" -- coché par défaut. Décoché
+  // -> côté élève, le sélecteur disparaît ET sa demande explicite à
+  // Clovis de changer de mode est refusée (voir
+  // core/outils_changement_mode.py).
+  onSauverEleveChoisitMode: (v: boolean) => void;
   mesComportements: Comportement[];
   mesDossiers: DossierBibliotheque[];
   onDossierCree: () => void;
@@ -640,6 +648,25 @@ function CarteCode({
               )}
             </div>
           )}
+
+          {/* 25/09/2026, demande Bourama : "l'élève peut choisir lui-même
+              son mode source et son mode pédagogique", coché par défaut.
+              Décoché -> côté élève, le sélecteur disparaît (voir
+              BarreDeSaisie.tsx/SelecteurModeActif.tsx) ET sa demande
+              explicite à Clovis de changer de mode est refusée (voir
+              core/outils_changement_mode.py). Ne restreint jamais un
+              changement de mode piloté par un skill attaché à ce code. */}
+          <label className="mt-2 flex w-full cursor-pointer items-start gap-2 rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte">
+            <input
+              type="checkbox"
+              checked={c.eleve_choisit_mode !== false}
+              onChange={(e) => onSauverEleveChoisitMode(e.target.checked)}
+              className="mt-0.5 flex-shrink-0"
+            />
+            <span className="min-w-0 flex-1">
+              L'élève peut choisir lui-même son mode source et son mode pédagogique
+            </span>
+          </label>
         </div>
       )}
     </div>
