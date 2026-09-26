@@ -29,7 +29,18 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 // lib/sectionsParametres.tsx), d'où /parametres/aide plutôt que
 // /parametres?vue=... comme du temps de l'ancien EspaceParametres.tsx à
 // état interne `vue` (supprimé).
-export function BoutonInfoSection({ rubriqueId, texteCourt }: { rubriqueId: string; texteCourt: React.ReactNode }) {
+export function BoutonInfoSection({
+  rubriqueId,
+  texteCourt,
+  hrefEnSavoirPlus,
+}: {
+  rubriqueId: string;
+  texteCourt: React.ReactNode;
+  /** Chantier SEO/AEO de Classinus (26/09/2026). Quand fourni (rubriques
+   * qui ont une page /decouvrir/... dédiée, voir lib/aideSections.tsx),
+   * remplace le lien par défaut vers /parametres/aide. */
+  hrefEnSavoirPlus?: string;
+}) {
   const [ouvert, setOuvert] = useState(false);
   // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
   // brut") : cette bulle n'avait qu'une animation d'entrée -- même
@@ -68,7 +79,7 @@ export function BoutonInfoSection({ rubriqueId, texteCourt }: { rubriqueId: stri
           >
             <p className="text-xs leading-relaxed text-dj-texte-muet">{texteCourt}</p>
             <Link
-              href={`/parametres/aide?aide=${rubriqueId}`}
+              href={hrefEnSavoirPlus ?? `/parametres/aide?aide=${rubriqueId}`}
               onClick={fermer}
               className="mt-2 inline-block text-xs font-medium text-dj-accent-1-texte hover:underline"
             >

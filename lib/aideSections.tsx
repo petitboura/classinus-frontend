@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ROUTES_DECOUVRIR } from "./routesDecouvrir";
 
 // Créé le 01/09/2026, correctif (Bourama : "les descriptions de section,
 // c'est pas la norme mobile, trouve où ça doit aller").
@@ -29,6 +30,13 @@ export type RubriqueAide = {
   titre: string;
   texteCourt: React.ReactNode;
   texteComplet: React.ReactNode;
+  /** Chantier SEO/AEO de Classinus (26/09/2026). Quand une page publique
+   * de présentation /decouvrir/... existe pour cette rubrique, le lien
+   * "En savoir plus" de la bulle (BoutonInfoSection.tsx) pointe vers
+   * elle plutôt que vers /parametres/aide -- ce champ n'est renseigné
+   * que pour ces rubriques là, les autres gardent le comportement
+   * d'avant sans rien changer. */
+  lienDecouvrir?: string;
 };
 
 export const RUBRIQUES_AIDE: RubriqueAide[] = [
@@ -182,6 +190,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
     texteComplet:
       "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.perso,
   },
   {
     id: "bibliotheque-publique",
@@ -218,6 +227,20 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
         .
       </>
     ),
+    lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.publique,
+  },
+  {
+    // Ajoutée le 26/09/2026, chantier SEO/AEO (demande Bourama) : cet
+    // onglet n'avait jusqu'ici aucune bulle d'info, contrairement à
+    // Perso et Publique. Texte repris de la description validée le
+    // 25/09/2026 pour /decouvrir/bibliotheque/telephone.
+    id: "bibliotheque-telephone",
+    titre: "Dossiers du téléphone",
+    texteCourt:
+      "Désigne des dossiers de ton téléphone, sans copier tes PDF ni documents. Classinus les explore et les réorganise pour toi.",
+    texteComplet:
+      "Disponible uniquement sur l'appli mobile. Si tu le décides, plus besoin d'ajouter tes PDF ou documents un par un : Classinus peut fouiller directement dans les dossiers de ton téléphone que tu lui désignes, et même les réorganiser en sous dossiers.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.telephone,
   },
   {
     id: "mes-skills",
