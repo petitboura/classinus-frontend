@@ -107,6 +107,21 @@ function nettoyerTraceback(message) {
   return ["Traceback (most recent call last):", ...lignes.slice(debut)].join("\n").trim();
 }
 
+// sys.exit()/exit() (26/09/2026, même famille de bug que sys.argv,
+// remonté par Bourama) : un étudiant qui arrête volontairement son
+// script (ex: "if erreur: print(...); exit()") lève SystemExit -- une
+// vraie ligne de commande se termine juste proprement là-dessus, sans
+// rien afficher. Ici, Pyodide la fait remonter comme n'importe quelle
+// autre exception : sans ce test, l'étudiant voit un vrai traceback
+// pour un arrêt volontaire et normal de son programme.
+function estArretVolontaire(messageErreur) {
+  return /(^|\n)\s*SystemExit(:|\n|$)/.test(String(messageErreur));
+}
+
+function recupererFigures(pyodide) {
+  return JSON.parse(pyodide.runPython("_figures_png()", { globals: pyodide.globals }));
+}
+
 self.onmessage = async (evenement) => {
   const donnees = evenement.data;
 
@@ -142,6 +157,10 @@ self.onmessage = async (evenement) => {
   const globals = pyodide.globals.get("dict")();
   // Sans ça, le classique if __name__ == "__main__": ne s'exécuterait jamais.
   globals.set("__name__", "__main__");
+  // __file__ (26/09/2026, même famille de bug que sys.argv, remonté par
+  // Bourama) : un script qui lit __file__ (ex: os.path.dirname(__file__))
+  // plantait avec NameError, ce n'est jamais défini par défaut ici.
+  globals.set("__file__", "script.py");
 
   try {
     globals.set("_valeurs_argv_js", argv || []);
@@ -181,8 +200,7 @@ self.onmessage = async (evenement) => {
     await pyodide.runPythonAsync(code, { globals });
     pyodide.runPython("sys.stdout.flush(); sys.stderr.flush()");
 
-    const figures = JSON.parse(pyodide.runPython("_figures_png()", { globals: pyodide.globals }));
-    figures.forEach((base64) => envoyer("image", { base64 }));
+    recupererFigures(pyodide).forEach((base64) => envoyer("image", { base64 }));
     envoyer("fin", {});
   } catch (erreur) {
     try {
@@ -190,7 +208,19 @@ self.onmessage = async (evenement) => {
     } catch (e) {
       // Rien de plus à récupérer.
     }
-    envoyer("erreur", { texte: nettoyerTraceback(erreur && erreur.message ? erreur.message : erreur) });
+    const messageErreur = erreur && erreur.message ? erreur.message : erreur;
+    if (estArretVolontaire(messageErreur)) {
+      // Arrêt volontaire et normal (sys.exit()/exit()), pas une erreur --
+      // mêmes figures possiblement dessinées avant l'arrêt, voir plus haut.
+      try {
+        recupererFigures(pyodide).forEach((base64) => envoyer("image", { base64 }));
+      } catch (e) {
+        // Rien de plus à récupérer.
+      }
+      envoyer("fin", {});
+    } else {
+      envoyer("erreur", { texte: nettoyerTraceback(messageErreur) });
+    }
   } finally {
     self._enAttenteEntree?.delete(id);
     globals.destroy();
