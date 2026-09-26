@@ -71,15 +71,24 @@ function arreterWorker() {
 }
 
 /**
- * Lance un code Python, avec ou sans input() interactif :
+ * Lance un code Python, avec ou sans input() interactif, et avec les
+ * valeurs de sys.argv (26/09/2026, bug remonté par Bourama : un script
+ * qui lit sys.argv plantait direct avec IndexError, sys.argv n'était
+ * jamais renseigné puisqu'il n'y a pas de vraie ligne de commande ici) :
  * - interactif=true : le code se met en pause à chaque input(), voir
  *   surSaisieDemandee et ControleExecution.repondre.
  * - interactif=false : entreesPrealables fournit d'avance les réponses
  *   qu'input() renverra dans l'ordre (file vide -> EOFError côté Python).
+ * - argv : valeurs de sys.argv[1], sys.argv[2]... demandées d'avance
+ *   (voir detecterArgv dans useExecutionPython.ts) -- contrairement à
+ *   input(), il n'y a aucun moyen d'intercepter une lecture de
+ *   sys.argv en cours de route pour mettre le code en pause, donc ces
+ *   valeurs sont TOUJOURS demandées avant de lancer, même sur un
+ *   téléphone compatible JSPI.
  */
 export function lancerPython(
   code: string,
-  options: { interactif: boolean; entreesPrealables: string[] },
+  options: { interactif: boolean; entreesPrealables: string[]; argv: string[] },
   rappels: RappelsExecution
 ): ControleExecution {
   let interrompu = false;
@@ -181,7 +190,13 @@ export function lancerPython(
 
         w.addEventListener("message", surMessage);
         w.addEventListener("error", surErreurWorker);
-        w.postMessage({ id, code, interactif: options.interactif, entreesPrealables: options.entreesPrealables });
+        w.postMessage({
+          id,
+          code,
+          interactif: options.interactif,
+          entreesPrealables: options.entreesPrealables,
+          argv: options.argv,
+        });
       })
   );
   fileAttente = execution;

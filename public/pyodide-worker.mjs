@@ -67,6 +67,18 @@ def _entree_prealable(invite=""):
 builtins.input = _entree_prealable
 `;
 
+// sys.argv (26/09/2026, bug remonté par Bourama) : ce worker n'est jamais
+// lancé depuis une vraie ligne de commande, donc sys.argv est vide par
+// défaut -- un script qui lit sys.argv[1] plante avec IndexError avant
+// même d'afficher quoi que ce soit. _valeurs_argv_js contient les
+// valeurs demandées d'avance à l'étudiant (voir detecterArgv côté
+// useExecutionPython.ts) ; argv[0] reste un nom de script arbitraire,
+// comme une vraie ligne de commande.
+const PREPARER_ARGV = `
+import sys
+sys.argv = ["script.py"] + list(_valeurs_argv_js)
+`;
+
 let promessePyodide = null;
 
 function chargerPyodide() {
@@ -110,7 +122,7 @@ self.onmessage = async (evenement) => {
     return;
   }
 
-  const { id, code, interactif, entreesPrealables } = donnees;
+  const { id, code, interactif, entreesPrealables, argv } = donnees;
   const envoyer = (type, extra) => self.postMessage({ id, type, ...extra });
 
   let pyodide;
@@ -132,6 +144,9 @@ self.onmessage = async (evenement) => {
   globals.set("__name__", "__main__");
 
   try {
+    globals.set("_valeurs_argv_js", argv || []);
+    pyodide.runPython(PREPARER_ARGV, { globals });
+
     if (interactif) {
       if (!self._enAttenteEntree) self._enAttenteEntree = new Map();
       self._demanderEntreeJs = (invite) =>

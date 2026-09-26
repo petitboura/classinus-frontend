@@ -21,6 +21,28 @@ function detecterInvitesInput(code: string): string[] {
   return invites;
 }
 
+// sys.argv (26/09/2026, bug remonté par Bourama : un script qui lit
+// sys.argv[1] plantait direct avec IndexError, il n'y a pas de vraie
+// ligne de commande ici donc sys.argv est toujours vide). Contrairement
+// à input(), une lecture de sys.argv ne peut pas être interceptée en
+// cours d'exécution pour mettre le code en pause -- ces valeurs sont
+// donc TOUJOURS demandées avant de lancer, même sur un téléphone
+// compatible JSPI (voir jspiDisponible). Ne comprend que les index
+// littéraux (sys.argv[1], sys.argv[2]...) ; un index calculé (variable,
+// boucle) n'est pas détecté et gardera son comportement actuel
+// (IndexError si la valeur manque) -- même limite assumée que pour
+// detecterInvitesInput ci-dessus.
+function detecterNombreArgv(code: string): number {
+  if (!/\bsys\s*\.\s*argv\b/.test(code)) return 0;
+  const motif = /\bsys\s*\.\s*argv\s*\[\s*(\d+)\s*\]/g;
+  let max = 0;
+  let correspondance: RegExpExecArray | null;
+  while ((correspondance = motif.exec(code))) {
+    max = Math.max(max, parseInt(correspondance[1], 10));
+  }
+  return max;
+}
+
 // Etat d'une exécution Python pour un bloc de code du chat. Chaque bloc a
 // sa propre sortie ; le worker, lui, est partagé (voir executionPython.ts).
 export function useExecutionPython(code: string) {
@@ -30,8 +52,12 @@ export function useExecutionPython(code: string) {
   const [erreur, setErreur] = useState<string | null>(null);
   const [inviteSaisie, setInviteSaisie] = useState<string | null>(null);
   // Non nul pendant la phase "avant" (téléphone incapable de mettre le code
-  // en pause) : les invites détectées, en attente des réponses de l'étudiant.
+  // en pause, et/ou le code lit sys.argv) : les invites détectées, en
+  // attente des réponses de l'étudiant. Les `nombreArgv` premières sont
+  // pour sys.argv, le reste (s'il y en a) pour input() -- voir
+  // lancerAvecValeursPrealables, qui les sépare avant de lancer.
   const [invitesPrealables, setInvitesPrealables] = useState<string[] | null>(null);
+  const nombreArgvRef = useRef(0);
   const controleRef = useRef<ControleExecution | null>(null);
 
   // Quitter la page pendant un calcul : on coupe, plutôt que de laisser
@@ -39,13 +65,13 @@ export function useExecutionPython(code: string) {
   useEffect(() => () => controleRef.current?.arreter(), []);
 
   const demarrer = useCallback(
-    (entreesPrealables: string[]) => {
+    (argv: string[], entreesPrealables: string[]) => {
       setLignes([]);
       setImages([]);
       setErreur(null);
       setInviteSaisie(null);
       const interactif = jspiDisponible && entreesPrealables.length === 0 && /\binput\s*\(/.test(code);
-      controleRef.current = lancerPython(code, { interactif, entreesPrealables }, {
+      controleRef.current = lancerPython(code, { interactif, entreesPrealables, argv }, {
         surStatut: setEtat,
         surSortie: (flux, texte) => setLignes((precedentes) => [...precedentes, { flux, texte }]),
         surImage: (base64) => setImages((precedentes) => [...precedentes, base64]),
@@ -59,23 +85,28 @@ export function useExecutionPython(code: string) {
   const executer = useCallback(() => {
     controleRef.current?.arreter();
     setInvitesPrealables(null);
-    if (!jspiDisponible) {
-      const invites = detecterInvitesInput(code);
-      if (invites.length > 0) {
-        setEtat("inactif");
-        setInvitesPrealables(invites);
-        return;
-      }
+    const nombreArgv = detecterNombreArgv(code);
+    const invitesArgv = Array.from({ length: nombreArgv }, (_, i) => `Argument ${i + 1} (sys.argv[${i + 1}])`);
+    const invitesInput = jspiDisponible ? [] : detecterInvitesInput(code);
+    const invites = [...invitesArgv, ...invitesInput];
+    if (invites.length > 0) {
+      nombreArgvRef.current = nombreArgv;
+      setEtat("inactif");
+      setInvitesPrealables(invites);
+      return;
     }
-    demarrer([]);
+    demarrer([], []);
   }, [code, demarrer]);
 
   // Appelé une fois que l'étudiant a rempli le petit formulaire de valeurs
-  // (téléphone incapable de mettre le code en pause).
+  // (sys.argv et/ou input() sur un téléphone incapable de mettre le code
+  // en pause) -- les `nombreArgvRef.current` premières valeurs sont pour
+  // sys.argv, le reste pour input().
   const lancerAvecValeursPrealables = useCallback(
     (valeurs: string[]) => {
       setInvitesPrealables(null);
-      demarrer(valeurs);
+      const n = nombreArgvRef.current;
+      demarrer(valeurs.slice(0, n), valeurs.slice(n));
     },
     [demarrer]
   );
