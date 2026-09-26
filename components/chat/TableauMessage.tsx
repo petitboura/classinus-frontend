@@ -62,9 +62,19 @@ export function TableauMessage({ children }: { children: ReactNode }) {
 
   // Structure inattendue (pas de thead/tbody standard) -> rendu passthrough,
   // fidèle à ce que produisait le composant table par défaut.
+  //
+  // 26/09/2026, demande Bourama : l'en-tête doit rester visible tant qu'on
+  // scrolle dans un tableau qui n'est pas terminé. `overflow-x-auto` seul
+  // (comme avant) transforme aussi overflow-y en "auto" implicitement,
+  // mais sans hauteur bornée le conteneur ne scrolle jamais verticalement
+  // -- le sticky n'a donc aucun effet. `max-h-[60vh] overflow-auto` (même
+  // convention que BulleMessage.tsx pour les zones scrollables du chat)
+  // donne au tableau son propre scroll borné, dans lequel `sticky top-0`
+  // sur le thead fonctionne correctement (voir le bug analogue documenté
+  // dans BlocExpansible.tsx pour la même raison en plein écran).
   if (!thead || !tbody) {
     return (
-      <BlocLarge className="my-2 overflow-x-auto rounded-lg border border-dj-bordure [&_th]:border [&_th]:border-dj-bordure [&_th]:bg-dj-surface-haute [&_th]:px-2.5 [&_th]:py-1.5 [&_td]:border [&_td]:border-dj-bordure [&_td]:px-2.5 [&_td]:py-1.5 [&_tbody_tr:nth-child(even)]:bg-dj-surface">
+      <BlocLarge className="my-2 max-h-[60vh] overflow-auto rounded-lg border border-dj-bordure [&_th]:border [&_th]:border-dj-bordure [&_th]:bg-dj-surface-haute [&_th]:px-2.5 [&_th]:py-1.5 [&_td]:border [&_td]:border-dj-bordure [&_td]:px-2.5 [&_td]:py-1.5 [&_tbody_tr:nth-child(even)]:bg-dj-surface [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10">
         <table className="w-full border-collapse">{children}</table>
       </BlocLarge>
     );
@@ -80,9 +90,9 @@ export function TableauMessage({ children }: { children: ReactNode }) {
   }
 
   return (
-    <BlocLarge className="my-2 overflow-x-auto rounded-lg border border-dj-bordure [&_td]:border [&_td]:border-dj-bordure [&_td]:px-2.5 [&_td]:py-1.5 [&_tbody_tr:nth-child(even)]:bg-dj-surface [&_tbody_tr:hover]:bg-dj-surface-haute">
+    <BlocLarge className="my-2 max-h-[60vh] overflow-auto rounded-lg border border-dj-bordure [&_td]:border [&_td]:border-dj-bordure [&_td]:px-2.5 [&_td]:py-1.5 [&_tbody_tr:nth-child(even)]:bg-dj-surface [&_tbody_tr:hover]:bg-dj-surface-haute">
       <table className="w-full border-collapse">
-        <thead>
+        <thead className="sticky top-0 z-10">
           <tr>
             {entetes.map((entete, index) => (
               <th
