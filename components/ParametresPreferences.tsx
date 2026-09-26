@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useContext, useState } from "react";
 import { Monitor, Sun, Moon } from "lucide-react";
-import { lireMonProfil, enregistrerMonProfil, obtenirMonStatut } from "@/lib/api";
+import { lireMonProfil, enregistrerMonProfil } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
+import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 
 // 19/09/2026, demande Bourama : ancien écran "preferences" d'EspaceParametres.tsx.
 const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
@@ -15,6 +16,13 @@ const LIBELLES_THEME = { systeme: "Système", clair: "Clair", sombre: "Sombre" }
 
 export function ParametresPreferences() {
   const { choix: choixTheme, changerTheme } = useTheme();
+  // 26/09/2026, demande Bourama (2e retour) : ne plus rappeler l'API ici
+  // -- lu une seule fois par session d'appli dans AppShell.tsx, partagé
+  // via ce contexte (voir lib/contexteStatutUtilisateur.tsx). null =
+  // jamais répondu, traité comme "prof" pour l'affichage du switch (même
+  // valeur par défaut que côté Bureau).
+  const { estProfesseur: estProfesseurContexte, definirEstProfesseur } = useContext(ContexteStatutUtilisateur);
+  const estProfesseur = estProfesseurContexte ?? true;
 
   const [chargement, setChargement] = useState(true);
   const [sansCompte, setSansCompte] = useState(false);
@@ -22,12 +30,6 @@ export function ParametresPreferences() {
   const [notifsActives, setNotifsActives] = useState(false);
   const [messageNotifs, setMessageNotifs] = useState<string | null>(null);
   const [enregistrementNotifs, setEnregistrementNotifs] = useState(false);
-  // 26/09/2026, demande Bourama : réglage "Es-tu prof ?" (voir
-  // BureauAccueil.tsx, question posée une fois dans Bureau), déplacé
-  // ici pour pouvoir le changer ensuite. true tant que la lecture de
-  // GET /moi/statut n'est pas revenue -- même valeur que "jamais
-  // répondu" côté affichage de Bureau (liste complète par défaut).
-  const [estProfesseur, setEstProfesseur] = useState(true);
   const [messageProf, setMessageProf] = useState<string | null>(null);
   const [enregistrementProf, setEnregistrementProf] = useState(false);
 
@@ -42,12 +44,6 @@ export function ParametresPreferences() {
         }
       })
       .finally(() => setChargement(false));
-    obtenirMonStatut()
-      .then((s) => setEstProfesseur(s.est_professeur ?? true))
-      .catch(() => {
-        // Silencieux, même logique que l'existant : reste modifiable
-        // même si cette lecture échoue.
-      });
   }, []);
 
   async function basculerNotifs() {
@@ -68,14 +64,12 @@ export function ParametresPreferences() {
 
   async function basculerProf() {
     const nouvelleValeur = !estProfesseur;
-    setEstProfesseur(nouvelleValeur); // optimiste
     setEnregistrementProf(true);
     setMessageProf(null);
     try {
-      await enregistrerMonProfil({ est_professeur: nouvelleValeur });
+      await definirEstProfesseur(nouvelleValeur);
       setMessageProf(nouvelleValeur ? "Sections prof affichées dans Bureau." : "Sections prof masquées dans Bureau.");
     } catch (e) {
-      setEstProfesseur(!nouvelleValeur);
       setMessageProf(messageErreur(e));
     } finally {
       setEnregistrementProf(false);

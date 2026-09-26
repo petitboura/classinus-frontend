@@ -1,7 +1,6 @@
-import { SectionPage } from "@/components/SectionPage";
+import { SectionPageBureau } from "@/components/SectionPageBureau";
 import { ListeCorrectionsProf } from "@/components/ListeCorrectionsProf";
 import { DefinirInfoSection } from "@/components/DefinirInfoSection";
-import { groupeBureau } from "@/lib/sectionsBureau";
 
 // 19/09/2026, demande Bourama : ancien onglet "Signalements" de Bureau,
 // devenu une vraie page. Cette adresse ne gêne ni /signalements/[id]
@@ -9,9 +8,9 @@ import { groupeBureau } from "@/lib/sectionsBureau";
 // (modération), ce sont d'autres branches.
 export default function PageBureauSignalements() {
   return (
-    <SectionPage title="Signalements" groupe={groupeBureau()}>
+    <SectionPageBureau title="Signalements">
       <DefinirInfoSection id="signalements-prof" />
       <ListeCorrectionsProf />
-    </SectionPage>
+    </SectionPageBureau>
   );
 }

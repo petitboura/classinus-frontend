@@ -1,26 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import Link from "next/link";
 import { ListeSections } from "./ListeSections";
 import { Skeleton } from "./Skeleton";
-import { obtenirMonStatut, enregistrerMonProfil } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { SECTIONS_BUREAU } from "@/lib/sectionsBureau";
 import { ROUTES_BUREAU } from "@/lib/routesBureau";
 import { ROUTES_PARAMETRES } from "@/lib/routesParametres";
+import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 
-// 26/09/2026, demande Bourama : "Es-tu prof ?" -- redesigné le même
-// jour après un premier retour (un interrupteur permanent en haut de
-// Bureau prenait trop de place, l'inverse de son but). Devient une
-// question posée UNE SEULE FOIS, à la première entrée dans Bureau tant
-// que jamais répondue (voir MonStatutReponse.est_professeur côté
-// backend, None = jamais répondu). Une fois répondue, conditionne
-// l'affichage de trois sections (Audit hebdomadaire, Programme,
-// Signalements) dans la liste -- les trois autres (Mes codes, Entrer un
-// code, Établissements) restent toujours visibles. Modifiable ensuite
-// dans Paramètres > Préférences (voir ParametresPreferences.tsx), pas
-// ici. Accès direct par URL volontairement non bloqué (demande
+// 26/09/2026, demande Bourama : "Es-tu prof ?" -- redesigné deux fois le
+// même jour après retours de Bourama : (1) un interrupteur permanent en
+// haut de Bureau prenait trop de place, l'inverse de son but ; (2) le
+// statut ne doit être lu qu'UNE FOIS par session d'appli, jamais rappelé
+// à chaque écran -- voir lib/contexteStatutUtilisateur.tsx (lu une seule
+// fois dans AppShell.tsx, partagé ici via ce contexte).
+//
+// Question posée une seule fois, à la première entrée dans Bureau tant
+// que jamais répondue (estProfesseur === null). Une fois répondue,
+// conditionne l'affichage de trois sections (Audit hebdomadaire,
+// Programme, Signalements) dans la liste -- les trois autres (Mes codes,
+// Entrer un code, Établissements) restent toujours visibles. Modifiable
+// ensuite dans Paramètres > Préférences (voir ParametresPreferences.tsx),
+// pas ici. Accès direct par URL volontairement non bloqué (demande
 // explicite de Bourama : juste une préférence d'affichage de la liste).
 const SECTIONS_PROF_UNIQUEMENT = new Set<string>([
   ROUTES_BUREAU.audit,
@@ -29,13 +32,7 @@ const SECTIONS_PROF_UNIQUEMENT = new Set<string>([
 ]);
 
 export function BureauAccueil() {
-  const [chargement, setChargement] = useState(true);
-  // null = jamais répondu (ou visiteur sans compte -- voir le catch
-  // ci-dessous, qui laisse volontairement cette valeur à null plutôt
-  // que de poser la question à quelqu'un qui n'a pas de profil à
-  // enregistrer).
-  const [estProfesseur, setEstProfesseur] = useState<boolean | null>(null);
-  const [sansCompte, setSansCompte] = useState(false);
+  const { chargement, estProfesseur, connecte, definirEstProfesseur } = useContext(ContexteStatutUtilisateur);
   const [enregistrement, setEnregistrement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   // Message "c'est noté, voir Paramètres" affiché juste après avoir
@@ -43,23 +40,11 @@ export function BureauAccueil() {
   // ressort de Bureau et qu'on y revient.
   const [vientDeRepondre, setVientDeRepondre] = useState(false);
 
-  useEffect(() => {
-    obtenirMonStatut()
-      .then((s) => setEstProfesseur(s.est_professeur))
-      .catch(() => {
-        // Visiteur sans compte (401) ou lecture en échec : reste sur la
-        // liste complète, jamais cette question (rien à enregistrer).
-        setSansCompte(true);
-      })
-      .finally(() => setChargement(false));
-  }, []);
-
   async function repondre(valeur: boolean) {
     setEnregistrement(true);
     setErreur(null);
     try {
-      await enregistrerMonProfil({ est_professeur: valeur });
-      setEstProfesseur(valeur);
+      await definirEstProfesseur(valeur);
       setVientDeRepondre(true);
     } catch (e) {
       setErreur(messageErreur(e));
@@ -68,9 +53,10 @@ export function BureauAccueil() {
     }
   }
 
-  // Chargement : mêmes dimensions que la liste de sections en dessous,
-  // pour ne jamais montrer brièvement la mauvaise liste avant de la
-  // corriger (BUG signalé par Bourama sur le premier jet).
+  // Chargement (une seule fois par session d'appli, pas à chaque visite
+  // de cette page) : mêmes dimensions que la liste de sections en
+  // dessous, pour ne jamais montrer brièvement la mauvaise liste avant de
+  // la corriger (bug signalé par Bourama sur le premier jet).
   if (chargement) {
     return (
       <div className="space-y-2" aria-hidden>
@@ -81,7 +67,7 @@ export function BureauAccueil() {
     );
   }
 
-  if (!sansCompte && estProfesseur === null) {
+  if (connecte && estProfesseur === null) {
     return (
       <div className="flex flex-col gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
         <div className="flex flex-col gap-0.5">

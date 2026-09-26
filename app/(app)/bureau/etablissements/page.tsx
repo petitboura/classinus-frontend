@@ -1,6 +1,5 @@
-import { SectionPage } from "@/components/SectionPage";
+import { SectionPageBureau } from "@/components/SectionPageBureau";
 import { EspaceEtablissements } from "@/components/EspaceEtablissements";
-import { groupeBureau } from "@/lib/sectionsBureau";
 
 // 19/09/2026, demande Bourama : ancien onglet "Établissements" de Bureau,
 // devenu une vraie page. Cet écran n'a pas de bouton "i" : sa phrase
@@ -10,8 +9,8 @@ import { groupeBureau } from "@/lib/sectionsBureau";
 // maintenant ici.
 export default function PageBureauEtablissements() {
   return (
-    <SectionPage title="Établissements" groupe={groupeBureau()}>
+    <SectionPageBureau title="Établissements">
       <EspaceEtablissements />
-    </SectionPage>
+    </SectionPageBureau>
   );
 }

@@ -1,7 +1,6 @@
-import { SectionPage } from "@/components/SectionPage";
+import { SectionPageBureau } from "@/components/SectionPageBureau";
 import { ProgrammeAvecCatalogue } from "@/components/ProgrammeAvecCatalogue";
 import { DefinirInfoSection } from "@/components/DefinirInfoSection";
-import { groupeBureau } from "@/lib/sectionsBureau";
 
 // 19/09/2026, demande Bourama : ancien onglet "Programme" de Bureau,
 // devenu une vraie page.
@@ -9,9 +8,9 @@ import { groupeBureau } from "@/lib/sectionsBureau";
 // (partager/récupérer un Programme entier), voir ProgrammeAvecCatalogue.tsx.
 export default function PageBureauProgramme() {
   return (
-    <SectionPage title="Programme" groupe={groupeBureau()}>
+    <SectionPageBureau title="Programme">
       <DefinirInfoSection id="programme-notions" />
       <ProgrammeAvecCatalogue />
-    </SectionPage>
+    </SectionPageBureau>
   );
 }

@@ -1,6 +1,6 @@
 import { CalendarCheck, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput } from "lucide-react";
 import { ROUTES_BUREAU } from "./routesBureau";
-import { construireGroupe, type SectionDeGroupe } from "./groupeSections";
+import type { SectionDeGroupe } from "./groupeSections";
 
 // 19/09/2026, demande Bourama : Bureau fonctionne comme Personnaliser
 // Clovis (voir lib/routesBureau.ts et lib/groupeSections.tsx). Cette liste
@@ -48,8 +48,3 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
     Icone: MessageSquareWarning,
   },
 ];
-
-// Valeur à passer au prop `groupe` de SectionPage sur chaque page fille.
-export function groupeBureau() {
-  return construireGroupe("Bureau", ROUTES_BUREAU.accueil, SECTIONS_BUREAU);
-}
