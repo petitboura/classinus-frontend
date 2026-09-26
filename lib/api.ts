@@ -1915,9 +1915,9 @@ export async function obtenirMonStatut() {
   return appelerApi("/api/profiles/moi/statut") as Promise<{
     est_createur: boolean;
     est_majeur: boolean | null;
-    // 26/09/2026, voir api/profiles.py:MonStatutReponse -- bouton "je
-    // suis prof" en haut de la page Bureau. True par défaut.
-    est_professeur: boolean;
+    // 26/09/2026, voir api/profiles.py:MonStatutReponse -- null =
+    // jamais répondu à la question posée une fois dans Bureau.
+    est_professeur: boolean | null;
   }>;
 }
 

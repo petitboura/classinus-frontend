@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Monitor, Sun, Moon } from "lucide-react";
-import { lireMonProfil, enregistrerMonProfil } from "@/lib/api";
+import { lireMonProfil, enregistrerMonProfil, obtenirMonStatut } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
 import { Skeleton } from "./Skeleton";
@@ -22,6 +22,14 @@ export function ParametresPreferences() {
   const [notifsActives, setNotifsActives] = useState(false);
   const [messageNotifs, setMessageNotifs] = useState<string | null>(null);
   const [enregistrementNotifs, setEnregistrementNotifs] = useState(false);
+  // 26/09/2026, demande Bourama : réglage "Es-tu prof ?" (voir
+  // BureauAccueil.tsx, question posée une fois dans Bureau), déplacé
+  // ici pour pouvoir le changer ensuite. true tant que la lecture de
+  // GET /moi/statut n'est pas revenue -- même valeur que "jamais
+  // répondu" côté affichage de Bureau (liste complète par défaut).
+  const [estProfesseur, setEstProfesseur] = useState(true);
+  const [messageProf, setMessageProf] = useState<string | null>(null);
+  const [enregistrementProf, setEnregistrementProf] = useState(false);
 
   useEffect(() => {
     lireMonProfil()
@@ -34,6 +42,12 @@ export function ParametresPreferences() {
         }
       })
       .finally(() => setChargement(false));
+    obtenirMonStatut()
+      .then((s) => setEstProfesseur(s.est_professeur ?? true))
+      .catch(() => {
+        // Silencieux, même logique que l'existant : reste modifiable
+        // même si cette lecture échoue.
+      });
   }, []);
 
   async function basculerNotifs() {
@@ -49,6 +63,22 @@ export function ParametresPreferences() {
       setMessageNotifs(messageErreur(e));
     } finally {
       setEnregistrementNotifs(false);
+    }
+  }
+
+  async function basculerProf() {
+    const nouvelleValeur = !estProfesseur;
+    setEstProfesseur(nouvelleValeur); // optimiste
+    setEnregistrementProf(true);
+    setMessageProf(null);
+    try {
+      await enregistrerMonProfil({ est_professeur: nouvelleValeur });
+      setMessageProf(nouvelleValeur ? "Sections prof affichées dans Bureau." : "Sections prof masquées dans Bureau.");
+    } catch (e) {
+      setEstProfesseur(!nouvelleValeur);
+      setMessageProf(messageErreur(e));
+    } finally {
+      setEnregistrementProf(false);
     }
   }
 
@@ -119,6 +149,31 @@ export function ParametresPreferences() {
         </button>
       </div>
       {messageNotifs && <span className="text-sm text-dj-texte-muet">{messageNotifs}</span>}
+
+      <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-dj-texte">Je suis prof</span>
+          <span className="text-xs text-dj-texte-muet">
+            Désactive pour retirer Audit hebdomadaire, Programme et Signalements de Bureau.
+          </span>
+        </div>
+        <button
+          role="switch"
+          aria-checked={estProfesseur}
+          onClick={basculerProf}
+          disabled={enregistrementProf}
+          className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+            estProfesseur ? "bg-dj-accent-1" : "bg-dj-inactif"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              estProfesseur ? "translate-x-5" : "translate-x-0.5"
+            }`}
+          />
+        </button>
+      </div>
+      {messageProf && <span className="text-sm text-dj-texte-muet">{messageProf}</span>}
     </div>
   );
 }

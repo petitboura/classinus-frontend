@@ -17,7 +17,7 @@ export const SECTIONS_PARAMETRES: SectionDeGroupe[] = [
   {
     href: ROUTES_PARAMETRES.preferences,
     label: "Préférences",
-    description: "Thème et relances proactives de Classinus",
+    description: "Thème, relances proactives et réglage prof/pas prof",
     Icone: SlidersHorizontal,
   },
   {
