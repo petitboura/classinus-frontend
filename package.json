@@ -23,6 +23,7 @@
     "@capgo/capacitor-transitions": "^8.1.9",
     "capacitor-dossiers-electron": "file:./packages/capacitor-dossiers-electron",
     "capacitor-pont-natif-electron": "file:./packages/capacitor-pont-natif-electron",
+    "capacitor-superposition-electron": "file:./packages/capacitor-superposition-electron",
     "@supabase/supabase-js": "^2.45.0",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/query-sync-storage-persister": "^5.103.1",

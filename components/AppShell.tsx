@@ -34,6 +34,7 @@ import {
   useFournirCanalEnDirect,
   enregistrerCanalEnDirect,
 } from "@/lib/contexteCanalEnDirect";
+import { useEmetteurSuperposition } from "@/lib/superpositionElectron";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -89,6 +90,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // layout racine pour survivre à tout changement de section -- voir
   // lib/contexteCanalEnDirect.tsx.
   const canalEnDirectValeur = useFournirCanalEnDirect();
+  // Lot R (27/09/2026, voir plan-canal-en-direct-pc.md) : pousse cet état
+  // vers la fenêtre de superposition Electron (ne fait rien ailleurs que
+  // sur la plateforme "electron", voir lib/superpositionElectron.ts).
+  useEmetteurSuperposition(curseurVirtuelValeur, canalEnDirectValeur);
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);

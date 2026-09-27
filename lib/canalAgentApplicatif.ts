@@ -77,6 +77,7 @@ import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
+import { estDansFenetreSuperposition, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -302,6 +303,19 @@ function envoyerViaRepli(texte: string) {
 export function envoyerMessageEtudiant(texte: string) {
   const propre = texte.trim();
   if (!propre) return;
+  // Ajout du 27/09/2026 (Lot R, voir plan-canal-en-direct-pc.md) : cette
+  // fonction est importée directement par ControlesInteractionCanal.tsx
+  // et BulleDialogueAgent.tsx (pas via ContexteCanalEnDirect), et ces
+  // composants sont réutilisés tels quels dans la fenêtre de
+  // superposition. Cette fenêtre n'a jamais de vraie connexion (socket
+  // reste undefined dans son propre module JS) : relayer vers la fenêtre
+  // principale plutôt que de tomber dans le repli HTTP local, qui
+  // échouerait silencieusement (obtenirConversationIdCanal lirait le
+  // canalGlobal de CETTE fenêtre, jamais enregistré ici).
+  if (estDansFenetreSuperposition()) {
+    relayerEnvoiMessageEtudiant(propre);
+    return;
+  }
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     envoyerViaRepli(propre);
     return;
