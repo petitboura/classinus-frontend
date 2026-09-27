@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
-import { SOUS_PAGES_DECOUVRIR_PERSONNALISER } from "@/lib/sectionsDecouvrir";
-import { MiseEnPageDecouvrirGroupe } from "@/components/MiseEnPageDecouvrirGroupe";
+import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 // Chantier SEO/AEO de Classinus (26/09/2026). Titre, description et
 // contenu validés par Bourama, revus une première fois pour préciser le
@@ -14,17 +12,13 @@ export const metadata: Metadata = {
 
 export default function PageDecouvrirPersonnaliserSkillsPublics() {
   return (
-    <MiseEnPageDecouvrirGroupe
-      retourHref={ROUTES_DECOUVRIR.personnaliser.accueil}
-      retourLabel="Personnaliser Classinus"
-      sousPages={SOUS_PAGES_DECOUVRIR_PERSONNALISER}
-    >
+    <MiseEnPageDecouvrirPersonnaliser>
       <h1 className="font-display text-2xl font-bold text-dj-texte">Skills publics</h1>
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
         Un catalogue de skills publiées par d&apos;autres élèves. L&apos;IA peut t&apos;aider à en chercher et en
         trouver une qui te correspond. Tu peux voir son contenu complet avant de l&apos;activer, et une copie
         s&apos;ajoute directement dans tes propres skills, prête à l&apos;emploi.
       </p>
-    </MiseEnPageDecouvrirGroupe>
+    </MiseEnPageDecouvrirPersonnaliser>
   );
 }

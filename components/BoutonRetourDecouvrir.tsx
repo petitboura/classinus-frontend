@@ -1,21 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { BoutonRetour } from "@/components/BoutonRetour";
+import { useDepuisDecouvrir } from "@/lib/depuisDecouvrir";
 
-// Chantier SEO/AEO de Classinus (26/09/2026, demande Bourama) : sur les
-// pages publiques /decouvrir/..., "Retour" doit ramener exactement là où
-// la personne était avant (par exemple l'écran connecté d'où elle a
-// cliqué "En savoir plus"), pas juste à l'accueil de l'appli.
+// Chantier SEO/AEO de Classinus (26/09/2026, retour de Bourama : "ce
+// retour là il doit te ramener de là où tu viens de l'appli, pas dans
+// le découvrir"). ?depuis= posé par BoutonInfoSection.tsx et reporté de
+// page /decouvrir en page /decouvrir par MiseEnPageDecouvrirGroupe, lu
+// ici pour construire la vraie destination. Absent (visiteur arrivé
+// directement depuis Google, ou depuis la page générale /decouvrir) :
+// repli sur l'accueil de l'appli, comme avant ce correctif.
 //
-// router.back() plutôt qu'une destination fixe (href), à la différence
-// du reste de l'app qui évite volontairement router.back() (voir le
-// commentaire au dessus de components/SectionPage.tsx : l'app pousse de
-// fausses entrées d'historique pour fermer menus et panneaux, ce qui
-// rendait un vrai retour navigateur imprévisible). Ces pages /decouvrir
-// sont en dehors de cette pile d'écrans internes, donc pas le même
-// risque : l'entrée d'historique juste avant est une vraie page.
+// href (vraie navigation), pas onClick/router.back() : router.back()
+// recule seulement d'un cran dans les pages /decouvrir déjà visitées,
+// pas jusqu'à l'écran d'origine dans l'appli -- exactement le bug
+// signalé par Bourama.
+//
+// À utiliser entouré d'un <Suspense> (useSearchParams l'exige, voir
+// app/decouvrir/layout.tsx) avec un repli identique mais href="/" fixe.
 export function BoutonRetourDecouvrir() {
-  const router = useRouter();
-  return <BoutonRetour onClick={() => router.back()} avecTexte />;
+  const { depuis } = useDepuisDecouvrir();
+  return <BoutonRetour href={depuis ?? "/"} avecTexte />;
 }

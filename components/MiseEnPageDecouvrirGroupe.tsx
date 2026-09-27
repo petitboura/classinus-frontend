@@ -19,23 +19,35 @@ import type { CarteDecouvrir } from "@/lib/sectionsDecouvrir";
 // (OngletsLiens) uniquement sur téléphone (`md:hidden`), menu vertical à
 // gauche uniquement sur PC (`hidden md:flex`), jamais les deux en même
 // temps (retour de Bourama le 26/09 après capture d'écran).
+//
+// `depuis` (optionnel) : chemin de l'écran de l'appli d'où on vient, à
+// reporter sur chaque lien interne pour que le bouton retour du layout
+// (app/decouvrir/layout.tsx) sache toujours y revenir, même après avoir
+// visité plusieurs soeurs -- voir lib/depuisDecouvrir.ts. Composant lui
+// même sans useSearchParams (pour rester utilisable tel quel comme
+// contenu de repli d'un <Suspense>, voir ConDepuisDecouvrir.tsx) : c'est
+// l'appelant qui fournit `depuis` en prop, déjà lu ailleurs.
 export function MiseEnPageDecouvrirGroupe({
   retourHref,
   retourLabel,
   sousPages,
+  depuis,
   children,
 }: {
   retourHref: string;
   retourLabel: string;
   sousPages: CarteDecouvrir[];
+  depuis?: string | null;
   children: ReactNode;
 }) {
   const pathname = usePathname();
 
+  const avecDepuis = (href: string) => (depuis ? `${href}?depuis=${encodeURIComponent(depuis)}` : href);
+
   return (
     <div>
       <Link
-        href={retourHref}
+        href={avecDepuis(retourHref)}
         className="flex items-center gap-1 text-xs font-medium text-dj-texte-muet hover:text-dj-texte hover:underline"
       >
         <ChevronLeft size={14} />
@@ -46,7 +58,7 @@ export function MiseEnPageDecouvrirGroupe({
         <div className="md:hidden">
           <OngletsLiens
             ariaLabel={retourLabel}
-            onglets={sousPages.map((sousPage) => ({ href: sousPage.href, libelle: sousPage.titre }))}
+            onglets={sousPages.map((sousPage) => ({ href: avecDepuis(sousPage.href), libelle: sousPage.titre }))}
           />
         </div>
 
@@ -56,7 +68,7 @@ export function MiseEnPageDecouvrirGroupe({
             return (
               <Link
                 key={sousPage.href}
-                href={sousPage.href}
+                href={avecDepuis(sousPage.href)}
                 replace
                 className={`rounded-xl px-3 py-2 text-sm transition-colors ${
                   actif
