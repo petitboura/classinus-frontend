@@ -106,6 +106,18 @@ function obtenirOuCreerEtat(): EtatIdentifiantAppareil {
   return nouvel_etat;
 }
 
+/**
+ * Reutilisable par d'autres modules du processus principal Electron
+ * (voir capacitor-pont-natif-electron, Lot S : la connexion WebSocket
+ * dediee aux actions systeme a besoin du meme identifiant PC, avec un
+ * suffixe distinct pour ne pas remplacer la connexion de la fenetre
+ * principale -- voir la remarque sur connecter() dans
+ * core/canal_agent_applicatif.py cote backend).
+ */
+export function obtenirAppareilIdPc(): string {
+  return obtenirOuCreerEtat().appareilId;
+}
+
 class DossiersImpl extends ElectronPlugin {
   /**
    * Meme forme de reponse que le plugin Android (voir DossiersPlugin.kt,
