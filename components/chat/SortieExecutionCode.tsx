@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { Loader2, Send, X } from "lucide-react";
+import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
+import { Languages, Loader2, Send, X } from "lucide-react";
 import type { EtatExecution } from "@/lib/executionPython";
 import type { LigneSortie } from "@/lib/useExecutionPython";
+import { traduireMessage } from "@/lib/api";
+import { messageErreur } from "@/lib/erreurs";
+import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
+import { LANGUES_TRADUCTION_ERREURS } from "@/lib/languesTraductionErreurs";
 
 // Zone sous un bloc de code exécuté (voir BlocCode.tsx) : soit le petit
 // formulaire de valeurs demandé avant de lancer (téléphone incapable de
@@ -92,6 +96,82 @@ export function SortieExecutionCode({
 }) {
   const [saisie, setSaisie] = useState("");
 
+  // 27/09/2026, chantier "traduction erreurs execution".
+  const { connecte, langueCibleErreurs, traductionAutoErreurs, definirLangueCibleErreurs } =
+    useContext(ContexteStatutUtilisateur);
+  const [afficherSelecteurLangue, setAfficherSelecteurLangue] = useState(false);
+  const [chargementTraduction, setChargementTraduction] = useState(false);
+  const [traduction, setTraduction] = useState<string | null>(null);
+  const [messageTraduction, setMessageTraduction] = useState<string | null>(null);
+  // Évite de relancer la traduction auto en boucle sur la même erreur
+  // (re-renders successifs tant que rien n'a changé côté exécution).
+  const derniereErreurAutoTraduiteRef = useRef<string | null>(null);
+
+  // L'erreur peut changer (nouvelle exécution) ou disparaître (Effacer) :
+  // la traduction affichée doit repartir de zéro dans les deux cas.
+  useEffect(() => {
+    setTraduction(null);
+    setMessageTraduction(null);
+    setAfficherSelecteurLangue(false);
+  }, [erreur]);
+
+  async function lancerTraduction(langue: string) {
+    setChargementTraduction(true);
+    setMessageTraduction(null);
+    try {
+      const { traduction: resultat } = await traduireMessage(erreur || "", langue);
+      if (resultat) {
+        setTraduction(resultat);
+      } else {
+        setMessageTraduction("La traduction a échoué, réessaie dans un instant.");
+      }
+    } catch (e) {
+      setMessageTraduction(messageErreur(e));
+    } finally {
+      setChargementTraduction(false);
+    }
+  }
+
+  function cliquerTraduire() {
+    if (!connecte) {
+      setMessageTraduction("Connecte-toi pour traduire.");
+      return;
+    }
+    if (!langueCibleErreurs) {
+      setAfficherSelecteurLangue(true);
+      return;
+    }
+    lancerTraduction(langueCibleErreurs);
+  }
+
+  async function choisirLangue(langue: string) {
+    setAfficherSelecteurLangue(false);
+    try {
+      await definirLangueCibleErreurs(langue);
+    } catch (e) {
+      setMessageTraduction(messageErreur(e));
+      return;
+    }
+    lancerTraduction(langue);
+  }
+
+  // Traduction automatique (réglage "Traduction automatique des erreurs"
+  // dans Paramètres > Préférences) : dès qu'une erreur apparaît pour un
+  // compte connecté ayant déjà choisi sa langue.
+  useEffect(() => {
+    if (
+      erreur &&
+      connecte &&
+      traductionAutoErreurs &&
+      langueCibleErreurs &&
+      derniereErreurAutoTraduiteRef.current !== erreur
+    ) {
+      derniereErreurAutoTraduiteRef.current = erreur;
+      lancerTraduction(langueCibleErreurs);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [erreur, connecte, traductionAutoErreurs, langueCibleErreurs]);
+
   if (etat === "inactif") return null;
 
   const aucunResultat = lignes.length === 0 && images.length === 0 && !erreur;
@@ -156,9 +236,57 @@ export function SortieExecutionCode({
       ))}
 
       {erreur && (
-        <pre className="mt-1 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-[var(--dj-code-deletion)]">
-          {erreur}
-        </pre>
+        <>
+          <pre className="mt-1 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-[var(--dj-code-deletion)]">
+            {erreur}
+          </pre>
+
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {!chargementTraduction && !traduction && (
+              <button
+                onClick={cliquerTraduire}
+                className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+              >
+                <Languages size={12} /> Traduire
+              </button>
+            )}
+            {chargementTraduction && (
+              <span className="flex items-center gap-1 text-[11px] text-dj-texte-muet">
+                <Loader2 size={12} className="animate-spin" /> Traduction...
+              </span>
+            )}
+          </div>
+
+          {afficherSelecteurLangue && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-dj-texte-muet">Traduire vers :</span>
+              {LANGUES_TRADUCTION_ERREURS.map((langue) => (
+                <button
+                  key={langue}
+                  onClick={() => choisirLangue(langue)}
+                  className="rounded-md border border-dj-bordure px-1.5 py-0.5 text-[11px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+                >
+                  {langue}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {messageTraduction && (
+            <p className="mt-1 text-xs text-dj-texte-muet">{messageTraduction}</p>
+          )}
+
+          {traduction && (
+            <div className="mt-1.5 border-t border-dj-bordure pt-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-dj-texte-muet">
+                Traduction
+              </span>
+              <pre className="mt-1 max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-dj-texte">
+                {traduction}
+              </pre>
+            </div>
+          )}
+        </>
       )}
 
       {!enCours && etat === "interrompu" && (
