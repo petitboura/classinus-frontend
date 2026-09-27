@@ -92,6 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // première section traitée, les prochaines rejoindront cette liste
     // au fil des prochains chantiers.
     { url: `${URL_BASE}/decouvrir` },
+    { url: `${URL_BASE}/decouvrir/accueil` },
     { url: `${URL_BASE}/decouvrir/bibliotheque` },
     { url: `${URL_BASE}/decouvrir/bibliotheque/perso` },
     { url: `${URL_BASE}/decouvrir/bibliotheque/publique` },

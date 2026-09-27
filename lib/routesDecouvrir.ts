@@ -11,6 +11,10 @@
 // propres entrées ici au fil des prochains chantiers.
 export const ROUTES_DECOUVRIR = {
   accueil: "/decouvrir",
+  // Page de présentation de la section Accueil de l'appli elle même (le
+  // chat + tableau de bord) -- à ne pas confondre avec `accueil`
+  // ci dessus, qui est la racine de toute la famille /decouvrir.
+  accueilClassinus: "/decouvrir/accueil",
   bibliotheque: {
     accueil: "/decouvrir/bibliotheque",
     perso: "/decouvrir/bibliotheque/perso",

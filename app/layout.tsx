@@ -79,7 +79,7 @@ const sourceSerif = Source_Serif_4({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Classinus",
-  description: "Ton compagnon d'études pour la classe.",
+  description: "Le coin des étudiants.",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Classinus" },
   // Correctif (02/09/2026) : Next.js (appleWebApp ci-dessus) ne génère
   // que la balise préfixée "apple-", dépréciée par Chrome/Android au
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
   // URL en dur ici).
   openGraph: {
     title: "Classinus",
-    description: "Ton compagnon d'études pour la classe.",
+    description: "Le coin des étudiants.",
     siteName: "Classinus",
     locale: "fr_FR",
     type: "website",
@@ -105,7 +105,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Classinus",
-    description: "Ton compagnon d'études pour la classe.",
+    description: "Le coin des étudiants.",
   },
   // Icône d'onglet (favicon) et icône iOS "ajouter à l'écran d'accueil"
   // (12/08) : désormais générées automatiquement par Next.js depuis

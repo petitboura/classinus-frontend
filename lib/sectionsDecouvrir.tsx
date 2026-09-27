@@ -21,6 +21,12 @@ export type CarteDecouvrir = {
 // prochains chantiers, sans changer la page qui l'affiche.
 export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
+    slug: "accueil",
+    href: ROUTES_DECOUVRIR.accueilClassinus,
+    titre: "Le coin des étudiants",
+    description: "Ta bibliothèque, des fiches de révision, des QCM et des animations pour t'aider à réviser.",
+  },
+  {
     slug: "bibliotheque",
     href: ROUTES_DECOUVRIR.bibliotheque.accueil,
     titre: "Bibliothèque",

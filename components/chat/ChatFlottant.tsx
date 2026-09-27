@@ -42,7 +42,7 @@ import { Skeleton } from "@/components/Skeleton";
 
 const LIMITE_MESSAGES_INVITE = 5;
 const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
-const SOUS_TITRE_ACCUEIL_CLOVIS = "Ton compagnon d'études, à tes côtés.";
+const SOUS_TITRE_ACCUEIL_CLOVIS = "Le coin des étudiants.";
 
 // 07/09/2026, demande Bourama : le popup mini (desktop) doit être
 // déplaçable/redimensionnable comme les fenêtres de section (voir
