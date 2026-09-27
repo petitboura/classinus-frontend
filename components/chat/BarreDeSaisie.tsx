@@ -195,10 +195,16 @@ const TYPES_FICHIERS_ACCEPTES =
   "video/mp4,video/webm,video/quicktime," +
   // Zip (26/09/2026, chantier "zip en conversation", demande Bourama) :
   // dézipage démarré dès la sélection, voir ajouterFichiers ci-dessous et
-  // api/uploads.py:demarrer_zip_chat. application/x-zip-compressed est le
-  // type MIME renvoyé par certains navigateurs/OS (Windows notamment)
-  // pour un .zip, les deux sont donc acceptés ici.
-  "application/zip,application/x-zip-compressed," +
+  // api/uploads.py:demarrer_zip_chat. Le MIME type seul ne suffit pas ici
+  // (bug signalé 27/09 : le sélecteur de fichier masquait les .zip) --
+  // selon l'OS/le navigateur, un .zip peut être rapporté comme
+  // application/zip, application/x-zip-compressed, ou même
+  // application/octet-stream (générique), donc invisible si on ne filtre
+  // que sur ces types précis. L'extension .zip est ajoutée en plus des
+  // types MIME : le navigateur accepte un fichier qui correspond à
+  // N'IMPORTE LEQUEL des critères listés, l'extension comble donc les cas
+  // où le MIME rapporté ne correspond à aucun des deux ci-dessus.
+  "application/zip,application/x-zip-compressed,.zip," +
   // Upload d'un vrai fichier audio (2026-07-22, préparé par Bourama --
   // distinct de la dictée micro juste en dessous, qui passe par le même
   // endpoint /audio-chat mais un chemin de code différent, voir
