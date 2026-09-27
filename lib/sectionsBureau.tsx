@@ -1,4 +1,4 @@
-import { CalendarCheck, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput } from "lucide-react";
+import { CalendarCheck, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput, Terminal } from "lucide-react";
 import { ROUTES_BUREAU } from "./routesBureau";
 import type { SectionDeGroupe } from "./groupeSections";
 
@@ -46,5 +46,11 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
     label: "Signalements",
     description: "Les problèmes que tes élèves ont signalés sur une réponse",
     Icone: MessageSquareWarning,
+  },
+  {
+    href: ROUTES_BUREAU.editeur,
+    label: "Éditeur de code",
+    description: "Écris, exécute et enregistre du code dans ta bibliothèque",
+    Icone: Terminal,
   },
 ];

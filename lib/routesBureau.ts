@@ -14,6 +14,7 @@ export const ROUTES_BUREAU = {
   entrerCode: "/bureau/entrer-code",
   etablissements: "/bureau/etablissements",
   signalements: "/bureau/signalements",
+  editeur: "/bureau/editeur",
 } as const;
 
 /** Les pages filles de Bureau, sans la page d'accueil. */
@@ -24,4 +25,5 @@ export const PAGES_FILLES_BUREAU: readonly string[] = [
   ROUTES_BUREAU.entrerCode,
   ROUTES_BUREAU.etablissements,
   ROUTES_BUREAU.signalements,
+  ROUTES_BUREAU.editeur,
 ];

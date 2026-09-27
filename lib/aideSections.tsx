@@ -120,6 +120,13 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Si quelqu'un t'a donné un code, entre-le ici pour recevoir tout ce qu'il partage : comportement, bibliothèque, ou texte, selon ce que la personne y a mis.",
   },
   {
+    id: "editeur-code",
+    titre: "Éditeur de code",
+    texteCourt: "Écris et exécute du code, ouvre ou enregistre-le dans ta bibliothèque.",
+    texteComplet:
+      "Écris du code dans n'importe quel langage. Le bouton Exécuter (Python uniquement pour l'instant) lance le code directement dans le navigateur, comme dans le chat. Ouvrir et Enregistrer utilisent ta bibliothèque personnelle comme espace de fichiers : choisis un fichier existant à ouvrir, ou enregistre le code affiché sous un nom, avec ou sans dossier.",
+  },
+  {
     id: "ecrire-matiere",
     titre: "Écrire une matière",
     texteCourt: "Choisis une matière et écris ce que Classinus doit savoir ou comment il doit répondre.",

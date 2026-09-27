@@ -43,7 +43,7 @@ import { useExecutionPython } from "@/lib/useExecutionPython";
 //     + son résultat -- exactement le même mécanisme que BlocExpansible
 //     (rangée du haut visible -> rail masqué ; rangée du haut sortie du
 //     champ -> rail apparaît, révélé au survol desktop / tap mobile).
-const EXTENSION_PAR_LANGAGE: Record<string, string> = {
+export const EXTENSION_PAR_LANGAGE: Record<string, string> = {
   python: "py", javascript: "js", typescript: "ts", xml: "html", css: "css",
   bash: "sh", sql: "sql", java: "java", c: "c", cpp: "cpp", go: "go",
   rust: "rs", php: "php", ruby: "rb", yaml: "yml", markdown: "md", ini: "toml",
@@ -51,7 +51,7 @@ const EXTENSION_PAR_LANGAGE: Record<string, string> = {
 };
 
 // Langages exécutables avec le bouton Exécuter (Python seulement pour l'instant).
-const LANGAGES_PYTHON = new Set(["python", "py", "python3"]);
+export const LANGAGES_PYTHON = new Set(["python", "py", "python3"]);
 
 export function BlocCode({ langage, code }: { langage: string; code: string }) {
   const executable = LANGAGES_PYTHON.has((langage || "").toLowerCase());
