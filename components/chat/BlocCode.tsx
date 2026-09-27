@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Check, Download, Maximize2, Minimize2, Play, Square, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Copy, Check, Download, ExternalLink, Maximize2, Minimize2, Play, Square, X } from "lucide-react";
 import hljs from "@/lib/coloration";
 import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
@@ -53,7 +54,8 @@ export const EXTENSION_PAR_LANGAGE: Record<string, string> = {
 // Langages exécutables avec le bouton Exécuter (Python seulement pour l'instant).
 export const LANGAGES_PYTHON = new Set(["python", "py", "python3"]);
 
-export function BlocCode({ langage, code }: { langage: string; code: string }) {
+export function BlocCode({ langage, code, conversationId }: { langage: string; code: string; conversationId?: string }) {
+  const router = useRouter();
   const executable = LANGAGES_PYTHON.has((langage || "").toLowerCase());
   const execution = useExecutionPython(code);
   const [copie, setCopie] = useState(false);
@@ -132,6 +134,28 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
     telechargerContenuLocal(`code.${extension}`, code, "text/plain;charset=utf-8");
   }
 
+  // 27/09/2026, chantier "éditeur de code du Bureau", pont chat ->
+  // éditeur (voir components/bureau/EditeurCode.tsx) : dépose le code et
+  // son langage dans sessionStorage (l'éditeur les lit une seule fois au
+  // montage puis vide la clé), avec la conversation d'origine si connue,
+  // pour que le bouton "Vers le chat" de l'éditeur sache y revenir.
+  // Indépendant de tout enregistrement -- pas de bouton "enregistrer"
+  // séparé ici, c'est celui déjà dans l'éditeur qui s'en charge une fois
+  // le code ouvert là-bas (demande explicite de Bourama, 26/09).
+  function ouvrirDansEditeur() {
+    try {
+      window.sessionStorage.setItem(
+        "classinus:editeur:payload",
+        JSON.stringify({ code, langage, origineConversationId: conversationId })
+      );
+    } catch {
+      // sessionStorage indisponible (navigation privée stricte, quota) :
+      // l'éditeur s'ouvrira simplement vide plutôt que préempli, pas
+      // bloquant pour autant.
+    }
+    router.push("/bureau/editeur");
+  }
+
   // Bouton Agrandir/Rétrécir partagé entre vue inline et plein écran
   // (BoutonsActions, plus bas) -- seule la fermeture (Rétrécir depuis le
   // plein écran) doit passer par l'animation, pas l'ouverture.
@@ -191,6 +215,10 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
         <button onClick={telecharger} aria-label="Télécharger le code" className={classe}>
           <Download size={avecTexte ? 12 : 14} />
           {avecTexte && "Télécharger"}
+        </button>
+        <button onClick={ouvrirDansEditeur} aria-label="Ouvrir dans l'éditeur" className={classe}>
+          <ExternalLink size={avecTexte ? 12 : 14} />
+          {avecTexte && "Éditeur"}
         </button>
         <button onClick={basculerPleinEcran} aria-label={pleinEcran ? "Rétrécir" : "Agrandir"} className={classe}>
           {pleinEcran ? <Minimize2 size={avecTexte ? 12 : 14} /> : <Maximize2 size={avecTexte ? 12 : 14} />}

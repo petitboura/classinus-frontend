@@ -88,7 +88,7 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
         case "html":
           return <WidgetSandbox code={code} />;
         default:
-          return <BlocCode langage={langage} code={code} />;
+          return <BlocCode langage={langage} code={code} conversationId={conversationId} />;
       }
     },
     code({ children }: { children?: ReactNode }) {

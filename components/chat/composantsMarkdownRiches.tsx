@@ -111,7 +111,7 @@ function PreMarkdown({ children }: { children?: ReactNode }) {
     case "html":
       return <WidgetSandbox code={code} />;
     default:
-      return <BlocCode langage={langage} code={code} />;
+      return <BlocCode langage={langage} code={code} conversationId={etat?.conversationId} />;
   }
 }
 

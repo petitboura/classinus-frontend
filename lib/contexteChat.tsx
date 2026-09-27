@@ -463,6 +463,34 @@ export function useOuvrirConversation() {
   };
 }
 
+// 27/09/2026, chantier "éditeur de code du Bureau", pont retour éditeur
+// -> chat (voir components/bureau/EditeurCode.tsx) : équivalents plein
+// écran (route /chat) des deux hooks ci-dessus/de nouvelleConversation()
+// -- ceux du dessus ouvrent la popup mini (Activité récente), pas
+// utilisables ici puisque l'éditeur est une vraie page à part, pas montée
+// sous ChatFlottant.tsx. Consommés par l'effet ajouté dans
+// ChatSection.tsx (même esprit que celui de ChatFlottant.tsx un peu plus
+// haut dans ce fichier pour demandeOuvrirConversation).
+export function useOuvrirConversationPleinEcran() {
+  const ctx = useContext(ContexteChat);
+  const router = useRouter();
+  return (conversationId: string | null) => {
+    ctx?.setDemandeOuvrirConversation({ conversationId });
+    router.push("/chat");
+  };
+}
+
+export function useNouvelleConversationPleinEcran() {
+  const ctx = useContext(ContexteChat);
+  const router = useRouter();
+  return () => {
+    ctx?.setCle(crypto.randomUUID());
+    ctx?.setMessagesInitiaux([]);
+    ctx?.setNbMessages(0);
+    router.push("/chat");
+  };
+}
+
 // 30/08/2026, tiroir mobile du chat plein écran (AppSidebar.tsx,
 // contexteChat=true) : les liens du "Plus" repris de BlocsMenuPlus qui
 // n'ont pas d'id de section (Accueil, Paramètres, Rappels -- pas

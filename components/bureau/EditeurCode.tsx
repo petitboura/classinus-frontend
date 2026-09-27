@@ -3,33 +3,33 @@
 import { useEffect, useMemo, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
-import { FolderOpen, Play, Save, Square } from "lucide-react";
+import { FolderOpen, MessageCircle, Play, Save, Square } from "lucide-react";
 import { EXTENSION_PAR_LANGAGE, LANGAGES_PYTHON } from "@/components/chat/BlocCode";
 import { FormulaireValeursPrealables, SortieExecutionCode } from "@/components/chat/SortieExecutionCode";
 import { useExecutionPython } from "@/lib/useExecutionPython";
 import { useTheme } from "@/lib/useTheme";
+import { useNouvelleConversationPleinEcran, useOuvrirConversationPleinEcran } from "@/lib/contexteChat";
 import { detecterLangage, extensionsLangage, LANGAGES_EDITEUR } from "@/lib/langagesEditeur";
 import type { FichierBibliothequePersonnelle } from "@/lib/api";
 import { DialogueOuvrirEditeur } from "./DialogueOuvrirEditeur";
 import { DialogueEnregistrerEditeur } from "./DialogueEnregistrerEditeur";
+import { DialogueRetourChat } from "./DialogueRetourChat";
 
-// 26/09/2026, chantier "éditeur de code du Bureau" (demande Bourama :
+// 26-27/09/2026, chantier "éditeur de code du Bureau" (demande Bourama :
 // un éditeur type Thonny, dont la bibliothèque privée joue le rôle
 // d'explorateur de fichiers -- pas de panneau explorateur intégré,
-// exactement comme Thonny lui-même n'en a pas). Étape A du découpage en
-// 3 chantiers parallèles (voir /areas/bibliotheque-code-clovis.md côté
-// mémoire) : cette page ne dépend d'aucune des deux autres (ponts chat,
-// traduction des erreurs) pour fonctionner seule.
-//
-// Contrat sessionStorage avec le futur pont chat -> éditeur (chantier B,
-// pas encore construit) : la clé "classinus:editeur:payload" contient
-// { code, langage, origineConversationId?, origineMessageId?,
-// origineFichierId? } -- lue une seule fois au montage puis vidée. Tant
-// que B n'existe pas, cette clé n'est jamais écrite : le comportement par
-// défaut (éditeur vide) est inchangé.
+// exactement comme Thonny lui-même n'en a pas). Chantiers A (cette page)
+// et B (pont chat <-> éditeur, BlocCode.tsx + lib/contexteChat.tsx)
+// réunis ici -- seul C (traduction des messages d'erreur,
+// SortieExecutionCode.tsx) reste indépendant.
+// Contrat sessionStorage avec le pont chat -> éditeur (BlocCode.tsx,
+// chantier B) : la clé "classinus:editeur:payload" contient { code,
+// langage, origineConversationId? } -- lue une seule fois au montage
+// puis vidée. Sans cette clé (éditeur ouvert directement depuis Bureau),
+// comportement inchangé : éditeur vide, pas d'origine.
 const CLE_SESSION_PAYLOAD = "classinus:editeur:payload";
 
-type PayloadEditeur = { code: string; langage: string };
+type PayloadEditeur = { code: string; langage: string; origineConversationId: string | null };
 
 function lirePayloadSession(): PayloadEditeur | null {
   if (typeof window === "undefined") return null;
@@ -39,7 +39,11 @@ function lirePayloadSession(): PayloadEditeur | null {
     window.sessionStorage.removeItem(CLE_SESSION_PAYLOAD);
     const payload = JSON.parse(brut) as Partial<PayloadEditeur>;
     if (typeof payload.code !== "string") return null;
-    return { code: payload.code, langage: typeof payload.langage === "string" ? payload.langage : "python" };
+    return {
+      code: payload.code,
+      langage: typeof payload.langage === "string" ? payload.langage : "python",
+      origineConversationId: typeof payload.origineConversationId === "string" ? payload.origineConversationId : null,
+    };
   } catch {
     return null;
   }
@@ -49,16 +53,21 @@ export function EditeurCode() {
   const [code, setCode] = useState("");
   const [langage, setLangage] = useState("python");
   const [nomFichierOuvert, setNomFichierOuvert] = useState<string | null>(null);
+  const [origineConversationId, setOrigineConversationId] = useState<string | null>(null);
   const [dialogueOuvrirVisible, setDialogueOuvrirVisible] = useState(false);
   const [dialogueEnregistrerVisible, setDialogueEnregistrerVisible] = useState(false);
+  const [dialogueRetourVisible, setDialogueRetourVisible] = useState(false);
   const [messageEnregistre, setMessageEnregistre] = useState<string | null>(null);
   const { resolu } = useTheme();
+  const ouvrirConversationPleinEcran = useOuvrirConversationPleinEcran();
+  const nouvelleConversationPleinEcran = useNouvelleConversationPleinEcran();
 
   useEffect(() => {
     const payload = lirePayloadSession();
     if (payload) {
       setCode(payload.code);
       setLangage(payload.langage);
+      setOrigineConversationId(payload.origineConversationId);
     }
   }, []);
 
@@ -85,6 +94,16 @@ export function EditeurCode() {
     setNomFichierOuvert(sansExtension);
     setDialogueEnregistrerVisible(false);
     setMessageEnregistre(`Enregistré dans la bibliothèque sous « ${fichier.nom_fichier} ».`);
+  }
+
+  // 27/09/2026, chantier "pont retour éditeur -> chat" (demande Bourama) :
+  // choix seulement si une conversation d'origine existe (code ouvert
+  // depuis un bloc du chat) -- sinon (écrit direct dans l'éditeur, ou
+  // ouvert depuis la bibliothèque) toujours une nouvelle conversation,
+  // sans demander.
+  function versLeChat() {
+    if (origineConversationId) setDialogueRetourVisible(true);
+    else nouvelleConversationPleinEcran();
   }
 
   const sortieExecution = executable ? (
@@ -145,6 +164,12 @@ export function EditeurCode() {
           >
             <Save size={13} /> Enregistrer
           </button>
+          <button
+            onClick={versLeChat}
+            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+          >
+            <MessageCircle size={13} /> Vers le chat
+          </button>
         </div>
       </div>
 
@@ -178,6 +203,13 @@ export function EditeurCode() {
           contenu={code}
           onEnregistre={apresEnregistrement}
           onFermer={() => setDialogueEnregistrerVisible(false)}
+        />
+      )}
+      {dialogueRetourVisible && (
+        <DialogueRetourChat
+          onOrigine={() => ouvrirConversationPleinEcran(origineConversationId)}
+          onNouvelle={nouvelleConversationPleinEcran}
+          onFermer={() => setDialogueRetourVisible(false)}
         />
       )}
     </div>

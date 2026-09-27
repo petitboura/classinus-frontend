@@ -94,6 +94,27 @@ export function ChatSection() {
     return () => observateur.disconnect();
   }, []);
 
+  // 27/09/2026, chantier "éditeur de code du Bureau", pont retour éditeur
+  // -> chat (useOuvrirConversationPleinEcran, lib/contexteChat.tsx) :
+  // même mécanisme et même esprit que l'effet équivalent de
+  // ChatFlottant.tsx pour la popup mini (Activité récente) --
+  // demandeOuvrirConversation n'était consommée que là jusqu'ici, jamais
+  // par la vraie page /chat. selectionnerConversation a besoin d'agent
+  // (agent.id) : si la demande arrive avant que l'agent soit chargé,
+  // l'effet se redéclenche dès qu'il arrive (dépendance ci-dessous).
+  // Consommée une seule fois (setDemandeOuvrirConversation(null)).
+  const demandeOuvrirConversation = ctxChat?.demandeOuvrirConversation ?? null;
+  useEffect(() => {
+    if (demandeOuvrirConversation === null || !agent) return;
+    selectionnerConversation({
+      conversation_id: demandeOuvrirConversation.conversationId,
+      titre: "",
+      derniere_activite: "",
+    });
+    ctxChat?.setDemandeOuvrirConversation(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectionnerConversation recréée à chaque rendu (pas dans useCallback) ; seuls demandeOuvrirConversation et agent doivent déclencher ce passage.
+  }, [demandeOuvrirConversation, agent]);
+
   const { fenetres, fermerToutes } = useFenetres();
   function fermerFenetresAuClic() {
     if (fenetres.length > 0) fermerToutes();
