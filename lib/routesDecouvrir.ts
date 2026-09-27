@@ -32,4 +32,12 @@ export const ROUTES_DECOUVRIR = {
     session: "/decouvrir/concentration/session",
     tempsEcran: "/decouvrir/concentration/temps-ecran",
   },
+  bureau: {
+    accueil: "/decouvrir/bureau",
+    programme: "/decouvrir/bureau/programme",
+    codes: "/decouvrir/bureau/codes",
+    entrerCode: "/decouvrir/bureau/entrer-code",
+    audit: "/decouvrir/bureau/audit",
+    signalements: "/decouvrir/bureau/signalements",
+  },
 } as const;

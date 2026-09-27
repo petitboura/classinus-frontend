@@ -44,6 +44,12 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     titre: "Concentration",
     description: "Coupe les distractions pendant tes sessions de travail, et suis le temps passé sur chaque application.",
   },
+  {
+    slug: "bureau",
+    href: ROUTES_DECOUVRIR.bureau.accueil,
+    titre: "Bureau",
+    description: "Le programme à enseigner, les codes à partager, et le suivi des signalements de tes élèves.",
+  },
 ];
 
 // Les trois volets de la Bibliothèque, textes validés par Bourama le
@@ -110,5 +116,43 @@ export const SOUS_PAGES_DECOUVRIR_CONCENTRATION: CarteDecouvrir[] = [
     href: ROUTES_DECOUVRIR.concentration.tempsEcran,
     titre: "Temps d'écran",
     description: "Le temps passé aujourd'hui dans chaque application, avec un historique sur les 7 derniers jours.",
+  },
+];
+
+// Les cinq volets de Bureau traités ici, textes validés par Bourama le
+// 27/09/2026. Établissements (6e carte de Bureau) volontairement exclu :
+// c'est exactement le même écran que la future section publique
+// Établissements (components/EspaceEtablissements.tsx, partagé entre
+// /bureau/etablissements et /etablissements), pas une page à part.
+export const SOUS_PAGES_DECOUVRIR_BUREAU: CarteDecouvrir[] = [
+  {
+    slug: "programme",
+    href: ROUTES_DECOUVRIR.bureau.programme,
+    titre: "Programme",
+    description: "Organise le programme d'un code et suis l'avancement de tes élèves, notion par notion. Réservé aux enseignants.",
+  },
+  {
+    slug: "codes",
+    href: ROUTES_DECOUVRIR.bureau.codes,
+    titre: "Mes codes",
+    description: "Crée un code et partage-le : tous ceux qui l'entrent reçoivent ce que tu y mets.",
+  },
+  {
+    slug: "entrer-code",
+    href: ROUTES_DECOUVRIR.bureau.entrerCode,
+    titre: "Entrer un code",
+    description: "Quelqu'un t'a donné un code ? Entre-le pour recevoir tout ce qu'il partage.",
+  },
+  {
+    slug: "audit",
+    href: ROUTES_DECOUVRIR.bureau.audit,
+    titre: "Audit hebdomadaire",
+    description: "Un résumé chaque semaine des signalements de tes élèves. Réservé aux enseignants.",
+  },
+  {
+    slug: "signalements",
+    href: ROUTES_DECOUVRIR.bureau.signalements,
+    titre: "Signalements",
+    description: "Discute avec Classinus de chaque signalement reçu de tes élèves. Réservé aux enseignants.",
   },
 ];
