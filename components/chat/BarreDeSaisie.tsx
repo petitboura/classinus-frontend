@@ -831,13 +831,15 @@ export function BarreDeSaisie({
           setFichiers((prec) => prec.map((entree) => (entree.fichier === f ? { ...entree, zipJobId: job_id } : entree)));
         })
         .catch((e) => {
-          // Best-effort comme les autres uploads de ce composant : une
-          // archive illisible/trop lourde reste jointe (l'étudiant peut
-          // la retirer), mais sans job_id -- traitée normalement par
-          // envoyer() comme n'importe quel fichier sans dézipage prêt
-          // (le backend affichera juste que rien n'a pu être lu, voir
-          // core/zip_chat.py).
+          // Bug corrigé 27/09/2026 : un échec ici passait inaperçu (le
+          // fichier restait joint sans job_id, le message partait quand
+          // même, le LLM ne recevait donc STRICTEMENT rien sur cette
+          // archive et l'étudiant ne comprenait pas pourquoi). Retiré de
+          // la liste + message clair, plutôt que de laisser envoyer une
+          // pièce jointe qui ne sera jamais lue.
           console.error("Démarrage dézipage échoué :", e);
+          setFichiers((prec) => prec.filter((entree) => entree.fichier !== f));
+          alert(e instanceof Error ? e.message : "Impossible de lire cette archive.");
         });
     }
   }
