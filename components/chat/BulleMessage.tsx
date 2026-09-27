@@ -218,7 +218,7 @@ export interface MessageAffiche {
   // affiché avec un état "échec" plutôt que retiré silencieusement, pour
   // le cas où un fichier précis n'a pas pu être uploadé/lu alors que les
   // autres, eux, sont bien partis (voir ChatIA.tsx:envoyerMessage).
-  piecesJointes?: { nom: string; type: "image" | "document" | "video" | "audio"; previewUrl?: string; erreur?: string }[] | null;
+  piecesJointes?: { nom: string; type: "image" | "document" | "video" | "audio" | "zip"; previewUrl?: string; erreur?: string }[] | null;
   // Ajouté 2026-07-26 (demande Bourama) : true quand cette réponse précise
   // a été générée par un modèle de secours de qualité nettement réduite
   // (llama-3.1-8b-instant, tout dernier recours Groq avant Gemini -- voir
@@ -378,17 +378,22 @@ export type SegmentMessage =
 // éventuel + autres fichiers) était perdu -- sans conséquence tant qu'un
 // seul fichier par message était possible, mais aurait silencieusement
 // tronqué l'affichage dès qu'un deuxième bloc apparaissait.
-const MARQUEURS_PIECE_JOINTE: { motif: RegExp; type: "image" | "document" | "video" | "audio" }[] = [
+const MARQUEURS_PIECE_JOINTE: { motif: RegExp; type: "image" | "document" | "video" | "audio" | "zip" }[] = [
   { motif: /\[Image jointe : /, type: "image" },
   { motif: /\[Audio joint : /, type: "audio" },
   { motif: /\[Vidéo jointe : /, type: "video" },
   { motif: /\[Document joint : /, type: "document" },
+  // Zip (26/09/2026) : contrairement aux autres, ce bloc ne porte QUE le
+  // nom (pas de contenu extrait injecté ici, voir core/zip_chat.py et
+  // core/main.py:chat() -- le sommaire part directement dans le message
+  // envoyé au modèle côté serveur, pas via ce bloc texte visible).
+  { motif: /\[Archive jointe : /, type: "zip" },
 ];
 // Repère le début de CHAQUE bloc pièce jointe dans le texte (peu importe
 // le type), pour pouvoir découper le contenu en segments un par un.
-const DEBUT_BLOC_PIECE_JOINTE = /\n\n\[(?:Image jointe|Audio joint|Vidéo jointe|Document joint) : /g;
+const DEBUT_BLOC_PIECE_JOINTE = /\n\n\[(?:Image jointe|Audio joint|Vidéo jointe|Document joint|Archive jointe) : /g;
 
-function extraireUneBloc(bloc: string): { nom: string; type: "image" | "document" | "video" | "audio"; previewUrl?: string } | null {
+function extraireUneBloc(bloc: string): { nom: string; type: "image" | "document" | "video" | "audio" | "zip"; previewUrl?: string } | null {
   const correspondance = MARQUEURS_PIECE_JOINTE.find(({ motif }) => motif.test(bloc));
   if (!correspondance) return null;
   const { type } = correspondance;
