@@ -1,0 +1,19 @@
+{
+  "name": "capacitor-dossiers-electron",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Implementation Electron du plugin Capacitor \"Dossiers\" -- pour l'instant, uniquement obtenirInfosAppareil() (identifiant d'appareil du PC, necessaire pour que le canal agent applicatif distingue une fenetre Electron d'un onglet navigateur, voir lib/canalAgentApplicatif.ts). Les methodes de gestion de dossiers deja disponibles sur Android/iOS (choisirDossier, listerContenu, etc.) ne sont pas dans ce lot -- a ajouter ici plus tard si Bourama le demande.",
+  "capacitor": {
+    "electron": { "src": "electron" }
+  },
+  "scripts": {
+    "build": "tsc -p electron/tsconfig.json"
+  },
+  "devDependencies": {
+    "@capawesome/capacitor-electron": "^0.1.1",
+    "typescript": "^5.5.0"
+  },
+  "peerDependencies": {
+    "@capawesome/capacitor-electron": "^0.1.1"
+  }
+}
