@@ -1915,6 +1915,10 @@ export async function enregistrerMonProfil(payload: {
   profil_public?: boolean;
   // 26/09/2026, voir api/profiles.py:MettreAJourProfilPayload.
   est_professeur?: boolean;
+  // 27/09/2026, chantier "traduction erreurs execution", voir
+  // api/profiles.py:MettreAJourProfilPayload.
+  langue_cible_erreurs?: string;
+  traduction_auto_erreurs?: boolean;
 }) {
   return appelerApi("/api/profiles/me", {
     method: "PATCH",
@@ -1932,7 +1936,21 @@ export async function obtenirMonStatut() {
     // 26/09/2026, voir api/profiles.py:MonStatutReponse -- null =
     // jamais répondu à la question posée une fois dans Bureau.
     est_professeur: boolean | null;
+    // 27/09/2026, chantier "traduction erreurs execution", voir
+    // api/profiles.py:MonStatutReponse -- null = jamais répondu.
+    langue_cible_erreurs: string | null;
+    traduction_auto_erreurs: boolean | null;
   }>;
+}
+
+/** POST /api/traduire-message -- voir api/traduction_erreurs.py. Réservé
+ * aux comptes connectés (401 sinon, voir SortieExecutionCode.tsx qui
+ * affiche alors "connecte-toi pour traduire"). */
+export async function traduireMessage(texte: string, langueCible: string) {
+  return appelerApi("/api/traduire-message", {
+    method: "POST",
+    body: JSON.stringify({ texte, langue_cible: langueCible }),
+  }) as Promise<{ traduction: string | null }>;
 }
 
 /** DELETE /api/profiles/me -- voir api/profiles.py:supprimer_mon_compte

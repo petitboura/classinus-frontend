@@ -32,6 +32,16 @@ export type ValeurStatutUtilisateur = {
   connecte: boolean;
   /** Enregistre la réponse (optimiste, revient en arrière si l'écriture échoue). */
   definirEstProfesseur: (valeur: boolean) => Promise<void>;
+  // 27/09/2026, chantier "traduction erreurs execution" : même
+  // convention que estProfesseur ci-dessus -- null = jamais répondu
+  // (question posée au premier clic sur "Traduire", voir
+  // SortieExecutionCode.tsx).
+  /** null = jamais choisi de langue cible pour la traduction des erreurs. */
+  langueCibleErreurs: string | null;
+  /** null/false = traduction à la demande seulement, true = automatique. */
+  traductionAutoErreurs: boolean | null;
+  definirLangueCibleErreurs: (valeur: string) => Promise<void>;
+  definirTraductionAutoErreurs: (valeur: boolean) => Promise<void>;
 };
 
 export const ContexteStatutUtilisateur = createContext<ValeurStatutUtilisateur>({
@@ -39,12 +49,18 @@ export const ContexteStatutUtilisateur = createContext<ValeurStatutUtilisateur>(
   estProfesseur: null,
   connecte: false,
   definirEstProfesseur: async () => {},
+  langueCibleErreurs: null,
+  traductionAutoErreurs: null,
+  definirLangueCibleErreurs: async () => {},
+  definirTraductionAutoErreurs: async () => {},
 });
 
 export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
   const [chargement, setChargement] = useState(true);
   const [estProfesseur, setEstProfesseur] = useState<boolean | null>(null);
   const [connecte, setConnecte] = useState(false);
+  const [langueCibleErreurs, setLangueCibleErreurs] = useState<string | null>(null);
+  const [traductionAutoErreurs, setTraductionAutoErreurs] = useState<boolean | null>(null);
 
   // Bug corrigé le 26/09/2026 (remonté par Bourama : "j'ai l'impression
   // qu'il demande à chaque fois") : la première version dépendait du
@@ -70,6 +86,8 @@ export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
       .then((s) => {
         if (annule) return;
         setEstProfesseur(s.est_professeur);
+        setLangueCibleErreurs(s.langue_cible_erreurs);
+        setTraductionAutoErreurs(s.traduction_auto_erreurs);
         setConnecte(true);
       })
       .catch(() => {
@@ -97,5 +115,36 @@ export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
     }
   }, [estProfesseur]);
 
-  return { chargement, estProfesseur, connecte, definirEstProfesseur };
+  const definirLangueCibleErreurs = useCallback(async (valeur: string) => {
+    const precedent = langueCibleErreurs;
+    setLangueCibleErreurs(valeur); // optimiste
+    try {
+      await enregistrerMonProfil({ langue_cible_erreurs: valeur });
+    } catch (e) {
+      setLangueCibleErreurs(precedent);
+      throw e;
+    }
+  }, [langueCibleErreurs]);
+
+  const definirTraductionAutoErreurs = useCallback(async (valeur: boolean) => {
+    const precedent = traductionAutoErreurs;
+    setTraductionAutoErreurs(valeur); // optimiste
+    try {
+      await enregistrerMonProfil({ traduction_auto_erreurs: valeur });
+    } catch (e) {
+      setTraductionAutoErreurs(precedent);
+      throw e;
+    }
+  }, [traductionAutoErreurs]);
+
+  return {
+    chargement,
+    estProfesseur,
+    connecte,
+    definirEstProfesseur,
+    langueCibleErreurs,
+    traductionAutoErreurs,
+    definirLangueCibleErreurs,
+    definirTraductionAutoErreurs,
+  };
 }

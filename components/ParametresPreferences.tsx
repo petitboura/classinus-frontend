@@ -8,6 +8,7 @@ import { useTheme, type ChoixTheme } from "@/lib/useTheme";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
+import { LANGUES_TRADUCTION_ERREURS } from "@/lib/languesTraductionErreurs";
 
 // 19/09/2026, demande Bourama : ancien écran "preferences" d'EspaceParametres.tsx.
 const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
@@ -21,7 +22,14 @@ export function ParametresPreferences() {
   // via ce contexte (voir lib/contexteStatutUtilisateur.tsx). null =
   // jamais répondu, traité comme "prof" pour l'affichage du switch (même
   // valeur par défaut que côté Bureau).
-  const { estProfesseur: estProfesseurContexte, definirEstProfesseur } = useContext(ContexteStatutUtilisateur);
+  const {
+    estProfesseur: estProfesseurContexte,
+    definirEstProfesseur,
+    langueCibleErreurs,
+    traductionAutoErreurs,
+    definirLangueCibleErreurs,
+    definirTraductionAutoErreurs,
+  } = useContext(ContexteStatutUtilisateur);
   const estProfesseur = estProfesseurContexte ?? true;
 
   const [chargement, setChargement] = useState(true);
@@ -32,6 +40,12 @@ export function ParametresPreferences() {
   const [enregistrementNotifs, setEnregistrementNotifs] = useState(false);
   const [messageProf, setMessageProf] = useState<string | null>(null);
   const [enregistrementProf, setEnregistrementProf] = useState(false);
+  // 27/09/2026, chantier "traduction erreurs execution".
+  const [messageLangue, setMessageLangue] = useState<string | null>(null);
+  const [enregistrementLangue, setEnregistrementLangue] = useState(false);
+  const [messageAuto, setMessageAuto] = useState<string | null>(null);
+  const [enregistrementAuto, setEnregistrementAuto] = useState(false);
+  const traductionAuto = traductionAutoErreurs ?? false;
 
   useEffect(() => {
     lireMonProfil()
@@ -73,6 +87,33 @@ export function ParametresPreferences() {
       setMessageProf(messageErreur(e));
     } finally {
       setEnregistrementProf(false);
+    }
+  }
+
+  async function choisirLangueCibleErreurs(langue: string) {
+    setEnregistrementLangue(true);
+    setMessageLangue(null);
+    try {
+      await definirLangueCibleErreurs(langue);
+      setMessageLangue(`Erreurs traduites en ${langue.toLowerCase()}.`);
+    } catch (e) {
+      setMessageLangue(messageErreur(e));
+    } finally {
+      setEnregistrementLangue(false);
+    }
+  }
+
+  async function basculerTraductionAuto() {
+    const nouvelleValeur = !traductionAuto;
+    setEnregistrementAuto(true);
+    setMessageAuto(null);
+    try {
+      await definirTraductionAutoErreurs(nouvelleValeur);
+      setMessageAuto(nouvelleValeur ? "Traduction automatique activée." : "Traduction à la demande (bouton Traduire).");
+    } catch (e) {
+      setMessageAuto(messageErreur(e));
+    } finally {
+      setEnregistrementAuto(false);
     }
   }
 
@@ -168,6 +209,55 @@ export function ParametresPreferences() {
         </button>
       </div>
       {messageProf && <span className="text-sm text-dj-texte-muet">{messageProf}</span>}
+
+      <div className="flex flex-col gap-2 border-t border-dj-bordure pt-4">
+        <span className="text-sm font-medium text-dj-texte">Langue de traduction des erreurs</span>
+        <span className="text-xs text-dj-texte-muet">
+          Langue utilisée par le bouton "Traduire" sous une erreur d'exécution de code.
+        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {LANGUES_TRADUCTION_ERREURS.map((langue) => (
+            <button
+              key={langue}
+              onClick={() => choisirLangueCibleErreurs(langue)}
+              disabled={enregistrementLangue}
+              className={`rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
+                langueCibleErreurs === langue
+                  ? "border-dj-accent-1 text-dj-accent-1"
+                  : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
+              }`}
+            >
+              {langue}
+            </button>
+          ))}
+        </div>
+        {messageLangue && <span className="text-sm text-dj-texte-muet">{messageLangue}</span>}
+      </div>
+
+      <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-dj-texte">Traduction automatique des erreurs</span>
+          <span className="text-xs text-dj-texte-muet">
+            Traduit dès qu'une erreur apparaît, sans avoir à cliquer sur "Traduire".
+          </span>
+        </div>
+        <button
+          role="switch"
+          aria-checked={traductionAuto}
+          onClick={basculerTraductionAuto}
+          disabled={enregistrementAuto || !langueCibleErreurs}
+          className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+            traductionAuto ? "bg-dj-accent-1" : "bg-dj-inactif"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              traductionAuto ? "translate-x-5" : "translate-x-0.5"
+            }`}
+          />
+        </button>
+      </div>
+      {messageAuto && <span className="text-sm text-dj-texte-muet">{messageAuto}</span>}
     </div>
   );
 }
