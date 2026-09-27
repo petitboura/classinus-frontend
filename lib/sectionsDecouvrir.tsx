@@ -38,6 +38,12 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     titre: "Personnaliser Classinus",
     description: "Tes propres consignes, les skills partagés par les élèves, et ce que l'IA retient de vos échanges.",
   },
+  {
+    slug: "concentration",
+    href: ROUTES_DECOUVRIR.concentration.accueil,
+    titre: "Concentration",
+    description: "Coupe les distractions pendant tes sessions de travail, et suis le temps passé sur chaque application.",
+  },
 ];
 
 // Les trois volets de la Bibliothèque, textes validés par Bourama le
@@ -87,5 +93,22 @@ export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
     href: ROUTES_DECOUVRIR.personnaliser.memoire,
     titre: "Ma mémoire",
     description: "Ce que Classinus retient de vos échanges passés, à consulter, corriger ou effacer à tout moment.",
+  },
+];
+
+// Les deux volets de Concentration, textes validés par Bourama le
+// 27/09/2026.
+export const SOUS_PAGES_DECOUVRIR_CONCENTRATION: CarteDecouvrir[] = [
+  {
+    slug: "session",
+    href: ROUTES_DECOUVRIR.concentration.session,
+    titre: "Contrôle de session",
+    description: "Coupe les sonneries et notifications, et active Ne pas déranger pendant toute la durée de ta session.",
+  },
+  {
+    slug: "temps-ecran",
+    href: ROUTES_DECOUVRIR.concentration.tempsEcran,
+    titre: "Temps d'écran",
+    description: "Le temps passé aujourd'hui dans chaque application, avec un historique sur les 7 derniers jours.",
   },
 ];

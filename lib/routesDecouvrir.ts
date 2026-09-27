@@ -27,4 +27,9 @@ export const ROUTES_DECOUVRIR = {
     skillsPublics: "/decouvrir/personnaliser/skills-publics",
     memoire: "/decouvrir/personnaliser/memoire",
   },
+  concentration: {
+    accueil: "/decouvrir/concentration",
+    session: "/decouvrir/concentration/session",
+    tempsEcran: "/decouvrir/concentration/temps-ecran",
+  },
 } as const;

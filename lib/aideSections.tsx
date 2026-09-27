@@ -84,6 +84,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Coupe les sonneries et notifications, et active Ne pas déranger pendant la durée choisie.",
     texteComplet:
       "Coupe les sonneries et notifications, et active Ne pas déranger le temps de ta session de travail. L'activation se fait dans les réglages système (Accessibilité), en dehors de l'app.",
+    lienDecouvrir: ROUTES_DECOUVRIR.concentration.session,
   },
   {
     // Partie 5 (06/09/2026, chantier "confiance pédagogique") : côté
@@ -147,6 +148,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Temps passé aujourd'hui dans chaque app, et les 7 derniers jours.",
     texteComplet:
       "Affiche le temps passé aujourd'hui dans chaque app installée, avec un historique sur les 7 derniers jours. Nécessite l'app mobile Classinus (Android uniquement pour l'instant).",
+    lienDecouvrir: ROUTES_DECOUVRIR.concentration.tempsEcran,
   },
   {
     id: "mes-codes",
