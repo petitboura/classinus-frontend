@@ -10,6 +10,7 @@ import { telechargerContenuLocal } from "@/lib/telecharger";
 import { BlocLarge } from "./BlocLarge";
 import { FormulaireValeursPrealables, SortieExecutionCode } from "./SortieExecutionCode";
 import { useExecutionPython } from "@/lib/useExecutionPython";
+import { ROUTES_BUREAU } from "@/lib/routesBureau";
 
 // Rendu des blocs ```lang ... ``` "code réel" du markdown (les langages
 // spéciaux -- mermaid/chart/carte/html -- sont interceptés un niveau plus
@@ -153,7 +154,7 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
       // l'éditeur s'ouvrira simplement vide plutôt que préempli, pas
       // bloquant pour autant.
     }
-    router.push("/bureau/editeur");
+    router.push(ROUTES_BUREAU.editeur);
   }
 
   // Bouton Agrandir/Rétrécir partagé entre vue inline et plein écran

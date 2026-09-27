@@ -11,6 +11,7 @@ import {
 } from "@/lib/api";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { messageErreur } from "@/lib/erreurs";
+import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 
 // 26/09/2026, chantier "éditeur de code du Bureau" (demande Bourama : nom
 // obligatoire, dossier optionnel -- comme le reste de la bibliothèque,
@@ -135,19 +136,15 @@ export function DialogueEnregistrerEditeur({
           {chargementDossiers ? (
             <Loader2 size={16} className="animate-spin text-dj-texte-muet" />
           ) : (
-            <select
-              value={dossierChoisi}
-              onChange={(e) => setDossierChoisi(e.target.value)}
-              className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte"
-            >
-              <option value={AUCUN_DOSSIER}>Aucun dossier (racine)</option>
-              {dossiers.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.nom}
-                </option>
-              ))}
-              <option value={NOUVEAU_DOSSIER}>+ Nouveau dossier...</option>
-            </select>
+            <SelectPersonnalise
+              options={[
+                { id: AUCUN_DOSSIER, label: "Aucun dossier (racine)" },
+                ...dossiers.map((d) => ({ id: d.id, label: d.nom })),
+                { id: NOUVEAU_DOSSIER, label: "+ Nouveau dossier..." },
+              ]}
+              valeur={dossierChoisi}
+              onChange={setDossierChoisi}
+            />
           )}
         </label>
 

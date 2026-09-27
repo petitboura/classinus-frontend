@@ -480,13 +480,21 @@ export function useOuvrirConversationPleinEcran() {
   };
 }
 
+// 27/09/2026, demande Bourama (retour de test du chantier "pont
+// éditeur -> chat") : "Vers le chat" n'emmenait jamais le code, seule la
+// navigation avait lieu. `texteInitial` optionnel dépose le texte dans
+// texteInitialConversation (même champ lu par ChatIA via demandePrefill/
+// ChatFlottant.tsx, voir plus haut) avant la navigation -- ce hook fait
+// déjà lui-même la réinitialisation de conversation, pas besoin de
+// passer par demandePrefill + son effet (ChatFlottant uniquement).
 export function useNouvelleConversationPleinEcran() {
   const ctx = useContext(ContexteChat);
   const router = useRouter();
-  return () => {
+  return (texteInitial?: string) => {
     ctx?.setCle(crypto.randomUUID());
     ctx?.setMessagesInitiaux([]);
     ctx?.setNbMessages(0);
+    ctx?.setTexteInitialConversation(texteInitial ?? null);
     router.push("/chat");
   };
 }

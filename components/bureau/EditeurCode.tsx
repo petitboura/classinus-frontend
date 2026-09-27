@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
-import { FolderOpen, MessageCircle, Play, Save, Square } from "lucide-react";
+import { FolderOpen, MessageCircle, Maximize2, Minimize2, Play, Save, Square } from "lucide-react";
 import { EXTENSION_PAR_LANGAGE, LANGAGES_PYTHON } from "@/components/chat/BlocCode";
 import { FormulaireValeursPrealables, SortieExecutionCode } from "@/components/chat/SortieExecutionCode";
+import { PleinEcranApercu } from "@/components/chat/PleinEcranApercu";
+import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { useExecutionPython } from "@/lib/useExecutionPython";
 import { useTheme } from "@/lib/useTheme";
 import { useNouvelleConversationPleinEcran, useOuvrirConversationPleinEcran } from "@/lib/contexteChat";
@@ -58,6 +60,7 @@ export function EditeurCode() {
   const [dialogueEnregistrerVisible, setDialogueEnregistrerVisible] = useState(false);
   const [dialogueRetourVisible, setDialogueRetourVisible] = useState(false);
   const [messageEnregistre, setMessageEnregistre] = useState<string | null>(null);
+  const [pleinEcran, setPleinEcran] = useState(false);
   const { resolu } = useTheme();
   const ouvrirConversationPleinEcran = useOuvrirConversationPleinEcran();
   const nouvelleConversationPleinEcran = useNouvelleConversationPleinEcran();
@@ -89,6 +92,13 @@ export function EditeurCode() {
     setDialogueOuvrirVisible(false);
   }
 
+  function importerFichierLocal(nomFichier: string, contenu: string) {
+    setCode(contenu);
+    setLangage(detecterLangage(nomFichier));
+    setNomFichierOuvert(nomFichier.replace(/\.[^./]+$/, ""));
+    setDialogueOuvrirVisible(false);
+  }
+
   function apresEnregistrement(fichier: FichierBibliothequePersonnelle) {
     const sansExtension = fichier.nom_fichier.replace(/\.[^./]+$/, "");
     setNomFichierOuvert(sansExtension);
@@ -101,9 +111,11 @@ export function EditeurCode() {
   // depuis un bloc du chat) -- sinon (écrit direct dans l'éditeur, ou
   // ouvert depuis la bibliothèque) toujours une nouvelle conversation,
   // sans demander.
+  const codeEnBlocMarkdown = `\`\`\`${langage}\n${code}\n\`\`\``;
+
   function versLeChat() {
     if (origineConversationId) setDialogueRetourVisible(true);
-    else nouvelleConversationPleinEcran();
+    else nouvelleConversationPleinEcran(codeEnBlocMarkdown);
   }
 
   const sortieExecution = executable ? (
@@ -127,51 +139,66 @@ export function EditeurCode() {
     )
   ) : null;
 
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2">
-        <select
-          value={langage}
-          onChange={(e) => setLangage(e.target.value)}
-          className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte"
+  // 27/09/2026, demande Bourama (retour de test) : un bouton pour mettre
+  // l'éditeur lui-même en plein écran (au-delà du plein écran d'un bloc
+  // de code isolé côté chat, voir BlocCode.tsx) -- réutilise le même
+  // composant PleinEcranApercu que le reste du dépôt plutôt qu'une
+  // implémentation maison.
+  const boutonsBarre = (
+    <div className="flex items-center gap-1.5">
+      {executable && (
+        <button
+          onClick={execution.enCours ? execution.arreter : execution.executer}
+          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs font-medium text-dj-accent-1-texte transition-colors hover:opacity-80"
         >
-          {LANGAGES_EDITEUR.map((l) => (
-            <option key={l.valeur} value={l.valeur}>
-              {l.libelle}
-            </option>
-          ))}
-        </select>
+          {execution.enCours ? <Square size={13} /> : <Play size={13} />}
+          {execution.enCours ? "Arrêter" : "Exécuter"}
+        </button>
+      )}
+      <button
+        onClick={() => setDialogueOuvrirVisible(true)}
+        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+      >
+        <FolderOpen size={13} /> Ouvrir
+      </button>
+      <button
+        onClick={() => setDialogueEnregistrerVisible(true)}
+        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+      >
+        <Save size={13} /> Enregistrer
+      </button>
+      <button
+        onClick={versLeChat}
+        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+      >
+        <MessageCircle size={13} /> Vers le chat
+      </button>
+      <button
+        onClick={() => setPleinEcran((v) => !v)}
+        aria-label={pleinEcran ? "Rétrécir" : "Agrandir l'éditeur"}
+        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+      >
+        {pleinEcran ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+      </button>
+    </div>
+  );
 
-        <div className="flex items-center gap-1.5">
-          {executable && (
-            <button
-              onClick={execution.enCours ? execution.arreter : execution.executer}
-              className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs font-medium text-dj-accent-1-texte transition-colors hover:opacity-80"
-            >
-              {execution.enCours ? <Square size={13} /> : <Play size={13} />}
-              {execution.enCours ? "Arrêter" : "Exécuter"}
-            </button>
-          )}
-          <button
-            onClick={() => setDialogueOuvrirVisible(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
-          >
-            <FolderOpen size={13} /> Ouvrir
-          </button>
-          <button
-            onClick={() => setDialogueEnregistrerVisible(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
-          >
-            <Save size={13} /> Enregistrer
-          </button>
-          <button
-            onClick={versLeChat}
-            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
-          >
-            <MessageCircle size={13} /> Vers le chat
-          </button>
-        </div>
+  const barreOutils = (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2">
+      <div className="w-36">
+        <SelectPersonnalise
+          options={LANGAGES_EDITEUR.map((l) => ({ id: l.valeur, label: l.libelle }))}
+          valeur={langage}
+          onChange={setLangage}
+        />
       </div>
+      {boutonsBarre}
+    </div>
+  );
+
+  const zoneEditeur = (
+    <>
+      {!pleinEcran && barreOutils}
 
       {messageEnregistre && (
         <p className="animate-dj-fade-in-rapide rounded-lg bg-dj-accent-1-conteneur px-3 py-1.5 text-xs text-dj-accent-1-texte">
@@ -187,14 +214,22 @@ export function EditeurCode() {
           theme={resolu === "sombre" ? vscodeDark : vscodeLight}
           basicSetup={{ foldGutter: true, autocompletion: true }}
           className="text-[13px]"
-          minHeight="45vh"
+          minHeight={pleinEcran ? "100%" : "45vh"}
         />
       </div>
 
       {sortieExecution}
+    </>
+  );
 
+  const dialogues = (
+    <>
       {dialogueOuvrirVisible && (
-        <DialogueOuvrirEditeur onChoisir={ouvrirFichier} onFermer={() => setDialogueOuvrirVisible(false)} />
+        <DialogueOuvrirEditeur
+          onChoisir={ouvrirFichier}
+          onImporterLocal={importerFichierLocal}
+          onFermer={() => setDialogueOuvrirVisible(false)}
+        />
       )}
       {dialogueEnregistrerVisible && (
         <DialogueEnregistrerEditeur
@@ -208,10 +243,41 @@ export function EditeurCode() {
       {dialogueRetourVisible && (
         <DialogueRetourChat
           onOrigine={() => ouvrirConversationPleinEcran(origineConversationId)}
-          onNouvelle={nouvelleConversationPleinEcran}
+          onNouvelle={() => nouvelleConversationPleinEcran(codeEnBlocMarkdown)}
           onFermer={() => setDialogueRetourVisible(false)}
         />
       )}
+    </>
+  );
+
+  if (pleinEcran) {
+    return (
+      <PleinEcranApercu
+        titre="Éditeur de code"
+        onFerme={() => setPleinEcran(false)}
+        entete={
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="w-36">
+              <SelectPersonnalise
+                options={LANGAGES_EDITEUR.map((l) => ({ id: l.valeur, label: l.libelle }))}
+                valeur={langage}
+                onChange={setLangage}
+              />
+            </div>
+            {boutonsBarre}
+          </div>
+        }
+      >
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-3">{zoneEditeur}</div>
+        {dialogues}
+      </PleinEcranApercu>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {zoneEditeur}
+      {dialogues}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronLeft, File, Folder, Loader2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, File, Folder, HardDrive, Loader2, X } from "lucide-react";
 import {
   listerBibliothequePersonnelle,
   listerDossiersBibliotheque,
@@ -30,9 +30,16 @@ function estOuvrable(fichier: FichierBibliothequePersonnelle): boolean {
 
 export function DialogueOuvrirEditeur({
   onChoisir,
+  onImporterLocal,
   onFermer,
 }: {
   onChoisir: (fichier: FichierBibliothequePersonnelle, contenu: string) => void;
+  // 27/09/2026, demande Bourama (retour de test) : "Ouvrir" doit aussi
+  // proposer de choisir un fichier depuis l'ordinateur, pas seulement
+  // depuis la bibliothèque -- lit le fichier localement (FileReader,
+  // rien n'est envoyé au serveur) et le dépose directement dans
+  // l'éditeur, sans passer par la bibliothèque personnelle.
+  onImporterLocal: (nomFichier: string, contenu: string) => void;
   onFermer: () => void;
 }) {
   const [fichiers, setFichiers] = useState<FichierBibliothequePersonnelle[]>([]);
@@ -41,8 +48,22 @@ export function DialogueOuvrirEditeur({
   const [ouvertureId, setOuvertureId] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [dossierCourantId, setDossierCourantId] = useState<string | null>(null);
+  const inputLocalRef = useRef<HTMLInputElement>(null);
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onFermer);
+
+  async function fichierLocalChoisi(e: React.ChangeEvent<HTMLInputElement>) {
+    const fichier = e.target.files?.[0];
+    e.target.value = "";
+    if (!fichier) return;
+    try {
+      const contenu = await fichier.text();
+      onImporterLocal(fichier.name, contenu);
+      fermer();
+    } catch {
+      setErreur("Impossible de lire ce fichier.");
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -117,6 +138,15 @@ export function DialogueOuvrirEditeur({
         </div>
 
         {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
+
+        <input ref={inputLocalRef} type="file" onChange={fichierLocalChoisi} className="hidden" />
+        <button
+          onClick={() => inputLocalRef.current?.click()}
+          className="flex items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte"
+        >
+          <HardDrive size={14} className="flex-shrink-0 text-dj-texte-muet" />
+          Depuis mon ordinateur
+        </button>
 
         {chargement ? (
           <div className="flex justify-center py-6">
