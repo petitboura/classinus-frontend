@@ -851,7 +851,7 @@ export function ChatIA({
     if (!ctxMinuteurs || nbFinsMinuteurs === 0) return;
     if (genEnCours || affichageEnCours || accesBloqueMineur) return;
     const fin = ctxMinuteurs.prendreFinEnAttente();
-    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, null, false, false, true);
+    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, null, false, false, [], true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbFinsMinuteurs, genEnCours, affichageEnCours, accesBloqueMineur]);
 
@@ -863,6 +863,10 @@ export function ChatIA({
     texteColle: string | null = null,
     rechercheForcee: boolean = false,
     sansEnseignant: boolean = false,
+    // Zip(s) dont le dézipage a démarré dès la sélection (26/09/2026,
+    // voir BarreDeSaisie.tsx:ajouterFichiers) -- job_id(s) transmis tels
+    // quels à /api/chat, terminés ou pas (voir core/main.py:chat()).
+    zipsEnAttente: string[] = [],
     // Minuteurs du chat (20/09/2026) : true quand l'appli, et non
     // l'étudiant, réveille Clovis (fin d'un minuteur). Le message part et
     // est enregistré comme les autres mais n'est jamais affiché comme une
@@ -900,8 +904,16 @@ export function ChatIA({
     // fois par appareil, jamais si déjà répondu avant".
     if (!automatique) proposerNotificationsPushUneFois(activerNotificationsPush);
 
-    const typeDeFichier = (f: File): "image" | "document" | "video" | "audio" =>
-      f.type.startsWith("image/") ? "image" : f.type.startsWith("video/") ? "video" : f.type.startsWith("audio/") ? "audio" : "document";
+    const typeDeFichier = (f: File): "image" | "document" | "video" | "audio" | "zip" =>
+      f.type.startsWith("image/")
+        ? "image"
+        : f.type.startsWith("video/")
+        ? "video"
+        : f.type.startsWith("audio/")
+        ? "audio"
+        : f.type === "application/zip" || f.type === "application/x-zip-compressed" || f.name.toLowerCase().endsWith(".zip")
+        ? "zip"
+        : "document";
 
     const messageUtilisateur: MessageAffiche = {
       id: null,
@@ -1013,6 +1025,19 @@ export function ChatIA({
             const lienAudio = urlAudio ? `\n[Lien réel du fichier : ${urlAudio}]` : "";
             return { texteBloc: `\n\n[Audio joint : ${fichier.name} -- transcription]\n${texteAudio}${lienAudio}` };
           }
+          if (type === "zip") {
+            // Rien à uploader ici : le dézipage a déjà démarré dès la
+            // sélection (voir BarreDeSaisie.tsx:ajouterFichiers), et le
+            // job_id correspondant part directement dans zipsEnAttente
+            // (voir plus bas, payload /api/chat) -- core/main.py:chat()
+            // termine lui-même le travail restant et injecte le sommaire
+            // côté serveur (voir core/zip_chat.py). Seul un repère textuel
+            // léger est ajouté ici, pour que le chip pièce jointe survive
+            // au rechargement de la page (voir BulleMessage.tsx,
+            // MARQUEURS_PIECE_JOINTE) -- volontairement AUCUN contenu de
+            // fichier n'est injecté dans le message visible.
+            return { texteBloc: `\n\n[Archive jointe : ${fichier.name}]` };
+          }
           if (type === "video") {
             const { transcript, frames_base64, url: urlVideo } = await uploaderVideoChat(fichier);
             const lienVideo = urlVideo ? `\n[Lien réel du fichier : ${urlVideo}]` : "";
@@ -1034,7 +1059,7 @@ export function ChatIA({
         })
       );
 
-      const echecs: { nom: string; typeFichier: "image" | "document" | "video" | "audio"; detail: string }[] = [];
+      const echecs: { nom: string; typeFichier: "image" | "document" | "video" | "audio" | "zip"; detail: string }[] = [];
       resultats.forEach((resultat, index) => {
         const fichier = fichiers[index];
         if (resultat.status === "fulfilled") {
@@ -1102,6 +1127,9 @@ export function ChatIA({
           image_url: null,
           image_urls: imageUrls.length ? imageUrls : null,
           images_base64: imagesBase64.length ? imagesBase64 : null,
+          // Zip(s) en cours/terminé(s) de dézipage (26/09/2026) -- voir
+          // core/main.py:chat(), paramètre zips_en_attente.
+          zips_en_attente: zipsEnAttente.length ? zipsEnAttente : null,
           localisation,
           // Fuseau du navigateur, pas une valeur figée côté code -- voir
           // core/main.py:chat(), paramètre fuseau_horaire.

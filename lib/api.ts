@@ -1244,6 +1244,20 @@ export async function ajouterFichiersBibliothequePersonnelle(fichiers: File[]) {
 }
 
 /**
+ * Démarre le dézipage en tâche de fond d'une archive .zip jointe à un
+ * message de chat -- voir api/uploads.py:demarrer_zip_chat et
+ * core/zip_chat.py. Appelé DÈS la sélection du fichier (pas seulement à
+ * l'envoi, voir BarreDeSaisie.tsx:ajouterFichiers), pour donner de
+ * l'avance au dézipage pendant que l'étudiant finit son message.
+ * Renvoie un job_id à transmettre tel quel dans zips_en_attente du
+ * payload /api/chat.
+ */
+export async function demarrerZipChat(fichier: File) {
+  const resultat = await appelerApiFichier("/api/uploads/zip-chat/demarrer", fichier);
+  return resultat as { job_id: string };
+}
+
+/**
  * Upload d'une image jointe à un message de chat -- voir
  * components/chat/ChatIA.tsx:envoyerMessage côté appelant. Réutilise
  * appelerApiFichier (même mécanique FormData) sur le nouvel endpoint dédié

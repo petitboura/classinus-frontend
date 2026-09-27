@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio } from "lucide-react";
-import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
+import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent, demarrerZipChat } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { LecteurMedia } from "./LecteurMedia";
@@ -193,6 +193,12 @@ const TYPES_FICHIERS_ACCEPTES =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document," +
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet," +
   "video/mp4,video/webm,video/quicktime," +
+  // Zip (26/09/2026, chantier "zip en conversation", demande Bourama) :
+  // dézipage démarré dès la sélection, voir ajouterFichiers ci-dessous et
+  // api/uploads.py:demarrer_zip_chat. application/x-zip-compressed est le
+  // type MIME renvoyé par certains navigateurs/OS (Windows notamment)
+  // pour un .zip, les deux sont donc acceptés ici.
+  "application/zip,application/x-zip-compressed," +
   // Upload d'un vrai fichier audio (2026-07-22, préparé par Bourama --
   // distinct de la dictée micro juste en dessous, qui passe par le même
   // endpoint /audio-chat mais un chemin de code différent, voir
@@ -221,7 +227,12 @@ export function BarreDeSaisie({
     localisation: LocalisationJointe,
     texteColle: string | null,
     rechercheForcee: boolean,
-    sansEnseignant: boolean
+    sansEnseignant: boolean,
+    // Zip(s) en cours/terminé(s) de dézipage (26/09/2026) : job_id(s)
+    // déjà démarrés dès la sélection (voir ajouterFichiers), à transmettre
+    // tels quels à /api/chat (zips_en_attente) -- voir
+    // ChatIA.tsx:envoyerMessage et core/main.py:chat().
+    zipsEnAttente: string[]
   ) => void;
   desactive?: boolean;
   // Ajouté 20/09/2026 (demande Bourama : bouton arrêter, jusque-là
@@ -285,7 +296,7 @@ export function BarreDeSaisie({
   // par message). Chaque entrée garde son propre aperçu (image only, même
   // logique qu'avant) et un id stable pour la clé React / le retrait
   // individuel.
-  const [fichiers, setFichiers] = useState<{ id: string; fichier: File; apercu: string | null }[]>([]);
+  const [fichiers, setFichiers] = useState<{ id: string; fichier: File; apercu: string | null; zipJobId?: string }[]>([]);
   const [imageAgrandieId, setImageAgrandieId] = useState<string | null>(null);
   // Icône de recherche web (2026-07-23, demande de Bourama : "une icône
   // dans la barre de saisie mais peut s'activer automatiquement") --
@@ -795,6 +806,34 @@ export function BarreDeSaisie({
         apercu: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
       })),
     ]);
+
+    // Zip (26/09/2026, chantier "zip en conversation", demande Bourama :
+    // "le dézipage commence à l'upload, au fond") -- démarré ICI, tout de
+    // suite, sans attendre l'envoi du message. Volontairement AUCUN
+    // indicateur visuel pendant cette attente (la vignette reste un
+    // fichier joint tout à fait normal) : si le dézipage n'est pas fini
+    // au moment d'envoyer, c'est core/main.py:chat() qui affichera une
+    // ligne de statut (voir ChatIA.tsx), jamais avant. Un id est attribué
+    // à chaque fichier AVANT cette boucle (ci-dessus) -- on ne peut donc
+    // relier la réponse à la bonne entrée qu'en comparant l'objet File
+    // lui-même (référence stable, jamais cloné entre les deux boucles).
+    for (const f of nouveaux) {
+      const estZip = f.type === "application/zip" || f.type === "application/x-zip-compressed" || f.name.toLowerCase().endsWith(".zip");
+      if (!estZip) continue;
+      demarrerZipChat(f)
+        .then(({ job_id }) => {
+          setFichiers((prec) => prec.map((entree) => (entree.fichier === f ? { ...entree, zipJobId: job_id } : entree)));
+        })
+        .catch((e) => {
+          // Best-effort comme les autres uploads de ce composant : une
+          // archive illisible/trop lourde reste jointe (l'étudiant peut
+          // la retirer), mais sans job_id -- traitée normalement par
+          // envoyer() comme n'importe quel fichier sans dézipage prêt
+          // (le backend affichera juste que rien n'a pu être lu, voir
+          // core/zip_chat.py).
+          console.error("Démarrage dézipage échoué :", e);
+        });
+    }
   }
 
   function retirerFichier(id: string) {
@@ -1400,7 +1439,12 @@ export function BarreDeSaisie({
       localisation,
       texteColle,
       rechercheForcee,
-      sansEnseignant
+      sansEnseignant,
+      // Zip(s) dont le dézipage a démarré dès la sélection (voir
+      // ajouterFichiers) -- transmis tels quels, terminés ou pas :
+      // core/main.py:chat() termine lui-même le travail restant si
+      // besoin (voir zipsEnAttente dans le type onEnvoyer ci-dessus).
+      fichiers.filter((f) => f.zipJobId).map((f) => f.zipJobId as string)
     );
     setTexte("");
     viderFichiers();
