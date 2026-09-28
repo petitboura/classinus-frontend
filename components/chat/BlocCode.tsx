@@ -57,6 +57,14 @@ export const LANGAGES_PYTHON = new Set(["python", "py", "python3"]);
 
 export function BlocCode({ langage, code, conversationId }: { langage: string; code: string; conversationId?: string }) {
   const router = useRouter();
+  // 27/09/2026, retour de test Bourama : au premier clic sur "Ouvrir dans
+  // l'éditeur", rien ne se passait visiblement (la page de l'éditeur, avec
+  // CodeMirror, n'était pas encore chargée) ; les clics suivants marchaient
+  // car la route était alors en cache. On la précharge dès l'affichage du
+  // bloc pour que le premier clic soit aussi immédiat que les suivants.
+  useEffect(() => {
+    router.prefetch(ROUTES_BUREAU.editeur);
+  }, [router]);
   const executable = LANGAGES_PYTHON.has((langage || "").toLowerCase());
   const execution = useExecutionPython(code);
   const [copie, setCopie] = useState(false);

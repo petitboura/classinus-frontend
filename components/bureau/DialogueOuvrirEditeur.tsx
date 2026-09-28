@@ -21,11 +21,14 @@ const EXTENSIONS_OUVRABLES = new Set([
   "go", "rs", "php", "rb", "yml", "yaml", "md", "toml", "json", "txt",
 ]);
 
+// 27/09/2026, retour de test Bourama : la liste montrait aussi des liens et
+// vidéos, car les liens sont stockés en "text/uri-list" (donc "text/*").
+// Un élément n'est ouvrable que si son extension est celle d'un fichier
+// texte/code connu -- le type MIME seul ne suffit pas.
 function estOuvrable(fichier: FichierBibliothequePersonnelle): boolean {
-  if (fichier.type_mime?.startsWith("text/")) return true;
-  if (fichier.type_mime === "application/json") return true;
+  if (fichier.type_mime === "text/uri-list") return false;
   const extension = fichier.nom_fichier.split(".").pop()?.toLowerCase();
-  return !!extension && EXTENSIONS_OUVRABLES.has(extension);
+  return !!extension && extension !== fichier.nom_fichier.toLowerCase() && EXTENSIONS_OUVRABLES.has(extension);
 }
 
 export function DialogueOuvrirEditeur({
