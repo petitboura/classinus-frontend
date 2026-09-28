@@ -18,6 +18,11 @@ export default function PageDecouvrirPersonnaliserMemoire() {
         met à jour automatiquement au fil des discussions, et tu peux aussi le corriger ou l&apos;effacer toi même à
         tout moment.
       </p>
+      <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
+        Sous ce résumé, une section Ma progression rassemble ce que Classinus a noté matière par matière (notions
+        vues, difficultés repérées). Elle se remplit toute seule quand tu partages des informations sur tes études
+        pendant les conversations.
+      </p>
     </MiseEnPageDecouvrirPersonnaliser>
   );
 }
