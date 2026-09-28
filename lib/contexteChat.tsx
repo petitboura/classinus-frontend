@@ -474,7 +474,12 @@ export function useOuvrirConversation() {
 export function useOuvrirConversationPleinEcran() {
   const ctx = useContext(ContexteChat);
   const router = useRouter();
-  return (conversationId: string | null) => {
+  // 27/09/2026, demande Bourama : depuis l'éditeur, le code doit arriver
+  // comme BROUILLON dans la conversation d'origine (pas envoyé) --
+  // texteInitial optionnel, lu par la barre de saisie au montage (voir
+  // ChatSection.tsx, qui le vide en quittant la page).
+  return (conversationId: string | null, texteInitial?: string) => {
+    ctx?.setTexteInitialConversation(texteInitial ?? null);
     ctx?.setDemandeOuvrirConversation({ conversationId });
     router.push("/chat");
   };

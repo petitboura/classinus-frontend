@@ -251,7 +251,7 @@ export function EditeurCode() {
       )}
       {dialogueRetourVisible && (
         <DialogueRetourChat
-          onOrigine={() => ouvrirConversationPleinEcran(origineConversationId)}
+          onOrigine={() => ouvrirConversationPleinEcran(origineConversationId, codeEnBlocMarkdown)}
           onNouvelle={() => nouvelleConversationPleinEcran(codeEnBlocMarkdown)}
           onFermer={() => setDialogueRetourVisible(false)}
         />

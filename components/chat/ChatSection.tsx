@@ -120,7 +120,16 @@ export function ChatSection() {
     if (fenetres.length > 0) fermerToutes();
   }
 
+  // 27/09/2026 : le brouillon venu de l'éditeur (texteInitialConversation)
+  // ne doit pas réapparaître dans une conversation ouverte plus tard --
+  // vidé en quittant la page et à chaque nouvelle conversation.
+  useEffect(() => {
+    return () => ctxChat?.setTexteInitialConversation(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function nouvelleConversation() {
+    ctxChat?.setTexteInitialConversation(null);
     setCle(crypto.randomUUID());
     setMessagesInitiaux([]);
     setNbMessages(0);
