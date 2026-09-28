@@ -28,6 +28,41 @@ cd ../capacitor-pont-natif-electron && npm install && npm run build
 Produit `electron/dist/plugin.mjs`. A refaire a chaque modification de
 `electron/src/plugin.mts`.
 
+## Lot V : lecture de la fenetre au premier plan (UI Automation)
+
+Le cas `lire_ecran` ne prend plus de capture d'image (decision Bourama du
+28/09/2026 : aucune image envoyee au modele, trop couteux). Il lit en TEXTE
+la fenetre au premier plan avec UI Automation de Windows, via un petit
+script PowerShell lance par `electron/src/lectureFenetreWindows.mts`
+(lecture seule, aucune fenetre affichee). Le resultat contient le titre, le
+nom de l'application, les titres des autres fenetres ouvertes, et les
+elements visibles (textes, boutons, champs avec leur valeur, cases,
+onglets...) avec leurs coordonnees d'ecran pour `cliquer_ecran`. La valeur
+d'un champ mot de passe n'est jamais lue. Les fenetres de Classinus lui
+meme sont reconnues par leur processus (`process.pid`) : si l'une d'elles
+est au premier plan, rien n'est lu et l'IA est renvoyee vers `lire_page`.
+
+Les limites (nombre d'elements, longueurs, delai) sont envoyees par le
+backend avec chaque demande (`core/outils_action_agent_pc.py`), elles ne
+sont reglees qu'a cet endroit. Si la lecture echoue (PowerShell absent ou
+bloque, delai depasse), on renvoie au moins le titre, en mode `titre_seul`.
+
+A tester sur la machine de Bourama, en priorite :
+
+- Bloc-notes avec une phrase ecrite : le texte est lu.
+- Chrome sur une page quelconque : contenu de la page lu, ou seulement la
+  barre d'outils ? (les navigateurs ne construisent leur arbre complet que
+  lorsqu'un outil d'accessibilite le demande : non verifie).
+- Ecran regle a 100 % puis 150 % : les coordonnees donnees a l'IA tombent
+  elles sur le bon element avec `cliquer_ecran` ? Le script se declare
+  sensible a l'echelle d'affichage (`SetProcessDPIAware`) pour s'aligner sur
+  la souris, mais l'accord avec `nut-js` n'a pas pu etre verifie.
+- Un champ mot de passe rempli : la valeur ne doit jamais apparaitre.
+- Une application qui n'expose rien : reponse propre en `titre_seul`.
+
+`screenshot-desktop` n'est plus utilise par ce paquet : la dependance de
+`package.json` peut etre retiree (a decider avec Bourama).
+
 ## Points a verifier au premier vrai test (sur la machine de Bourama)
 
 - `URL_API_BACKEND` (en tete de `plugin.mts`) : vaut

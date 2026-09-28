@@ -32,6 +32,8 @@ import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-elec
 // construit (npm run build) avant celui-ci -- voir le README a la
 // racine de ce paquet.
 import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/plugin.mjs";
+// Lot V : lecture en texte de la fenetre au premier plan (UI Automation).
+import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -180,12 +182,11 @@ async function traiterMessage(ws: WebSocket, brut: string): Promise<void> {
 }
 
 async function executerActionSysteme(type: string, parametres: Record<string, unknown>): Promise<unknown> {
-  // Import paresseux : @nut-tree-fork/nut-js et screenshot-desktop
-  // contiennent des modules natifs precompiles par plateforme --
-  // les charger seulement quand une action est reellement demandee
-  // evite un echec au demarrage de l'appli si jamais l'un des deux
-  // pose probleme sur une machine donnee (a surveiller au premier
-  // vrai test, voir le README de ce paquet).
+  // Import paresseux : @nut-tree-fork/nut-js contient des modules
+  // natifs precompiles par plateforme. Le charger seulement quand une
+  // action est reellement demandee evite un echec au demarrage de
+  // l'appli si jamais il pose probleme sur une machine donnee (a
+  // surveiller au premier vrai test, voir le README de ce paquet).
   const { mouse, keyboard, Point, Button, getActiveWindow } = await import("@nut-tree-fork/nut-js");
 
   try {
@@ -220,13 +221,16 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         return { ok: true };
       }
       case "lire_ecran": {
-        // Lot S : capture simple, verifie seulement que la capture et
-        // la lecture du titre de fenetre fonctionnent. La lecture fine
-        // du contenu affiche (OCR ou UI Automation Windows) est
-        // volontairement laissee pour un lot ulterieur si le besoin se
-        // confirme (voir plan-canal-en-direct-pc.md).
-        const screenshotDesktop = (await import("screenshot-desktop")).default;
-        await screenshotDesktop(); // prend la capture, non exploitee pour l'instant (voir ci-dessus)
+        // Lot V (28/09/2026, decision Bourama : aucune image envoyee au
+        // modele, seulement du texte) : lit le contenu de la fenetre au
+        // premier plan via UI Automation, voir lectureFenetreWindows.mts.
+        // Les limites viennent du backend (parametres de la demande).
+        const lecture = await lireFenetreAuPremierPlan(parametres);
+        if (!("erreur" in lecture)) return lecture;
+
+        // Repli : si la lecture fine echoue (PowerShell absent ou bloque,
+        // delai depasse...), on garde au moins le titre de la fenetre,
+        // comme avant le Lot V, en signalant que le contenu n'est pas lu.
         let titre: string | null = null;
         try {
           const fenetre = await getActiveWindow();
@@ -234,7 +238,16 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         } catch {
           titre = null;
         }
-        return { titre_fenetre_active: titre };
+        return {
+          titre_fenetre_active: titre,
+          application: null,
+          fenetre_classinus: false,
+          fenetres_ouvertes: [],
+          elements: [],
+          coupe: false,
+          mode: "titre_seul",
+          erreur_lecture: lecture.erreur,
+        };
       }
       default:
         return { erreur: `type d'action systeme inconnu : ${type}` };

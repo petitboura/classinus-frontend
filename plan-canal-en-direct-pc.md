@@ -185,3 +185,15 @@ Aucune modification n'est nécessaire dans `api/canal_agent_applicatif.py` : la 
 - **Confirmation avant action sensible** : Bourama a tranché de la laisser de côté pour ce premier temps de travail. Le point d'ancrage naturel pour l'ajouter plus tard est `demander_action_systeme` côté backend (avant de diffuser) et/ou dans le processus principal Electron (avant d'exécuter réellement, Lot S) : ajouter une liste d'actions jugées sensibles (ouverture d'un site de paiement, suppression de fichier, etc.) et une pause qui attend une validation explicite de l'étudiant, envoyée par la fenêtre de superposition.
 - **Mac** : ce plan cible Windows en priorité (comme le reste de l'environnement de travail de Bourama). Une extension à Mac demanderait de gérer les permissions Accessibilité/Enregistrement d'écran, spécifiques à ce système, et un compte Apple Developer payant pour la distribution, que Bourama n'a pas encore.
 - **Lecture d'écran fine (nom des fenêtres, texte précis affiché)** : volontairement laissée ouverte au Lot S plutôt que figée à l'avance, pour être tranchée selon la difficulté réelle rencontrée en codant (capture d'écran simple d'abord, UI Automation Windows si nécessaire).
+
+## Lot V : lecture du contenu de la fenetre (fait le 28/09/2026)
+
+La lecture d'ecran fine, laissee ouverte au Lot S, est faite : `lire_ecran`
+lit en texte le contenu de la fenetre au premier plan avec UI Automation de
+Windows (script PowerShell lance depuis le processus principal Electron),
+sans aucune image envoyee au modele. Voir la section "Lot V" du README de
+`packages/capacitor-pont-natif-electron` et `plan-canal-en-direct-pc-lot-v.md`
+si ce fichier est present dans le depot. Cote backend, les quatre outils PC
+sont maintenant enregistres (`core/registre_outils.py`, categorie
+`agent_pc`) et proposes au modele seulement quand une connexion systeme PC
+est ouverte (`core/main.py`, `a_connexion_systeme_pc`).
