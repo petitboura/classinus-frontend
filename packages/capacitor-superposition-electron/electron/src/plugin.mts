@@ -67,8 +67,36 @@ type EtatPousse = {
   [cle: string]: unknown;
 };
 
+// Correctif (28/09/2026, demande Bourama) : la fenetre de superposition
+// ne doit etre visible que lorsque le canal en direct est actif, ni au
+// lancement, ni en permanence. pousserEtat est le seul signal recu a
+// chaque changement pertinent cote fenetre principale (voir
+// useEmetteurSuperposition dans lib/superpositionElectron.ts, qui pousse
+// canal.actif a chaque changement), donc c'est ici qu'on decide de
+// montrer/cacher, plutot que dans electron/main.ts qui ne connait pas cet
+// etat. Variable de module (pas de champ sur la classe : Capacitor peut
+// recreer l'instance du plugin, ce module reste, lui, charge une seule
+// fois par processus) pour n'appeler show()/hide() qu'au VRAI changement
+// et ne pas voler le focus a chaque instantane (le curseur bouge en
+// continu pendant une trajectoire, voir useEmetteurSuperposition).
+let dernierCanalActif = false;
+
+function synchroniserVisibiliteSuperposition(actif: boolean) {
+  if (actif === dernierCanalActif) return;
+  dernierCanalActif = actif;
+  const superposition = trouverFenetreSuperposition();
+  if (!superposition || superposition.isDestroyed()) return;
+  if (actif) superposition.showInactive();
+  else superposition.hide();
+}
+
 class SuperpositionAgentImpl extends ElectronPlugin {
   async pousserEtat(etat: EtatPousse): Promise<void> {
+    const canal = etat.canal as { actif?: unknown } | undefined;
+    if (canal && typeof canal.actif === "boolean") {
+      synchroniserVisibiliteSuperposition(canal.actif);
+    }
+
     const principale = trouverFenetrePrincipale();
     if (!principale || !etat.curseur) {
       this.context.notifyListeners("etat", etat);

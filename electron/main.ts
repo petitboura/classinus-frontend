@@ -91,7 +91,16 @@ capacitorApp.whenReady.then(() => {
   });
   superposition.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-  superposition.once('ready-to-show', () => superposition.showInactive());
+  // Correctif (28/09/2026, demande Bourama) : ne JAMAIS afficher cette
+  // fenetre par defaut, meme une fois prete. Le curseur/la bulle/le
+  // journal ne doivent apparaitre que lorsque le canal en direct est
+  // actif : c'est desormais SuperpositionAgentImpl.pousserEtat (voir
+  // packages/capacitor-superposition-electron/electron/src/plugin.mts)
+  // qui appelle show()/hide() sur cette fenetre selon etat.canal.actif,
+  // a chaque instantane recu de la fenetre principale (lib/superpositionElectron.ts).
+  // Avant ce correctif, showInactive() ici rendait la fenetre visible
+  // dès le lancement de l'appli, quel que soit l'etat du canal, c'est
+  // ce qui produisait l'ecran fige que Bourama a signale.
 
   // Assomption a verifier par Bourama (impossible a tester dans ce bac a
   // sable, pas de build Next complet possible ici -- police Google
