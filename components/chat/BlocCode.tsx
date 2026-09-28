@@ -137,8 +137,8 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
 
   // 27/09/2026, chantier "éditeur de code du Bureau", pont chat ->
   // éditeur (voir components/bureau/EditeurCode.tsx) : dépose le code et
-  // son langage dans sessionStorage (l'éditeur les lit une seule fois au
-  // montage puis vide la clé), avec la conversation d'origine si connue,
+  // son langage dans sessionStorage (l'éditeur les lit sans les supprimer, valides
+  // 30 s grâce à l'horodatage), avec la conversation d'origine si connue,
   // pour que le bouton "Vers le chat" de l'éditeur sache y revenir.
   // Indépendant de tout enregistrement -- pas de bouton "enregistrer"
   // séparé ici, c'est celui déjà dans l'éditeur qui s'en charge une fois
@@ -147,7 +147,7 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
     try {
       window.sessionStorage.setItem(
         "classinus:editeur:payload",
-        JSON.stringify({ code, langage, origineConversationId: conversationId })
+        JSON.stringify({ code, langage, origineConversationId: conversationId, horodatage: Date.now() })
       );
     } catch {
       // sessionStorage indisponible (navigation privée stricte, quota) :

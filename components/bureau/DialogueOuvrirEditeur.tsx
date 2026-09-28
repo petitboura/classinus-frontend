@@ -80,7 +80,21 @@ export function DialogueOuvrirEditeur({
   }, []);
 
   const dossierCourant = dossiers.find((d) => d.id === dossierCourantId) ?? null;
-  const sousDossiers = dossiers.filter((d) => d.dossier_parent_id === dossierCourantId);
+  // 27/09/2026, retour de test Bourama : la liste montrait tous les
+  // dossiers de la bibliothèque. Un dossier n'est proposé que s'il contient
+  // au moins un fichier ouvrable, directement ou dans un sous-dossier.
+  const idsFichiersOuvrables = new Set(fichiers.map((f) => f.id));
+  const dossierContientOuvrable = (id: string, vus: Set<string> = new Set()): boolean => {
+    if (vus.has(id)) return false;
+    vus.add(id);
+    const d = dossiers.find((x) => x.id === id);
+    if (!d) return false;
+    if (d.fichier_ids.some((fid) => idsFichiersOuvrables.has(fid))) return true;
+    return dossiers.some((e) => e.dossier_parent_id === id && dossierContientOuvrable(e.id, vus));
+  };
+  const sousDossiers = dossiers.filter(
+    (d) => d.dossier_parent_id === dossierCourantId && dossierContientOuvrable(d.id)
+  );
   // Un fichier "à la racine" est un fichier qui n'apparaît dans aucun
   // dossier -- même logique de dérivation que le reste de la bibliothèque
   // (fichier_ids sur chaque dossier, pas de dossier_parent_id sur le

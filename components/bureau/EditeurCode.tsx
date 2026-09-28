@@ -38,8 +38,17 @@ function lirePayloadSession(): PayloadEditeur | null {
   try {
     const brut = window.sessionStorage.getItem(CLE_SESSION_PAYLOAD);
     if (!brut) return null;
-    window.sessionStorage.removeItem(CLE_SESSION_PAYLOAD);
-    const payload = JSON.parse(brut) as Partial<PayloadEditeur>;
+    // 27/09/2026, retour de test Bourama : le code s'affichait puis
+    // disparaissait (l'éditeur est remonté une seconde fois après le
+    // premier rendu, et la clé avait déjà été supprimée à la première
+    // lecture). Lecture désormais NON destructive et idempotente : un
+    // remontage retrouve le même code. Un horodatage évite de réappliquer
+    // un vieux payload lors d'une visite ultérieure (ignoré au-delà de 30 s).
+    const payload = JSON.parse(brut) as Partial<PayloadEditeur> & { horodatage?: number };
+    if (typeof payload.horodatage !== "number" || Date.now() - payload.horodatage > 30000) {
+      window.sessionStorage.removeItem(CLE_SESSION_PAYLOAD);
+      return null;
+    }
     if (typeof payload.code !== "string") return null;
     return {
       code: payload.code,
