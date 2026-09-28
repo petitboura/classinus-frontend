@@ -131,6 +131,36 @@ function estMessageActionSysteme(valeur: unknown): valeur is MessageActionSystem
   );
 }
 
+// Lot T (27/09/2026, voir plan-canal-en-direct-pc.md) : diffuse a la
+// fenetre principale (qui tient le journal et la bulle, voir
+// lib/superpositionElectron.ts) une phrase courte decrivant l'action
+// systeme, AVANT l'execution (phase "debut") puis avec son issue APRES
+// (phase "fin"), sur le meme modele que les actions DOM
+// (pousserJournalDepuisAgent puis mettreAJourJournalDepuisAgent, voir
+// lib/canalAgentApplicatif.ts). Renseigne par la methode
+// enregistrerToken ci dessous, seul moment ou le contexte du plugin est
+// disponible ; sans lui (rien d'enregistre), l'action s'execute quand
+// meme, simplement sans trace visuelle.
+type NotifierWeb = (evenement: string, donnees: Record<string, unknown>) => void;
+let notifierWeb: NotifierWeb | null = null;
+
+function decrireActionSysteme(type: string, parametres: Record<string, unknown>): string {
+  switch (type) {
+    case "cliquer_ecran":
+      return "Clovis a cliqué à l'écran";
+    case "taper_clavier":
+      return "Clovis a écrit du texte";
+    case "ouvrir_application": {
+      const nom = String(parametres.nom ?? "").trim();
+      return nom ? `Clovis a ouvert ${nom}` : "Clovis a ouvert une application";
+    }
+    case "lire_ecran":
+      return "Clovis a regardé l'écran";
+    default:
+      return "Clovis a agi sur l'ordinateur";
+  }
+}
+
 async function traiterMessage(ws: WebSocket, brut: string): Promise<void> {
   let message: unknown;
   try {
@@ -140,7 +170,13 @@ async function traiterMessage(ws: WebSocket, brut: string): Promise<void> {
   }
   if (!estMessageActionSysteme(message)) return; // pas pour nous, on ignore silencieusement
 
-  const resultat = await executerActionSysteme(message.action_systeme, message.parametres || {});
+  const parametres = message.parametres || {};
+  const description = decrireActionSysteme(message.action_systeme, parametres);
+  notifierWeb?.("actionSysteme", { id: message.id, phase: "debut", description });
+  const resultat = await executerActionSysteme(message.action_systeme, parametres);
+  const enErreur =
+    typeof resultat === "object" && resultat !== null && typeof (resultat as { erreur?: unknown }).erreur === "string";
+  notifierWeb?.("actionSysteme", { id: message.id, phase: "fin", statut: enErreur ? "erreur" : "succes" });
   ws.send(JSON.stringify({ id: message.id, resultat }));
 }
 
@@ -214,6 +250,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
 
 class PontNatifImpl extends ElectronPlugin {
   async enregistrerToken(options: { token: string }): Promise<void> {
+    notifierWeb = (evenement, donnees) => this.context.notifyListeners(evenement, donnees);
     ouvrirConnexion(options.token);
   }
 

@@ -19,7 +19,12 @@
 import { useEffect, useRef } from "react";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import type { ValeurCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
-import type { ValeurCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import {
+  pousserJournalDepuisAgent,
+  mettreAJourJournalDepuisAgent,
+  afficherTexteDepuisAgent,
+  type ValeurCanalEnDirect,
+} from "@/lib/contexteCanalEnDirect";
 
 export interface EtatSuperposition {
   curseur: { x: number; y: number; echelle: number; visible: boolean; forme: string; enAction: boolean };
@@ -108,6 +113,7 @@ export function estDansFenetreSuperposition(): boolean {
 export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: ValeurCanalEnDirect) {
   const refValeurs = useRef({ curseur, canal });
   refValeurs.current = { curseur, canal };
+  useJournalActionsSysteme();
 
   useEffect(() => {
     if (!surElectron()) return;
@@ -201,6 +207,61 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
           break;
         default:
           void c; // évite un avertissement "non utilisé" si aucun cas ci-dessus ne concerne le curseur pour l'instant
+      }
+    }).then((poignee) => {
+      if (annule) poignee.remove();
+      else retrait = () => poignee.remove();
+    });
+    return () => {
+      annule = true;
+      retrait?.();
+    };
+  }, []);
+}
+
+// Lot T (27/09/2026, voir plan-canal-en-direct-pc.md) : événement émis par
+// le plugin PontNatif (packages/capacitor-pont-natif-electron) autour de
+// chaque action système du lot S. Même plugin, même nom que celui déjà
+// enregistré dans lib/supabase.ts (registerPlugin renvoie l'instance
+// existante si le nom est déjà connu).
+interface EvenementActionSysteme {
+  id: string;
+  phase: "debut" | "fin";
+  description?: string;
+  statut?: "succes" | "erreur";
+}
+
+interface PluginPontNatifEvenements {
+  addListener(
+    eventName: "actionSysteme",
+    listenerFunc: (donnee: EvenementActionSysteme) => void
+  ): Promise<{ remove: () => void }>;
+}
+
+/**
+ * Monté dans la fenêtre PRINCIPALE (voir useEmetteurSuperposition) : traduit
+ * chaque action système en entrée de journal + phrase de bulle, exactement
+ * comme le fait lib/canalAgentApplicatif.ts pour un clic DOM. Le journal
+ * vit ici (fenêtre principale) et arrive ensuite dans la superposition par
+ * l'instantané habituel (Lot R) : rien de spécifique à faire côté
+ * superposition, c'est ce qui garantit le même rendu pour l'étudiant.
+ */
+function useJournalActionsSysteme() {
+  useEffect(() => {
+    if (!surElectron()) return;
+    const PontNatif = registerPlugin<PluginPontNatifEvenements>("PontNatif");
+    const idsJournal = new Map<string, string>();
+    let retrait: (() => void) | undefined;
+    let annule = false;
+    PontNatif.addListener("actionSysteme", (evenement) => {
+      if (evenement.phase === "debut" && evenement.description) {
+        const idJournal = pousserJournalDepuisAgent(evenement.description, "en_cours");
+        if (idJournal) idsJournal.set(evenement.id, idJournal);
+        afficherTexteDepuisAgent(evenement.description);
+      } else if (evenement.phase === "fin") {
+        const idJournal = idsJournal.get(evenement.id);
+        if (idJournal) mettreAJourJournalDepuisAgent(idJournal, evenement.statut ?? "succes");
+        idsJournal.delete(evenement.id);
       }
     }).then((poignee) => {
       if (annule) poignee.remove();
