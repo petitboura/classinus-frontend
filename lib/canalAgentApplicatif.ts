@@ -76,6 +76,7 @@ import { supabase } from "./supabase";
 import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
+import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { estDansFenetreSuperposition, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
 import {
@@ -524,6 +525,25 @@ async function traiterDemandeEcriture(id: string, actionId: string, texteAEcrire
 }
 
 
+/**
+ * Lot U : Clovis demande à voir ce que l'étudiant lit (outil lire_page côté
+ * backend). Lecture seule, rien n'est modifié dans la page. Toute connexion
+ * ouverte répond : la première réponse reçue par le backend est retenue.
+ * `longueurMax` vient du backend, qui garde la limite en un seul endroit.
+ */
+function traiterDemandeLecturePage(id: string, longueurMax: unknown) {
+  const idJournal = pousserJournalDepuisAgent("Lit ce qui est affiché à l'écran");
+  try {
+    const limite = typeof longueurMax === "number" ? longueurMax : undefined;
+    const lecture = lirePageVisible(limite);
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
+    envoyerReponse(id, { succes: true, texte: lecture.texte, coupe: lecture.coupe });
+  } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors de la lecture de la page." });
+  }
+}
+
 async function traiterDemandeClicGenerique(id: string, selecteur: string, description: string) {
   const element = resoudreElementCliquable(selecteur);
 
@@ -627,6 +647,8 @@ function traiterMessage(message: unknown) {
     selecteur_generique?: string;
     description?: string;
     montrer_action_id?: string;
+    lire_page?: boolean;
+    longueur_max?: number;
   };
   if (m.accuse_message_etudiant !== undefined) {
     traiterAccuseMessageEtudiant(m.accuse_message_etudiant, m.pris_en_compte);
@@ -638,6 +660,8 @@ function traiterMessage(message: unknown) {
     traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
+  } else if (m.id && m.lire_page === true) {
+    traiterDemandeLecturePage(m.id, m.longueur_max);
   } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
     traiterDemandeEcriture(m.id, m.action_id, m.texte_a_ecrire);
   } else if (m.id && m.action_id) {
