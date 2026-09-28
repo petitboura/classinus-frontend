@@ -89,7 +89,7 @@ export function BoutonJournalAgent() {
         deplacement.ref(noeud);
       }}
       data-agent-superposition="true"
-      className="fixed bottom-4 right-4 z-[65]"
+      className="fixed bottom-4 right-4 z-agent-controles"
       style={deplacement.style}
     >
       <button

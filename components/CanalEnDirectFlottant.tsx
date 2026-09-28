@@ -67,7 +67,7 @@ export function CanalEnDirectFlottant() {
       ref={deplacement.ref}
       data-agent-superposition="true"
       {...deplacement.poignee}
-      className={`fixed z-[65] flex touch-none flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
+      className={`fixed z-agent-controles flex touch-none flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
       style={{ left: `calc(${decalageRail}px + 1rem)`, ...deplacement.style }}
     >
       <motion.button

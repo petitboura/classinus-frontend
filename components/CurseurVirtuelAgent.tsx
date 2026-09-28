@@ -26,6 +26,7 @@ import { Grab, MousePointer2, Pointer } from "lucide-react";
 import { useContext } from "react";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteCurseurVirtuel, type FormeCurseur } from "@/lib/contexteCurseurVirtuel";
+import { COUCHE_AGENT_CURSEUR } from "@/lib/couchesAgent";
 
 const ICONE_PAR_FORME: Record<FormeCurseur, typeof MousePointer2> = {
   defaut: MousePointer2,
@@ -74,7 +75,7 @@ export function CurseurVirtuelAgent() {
             // jusqu'à 999) : le curseur ne doit jamais passer derrière,
             // sinon on ne le voit plus cliquer dans une popup et on ne peut
             // plus cliquer dessus pour rouvrir ou fermer la réponse.
-            zIndex: 10000,
+            zIndex: COUCHE_AGENT_CURSEUR,
             pointerEvents: enAction ? "none" : "auto",
             touchAction: "none",
             cursor: enAction ? undefined : "grab",

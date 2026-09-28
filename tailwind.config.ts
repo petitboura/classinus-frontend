@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import containerQueries from "@tailwindcss/container-queries";
+import { COUCHE_AGENT_BULLE, COUCHE_AGENT_CONTROLES, COUCHE_AGENT_CURSEUR } from "./lib/couchesAgent";
 
 // Tokens "cgpt-*" (partie 5, traitement "à main levée") : propres à
 // Classinus, n'existent pas dans djiguigne-frontend -- easings sur mesure
@@ -34,6 +35,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      zIndex: {
+        "agent-bulle": String(COUCHE_AGENT_BULLE),
+        "agent-controles": String(COUCHE_AGENT_CONTROLES),
+        "agent-curseur": String(COUCHE_AGENT_CURSEUR),
+      },
       colors: {
         dj: {
           fond: "var(--dj-fond)",

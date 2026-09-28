@@ -215,19 +215,28 @@ export function EditeurCode() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-dj-bordure">
+      <div
+        className={`overflow-hidden rounded-xl border border-dj-bordure ${
+          pleinEcran ? "min-h-[12rem] flex-1" : ""
+        }`}
+      >
         <CodeMirror
           value={code}
           onChange={setCode}
           extensions={extensionsCodeMirror}
           theme={resolu === "sombre" ? vscodeDark : vscodeLight}
           basicSetup={{ foldGutter: true, autocompletion: true }}
-          className="text-[13px]"
-          minHeight={pleinEcran ? "100%" : "45vh"}
+          className={pleinEcran ? "h-full text-[13px]" : "text-[13px]"}
+          height={pleinEcran ? "100%" : undefined}
+          minHeight={pleinEcran ? undefined : "45vh"}
         />
       </div>
 
-      {sortieExecution}
+      {pleinEcran ? (
+        <div className="max-h-[45%] flex-shrink-0 overflow-auto">{sortieExecution}</div>
+      ) : (
+        sortieExecution
+      )}
     </>
   );
 
@@ -277,7 +286,7 @@ export function EditeurCode() {
           </div>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-3">{zoneEditeur}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">{zoneEditeur}</div>
         {dialogues}
       </PleinEcranApercu>
     );
