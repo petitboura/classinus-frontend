@@ -41,13 +41,12 @@ import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/p
  * surchargeable par la variable d'environnement CLASSINUS_API_URL au
  * lancement si besoin (tests locaux, changement d'environnement).
  *
- * Valeur par defaut = domaine Railway confirme le 05/09/2026 (voir
- * memoire du chantier mobile). A REVERIFIER par Bourama au moment du
- * premier vrai test : le renommage des depots GitHub (23-25/09/2026)
- * n'a normalement pas change ce domaine, mais ca n'a pas ete confirme
- * pour ce chantier precis.
+ * Valeur par defaut = https://api.classinus.com, adresse du backend
+ * confirmee par Bourama le 28/09/2026.
  */
-const URL_API_BACKEND = process.env.CLASSINUS_API_URL || "https://clovis-backend-production.up.railway.app";
+// Corrige le 28/09/2026 : adresse confirmee par Bourama, l'ancienne valeur
+// (domaine Railway) n'etait plus la bonne.
+const URL_API_BACKEND = process.env.CLASSINUS_API_URL || "https://api.classinus.com";
 
 function urlWebSocketCanal(): string {
   return URL_API_BACKEND.replace(/^http/, "ws") + "/api/canal-agent-applicatif/ws";

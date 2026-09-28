@@ -30,10 +30,10 @@ Produit `electron/dist/plugin.mjs`. A refaire a chaque modification de
 
 ## Points a verifier au premier vrai test (sur la machine de Bourama)
 
-- `URL_API_BACKEND` (en tete de `plugin.mts`) : domaine Railway suppose
-  inchange apres le renommage des depots GitHub (23-25/09/2026), mais
-  pas reverifie independamment pour ce chantier. Surchargeable via la
-  variable d'environnement `CLASSINUS_API_URL` si besoin.
+- `URL_API_BACKEND` (en tete de `plugin.mts`) : vaut
+  `https://api.classinus.com` (adresse confirmee par Bourama le
+  28/09/2026). Surchargeable via la variable d'environnement
+  `CLASSINUS_API_URL` si besoin.
 - `@nut-tree-fork/nut-js` et `screenshot-desktop` contiennent des modules
   natifs precompiles par plateforme -- a reconstruire avec
   `electron-rebuild` (ou equivalent) si un module natif ne charge pas au
