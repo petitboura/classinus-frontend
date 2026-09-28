@@ -274,6 +274,19 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Lot R (28/09/2026, canal en direct sur PC) : la fenêtre de superposition
+   Electron est transparente et ne doit rien peindre d'autre que le curseur,
+   la bulle, le journal et le bouton du canal. Sans ça le fond plein du
+   body et l'écran d'ouverture recouvriraient tout l'écran. L'attribut est
+   posé par le script anti-flash de app/layout.tsx. */
+html[data-superposition],
+html[data-superposition] body {
+  background: transparent !important;
+}
+html[data-superposition] #clovis-splash {
+  display: none !important;
+}
+
 body {
   background-color: var(--dj-fond);
   color: var(--dj-texte);

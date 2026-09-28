@@ -151,10 +151,15 @@ export default function RacineLayout({
             (flash blanc). Lecture directe de localStorage + matchMedia,
             volontairement hors de React (trop tôt dans le cycle de vie
             pour qu'un hook s'en charge). Doit rester IDENTIQUE à la
-            logique de lib/useTheme.ts (clé de stockage, valeurs). */}
+            logique de lib/useTheme.ts (clé de stockage, valeurs).
+            Ajout du 28/09/2026 (Lot R, canal en direct sur PC) : pose aussi
+            data-superposition sur <html> quand la page est celle de la
+            fenêtre de superposition Electron (app/agent-superposition),
+            pour que globals.css la rende transparente et sans écran
+            d'ouverture (sinon un fond plein couvrirait tout l'écran). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("clovis-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t;}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("clovis-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t;}}catch(e){}try{if(location.pathname.indexOf("/agent-superposition")===0){document.documentElement.dataset.superposition="1";}}catch(e){}})();`,
           }}
         />
       </head>

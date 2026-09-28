@@ -54,7 +54,12 @@ capacitorApp.whenReady.then(() => {
     maximizable: false,
     fullscreenable: false,
     skipTaskbar: true,
-    focusable: false,
+    // focusable: false retire le 28/09/2026 : sous Windows, une fenetre non
+    // focusable ne recoit jamais le clavier, donc la barre de saisie texte
+    // de la superposition (ControlesInteractionCanal.tsx) n'aurait pas pu
+    // ecrire. La fenetre apparait toujours sans voler le focus (voir
+    // showInactive plus bas) ; elle ne le prend que si l'etudiant clique
+    // lui meme sur un de ses elements.
     show: false,
     webPreferences: {
       sandbox: true,
