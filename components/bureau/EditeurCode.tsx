@@ -12,6 +12,8 @@ import { useExecutionPython } from "@/lib/useExecutionPython";
 import { useTheme } from "@/lib/useTheme";
 import { useNouvelleConversationPleinEcran, useOuvrirConversationPleinEcran } from "@/lib/contexteChat";
 import { detecterLangage, extensionsLangage, LANGAGES_EDITEUR } from "@/lib/langagesEditeur";
+import { extensionsAgentEditeur } from "@/lib/operationsEditeurAgent";
+import { usePontEditeurAgent } from "@/lib/usePontEditeurAgent";
 import type { FichierBibliothequePersonnelle } from "@/lib/api";
 import { DialogueOuvrirEditeur } from "./DialogueOuvrirEditeur";
 import { DialogueEnregistrerEditeur } from "./DialogueEnregistrerEditeur";
@@ -91,7 +93,15 @@ export function EditeurCode() {
 
   const executable = LANGAGES_PYTHON.has(langage);
   const execution = useExecutionPython(code);
-  const extensionsCodeMirror = useMemo(() => extensionsLangage(langage), [langage]);
+  const extensionsCodeMirror = useMemo(() => [...extensionsLangage(langage), ...extensionsAgentEditeur], [langage]);
+  // 28/09/2026 : l'IA lit, montre et écrit dans l'éditeur via le canal en direct.
+  const surCreationEditeur = usePontEditeurAgent({
+    langage,
+    nomFichier: nomFichierOuvert,
+    pleinEcran,
+    lignesSortie: execution.lignes,
+    erreurExecution: execution.erreur,
+  });
 
   function ouvrirFichier(fichier: FichierBibliothequePersonnelle, contenu: string) {
     setCode(contenu);
@@ -224,6 +234,7 @@ export function EditeurCode() {
           value={code}
           onChange={setCode}
           extensions={extensionsCodeMirror}
+          onCreateEditor={surCreationEditeur}
           theme={resolu === "sombre" ? vscodeDark : vscodeLight}
           basicSetup={{ foldGutter: true, autocompletion: true }}
           className={pleinEcran ? "h-full text-[13px]" : "text-[13px]"}

@@ -77,6 +77,8 @@ import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
+import { traiterDemandeEditeur } from "./canalEditeurAgent";
+import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -337,7 +339,8 @@ let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
-  socket.send(JSON.stringify({ etat_actions: scannerElementsInteractifs() }));
+  // etat_editeur : null quand aucun éditeur de code n'est monté ici (28/09/2026).
+  socket.send(JSON.stringify({ etat_actions: scannerElementsInteractifs(), etat_editeur: obtenirEtatEditeurPourCanal() }));
 }
 
 /**
@@ -613,6 +616,7 @@ function traiterMessage(message: unknown) {
     selecteur_generique?: string;
     description?: string;
     montrer_action_id?: string;
+    editeur?: unknown;
   };
   if (m.accuse_message_etudiant !== undefined) {
     traiterAccuseMessageEtudiant(m.accuse_message_etudiant, m.pris_en_compte);
@@ -624,6 +628,8 @@ function traiterMessage(message: unknown) {
     traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
+  } else if (m.id && m.editeur !== undefined) {
+    traiterDemandeEditeur(m.id, m.editeur, envoyerReponse);
   } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
     traiterDemandeEcriture(m.id, m.action_id, m.texte_a_ecrire);
   } else if (m.id && m.action_id) {
@@ -780,6 +786,10 @@ function fermerCanal() {
 export function initialiserCanalAgentApplicatif() {
   if (dejaInitialise || typeof window === "undefined") return;
   dejaInitialise = true;
+
+  // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
+  // l'état sans attendre un autre changement de l'écran.
+  ecouterEtatEditeur(envoyerEtatActions);
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {

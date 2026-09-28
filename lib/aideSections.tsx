@@ -124,7 +124,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     titre: "Éditeur de code",
     texteCourt: "Écris et exécute du code, ouvre ou enregistre-le dans ta bibliothèque.",
     texteComplet:
-      "Écris du code dans n'importe quel langage. Le bouton Exécuter (Python uniquement pour l'instant) lance le code directement dans le navigateur, comme dans le chat. Ouvrir et Enregistrer utilisent ta bibliothèque personnelle comme espace de fichiers : choisis un fichier existant à ouvrir, ou enregistre le code affiché sous un nom, avec ou sans dossier.",
+      "Écris du code dans n'importe quel langage. Le bouton Exécuter (Python uniquement pour l'instant) lance le code directement dans le navigateur, comme dans le chat. Ouvrir et Enregistrer utilisent ta bibliothèque personnelle comme espace de fichiers : choisis un fichier existant à ouvrir, ou enregistre le code affiché sous un nom, avec ou sans dossier. Quand le canal en direct est actif, Classinus voit ton code : il peut te répondre, te montrer des lignes, te conseiller et écrire directement dans l'éditeur, en plein écran comme en petit. Tu peux annuler ce qu'il écrit avec Ctrl+Z (Cmd+Z sur Mac).",
   },
   {
     id: "ecrire-matiere",
