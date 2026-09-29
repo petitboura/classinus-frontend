@@ -78,7 +78,7 @@ import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
-import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal } from "./pontEditeurAgent";
+import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -244,6 +244,7 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
         longueur_reponse: "moyenne",
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
+        etat_editeur: obtenirLectureEditeurPourChat(),
       },
       (evenement) => {
         if (evenement?.type === "reponse" && typeof evenement.texte === "string") {
