@@ -17,5 +17,10 @@ declare module "electron" {
     getTitle(): string;
     getContentBounds(): RectangleMinimal;
     setIgnoreMouseEvents(ignore: boolean, options?: { forward?: boolean }): void;
+    // Ajoutes le 29/09/2026 : utilises par synchroniserVisibiliteSuperposition
+    // (plugin.mts, correctif du 28/09) mais jamais declares ici, ce qui faisait
+    // echouer `npm run build` avec deux erreurs TS2339.
+    showInactive(): void;
+    hide(): void;
   }
 }
