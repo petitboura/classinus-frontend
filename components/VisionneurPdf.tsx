@@ -123,6 +123,19 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
         });
     }
 
+    // Fichier local du navigateur (blob:, data:) : c'est ce que reçoit le
+    // lecteur pour un PDF choisi mais pas encore envoyé, et pour la bulle
+    // qui vient d'être envoyée. Une requête HEAD est refusée sur ces
+    // adresses par le navigateur (seul GET est permis), elle échouait donc
+    // à chaque fois et affichait l'erreur alors que le fichier est valide.
+    // Rien à vérifier par le réseau : le fichier est déjà sur la machine.
+    if (!/^https?:/i.test(url)) {
+      setPretAVerifier(true);
+      return () => {
+        annule = true;
+      };
+    }
+
     import("@capacitor/core").then(({ Capacitor }) => {
       if (annule) return;
       if (Capacitor.isNativePlatform()) {
