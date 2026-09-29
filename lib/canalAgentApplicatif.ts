@@ -98,7 +98,7 @@ import {
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
-const API_URL = "https://classinus-backend-editeur-fix-staging.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 let socket: WebSocket | null = null;
 let tentativeReconnexion: ReturnType<typeof setTimeout> | null = null;
