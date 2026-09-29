@@ -166,7 +166,9 @@ export function BlocExpansible({
 
   // Barre d'actions -- réutilisée telle quelle en haut du déroulé, dans
   // le rail sticky (icônes seules), et dans l'en-tête plein écran.
-  function BoutonsActions({ avecTexte, surAgrandir }: { avecTexte: boolean; surAgrandir: () => void }) {
+  // Fonction de rendu, pas composant défini ici : sinon React démonte
+  // les boutons à chaque rendu du bloc (perte du focus notamment).
+  function rendreBoutonsActions(avecTexte: boolean, surAgrandir: () => void) {
     const classe = avecTexte
       ? "flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
       : "flex h-8 w-8 items-center justify-center rounded-lg border border-dj-bordure bg-dj-surface-haute text-dj-texte-muet hover:text-dj-texte";
@@ -245,7 +247,7 @@ export function BlocExpansible({
       <div ref={topRowRef} className="flex items-center justify-between gap-2 px-1 pb-2">
         <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
         <div className="flex shrink-0 gap-1.5">
-          <BoutonsActions avecTexte surAgrandir={() => setPleinEcran((v) => !v)} />
+          {rendreBoutonsActions(true, () => setPleinEcran((v) => !v))}
         </div>
       </div>
 
@@ -264,7 +266,7 @@ export function BlocExpansible({
             liens...) partout sauf sur les boutons eux-mêmes. */}
         <div className="pointer-events-none absolute inset-0 z-10 flex justify-end">
           <div className={`sticky top-2 mr-1 self-start ${classeRail}`} onClick={(e) => e.stopPropagation()}>
-            <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran((v) => !v)} />
+            {rendreBoutonsActions(false, () => setPleinEcran((v) => !v))}
             <button onClick={fermer} className="flex h-8 w-8 items-center justify-center rounded-lg border border-dj-bordure bg-dj-surface-haute text-dj-texte-muet hover:text-dj-texte" aria-label="Fermer">
               <X size={14} />
             </button>
@@ -306,7 +308,7 @@ export function BlocExpansible({
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
               <div className="flex shrink-0 gap-1.5">
-                <BoutonsActions avecTexte surAgrandir={() => setPleinEcran(false)} />
+                {rendreBoutonsActions(true, () => setPleinEcran(false))}
                 <button onClick={() => demarrerFermeture(fermer)} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
                   <X size={14} /> Fermer
                 </button>

@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppWindow, Loader2 } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { useTheme } from "@/lib/useTheme";
+
+const HAUTEUR_MIN_WIDGET = 128;
+const HAUTEUR_MAX_WIDGET = 1200;
 
 // Bloc ```html ou ```widget du markdown -- le modèle peut générer un
 // mini-outil autonome (calculateur, formulaire, mini-jeu) en HTML/CSS/JS
@@ -80,6 +83,33 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
         window.addEventListener('unhandledrejection', function (e) {
           afficher(String(e.reason));
         });
+
+        // Mesurer le corps, pas scrollHeight de html : celui-ci reste au
+        // moins aussi haut que l'iframe et empêcherait tout rétrécissement.
+        var derniereHauteur = 0;
+        var mesurePlanifiee = false;
+        function envoyerHauteur() {
+          mesurePlanifiee = false;
+          var style = getComputedStyle(document.documentElement);
+          var hauteur = Math.ceil(Math.max(document.body.offsetHeight, document.body.scrollHeight)
+            + (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0));
+          if (hauteur === derniereHauteur) return;
+          derniereHauteur = hauteur;
+          window.parent.postMessage({ type: 'dj-widget-hauteur', hauteur: hauteur }, '*');
+        }
+        function planifierMesure() {
+          if (mesurePlanifiee) return;
+          mesurePlanifiee = true;
+          requestAnimationFrame(envoyerHauteur);
+        }
+        window.addEventListener('load', planifierMesure);
+        window.addEventListener('resize', planifierMesure);
+        document.body.addEventListener('load', planifierMesure, true);
+        if (window.ResizeObserver) new ResizeObserver(planifierMesure).observe(document.body);
+        new MutationObserver(planifierMesure).observe(document.body, {
+          subtree: true, childList: true, attributes: true, characterData: true
+        });
+        planifierMesure();
       })();
     </script>
     </body></html>`;
@@ -99,6 +129,26 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
 export function WidgetSandbox({ code }: { code: string }) {
   const { resolu } = useTheme();
   const [codeStable, setCodeStable] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    function recevoirHauteur(event: MessageEvent) {
+      const iframe = iframeRef.current;
+      // Le sandbox a une origine opaque : vérifier la fenêtre émettrice,
+      // pas event.origin, pour isoler chaque widget et rejeter les autres.
+      if (!iframe || event.source !== iframe.contentWindow) return;
+      const data = event.data;
+      if (data?.type !== "dj-widget-hauteur" || typeof data.hauteur !== "number"
+        || !Number.isFinite(data.hauteur) || data.hauteur <= 0) return;
+      // Un contenu en 100vh peut grandir à chaque mesure (+ padding).
+      // Le plafond arrête cette boucle ; le défilement natif reste permis.
+      // En plein écran, le !h-full de BlocExpansible garde la priorité.
+      const hauteur = Math.min(HAUTEUR_MAX_WIDGET, Math.max(HAUTEUR_MIN_WIDGET, Math.ceil(data.hauteur)));
+      if (iframe.style.height !== `${hauteur}px`) iframe.style.height = `${hauteur}px`;
+    }
+    window.addEventListener("message", recevoirHauteur);
+    return () => window.removeEventListener("message", recevoirHauteur);
+  }, []);
 
   useEffect(() => {
     setCodeStable(null);
@@ -116,15 +166,18 @@ export function WidgetSandbox({ code }: { code: string }) {
       chargement={codeStable === null}
       enfant={
         codeStable === null ? (
-          <div className="flex h-96 w-full items-center justify-center gap-2 rounded-lg border border-dj-bordure text-xs text-dj-texte-muet">
+          <div className="flex min-h-32 w-full items-center justify-center gap-2 text-xs text-dj-texte-muet">
             <Loader2 size={16} className="animate-spin" />
             Préparation du widget...
           </div>
         ) : (
           <iframe
+            ref={iframeRef}
+            key={`${resolu}:${codeStable}`}
             sandbox="allow-scripts allow-forms allow-modals"
             srcDoc={construireDocumentWidget(codeStable, resolu)}
-            className="h-96 w-full rounded-lg border border-dj-bordure"
+            className="block w-full border-0"
+            style={{ height: HAUTEUR_MIN_WIDGET }}
             title="Widget interactif"
           />
         )
