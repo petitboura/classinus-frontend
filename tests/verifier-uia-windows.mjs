@@ -80,7 +80,8 @@ try {
     assert.equal(lecture.mode,'uia',JSON.stringify(lecture));
     assert(lecture.elements.some(e=>e.nom.includes('Texte visible depuis Windows')));
     assert(lecture.elements.some(e=>e.nom==='Continuer' && Number.isFinite(e.x) && Number.isFinite(e.y)));
-    assert(lecture.elements.some(e=>e.valeur==='Valeur fenêtre Windows'));
+    assert(lecture.elements.some(e=>e.valeur==='Valeur fenêtre Windows' || e.nom==='Valeur fenêtre Windows'));
+    assert(lecture.elements.some(e=>e.valeur_masquee));
     assert(!JSON.stringify(lecture).includes('SECRET-INTERDIT'));
   };
   const premiere = await lireFenetreAuPremierPlan({},etat.superposition);

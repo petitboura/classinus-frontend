@@ -118,6 +118,12 @@ public static class LectureFenetres {
   [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int attr, out int value, int size);
   public static string Titre(IntPtr h) { StringBuilder sb = new StringBuilder(512); GetWindowTextW(h, sb, sb.Capacity); return sb.ToString(); }
   public static string Classe(IntPtr h) { StringBuilder sb = new StringBuilder(256); GetClassNameW(h, sb, sb.Capacity); return sb.ToString(); }
+  // Les anciens fournisseurs WinForms exposent parfois un champ secret comme Pane.
+  public static bool MotDePasse(IntPtr h) {
+    string c = Classe(h);
+    bool edit = c.Equals("Edit", StringComparison.OrdinalIgnoreCase) || c.StartsWith("WindowsForms10.EDIT.", StringComparison.OrdinalIgnoreCase);
+    return edit && (GetWindowLong(h, -16) & 0x20) != 0;
+  }
   public static uint Pid(IntPtr h) { uint p; GetWindowThreadProcessId(h, out p); return p; }
   public static List<IntPtr> Ouvertes() {
     List<IntPtr> liste = new List<IntPtr>();
@@ -225,13 +231,14 @@ ${CODE_CSHARP}
     CheckBox = 'case à cocher'; RadioButton = 'choix'; ComboBox = 'liste'; Hyperlink = 'lien'
     ListItem = "élément de liste"; MenuItem = 'menu'; TabItem = 'onglet'; TreeItem = "élément d'arbre"
     DataItem = "élément de tableau"
+    Pane = 'zone'; Group = 'groupe'; Custom = 'élément'
   }
   $typesAvecValeur = @('Edit', 'Document', 'ComboBox')
 
   $AE = [System.Windows.Automation.AutomationElement]
   $cr = New-Object System.Windows.Automation.CacheRequest
   foreach ($p in @($AE::NameProperty, $AE::ControlTypeProperty, $AE::BoundingRectangleProperty,
-                   $AE::IsOffscreenProperty, $AE::IsPasswordProperty, $AE::IsEnabledProperty)) { $cr.Add($p) }
+                   $AE::IsOffscreenProperty, $AE::IsPasswordProperty, $AE::IsEnabledProperty, $AE::NativeWindowHandleProperty)) { $cr.Add($p) }
   foreach ($p in @([System.Windows.Automation.ValuePattern]::Pattern,
                    [System.Windows.Automation.TogglePattern]::Pattern,
                    [System.Windows.Automation.ExpandCollapsePattern]::Pattern,
@@ -309,15 +316,19 @@ ${CODE_CSHARP}
     if ($el.Cached.IsOffscreen) { return }
 
     $typeCle = ($el.Cached.ControlType.ProgrammaticName -replace '^ControlType\\.', '')
-    $nom = Couper $el.Cached.Name $longueurMaxNom
+    # Certains fournisseurs hérités ne renseignent ni ControlType ni IsPassword.
+    # Garder leurs noms visibles, mais protéger aussi les champs Win32 ES_PASSWORD.
+    $masquee = $el.Cached.IsPassword
+    $handle = [IntPtr]$el.Cached.NativeWindowHandle
+    if ($handle -ne [IntPtr]::Zero -and [LectureFenetres]::MotDePasse($handle)) { $masquee = $true }
+    $nom = $(if ($masquee) { '' } else { Couper $el.Cached.Name $longueurMaxNom })
     $nomTransmis = $nomParent
     $rect = $el.Cached.BoundingRectangle
 
     if ($types.ContainsKey($typeCle) -and -not $rect.IsEmpty) {
-      $masquee = $false
       $valeur = ''
       if ($typesAvecValeur -contains $typeCle) {
-        if ($el.Cached.IsPassword) { $masquee = $true } else { $valeur = Couper (LireValeur $el $typeCle) $longueurMaxValeur }
+        if (-not $masquee) { $valeur = Couper (LireValeur $el $typeCle) $longueurMaxValeur }
       }
       $doublon = ($typeCle -eq 'Text' -and $nom -ne '' -and $nom -eq $nomParent)
       if (-not $doublon -and ($nom -ne '' -or $valeur -ne '' -or $masquee)) {
