@@ -5,7 +5,8 @@ import { ErreurApi, messageErreur } from "./erreurs";
 // http://localhost:8000. Une fois déployé sur Railway : l'URL publique de
 // ce service (pas encore un domaine définitif tant que djiguigne.com n'est
 // pas branché — voir RAILWAY_DEPLOY.md du dépôt djiguigne-backend).
-export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// Branche de test du lot U : requêtes API vers son backend Railway isolé.
+export const API_URL = "https://classinus-backend-lot-u-test-staging.up.railway.app";
 
 if (!API_URL) {
   throw new Error("NEXT_PUBLIC_API_URL est requis (voir .env.local.example).");
