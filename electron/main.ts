@@ -131,6 +131,18 @@ capacitorApp.whenReady.then(() => {
   // et le plugin SuperpositionAgent.definirCapturerSouris).
   superposition.setIgnoreMouseEvents(true, { forward: true });
 
+  // Correctif (29/09/2026, demande Bourama) : le plugin SuperpositionAgent
+  // (packages/capacitor-superposition-electron/electron/src/plugin.mts)
+  // retrouve cette fenetre par son titre (getTitle() ===
+  // TITRE_FENETRE_SUPERPOSITION). Or Electron remplace le titre de la
+  // fenetre par celui de la page des qu'elle est chargee (ici "Classinus",
+  // herite du layout racine), sauf si on l'en empeche : la fenetre n'etait
+  // alors plus retrouvee, donc jamais montree (showInactive jamais
+  // appele) et sans capture de clic. On fige donc le titre.
+  superposition.on('page-title-updated', (evenement) => {
+    evenement.preventDefault();
+  });
+
   // Meme garde de navigation que la fenetre principale (voir
   // installNavigationGuards dans le runtime @capawesome/capacitor-electron
   // -- non exporte publiquement, donc reproduit ici a l'identique) : un
