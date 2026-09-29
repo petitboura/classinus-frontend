@@ -8,6 +8,8 @@ import { traduireMessage } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { LANGUES_TRADUCTION_ERREURS } from "@/lib/languesTraductionErreurs";
+import { telechargerImageBase64 } from "@/lib/telechargerImageElement";
+import { BoutonTelechargerImage } from "./BoutonTelechargerImage";
 
 // Zone sous un bloc de code exécuté (voir BlocCode.tsx) : soit le petit
 // formulaire de valeurs demandé avant de lancer (téléphone incapable de
@@ -226,13 +228,22 @@ export function SortieExecutionCode({
       )}
 
       {images.map((base64, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={i}
-          src={`data:image/png;base64,${base64}`}
-          alt="Graphique produit par le code"
-          className="mt-2 max-w-full animate-dj-fade-in rounded-lg bg-white"
-        />
+        <div key={i} className="mt-2 animate-dj-fade-in">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`data:image/png;base64,${base64}`}
+            alt="Graphique produit par le code"
+            className="max-w-full rounded-lg bg-white"
+          />
+          <div className="mt-0.5 flex justify-end">
+            <BoutonTelechargerImage
+              exporter={() =>
+                telechargerImageBase64(base64, images.length > 1 ? `graphique-code-${i + 1}.png` : "graphique-code.png")
+              }
+              libelleAria="Télécharger le graphique en image"
+            />
+          </div>
+        </div>
       ))}
 
       {erreur && (
