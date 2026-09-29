@@ -66,6 +66,24 @@ function brancherDiagnosticSuperposition(fenetre: BrowserWindow, urlDemandee: st
   wc.on('console-message', (evenement) => {
     journalDiagnostic(`console niveau=${evenement.level} ${evenement.sourceId}:${evenement.lineNumber} ${evenement.message}`);
   });
+  // Complement du 29/09/2026 : titre reel de la fenetre de superposition
+  // apres chargement (confirme que le blocage de page-title-updated est
+  // actif), puis un releve toutes les 3 secondes pendant la premiere
+  // minute : titre et visibilite de chaque fenetre de l'appli, pour voir
+  // si la superposition est retrouvee et si son etat change au clic.
+  wc.on('did-finish-load', () => {
+    journalDiagnostic(`titre de la fenetre de superposition apres chargement : "${fenetre.getTitle()}"`);
+  });
+  let releves = 0;
+  const minuteur = setInterval(() => {
+    releves += 1;
+    const fenetres = BrowserWindow.getAllWindows()
+      .map((f) => `[titre="${f.getTitle()}" visible=${f.isVisible()} id=${f.id}]`)
+      .join(' ');
+    journalDiagnostic(`releve ${releves} : ${fenetres}`);
+    if (releves >= 20) clearInterval(minuteur);
+  }, 3000);
+  fenetre.on('closed', () => clearInterval(minuteur));
   fenetre.on('show', () => journalDiagnostic('fenetre : show'));
   fenetre.on('hide', () => journalDiagnostic('fenetre : hide'));
   fenetre.on('closed', () => journalDiagnostic('fenetre : closed'));
