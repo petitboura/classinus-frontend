@@ -8,6 +8,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { lireMonProfil, supprimerMonCompte, exporterMesDonnees, appelerApi } from "@/lib/api";
 import { clesRequetes } from "@/lib/clesRequetes";
+import { demanderDoubleConfirmationOubli } from "@/lib/confirmationOubliMemoire";
+import { CATEGORIES_MEMOIRE, oublierCategorieMemoire, titreCategorieMemoire } from "@/lib/categoriesMemoire";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
@@ -94,7 +96,8 @@ export function ParametresAccueil() {
   const [exportEnCours, setExportEnCours] = useState(false);
   const [erreurExport, setErreurExport] = useState<string | null>(null);
   const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
-  const [memoireEnCours, setMemoireEnCours] = useState(false);
+  // Ce qui est en cours d'effacement : une catégorie, "tout", ou null.
+  const [memoireEnCours, setMemoireEnCours] = useState<string | null>(null);
   const [erreurMemoire, setErreurMemoire] = useState<string | null>(null);
   const [messageMemoire, setMessageMemoire] = useState<string | null>(null);
 
@@ -132,20 +135,37 @@ export function ParametresAccueil() {
     window.location.href = "/connexion";
   }
 
+  async function oublierUneCategorie(categorie: string) {
+    // Même effacement, même double confirmation que le bouton "Oublier" de
+    // l'écran Ma mémoire : voir lib/categoriesMemoire.ts.
+    if (memoireEnCours !== null) return;
+    setMemoireEnCours(categorie);
+    setErreurMemoire(null);
+    setMessageMemoire(null);
+    try {
+      const confirmation = await oublierCategorieMemoire(categorie, queryClient);
+      if (confirmation) setMessageMemoire(confirmation);
+    } catch (e) {
+      setErreurMemoire(messageErreur(e));
+    } finally {
+      setMemoireEnCours(null);
+    }
+  }
+
   async function confirmerEffacementMemoire() {
-    // Double confirmation (29/09/2026, demande Bourama : effacer toute la
-    // mémoire doit demander deux fois), même mécanique que la suppression
-    // de compte juste en dessous : un window.confirm, puis la saisie d'un
-    // mot. Effacer UNE catégorie reste sur l'écran Ma mémoire, avec une
-    // seule confirmation.
-    if (!window.confirm("Effacer toute ta mémoire ? Classinus oubliera tout ce qu'il a retenu de toi.")) return;
+    if (memoireEnCours !== null) return;
+    // Double confirmation (29/09/2026, demande Bourama), même règle que
+    // "Oublier" une catégorie sur l'écran Ma mémoire : voir
+    // lib/confirmationOubliMemoire.ts.
+    if (
+      !demanderDoubleConfirmationOubli(
+        "Effacer toute ta mémoire ? Classinus oubliera tout ce qu'il a retenu de toi.",
+        "Ton identité, ta scolarité, ce que tu apprends et tes préférences seront effacés."
+      )
+    )
+      return;
 
-    const saisie = window.prompt(
-      'Cette action est définitive : ton identité, ta scolarité, ce que tu apprends et tes préférences seront effacés. Tape "OUBLIER" pour confirmer.'
-    );
-    if (saisie?.trim() !== "OUBLIER") return;
-
-    setMemoireEnCours(true);
+    setMemoireEnCours("tout");
     setErreurMemoire(null);
     setMessageMemoire(null);
     try {
@@ -155,7 +175,7 @@ export function ParametresAccueil() {
     } catch (e) {
       setErreurMemoire(messageErreur(e));
     } finally {
-      setMemoireEnCours(false);
+      setMemoireEnCours(null);
     }
   }
 
@@ -315,9 +335,18 @@ export function ParametresAccueil() {
       {erreurExport && <p className="text-sm text-[var(--dj-erreur)]">{erreurExport}</p>}
 
       <Liste>
+        {CATEGORIES_MEMOIRE.map((categorie) => (
+          <LigneAction
+            key={categorie}
+            icone={Eraser}
+            titre={memoireEnCours === categorie ? "Effacement…" : `Oublier : ${titreCategorieMemoire(categorie)}`}
+            onClick={() => oublierUneCategorie(categorie)}
+            danger
+          />
+        ))}
         <LigneAction
           icone={Eraser}
-          titre={memoireEnCours ? "Effacement…" : "Effacer ma mémoire"}
+          titre={memoireEnCours === "tout" ? "Effacement…" : "Effacer toute ma mémoire"}
           sousTitre="Classinus oublie tout ce qu'il a retenu de toi"
           onClick={confirmerEffacementMemoire}
           danger

@@ -9,14 +9,17 @@ import { CTACompteRequis } from "./CTACompteRequis";
 import { useInfoSection } from "./SectionPage";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { dateRelative } from "@/lib/dateRelative";
+import { oublierCategorieMemoire, titreCategorieMemoire } from "@/lib/categoriesMemoire";
 
 // Écran "Ma mémoire" (29/09/2026, demande Bourama : un seul système de
 // mémoire). Il lit la mémoire structurée de l'élève (table memoire_eleve,
 // voir api/memoire_eleve.py côté backend), classée en 4 catégories fixes.
 // Lecture seule : le contenu est un JSON libre écrit par le modèle, pas un
 // texte pensé pour être édité à la main. On peut en revanche oublier une
-// catégorie entière ici ; effacer TOUTE la mémoire se fait dans Paramètres
-// (components/ParametresAccueil.tsx), avec une double confirmation.
+// catégorie entière ici (comme dans Paramètres, voir
+// lib/categoriesMemoire.ts) ; effacer TOUTE la mémoire se fait dans
+// Paramètres (components/ParametresAccueil.tsx). Dans tous les cas,
+// double confirmation (lib/confirmationOubliMemoire.ts).
 //
 // Le contenu d'une ligne est libre (décidé par le modèle pour chaque élève),
 // donc rendu de façon générique : les listes deviennent des pastilles, les
@@ -36,20 +39,9 @@ type Categorie = {
 
 type Memoire = { categories: Categorie[] };
 
-const TITRES_CATEGORIES: Record<string, string> = {
-  identite: "Identité",
-  scolarite: "Scolarité",
-  apprentissage: "Apprentissage",
-  preferences: "Préférences",
-};
-
 function libelleCle(cle: string): string {
   const texte = cle.replace(/_/g, " ");
   return texte.charAt(0).toUpperCase() + texte.slice(1);
-}
-
-function titreCategorie(categorie: string): string {
-  return TITRES_CATEGORIES[categorie] ?? libelleCle(categorie);
 }
 
 function titreSousCategorie(chemin: string): string {
@@ -172,23 +164,13 @@ export function MaMemoire() {
   });
 
   async function oublierCategorie(categorie: string) {
-    if (
-      !window.confirm(
-        `Oublier tout ce que Classinus a retenu dans la catégorie « ${titreCategorie(categorie)} » ? Cette action est irréversible.`
-      )
-    )
-      return;
+    if (efface !== null) return;
     setEfface(categorie);
     setErreur(null);
     setMessage(null);
     try {
-      await appelerApi(`/api/memoire-eleve/${encodeURIComponent(categorie)}`, { method: "DELETE" });
-      queryClient.setQueryData<Memoire>(clesRequetes.memoire, (ancien) =>
-        ancien
-          ? { categories: ancien.categories.map((c) => (c.categorie === categorie ? { ...c, lignes: [] } : c)) }
-          : ancien
-      );
-      setMessage(`Catégorie « ${titreCategorie(categorie)} » oubliée.`);
+      const confirmation = await oublierCategorieMemoire(categorie, queryClient);
+      if (confirmation) setMessage(confirmation);
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
@@ -257,7 +239,7 @@ export function MaMemoire() {
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <h3 className="break-words text-sm font-bold text-dj-texte">{titreCategorie(c.categorie)}</h3>
+                  <h3 className="break-words text-sm font-bold text-dj-texte">{titreCategorieMemoire(c.categorie)}</h3>
                   {derniereMaj && (
                     <span className="text-xs text-dj-texte-muet">Mis à jour {dateRelative(derniereMaj)}</span>
                   )}

@@ -20,7 +20,8 @@ export default function PageDecouvrirPersonnaliserMemoire() {
       </p>
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
         Cette mémoire se construit toute seule au fil de tes conversations. Tu peux tout consulter, oublier une
-        catégorie entière, ou tout effacer d&apos;un coup depuis les Paramètres.
+        catégorie entière ou tout effacer d&apos;un coup, ici ou depuis les Paramètres. Chaque effacement demande une
+        double confirmation.
       </p>
     </MiseEnPageDecouvrirPersonnaliser>
   );
