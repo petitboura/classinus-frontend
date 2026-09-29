@@ -20,6 +20,58 @@ export function nomFichierImage(titre: string | undefined, parDefaut: string): s
   return `${propre || parDefaut}.png`;
 }
 
+// Largeur réelle qu'il faut pour tout montrer. Un tableau large défile
+// horizontalement dans son cadre : à l'écran on n'en voit qu'une partie, mais
+// l'image doit montrer le tableau entier. On mesure donc le débordement le plus
+// grand parmi tous les éléments à l'intérieur et on l'ajoute à la largeur
+// visible.
+function largeurNecessaire(noeud: HTMLElement, largeurVisible: number): number {
+  let debordMax = 0;
+  const tous: HTMLElement[] = [noeud, ...Array.from(noeud.querySelectorAll<HTMLElement>("*"))];
+  for (const el of tous) {
+    const debord = el.scrollWidth - el.clientWidth;
+    if (debord > debordMax) debordMax = debord;
+  }
+  return Math.ceil(largeurVisible + debordMax);
+}
+
+// On ne capture jamais l'élément vivant : on en fait une copie hors écran, où
+// l'on retire tout ce qui rogne ou anime (barres de défilement, hauteurs
+// limitées, fondu d'apparition). La copie est placée dans le même parent que
+// l'original pour hériter des mêmes polices et couleurs, puis retirée aussitôt.
+function preparerCopieHorsEcran(noeud: HTMLElement, largeur: number): { hote: HTMLElement; copie: HTMLElement } {
+  const hote = document.createElement("div");
+  hote.setAttribute("aria-hidden", "true");
+  hote.style.cssText = `position:fixed;top:0;left:-100000px;width:${largeur}px;pointer-events:none;`;
+
+  const copie = noeud.cloneNode(true) as HTMLElement;
+  copie.style.margin = "0";
+  copie.style.width = `${largeur}px`;
+  copie.style.minWidth = "0";
+  copie.style.maxWidth = "none";
+  copie.style.transform = "none";
+
+  hote.appendChild(copie);
+  (noeud.parentElement ?? document.body).appendChild(hote);
+
+  const tous: HTMLElement[] = [copie, ...Array.from(copie.querySelectorAll<HTMLElement>("*"))];
+  for (const el of tous) {
+    el.style.animation = "none";
+    el.style.transition = "none";
+  }
+  for (const el of tous) {
+    // Les <svg> gardent leur propre logique de découpe, on n'y touche pas.
+    if (el instanceof SVGElement) continue;
+    const style = getComputedStyle(el);
+    if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+    const coupeEnHauteur = el.scrollHeight > el.clientHeight + 1;
+    el.style.overflow = "visible";
+    el.style.maxHeight = "none";
+    if (coupeEnHauteur) el.style.height = "auto";
+  }
+  return { hote, copie };
+}
+
 // Retourne true si le fichier a bien été produit et remis au téléchargement,
 // false sinon (élément absent ou masqué, capture refusée par le navigateur).
 // L'appelant affiche alors un retour clair au lieu d'un faux "Téléchargé".
@@ -29,6 +81,7 @@ export async function telechargerImageElement(noeud: HTMLElement | null, nomFich
   // Élément masqué au moment du clic (ex. bloc replié) : rien à capturer.
   if (rect.width === 0 || rect.height === 0) return false;
 
+  let hote: HTMLElement | null = null;
   try {
     // Les polices doivent être chargées avant la capture, sinon le texte est
     // dessiné avec une police de secours.
@@ -36,17 +89,15 @@ export async function telechargerImageElement(noeud: HTMLElement | null, nomFich
 
     const fond = getComputedStyle(document.documentElement).getPropertyValue("--dj-surface").trim() || undefined;
 
-    // Un bloc large peut défiler horizontalement : on capture sa taille
-    // complète (scroll incluse), pas seulement la partie visible.
-    const largeur = Math.max(noeud.scrollWidth, Math.ceil(rect.width));
-    const hauteur = Math.max(noeud.scrollHeight, Math.ceil(rect.height));
+    const prepare = preparerCopieHorsEcran(noeud, largeurNecessaire(noeud, Math.ceil(rect.width)));
+    hote = prepare.hote;
+    const { copie } = prepare;
 
-    const blob = await toBlob(noeud, {
+    const blob = await toBlob(copie, {
       pixelRatio: 2,
       backgroundColor: fond,
-      width: largeur,
-      height: hauteur,
-      style: { overflow: "visible", margin: "0" },
+      width: copie.offsetWidth,
+      height: copie.offsetHeight,
       filter: (n) => !(n instanceof HTMLElement && n.hasAttribute(ATTRIBUT_EXCLURE_EXPORT)),
     });
     if (!blob) return false;
@@ -56,6 +107,8 @@ export async function telechargerImageElement(noeud: HTMLElement | null, nomFich
   } catch (e) {
     console.error("[telechargerImageElement] échec de la capture :", e);
     return false;
+  } finally {
+    hote?.remove();
   }
 }
 
