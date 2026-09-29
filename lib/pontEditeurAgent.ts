@@ -70,6 +70,24 @@ export function obtenirEtatEditeurPourCanal(): EtatEditeurAgent | null {
   return pont ? pont.etat() : null;
 }
 
+/**
+ * État complet de l'éditeur pour le tour HTTP /api/chat.
+ *
+ * Contrairement à la simple présence envoyée par le WebSocket, cette lecture
+ * est faite au moment exact où le message part. Le code courant devient donc
+ * une donnée du tour, et ne dépend plus d'une synchronisation préalable avec
+ * le serveur.
+ */
+export function obtenirLectureEditeurPourChat(): LectureEditeurAgent | null {
+  const pont = registre().pont;
+  if (!pont) return null;
+  try {
+    return pont.lire();
+  } catch {
+    return null;
+  }
+}
+
 // Appelé quand le langage, le fichier ou le plein écran change, pour que le
 // serveur repousse l'état sans attendre un autre changement de l'écran.
 export function signalerChangementEtatEditeur() {
