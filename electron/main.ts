@@ -1,4 +1,6 @@
-import { BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
+import { appendFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createCapacitorElectronApp } from '@capawesome/capacitor-electron';
 
 import config from './capacitor.electron.config';
@@ -27,6 +29,55 @@ function zoneTousEcrans() {
   const droite = Math.max(...ecrans.map((e) => e.bounds.x + e.bounds.width));
   const bas = Math.max(...ecrans.map((e) => e.bounds.y + e.bounds.height));
   return { x: gauche, y: haut, width: droite - gauche, height: bas - haut };
+}
+
+
+// DIAGNOSTIC TEMPORAIRE (29/09/2026, demande Bourama) : la superposition
+// ne s'affiche pas dans l'appli installee (bouton canal qui disparait au
+// clic, curseur et journal jamais visibles). Ce bloc ne change aucun
+// comportement : il ecrit dans un fichier ce qui arrive a la fenetre de
+// superposition (chargement de sa page, erreurs de sa console, affichage
+// et masquage) et ouvre ses outils de developpement dans une fenetre a
+// part. A RETIRER des que la cause est trouvee.
+function journalDiagnostic(message: string) {
+  try {
+    const fichier = join(app.getPath('userData'), 'diagnostic-superposition.log');
+    appendFileSync(fichier, `${new Date().toISOString()} ${message}\n`, 'utf8');
+  } catch {
+    // Ecriture impossible : on ne casse jamais l'appli pour un diagnostic.
+  }
+}
+
+function brancherDiagnosticSuperposition(fenetre: BrowserWindow, urlDemandee: string) {
+  journalDiagnostic(`--- creation de la fenetre de superposition, url demandee : ${urlDemandee}`);
+  journalDiagnostic(`chemin de ce fichier journal : ${join(app.getPath('userData'), 'diagnostic-superposition.log')}`);
+  const wc = fenetre.webContents;
+  wc.on('did-start-loading', () => journalDiagnostic('did-start-loading'));
+  wc.on('did-finish-load', () => journalDiagnostic(`did-finish-load, url reelle : ${wc.getURL()}`));
+  wc.on('did-fail-load', (_evenement, code, description, urlEchec, principale) => {
+    journalDiagnostic(`did-fail-load code=${code} description=${description} url=${urlEchec} fenetrePrincipale=${principale}`);
+  });
+  wc.on('render-process-gone', (_evenement, details) => {
+    journalDiagnostic(`render-process-gone raison=${details.reason} code=${details.exitCode}`);
+  });
+  wc.on('preload-error', (_evenement, cheminPreload, erreur) => {
+    journalDiagnostic(`preload-error ${cheminPreload} : ${erreur.message}`);
+  });
+  wc.on('console-message', (evenement) => {
+    journalDiagnostic(`console niveau=${evenement.level} ${evenement.sourceId}:${evenement.lineNumber} ${evenement.message}`);
+  });
+  fenetre.on('show', () => journalDiagnostic('fenetre : show'));
+  fenetre.on('hide', () => journalDiagnostic('fenetre : hide'));
+  fenetre.on('closed', () => journalDiagnostic('fenetre : closed'));
+  wc.on('did-finish-load', () => {
+    wc.openDevTools({ mode: 'detach' });
+    void wc
+      .executeJavaScript(
+        "JSON.stringify({ url: location.href, plateforme: (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || 'inconnue', nbElementsSuperposition: document.querySelectorAll('[data-agent-superposition]').length, longueurBody: document.body ? document.body.innerHTML.length : -1 })"
+      )
+      .then((resultat) => journalDiagnostic(`etat de la page apres chargement : ${String(resultat)}`))
+      .catch((erreur: unknown) => journalDiagnostic(`etat de la page illisible : ${String(erreur)}`));
+  });
 }
 
 capacitorApp.whenReady.then(() => {
@@ -109,5 +160,7 @@ capacitorApp.whenReady.then(() => {
   // PLAT "<route>.html" par route, pas un dossier "<route>/index.html".
   // Si ce n'est pas le cas, remplacer la ligne ci dessous par
   // `${origine}/agent-superposition/index.html`.
-  void superposition.loadURL(`${origine}/agent-superposition.html`);
+  const urlSuperposition = `${origine}/agent-superposition.html`;
+  brancherDiagnosticSuperposition(superposition, urlSuperposition);
+  void superposition.loadURL(urlSuperposition);
 });
