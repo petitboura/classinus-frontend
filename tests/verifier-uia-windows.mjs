@@ -4,7 +4,8 @@ import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { spawn } from 'node:child_process';
+import { spawn, execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { build } from 'esbuild';
 
 if (process.platform !== 'win32') throw new Error('Ce test nécessite Windows et une session de bureau.');
@@ -73,16 +74,25 @@ try {
   const etat = await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')));
   const sortie = join(dossier,'lecture.mjs');
   await build({ entryPoints:[resolve(import.meta.dirname,'../packages/capacitor-pont-natif-electron/electron/src/lectureFenetreWindows.mts')],outfile:sortie,bundle:true,platform:'node',format:'esm' });
-  const {lireFenetreAuPremierPlan} = await import(pathToFileURL(sortie).href);
+  const {lireFenetreAuPremierPlan, construireScript, limitesDepuisParametres} = await import(pathToFileURL(sortie).href);
   const verifier = lecture => {
     assert.equal(lecture.titre_fenetre_active,titre,JSON.stringify(lecture));
-    assert.equal(lecture.mode,'uia');
+    assert.equal(lecture.mode,'uia',JSON.stringify(lecture));
     assert(lecture.elements.some(e=>e.nom.includes('Texte visible depuis Windows')));
     assert(lecture.elements.some(e=>e.nom==='Continuer' && Number.isFinite(e.x) && Number.isFinite(e.y)));
     assert(lecture.elements.some(e=>e.valeur==='Valeur fenêtre Windows'));
     assert(!JSON.stringify(lecture).includes('SECRET-INTERDIT'));
   };
-  verifier(await lireFenetreAuPremierPlan({},etat.superposition));
+  const premiere = await lireFenetreAuPremierPlan({},etat.superposition);
+  if (premiere.mode !== 'uia') {
+    const diagnostic = construireScript(limitesDepuisParametres({}),process.pid,etat.superposition)
+      .replace('$script:elements =', '$script:traces = New-Object System.Collections.Generic.List[object]\n  $script:elements =')
+      .replace('if ($el.Cached.IsOffscreen)', '$script:traces.Add(@{nom=$el.Cached.Name;type=$el.Cached.ControlType.ProgrammaticName;hors_ecran=$el.Cached.IsOffscreen;rectangle=$el.Cached.BoundingRectangle.ToString()})\n    if ($el.Cached.IsOffscreen)')
+      .replace('$resultat.coupe = $script:coupe', '$resultat.trace = $script:traces\n  $resultat.coupe = $script:coupe');
+    const trace = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(diagnostic,'utf16le').toString('base64')],{encoding:'utf8'});
+    console.log('Diagnostic UIA :',trace.stdout);
+  }
+  verifier(premiere);
   await writeFile(demandeFocus,'go');
   await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='superposition');
   verifier(await lireFenetreAuPremierPlan({},etat.superposition));
