@@ -27,7 +27,7 @@ export type ElementInteractifDetecte = {
 // Liste des sélecteurs CSS considérés comme "potentiellement
 // actionnables" par le scan. Volontairement centralisée ici pour
 // rester facile à ajuster sans toucher au reste de la logique.
-const SELECTEURS_ELEMENTS_INTERACTIFS = [
+export const SELECTEURS_ELEMENTS_INTERACTIFS = [
   "button",
   "a[href]",
   '[role="button"]',
