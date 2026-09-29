@@ -13,8 +13,10 @@ import {
   usePdfJump,
 } from "@anaralabs/lector";
 import "pdfjs-dist/web/pdf_viewer.css";
-import { Download, ZoomIn as IconZoomIn, ZoomOut as IconZoomOut } from "lucide-react";
+import { Download, RotateCw, ZoomIn as IconZoomIn, ZoomOut as IconZoomOut } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { Skeleton } from "./Skeleton";
+import { AvisPdfLent } from "./AvisPdfLent";
 import { telecharger } from "@/lib/telecharger";
 
 // 10/09, remplacement du lecteur PDF -- l'ancien (react-pdf/pdfjs custom,
@@ -33,14 +35,17 @@ import { telecharger } from "@/lib/telecharger";
 import { GlobalWorkerOptions } from "pdfjs-dist";
 GlobalWorkerOptions.workerSrc = "/pdf-worker/pdf.worker.min.mjs";
 
-// Délai (ms) au-delà duquel, si le document n'a toujours pas fini de
-// charger, on affiche l'état d'erreur -- lector n'expose aucun callback
-// d'erreur de chargement (vérifié dans son code source : un échec de
-// getDocument() est juste loggé en console, le loader reste affiché
-// indéfiniment sinon). Ce timeout + la pré-vérification réseau juste en
-// dessous sont un contournement pour retrouver le comportement de
-// l'ancien lecteur ("Impossible d'afficher ce PDF ici" + Télécharger).
-const DELAI_ERREUR_MS = 20000;
+// Chargement d'un gros PDF (29/09/2026, demande Bourama) : plutôt que
+// d'afficher une erreur au bout de 20 secondes alors que le fichier est
+// valide, le chargement continue (pdf.js lit le fichier par morceaux et
+// affiche la première page dès qu'elle est prête, le reste arrive en
+// continu). Au bout de DELAI_AVIS_MS un avis informe l'utilisateur, avec
+// Réessayer et Télécharger, sans rien interrompre. L'erreur définitive
+// n'arrive qu'après DELAI_ERREUR_MS, seul garde-fou pour un fichier réellement
+// bloqué (lector n'expose aucun callback d'erreur de chargement, vérifié
+// dans son code source : un échec de getDocument() est seulement loggé).
+const DELAI_AVIS_MS = 15000;
+const DELAI_ERREUR_MS = 120000;
 
 // Composant interne : une fois le document chargé (donc à l'intérieur du
 // PDFStore fourni par <Root>), saute à la page demandée au montage.
@@ -60,6 +65,9 @@ function SautInitial({ page }: { page: number }) {
 export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number }) {
   const [erreur, setErreur] = useState(false);
   const [pretAVerifier, setPretAVerifier] = useState(false);
+  const [tailleOctets, setTailleOctets] = useState<number | null>(null);
+  // Incrémenté par Réessayer : relance la vérification et remonte le lecteur.
+  const [essai, setEssai] = useState(0);
 
   // Pré-vérification réseau : les échecs les plus courants (URL 404,
   // fichier supprimé côté Supabase, CORS) sont détectés tout de suite au
@@ -96,6 +104,8 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
         .then((reponse) => {
           if (annule) return;
           if (reponse.ok) {
+            const longueur = Number(reponse.headers.get("content-length"));
+            setTailleOctets(Number.isFinite(longueur) && longueur > 0 ? longueur : null);
             setPretAVerifier(true);
           } else if (tentative < TENTATIVES_MAX) {
             setTimeout(() => !annule && verifier(tentative + 1), DELAI_ENTRE_TENTATIVES_MS);
@@ -125,19 +135,28 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
     return () => {
       annule = true;
     };
-  }, [url]);
+  }, [url, essai]);
 
   if (erreur) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-5 text-center text-dj-texte-muet">
         <p>Impossible d&apos;afficher ce PDF ici.</p>
-        <button
-          type="button"
-          onClick={() => telecharger(url, "document.pdf")}
-          className="flex items-center gap-1 text-dj-accent-1-texte hover:underline"
-        >
-          <Download size={14} /> Télécharger
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setEssai((n) => n + 1)}
+            className="flex items-center gap-1 text-dj-accent-1-texte hover:underline"
+          >
+            <RotateCw size={14} /> Réessayer
+          </button>
+          <button
+            type="button"
+            onClick={() => telecharger(url, "document.pdf")}
+            className="flex items-center gap-1 text-dj-accent-1-texte hover:underline"
+          >
+            <Download size={14} /> Télécharger
+          </button>
+        </div>
       </div>
     );
   }
@@ -150,24 +169,41 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
     );
   }
 
-  return <VisionneurPdfCharge url={url} page={page} onErreur={() => setErreur(true)} />;
+  return (
+    <VisionneurPdfCharge
+      key={essai}
+      url={url}
+      page={page}
+      tailleOctets={tailleOctets}
+      onErreur={() => setErreur(true)}
+      surReessayer={() => setEssai((n) => n + 1)}
+    />
+  );
 }
 
 function VisionneurPdfCharge({
   url,
   page,
+  tailleOctets,
   onErreur,
+  surReessayer,
 }: {
   url: string;
   page: number;
+  tailleOctets: number | null;
   onErreur: () => void;
+  surReessayer: () => void;
 }) {
-  const delaiRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const delaiErreurRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const delaiAvisRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lent, setLent] = useState(false);
 
   useEffect(() => {
-    delaiRef.current = setTimeout(onErreur, DELAI_ERREUR_MS);
+    delaiAvisRef.current = setTimeout(() => setLent(true), DELAI_AVIS_MS);
+    delaiErreurRef.current = setTimeout(onErreur, DELAI_ERREUR_MS);
     return () => {
-      if (delaiRef.current) clearTimeout(delaiRef.current);
+      if (delaiAvisRef.current) clearTimeout(delaiAvisRef.current);
+      if (delaiErreurRef.current) clearTimeout(delaiErreurRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -182,6 +218,7 @@ function VisionneurPdfCharge({
   // englobant (au lieu de n'entourer que la zone de pages), la barre de
   // zoom passe dans ses children, en dessous de <Pages>.
   return (
+    <div className="relative h-full">
     <Root
       source={url}
       className="flex h-full flex-col overflow-hidden"
@@ -193,8 +230,10 @@ function VisionneurPdfCharge({
       isZoomFitWidth
       zoomOptions={{ minZoom: 0.5, maxZoom: 4 }}
       onDocumentLoad={() => {
-        // le chargement a réussi -- on annule le garde-fou timeout.
-        if (delaiRef.current) clearTimeout(delaiRef.current);
+        // le chargement a réussi : on annule l'avis et le garde-fou.
+        if (delaiAvisRef.current) clearTimeout(delaiAvisRef.current);
+        if (delaiErreurRef.current) clearTimeout(delaiErreurRef.current);
+        setLent(false);
       }}
     >
       <SautInitial page={page} />
@@ -224,5 +263,11 @@ function VisionneurPdfCharge({
         </ZoomIn>
       </div>
     </Root>
+    <AnimatePresence>
+      {lent && (
+        <AvisPdfLent tailleOctets={tailleOctets} surReessayer={surReessayer} surTelecharger={() => telecharger(url, "document.pdf")} />
+      )}
+    </AnimatePresence>
+    </div>
   );
 }

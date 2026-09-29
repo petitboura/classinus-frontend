@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { Skeleton } from "@/components/Skeleton";
+import { estOrigineDeConfiance } from "@/lib/originesFiables";
 
 // Carte "note texte" pour les notes de la bibliothèque personnelle
 // (voir api/bibliotheque_utilisateur.py:ajouter_texte -- stockées comme
@@ -26,20 +27,7 @@ import { Skeleton } from "@/components/Skeleton";
 // core/stockage_r2.py) -- NEXT_PUBLIC_API_URL ajouté comme origine de
 // confiance en plus de Supabase (anciens fichiers non migrés).
 export function estNoteTexteBibliotheque(href: string): boolean {
-  const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const urlApi = process.env.NEXT_PUBLIC_API_URL;
-  const originesFiables = [urlSupabase, urlApi].filter(Boolean).map((u) => {
-    try {
-      return new URL(u as string).origin;
-    } catch {
-      return null;
-    }
-  });
-  try {
-    if (!originesFiables.includes(new URL(href).origin)) return false;
-  } catch {
-    return false;
-  }
+  if (!estOrigineDeConfiance(href)) return false;
   return href.split("?")[0].toLowerCase().endsWith(".txt");
 }
 

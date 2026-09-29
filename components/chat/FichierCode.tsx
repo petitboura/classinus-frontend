@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { FileCode } from "lucide-react";
 import hljs from "@/lib/coloration";
 import { BlocExpansible } from "./BlocExpansible";
+import { estOrigineDeConfiance } from "@/lib/originesFiables";
 
 // Extensions de code reconnues -> langage highlight.js. Un fichier de
 // code livré seul (voir le fix backend generation_code.py, 2026-07-20 :
@@ -48,23 +49,6 @@ export function extensionCode(href: string): string | null {
 // 18/09/2026 : stockage migré de Supabase vers R2 (clovis-backend,
 // core/stockage_r2.py) -- NEXT_PUBLIC_API_URL ajouté comme origine de
 // confiance en plus de Supabase (anciens fichiers non migrés).
-function estOrigineDeConfiance(href: string): boolean {
-  const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const urlApi = process.env.NEXT_PUBLIC_API_URL;
-  const originesFiables = [urlSupabase, urlApi].filter(Boolean).map((u) => {
-    try {
-      return new URL(u as string).origin;
-    } catch {
-      return null;
-    }
-  });
-  try {
-    return originesFiables.includes(new URL(href).origin);
-  } catch {
-    return false;
-  }
-}
-
 export function estFichierCodeAffichable(href: string): boolean {
   return extensionCode(href) !== null && estOrigineDeConfiance(href);
 }

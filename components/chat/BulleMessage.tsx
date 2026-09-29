@@ -133,9 +133,13 @@ export { texteBrut };
 // ne le traite pas comme un résultat web (estSiteWeb) et affiche plutôt
 // son repli "Aperçu non disponible" + téléchargement, qui reste dans
 // l'appli (voir ContenuNonPrevisualisable).
-function typeMimeDepuisNom(nom: string): string {
-  const ext = nom.split(".").pop()?.toLowerCase() ?? "";
-  return ext === "pdf" ? "application/pdf" : "application/octet-stream";
+// Le nom peut ne pas finir par .pdf (extension absente, nom coupé par un
+// séparateur du marqueur de pièce jointe) : l'adresse réelle du fichier,
+// qui garde toujours son extension, sert alors de second indice.
+function typeMimeDepuisNom(nom: string, adresse?: string): string {
+  const extNom = nom.split(".").pop()?.toLowerCase() ?? "";
+  const extAdresse = adresse?.split("?")[0].split("#")[0].split(".").pop()?.toLowerCase() ?? "";
+  return extNom === "pdf" || extAdresse === "pdf" ? "application/pdf" : "application/octet-stream";
 }
 
 // Nettoie le markdown avant lecture à voix haute (Web Speech API, voir
@@ -1018,7 +1022,7 @@ function BulleMessageInterne({
                   key={index}
                   onClick={() =>
                     piece.previewUrl &&
-                    ouvrirPosition({ url: piece.previewUrl, titre: piece.nom, typeMime: typeMimeDepuisNom(piece.nom) })
+                    ouvrirPosition({ url: piece.previewUrl, titre: piece.nom, typeMime: typeMimeDepuisNom(piece.nom, piece.previewUrl) })
                   }
                   aria-label="Ouvrir le fichier"
                   className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-fond/40 px-3 py-2 text-xs text-dj-texte-muet hover:text-dj-texte"

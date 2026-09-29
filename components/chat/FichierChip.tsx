@@ -9,6 +9,7 @@ import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuText
 import { telecharger } from "@/lib/telecharger";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { useEntreePubliqueParUrl } from "@/lib/useEntreePubliqueParUrl";
+import { estOrigineDeConfiance } from "@/lib/originesFiables";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 
 // CORRECTIF 2026-09-10 (demande Bourama : le nouveau lecteur -- PDF
@@ -121,23 +122,8 @@ const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp"]);
 // route /fichiers/r2/...), plus depuis Supabase. Origine tout aussi
 // fiable (c'est notre backend), donc ajoutée à la liste des origines de
 // confiance au lieu de remplacer Supabase (anciens fichiers non migrés).
-function estOrigineDeConfiance(href: string): boolean {
-  const urlSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const urlApi = process.env.NEXT_PUBLIC_API_URL;
-  const originesFiables = [urlSupabase, urlApi].filter(Boolean).map((u) => {
-    try {
-      return new URL(u as string).origin;
-    } catch {
-      return null;
-    }
-  });
-  try {
-    const origine = new URL(href).origin;
-    return originesFiables.includes(origine);
-  } catch {
-    return false;
-  }
-}
+// La règle vit maintenant dans lib/originesFiables.ts, partagée avec les
+// autres composants de fichier.
 
 // Détecte si un lien markdown pointe vers un fichier "document" (PDF,
 // Word, Excel, PowerPoint...) via son extension d'URL, et si oui le
