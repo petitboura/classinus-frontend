@@ -339,7 +339,10 @@ let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
-  // etat_editeur : null quand aucun éditeur de code n'est monté ici (28/09/2026).
+  // Le WebSocket conserve la présence de l'éditeur pour les actions
+  // interactives, mais le chat HTTP transmet aussi l'état exact du tour.
+  // Cette synchronisation reste utile comme cache, sans être une condition
+  // nécessaire pour que le modèle voie l'éditeur.
   socket.send(JSON.stringify({ etat_actions: scannerElementsInteractifs(), etat_editeur: obtenirEtatEditeurPourCanal() }));
 }
 
