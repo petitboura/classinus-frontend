@@ -1,6 +1,6 @@
 import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { supabase } from "./supabase";
-import type { NotificationClovis } from "./api";
+import { API_URL, type NotificationClovis } from "./api";
 
 // Ajoute le 30/08/2026, Bourama : Lot 1 Partie 3 (app mobile), chantier
 // "Exploration de dossier en temps reel" (voir 00-commun-exploration-dossier.md
@@ -66,7 +66,7 @@ type PluginDossiers = {
 // tourner indefiniment sur une arborescence tres profonde.
 const PROFONDEUR_MAX_RECHERCHE = 20;
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 
 let socket: WebSocket | null = null;
 let tentativeReconnexion: ReturnType<typeof setTimeout> | null = null;
