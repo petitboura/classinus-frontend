@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BlocLarge } from "./BlocLarge";
+import { BoutonTelechargerImage } from "./BoutonTelechargerImage";
+import { telechargerImageElement } from "@/lib/telechargerImageElement";
 
 let compteurMermaid = 0;
 
@@ -38,6 +40,8 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
   const [svg, setSvg] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sourceAffichee, setSourceAffichee] = useState(false);
+  // Zone du diagramme seul (sans le bouton Télécharger) pour l'export image.
+  const zoneDiagrammeRef = useRef<HTMLDivElement>(null);
   // Incrémenté à chaque changement de thème (voir lib/useTheme.ts) pour
   // forcer un nouveau rendu avec les couleurs résolues du nouveau thème --
   // simplement changer les variables CSS ne suffit pas ici (voir plus bas
@@ -136,11 +140,22 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
         // le cadre. Si le diagramme dépasse la place disponible, le cadre
         // défile. mermaid pose un style inline max-width sur le SVG : un
         // style inline gagne sur une classe normale, d'où les variantes avec !.
+        <>
+        {!sansCadre && (
+          <div className="mb-1 flex justify-end">
+            <BoutonTelechargerImage
+              exporter={() => telechargerImageElement(zoneDiagrammeRef.current, "diagramme.png")}
+              libelleAria="Télécharger le diagramme en image"
+            />
+          </div>
+        )}
         <div
+          ref={zoneDiagrammeRef}
           className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-[var(--largeur-naturelle,100%)] [&_svg]:!min-w-full [&_svg]:!max-w-none [&_svg]:!h-auto [&_svg]:min-h-[160px]"
           style={{ "--largeur-naturelle": `${largeurNaturelle(svg)}px` } as CSSProperties}
           dangerouslySetInnerHTML={{ __html: svg }}
         />
+        </>
       ) : erreur ? (
         <div className="space-y-2">
           <p className="text-xs text-dj-texte-muet">

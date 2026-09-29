@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { creerMemoireElements } from "@/lib/memoireElementsRiches";
+import { nomFichierImage, telechargerImageElement } from "@/lib/telechargerImageElement";
+import { BoutonTelechargerImage } from "./BoutonTelechargerImage";
 import { FicheFormules } from "./FicheFormules";
 import { FicheDates } from "./FicheDates";
 import { FicheVocabulaire } from "./FicheVocabulaire";
@@ -103,9 +105,44 @@ function EtatErreur({ texte }: { texte: string }) {
 // Mémoire (23/09/2026) : une fiche qui se remonte réapparaît tout de suite.
 const memoireFiches = creerMemoireElements<Fiche>();
 
+// Choisit l'affichage selon le type. "valide" sert à n'afficher le bouton
+// Télécharger que sur une vraie fiche, pas sur un message d'erreur.
+function rendreContenuFiche(fiche: Fiche): { valide: boolean; noeud: ReactNode } {
+  switch (fiche.type) {
+    case "formules":
+      if (!Array.isArray(fiche.items) || fiche.items.length === 0) {
+        return { valide: false, noeud: <EtatErreur texte="au moins une formule est nécessaire." /> };
+      }
+      return { valide: true, noeud: <FicheFormules fiche={fiche} /> };
+    case "dates":
+      if (!Array.isArray(fiche.evenements) || fiche.evenements.length === 0) {
+        return { valide: false, noeud: <EtatErreur texte="au moins un événement est nécessaire." /> };
+      }
+      return { valide: true, noeud: <FicheDates fiche={fiche} /> };
+    case "vocabulaire":
+      if (!Array.isArray(fiche.termes) || fiche.termes.length === 0) {
+        return { valide: false, noeud: <EtatErreur texte="au moins un terme est nécessaire." /> };
+      }
+      return { valide: true, noeud: <FicheVocabulaire fiche={fiche} /> };
+    case "carte-mentale":
+      if (typeof fiche.racine !== "string" || !Array.isArray(fiche.branches)) {
+        return { valide: false, noeud: <EtatErreur texte="une racine et des branches sont nécessaires." /> };
+      }
+      return { valide: true, noeud: <FicheCarteMentale fiche={fiche} /> };
+    case "tableau-comparatif":
+      if (!Array.isArray(fiche.colonnes) || !Array.isArray(fiche.lignes)) {
+        return { valide: false, noeud: <EtatErreur texte="des colonnes et des lignes sont nécessaires." /> };
+      }
+      return { valide: true, noeud: <FicheTableauComparatif fiche={fiche} /> };
+    default:
+      return { valide: false, noeud: <EtatErreur texte="type de fiche non reconnu." /> };
+  }
+}
+
 export function FicheRevision({ code }: { code: string }) {
   const [fiche, setFiche] = useState<Fiche | null>(() => memoireFiches.lire(code) ?? null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const zoneFicheRef = useRef<HTMLDivElement>(null);
 
   // Même principe que QCMInteractif.tsx/CarteMessage.tsx/GraphiqueDonnees.tsx :
   // on attend l'arrêt du streaming (500ms sans changement) avant de
@@ -133,33 +170,26 @@ export function FicheRevision({ code }: { code: string }) {
     );
   }
 
-  switch (fiche.type) {
-    case "formules":
-      if (!Array.isArray(fiche.items) || fiche.items.length === 0) {
-        return <EtatErreur texte="au moins une formule est nécessaire." />;
-      }
-      return <FicheFormules fiche={fiche} />;
-    case "dates":
-      if (!Array.isArray(fiche.evenements) || fiche.evenements.length === 0) {
-        return <EtatErreur texte="au moins un événement est nécessaire." />;
-      }
-      return <FicheDates fiche={fiche} />;
-    case "vocabulaire":
-      if (!Array.isArray(fiche.termes) || fiche.termes.length === 0) {
-        return <EtatErreur texte="au moins un terme est nécessaire." />;
-      }
-      return <FicheVocabulaire fiche={fiche} />;
-    case "carte-mentale":
-      if (typeof fiche.racine !== "string" || !Array.isArray(fiche.branches)) {
-        return <EtatErreur texte="une racine et des branches sont nécessaires." />;
-      }
-      return <FicheCarteMentale fiche={fiche} />;
-    case "tableau-comparatif":
-      if (!Array.isArray(fiche.colonnes) || !Array.isArray(fiche.lignes)) {
-        return <EtatErreur texte="des colonnes et des lignes sont nécessaires." />;
-      }
-      return <FicheTableauComparatif fiche={fiche} />;
-    default:
-      return <EtatErreur texte="type de fiche non reconnu." />;
-  }
+  const { valide, noeud } = rendreContenuFiche(fiche);
+  if (!valide) return <>{noeud}</>;
+
+  // Le bouton est dans une ligne au-dessus de la fiche (jamais dans la zone
+  // capturée) : la carte mentale s'élargit hors de la colonne du chat (voir
+  // BlocLarge.tsx), donc on capture la carte elle-même, pas son parent.
+  return (
+    <div>
+      <div className="-mb-1 mt-3 flex justify-end">
+        <BoutonTelechargerImage
+          exporter={() =>
+            telechargerImageElement(
+              (zoneFicheRef.current?.firstElementChild as HTMLElement | null) ?? null,
+              nomFichierImage(fiche.titre, `fiche-${fiche.type}`)
+            )
+          }
+          libelleAria="Télécharger la fiche en image"
+        />
+      </div>
+      <div ref={zoneFicheRef}>{noeud}</div>
+    </div>
+  );
 }
