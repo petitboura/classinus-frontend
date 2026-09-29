@@ -78,7 +78,7 @@ import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
-import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal } from "./pontEditeurAgent";
+import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -244,6 +244,7 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
         longueur_reponse: "moyenne",
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
+        etat_editeur: obtenirLectureEditeurPourChat(),
       },
       (evenement) => {
         if (evenement?.type === "reponse" && typeof evenement.texte === "string") {
@@ -339,7 +340,10 @@ let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
-  // etat_editeur : null quand aucun éditeur de code n'est monté ici (28/09/2026).
+  // Le WebSocket conserve la présence de l'éditeur pour les actions
+  // interactives, mais le chat HTTP transmet aussi l'état exact du tour.
+  // Cette synchronisation reste utile comme cache, sans être une condition
+  // nécessaire pour que le modèle voie l'éditeur.
   socket.send(JSON.stringify({ etat_actions: scannerElementsInteractifs(), etat_editeur: obtenirEtatEditeurPourCanal() }));
 }
 

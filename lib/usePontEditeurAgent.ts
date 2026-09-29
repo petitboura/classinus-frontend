@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { EditorView } from "@uiw/react-codemirror";
 import { ecrireDansEditeurCode, lireCodeEditeur, montrerLignesEditeur } from "./operationsEditeurAgent";
-import { enregistrerPontEditeur, signalerChangementEtatEditeur } from "./pontEditeurAgent";
+import { enregistrerPontEditeur, obtenirPontEditeur, signalerChangementEtatEditeur } from "./pontEditeurAgent";
+import type { PontEditeurAgent } from "./pontEditeurAgent";
 import type { LigneSortie } from "./useExecutionPython";
 
 type ParametresPont = {
@@ -22,6 +23,7 @@ type ParametresPont = {
 export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorView) => void {
   const vueRef = useRef<EditorView | null>(null);
   const parametresRef = useRef(parametres);
+  const pontRef = useRef<PontEditeurAgent | null>(null);
 
   useEffect(() => {
     parametresRef.current = parametres;
@@ -39,7 +41,7 @@ export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorVie
       return { langage: p.langage, nom_fichier: p.nomFichier, plein_ecran: p.pleinEcran };
     }
 
-    enregistrerPontEditeur({
+    const pont: PontEditeurAgent = {
       etat,
       lire: () => {
         const p = parametresRef.current;
@@ -49,10 +51,18 @@ export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorVie
           derniere_execution: { lignes: p.lignesSortie.map((l) => l.texte), erreur: p.erreurExecution },
         };
       },
-      ecrire: (operation) => ecrireDansEditeurCode(vueActive(), operation),
-      montrer: (debut, fin) => montrerLignesEditeur(vueActive(), debut, fin),
-    });
-    return () => enregistrerPontEditeur(null);
+      ecrire: (operation: Parameters<typeof ecrireDansEditeurCode>[1]) => ecrireDansEditeurCode(vueActive(), operation),
+      montrer: (debut: number, fin: number) => montrerLignesEditeur(vueActive(), debut, fin),
+    };
+
+    pontRef.current = pont;
+    if (vueRef.current) enregistrerPontEditeur(pont);
+
+    return () => {
+      if (obtenirPontEditeur() === pont) enregistrerPontEditeur(null);
+      pontRef.current = null;
+      vueRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -61,5 +71,7 @@ export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorVie
 
   return useCallback((vue: EditorView) => {
     vueRef.current = vue;
+    const pont = pontRef.current;
+    if (pont && obtenirPontEditeur() !== pont) enregistrerPontEditeur(pont);
   }, []);
 }
