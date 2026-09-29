@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { EditorView } from "@uiw/react-codemirror";
 import { ecrireDansEditeurCode, lireCodeEditeur, montrerLignesEditeur } from "./operationsEditeurAgent";
-import { enregistrerPontEditeur, signalerChangementEtatEditeur } from "./pontEditeurAgent";
+import { enregistrerPontEditeur, obtenirPontEditeur, signalerChangementEtatEditeur } from "./pontEditeurAgent";
+import type { PontEditeurAgent } from "./pontEditeurAgent";
 import type { LigneSortie } from "./useExecutionPython";
 
 type ParametresPont = {
@@ -22,6 +23,7 @@ type ParametresPont = {
 export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorView) => void {
   const vueRef = useRef<EditorView | null>(null);
   const parametresRef = useRef(parametres);
+  const pontRef = useRef<PontEditeurAgent | null>(null);
 
   useEffect(() => {
     parametresRef.current = parametres;
@@ -39,7 +41,7 @@ export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorVie
       return { langage: p.langage, nom_fichier: p.nomFichier, plein_ecran: p.pleinEcran };
     }
 
-    const pont = {
+    const pont: PontEditeurAgent = {
       etat,
       lire: () => {
         const p = parametresRef.current;
@@ -53,26 +55,13 @@ export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorVie
       montrer: (debut: number, fin: number) => montrerLignesEditeur(vueActive(), debut, fin),
     };
 
-    const pontRefLocal = { current: pont };
-    // Le pont est enregistré quand CodeMirror fournit réellement sa vue.
-    // Cela évite une fenêtre où le registre global existe mais ne possède
-    // encore aucune vue d'éditeur, et évite aussi qu'un cleanup de React
-    // efface le pont d'une instance remontée entre-temps.
-    const surCreation = (vue: EditorView) => {
-      vueRef.current = vue;
-      enregistrerPontEditeur(pont);
-    };
-
-    (surCreation as ((vue: EditorView) => void) & { __pont?: typeof pont }).__pont = pont;
+    pontRef.current = pont;
+    if (vueRef.current) enregistrerPontEditeur(pont);
 
     return () => {
-      if (vueRef.current?.dom.isConnected === false) vueRef.current = null;
-      // Ne retire le pont que s'il s'agit toujours de celui monté par cette
-      // instance. Une autre instance ne doit jamais être effacée par ce cleanup.
-      // Le registre expose uniquement la valeur courante, donc on compare
-      // par référence avant de nettoyer.
-      // @ts-expect-error accès interne évité : le test est réalisé via obtenirPontEditeur.
-      if ((globalThis as any).__pontEditeurAgent?.pont === pont) enregistrerPontEditeur(null);
+      if (obtenirPontEditeur() === pont) enregistrerPontEditeur(null);
+      pontRef.current = null;
+      vueRef.current = null;
     };
   }, []);
 
@@ -82,5 +71,7 @@ export function usePontEditeurAgent(parametres: ParametresPont): (vue: EditorVie
 
   return useCallback((vue: EditorView) => {
     vueRef.current = vue;
+    const pont = pontRef.current;
+    if (pont && obtenirPontEditeur() !== pont) enregistrerPontEditeur(pont);
   }, []);
 }
