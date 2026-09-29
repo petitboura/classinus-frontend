@@ -6,7 +6,7 @@ import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPe
 export const metadata: Metadata = {
   title: "Ma mémoire dans Classinus : ce que l'IA retient de toi",
   description:
-    "Classinus retient un résumé de vos échanges passés pour personnaliser vos conversations. Tu peux le consulter, le corriger ou l'effacer à tout moment.",
+    "Classinus retient ce qui compte pour toi (identité, scolarité, apprentissage, préférences) afin de personnaliser vos conversations. Tu peux tout consulter et l'effacer à tout moment.",
 };
 
 export default function PageDecouvrirPersonnaliserMemoire() {
@@ -14,14 +14,13 @@ export default function PageDecouvrirPersonnaliserMemoire() {
     <MiseEnPageDecouvrirPersonnaliser>
       <h1 className="font-display text-2xl font-bold text-dj-texte">Ma mémoire</h1>
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
-        Un résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Il se
-        met à jour automatiquement au fil des discussions, et tu peux aussi le corriger ou l&apos;effacer toi même à
-        tout moment.
+        Ce que Classinus retient de toi pour personnaliser vos échanges. Tout est classé en quatre catégories :
+        ton identité, ta scolarité, ce que tu apprends (matière par matière, avec les notions vues et les
+        difficultés repérées) et tes préférences.
       </p>
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
-        Sous ce résumé, une section Ma progression rassemble ce que Classinus a noté matière par matière (notions
-        vues, difficultés repérées). Elle se remplit toute seule quand tu partages des informations sur tes études
-        pendant les conversations.
+        Cette mémoire se construit toute seule au fil de tes conversations. Tu peux tout consulter, oublier une
+        catégorie entière ou tout effacer à tout moment.
       </p>
     </MiseEnPageDecouvrirPersonnaliser>
   );
