@@ -1,3 +1,4 @@
+import { API_URL } from "../lib/api";
 "use client";
 
 import { useEffect } from "react";
@@ -19,7 +20,6 @@ const INTERVALLE_MS = 14 * 60 * 1000;
 
 export function ReveilBackend() {
   useEffect(() => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL;
     if (!API_URL) return;
 
     function reveiller() {
