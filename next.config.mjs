@@ -19,6 +19,15 @@
 // par la doc Capacitor -- problemes de cookies/auth rapportes par la
 // communaute, et incertitude sur l'acceptation Play Store d'une app qui
 // se contente de charger un site distant).
+// Test canal en direct PC : les builds Capacitor/Electron de cette branche
+// parlent au backend de test Railway (environnement staging), pas a la
+// production. Adresse en dur volontairement, a retirer avant toute fusion.
+// Le web Vercel n'est pas touche (CAPACITOR_BUILD absent).
+if (process.env.CAPACITOR_BUILD === "true") {
+  process.env.NEXT_PUBLIC_API_URL =
+    "https://classinus-backend-lot-u-test-staging.up.railway.app";
+}
+
 const nextConfig = {
   ...(process.env.CAPACITOR_BUILD === "true" ? { output: "export" } : {}),
   images: {
