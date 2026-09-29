@@ -21,6 +21,7 @@ import { texteMessageAutomatique } from "@/lib/minuteurs";
 import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
+import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
 
 // L'aperçu interne (VisionneurPositionGlobal) n'est plus monté ici depuis
 // le 20/09/2026 : il vit dans le layout racine (VisionneurGlobalRacine.tsx)
@@ -944,6 +945,12 @@ export function ChatIA({
           : undefined,
     }));
 
+    // L'éditeur ne dépend plus du WebSocket pour être visible par le modèle
+    // sur CE tour. On capture son état exact juste avant l'appel HTTP ;
+    // ainsi une reconnexion du canal, un délai de synchronisation ou sa
+    // fermeture ne peut plus faire perdre l'éditeur au modèle.
+    const etatEditeurPourChat = obtenirLectureEditeurPourChat();
+
     // Corrige un bug signalé par Bourama le 18/09/2026 : "Historique" ne
     // montrait une nouvelle conversation qu'après rechargement de la page
     // (liste chargée une seule fois, voir lib/contexteChat.tsx). `messages`
@@ -1158,6 +1165,10 @@ export function ChatIA({
           // le canal est actif, sur ce message comme sur tous les
           // autres pendant ce temps.
           canal_en_direct: canalEnDirectActif,
+          // Source de vérité pour l'éditeur pendant CE tour. Le WebSocket
+          // reste utilisé pour les actions interactives, mais n'est plus
+          // requis pour que le modèle voie le code courant.
+          etat_editeur: etatEditeurPourChat,
           // Minuteurs du chat (20/09/2026) : voir le paramètre `automatique`
           // de envoyerMessage, et message_automatique dans api/chat.py.
           message_automatique: automatique,
