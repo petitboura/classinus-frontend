@@ -281,9 +281,9 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     id: "memoire",
     titre: "Ma mémoire",
     texteCourt:
-      "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici. En dessous, ta progression matière par matière (notions vues, difficultés repérées) se construit toute seule.",
+      "Ce que Classinus retient de toi pour personnaliser vos échanges, classé en quatre catégories : identité, scolarité, apprentissage et préférences. Ça se construit tout seul au fil de tes conversations. Tu peux tout consulter ici et oublier une catégorie. Les Paramètres te permettent aussi d'oublier une catégorie ou de tout effacer d'un coup.",
     texteComplet:
-      "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici. En dessous, ta progression matière par matière (notions vues, difficultés repérées) se construit toute seule.",
+      "Ce que Classinus retient de toi pour personnaliser vos échanges, classé en quatre catégories : identité, scolarité, apprentissage et préférences. Ça se construit tout seul au fil de tes conversations. Tu peux tout consulter ici et oublier une catégorie. Les Paramètres te permettent aussi d'oublier une catégorie ou de tout effacer d'un coup.",
     lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.memoire,
   },
 ];

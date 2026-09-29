@@ -3,9 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, SlidersHorizontal, Lock, HelpCircle, Info, Trash2, Download, Smartphone, Accessibility, LogOut, type LucideIcon } from "lucide-react";
+import { ChevronRight, SlidersHorizontal, Lock, HelpCircle, Info, Trash2, Download, Smartphone, Accessibility, LogOut, Eraser, type LucideIcon } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { lireMonProfil, supprimerMonCompte, exporterMesDonnees } from "@/lib/api";
+import { lireMonProfil, supprimerMonCompte, exporterMesDonnees, appelerApi } from "@/lib/api";
+import { clesRequetes } from "@/lib/clesRequetes";
+import { demanderDoubleConfirmationOubli } from "@/lib/confirmationOubliMemoire";
+import { CATEGORIES_MEMOIRE, oublierCategorieMemoire, titreCategorieMemoire } from "@/lib/categoriesMemoire";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
@@ -81,6 +85,7 @@ function LigneAction({
 
 export function ParametresAccueil() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [chargement, setChargement] = useState(true);
   const [sansCompte, setSansCompte] = useState(false);
@@ -91,6 +96,10 @@ export function ParametresAccueil() {
   const [exportEnCours, setExportEnCours] = useState(false);
   const [erreurExport, setErreurExport] = useState<string | null>(null);
   const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
+  // Ce qui est en cours d'effacement : une catégorie, "tout", ou null.
+  const [memoireEnCours, setMemoireEnCours] = useState<string | null>(null);
+  const [erreurMemoire, setErreurMemoire] = useState<string | null>(null);
+  const [messageMemoire, setMessageMemoire] = useState<string | null>(null);
 
   useEffect(() => {
     lireMonProfil()
@@ -124,6 +133,50 @@ export function ParametresAccueil() {
 
     await supabase.auth.signOut();
     window.location.href = "/connexion";
+  }
+
+  async function oublierUneCategorie(categorie: string) {
+    // Même effacement, même double confirmation que le bouton "Oublier" de
+    // l'écran Ma mémoire : voir lib/categoriesMemoire.ts.
+    if (memoireEnCours !== null) return;
+    setMemoireEnCours(categorie);
+    setErreurMemoire(null);
+    setMessageMemoire(null);
+    try {
+      const confirmation = await oublierCategorieMemoire(categorie, queryClient);
+      if (confirmation) setMessageMemoire(confirmation);
+    } catch (e) {
+      setErreurMemoire(messageErreur(e));
+    } finally {
+      setMemoireEnCours(null);
+    }
+  }
+
+  async function confirmerEffacementMemoire() {
+    if (memoireEnCours !== null) return;
+    // Double confirmation (29/09/2026, demande Bourama), même règle que
+    // "Oublier" une catégorie sur l'écran Ma mémoire : voir
+    // lib/confirmationOubliMemoire.ts.
+    if (
+      !demanderDoubleConfirmationOubli(
+        "Effacer toute ta mémoire ? Classinus oubliera tout ce qu'il a retenu de toi.",
+        "Ton identité, ta scolarité, ce que tu apprends et tes préférences seront effacés."
+      )
+    )
+      return;
+
+    setMemoireEnCours("tout");
+    setErreurMemoire(null);
+    setMessageMemoire(null);
+    try {
+      await appelerApi("/api/memoire-eleve", { method: "DELETE" });
+      queryClient.invalidateQueries({ queryKey: clesRequetes.memoire });
+      setMessageMemoire("Mémoire effacée.");
+    } catch (e) {
+      setErreurMemoire(messageErreur(e));
+    } finally {
+      setMemoireEnCours(null);
+    }
   }
 
   async function confirmerSuppressionCompte() {
@@ -280,6 +333,27 @@ export function ParametresAccueil() {
         />
       </Liste>
       {erreurExport && <p className="text-sm text-[var(--dj-erreur)]">{erreurExport}</p>}
+
+      <Liste>
+        {CATEGORIES_MEMOIRE.map((categorie) => (
+          <LigneAction
+            key={categorie}
+            icone={Eraser}
+            titre={memoireEnCours === categorie ? "Effacement…" : `Oublier : ${titreCategorieMemoire(categorie)}`}
+            onClick={() => oublierUneCategorie(categorie)}
+            danger
+          />
+        ))}
+        <LigneAction
+          icone={Eraser}
+          titre={memoireEnCours === "tout" ? "Effacement…" : "Effacer toute ma mémoire"}
+          sousTitre="Classinus oublie tout ce qu'il a retenu de toi"
+          onClick={confirmerEffacementMemoire}
+          danger
+        />
+      </Liste>
+      {erreurMemoire && <p className="text-sm text-[var(--dj-erreur)]">{erreurMemoire}</p>}
+      {messageMemoire && <p className="text-sm text-dj-texte-muet">{messageMemoire}</p>}
 
       <Liste>
         <LigneAction icone={LogOut} titre="Se déconnecter" onClick={seDeconnecter} />
