@@ -8,12 +8,14 @@ import { useTheme } from "@/lib/useTheme";
 import { textesAnimation } from "@/lib/textesAnimation";
 import { construireDocumentAnimation } from "./animation/construireDocumentAnimation";
 
-// Bloc ```animation du markdown (29/09/2026, demande Bourama) : une leçon
-// animée qui se regarde comme une vidéo (lecture, pause, barre de
-// progression, chapitres cliquables, barre d'espace), en 2D ou en 3D. Le
-// lecteur est fourni par l'application (voir animation/), le modèle
-// n'écrit que le contenu des chapitres. Le widget interactif existant
-// (WidgetSandbox.tsx) reste disponible et n'est pas modifié.
+// Bloc ```animation du markdown (29/09/2026, demande Bourama) : une
+// animation qui se regarde comme une vidéo (lecture, pause, barre de
+// progression, barre d'espace), en 2D ou en 3D, pour n'importe quel
+// sujet et sans structure imposée : un seul mouvement continu ou
+// plusieurs parties, avec ou sans titres et légende. Le lecteur est
+// fourni par l'application (voir animation/), le modèle n'écrit que le
+// contenu. Le widget interactif existant (WidgetSandbox.tsx) reste
+// disponible et n'est pas modifié.
 //
 // Même déroulement que les autres aperçus : chip replié, déroulé dans le
 // fil, vrai plein écran (BlocExpansible force l'iframe à remplir tout
@@ -25,7 +27,7 @@ import { construireDocumentAnimation } from "./animation/construireDocumentAnima
 const HAUTEUR_FIL = "h-[28rem]";
 
 // Même forme que le lecteur final (zone d'image, légende, barre de
-// lecture, chapitres) pour éviter un saut visuel à l'arrivée.
+// lecture, titres) pour éviter un saut visuel à l'arrivée.
 function SqueletteAnimation() {
   return (
     <div className={`flex ${HAUTEUR_FIL} w-full flex-col gap-2 rounded-lg border border-dj-bordure p-2.5`}>

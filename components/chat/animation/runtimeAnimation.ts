@@ -3,12 +3,12 @@
 // construireDocumentAnimation.ts : l'iframe est un document séparé, il ne
 // peut rien importer de l'application.
 //
-// Principe : le modèle décrit des chapitres, chacun est une fonction de sa
+// Principe : le modèle décrit une ou plusieurs parties, chacune est une fonction de sa
 // progression p (0 à 1). À chaque image, le lecteur remet d'abord tout
 // dans l'état posé par installer(), puis applique dans l'ordre les
-// chapitres déjà passés (p vaut 1) et le chapitre en cours (p courant).
-// Les chapitres à venir ne sont pas appelés. La pause, le retour en
-// arrière, le saut de chapitre et la barre de progression sont ainsi
+// parties déjà passées (p vaut 1) et la partie en cours (p courant).
+// Les parties à venir ne sont pas appelées. La pause, le retour en
+// arrière, le saut de partie et la barre de progression sont ainsi
 // exacts, sans aucun état mémorisé par le modèle.
 //
 // Écrit en JS simple (sans backtick ni interpolation) pour tenir dans un
@@ -41,15 +41,22 @@ export const RUNTIME_ANIMATION = String.raw`
     return s1.replace(NOMBRE, function (m) { return arrondi(lerp(parseFloat(m), parseFloat(n2[i++]), x)); });
   }
 
-  var etat = { mode: '2d', restaurer: null, installeur: null, chapitres: [], S: null, t: 0, duree: 0, joue: false, dernier: 0, idx: -1, pret: false };
+  var etat = { mode: '2d', restaurer: null, installeur: null, parties: [], S: null, t: 0, duree: 0, joue: false, dernier: 0, idx: -1, pret: false };
 
   window.mode = function (m) { etat.mode = (m === '3d') ? '3d' : '2d'; };
   window.installer = function (fn) { etat.installeur = fn; };
+  function ajouterPartie(duree, fn, nom, legende) {
+    var d = Number(duree);
+    if (!(d >= 0.5)) { d = 5; }
+    etat.parties.push({ nom: nom ? String(nom) : '', duree: d, legende: legende ? String(legende) : '', fn: fn });
+  }
+  window.animer = function (duree, fn, options) {
+    options = options || {};
+    ajouterPartie(duree, fn, options.titre, options.legende);
+  };
   window.chapitre = function (nom, duree, legende, fn) {
     if (typeof legende === 'function') { fn = legende; legende = ''; }
-    var d = Number(duree);
-    if (!(d >= 0.5)) { d = 3; }
-    etat.chapitres.push({ nom: String(nom), duree: d, legende: String(legende || ''), fn: fn });
+    ajouterPartie(duree, fn, nom, legende);
   };
   window.seg = seg;
   window.ease = ease;
@@ -70,9 +77,9 @@ export const RUNTIME_ANIMATION = String.raw`
   window.onerror = function (message, source, ligne) { erreur(message + (ligne ? ' (ligne ' + ligne + ')' : '')); };
   window.addEventListener('unhandledrejection', function (e) { erreur(String(e.reason)); });
 
-  function debutChapitre(i) {
+  function debutPartie(i) {
     var d = 0;
-    for (var k = 0; k < i; k++) { d += etat.chapitres[k].duree; }
+    for (var k = 0; k < i; k++) { d += etat.parties[k].duree; }
     return d;
   }
   function formater(x) {
@@ -277,12 +284,13 @@ export const RUNTIME_ANIMATION = String.raw`
     if (idx !== etat.idx) {
       etat.idx = idx;
       var legende = $('an-legende');
-      legende.textContent = etat.chapitres[idx].legende;
+      legende.textContent = etat.parties[idx].legende;
       legende.classList.remove('maj');
       void legende.offsetWidth;
       legende.classList.add('maj');
       var puces = $('an-chap').children;
       for (var k = 0; k < puces.length; k++) { puces[k].classList.toggle('actif', k === idx); }
+      if (!etat.parties[idx].legende) { legende.classList.remove('maj'); }
     }
     var part = etat.duree ? etat.t / etat.duree : 0;
     var curseur = $('an-pos');
@@ -297,14 +305,14 @@ export const RUNTIME_ANIMATION = String.raw`
     var debuts = [];
     var cumul = 0;
     var idx = 0;
-    for (var i = 0; i < etat.chapitres.length; i++) {
+    for (var i = 0; i < etat.parties.length; i++) {
       debuts.push(cumul);
       if (etat.t >= cumul - 0.000001) { idx = i; }
-      cumul += etat.chapitres[i].duree;
+      cumul += etat.parties[i].duree;
     }
     etat.restaurer();
     for (var k = 0; k <= idx; k++) {
-      var ch = etat.chapitres[k];
+      var ch = etat.parties[k];
       var p = k < idx ? 1 : borne((etat.t - debuts[k]) / ch.duree);
       try {
         ch.fn(p, etat.S);
@@ -346,12 +354,17 @@ export const RUNTIME_ANIMATION = String.raw`
   function construireControles() {
     var chap = $('an-chap');
     chap.setAttribute('aria-label', T.chapitres);
-    etat.chapitres.forEach(function (ch, i) {
+    var titrees = etat.parties.filter(function (q) { return q.nom; }).length;
+    var avecLegende = etat.parties.some(function (q) { return q.legende; });
+    document.body.classList.toggle('sans-chapitres', titrees < 2);
+    document.body.classList.toggle('sans-legende', !avecLegende);
+    etat.parties.forEach(function (ch, i) {
+      if (!ch.nom) { ch.nom = String(i + 1); }
       var b = document.createElement('button');
       b.type = 'button';
-      b.textContent = (i + 1) + '. ' + ch.nom;
+      b.textContent = ch.nom === String(i + 1) ? ch.nom : (i + 1) + '. ' + ch.nom;
       b.addEventListener('click', function () {
-        etat.t = debutChapitre(i);
+        etat.t = debutPartie(i);
         rendre();
         jouer();
       });
@@ -419,12 +432,12 @@ export const RUNTIME_ANIMATION = String.raw`
 
   window.__animDemarrer = function () {
     var zone = $('an-zone');
-    if (!etat.chapitres.length) {
+    if (!etat.parties.length) {
       if ($('an-erreur').style.display !== 'block') { echec(T.aucuneScene); }
       else { document.body.classList.add('echec'); $('an-squelette').classList.add('fini'); }
       return;
     }
-    etat.duree = debutChapitre(etat.chapitres.length);
+    etat.duree = debutPartie(etat.parties.length);
     construireControles();
     if (etat.mode === '3d') {
       charger(CONF.sourcesTroisD, function () {

@@ -1,4 +1,4 @@
-// Textes affichés par le lecteur d'animation guidée du chat (29/09/2026,
+// Textes affichés par le lecteur d'animation du chat (29/09/2026,
 // demande Bourama).
 //
 // Regroupés ici, par langue, sur le même modèle que lib/textesMinuteurs.ts
@@ -11,17 +11,17 @@ import { LOCALE_ACTIVE, type Locale } from "@/lib/erreurs";
 
 const TEXTES_FR = {
   titre: "Animation",
-  sousTitre: "Lecture guidée",
-  iframeTitre: "Animation guidée",
+  sousTitre: "Lecture",
+  iframeTitre: "Animation",
   lecture: "Lecture",
   pause: "Pause",
   recommencer: "Recommencer",
   position: "Position dans l'animation",
-  chapitres: "Chapitres",
+  chapitres: "Parties de l'animation",
   erreurAnimation: "Erreur dans l'animation",
   erreurTroisD: "Impossible de charger la 3D. Vérifie ta connexion puis recharge.",
   erreurTroisDIndisponible: "La 3D n'est pas disponible sur cet appareil.",
-  aucuneScene: "Cette animation ne contient aucun chapitre.",
+  aucuneScene: "Cette animation est vide.",
 } as const;
 
 export type TextesAnimation = typeof TEXTES_FR;

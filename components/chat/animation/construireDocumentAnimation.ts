@@ -10,9 +10,10 @@ import { RUNTIME_ANIMATION } from "./runtimeAnimation";
 // avec quelques couleurs d'appoint (a, b, c, d) que le modèle peut
 // utiliser pour mettre un élément en valeur.
 //
-// Le lecteur (boutons, barre de progression, chapitres, barre d'espace)
-// est écrit une fois pour toutes ici et dans runtimeAnimation.ts : le
-// modèle n'écrit que le contenu des chapitres.
+// Le lecteur (boutons, barre de progression, barre d'espace, et si le
+// modèle en donne : titres cliquables et légende) est écrit une fois pour
+// toutes ici et dans runtimeAnimation.ts : le modèle n'écrit que le
+// contenu de l'animation.
 type Palette = {
   fond: string;
   surface: string;
@@ -127,6 +128,7 @@ body.joue #an-jouer .ic-lecture{display:none;}
 #an-chap{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin;}
 #an-chap button{flex:none;font:inherit;font-size:12.5px;padding:6px 11px;border-radius:999px;border:1px solid ${p.bordure};background:transparent;color:${p.texte};cursor:pointer;transition:background .2s ease,border-color .2s ease;}
 #an-chap button:hover{border-color:${p.accent};}
+body.sans-chapitres #an-chap,body.sans-legende #an-legende{display:none;}
 body.echec #an-barre,body.echec #an-chap{opacity:.4;pointer-events:none;}
 #an-chap button.actif{border-color:${p.accent};background:${p.bordure};}
 </style></head><body>
