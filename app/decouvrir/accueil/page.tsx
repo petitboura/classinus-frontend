@@ -31,8 +31,8 @@ export default function PageDecouvrirAccueil() {
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
         Un compagnon d&apos;études avec IA, disponible directement dans le chat. Pose lui tes questions, et retrouve
         tes documents personnels ainsi que ceux partagés par les autres élèves dans la bibliothèque. Il peut aussi te
-        préparer des fiches de révision, des QCM interactifs, ou encore des animations pour t&apos;aider à comprendre
-        un cours. Depuis l&apos;accueil, tu retrouves aussi tes raccourcis vers chaque partie de Classinus et ton
+        préparer des fiches de révision, des QCM interactifs, ou encore des animations guidées, à regarder comme une
+        vidéo, en 2D ou en 3D, pour t&apos;aider à comprendre un cours. Depuis l&apos;accueil, tu retrouves aussi tes raccourcis vers chaque partie de Classinus et ton
         activité récente.
       </p>
     </main>

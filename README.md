@@ -60,6 +60,17 @@ components/
                           par ChatIA.tsx), CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
                           LanceurMinuteur.tsx (bouton horloge : lancer, retrouver les masqués),
                           AnneauMinuteur.tsx
+    AnimationLecteur.tsx  bloc ```animation du markdown (29/09/2026) : leçon animée qui se regarde comme
+                          une vidéo (lecture, pause, barre de progression, chapitres, barre d'espace), en 2D
+                          (SVG) ou en 3D (Three.js r128 chargé depuis cdnjs, jsdelivr en secours), dans une
+                          iframe isolée comme le widget (WidgetSandbox.tsx, inchangé) ; branché dans
+                          composantsMarkdownRiches.tsx et RenduMarkdownAutonome.tsx
+    animation/           le lecteur lui même : construireDocumentAnimation.ts (page de l'iframe, thème,
+                          barre de lecture) et runtimeAnimation.ts (code exécuté dans l'iframe). Le modèle
+                          n'écrit que les chapitres, chacun étant une fonction de sa progression p (0 à 1),
+                          rejouée dans l'ordre à chaque image : pause, retour en arrière et saut de chapitre
+                          sont donc exacts. Textes dans lib/textesAnimation.ts. Consignes données au modèle
+                          dans clovis-backend, core/profils_agents.py (INSTRUCTIONS_FORMATS_AFFICHAGE)
   icones/, icons/        icônes du produit
 
 lib/
