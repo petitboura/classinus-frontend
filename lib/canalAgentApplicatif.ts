@@ -74,7 +74,7 @@
 
 import { supabase } from "./supabase";
 import { creerReconnexionProgressive } from "./reconnexionProgressive";
-import { appelerApiStream, API_URL } from "./api";
+import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
@@ -99,6 +99,7 @@ import {
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
 let socket: WebSocket | null = null;
