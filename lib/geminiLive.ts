@@ -171,7 +171,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (message.toolCall?.functionCalls) {
       const functionResponses = [];
       for (const appel of message.toolCall.functionCalls) {
-        if (appel.name !== OUTIL_CLOVIS) {
+        if (appel.name !== OUTIL_CLOVIS.name) {
           functionResponses.push({ id: appel.id, name: appel.name, response: { error: "Outil inconnu." } });
           continue;
         }
