@@ -24,7 +24,7 @@ function listeOriginesFiables(): string[] {
   const anciennes = process.env.NEXT_PUBLIC_ANCIENNES_ORIGINES_FICHIERS
     ? process.env.NEXT_PUBLIC_ANCIENNES_ORIGINES_FICHIERS.split(",")
     : ANCIENNES_ORIGINES_PAR_DEFAUT;
-  return [process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_API_URL, "https://classinus-backend-lot-u-test-staging.up.railway.app", ...anciennes]
+  return [process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_API_URL, ...anciennes]
     .map(origineDe)
     .filter((o): o is string => o !== null);
 }
