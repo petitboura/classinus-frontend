@@ -6,7 +6,7 @@ import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPe
 export const metadata: Metadata = {
   title: "Ma mémoire dans Classinus : ce que l'IA retient de toi",
   description:
-    "Classinus retient ce qui compte pour toi (identité, scolarité, apprentissage, préférences) afin de personnaliser vos conversations. Tu peux tout consulter et l'effacer à tout moment.",
+    "Classinus retient ce qui compte pour toi (identité, scolarité, apprentissage, préférences) afin de personnaliser vos conversations. Tu peux tout consulter et l'effacer quand tu veux.",
 };
 
 export default function PageDecouvrirPersonnaliserMemoire() {
@@ -20,7 +20,7 @@ export default function PageDecouvrirPersonnaliserMemoire() {
       </p>
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
         Cette mémoire se construit toute seule au fil de tes conversations. Tu peux tout consulter, oublier une
-        catégorie entière ou tout effacer à tout moment.
+        catégorie entière, ou tout effacer d&apos;un coup depuis les Paramètres.
       </p>
     </MiseEnPageDecouvrirPersonnaliser>
   );

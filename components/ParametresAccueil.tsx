@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, SlidersHorizontal, Lock, HelpCircle, Info, Trash2, Download, Smartphone, Accessibility, LogOut, type LucideIcon } from "lucide-react";
+import { ChevronRight, SlidersHorizontal, Lock, HelpCircle, Info, Trash2, Download, Smartphone, Accessibility, LogOut, Eraser, type LucideIcon } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { lireMonProfil, supprimerMonCompte, exporterMesDonnees } from "@/lib/api";
+import { lireMonProfil, supprimerMonCompte, exporterMesDonnees, appelerApi } from "@/lib/api";
+import { clesRequetes } from "@/lib/clesRequetes";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
@@ -81,6 +83,7 @@ function LigneAction({
 
 export function ParametresAccueil() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [chargement, setChargement] = useState(true);
   const [sansCompte, setSansCompte] = useState(false);
@@ -91,6 +94,9 @@ export function ParametresAccueil() {
   const [exportEnCours, setExportEnCours] = useState(false);
   const [erreurExport, setErreurExport] = useState<string | null>(null);
   const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
+  const [memoireEnCours, setMemoireEnCours] = useState(false);
+  const [erreurMemoire, setErreurMemoire] = useState<string | null>(null);
+  const [messageMemoire, setMessageMemoire] = useState<string | null>(null);
 
   useEffect(() => {
     lireMonProfil()
@@ -124,6 +130,33 @@ export function ParametresAccueil() {
 
     await supabase.auth.signOut();
     window.location.href = "/connexion";
+  }
+
+  async function confirmerEffacementMemoire() {
+    // Double confirmation (29/09/2026, demande Bourama : effacer toute la
+    // mémoire doit demander deux fois), même mécanique que la suppression
+    // de compte juste en dessous : un window.confirm, puis la saisie d'un
+    // mot. Effacer UNE catégorie reste sur l'écran Ma mémoire, avec une
+    // seule confirmation.
+    if (!window.confirm("Effacer toute ta mémoire ? Classinus oubliera tout ce qu'il a retenu de toi.")) return;
+
+    const saisie = window.prompt(
+      'Cette action est définitive : ton identité, ta scolarité, ce que tu apprends et tes préférences seront effacés. Tape "OUBLIER" pour confirmer.'
+    );
+    if (saisie?.trim() !== "OUBLIER") return;
+
+    setMemoireEnCours(true);
+    setErreurMemoire(null);
+    setMessageMemoire(null);
+    try {
+      await appelerApi("/api/memoire-eleve", { method: "DELETE" });
+      queryClient.invalidateQueries({ queryKey: clesRequetes.memoire });
+      setMessageMemoire("Mémoire effacée.");
+    } catch (e) {
+      setErreurMemoire(messageErreur(e));
+    } finally {
+      setMemoireEnCours(false);
+    }
   }
 
   async function confirmerSuppressionCompte() {
@@ -280,6 +313,18 @@ export function ParametresAccueil() {
         />
       </Liste>
       {erreurExport && <p className="text-sm text-[var(--dj-erreur)]">{erreurExport}</p>}
+
+      <Liste>
+        <LigneAction
+          icone={Eraser}
+          titre={memoireEnCours ? "Effacement…" : "Effacer ma mémoire"}
+          sousTitre="Classinus oublie tout ce qu'il a retenu de toi"
+          onClick={confirmerEffacementMemoire}
+          danger
+        />
+      </Liste>
+      {erreurMemoire && <p className="text-sm text-[var(--dj-erreur)]">{erreurMemoire}</p>}
+      {messageMemoire && <p className="text-sm text-dj-texte-muet">{messageMemoire}</p>}
 
       <Liste>
         <LigneAction icone={LogOut} titre="Se déconnecter" onClick={seDeconnecter} />

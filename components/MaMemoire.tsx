@@ -15,7 +15,8 @@ import { dateRelative } from "@/lib/dateRelative";
 // voir api/memoire_eleve.py côté backend), classée en 4 catégories fixes.
 // Lecture seule : le contenu est un JSON libre écrit par le modèle, pas un
 // texte pensé pour être édité à la main. On peut en revanche oublier une
-// catégorie entière ou tout effacer.
+// catégorie entière ici ; effacer TOUTE la mémoire se fait dans Paramètres
+// (components/ParametresAccueil.tsx), avec une double confirmation.
 //
 // Le contenu d'une ligne est libre (décidé par le modèle pour chaque élève),
 // donc rendu de façon générique : les listes deviennent des pastilles, les
@@ -150,7 +151,7 @@ export function MaMemoire() {
   const [sansCompte, setSansCompte] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  // Ce qui est en cours d'effacement : une catégorie, "tout", ou null.
+  // Catégorie en cours d'effacement, ou null.
   const [efface, setEfface] = useState<string | null>(null);
 
   // Description fixe remplacée par le bouton "i" du titre de page (voir
@@ -188,29 +189,6 @@ export function MaMemoire() {
           : ancien
       );
       setMessage(`Catégorie « ${titreCategorie(categorie)} » oubliée.`);
-    } catch (e) {
-      setErreur(messageErreur(e));
-    } finally {
-      setEfface(null);
-    }
-  }
-
-  async function toutOublier() {
-    if (
-      !window.confirm(
-        "Effacer toute ta mémoire ? Classinus oubliera tout ce qu'il a retenu de toi. Cette action est irréversible."
-      )
-    )
-      return;
-    setEfface("tout");
-    setErreur(null);
-    setMessage(null);
-    try {
-      await appelerApi("/api/memoire-eleve", { method: "DELETE" });
-      queryClient.setQueryData<Memoire>(clesRequetes.memoire, (ancien) =>
-        ancien ? { categories: ancien.categories.map((c) => ({ ...c, lignes: [] })) } : ancien
-      );
-      setMessage("Mémoire effacée.");
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
@@ -307,18 +285,6 @@ export function MaMemoire() {
             </section>
           );
         })}
-
-      {!chargement && !toutEstVide && (
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={toutOublier}
-            disabled={efface !== null}
-            className="rounded-cgpt-bouton border border-[var(--dj-erreur)] px-5 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
-          >
-            {efface === "tout" ? "Suppression…" : "Tout oublier"}
-          </button>
-        </div>
-      )}
 
       {!chargement && message && <span className="text-sm text-dj-texte-muet">{message}</span>}
     </div>
