@@ -101,7 +101,8 @@ export function marquerFenetreSuperposition() {
   dansLaFenetreDeSuperposition = true;
 }
 export function estDansFenetreSuperposition(): boolean {
-  return dansLaFenetreDeSuperposition;
+  return dansLaFenetreDeSuperposition ||
+    (typeof window !== "undefined" && window.location.pathname.startsWith("/agent-superposition"));
 }
 
 /**

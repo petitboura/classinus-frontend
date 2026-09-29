@@ -64,7 +64,7 @@ export interface LectureFenetre {
   titre_fenetre_active: string | null;
   application: string | null;
   // Vrai si la fenetre au premier plan est une fenetre de Classinus
-  // lui meme (fenetre principale ou superposition) : rien n'est lu, l'IA
+  // lui meme (fenetre principale) : rien n'est lu, l'IA
   // doit utiliser lire_page.
   fenetre_classinus: boolean;
   fenetres_ouvertes: string[];
@@ -106,6 +106,8 @@ public static class LectureFenetres {
   delegate bool EnumProc(IntPtr h, IntPtr l);
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr l);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
   [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
   [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint cmd);
   [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
@@ -120,7 +122,7 @@ public static class LectureFenetres {
   public static List<IntPtr> Ouvertes() {
     List<IntPtr> liste = new List<IntPtr>();
     EnumWindows(delegate(IntPtr h, IntPtr l) {
-      if (!IsWindowVisible(h)) return true;
+      if (!IsWindowVisible(h) || IsIconic(h)) return true;
       if (GetWindow(h, 4) != IntPtr.Zero) return true;
       if ((GetWindowLong(h, -20) & 0x80) != 0) return true;
       int cache;
@@ -137,7 +139,8 @@ public static class LectureFenetres {
 `;
 
 // Exportee pour pouvoir verifier la syntaxe du script hors de Windows.
-export function construireScript(limites: LimitesLectureEcran, pidClassinus: number): string {
+export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false): string {
+  if (!/^\d+$/.test(handleSuperposition)) throw new Error("Handle de superposition invalide");
   const nbMaxNoeuds = limites.nbMaxElements * FACTEUR_NOEUDS_PARCOURUS;
   // Les seules valeurs inserees dans le script sont des entiers deja
   // bornes par entierBorne : aucune chaine venue de l'exterieur.
@@ -152,6 +155,7 @@ $profondeurMax = ${limites.profondeurMax}
 $delaiMaxMs = ${limites.delaiMaxMs}
 $nbMaxNoeuds = ${nbMaxNoeuds}
 $pidClassinus = ${pidClassinus}
+$handleSuperposition = [IntPtr]([long]${handleSuperposition})
 
 try {
   Add-Type -AssemblyName UIAutomationClient
@@ -178,7 +182,20 @@ ${CODE_CSHARP}
   }
 
   $fg = [LectureFenetres]::GetForegroundWindow()
+  # La barre de saisie peut avoir le focus : lire la vraie fenêtre en dessous,
+  # sans confondre toute l'application Classinus avec sa superposition.
+  if ($handleSuperposition -ne [IntPtr]::Zero -and $fg -eq $handleSuperposition) {
+    $fg = [IntPtr]::Zero
+    foreach ($h in [LectureFenetres]::Ouvertes()) {
+      if ($h -ne $handleSuperposition) { $fg = $h; break }
+    }
+  }
   if ($fg -eq [IntPtr]::Zero) {
+    throw "Aucune fenêtre disponible sous la superposition."
+  }
+
+  if (${activerFenetre ? "$true" : "$false"}) {
+    if (-not [LectureFenetres]::SetForegroundWindow($fg)) { throw "Impossible de rendre le focus à la fenêtre cible." }
     $resultat | ConvertTo-Json -Depth 6 -Compress
     exit 0
   }
@@ -359,14 +376,16 @@ function chaineOuNull(valeur: unknown): string | null {
  * l'appelant decide alors du repli.
  */
 export function lireFenetreAuPremierPlan(
-  parametres: Record<string, unknown>
+  parametres: Record<string, unknown>,
+  handleSuperposition = "0",
+  activerFenetre = false
 ): Promise<LectureFenetre | { erreur: string }> {
   if (process.platform !== "win32") {
     return Promise.resolve({ erreur: "La lecture de l'écran n'est disponible que sous Windows." });
   }
 
   const limites = limitesDepuisParametres(parametres);
-  const script = construireScript(limites, process.pid);
+  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre);
 
   return new Promise((resolve) => {
     execFile(

@@ -1,6 +1,12 @@
 import { defineConfig } from '@capawesome/capacitor-electron/config';
 
 export default defineConfig({
+  hooks: {
+    onWindowCreated: (window) => {
+      // Le canal et le miroir continuent lorsque Classinus est en arrière-plan.
+      window.webContents.setBackgroundThrottling(false);
+    },
+  },
   window: {
     width: 1200,
     height: 800,

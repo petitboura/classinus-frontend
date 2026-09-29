@@ -1,0 +1,22 @@
+name: Lecture PC Windows
+on:
+  push:
+    branches: [fix/canal-pc-lecture-complete]
+  pull_request:
+    branches: [feature/canal-en-direct-pc-lot-q]
+  workflow_dispatch:
+jobs:
+  lecture-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx tsc --noEmit
+      - run: npx tsc -p electron/tsconfig.json --noEmit
+      - run: npx tsc -p packages/capacitor-pont-natif-electron/electron/tsconfig.json --noEmit
+      - run: node tests/verifier-uia-windows.mjs

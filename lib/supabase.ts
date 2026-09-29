@@ -76,7 +76,7 @@ if (typeof window !== "undefined") {
     });
 
     const PontNatif = registerPlugin<{
-      enregistrerToken(options: { token: string }): Promise<void>;
+      enregistrerToken(options: { token: string; apiUrl?: string }): Promise<void>;
       deconnexion(): Promise<void>;
       rattraperActionsEnAttente(): Promise<{ traitees: number }>;
     }>("PontNatif");
@@ -86,7 +86,7 @@ if (typeof window !== "undefined") {
     supabase.auth.onAuthStateChange((event, session) => {
       console.log(`PontNatif (JS): onAuthStateChange event=${event}, session=${session ? "presente" : "absente"}`);
       if (session?.access_token) {
-        PontNatif.enregistrerToken({ token: session.access_token })
+        PontNatif.enregistrerToken({ token: session.access_token, apiUrl: process.env.NEXT_PUBLIC_API_URL })
           .then(() => console.log("PontNatif (JS): enregistrerToken OK"))
           .catch((e) => console.warn("PontNatif (JS): echec enregistrerToken", e));
         if (!dejaRattrape) {
