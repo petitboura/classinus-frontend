@@ -113,6 +113,19 @@ class SuperpositionAgentImpl extends ElectronPlugin {
   }
 
   async envoyerInteraction(action: Record<string, unknown>): Promise<void> {
+    // Correctif 29/09/2026 : "deposerCurseur" arrive en coordonnees ECRAN
+    // (repere de la superposition). La fenetre principale raisonne en
+    // coordonnees LOCALES a sa page (inverse de pousserEtat) : on retire
+    // ici la position de sa zone de contenu.
+    const args = action.args;
+    if (action.fonction === "deposerCurseur" && Array.isArray(args) && typeof args[0] === "number" && typeof args[1] === "number") {
+      const principale = trouverFenetrePrincipale();
+      if (principale && !principale.isDestroyed()) {
+        const bornes = principale.getContentBounds();
+        this.context.notifyListeners("interaction", { ...action, args: [args[0] - bornes.x, args[1] - bornes.y] });
+        return;
+      }
+    }
     this.context.notifyListeners("interaction", action);
   }
 

@@ -65,10 +65,14 @@ export default function PageAgentSuperposition() {
     enAction: false,
   });
   const [canal, setCanal] = useState(ETAT_CANAL_INITIAL);
+  // Derniere position recue de la fenetre principale : sert a savoir si
+  // l'etudiant a reellement deplace le curseur (glisser) a la fin d'un appui.
+  const dernierePositionRecue = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     marquerFenetreSuperposition();
     return ecouterEtatSuperposition((etat: EtatSuperposition) => {
+      dernierePositionRecue.current = { x: etat.curseur.x, y: etat.curseur.y };
       x.set(etat.curseur.x);
       y.set(etat.curseur.y);
       echelle.set(etat.curseur.echelle);
@@ -97,6 +101,23 @@ export default function PageAgentSuperposition() {
   // data-agent-superposition="true" (chantiers precedents). "forward:
   // true" cote main process laisse les mousemove remonter meme en mode
   // passe-clic, voir le plugin SuperpositionAgent.
+  // Fin d'un glissement du curseur : on previent la fenetre principale de
+  // la nouvelle position, sinon elle repousse l'ancienne au prochain etat
+  // et le curseur revient a sa place.
+  useEffect(() => {
+    function surRelachement() {
+      const px = x.get();
+      const py = y.get();
+      const ref = dernierePositionRecue.current;
+      if (Math.abs(px - ref.x) < 1 && Math.abs(py - ref.y) < 1) return;
+      dernierePositionRecue.current = { x: px, y: py };
+      interactionsSuperposition.deposerCurseur(px, py);
+    }
+    window.addEventListener("pointerup", surRelachement);
+    return () => window.removeEventListener("pointerup", surRelachement);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const surElementRef = useRef(false);
   useEffect(() => {
     function surDeplacement(e: MouseEvent) {

@@ -49,7 +49,8 @@ interface ActionSuperposition {
     | "desactiver"
     | "choisirModeInteraction"
     | "choisirMoteurDictee"
-    | "envoyerMessageEtudiant";
+    | "envoyerMessageEtudiant"
+    | "deposerCurseur";
   args: unknown[];
 }
 
@@ -199,6 +200,17 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
         case "choisirMoteurDictee":
           k.choisirMoteurDictee(action.args[0] as "whisper" | "navigateur");
           break;
+        case "deposerCurseur":
+          // Correctif 29/09/2026 : la superposition vient de deplacer le
+          // curseur (glisser de l'etudiant). La fenetre principale garde
+          // la position de reference et la repousse a chaque etat : sans
+          // cette mise a jour, le curseur revenait a son ancienne place.
+          // Coordonnees deja converties en locales par le plugin natif.
+          if (typeof action.args[0] === "number" && typeof action.args[1] === "number") {
+            c.x.set(action.args[0]);
+            c.y.set(action.args[1]);
+          }
+          break;
         case "envoyerMessageEtudiant":
           // Import dynamique : évite un cycle statique avec
           // canalAgentApplicatif.ts, qui importe relayerEnvoiMessageEtudiant
@@ -296,6 +308,9 @@ export function ecouterEtatSuperposition(sur: (etat: EtatSuperposition) => void)
 }
 
 export const interactionsSuperposition = {
+  // Position ECRAN absolue (repere de la superposition), convertie en
+  // locale a la page principale par le plugin natif.
+  deposerCurseur: (x: number, y: number) => relayerInteraction("deposerCurseur", x, y),
   basculerReponse: () => relayerInteraction("basculerReponse"),
   suspendreMasquageReponse: () => relayerInteraction("suspendreMasquageReponse"),
   reprendreMasquageReponse: () => relayerInteraction("reprendreMasquageReponse"),
