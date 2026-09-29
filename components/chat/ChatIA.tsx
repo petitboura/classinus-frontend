@@ -949,7 +949,7 @@ export function ChatIA({
     // sur CE tour. On capture son état exact juste avant l'appel HTTP ;
     // ainsi une reconnexion du canal, un délai de synchronisation ou sa
     // fermeture ne peut plus faire perdre l'éditeur au modèle.
-    const etatEditeurPourChat = canalEnDirectActif ? obtenirLectureEditeurPourChat() : null;
+    const etatEditeurPourChat = obtenirLectureEditeurPourChat();
 
     // Corrige un bug signalé par Bourama le 18/09/2026 : "Historique" ne
     // montrait une nouvelle conversation qu'après rechargement de la page
