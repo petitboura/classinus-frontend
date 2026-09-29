@@ -39,8 +39,10 @@ nom de l'application, les titres des autres fenetres ouvertes, et les
 elements visibles (textes, boutons, champs avec leur valeur, cases,
 onglets...) avec leurs coordonnees d'ecran pour `cliquer_ecran`. La valeur
 d'un champ mot de passe n'est jamais lue. Les fenetres de Classinus lui
-meme sont reconnues par leur processus (`process.pid`) : si l'une d'elles
-est au premier plan, rien n'est lu et l'IA est renvoyee vers `lire_page`.
+meme sont reconnues par leur processus (`process.pid`) : la fenêtre principale
+renvoie vers `lire_page`. Quand la superposition a le focus, son handle Win32
+est exclu et la fenêtre visible immédiatement en dessous est lue. Avant une
+frappe ou un clic système, le focus lui est rendu.
 
 Les limites (nombre d'elements, longueurs, delai) sont envoyees par le
 backend avec chaque demande (`core/outils_action_agent_pc.py`), elles ne
@@ -65,19 +67,18 @@ A tester sur la machine de Bourama, en priorite :
 
 ## Points a verifier au premier vrai test (sur la machine de Bourama)
 
-- `URL_API_BACKEND` (en tete de `plugin.mts`) : vaut
-  `https://api.classinus.com` (adresse confirmee par Bourama le
-  28/09/2026). Surchargeable via la variable d'environnement
-  `CLASSINUS_API_URL` si besoin.
+- La destination API est transmise par le renderer dans
+  `enregistrerToken({token, apiUrl})` : le canal système et le chat utilisent
+  le même serveur, y compris en staging. Sans `apiUrl`, le repli reste
+  `CLASSINUS_API_URL` puis `https://api.classinus.com`.
 - `@nut-tree-fork/nut-js` et `screenshot-desktop` contiennent des modules
   natifs precompiles par plateforme -- a reconstruire avec
   `electron-rebuild` (ou equivalent) si un module natif ne charge pas au
   lancement de l'appli empaquetee. Non teste dans ce chantier (bac a
   sable Linux sans runtime Electron reel) : seule la compilation
   TypeScript a ete verifiee ici.
-- `ouvrir_application` lance simplement la commande recue via
-  l'interpreteur de commandes (`exec`) -- fonctionne pour un executable
-  present dans le PATH Windows (`notepad`, `calc`...), pas teste au-dela.
+- `ouvrir_application` lance un exécutable avec `spawn` et accuse son
+  démarrage immédiatement, sans attendre sa fermeture.
 
 ## Lot T : journal et bulle des actions système
 

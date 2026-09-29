@@ -88,7 +88,7 @@ function brancherDiagnosticSuperposition(fenetre: BrowserWindow, urlDemandee: st
   fenetre.on('hide', () => journalDiagnostic('fenetre : hide'));
   fenetre.on('closed', () => journalDiagnostic('fenetre : closed'));
   wc.on('did-finish-load', () => {
-    wc.openDevTools({ mode: 'detach' });
+    // Les DevTools volaient le premier plan pendant les lectures Windows.
     void wc
       .executeJavaScript(
         "JSON.stringify({ url: location.href, plateforme: (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || 'inconnue', nbElementsSuperposition: document.querySelectorAll('[data-agent-superposition]').length, longueurBody: document.body ? document.body.innerHTML.length : -1 })"
@@ -135,6 +135,7 @@ capacitorApp.whenReady.then(() => {
       contextIsolation: true,
       nodeIntegration: false,
       preload: preloadPath,
+      backgroundThrottling: false,
     },
   });
 

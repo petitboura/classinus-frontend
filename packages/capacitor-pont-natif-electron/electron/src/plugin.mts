@@ -23,8 +23,9 @@
 // Cette connexion utilise donc un appareil_id different de celui de la
 // fenetre principale (meme UUID de base, suffixe "-systeme").
 
-import { exec } from "node:child_process";
+import { spawn } from "node:child_process";
 import WebSocket from "ws";
+import { BrowserWindow } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 // Import direct du module compile du paquet voisin (pas un appel de
 // plugin Capacitor : juste une fonction Node partagee entre les deux
@@ -40,7 +41,8 @@ import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
  * processus principal Electron n'a pas acces aux variables
  * NEXT_PUBLIC_* inlinees a la construction du site web (celles-ci ne
  * vivent que dans le bundle web statique) -- d'ou cette valeur separee,
- * surchargeable par la variable d'environnement CLASSINUS_API_URL au
+ * La destination du renderer est transmise par enregistrerToken(apiUrl).
+ * Sans elle, la valeur reste surchargeable par CLASSINUS_API_URL au
  * lancement si besoin (tests locaux, changement d'environnement).
  *
  * Valeur par defaut = https://api.classinus.com, adresse du backend
@@ -48,10 +50,10 @@ import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
  */
 // Corrige le 28/09/2026 : adresse confirmee par Bourama, l'ancienne valeur
 // (domaine Railway) n'etait plus la bonne.
-const URL_API_BACKEND = process.env.CLASSINUS_API_URL || "https://api.classinus.com";
+let urlApiBackend = process.env.CLASSINUS_API_URL || "https://api.classinus.com";
 
 function urlWebSocketCanal(): string {
-  return URL_API_BACKEND.replace(/^http/, "ws") + "/api/canal-agent-applicatif/ws";
+  return urlApiBackend.replace(/^http/, "ws") + "/api/canal-agent-applicatif/ws";
 }
 
 // --- Gestion de la connexion systeme (une seule a la fois) ---
@@ -178,7 +180,24 @@ async function traiterMessage(ws: WebSocket, brut: string): Promise<void> {
   const enErreur =
     typeof resultat === "object" && resultat !== null && typeof (resultat as { erreur?: unknown }).erreur === "string";
   notifierWeb?.("actionSysteme", { id: message.id, phase: "fin", statut: enErreur ? "erreur" : "succes" });
-  ws.send(JSON.stringify({ id: message.id, resultat }));
+  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ id: message.id, resultat }));
+}
+
+function fenetreSuperposition(): BrowserWindow | undefined {
+  return BrowserWindow.getAllWindows().find(f => !f.isDestroyed() && f.getTitle() === "classinus-superposition-agent");
+}
+
+function handleSuperposition(): string {
+  if (process.platform !== "win32") return "0";
+  const handle = fenetreSuperposition()?.getNativeWindowHandle();
+  if (!handle) return "0";
+  return (handle.length >= 8 ? handle.readBigUInt64LE() : BigInt(handle.readUInt32LE())).toString();
+}
+
+async function restaurerFocusSousSuperposition(): Promise<void> {
+  if (!fenetreSuperposition()?.isFocused()) return;
+  const resultat = await lireFenetreAuPremierPlan({}, handleSuperposition(), true);
+  if ("erreur" in resultat) throw new Error(resultat.erreur);
 }
 
 async function executerActionSysteme(type: string, parametres: Record<string, unknown>): Promise<unknown> {
@@ -187,36 +206,37 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
   // action est reellement demandee evite un echec au demarrage de
   // l'appli si jamais il pose probleme sur une machine donnee (a
   // surveiller au premier vrai test, voir le README de ce paquet).
-  const { mouse, keyboard, Point, Button, getActiveWindow } = await import("@nut-tree-fork/nut-js");
 
   try {
     switch (type) {
       case "cliquer_ecran": {
+        const { mouse, Point, Button } = await import("@nut-tree-fork/nut-js");
         const x = Number(parametres.x);
         const y = Number(parametres.y);
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
           return { erreur: "coordonnees x/y invalides" };
         }
+        await restaurerFocusSousSuperposition();
         await mouse.setPosition(new Point(x, y));
         await mouse.click(Button.LEFT);
         return { ok: true };
       }
       case "taper_clavier": {
+        const { keyboard } = await import("@nut-tree-fork/nut-js");
         const texte = String(parametres.texte ?? "");
         if (!texte) return { erreur: "texte vide" };
+        await restaurerFocusSousSuperposition();
         await keyboard.type(texte);
         return { ok: true };
       }
       case "ouvrir_application": {
         const nom = String(parametres.nom ?? "").trim();
         if (!nom) return { erreur: "nom d'application vide" };
-        // Lancement simple via l'interpreteur de commandes Windows :
-        // suffisant pour un nom d'executable connu du PATH (notepad,
-        // calc...) ou associe a une extension. Pas de verification
-        // prealable que l'application existe : une erreur ici remonte
-        // via le callback exec, traitee comme un echec normal.
+        // Accuser le lancement sans attendre la fermeture de l'application.
         await new Promise<void>((resolve, reject) => {
-          exec(nom, (erreur) => (erreur ? reject(erreur) : resolve()));
+          const enfant = spawn(nom, [], { detached: true, stdio: "ignore", shell: false });
+          enfant.once("error", reject);
+          enfant.once("spawn", () => { enfant.unref(); resolve(); });
         });
         return { ok: true };
       }
@@ -225,7 +245,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         // modele, seulement du texte) : lit le contenu de la fenetre au
         // premier plan via UI Automation, voir lectureFenetreWindows.mts.
         // Les limites viennent du backend (parametres de la demande).
-        const lecture = await lireFenetreAuPremierPlan(parametres);
+        const lecture = await lireFenetreAuPremierPlan(parametres, handleSuperposition());
         if (!("erreur" in lecture)) return lecture;
 
         // Repli : si la lecture fine echoue (PowerShell absent ou bloque,
@@ -233,6 +253,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         // comme avant le Lot V, en signalant que le contenu n'est pas lu.
         let titre: string | null = null;
         try {
+          const { getActiveWindow } = await import("@nut-tree-fork/nut-js");
           const fenetre = await getActiveWindow();
           titre = await fenetre.getTitle();
         } catch {
@@ -261,8 +282,14 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
 // Android/iOS, voir lib/supabase.ts) ---
 
 class PontNatifImpl extends ElectronPlugin {
-  async enregistrerToken(options: { token: string }): Promise<void> {
+  async enregistrerToken(options: { token: string; apiUrl?: string }): Promise<void> {
     notifierWeb = (evenement, donnees) => this.context.notifyListeners(evenement, donnees);
+    // Même destination que le renderer : les builds staging ne doivent pas ouvrir le canal système en production.
+    if (options.apiUrl) {
+      const url = new URL(options.apiUrl);
+      if (!["http:", "https:"].includes(url.protocol)) throw new Error("URL API invalide");
+      urlApiBackend = url.href.replace(/\/$/, "");
+    }
     ouvrirConnexion(options.token);
   }
 

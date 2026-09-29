@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:capacitor": "cross-env CAPACITOR_BUILD=true next build && npx cap sync"
+    "build:capacitor": "cross-env CAPACITOR_BUILD=true next build && npx cap sync",
+    "test:canal-pc": "node tests/verifier-canal-pc.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "^3.7.1",
@@ -21,9 +22,6 @@
     "@capawesome/capacitor-electron": "^0.1.1",
     "@capgo/capacitor-native-navigation": "^8.3.1",
     "@capgo/capacitor-transitions": "^8.1.9",
-    "capacitor-dossiers-electron": "file:./packages/capacitor-dossiers-electron",
-    "capacitor-pont-natif-electron": "file:./packages/capacitor-pont-natif-electron",
-    "capacitor-superposition-electron": "file:./packages/capacitor-superposition-electron",
     "@supabase/supabase-js": "^2.45.0",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/query-sync-storage-persister": "^5.103.1",
@@ -33,6 +31,9 @@
     "@tiptap/pm": "^2.27.2",
     "@tiptap/react": "^2.27.2",
     "@tiptap/starter-kit": "^2.27.2",
+    "capacitor-dossiers-electron": "file:./packages/capacitor-dossiers-electron",
+    "capacitor-pont-natif-electron": "file:./packages/capacitor-pont-natif-electron",
+    "capacitor-superposition-electron": "file:./packages/capacitor-superposition-electron",
     "framer-motion": "^13.1.1",
     "hast-util-sanitize": "^5.0.2",
     "highlight.js": "^11.11.1",
@@ -56,11 +57,14 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.2",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.19",
     "cross-env": "^10.1.0",
+    "electron": "^43.7.6",
+    "esbuild": "^0.28.2",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.0"

@@ -78,7 +78,7 @@ import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
-import { estDansFenetreSuperposition, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
+import { estDansFenetreSuperposition, surElectron, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -633,6 +633,7 @@ function traiterOuvertureCanal(valeur: unknown) {
 }
 
 function traiterMessage(message: unknown) {
+  if (estDansFenetreSuperposition()) return;
   if (!message || typeof message !== "object") return;
   const m = message as {
     accuse_message_etudiant?: unknown;
@@ -695,8 +696,13 @@ function canalDejaOuvertOuEnCours(): boolean {
 // exécutée deux fois, le second clic pouvant défaire le premier.
 let ouvertureEnCours = false;
 
+// Le renderer principal Electron reste responsable du DOM, même derrière une autre application.
+function peutMaintenirCanal(): boolean {
+  return !estDansFenetreSuperposition() && (surElectron() || document.visibilityState === "visible");
+}
+
 async function ouvrirCanal() {
-  if (document.visibilityState !== "visible") return;
+  if (!peutMaintenirCanal()) return;
   if (ouvertureEnCours || canalDejaOuvertOuEnCours()) return;
 
   ouvertureEnCours = true;
@@ -707,7 +713,7 @@ async function ouvrirCanal() {
     if (!session?.access_token) return;
 
     // L'onglet a pu être masqué ou une connexion ouverte pendant l'attente.
-    if (document.visibilityState !== "visible") return;
+    if (!peutMaintenirCanal()) return;
     if (canalDejaOuvertOuEnCours()) return;
 
     const url = urlWebSocket();
@@ -740,7 +746,8 @@ async function ouvrirCanal() {
     };
 
     ws.onclose = () => {
-      if (socket === ws) socket = null;
+      if (socket !== ws) return;
+      socket = null;
       arreterObservationDom();
       if (!fermetureVoulue) reconnexion.fermeeSansLeVouloir();
       planifierReconnexion();
@@ -795,7 +802,7 @@ function arreterObservationDom() {
 }
 
 function reconnecterApresRafraichissementToken() {
-  if (document.visibilityState !== "visible") return;
+  if (!peutMaintenirCanal()) return;
   fermetureVoulue = true;
   socket?.close();
   socket = null;
@@ -816,11 +823,11 @@ function fermerCanal() {
 
 /** À appeler une seule fois, même schéma que initialiserCanalTempsReel. */
 export function initialiserCanalAgentApplicatif() {
-  if (dejaInitialise || typeof window === "undefined") return;
+  if (dejaInitialise || typeof window === "undefined" || estDansFenetreSuperposition()) return;
   dejaInitialise = true;
 
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
+    if (peutMaintenirCanal()) {
       ouvrirCanal();
     } else {
       fermerCanal();
