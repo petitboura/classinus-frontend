@@ -75,6 +75,18 @@ export interface LectureFenetre {
   elements: ElementLu[];
   coupe: boolean;
   mode: "uia" | "titre_seul";
+  // Vrai si la lecture du texte long (documents, champs multilignes) a fait
+  // planter Windows et a ete abandonnee : les elements sont la, mais leur
+  // texte long n'est pas lu.
+  texte_long_ignore?: boolean;
+}
+
+// Echec de la lecture : plantage = le processus PowerShell s'est arrete
+// brutalement sans rien renvoyer (ex. violation d'acces memoire de Windows,
+// code 3221225477), ce qu'aucun try/catch du script ne peut intercepter.
+export interface ErreurLecture {
+  erreur: string;
+  plantage?: boolean;
 }
 
 function entierBorne(valeur: unknown, defaut: number, min: number, max: number): number {
@@ -149,7 +161,7 @@ public static class LectureFenetres {
 `;
 
 // Exportee pour pouvoir verifier la syntaxe du script hors de Windows.
-export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false): string {
+export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true): string {
   if (!/^\d+$/.test(handleSuperposition)) throw new Error("Handle de superposition invalide");
   const nbMaxNoeuds = limites.nbMaxElements * FACTEUR_NOEUDS_PARCOURUS;
   // Les seules valeurs inserees dans le script sont des entiers deja
@@ -173,6 +185,7 @@ $profondeurMax = ${limites.profondeurMax}
 $delaiMaxMs = ${limites.delaiMaxMs}
 $nbMaxNoeuds = ${nbMaxNoeuds}
 $pidClassinus = ${pidClassinus}
+$lireTexteLong = ${lireTexteLong ? "$true" : "$false"}
 $handleSuperposition = [IntPtr]([long]${handleSuperposition})
 
 try {
@@ -278,7 +291,7 @@ ${CODE_CSHARP}
         $valeur = [string]$obj.Cached.Value
       }
     } catch { }
-    if ([string]::IsNullOrWhiteSpace($valeur) -and ($typeCle -eq 'Edit' -or $typeCle -eq 'Document')) {
+    if ($lireTexteLong -and [string]::IsNullOrWhiteSpace($valeur) -and ($typeCle -eq 'Edit' -or $typeCle -eq 'Document')) {
       try {
         $obj2 = $null
         if ($el.TryGetCurrentPattern([System.Windows.Automation.TextPattern]::Pattern, [ref]$obj2)) {
@@ -398,17 +411,18 @@ function chaineOuNull(valeur: unknown): string | null {
  * Windows, PowerShell absent ou bloque, delai depasse, sortie illisible) :
  * l'appelant decide alors du repli.
  */
-export function lireFenetreAuPremierPlan(
+function lireUneFois(
   parametres: Record<string, unknown>,
-  handleSuperposition = "0",
-  activerFenetre = false
-): Promise<LectureFenetre | { erreur: string }> {
+  handleSuperposition: string,
+  activerFenetre: boolean,
+  lireTexteLong: boolean
+): Promise<LectureFenetre | ErreurLecture> {
   if (process.platform !== "win32") {
     return Promise.resolve({ erreur: "La lecture de l'écran n'est disponible que sous Windows." });
   }
 
   const limites = limitesDepuisParametres(parametres);
-  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre);
+  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong);
 
   // Le script est ecrit dans un fichier temporaire plutot que passe en -EncodedCommand :
   // le script encode approche la limite de 32 767 caracteres d'une ligne de commande
@@ -452,6 +466,8 @@ export function lireFenetreAuPremierPlan(
               `Lecture de l'écran impossible : PowerShell a échoué (code ${String(e.code)}, signal ${String(e.signal ?? "aucun")}, ` +
               `arrêt forcé ${e.killed ? "oui" : "non"})` +
               (detailErreur ? ` : ${detailErreur}` : " sans message"),
+            // Un arrêt forcé (délai dépassé) n'est pas un plantage : relancer doublerait l'attente.
+            plantage: !e.killed,
           });
           return;
         }
@@ -459,7 +475,10 @@ export function lireFenetreAuPremierPlan(
         try {
           brut = JSON.parse(String(sortie).replace(/^\uFEFF/, "").trim());
         } catch {
-          resolve({ erreur: "Lecture de l'écran impossible : réponse illisible." });
+          resolve({
+            erreur: "Lecture de l'écran impossible : réponse illisible.",
+            plantage: String(sortie ?? "").trim() === "",
+          });
           return;
         }
         if (typeof brut !== "object" || brut === null) {
@@ -491,4 +510,29 @@ export function lireFenetreAuPremierPlan(
       }
     );
   });
+}
+
+/**
+ * Filet de securite : lit d'abord normalement. Si PowerShell s'arrete
+ * brutalement sans rien renvoyer (plantage de Windows dans la lecture du
+ * texte long d'un document ou d'un champ), la lecture est relancee UNE fois
+ * sans cette partie : Clovis recoit alors au moins la structure de la fenetre
+ * (boutons, menus, champs courts, titres) au lieu de rien. Le resultat porte
+ * alors texte_long_ignore = true. Pas de relance apres un delai depasse.
+ */
+export async function lireFenetreAuPremierPlan(
+  parametres: Record<string, unknown>,
+  handleSuperposition = "0",
+  activerFenetre = false
+): Promise<LectureFenetre | { erreur: string }> {
+  const premiere = await lireUneFois(parametres, handleSuperposition, activerFenetre, true);
+  if (!("erreur" in premiere)) return premiere;
+  // activerFenetre ne lit aucun texte : rien a retirer, on ne relance pas.
+  if (!premiere.plantage || activerFenetre) return { erreur: premiere.erreur };
+
+  const seconde = await lireUneFois(parametres, handleSuperposition, activerFenetre, false);
+  if ("erreur" in seconde) {
+    return { erreur: `${premiere.erreur} | Nouvel essai sans lecture du texte long : ${seconde.erreur}` };
+  }
+  return { ...seconde, texte_long_ignore: true };
 }

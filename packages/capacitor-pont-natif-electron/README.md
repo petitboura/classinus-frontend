@@ -49,6 +49,13 @@ backend avec chaque demande (`core/outils_action_agent_pc.py`), elles ne
 sont reglees qu'a cet endroit. Si la lecture echoue (PowerShell absent ou
 bloque, delai depasse), on renvoie au moins le titre, en mode `titre_seul`.
 
+Filet de securite : si PowerShell s'arrete brutalement sans rien renvoyer
+(plantage de Windows dans la lecture du texte long d'un document ou d'un
+champ, code 3221225477), la lecture est relancee une seule fois sans cette
+partie. Clovis recoit alors la structure de la fenetre (boutons, menus,
+champs courts), avec `texte_long_ignore: true`. Pas de relance apres un
+delai depasse.
+
 A tester sur la machine de Bourama, en priorite :
 
 - Bloc-notes avec une phrase ecrite : le texte est lu.
