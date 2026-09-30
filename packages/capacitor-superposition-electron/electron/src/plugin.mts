@@ -76,6 +76,51 @@ let pointAffiche: PointEcranLocal | null = null;
 let pointEcranAffiche: PointEcranLocal | null = null;
 let dernierPointPrincipal: (PointEcranLocal & { repere: unknown }) | null = null;
 const confirmationsPointage = new Map<string, () => void>();
+const confirmationsInformation = new Map<string, () => void>();
+let informationCurseur: { id: string; texte: string; jusqua: number } | null = null;
+let clicTraversant = false;
+let captureDemandee = false;
+
+export async function avecSourisTraversante<T>(operation: () => Promise<T>): Promise<T> {
+  const fenetre = trouverFenetreSuperposition();
+  clicTraversant = true;
+  fenetre?.setIgnoreMouseEvents(true, { forward: true });
+  try { return await operation(); }
+  finally {
+    clicTraversant = false;
+    if (fenetre && !fenetre.isDestroyed()) fenetre.setIgnoreMouseEvents(!captureDemandee, { forward: true });
+  }
+}
+
+function avecInformationCurseur(etat: EtatPousse): EtatPousse {
+  if (!informationCurseur || performance.now() >= informationCurseur.jusqua) return etat;
+  return { ...etat, informationId: informationCurseur.id, canal: {
+    ...(etat.canal as Record<string, unknown>), dernierTexte: informationCurseur.texte, reponseVisible: false,
+  } };
+}
+
+/** Accusé d'affichage automatique, jamais une demande de validation à l'étudiant. */
+export async function annoncerUtilisationCurseurReel(texte: string): Promise<void> {
+  const fenetre = trouverFenetreSuperposition();
+  if (!fenetre || fenetre.isDestroyed() || !notifierEtat || !dernierEtat || !(dernierEtat.canal as { actif?: boolean })?.actif) {
+    throw new Error("L'annonce n'a pas pu être affichée. Le pointeur Windows n'a pas été déplacé.");
+  }
+  const id = randomUUID();
+  informationCurseur = { id, texte, jusqua: performance.now() + 3500 };
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      confirmationsInformation.set(id, resolve);
+      minuteur = setTimeout(() => reject(new Error("L'annonce n'a pas été affichée. Le pointeur Windows n'a pas été déplacé.")), 2500);
+      notifierEtat?.(avecInformationCurseur(dernierEtat!));
+    });
+    // Laisser l'annonce être perceptible avant le clic, sans intervention utilisateur.
+    await new Promise<void>(resolve => setTimeout(resolve, 350));
+  } finally {
+    clearTimeout(minuteur);
+    confirmationsInformation.delete(id);
+  }
+}
 
 function estSurUnEcran(point: PointEcranLocal): boolean {
   return Number.isFinite(point.x) && Number.isFinite(point.y) && screen.getAllDisplays().some(({ bounds: b }) =>
@@ -133,7 +178,7 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
         const point = { x: u * u * depart.x + 2 * u * t * controle.x + t * t * cible.x, y: u * u * depart.y + 2 * u * t * controle.y + t * t * cible.y };
         pointEcranAffiche = retenirSurUnEcran({ x: origine.x + point.x * zoom, y: origine.y + point.y * zoom });
         pointAffiche = { x: (pointEcranAffiche.x - origine.x) / zoom, y: (pointEcranAffiche.y - origine.y) / zoom };
-        notifier({ ...dernierEtat, curseur: { ...etat.curseur, ...pointAffiche, visible: true, enAction: progression < 1, forme: progression < 1 ? "defaut" : "main" }, ...(progression === 1 ? { pointageId: id } : {}) });
+        notifier(avecInformationCurseur({ ...dernierEtat, curseur: { ...etat.curseur, ...pointAffiche, visible: true, enAction: progression < 1, forme: progression < 1 ? "defaut" : "main" }, ...(progression === 1 ? { pointageId: id } : {}) }));
         if (progression === 1) resolve(); else animation = setTimeout(avancer, 16);
         } catch (e) { reject(e); }
       };
@@ -180,6 +225,9 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 
   async accuserPointage(p: { id: string }): Promise<void> {
     confirmationsPointage.get(p.id)?.();
+  }
+  async accuserInformation(p: { id: string }): Promise<void> {
+    confirmationsInformation.get(p.id)?.();
   }
   async preparerDeplacement(p: { depart: PointEcranLocal; repereDepart: string; cible: PointEcranLocal; repereCible: string }): Promise<{ depart: PointEcranLocal; cible: PointEcranLocal }> {
     const principale = trouverFenetrePrincipale();
@@ -243,7 +291,7 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     pointAffiche = { x: (pointEcranAffiche.x - origine.x) / zoomSuperposition, y: (pointEcranAffiche.y - origine.y) / zoomSuperposition };
     const curseur = { ...etat.curseur, ...pointAffiche, ...(pointageEnCours ? { visible: true, enAction: true } : {}) };
     dernierEtat = { ...etat, curseur };
-    this.context.notifyListeners("etat", dernierEtat);
+    this.context.notifyListeners("etat", avecInformationCurseur(dernierEtat));
   }
 
   async envoyerInteraction(action: Record<string, unknown>): Promise<void> {
@@ -274,11 +322,12 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     // { forward: true } laisse quand meme les evenements de mouvement
     // remonter au renderer de la superposition pour continuer le
     // hit-testing meme quand elle est en mode passe-clic.
-    superposition.setIgnoreMouseEvents(!parametres.capturer, { forward: true });
+    captureDemandee = parametres.capturer;
+    superposition.setIgnoreMouseEvents(clicTraversant || !captureDemandee, { forward: true });
   }
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "pousserEtat", "envoyerInteraction", "definirCapturerSouris"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "definirCapturerSouris"] },
   SuperpositionAgentImpl
 );

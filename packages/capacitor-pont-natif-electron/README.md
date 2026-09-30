@@ -109,3 +109,9 @@ Critère de fin à vérifier sur ta machine : demander à Clovis d'ouvrir le
 Bloc-notes et d'y écrire une phrase, Bloc-notes au premier plan. Le
 journal et la bulle de la superposition doivent montrer les mêmes types
 d'entrées que pour une action dans la page.
+
+## Clic indépendant et repli annoncé
+
+`cliquer_ecran` place d’abord le curseur dessiné sur la cible et tente une action UI Automation (bouton, case, sélection, menu ou focus de champ). Aucun pilote souris n’est chargé sur ce chemin. Si aucune action compatible n’existe, la superposition affiche « Je ne peux pas cliquer ici avec mon curseur seul. Je vais utiliser ton curseur maintenant. » avant le clic par la vraie souris, sans validation de l’étudiant. Le pointeur est remis à sa position initiale si l’étudiant ne l’a pas repris. La superposition laisse traverser le clic pendant toute l’opération.
+
+Un clic UIA commencé mais dont le résultat est incertain n’est pas répété, pour éviter une double action. Les confirmations internes concernent uniquement l’affichage de la superposition ; aucun bouton d’approbation n’est présenté.

@@ -28,6 +28,7 @@ import {
 
 export interface EtatSuperposition {
   pointageId?: string;
+  informationId?: string;
   curseur: { x: number; y: number; echelle: number; visible: boolean; forme: string; enAction: boolean };
   canal: {
     actif: boolean;
@@ -58,6 +59,7 @@ interface ActionSuperposition {
 
 interface PluginSuperpositionAgent {
   accuserPointage(parametres: { id: string }): Promise<void>;
+  accuserInformation(parametres: { id: string }): Promise<void>;
   pousserEtat(etat: { curseur?: Record<string, unknown>; [cle: string]: unknown }): Promise<void>;
   envoyerInteraction(action: ActionSuperposition): Promise<void>;
   definirCapturerSouris(parametres: { capturer: boolean }): Promise<void>;
@@ -321,6 +323,10 @@ export function ecouterEtatSuperposition(sur: (etat: EtatSuperposition) => void)
     if (typeof donnee.pointageId === "string") {
       const id = donnee.pointageId;
       requestAnimationFrame(() => { void SuperpositionAgent.accuserPointage({ id }); });
+    }
+    if (typeof donnee.informationId === "string") {
+      const id = donnee.informationId;
+      requestAnimationFrame(() => requestAnimationFrame(() => { void SuperpositionAgent.accuserInformation({ id }); }));
     }
   }).then((poignee) => {
     if (annule) poignee.remove();

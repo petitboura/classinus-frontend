@@ -49,7 +49,17 @@ $f = New-Object Windows.Forms.Form
 $f.Text='${titreExterne}'; $f.Width=600; $f.Height=400
 $label=New-Object Windows.Forms.Label
 $label.Text='Contenu externe visible par le pont'; $label.Width=450; $label.Left=20; $label.Top=20
-$f.Controls.Add($label)
+$bouton=New-Object Windows.Forms.Button
+$bouton.Text='Clic indépendant'; $bouton.Left=20; $bouton.Top=70; $bouton.Width=180
+$bouton.Add_Click({[System.IO.File]::WriteAllText('${join(temporaire,'clic-uia').replaceAll("'","''")}', 'ok')})
+$zone=New-Object Windows.Forms.Panel
+$zone.Left=20; $zone.Top=140; $zone.Width=180; $zone.Height=70; $zone.BackColor=[System.Drawing.Color]::Orange
+$zone.Add_MouseClick({[System.IO.File]::WriteAllText('${join(temporaire,'clic-souris').replaceAll("'","''")}', 'ok')})
+$f.Controls.AddRange(@($label,$bouton,$zone))
+$f.Add_Shown({
+  $p=$zone.PointToScreen([System.Drawing.Point]::new(80,30))
+  [System.IO.File]::WriteAllText('${join(temporaire,'zone-souris.json').replaceAll("'","''")}', (@{x=$p.X;y=$p.Y}|ConvertTo-Json -Compress))
+})
 $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete').replaceAll("'","''")}', 'ok')})
 [void]$f.ShowDialog()
 `;
@@ -138,13 +148,18 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
     ecouterEtatSuperposition(etat=>{
       const c=document.getElementById('curseur');c.style.left=etat.curseur.x+'px';c.style.top=etat.curseur.y+'px';
       if(etat.pointageId) console.log('POINTAGE_AFFICHE',etat.curseur.x,etat.curseur.y);
+      if(etat.informationId) {
+        document.getElementById('information').textContent=etat.canal.dernierTexte;
+        if(etat.canal.reponseVisible) throw new Error('Une réponse masque encore l’annonce.');
+        console.log('ANNONCE_AFFICHEE',etat.canal.dernierTexte);
+      }
     });`,resolveDir:racine},bundle:true,write:false,format:'iife',plugins:[{name:'etat-canal-test',setup(b){
       b.onResolve({filter:/contexteCanalEnDirect$/},a=>({path:a.path,namespace:'etat-canal-test'}));
       b.onResolve({filter:/canalAgentApplicatif$/},a=>({path:a.path,namespace:'etat-canal-test'}));
       b.onLoad({filter:/.*/,namespace:'etat-canal-test'},a=>({loader:'js',contents:a.path.endsWith('canalAgentApplicatif') ? 'export const envoyerMessageEtudiant=()=>{};' : ['pousserJournalDepuisAgent','mettreAJourJournalDepuisAgent','afficherTexteDepuisAgent'].map(n=>`export const ${n}=()=>null;`).join('\n')}));
     }}]});
   await writeFile(join(temporaire,'app/miroir.js'),miroirBundle.outputFiles[0].text);
-  await writeFile(join(temporaire,'app/miroir.html'),`<html><head><title>classinus-superposition-agent</title></head><body style="background:transparent"><div id="curseur" style="position:fixed;width:20px;height:20px;background:orange"></div><script src="miroir.js"></script></body></html>`);
+  await writeFile(join(temporaire,'app/miroir.html'),`<html><head><title>classinus-superposition-agent</title></head><body style="background:transparent"><div id="curseur" style="position:fixed;width:20px;height:20px;background:orange"></div><div id="information"></div><script src="miroir.js"></script></body></html>`);
   const session = {access_token:'session-test',refresh_token:'refresh-test',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:'pc-test'}};
   await writeFile(join(temporaire, 'app/index.html'), `<!doctype html><html><head><title>Classinus</title></head><body><script>localStorage.setItem('sb-supabase-auth-token',${JSON.stringify(JSON.stringify(session))});</script><script src="bundle.js"></script></body></html>`);
   enfant = spawn(require('electron'), ['--no-sandbox', temporaire], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -171,6 +186,24 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
   assert.deepEqual(messages.find(m=>m.id==='pointage-natif').resultat,{succes:true});
   assert(sorties.includes('POINTAGE_AFFICHE'),sorties);
   assert(sorties.includes('POINTEUR_WINDOWS_INCHANGE true'),sorties);
+  if(process.platform==='win32') {
+    const bouton=messages.find(m=>m.id==='lecture-native').resultat.elements.find(e=>e.nom==='Clic indépendant');
+    assert(bouton,JSON.stringify(messages));
+    connexionRenderer.send(JSON.stringify({id:'clic-independant',action_systeme:'cliquer_ecran',parametres:{x:bouton.x,y:bouton.y},via_renderer:true}));
+    await attendre(()=>messages.some(m=>m.id==='clic-independant'&&'resultat' in m));
+    assert.equal(messages.find(m=>m.id==='clic-independant').resultat.mode,'accessibilite',JSON.stringify(messages));
+    assert.equal(await readFile(join(temporaire,'clic-uia'),'utf8'),'ok');
+    assert(!sorties.includes('ANNONCE_AFFICHEE'),sorties);
+    const zone=JSON.parse(await readFile(join(temporaire,'zone-souris.json'),'utf8'));
+    connexionRenderer.send(JSON.stringify({id:'clic-repli',action_systeme:'cliquer_ecran',parametres:zone,via_renderer:true}));
+    await attendre(()=>messages.some(m=>m.id==='clic-repli'&&'resultat' in m));
+    const repli=messages.find(m=>m.id==='clic-repli').resultat;
+    assert.equal(repli.mode,'souris',JSON.stringify(repli)+'\n'+sorties);
+    assert.equal(repli.information_affichee,true);
+    assert(sorties.includes('ANNONCE_AFFICHEE Je ne peux pas cliquer ici avec mon curseur seul. Je vais utiliser ton curseur maintenant.'),sorties);
+    assert.equal(await readFile(join(temporaire,'clic-souris'),'utf8'),'ok');
+    console.log('OK Windows réel : clic UIA sans déplacement du pointeur, puis annonce affichée et clic souris réel sans validation.');
+  }
   console.log('OK : session Supabase -> canal applicatif -> IPC Capacitor -> plugin Electron -> réponse lire_ecran, sans demande sur la seconde connexion.');
 } finally {
   if (enfant && enfant.exitCode === null) {

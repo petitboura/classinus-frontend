@@ -35,7 +35,9 @@ import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-elec
 import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/plugin.mjs";
 // Lot V : lecture en texte de la fenetre au premier plan (UI Automation).
 import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
-import { pointerCurseurEcran } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
+import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversante } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
+import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
+import { cliquerEcran } from "./clicEcran.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -147,13 +149,14 @@ function estMessageActionSysteme(valeur: unknown): valeur is MessageActionSystem
 // meme, simplement sans trace visuelle.
 type NotifierWeb = (evenement: string, donnees: Record<string, unknown>) => void;
 let notifierWeb: NotifierWeb | null = null;
+let clicEnCours = false;
 
 function decrireActionSysteme(type: string, parametres: Record<string, unknown>): string {
   switch (type) {
     case "pointer_ecran":
       return "Clovis pointe à l'écran";
     case "cliquer_ecran":
-      return "Clovis a cliqué à l'écran";
+      return "Clovis clique à l'écran";
     case "taper_clavier":
       return "Clovis a écrit du texte";
     case "ouvrir_application": {
@@ -222,16 +225,37 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
       case "pointer_ecran":
         return await pointerCurseurEcran({ x: Number(parametres.x), y: Number(parametres.y) });
       case "cliquer_ecran": {
-        const { mouse, Point, Button } = await import("@nut-tree-fork/nut-js");
         const x = Number(parametres.x);
         const y = Number(parametres.y);
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
           return { erreur: "coordonnees x/y invalides" };
         }
-        await restaurerFocusSousSuperposition();
-        await mouse.setPosition(new Point(x, y));
-        await mouse.click(Button.LEFT);
-        return { ok: true };
+        if (clicEnCours) return { erreur: "Un clic de Clovis est déjà en cours." };
+        clicEnCours = true;
+        try {
+          return await cliquerEcran({ x, y }, {
+            pointer: pointerCurseurEcran,
+            accessibilite: cliquerParAccessibiliteWindows,
+            annoncer: annoncerUtilisationCurseurReel,
+            souris: async point => {
+              const { mouse, Point, Button } = await import("@nut-tree-fork/nut-js");
+              await restaurerFocusSousSuperposition();
+              // L'overlay passe en traversée avant le vrai clic : ni curseur
+              // dessiné ni bulle d'annonce ne doivent intercepter ce clic.
+              await avecSourisTraversante(async () => {
+                const depart = await mouse.getPosition();
+                try {
+                  await mouse.setPosition(new Point(point.x, point.y));
+                  await mouse.click(Button.LEFT);
+                } finally {
+                  const actuel = await mouse.getPosition();
+                  // Si l'étudiant a déjà repris sa souris, garder sa position.
+                  if (Math.abs(actuel.x - point.x) <= 1 && Math.abs(actuel.y - point.y) <= 1) await mouse.setPosition(depart);
+                }
+              });
+            },
+          });
+        } finally { clicEnCours = false; }
       }
       case "taper_clavier": {
         const { keyboard } = await import("@nut-tree-fork/nut-js");

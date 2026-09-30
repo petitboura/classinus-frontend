@@ -33,11 +33,15 @@ $label = New-Object Windows.Forms.Label
 $label.Text='Texte visible depuis Windows'; $label.Left=30; $label.Top=30; $label.Width=600
 $bouton = New-Object Windows.Forms.Button
 $bouton.Text='Continuer'; $bouton.Left=30; $bouton.Top=90; $bouton.Width=150
+$bouton.Add_Click({[System.IO.File]::WriteAllText('${ps(join(dossier,'clic-effectue'))}','ok')})
+$case = New-Object Windows.Forms.CheckBox
+$case.Text='Option indépendante'; $case.Left=350; $case.Top=90; $case.Width=200
+$case.Add_CheckedChanged({[System.IO.File]::WriteAllText('${ps(join(dossier,'case-cochee'))}',$case.Checked.ToString())})
 $champ = New-Object Windows.Forms.TextBox
 $champ.Text='Valeur fenêtre Windows'; $champ.Left=30; $champ.Top=140; $champ.Width=250
 $secret = New-Object Windows.Forms.TextBox
 $secret.Text='SECRET-INTERDIT'; $secret.UseSystemPasswordChar=$true; $secret.Left=30; $secret.Top=190
-$form.Controls.AddRange(@($label,$bouton,$champ,$secret))
+$form.Controls.AddRange(@($label,$bouton,$champ,$secret,$case))
 $overlay = New-Object Windows.Forms.Form
 $overlay.Text='classinus-superposition-agent'
 $overlay.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedToolWindow
@@ -94,6 +98,26 @@ try {
     console.log('Diagnostic UIA :',trace.stdout);
   }
   verifier(premiere);
+  const moduleClic=join(dossier,'clic.mjs');
+  await build({entryPoints:[resolve(import.meta.dirname,'../packages/capacitor-pont-natif-electron/electron/src/clicWindows.mts')],outfile:moduleClic,bundle:true,platform:'node',format:'esm'});
+  const {cliquerParAccessibiliteWindows}=await import(pathToFileURL(moduleClic).href);
+  const positionSouris=async()=>{
+    const r=await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-Command','Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Cursor]::Position.ToString()'],{encoding:'utf8'});
+    return r.stdout.trim();
+  };
+  const avant=await positionSouris();
+  const bouton=premiere.elements.find(e=>e.nom==='Continuer');
+  assert.equal((await cliquerParAccessibiliteWindows(bouton)).statut,'effectue');
+  assert.equal(await readFile(join(dossier,'clic-effectue'),'utf8'),'ok');
+  const option=premiere.elements.find(e=>e.nom==='Option indépendante');
+  assert(option,JSON.stringify(premiere));
+  assert.equal((await cliquerParAccessibiliteWindows(option)).statut,'effectue');
+  assert.equal(await readFile(join(dossier,'case-cochee'),'utf8'),'True');
+  assert.equal(await positionSouris(),avant);
+  const label=premiere.elements.find(e=>e.nom==='Texte visible depuis Windows');
+  assert.equal((await cliquerParAccessibiliteWindows(label)).statut,'indisponible');
+  assert.equal(await positionSouris(),avant);
+  console.log('OK Windows réel : bouton cliqué et case cochée par UIA, contrôle incompatible détecté, pointeur Windows inchangé.');
   await writeFile(demandeFocus,'go');
   await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='superposition');
   verifier(await lireFenetreAuPremierPlan({},etat.superposition));
