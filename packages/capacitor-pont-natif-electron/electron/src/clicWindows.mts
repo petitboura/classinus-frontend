@@ -58,6 +58,15 @@ public static class CibleClic {
   $file = New-Object 'System.Collections.Generic.Queue[object]'
   $file.Enqueue(@{el=$racine; profondeur=0})
   $cible=$null; $profondeur=-1; $noeuds=0
+  # FromPoint identifie directement le contrôle quand la superposition
+  # laisse traverser. Vérifier son appartenance à la fenêtre externe.
+  $direct=[System.Windows.Automation.AutomationElement]::FromPoint([System.Windows.Point]::new(${x},${y}))
+  $ancetre=$direct
+  for ($i=0; $null -ne $ancetre -and $i -lt 35; $i++) {
+    if ([System.Windows.Automation.Automation]::Compare($ancetre,$racine)) { $cible=$direct; $file.Clear(); break }
+    $ancetre=[System.Windows.Automation.TreeWalker]::RawViewWalker.GetParent($ancetre)
+  }
+  $diagnosticParcours=''
   while ($file.Count -gt 0 -and $noeuds -lt 1500) {
     $item=$file.Dequeue(); $noeuds++
     $el=$item.el; $niveau=$item.profondeur
@@ -72,7 +81,7 @@ public static class CibleClic {
           $enfant=$walker.GetNextSibling($enfant)
         }
       }
-    } catch { }
+    } catch { $diagnosticParcours=$_.Exception.Message }
   }
   $pattern=$null; $action=$null; $elementAction=$null
   for ($i=0; $null -ne $cible -and $i -lt 5; $i++) {
@@ -89,7 +98,10 @@ public static class CibleClic {
     }
     $cible=$walker.GetParent($cible)
   }
-  if ($null -eq $action) { Sortir 'indisponible' 'Ce contrôle ne propose pas de clic indépendant'; return }
+  if ($null -eq $action) {
+    @{statut='indisponible'; raison='Ce contrôle ne propose pas de clic indépendant'; diagnostic=('noeuds='+$noeuds+'; cible='+$profondeur+'; '+$diagnosticParcours)} | ConvertTo-Json -Compress
+    return
+  }
   # Dès cet instant, un délai ou une erreur ne permet plus de rejouer le clic.
   [System.IO.File]::WriteAllText('${chemin}','execution')
   switch ($action) {
