@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Trash2, X, Check, FileCode2, Loader2, Link2, Unlink, Eye, Code2, Upload, Download, FileUp, FolderUp, Info,
+  type LucideIcon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -62,6 +63,8 @@ export function EditeurComportement({
   placeholderQuandUtiliser,
   titreCreation,
   titreEdition,
+  placeholderTexte,
+  IconeCategorie,
 }: {
   agentId: string;
   comportement: Comportement | null;
@@ -103,6 +106,16 @@ export function EditeurComportement({
    * inchangé ("Nouveau skill" / "Modifier ce skill"). */
   titreCreation?: string;
   titreEdition?: string;
+  /** 29/09/2026, même chantier : placeholder du champ principal, propre
+   * à la catégorie ("Ex : corrige toujours..." pour une règle, etc.). */
+  placeholderTexte?: string;
+  /** 29/09/2026, demande Bourama ("là bas on ne doit rien voir de
+   * skill, pas de texte") : icône + mot générique affichés à la place
+   * de "skill" partout où ce composant est ouvert pour une des 4
+   * catégories de Configuration -- jamais le mot "skill" à l'écran dans
+   * ce contexte, aucune exception. Absent -> comportement inchangé
+   * ("skill" comme aujourd'hui, pour un skill classique). */
+  IconeCategorie?: LucideIcon;
 }) {
   const estCreation = comportement === null;
 
@@ -334,6 +347,7 @@ export function EditeurComportement({
     <div className="flex h-full flex-col">
       <div className="mb-3 flex flex-shrink-0 items-center justify-between">
         <span className="flex items-center gap-1.5">
+          {IconeCategorie && <IconeCategorie size={15} className="flex-shrink-0 text-dj-texte-muet" />}
           <span className="text-sm font-medium text-dj-texte">
             {estCreation ? titreCreation || "Nouveau skill" : titreEdition || "Modifier ce skill"}
           </span>
@@ -351,7 +365,7 @@ export function EditeurComportement({
                 variante="icone"
                 libelle="Utiliser avec l'IA"
                 texte={
-                  `Je veux utiliser le skill id ${comportementActuel.id}. ` +
+                  `Je veux utiliser ${categoriePreset ? "cet élément" : "le skill"} id ${comportementActuel.id}. ` +
                   `Utilise l'outil gerer_comportement (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
                   `puis discutons-en ensemble.`
                 }
@@ -371,7 +385,7 @@ export function EditeurComportement({
 
       <div className="mb-3 flex-shrink-0">
         <OngletsSegment
-          ariaLabel="Vue du skill"
+          ariaLabel={categoriePreset ? "Vue du contenu" : "Vue du skill"}
           valeur={onglet}
           onChange={(v) => (v === "skill" ? ouvrirOngletSkill() : setOnglet(v as typeof onglet))}
           onglets={
@@ -379,7 +393,7 @@ export function EditeurComportement({
               ? [{ valeur: "texte", libelle: "Texte" }]
               : [
                   { valeur: "texte", libelle: "Texte" },
-                  { valeur: "skill", libelle: "Voir le skill généré", icone: FileCode2 },
+                  { valeur: "skill", libelle: categoriePreset ? "Voir le contenu généré" : "Voir le skill généré", icone: FileCode2 },
                   { valeur: "codes", libelle: "Codes", icone: Link2 },
                 ]
           }
@@ -440,7 +454,9 @@ export function EditeurComportement({
 
           {estCreation && (
             <div className="mb-3 flex flex-col gap-2 rounded-lg border border-dashed border-dj-bordure px-3 py-2">
-              <span className="text-xs text-dj-texte-muet">Déjà un ou plusieurs skills rédigés ? Importe-les tels quels.</span>
+              <span className="text-xs text-dj-texte-muet">
+                {categoriePreset ? "Déjà rédigé ailleurs ? Importe-le tel quel." : "Déjà un ou plusieurs skills rédigés ? Importe-les tels quels."}
+              </span>
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   ref={inputImportRef}
@@ -504,14 +520,24 @@ export function EditeurComportement({
             </div>
           )}
 
-          <textarea
-            autoFocus
-            value={texteOuvert}
-            onChange={(e) => setTexteOuvert(e.target.value)}
-            placeholder="Ex : réponds-moi toujours en langage simple"
-            rows={16}
-            className="w-full flex-1 resize-none rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-bordure-forte"
-          />
+          {categoriePreset === "regle" ? (
+            <input
+              autoFocus
+              value={texteOuvert}
+              onChange={(e) => setTexteOuvert(e.target.value)}
+              placeholder={placeholderTexte || "Ex : réponds-moi toujours en langage simple"}
+              className="w-full rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-bordure-forte"
+            />
+          ) : (
+            <textarea
+              autoFocus
+              value={texteOuvert}
+              onChange={(e) => setTexteOuvert(e.target.value)}
+              placeholder={placeholderTexte || "Ex : réponds-moi toujours en langage simple"}
+              rows={16}
+              className="w-full flex-1 resize-none rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-bordure-forte"
+            />
+          )}
 
           <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {erreurOuvert || erreurPublication ? (
@@ -605,7 +631,7 @@ export function EditeurComportement({
               <button
                 onClick={telechargerSkillActuel}
                 disabled={skillChargement || !skillOuvert.trim()}
-                title="Télécharger ce skill en .md"
+                title={categoriePreset ? "Télécharger en .md" : "Télécharger ce skill en .md"}
                 className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte disabled:opacity-50"
               >
                 <Download size={14} /> Télécharger
@@ -623,7 +649,7 @@ export function EditeurComportement({
                 disabled={skillEnregistrementEnCours || skillChargement || !skillOuvert.trim()}
                 className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
-                <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : "Enregistrer le skill"}
+                <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : categoriePreset ? "Enregistrer" : "Enregistrer le skill"}
               </button>
             </div>
           </div>
