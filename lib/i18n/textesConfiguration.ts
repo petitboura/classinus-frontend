@@ -25,7 +25,17 @@ export type IdTexteConfiguration =
   | "vide.procedure"
   | "vide.regle"
   | "vide.comportement"
-  | "vide.style";
+  | "vide.style"
+  | "champ.quandUtiliser.libelle"
+  | "champ.quandUtiliser.placeholder"
+  | "titre.creation.procedure"
+  | "titre.creation.regle"
+  | "titre.creation.comportement"
+  | "titre.creation.style"
+  | "titre.edition.procedure"
+  | "titre.edition.regle"
+  | "titre.edition.comportement"
+  | "titre.edition.style";
 
 const FR: Record<IdTexteConfiguration, string> = {
   "onglet.procedure": "Procédure",
@@ -40,6 +50,16 @@ const FR: Record<IdTexteConfiguration, string> = {
   "vide.regle": "Aucune règle pour l'instant.",
   "vide.comportement": "Aucun comportement pour l'instant.",
   "vide.style": "Aucun style pour l'instant.",
+  "champ.quandUtiliser.libelle": "Quand l'utiliser (optionnel)",
+  "champ.quandUtiliser.placeholder": "Ex : quand l'élève demande un exercice corrigé",
+  "titre.creation.procedure": "Nouvelle procédure",
+  "titre.creation.regle": "Nouvelle règle",
+  "titre.creation.comportement": "Nouveau comportement",
+  "titre.creation.style": "Nouveau style",
+  "titre.edition.procedure": "Modifier cette procédure",
+  "titre.edition.regle": "Modifier cette règle",
+  "titre.edition.comportement": "Modifier ce comportement",
+  "titre.edition.style": "Modifier ce style",
 };
 
 export function texteConfiguration(id: IdTexteConfiguration): string {
