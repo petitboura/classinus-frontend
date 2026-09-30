@@ -40,6 +40,7 @@ import { ControlesInteractionCanal } from "@/components/ControlesInteractionCana
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { useDecalageRailLateral } from "@/lib/useDecalageRailLateral";
 import { useDeplacable } from "@/lib/useDeplacable";
+import { estPageChat } from "@/lib/routesApp";
 
 // Classes écrites en toutes lettres : Tailwind ne génère que les classes
 // qu'il trouve telles quelles dans le code, jamais celles assemblées par
@@ -58,7 +59,7 @@ export function CanalEnDirectFlottant() {
 
   if (!contexte) return null;
   const { actif, activer, desactiver } = contexte;
-  const surChat = pathname === "/chat";
+  const surChat = estPageChat(pathname);
 
   if (surChat && !actif) return null;
 

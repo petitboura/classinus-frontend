@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "@/lib/useTheme";
+import { ROUTES_APP, correspondARoute, estPageChat } from "@/lib/routesApp";
 
 // Cree le 26/08/2026, Bourama : refonte navigation mobile (chantier
 // "vraie appli mobile", suite Lot 3A/3B fusion Capacitor).
@@ -94,7 +95,7 @@ const ICONES_SVG: Record<string, string> = {
 const ONGLETS_NATIFS = [
   { id: "bibliotheque", titre: "Bibliothèque", route: "/bibliotheque", icone: ICONES_SVG.bibliotheque },
   { id: "controle-session", titre: "Concentration", route: "/controle-session", icone: ICONES_SVG.controleSession },
-  { id: "chat", titre: "Chat", route: "/chat", icone: ICONES_SVG.chat },
+  { id: "chat", titre: "Chat", route: ROUTES_APP.chat, icone: ICONES_SVG.chat },
   { id: "bureau", titre: "Bureau", route: "/bureau", icone: ICONES_SVG.bureau },
   { id: "personnaliser", titre: "Personnaliser Classinus", route: "/personnaliser", icone: ICONES_SVG.personnaliser },
 ] as const;
@@ -219,10 +220,10 @@ export function BarreOngletsNative() {
     import("@capacitor/core").then(async ({ Capacitor }) => {
       if (!Capacitor.isNativePlatform()) return;
       const { NativeNavigation } = await import("@capgo/capacitor-native-navigation");
-      const actif = ONGLETS_NATIFS.find((o) => pathname.startsWith(o.route));
+      const actif = ONGLETS_NATIFS.find((o) => correspondARoute(pathname, o.route));
       if (actif) dernierOngletRef.current = actif.id;
       await NativeNavigation.setTabbar({
-        hidden: pathname === "/chat",
+        hidden: estPageChat(pathname),
         selectedId: dernierOngletRef.current,
         labelVisibilityMode: "labeled",
         icons: true,

@@ -35,6 +35,7 @@ import {
   enregistrerCanalEnDirect,
 } from "@/lib/contexteCanalEnDirect";
 import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
+import { estPageChat } from "@/lib/routesApp";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -248,7 +249,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               meme condition que AppSidebar juste en dessous -- masque sur
               /chat, qui a deja son propre point d'entree du guide (menu
               "+" du chat, etape 5). */}
-          {pathname !== "/chat" && <GuideFlottant />}
+          {!estPageChat(pathname) && <GuideFlottant />}
           {/* 07/09/2026, décision Bourama (bug PC web signalé : profil et
               "..." affichés en double) : cette instance-ci d'AppSidebar
               (nav principale, hors chat) reste montée en permanence,
@@ -266,7 +267,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               masqué sur /chat plus haut (MenuHamburgerWeb.tsx) : sans
               perte de contenu, l'instance chat couvre déjà tout ce que
               celle-ci propose. */}
-          {pathname !== "/chat" && (
+          {!estPageChat(pathname) && (
             <AppSidebar
               connecte={connecte}
               onOuvrirCatalogue={() => setCatalogueOuvert(true)}
@@ -345,7 +346,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     // ChatIA.tsx) -- les deux s'additionnaient et
                     // poussaient la barre de saisie bien plus haut que
                     // nécessaire. /chat n'a plus cette barre à réserver.
-                    paddingBottom: pathname === "/chat" ? "0px" : "var(--dj-barre-onglets-web, 0px)",
+                    paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
                   }
             }
           >

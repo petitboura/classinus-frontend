@@ -7,6 +7,7 @@ import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
+import { ROUTES_APP } from "@/lib/routesApp";
 
 // Créé le 26/08/2026, Bourama : refonte navigation mobile native. Contenu
 // du menu "Plus", partagé entre l'appli native et le web mobile.
@@ -54,7 +55,7 @@ import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 // (voir MenuHamburgerNatif.tsx/MenuHamburgerWeb.tsx, tous deux
 // exclusivement mobiles).
 export const SECTIONS_BASE: { icone: LucideIcon; titre: string; sousTitre?: string; href: string }[] = [
-  { icone: Home, titre: "Accueil", sousTitre: "Mon espace", href: "/" },
+  { icone: Home, titre: "Tableau de bord", sousTitre: "Mon espace", href: ROUTES_APP.tableauDeBord },
   { icone: Plug, titre: "Connecter Claude", sousTitre: "Utiliser Classinus dans Claude", href: "/connecter-claude" },
   { icone: Settings, titre: "Paramètres", sousTitre: "Profil, confidentialité, capacités du téléphone...", href: "/parametres" },
   { icone: Bell, titre: "Rappels", sousTitre: "Notifications programmées", href: "/rappels" },

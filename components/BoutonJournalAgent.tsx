@@ -22,6 +22,7 @@ import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ContexteCanalEnDirect, type StatutEntreeJournal } from "@/lib/contexteCanalEnDirect";
 import { useDeplacable } from "@/lib/useDeplacable";
+import { estPageChat } from "@/lib/routesApp";
 
 const LABEL_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "En cours...",
@@ -80,7 +81,7 @@ export function BoutonJournalAgent() {
   const { journal, actif } = contexte;
   // Masqué sur /chat sauf si le canal est déjà actif, même règle et même
   // décision (25/09/2026, Bourama) que CanalEnDirectFlottant.tsx.
-  if (pathname === "/chat" && !actif) return null;
+  if (estPageChat(pathname) && !actif) return null;
 
   return (
     <div

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, MessageCircle } from "lucide-react";
 import { RUBRIQUES_AIDE, trouverRubriqueAide, type RubriqueAide } from "@/lib/aideSections";
+import { ROUTES_APP } from "@/lib/routesApp";
 
 // 19/09/2026, demande Bourama : ancien écran "aide" d'EspaceParametres.tsx.
 // Le lien "En savoir plus" d'une bulle infotip pointait vers
@@ -54,7 +55,7 @@ export function ParametresAide() {
     <div className="flex flex-col gap-4">
       <div className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
         <button
-          onClick={() => router.push("/")}
+          onClick={() => router.push(ROUTES_APP.chat)}
           className="flex items-center gap-2 rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
         >
           <MessageCircle size={16} />

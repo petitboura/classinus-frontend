@@ -7,6 +7,7 @@ import { BlocsMenuPlus, SECTIONS_BASE } from "@/components/EspacePlus";
 import { ContexteRetour } from "@/lib/contexteRetour";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermerChat } from "@/lib/contexteChat";
+import { estPageChat } from "@/lib/routesApp";
 
 // Créé le 30/08/2026, tâche 2 (menu hamburger natif), Bourama.
 //
@@ -143,7 +144,7 @@ function MenuHamburgerNatifInterne() {
   // perte de contenu : le tiroir du chat (MenuPlusChatFlottant.tsx)
   // reprend déjà tout ce que ce menu propose (BlocsMenuPlus, même
   // source), en plus de ses propres extras.
-  if (pathname === "/chat") return null;
+  if (estPageChat(pathname)) return null;
 
   return (
     <>

@@ -38,6 +38,7 @@ import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
+import { ROUTES_APP } from "@/lib/routesApp";
 
 // Nav principale de l'app (refonte "Mon espace = l'app", 15/08/2026,
 // demande Bourama : "faut changer l'affichage même de mon espace, son
@@ -788,7 +789,7 @@ export function AppSidebar({
   const idsPlusFlat: OngletId[] = contexteChat ? ["bureau", "controle-session", "claude"] : ["claude"];
   const ongletsDirects = ONGLETS.filter((o) => idsDirects.includes(o.id));
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
-  const navComplete = [{ href: "/", label: "Accueil", Icone: Home }, ...ongletsDirects];
+  const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }, ...ongletsDirects];
 
   // 30/08/2026, demande Bourama : le tiroir mobile du chat (plus bas,
   // ouverte && !masquerChromeMobile) doit reprendre les mêmes 4 boutons
