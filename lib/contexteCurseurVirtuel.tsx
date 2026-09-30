@@ -21,8 +21,11 @@
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { animate, useMotionValue, type MotionValue } from "framer-motion";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
 export type PointEcran = { x: number; y: number };
+type RepereCurseur = "page" | "ecran";
+type OptionsDeplacement = { cliquer?: boolean; forme?: FormeCurseur; repere?: RepereCurseur };
 
 export type FormeCurseur = "defaut" | "main" | "attrape";
 
@@ -30,6 +33,7 @@ export type ValeurCurseurVirtuel = {
   x: MotionValue<number>;
   y: MotionValue<number>;
   echelle: MotionValue<number>;
+  repere?: MotionValue<RepereCurseur>;
   visible: boolean;
   forme: FormeCurseur;
   // Correctif (19/09/2026, decision Bourama : "c'est la souris du LLM
@@ -49,7 +53,7 @@ export type ValeurCurseurVirtuel = {
   // la forme de la zone qu'il survole une fois arrivé.
   deplacerVers: (
     cible: PointEcran | HTMLElement,
-    options?: { cliquer?: boolean; forme?: FormeCurseur }
+    options?: OptionsDeplacement
   ) => Promise<void>;
   masquer: () => void;
   // Ajouté le 19/09/2026 (decision Bourama) : affiche le curseur sans
@@ -88,9 +92,12 @@ export function enregistrerDeplacementCurseur(fn: ValeurCurseurVirtuel["deplacer
  */
 export function deplacerCurseurDepuisAgent(
   cible: PointEcran | HTMLElement,
-  options?: { cliquer?: boolean; forme?: FormeCurseur }
+  options?: OptionsDeplacement
 ): Promise<void> {
-  if (!deplacementGlobal) return Promise.resolve();
+  if (!deplacementGlobal) {
+    if (options?.repere === "ecran") return Promise.reject(new Error("Le curseur de Clovis n'est pas prêt."));
+    return Promise.resolve();
+  }
   return deplacementGlobal(cible, options);
 }
 
@@ -140,6 +147,7 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const echelle = useMotionValue(1);
+  const repere = useMotionValue<RepereCurseur>("page");
   const [visible, setVisible] = useState(false);
   const [forme, setForme] = useState<FormeCurseur>("defaut");
   const [enAction, setEnAction] = useState(false);
@@ -178,7 +186,7 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
   const definirForme = useCallback((f: FormeCurseur) => setForme(f), []);
 
   const deplacerVers = useCallback(
-    (cible: PointEcran | HTMLElement, options?: { cliquer?: boolean; forme?: FormeCurseur }): Promise<void> => {
+    async (cible: PointEcran | HTMLElement, options?: OptionsDeplacement): Promise<void> => {
       // Arrete toute trajectoire encore en cours avant d'en lancer une
       // nouvelle : sans ca, un deplacerVers appele avant la fin du
       // precedent (ex: pointage juste apres un clic) ferait tourner
@@ -195,6 +203,20 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
       // stabilises, donc la position lue ici peut ne plus etre la
       // bonne au moment ou le curseur arrive.
       centrer();
+      const repereCible = options?.repere ?? "page";
+      if (repereCible === "ecran" || repere.get() !== repereCible) {
+        const pont = registerPlugin<{
+          preparerDeplacement(p: { depart: PointEcran; repereDepart: RepereCurseur; cible: PointEcran; repereCible: RepereCurseur }): Promise<{ depart: PointEcran; cible: PointEcran }>;
+        }>("SuperpositionAgent");
+        if (Capacitor.getPlatform() !== "electron") throw new Error("Le pointage écran nécessite l'application PC.");
+        const points = await pont.preparerDeplacement({ depart: { x: x.get(), y: y.get() }, repereDepart: repere.get(), cible: resoudrePoint(cible), repereCible });
+        if (generationRef.current !== generation) return;
+        // Écran : position absolue en DIP ; page : position locale en CSS.
+        x.set(points.depart.x);
+        y.set(points.depart.y);
+        if (repereCible === "ecran") cible = points.cible;
+        repere.set(repereCible);
+      }
       // Correctif du 20/09/2026 (Bourama : "il va complètement ailleurs").
       // Un élément que React vient de retirer de la page renvoie une
       // position à zéro : le curseur partait alors dans le coin en haut à
@@ -254,8 +276,8 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
         });
       });
     },
-    [x, y, echelle, centrer]
+    [x, y, echelle, repere, centrer]
   );
 
-  return { x, y, echelle, visible, forme, enAction, definirForme, deplacerVers, masquer, afficher };
+  return { x, y, echelle, repere, visible, forme, enAction, definirForme, deplacerVers, masquer, afficher };
 }

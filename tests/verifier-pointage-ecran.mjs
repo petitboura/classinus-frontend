@@ -1,0 +1,66 @@
+// Frontières Electron/React simulées ; le plugin et la trajectoire sont réels.
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const racine = resolve(import.meta.dirname, '..');
+const temporaire = await mkdtemp(join(tmpdir(), 'pointage-'));
+const etat = globalThis.testPointage = {
+  bornes: { x: 100, y: 80 }, origine: { x: -1280, y: -100 },
+  zoom: 1.25, zoomSuperposition: 1, notifications: [],
+};
+const substitutions = modules => ({ name: 'frontieres', setup(b) {
+  b.onResolve({filter: /.*/}, a => modules[a.path] === undefined ? undefined : {path: a.path, namespace: 'test'});
+  b.onLoad({filter: /.*/, namespace: 'test'}, a => ({contents: modules[a.path], loader: 'js'}));
+}});
+try {
+  const natif = join(temporaire, 'natif.mjs');
+  await build({ entryPoints: [join(racine, 'packages/capacitor-superposition-electron/electron/src/plugin.mts')], outfile: natif, bundle: true, format: 'esm', platform: 'node',
+    define: {'process.platform': '"win32"'}, plugins: [substitutions({
+      'electron': `const t=globalThis.testPointage;
+        export const BrowserWindow={getAllWindows:()=>[
+          {getTitle:()=>"Classinus",isDestroyed:()=>false,getContentBounds:()=>t.bornes,webContents:{getZoomFactor:()=>t.zoom}},
+          {getTitle:()=>"classinus-superposition-agent",isDestroyed:()=>false,getContentBounds:()=>t.origine,webContents:{getZoomFactor:()=>t.zoomSuperposition}}
+        ]};
+        export const screen={screenToDipPoint:p=>({x:p.x/1.5,y:p.y/1.5}),getAllDisplays:()=>[{bounds:{x:-1280,y:-100,width:3200,height:1180}}]};`,
+      '@capawesome/capacitor-electron/plugin': `export class ElectronPlugin{context={notifyListeners:(nom,etat)=>globalThis.testPointage.notifications.push({nom,etat})}}; export const defineElectronPlugin=(_,C)=>new C();`,
+    })] });
+  const pont = (await import(pathToFileURL(natif).href)).SuperpositionAgent;
+  const points = await pont.preparerDeplacement({depart:{x:40,y:80},repereDepart:'page',cible:{x:900,y:600},repereCible:'ecran'});
+  assert.deepEqual(points, {depart:{x:150,y:180},cible:{x:600,y:400}});
+  await pont.pousserEtat({curseur:{...points.cible,repere:'ecran',visible:true}});
+  assert.deepEqual(etat.notifications.at(-1).etat.curseur, {x:1880,y:500,repere:'ecran',visible:true});
+  etat.bornes = {x:800,y:250};
+  await pont.pousserEtat({curseur:{...points.cible,repere:'ecran',visible:true}});
+  assert.equal(etat.notifications.at(-1).etat.curseur.x,1880); // fenêtre déplacée : curseur fixe
+  assert.deepEqual(await pont.preparerDeplacement({depart:points.cible,repereDepart:'ecran',cible:{x:20,y:30},repereCible:'page'}), {depart:{x:-160,y:120},cible:{x:20,y:30}});
+  await assert.rejects(pont.preparerDeplacement({depart:points.cible,repereDepart:'ecran',cible:{x:NaN,y:10},repereCible:'ecran'}));
+  await assert.rejects(pont.preparerDeplacement({depart:points.cible,repereDepart:'ecran',cible:{x:100000,y:10},repereCible:'ecran'}));
+  await pont.envoyerInteraction({fonction:'deposerCurseur',args:[1880,500]});
+  assert.deepEqual(etat.notifications.at(-1).etat.args,[600,400]);
+  assert.equal(etat.notifications.at(-1).etat.repere,'ecran');
+  etat.pont = pont;
+  const contexte = join(temporaire,'contexte.mjs');
+  await build({entryPoints:[join(racine,'lib/contexteCurseurVirtuel.tsx')],outfile:contexte,bundle:true,format:'esm',platform:'node',plugins:[substitutions({
+    'react': `export const createContext=()=>({});export const useCallback=f=>f;export const useContext=()=>null;export const useRef=v=>({current:v});export const useState=v=>[v,()=>{}];`,
+    'framer-motion': `export const useMotionValue=v=>({get:()=>v,set:n=>{v=n}});export const animate=(_a,_b,o)=>{o.onUpdate?.(1);const p=Promise.resolve();p.stop=()=>{};return p;};`,
+    '@capacitor/core': `export const Capacitor={getPlatform:()=>"electron"};export const registerPlugin=()=>globalThis.testPointage.pont;`,
+  })]});
+  globalThis.window = {innerWidth:800,innerHeight:600};
+  globalThis.HTMLElement = class {};
+  const {useFournirCurseurVirtuel}=await import(pathToFileURL(contexte).href);
+  const curseur=useFournirCurseurVirtuel();
+  await curseur.deplacerVers({x:900,y:600},{repere:'ecran',cliquer:false});
+  assert.equal(curseur.repere.get(),'ecran');
+  assert.equal(curseur.x.get(),600); assert.equal(curseur.y.get(),400);
+  await curseur.deplacerVers({x:20,y:30});
+  assert.equal(curseur.repere.get(),'page');
+  assert.equal(curseur.x.get(),20); assert.equal(curseur.y.get(),30);
+  console.log('OK : DPI 150 %, zoom, écrans à origine négative, position indépendante de la fenêtre, aller-retour page/écran, coordonnées invalides. Aucun pilote souris chargé.');
+} finally {
+  delete globalThis.testPointage; delete globalThis.window; delete globalThis.HTMLElement;
+  await rm(temporaire,{recursive:true,force:true});
+}

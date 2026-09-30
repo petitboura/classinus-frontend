@@ -601,6 +601,23 @@ async function traiterDemandeMontrer(id: string, actionId: string) {
   envoyerReponse(id, { succes: true });
 }
 
+async function traiterPointageEcran(id: string, point: { x: number; y: number }) {
+  if (!surElectron()) { envoyerReponse(id, { ignore: true }); return; }
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+    envoyerReponse(id, { erreur: "Coordonnées de pointage invalides." });
+    return;
+  }
+  const idJournal = pousserJournalDepuisAgent("Clovis pointe à l'écran", "en_cours");
+  try {
+    await deplacerCurseurDepuisAgent(point, { cliquer: false, forme: "main", repere: "ecran" });
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
+    envoyerReponse(id, { succes: true });
+  } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Pointage impossible." });
+  }
+}
+
 /**
  * Chantier P : commentaire libre de Clovis. Aucune reponse envoyee, le
  * serveur n'en attend pas. Un texte vide ou non textuel est ignore
@@ -648,6 +665,7 @@ function traiterMessage(message: unknown) {
     selecteur_generique?: string;
     description?: string;
     montrer_action_id?: string;
+    pointer_ecran?: { x: number; y: number };
     lire_page?: boolean;
     longueur_max?: number;
     action_systeme?: string;
@@ -664,6 +682,8 @@ function traiterMessage(message: unknown) {
     traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
+  } else if (m.id && m.pointer_ecran) {
+    void traiterPointageEcran(m.id, m.pointer_ecran);
   } else if (m.id && m.lire_page === true) {
     traiterDemandeLecturePage(m.id, m.longueur_max);
   } else if (m.id && m.action_systeme && m.via_renderer === true && surElectron()) {

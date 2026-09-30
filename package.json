@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "build:capacitor": "cross-env CAPACITOR_BUILD=true next build && npx cap sync",
-    "test:canal-pc": "node tests/verifier-canal-pc.mjs"
+    "test:canal-pc": "node tests/verifier-canal-pc.mjs",
+    "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "^3.7.1",

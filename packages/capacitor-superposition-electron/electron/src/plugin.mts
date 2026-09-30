@@ -39,7 +39,7 @@
 // applicatif (lib/superpositionElectron.ts), pas ici -- ce plugin n'a pas
 // a etre retouche si ces formes evoluent.
 
-import { BrowserWindow } from "electron";
+import { BrowserWindow, screen } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 
 // Identification des deux fenetres par leur titre plutot que par un pont
@@ -91,6 +91,31 @@ function synchroniserVisibiliteSuperposition(actif: boolean) {
 }
 
 class SuperpositionAgentImpl extends ElectronPlugin {
+  async preparerDeplacement(p: { depart: PointEcranLocal; repereDepart: string; cible: PointEcranLocal; repereCible: string }): Promise<{ depart: PointEcranLocal; cible: PointEcranLocal }> {
+    const principale = trouverFenetrePrincipale();
+    const superposition = trouverFenetreSuperposition();
+    if (!principale || principale.isDestroyed() || !superposition || superposition.isDestroyed()) {
+      throw new Error("La superposition de Clovis n'est pas prête.");
+    }
+    if (![p.depart.x, p.depart.y, p.cible.x, p.cible.y].every(Number.isFinite)) {
+      throw new Error("Coordonnées de pointage invalides.");
+    }
+    const bornes = principale.getContentBounds();
+    const zoom = principale.webContents.getZoomFactor();
+    const departEcran = p.repereDepart === "ecran" ? p.depart : {
+      x: bornes.x + p.depart.x * zoom, y: bornes.y + p.depart.y * zoom,
+    };
+    if (p.repereCible === "ecran") {
+      const cible = process.platform === "win32" || process.platform === "linux"
+        ? screen.screenToDipPoint({ x: Math.round(p.cible.x), y: Math.round(p.cible.y) }) : p.cible;
+      if (!screen.getAllDisplays().some(d => cible.x >= d.bounds.x && cible.x < d.bounds.x + d.bounds.width && cible.y >= d.bounds.y && cible.y < d.bounds.y + d.bounds.height)) {
+        throw new Error("Le point visé est hors des écrans.");
+      }
+      return { depart: departEcran, cible };
+    }
+    return { depart: { x: (departEcran.x - bornes.x) / zoom, y: (departEcran.y - bornes.y) / zoom }, cible: p.cible };
+  }
+
   async pousserEtat(etat: EtatPousse): Promise<void> {
     const canal = etat.canal as { actif?: unknown } | undefined;
     if (canal && typeof canal.actif === "boolean") {
@@ -106,23 +131,30 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     // cles de etat.curseur (echelle, forme, visible, enAction...) passent
     // inchangees.
     const bornes = principale.getContentBounds();
+    const zoom = principale.webContents.getZoomFactor();
+    const superposition = trouverFenetreSuperposition();
+    const origine = superposition?.getContentBounds() ?? { x: 0, y: 0 };
+    const zoomSuperposition = superposition?.webContents.getZoomFactor() ?? 1;
+    const point = etat.curseur.repere === "ecran" ? etat.curseur : {
+      x: etat.curseur.x * zoom + bornes.x, y: etat.curseur.y * zoom + bornes.y,
+    };
     this.context.notifyListeners("etat", {
       ...etat,
-      curseur: { ...etat.curseur, x: etat.curseur.x + bornes.x, y: etat.curseur.y + bornes.y },
+      curseur: { ...etat.curseur, x: (point.x - origine.x) / zoomSuperposition, y: (point.y - origine.y) / zoomSuperposition },
     });
   }
 
   async envoyerInteraction(action: Record<string, unknown>): Promise<void> {
-    // Correctif 29/09/2026 : "deposerCurseur" arrive en coordonnees ECRAN
-    // (repere de la superposition). La fenetre principale raisonne en
-    // coordonnees LOCALES a sa page (inverse de pousserEtat) : on retire
-    // ici la position de sa zone de contenu.
+    // Un glissement dans la superposition conserve une position écran
+    // absolue, indépendante de la position de la fenêtre principale.
     const args = action.args;
     if (action.fonction === "deposerCurseur" && Array.isArray(args) && typeof args[0] === "number" && typeof args[1] === "number") {
       const principale = trouverFenetrePrincipale();
       if (principale && !principale.isDestroyed()) {
-        const bornes = principale.getContentBounds();
-        this.context.notifyListeners("interaction", { ...action, args: [args[0] - bornes.x, args[1] - bornes.y] });
+        const superposition = trouverFenetreSuperposition();
+        const origine = superposition?.getContentBounds() ?? { x: 0, y: 0 };
+        const zoomSuperposition = superposition?.webContents.getZoomFactor() ?? 1;
+        this.context.notifyListeners("interaction", { ...action, repere: "ecran", args: [args[0] * zoomSuperposition + origine.x, args[1] * zoomSuperposition + origine.y] });
         return;
       }
     }
@@ -143,6 +175,6 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["pousserEtat", "envoyerInteraction", "definirCapturerSouris"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "pousserEtat", "envoyerInteraction", "definirCapturerSouris"] },
   SuperpositionAgentImpl
 );

@@ -41,6 +41,7 @@ export interface EtatSuperposition {
 }
 
 interface ActionSuperposition {
+  repere?: "page" | "ecran";
   fonction:
     | "basculerReponse"
     | "suspendreMasquageReponse"
@@ -129,6 +130,7 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
           visible: curseur.visible,
           forme: curseur.forme,
           enAction: curseur.enAction,
+          repere: curseur.repere?.get() ?? "page",
         },
         canal: {
           actif: canal.actif,
@@ -151,10 +153,12 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
     const retraitX = curseur.x.on("change", pousser);
     const retraitY = curseur.y.on("change", pousser);
     const retraitEchelle = curseur.echelle.on("change", pousser);
+    const retraitRepere = curseur.repere?.on("change", pousser);
     return () => {
       retraitX();
       retraitY();
       retraitEchelle();
+      retraitRepere?.();
     };
   }, [
     curseur,
@@ -206,10 +210,12 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
           // curseur (glisser de l'etudiant). La fenetre principale garde
           // la position de reference et la repousse a chaque etat : sans
           // cette mise a jour, le curseur revenait a son ancienne place.
-          // Coordonnees deja converties en locales par le plugin natif.
+          // Le plugin indique le repère ; sur PC, garder une position écran
+          // absolue évite de transporter le curseur avec la fenêtre Classinus.
           if (typeof action.args[0] === "number" && typeof action.args[1] === "number") {
             c.x.set(action.args[0]);
             c.y.set(action.args[1]);
+            c.repere?.set(action.repere ?? "page");
           }
           break;
         case "envoyerMessageEtudiant":
@@ -309,8 +315,7 @@ export function ecouterEtatSuperposition(sur: (etat: EtatSuperposition) => void)
 }
 
 export const interactionsSuperposition = {
-  // Position ECRAN absolue (repere de la superposition), convertie en
-  // locale a la page principale par le plugin natif.
+  // Position locale à la superposition, convertie en écran absolu par le plugin.
   deposerCurseur: (x: number, y: number) => relayerInteraction("deposerCurseur", x, y),
   basculerReponse: () => relayerInteraction("basculerReponse"),
   suspendreMasquageReponse: () => relayerInteraction("suspendreMasquageReponse"),
