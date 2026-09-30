@@ -57,6 +57,7 @@ export function EditeurComportement({
   onSupprime,
   boutonFermerDesactive,
   onActionEnCoursChange,
+  categoriePreset,
 }: {
   agentId: string;
   comportement: Comportement | null;
@@ -73,6 +74,14 @@ export function EditeurComportement({
    * fermeture (clic sur le fond, Echap -- voir PanneauFlottant.tsx),
    * comme avant l'extraction de ce composant. */
   onActionEnCoursChange?: (enCours: boolean) => void;
+  /** 28/09/2026, demande Bourama, onglet "Configuration" de Bureau :
+   * fixé par l'appelant (un des 4 onglets Procédure/Règle/Comportement/
+   * Style, voir ConfigurationBureau.tsx), jamais proposé comme un choix
+   * à l'utilisateur -- aucun champ, aucun sélecteur dans ce composant.
+   * Ignoré silencieusement si `comportement` n'est pas null (la
+   * catégorie ne change jamais après la création). Absent -> skill
+   * classique inchangé ("Mes skills"), comportement par défaut. */
+  categoriePreset?: "procedure" | "regle" | "comportement" | "style";
 }) {
   const estCreation = comportement === null;
 
@@ -226,7 +235,7 @@ export function EditeurComportement({
       setEnregistrementEnCours(true);
       setErreurOuvert(null);
       try {
-        const cree = await ajouterComportement(agentId, texte, nom);
+        const cree = await ajouterComportement(agentId, texte, nom, undefined, undefined, categoriePreset);
         onCree(cree);
         onFermer();
       } catch (e) {
