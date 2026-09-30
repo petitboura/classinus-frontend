@@ -266,6 +266,14 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         } catch {
           titre = null;
         }
+        // Une demande faite depuis la superposition lui donne le focus :
+        // son titre (ou celui d'une autre fenetre de Classinus) ne decrit
+        // pas ce que l'etudiant regarde, on ne le renvoie donc pas.
+        const titresClassinus = BrowserWindow.getAllWindows()
+          .filter(f => !f.isDestroyed())
+          .map(f => f.getTitle());
+        const titreEstClassinus = titre !== null && titresClassinus.includes(titre);
+        if (titreEstClassinus) titre = null;
         return {
           titre_fenetre_active: titre,
           application: null,
@@ -274,7 +282,9 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
           elements: [],
           coupe: false,
           mode: "titre_seul",
-          erreur_lecture: lecture.erreur,
+          erreur_lecture: titreEstClassinus
+            ? `${lecture.erreur} (la fenetre active est une fenetre de Classinus, son titre est ignore)`
+            : lecture.erreur,
         };
       }
       default:
