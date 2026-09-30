@@ -65,10 +65,14 @@ $timer.Start()
 const cheminScript = join(dossier, 'fenetre.ps1');
 // Windows PowerShell 5.1 attend un BOM pour les sources UTF-8.
 await writeFile(cheminScript, '\uFEFF' + script);
-const application = spawn('powershell.exe', ['-NoProfile','-STA','-ExecutionPolicy','Bypass','-File',cheminScript], { stdio:'inherit' });
+let sortieApplication='';
+const application = spawn('powershell.exe', ['-NoProfile','-STA','-ExecutionPolicy','Bypass','-File',cheminScript], { stdio:['ignore','pipe','pipe'] });
+application.stdout.on('data',b=>{sortieApplication+=b;});
+application.stderr.on('data',b=>{sortieApplication+=b;});
 const attendre = async fn => {
   let derniereErreur;
-  for (let i=0; i<80; i++) {
+  for (let i=0; i<225; i++) {
+    if(application.exitCode!==null) throw new Error('La fenêtre Windows de test a quitté : '+sortieApplication);
     try { const r=await fn(); if(r) return r; } catch(e) { derniereErreur=e; }
     await new Promise(r=>setTimeout(r,200));
   }
@@ -108,12 +112,12 @@ try {
   const avant=await positionSouris();
   const bouton=premiere.elements.find(e=>e.nom==='Continuer');
   const clicBouton=await cliquerParAccessibiliteWindows(bouton);
-  assert.equal(clicBouton.statut,'effectue',JSON.stringify(clicBouton));
-  assert.equal(await readFile(join(dossier,'clic-effectue'),'utf8'),'ok');
+  assert.equal(clicBouton.statut,'effectue',JSON.stringify({...clicBouton,cible:bouton}));
+  assert.equal(await attendre(()=>readFile(join(dossier,'clic-effectue'),'utf8')),'ok');
   const option=premiere.elements.find(e=>e.nom==='Option indépendante');
   assert(option,JSON.stringify(premiere));
   assert.equal((await cliquerParAccessibiliteWindows(option)).statut,'effectue');
-  assert.equal(await readFile(join(dossier,'case-cochee'),'utf8'),'True');
+  assert.equal(await attendre(()=>readFile(join(dossier,'case-cochee'),'utf8')),'True');
   assert.equal(await positionSouris(),avant);
   const label=premiere.elements.find(e=>e.nom==='Texte visible depuis Windows');
   assert.equal((await cliquerParAccessibiliteWindows(label)).statut,'indisponible');
