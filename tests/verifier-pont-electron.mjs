@@ -93,6 +93,10 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
       const w=runtime.getMainWindow();
       if(process.platform==='win32'){w.show();w.focus();console.log('FOCUS_CLASSINUS',w.isFocused());}
       const depart=screen.getCursorScreenPoint();
+      w.webContents.on('console-message',e=>{
+        if(e.message==='CLIC_INDEPENDANT_TERMINE') console.log('SOURIS_INDEPENDANTE',JSON.stringify(depart)===JSON.stringify(screen.getCursorScreenPoint()));
+        if(e.message==='CLIC_REPLI_TERMINE') console.log('SOURIS_RESTAUREE',JSON.stringify(depart)===JSON.stringify(screen.getCursorScreenPoint()));
+      });
       const zone=screen.getPrimaryDisplay().bounds;
       const miroir=new BrowserWindow({title:'classinus-superposition-agent',...zone,show:false,frame:false,transparent:true,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false,preload:require.resolve('@capawesome/capacitor-electron/preload',{paths:[${JSON.stringify(join(racine,'node_modules'))}]})}});
       miroir.setIgnoreMouseEvents(true,{forward:true});
@@ -124,6 +128,10 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
   const bundle = await build({
     stdin: { contents: `import './lib/supabase'; import {Capacitor,registerPlugin} from '@capacitor/core';
       console.log('PLATEFORME',Capacitor.getPlatform());
+      registerPlugin('PontNatif').addListener('actionSysteme',e=>{
+        if(e.phase==='fin'&&e.id==='clic-independant') console.log('CLIC_INDEPENDANT_TERMINE');
+        if(e.phase==='fin'&&e.id==='clic-repli') console.log('CLIC_REPLI_TERMINE');
+      });
       window.preparerTestPointage=()=>registerPlugin('SuperpositionAgent').pousserEtat({curseur:{x:200,y:150,echelle:1,visible:true,forme:'defaut',enAction:false,repere:'page'},canal:{actif:true}});`, resolveDir: racine },
     bundle: true, write: false, format: 'iife',
     define: {
@@ -194,6 +202,7 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
     assert.equal(messages.find(m=>m.id==='clic-independant').resultat.mode,'accessibilite',JSON.stringify(messages));
     assert.equal(await readFile(join(temporaire,'clic-uia'),'utf8'),'ok');
     assert(!sorties.includes('ANNONCE_AFFICHEE'),sorties);
+    await attendre(()=>sorties.includes('SOURIS_INDEPENDANTE true'));
     const zone=JSON.parse(await readFile(join(temporaire,'zone-souris.json'),'utf8'));
     connexionRenderer.send(JSON.stringify({id:'clic-repli',action_systeme:'cliquer_ecran',parametres:zone,via_renderer:true}));
     await attendre(()=>messages.some(m=>m.id==='clic-repli'&&'resultat' in m));
@@ -202,6 +211,7 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
     assert.equal(repli.information_affichee,true);
     assert(sorties.includes('ANNONCE_AFFICHEE Je ne peux pas cliquer ici avec mon curseur seul. Je vais utiliser ton curseur maintenant.'),sorties);
     assert.equal(await readFile(join(temporaire,'clic-souris'),'utf8'),'ok');
+    await attendre(()=>sorties.includes('SOURIS_RESTAUREE true'));
     console.log('OK Windows réel : clic UIA sans déplacement du pointeur, puis annonce affichée et clic souris réel sans validation.');
   }
   console.log('OK : session Supabase -> canal applicatif -> IPC Capacitor -> plugin Electron -> réponse lire_ecran, sans demande sur la seconde connexion.');

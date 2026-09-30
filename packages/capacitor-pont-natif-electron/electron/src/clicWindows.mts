@@ -56,7 +56,9 @@ public static class CibleClic {
   $AE=[System.Windows.Automation.AutomationElement]
   $cache=New-Object System.Windows.Automation.CacheRequest
   foreach ($p in @($AE::BoundingRectangleProperty,$AE::IsOffscreenProperty,$AE::IsEnabledProperty,$AE::ControlTypeProperty,$AE::IsKeyboardFocusableProperty)) { $cache.Add($p) }
-  foreach ($p in @([System.Windows.Automation.TogglePattern]::Pattern,[System.Windows.Automation.InvokePattern]::Pattern,[System.Windows.Automation.SelectionItemPattern]::Pattern,[System.Windows.Automation.ExpandCollapsePattern]::Pattern)) { $cache.Add($p) }
+  foreach ($p in @([System.Windows.Automation.TogglePattern]::Pattern,[System.Windows.Automation.InvokePattern]::Pattern,[System.Windows.Automation.SelectionItemPattern]::Pattern,[System.Windows.Automation.ExpandCollapsePattern]::Pattern,[System.Windows.Automation.LegacyIAccessiblePattern]::Pattern)) { $cache.Add($p) }
+  $cache.Add([System.Windows.Automation.LegacyIAccessiblePattern]::DefaultActionProperty)
+  $cache.Add([System.Windows.Automation.ExpandCollapsePattern]::ExpandCollapseStateProperty)
   $cache.TreeFilter=[System.Windows.Automation.Automation]::ControlViewCondition
   $activationCache=$cache.Activate()
   $racine = $AE::FromHandle($h)
@@ -76,6 +78,7 @@ public static class CibleClic {
     $ancetre=[System.Windows.Automation.TreeWalker]::RawViewWalker.GetParent($ancetre,$cache)
   }
   $diagnosticParcours=''
+  $diagnosticType=if($null -ne $cible){$cible.Cached.ControlType.ProgrammaticName}else{'aucun'}
   while ($file.Count -gt 0 -and $noeuds -lt 1500) {
     $item=$file.Dequeue(); $noeuds++
     $el=$item.el; $niveau=$item.profondeur
@@ -96,10 +99,13 @@ public static class CibleClic {
   for ($i=0; $null -ne $cible -and $i -lt 5; $i++) {
     if ([System.Windows.Automation.Automation]::Compare($cible,$racine)) { break }
     if (!$cible.Cached.IsEnabled) { Sortir 'indisponible' 'Contrôle désactivé'; return }
-    foreach ($nom in @('Toggle','Invoke','SelectionItem','ExpandCollapse')) {
+    foreach ($nom in @('Toggle','Invoke','SelectionItem','ExpandCollapse','LegacyIAccessible')) {
       $type = ('System.Windows.Automation.'+$nom+'Pattern') -as [type]
       $objet=$null
-      if ($cible.TryGetCachedPattern($type::Pattern,[ref]$objet)) { $pattern=$objet; $action=$nom; $elementAction=$cible; break }
+      if ($cible.TryGetCachedPattern($type::Pattern,[ref]$objet)) {
+        if ($nom -eq 'LegacyIAccessible' -and [string]::IsNullOrWhiteSpace($objet.Cached.DefaultAction)) { continue }
+        $pattern=$objet; $action=$nom; $elementAction=$cible; break
+      }
     }
     if ($null -ne $action) { break }
     if ($cible.Cached.ControlType -eq [System.Windows.Automation.ControlType]::Edit -and $cible.Cached.IsKeyboardFocusable) {
@@ -108,7 +114,7 @@ public static class CibleClic {
     $cible=$walker.GetParent($cible,$cache)
   }
   if ($null -eq $action) {
-    @{statut='indisponible'; raison='Ce contrôle ne propose pas de clic indépendant'; diagnostic=('noeuds='+$noeuds+'; cible='+$profondeur+'; '+$diagnosticParcours)} | ConvertTo-Json -Compress
+    @{statut='indisponible'; raison='Ce contrôle ne propose pas de clic indépendant'; diagnostic=('noeuds='+$noeuds+'; cible='+$profondeur+'; type='+$diagnosticType+'; '+$diagnosticParcours)} | ConvertTo-Json -Compress
     return
   }
   # Dès cet instant, un délai ou une erreur ne permet plus de rejouer le clic.
@@ -118,10 +124,11 @@ public static class CibleClic {
     'Invoke' { $pattern.Invoke() }
     'SelectionItem' { $pattern.Select() }
     'ExpandCollapse' {
-      if ($pattern.Current.ExpandCollapseState -eq [System.Windows.Automation.ExpandCollapseState]::Expanded) { $pattern.Collapse() }
+      if ($pattern.Cached.ExpandCollapseState -eq [System.Windows.Automation.ExpandCollapseState]::Expanded) { $pattern.Collapse() }
       else { $pattern.Expand() }
     }
     'Focus' { $elementAction.SetFocus() }
+    'LegacyIAccessible' { $pattern.DoDefaultAction() }
   }
   Sortir 'effectue' $action
 } catch {
