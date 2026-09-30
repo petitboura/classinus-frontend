@@ -21,10 +21,12 @@ const titreExterne = `Fenêtre externe PC ${process.pid}`;
 let sorties = '';
 const messages = [];
 let demandesNatives = 0;
+let connexionRenderer;
 serveur.on('connection', ws => ws.on('message', brut => {
   const message = JSON.parse(brut);
   messages.push(message);
   if (message.auth_token && message.actions_systeme_via_renderer) {
+    connexionRenderer = ws;
     demandesNatives++;
     setTimeout(() => {
       if (ws.readyState === 1) ws.send(JSON.stringify({ id: 'lecture-native', action_systeme: 'lire_ecran', parametres: {}, via_renderer: true }));
@@ -69,7 +71,7 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
   await writeFile(join(temporaire, 'generated/plugins.mjs'), `export const plugins = {${paquets.map(p => `${JSON.stringify(p)}: () => import(${JSON.stringify(pathToFileURL(join(racine, 'packages', p, 'electron/dist/plugin.mjs')).href)})`).join(',')}};`);
   await writeFile(join(temporaire, 'package.json'), JSON.stringify({ name: 'classinus-pont-test', main: 'main.cjs' }));
   await writeFile(join(temporaire, 'main.cjs'), `
-    const {app} = require('electron');
+    const {app,BrowserWindow,screen} = require('electron');
     app.setPath('userData', ${JSON.stringify(join(temporaire, 'profil'))});
     const {createCapacitorElectronApp} = require(${JSON.stringify(require.resolve('@capawesome/capacitor-electron'))});
     const runtime = createCapacitorElectronApp({singleInstance:false, window:{showOnLaunch:${process.platform === 'win32'},statePersistence:false},
@@ -77,10 +79,28 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
       hooks:{onWindowCreated:w=>{w.webContents.on('console-message',e=>console.log(e.message));}}
     });
     runtime.whenReady.catch(e=>{console.error(e);app.exit(1);});
-    if(process.platform==='win32') runtime.whenReady.then(()=>{const w=runtime.getMainWindow();w.show();w.focus();console.log('FOCUS_CLASSINUS',w.isFocused());});
+    runtime.whenReady.then(async()=>{
+      const w=runtime.getMainWindow();
+      if(process.platform==='win32'){w.show();w.focus();console.log('FOCUS_CLASSINUS',w.isFocused());}
+      const depart=screen.getCursorScreenPoint();
+      const zone=screen.getPrimaryDisplay().bounds;
+      const miroir=new BrowserWindow({title:'classinus-superposition-agent',...zone,show:false,frame:false,transparent:true,webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false,preload:require.resolve('@capawesome/capacitor-electron/preload',{paths:[${JSON.stringify(join(racine,'node_modules'))}]})}});
+      miroir.setIgnoreMouseEvents(true,{forward:true});
+      miroir.webContents.on('page-title-updated',e=>e.preventDefault());
+      miroir.webContents.on('console-message',e=>{
+        console.log(e.message);
+        if(e.message.startsWith('POINTAGE_AFFICHE')) console.log('POINTEUR_WINDOWS_INCHANGE',JSON.stringify(depart)===JSON.stringify(screen.getCursorScreenPoint()));
+      });
+      await miroir.loadURL(new URL('miroir.html',w.webContents.getURL()).href);
+      await new Promise(r=>setTimeout(r,100));
+      await w.webContents.executeJavaScript('window.preparerTestPointage()');
+      console.log('MIROIR_PRET');
+    });
   `);
   const bundle = await build({
-    stdin: { contents: `import './lib/supabase'; import {Capacitor} from '@capacitor/core'; console.log('PLATEFORME',Capacitor.getPlatform());`, resolveDir: racine },
+    stdin: { contents: `import './lib/supabase'; import {Capacitor,registerPlugin} from '@capacitor/core';
+      console.log('PLATEFORME',Capacitor.getPlatform());
+      window.preparerTestPointage=()=>registerPlugin('SuperpositionAgent').pousserEtat({curseur:{x:200,y:150,echelle:1,visible:true,forme:'defaut',enAction:false,repere:'page'},canal:{actif:true}});`, resolveDir: racine },
     bundle: true, write: false, format: 'iife',
     define: {
       'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify('https://supabase.invalid'),
@@ -99,6 +119,17 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
     }}],
   });
   await writeFile(join(temporaire, 'app/bundle.js'), bundle.outputFiles[0].text);
+  const miroirBundle=await build({stdin:{contents:`
+    import {ecouterEtatSuperposition} from './lib/superpositionElectron';
+    ecouterEtatSuperposition(etat=>{
+      const c=document.getElementById('curseur');c.style.left=etat.curseur.x+'px';c.style.top=etat.curseur.y+'px';
+      if(etat.pointageId) console.log('POINTAGE_AFFICHE',etat.curseur.x,etat.curseur.y);
+    });`,resolveDir:racine},bundle:true,write:false,format:'iife',plugins:[{name:'etat-canal-test',setup(b){
+      b.onResolve({filter:/contexteCanalEnDirect$/},a=>({path:a.path,namespace:'etat-canal-test'}));
+      b.onLoad({filter:/.*/,namespace:'etat-canal-test'},()=>({loader:'js',contents:['pousserJournalDepuisAgent','mettreAJourJournalDepuisAgent','afficherTexteDepuisAgent'].map(n=>`export const ${n}=()=>null;`).join('\n')}));
+    }}]});
+  await writeFile(join(temporaire,'app/miroir.js'),miroirBundle.outputFiles[0].text);
+  await writeFile(join(temporaire,'app/miroir.html'),`<html><head><title>classinus-superposition-agent</title></head><body style="background:transparent"><div id="curseur" style="position:fixed;width:20px;height:20px;background:orange"></div><script src="miroir.js"></script></body></html>`);
   const session = {access_token:'session-test',refresh_token:'refresh-test',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:'pc-test'}};
   await writeFile(join(temporaire, 'app/index.html'), `<!doctype html><html><head><title>Classinus</title></head><body><script>localStorage.setItem('sb-supabase-auth-token',${JSON.stringify(JSON.stringify(session))});</script><script src="bundle.js"></script></body></html>`);
   enfant = spawn(require('electron'), ['--no-sandbox', temporaire], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -117,6 +148,13 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
     console.log('OK Windows : Classinus a le focus, lire_ecran lit le texte de la fenêtre externe derrière lui.');
   }
   assert(sorties.includes('PLATEFORME electron'), sorties);
+  await attendre(()=>sorties.includes('MIROIR_PRET'));
+  // Même WS et même IPC que lire_ecran ; l'arrivée doit être confirmée par le miroir réel.
+  connexionRenderer.send(JSON.stringify({id:'pointage-natif',action_systeme:'pointer_ecran',parametres:{x:320,y:240},via_renderer:true}));
+  await attendre(()=>messages.some(m=>m.id==='pointage-natif'&&'resultat' in m));
+  assert.deepEqual(messages.find(m=>m.id==='pointage-natif').resultat,{succes:true});
+  assert(sorties.includes('POINTAGE_AFFICHE'),sorties);
+  assert(sorties.includes('POINTEUR_WINDOWS_INCHANGE true'),sorties);
   console.log('OK : session Supabase -> canal applicatif -> IPC Capacitor -> plugin Electron -> réponse lire_ecran, sans demande sur la seconde connexion.');
 } finally {
   if (enfant && enfant.exitCode === null) {

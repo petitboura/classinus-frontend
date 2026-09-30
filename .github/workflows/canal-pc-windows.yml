@@ -20,6 +20,7 @@ jobs:
       - run: npx tsc -p electron/tsconfig.json --noEmit
       - run: npx tsc -p packages/capacitor-pont-natif-electron/electron/tsconfig.json --noEmit
       - run: node tests/verifier-uia-windows.mjs
+      - run: npm run test:pointage-ecran
       - run: node node_modules/electron/install.js
       - run: npm --prefix packages/capacitor-dossiers-electron run build
       - run: npm --prefix packages/capacitor-pont-natif-electron run build

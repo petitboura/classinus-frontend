@@ -9,6 +9,10 @@ declare module "capacitor-dossiers-electron/electron/dist/plugin.mjs" {
   export function obtenirAppareilIdPc(): string;
 }
 
+declare module "capacitor-superposition-electron/electron/dist/plugin.mjs" {
+  export function pointerCurseurEcran(point: { x: number; y: number }): Promise<{ succes: true }>;
+}
+
 // screenshot-desktop n'a pas de paquet @types officiel au moment
 // d'ecrire ceci. Signature minimale, limitee a l'usage fait ici (appel
 // sans argument, resultat Buffer PNG non exploite pour l'instant -- voir

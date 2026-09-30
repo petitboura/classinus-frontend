@@ -40,6 +40,7 @@
 // a etre retouche si ces formes evoluent.
 
 import { BrowserWindow, screen } from "electron";
+import { randomUUID } from "node:crypto";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 
 // Identification des deux fenetres par leur titre plutot que par un pont
@@ -67,6 +68,72 @@ type EtatPousse = {
   [cle: string]: unknown;
 };
 
+let dernierEtat: EtatPousse | null = null;
+let notifierEtat: ((etat: EtatPousse) => void) | null = null;
+let notifierInteraction: ((action: Record<string, unknown>) => void) | null = null;
+let pointageEnCours = false;
+let pointAffiche: PointEcranLocal | null = null;
+let dernierPointPrincipal: PointEcranLocal | null = null;
+const confirmationsPointage = new Map<string, () => void>();
+
+/** Trajectoire calculée dans Electron : aucun appel au pilote souris ni au RAF du renderer principal. */
+export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<{ succes: true }> {
+  const fenetre = trouverFenetreSuperposition();
+  const etat = dernierEtat;
+  const notifier = notifierEtat;
+  if (!fenetre || fenetre.isDestroyed() || !etat?.curseur || !notifier) throw new Error("La superposition de Clovis n'est pas prête.");
+  if (!(etat.canal as { actif?: boolean } | undefined)?.actif) throw new Error("Le canal en direct n'est pas actif.");
+  if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) throw new Error("Coordonnées de pointage invalides.");
+  if (pointageEnCours) throw new Error("Un pointage est déjà en cours.");
+  const cibleDip = process.platform === "win32" || process.platform === "linux" ? screen.screenToDipPoint({ x: Math.round(p.x), y: Math.round(p.y) }) : p;
+  if (!screen.getAllDisplays().some(d => cibleDip.x >= d.bounds.x && cibleDip.x < d.bounds.x + d.bounds.width && cibleDip.y >= d.bounds.y && cibleDip.y < d.bounds.y + d.bounds.height)) throw new Error("Le point visé est hors des écrans.");
+  const origine = fenetre.getContentBounds();
+  const zoom = fenetre.webContents.getZoomFactor();
+  const cible = { x: (cibleDip.x - origine.x) / zoom, y: (cibleDip.y - origine.y) / zoom };
+  const depart = pointAffiche ?? etat.curseur;
+  const dx = cible.x - depart.x, dy = cible.y - depart.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  const courbure = Math.min(Math.max(distance * 0.25, 30), 160);
+  const controle = { x: (depart.x + cible.x) / 2 - dy * courbure / distance, y: (depart.y + cible.y) / 2 + dx * courbure / distance };
+  const duree = Math.min(Math.max(distance / 900, 0.35), 1.1) * 1000;
+  const id = randomUUID();
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  let animation: ReturnType<typeof setTimeout> | undefined;
+  const confirmation = new Promise<void>((resolve, reject) => {
+    confirmationsPointage.set(id, resolve);
+    minuteur = setTimeout(() => reject(new Error("La superposition n'a pas confirmé l'affichage du curseur.")), 4000);
+  });
+  // Attacher immédiatement le rejet, y compris si la fenêtre disparaît pendant la trajectoire.
+  void confirmation.catch(() => {});
+  pointageEnCours = true;
+  try {
+    const debut = performance.now();
+    await new Promise<void>((resolve, reject) => {
+      const avancer = () => {
+        try {
+        if (fenetre.isDestroyed()) throw new Error("La superposition a été fermée pendant le pointage.");
+        const progression = Math.min((performance.now() - debut) / duree, 1);
+        const t = progression * progression * (3 - 2 * progression), u = 1 - t;
+        pointAffiche = { x: u * u * depart.x + 2 * u * t * controle.x + t * t * cible.x, y: u * u * depart.y + 2 * u * t * controle.y + t * t * cible.y };
+        notifier({ ...dernierEtat, curseur: { ...etat.curseur, ...pointAffiche, visible: true, enAction: progression < 1, forme: progression < 1 ? "defaut" : "main" }, ...(progression === 1 ? { pointageId: id } : {}) });
+        if (progression === 1) resolve(); else animation = setTimeout(avancer, 16);
+        } catch (e) { reject(e); }
+      };
+      avancer();
+    });
+    await confirmation;
+    // Le renderer principal garde la position absolue, même lors des prochains états de journal.
+    notifierInteraction?.({ fonction: "deposerCurseur", args: [cibleDip.x, cibleDip.y], repere: "ecran" });
+    return { succes: true };
+  } finally {
+    clearTimeout(minuteur);
+    clearTimeout(animation);
+    confirmationsPointage.delete(id);
+    pointageEnCours = false;
+  }
+}
+
+
 // Correctif (28/09/2026, demande Bourama) : la fenetre de superposition
 // ne doit etre visible que lorsque le canal en direct est actif, ni au
 // lancement, ni en permanence. pousserEtat est le seul signal recu a
@@ -91,6 +158,11 @@ function synchroniserVisibiliteSuperposition(actif: boolean) {
 }
 
 class SuperpositionAgentImpl extends ElectronPlugin {
+  load(): void { notifierInteraction = action => this.context.notifyListeners("interaction", action); }
+
+  async accuserPointage(p: { id: string }): Promise<void> {
+    confirmationsPointage.get(p.id)?.();
+  }
   async preparerDeplacement(p: { depart: PointEcranLocal; repereDepart: string; cible: PointEcranLocal; repereCible: string }): Promise<{ depart: PointEcranLocal; cible: PointEcranLocal }> {
     const principale = trouverFenetrePrincipale();
     const superposition = trouverFenetreSuperposition();
@@ -117,6 +189,8 @@ class SuperpositionAgentImpl extends ElectronPlugin {
   }
 
   async pousserEtat(etat: EtatPousse): Promise<void> {
+    notifierEtat = e => this.context.notifyListeners("etat", e);
+    notifierInteraction = action => this.context.notifyListeners("interaction", action);
     const canal = etat.canal as { actif?: unknown } | undefined;
     if (canal && typeof canal.actif === "boolean") {
       synchroniserVisibiliteSuperposition(canal.actif);
@@ -138,9 +212,15 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     const point = etat.curseur.repere === "ecran" ? etat.curseur : {
       x: etat.curseur.x * zoom + bornes.x, y: etat.curseur.y * zoom + bornes.y,
     };
+    const positionPrincipale = { x: etat.curseur.x, y: etat.curseur.y };
+    // Une action DOM peut reprendre la main ; un simple rafraîchissement de journal ne déplace rien.
+    if (!pointageEnCours && dernierPointPrincipal && (positionPrincipale.x !== dernierPointPrincipal.x || positionPrincipale.y !== dernierPointPrincipal.y)) pointAffiche = null;
+    dernierPointPrincipal = positionPrincipale;
+    const curseur = { ...etat.curseur, x: (point.x - origine.x) / zoomSuperposition, y: (point.y - origine.y) / zoomSuperposition };
+    dernierEtat = { ...etat, curseur };
     this.context.notifyListeners("etat", {
       ...etat,
-      curseur: { ...etat.curseur, x: (point.x - origine.x) / zoomSuperposition, y: (point.y - origine.y) / zoomSuperposition },
+      curseur: pointAffiche ? { ...curseur, ...pointAffiche, visible: true, enAction: pointageEnCours } : curseur,
     });
   }
 
@@ -175,6 +255,6 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "pousserEtat", "envoyerInteraction", "definirCapturerSouris"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "pousserEtat", "envoyerInteraction", "definirCapturerSouris"] },
   SuperpositionAgentImpl
 );

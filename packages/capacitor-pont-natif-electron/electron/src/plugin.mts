@@ -35,6 +35,7 @@ import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-elec
 import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/plugin.mjs";
 // Lot V : lecture en texte de la fenetre au premier plan (UI Automation).
 import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
+import { pointerCurseurEcran } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -149,6 +150,8 @@ let notifierWeb: NotifierWeb | null = null;
 
 function decrireActionSysteme(type: string, parametres: Record<string, unknown>): string {
   switch (type) {
+    case "pointer_ecran":
+      return "Clovis pointe à l'écran";
     case "cliquer_ecran":
       return "Clovis a cliqué à l'écran";
     case "taper_clavier":
@@ -216,6 +219,8 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
 
   try {
     switch (type) {
+      case "pointer_ecran":
+        return await pointerCurseurEcran({ x: Number(parametres.x), y: Number(parametres.y) });
       case "cliquer_ecran": {
         const { mouse, Point, Button } = await import("@nut-tree-fork/nut-js");
         const x = Number(parametres.x);

@@ -23,12 +23,12 @@ try {
       'electron': `const t=globalThis.testPointage;
         export const BrowserWindow={getAllWindows:()=>[
           {getTitle:()=>"Classinus",isDestroyed:()=>false,getContentBounds:()=>t.bornes,webContents:{getZoomFactor:()=>t.zoom}},
-          {getTitle:()=>"classinus-superposition-agent",isDestroyed:()=>false,getContentBounds:()=>t.origine,webContents:{getZoomFactor:()=>t.zoomSuperposition}}
+          {getTitle:()=>"classinus-superposition-agent",isDestroyed:()=>false,showInactive:()=>{},hide:()=>{},getContentBounds:()=>t.origine,webContents:{getZoomFactor:()=>t.zoomSuperposition}}
         ]};
         export const screen={screenToDipPoint:p=>({x:p.x/1.5,y:p.y/1.5}),getAllDisplays:()=>[{bounds:{x:-1280,y:-100,width:3200,height:1180}}]};`,
       '@capawesome/capacitor-electron/plugin': `export class ElectronPlugin{context={notifyListeners:(nom,etat)=>globalThis.testPointage.notifications.push({nom,etat})}}; export const defineElectronPlugin=(_,C)=>new C();`,
     })] });
-  const pont = (await import(pathToFileURL(natif).href)).SuperpositionAgent;
+  const { SuperpositionAgent: pont, pointerCurseurEcran } = await import(pathToFileURL(natif).href);
   const points = await pont.preparerDeplacement({depart:{x:40,y:80},repereDepart:'page',cible:{x:900,y:600},repereCible:'ecran'});
   assert.deepEqual(points, {depart:{x:150,y:180},cible:{x:600,y:400}});
   await pont.pousserEtat({curseur:{...points.cible,repere:'ecran',visible:true}});
@@ -42,6 +42,23 @@ try {
   await pont.envoyerInteraction({fonction:'deposerCurseur',args:[1880,500]});
   assert.deepEqual(etat.notifications.at(-1).etat.args,[600,400]);
   assert.equal(etat.notifications.at(-1).etat.repere,'ecran');
+  // Renderer principal sans requestAnimationFrame : le trajet doit quand même finir.
+  globalThis.requestAnimationFrame = () => { throw new Error('RAF principal suspendu'); };
+  await pont.pousserEtat({curseur:{x:600,y:400,repere:'ecran',visible:true},canal:{actif:true}});
+  let pointageTermine=false;
+  const confirmer=setInterval(()=>{
+    const dernier=etat.notifications.findLast(n=>n.nom==='etat'&&n.etat.pointageId);
+    if(dernier) { void pont.accuserPointage({id:dernier.etat.pointageId}); }
+  },10);
+  try {
+    assert.deepEqual(await pointerCurseurEcran({x:1298,y:52}),{succes:true});
+    pointageTermine=true;
+  } finally {clearInterval(confirmer);delete globalThis.requestAnimationFrame;}
+  assert(pointageTermine);
+  const arrivee=etat.notifications.findLast(n=>n.nom==='etat'&&n.etat.pointageId);
+  assert(Math.abs(arrivee.etat.curseur.x-(1298/1.5+1280))<0.001);
+  assert.equal(etat.notifications.at(-1).etat.repere,'ecran');
+  await assert.rejects(pointerCurseurEcran({x:900,y:600}),/confirmé/); // sans réponse du miroir : jamais un faux succès
   etat.pont = pont;
   const contexte = join(temporaire,'contexte.mjs');
   await build({entryPoints:[join(racine,'lib/contexteCurseurVirtuel.tsx')],outfile:contexte,bundle:true,format:'esm',platform:'node',plugins:[substitutions({
