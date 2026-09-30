@@ -115,8 +115,14 @@ function resoudrePoint(cible: PointEcran | HTMLElement): PointEcran {
 // (remplacé par React pendant le trajet), garde `dernierPointValide` au
 // lieu du point (0, 0) que renvoie alors getBoundingClientRect.
 function pointValide(cible: PointEcran | HTMLElement, dernierPointValide: PointEcran): PointEcran {
-  if (cible instanceof HTMLElement && !cible.isConnected) return dernierPointValide;
-  return resoudrePoint(cible);
+  if (cible instanceof HTMLElement) {
+    if (!cible.isConnected) return dernierPointValide;
+    const rect = cible.getBoundingClientRect();
+    // Un élément masqué reste connecté mais sa boîte devient (0, 0, 0, 0).
+    if (rect.width <= 0 || rect.height <= 0) return dernierPointValide;
+  }
+  const point = resoudrePoint(cible);
+  return Number.isFinite(point.x) && Number.isFinite(point.y) ? point : dernierPointValide;
 }
 
 // Point de contrôle décalé perpendiculairement au segment départ/arrivée,

@@ -87,6 +87,11 @@ try {
   await curseur.deplacerVers({x:20,y:30});
   assert.equal(curseur.repere.get(),'page');
   assert.equal(curseur.x.get(),20); assert.equal(curseur.y.get(),30);
+  const cibleMasquee = new HTMLElement();
+  cibleMasquee.isConnected = true;
+  cibleMasquee.getBoundingClientRect = () => ({left:0,top:0,width:0,height:0});
+  await curseur.deplacerVers(cibleMasquee);
+  assert.equal(curseur.x.get(),20); assert.equal(curseur.y.get(),30); // pas de retour au coin.
   curseur.deposerPoint({x:700,y:500},'ecran');
   etat.dernierUpdate(0.5); // une ancienne animation ne doit pas écraser le dépôt.
   curseur.afficher();
