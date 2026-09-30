@@ -19,6 +19,10 @@
 // que si une demande n'en fournit pas.
 
 import { execFile } from "node:child_process";
+import { writeFileSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomBytes } from "node:crypto";
 
 export interface LimitesLectureEcran {
   nbMaxElements: number;
@@ -152,7 +156,15 @@ export function construireScript(limites: LimitesLectureEcran, pidClassinus: num
   // bornes par entierBorne : aucune chaine venue de l'exterieur.
   return `
 $ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Sans console (processus lance en arriere plan, fenetre masquee), regler l'encodage de la
+# console leve "Le handle est invalide" AVANT le bloc try : le script s'arretait sans rien
+# renvoyer. On ne s'appuie donc plus sur l'encodage : la sortie est du JSON 100 % ASCII.
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
+function Sortir($objet) {
+  $json = $objet | ConvertTo-Json -Depth 6 -Compress
+  $ascii = [regex]::Replace($json, '[^\\x00-\\x7F]', { param($m) ('\\u{0:x4}' -f [int][char]$m.Value) })
+  [Console]::Out.Write($ascii)
+}
 $nbMaxElements = ${limites.nbMaxElements}
 $nbMaxFenetres = ${limites.nbMaxFenetres}
 $longueurMaxNom = ${limites.longueurMaxNom}
@@ -206,7 +218,7 @@ ${CODE_CSHARP}
       throw "Aucune fenêtre externe disponible pour cette action."
     }
     if (-not [LectureFenetres]::SetForegroundWindow($fg)) { throw "Impossible de rendre le focus à la fenêtre cible." }
-    $resultat | ConvertTo-Json -Depth 6 -Compress
+    Sortir $resultat
     exit 0
   }
 
@@ -226,7 +238,7 @@ ${CODE_CSHARP}
 
   if ($pidFg -eq $pidClassinus) {
     $resultat.fenetre_classinus = $true
-    $resultat | ConvertTo-Json -Depth 6 -Compress
+    Sortir $resultat
     exit 0
   }
 
@@ -363,15 +375,11 @@ ${CODE_CSHARP}
 
   $resultat.coupe = $script:coupe
   if ($script:elements.Count -gt 0) { $resultat.mode = 'uia' }
-  $resultat | ConvertTo-Json -Depth 6 -Compress
+  Sortir $resultat
 } catch {
-  @{ erreur = [string]$_.Exception.Message } | ConvertTo-Json -Compress
+  Sortir @{ erreur = [string]$_.Exception.Message }
 }
 `;
-}
-
-function versBase64Utf16(script: string): string {
-  return Buffer.from(script, "utf16le").toString("base64");
 }
 
 function normaliserTableau<T>(valeur: unknown): T[] {
@@ -402,19 +410,49 @@ export function lireFenetreAuPremierPlan(
   const limites = limitesDepuisParametres(parametres);
   const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre);
 
+  // Le script est ecrit dans un fichier temporaire plutot que passe en -EncodedCommand :
+  // le script encode approche la limite de 32 767 caracteres d'une ligne de commande
+  // Windows, et un fichier evite aussi tout probleme d'encodage (BOM UTF-8 pour que
+  // Windows PowerShell 5.1 lise correctement les accents).
+  const fichierScript = join(tmpdir(), `classinus-lecture-${process.pid}-${randomBytes(6).toString("hex")}.ps1`);
+  try {
+    writeFileSync(fichierScript, "\uFEFF" + script, "utf8");
+  } catch (e) {
+    return Promise.resolve({
+      erreur: `Lecture de l'écran impossible : écriture du script temporaire impossible (${e instanceof Error ? e.message : String(e)})`,
+    });
+  }
+  const nettoyer = () => {
+    try {
+      unlinkSync(fichierScript);
+    } catch {
+      // deja supprime ou inaccessible : sans consequence
+    }
+  };
+
   return new Promise((resolve) => {
     execFile(
       "powershell.exe",
-      ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", versBase64Utf16(script)],
+      ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", fichierScript],
       {
         windowsHide: true,
         timeout: limites.delaiMaxMs + MARGE_DEMARRAGE_MS,
         maxBuffer: TAILLE_MAX_SORTIE_OCTETS,
         encoding: "utf8",
       },
-      (erreur, sortie) => {
+      (erreur, sortie, sortieErreur) => {
+        nettoyer();
         if (erreur && !sortie) {
-          resolve({ erreur: `Lecture de l'écran impossible : ${erreur.message}` });
+          // Le message natif de Node contient tout le script encode (illisible, tres long) :
+          // on ne garde que le code de sortie, le signal et le texte d'erreur de PowerShell.
+          const detailErreur = String(sortieErreur ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
+          const e = erreur as NodeJS.ErrnoException & { killed?: boolean; signal?: string | null };
+          resolve({
+            erreur:
+              `Lecture de l'écran impossible : PowerShell a échoué (code ${String(e.code)}, signal ${String(e.signal ?? "aucun")}, ` +
+              `arrêt forcé ${e.killed ? "oui" : "non"})` +
+              (detailErreur ? ` : ${detailErreur}` : " sans message"),
+          });
           return;
         }
         let brut: unknown;
