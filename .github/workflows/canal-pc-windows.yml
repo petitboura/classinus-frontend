@@ -1,7 +1,7 @@
 name: Lecture PC Windows
 on:
   push:
-    branches: [fix/canal-pc-lecture-complete]
+    branches: [fix/canal-pc-lecture-complete, feature/canal-en-direct-pc-lot-q]
   pull_request:
     branches: [feature/canal-en-direct-pc-lot-q]
   workflow_dispatch:
@@ -20,3 +20,8 @@ jobs:
       - run: npx tsc -p electron/tsconfig.json --noEmit
       - run: npx tsc -p packages/capacitor-pont-natif-electron/electron/tsconfig.json --noEmit
       - run: node tests/verifier-uia-windows.mjs
+      - run: node node_modules/electron/install.js
+      - run: npm --prefix packages/capacitor-dossiers-electron run build
+      - run: npm --prefix packages/capacitor-pont-natif-electron run build
+      - run: npm --prefix packages/capacitor-superposition-electron run build
+      - run: node tests/verifier-pont-electron.mjs

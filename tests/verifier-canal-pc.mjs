@@ -57,7 +57,7 @@ try {
     define: { 'process.env.NEXT_PUBLIC_API_URL': JSON.stringify(api) },
     plugins: [substituts(p => {
       if (p.endsWith('/supabase') || p === './supabase') return `export const supabase={auth:{getSession:async()=>({data:{session:{access_token:'session-test'}}}),onAuthStateChange:()=>{}}};`;
-      if (p === '@capacitor/core') return `export const Capacitor={getPlatform:()=>window.plateforme||'electron',isNativePlatform:()=>true}; export const registerPlugin=()=>({obtenirInfosAppareil:async()=>({appareilId:'pc-test'})});`;
+      if (p === '@capacitor/core') return `export const Capacitor={getPlatform:()=>window.plateforme||'electron',isNativePlatform:()=>true,isPluginAvailable:()=>false}; export const registerPlugin=()=>({obtenirInfosAppareil:async()=>({appareilId:'pc-test'})});`;
       if (p.endsWith('contexteCanalEnDirect')) return contexteCanal;
       if (p.endsWith('contexteCurseurVirtuel')) return 'export const deplacerCurseurDepuisAgent=async()=>{};';
       if (p === './api') return 'export const appelerApiStream=async()=>{};';
@@ -134,7 +134,7 @@ try {
   assert(ecran.texte.includes('Calculatrice'));
   assert(globalThis.canalPcTest.scripts[0].includes('$handleSuperposition = [IntPtr]([long]42)'));
   // Une erreur du pilote clavier remonte, sans couper la lecture UIA ni perdre la réponse WS.
-  assert(globalThis.canalPcTest.scripts[0].includes('if ($h -ne $handleSuperposition)'));
+  assert(globalThis.canalPcTest.scripts[0].includes('$h -ne $handleSuperposition -and [LectureFenetres]::Pid($h) -ne $pidClassinus'));
   await page.evaluate(() => { window.plateforme='web'; document.dispatchEvent(new Event('visibilitychange')); });
   await attendre(async()=> !(await etat()).appareils.includes('pc-test'), 'onglet web masqué fermé');
   await page.evaluate(() => { Object.defineProperty(document,'visibilityState',{configurable:true,value:'visible'}); document.dispatchEvent(new Event('visibilitychange')); });
