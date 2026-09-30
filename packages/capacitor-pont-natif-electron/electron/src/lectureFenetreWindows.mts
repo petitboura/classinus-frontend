@@ -490,6 +490,12 @@ ${CODE_CSHARP}
     try {
       $script:zoneCourante = 'menu ouvert'
       Visiter ($AE::FromHandle($annexe).GetUpdatedCache($cr)) 0 ''
+      if ($script:elements.Count -eq $avantAnnexe) {
+        # Menus natifs : l'arbre UIA est souvent accroche au bureau, pas a la fenetre elle-meme.
+        $condition = New-Object System.Windows.Automation.PropertyCondition($AE::NativeWindowHandleProperty, [int]$annexe.ToInt64())
+        $depuisBureau = $AE::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+        if ($null -ne $depuisBureau) { Visiter ($depuisBureau.GetUpdatedCache($cr)) 0 '' }
+      }
     } catch { } finally { $script:zoneCourante = $null }
     if ($script:elements.Count -gt $avantAnnexe) { $menuOuvert = $true }
   }

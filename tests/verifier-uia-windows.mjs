@@ -205,6 +205,14 @@ foreach ($h in [DiagFenetres]::Sans_titre()) {
     "racine : type=" + $racine.Current.ControlType.ProgrammaticName + " nom=[" + $racine.Current.Name + "] classe=" + $racine.Current.ClassName + " horsecran=" + $racine.Current.IsOffscreen
     $tous = $racine.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
     "descendants (vue brute) : " + $tous.Count
+    $cond = New-Object System.Windows.Automation.PropertyCondition($AE::NativeWindowHandleProperty, [int][long]$h)
+    $bureau = $AE::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+    if ($null -eq $bureau) { "depuis le bureau : element introuvable" } else {
+      "depuis le bureau : type=" + $bureau.Current.ControlType.ProgrammaticName + " classe=" + $bureau.Current.ClassName
+      $fils = $bureau.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+      "  descendants depuis le bureau : " + $fils.Count
+      $k = 0; foreach ($f in $fils) { if ($k++ -ge 8) { break }; "    * " + $f.Current.ControlType.ProgrammaticName + " [" + $f.Current.Name + "]" }
+    }
     $i = 0
     foreach ($e in $tous) { if ($i++ -ge 15) { break }; "  - " + $e.Current.ControlType.ProgrammaticName + " [" + $e.Current.Name + "] classe=" + $e.Current.ClassName + " horsecran=" + $e.Current.IsOffscreen + " cle=" + $e.Current.IsControlElement }
     $ctl = $racine.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
