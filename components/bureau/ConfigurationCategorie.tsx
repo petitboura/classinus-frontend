@@ -2,7 +2,7 @@
 
 import { useState, type MouseEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { lireMesComportements, activerDesactiverComportement, type Comportement, type CategorieConfiguration } from "@/lib/api";
 import { texteConfiguration, type IdTexteConfiguration } from "@/lib/i18n/textesConfiguration";
@@ -28,6 +28,8 @@ export function ConfigurationCategorie({
   categorie,
   libelleNouveau,
   texteVide,
+  placeholderTexte,
+  Icone,
 }: {
   agentId: string;
   categorie: CategorieConfiguration;
@@ -35,6 +37,14 @@ export function ConfigurationCategorie({
   libelleNouveau: string;
   /** Texte affiché quand la liste de cette catégorie est vide. */
   texteVide: string;
+  /** 29/09/2026, demande Bourama : placeholder du champ principal,
+   * propre à cette catégorie. */
+  placeholderTexte: string;
+  /** 29/09/2026, demande Bourama ("chacune doivent être différente
+   * entre elle") : icône propre à cette catégorie, affichée sur le
+   * bouton "+" ET dans l'éditeur lui même (voir EditeurComportement).
+   * Jamais réutilisée d'un autre écran, voir lib/sectionsBureau.tsx. */
+  Icone: LucideIcon;
 }) {
   const queryClient = useQueryClient();
   const cle = clesRequetes.configurationSkills(agentId, categorie);
@@ -87,7 +97,7 @@ export function ConfigurationCategorie({
         onClick={() => setPanneau({ type: "creation" })}
         className="flex w-fit items-center gap-1.5 rounded-full border border-dj-bordure bg-dj-surface px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
       >
-        <Plus size={14} /> {libelleNouveau}
+        <Icone size={14} /> {libelleNouveau}
       </button>
 
       {liste.length === 0 ? (
@@ -110,6 +120,8 @@ export function ConfigurationCategorie({
             placeholderQuandUtiliser={texteConfiguration("champ.quandUtiliser.placeholder")}
             titreCreation={texteConfiguration(`titre.creation.${categorie}` as IdTexteConfiguration)}
             titreEdition={texteConfiguration(`titre.edition.${categorie}` as IdTexteConfiguration)}
+            placeholderTexte={placeholderTexte}
+            IconeCategorie={Icone}
             onFermer={() => demarrerFermeture(fermer)}
             onCree={(c) => queryClient.setQueryData<Comportement[]>(cle, (prec) => [...(prec || []), c])}
             onModifie={(c) => queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).map((x) => (x.id === c.id ? c : x)))}
