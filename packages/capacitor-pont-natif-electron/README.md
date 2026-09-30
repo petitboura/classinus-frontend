@@ -49,6 +49,13 @@ backend avec chaque demande (`core/outils_action_agent_pc.py`), elles ne
 sont reglees qu'a cet endroit. Si la lecture echoue (PowerShell absent ou
 bloque, delai depasse), on renvoie au moins le titre, en mode `titre_seul`.
 
+Lecture du texte long (documents, champs multilignes) : par l'API COM native
+de UI Automation (`IUIAutomation`, classe `LectureTexteCom` du script), et non
+par le wrapper .NET `TextPatternRange.GetText()`, qui plante Windows
+PowerShell avec une violation d'acces sous Windows 11. Ordre des methodes COM
+et GUID verifies contre `uiautomationclient.h` du SDK Windows. Non verifie sur
+une vraie machine Windows a ce jour.
+
 Filet de securite : si PowerShell s'arrete brutalement sans rien renvoyer
 (plantage de Windows dans la lecture du texte long d'un document ou d'un
 champ, code 3221225477), la lecture est relancee une seule fois sans cette

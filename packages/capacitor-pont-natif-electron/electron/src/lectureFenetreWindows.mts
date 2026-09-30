@@ -118,6 +118,70 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+[StructLayout(LayoutKind.Sequential)] public struct PtUia { public int X; public int Y; }
+// Interfaces COM de UI Automation (uiautomationclient.h du SDK Windows). Seul l'ORDRE des
+// methodes compte (table virtuelle) : les methodes inutilisees sont des emplacements vides.
+[ComImport, Guid("30cbe57d-d9d0-452a-ab13-7ac5ac4825ee"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUia {
+  void M0(); void M1(); void M2();
+  void ElementFromHandle(IntPtr hwnd, out IUiaElement element);
+  void ElementFromPoint(PtUia pt, out IUiaElement element);
+}
+[ComImport, Guid("d22108aa-8ac5-49a5-837b-37bbb3d7591e"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUiaElement {
+  void M0(); void M1(); void M2(); void M3(); void M4(); void M5(); void M6(); void M7(); void M8(); void M9();
+  void M10(); void M11(); void M12();
+  void GetCurrentPattern(int patternId, [MarshalAs(UnmanagedType.IUnknown)] out object pattern);
+}
+[ComImport, Guid("32eba289-3583-42c9-9c59-3b6d9a1e9b6a"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUiaTextPattern {
+  void M0(); void M1(); void M2();
+  void GetVisibleRanges(out IUiaTextRangeArray ranges);
+}
+[ComImport, Guid("ce4ae76a-e717-4c98-81ea-47371d028eb6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUiaTextRangeArray {
+  void GetLength(out int length);
+  void GetElement(int index, out IUiaTextRange range);
+}
+[ComImport, Guid("a543cc6a-f4ae-494b-8239-c814481187a8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUiaTextRange {
+  void M0(); void M1(); void M2(); void M3(); void M4(); void M5(); void M6(); void M7(); void M8();
+  void GetText(int maxLength, [MarshalAs(UnmanagedType.BStr)] out string text);
+}
+public static class LectureTexteCom {
+  // Le wrapper .NET de UI Automation (TextPatternRange.GetText) plante Windows PowerShell avec
+  // une violation d'acces sous Windows 11 : le texte est lu par l'API COM native a la place.
+  // Renvoie null si l'element n'expose pas de texte ou si la lecture echoue.
+  public static string Lire(IntPtr hwnd, int x, int y, int maxCar) {
+    try {
+      IUia uia = (IUia)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("ff48dba4-60ef-4201-aa87-54103eef594e")));
+      IUiaElement el = null;
+      if (hwnd != IntPtr.Zero) { uia.ElementFromHandle(hwnd, out el); }
+      else { PtUia pt = new PtUia(); pt.X = x; pt.Y = y; uia.ElementFromPoint(pt, out el); }
+      if (el == null) return null;
+      object obj = null;
+      el.GetCurrentPattern(10014, out obj);
+      IUiaTextPattern tp = obj as IUiaTextPattern;
+      if (tp == null) return null;
+      IUiaTextRangeArray plages = null;
+      tp.GetVisibleRanges(out plages);
+      if (plages == null) return null;
+      int n = 0;
+      plages.GetLength(out n);
+      StringBuilder sb = new StringBuilder();
+      int restant = maxCar;
+      for (int i = 0; i < n && restant > 0; i++) {
+        IUiaTextRange r = null;
+        plages.GetElement(i, out r);
+        if (r == null) continue;
+        string t = null;
+        r.GetText(restant, out t);
+        if (!string.IsNullOrEmpty(t)) { if (sb.Length > 0) sb.Append(' '); sb.Append(t); restant -= t.Length; }
+      }
+      return sb.ToString();
+    } catch (Exception) { return null; }
+  }
+}
 public static class LectureFenetres {
   delegate bool EnumProc(IntPtr h, IntPtr l);
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr l);
@@ -292,19 +356,11 @@ ${CODE_CSHARP}
       }
     } catch { }
     if ($lireTexteLong -and [string]::IsNullOrWhiteSpace($valeur) -and ($typeCle -eq 'Edit' -or $typeCle -eq 'Document')) {
+      # Lecture du texte par l'API COM native (le wrapper .NET plante sous Windows 11).
       try {
-        $obj2 = $null
-        if ($el.TryGetCurrentPattern([System.Windows.Automation.TextPattern]::Pattern, [ref]$obj2)) {
-          $morceaux = @()
-          $restant = $longueurMaxValeur
-          foreach ($r in $obj2.GetVisibleRanges()) {
-            if ($restant -le 0) { break }
-            $t = $r.GetText($restant)
-            $morceaux += $t
-            $restant -= $t.Length
-          }
-          $valeur = ($morceaux -join ' ')
-        }
+        $r = $el.Cached.BoundingRectangle
+        $t = [LectureTexteCom]::Lire([IntPtr]$el.Cached.NativeWindowHandle, [int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2), $longueurMaxValeur)
+        if ($null -ne $t) { $valeur = $t }
       } catch { }
     }
     return $valeur
