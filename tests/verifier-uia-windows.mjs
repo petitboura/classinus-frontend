@@ -135,6 +135,39 @@ try {
   await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='menu');
   const avecMenu = await lireFenetreAuPremierPlan({},etat.superposition);
   assert.equal(avecMenu.titre_fenetre_active,titre,JSON.stringify(avecMenu));
+  if (avecMenu.menu_ouvert !== true) {
+    // Diagnostic : fenetres visibles dans l'ordre d'affichage (haut vers bas), pour voir ou est le menu.
+    const diag = `
+Add-Type -TypeDefinition @'
+using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
+public static class DiagFenetres {
+  delegate bool Cb(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] static extern bool EnumWindows(Cb f, IntPtr l);
+  [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassNameW(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowTextW(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint p);
+  [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int i);
+  [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint c);
+  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+  public static string Liste() {
+    StringBuilder r = new StringBuilder(); int n = 0; IntPtr fg = GetForegroundWindow();
+    EnumWindows(delegate(IntPtr h, IntPtr l) {
+      if (!IsWindowVisible(h)) return true;
+      StringBuilder c = new StringBuilder(256); GetClassNameW(h, c, 256);
+      StringBuilder t = new StringBuilder(256); GetWindowTextW(h, t, 256);
+      uint p; GetWindowThreadProcessId(h, out p);
+      r.Append(n++ + ":" + (h == fg ? "FG " : "") + c + "|" + t + "|pid=" + p + "|ex=" + GetWindowLong(h, -20).ToString("x") + "|owner=" + (GetWindow(h, 4) != IntPtr.Zero) + "; ");
+      return true;
+    }, IntPtr.Zero);
+    return r.ToString();
+  }
+}
+'@
+[DiagFenetres]::Liste()`;
+    const liste = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(diag,'utf16le').toString('base64')],{encoding:'utf8',timeout:30000});
+    throw new Error('Menu non détecté. Fenêtres visibles (haut vers bas) : '+liste.stdout.slice(0,2200)+' | lecture : '+JSON.stringify(avecMenu).slice(0,600));
+  }
   assert.equal(avecMenu.menu_ouvert,true,JSON.stringify(avecMenu));
   const copier = avecMenu.elements.find(e=>e.nom==='Copier le texte');
   assert(copier && copier.zone==='menu ouvert' && Number.isFinite(copier.x),JSON.stringify(avecMenu));
