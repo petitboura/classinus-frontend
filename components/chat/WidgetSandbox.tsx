@@ -1,9 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppWindow, Loader2 } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { useTheme } from "@/lib/useTheme";
+
+// Adaptation de la hauteur du cadre au contenu du widget. Le cadre part de
+// HAUTEUR_INITIALE_WIDGET_PX (la hauteur fixe d'avant, h-96) puis suit ce que
+// le widget annonce, sans jamais dépasser HAUTEUR_MAX_WIDGET_PX : au delà,
+// le widget défile à l'intérieur de son cadre. Un widget dont la mise en
+// page dépend de la hauteur de la fenêtre (100vh) grandirait sans fin, car
+// chaque agrandissement du cadre agrandit le contenu : après
+// NB_CROISSANCES_SUSPECTES_WIDGET agrandissements de suite, rapprochés de
+// moins de DELAI_CROISSANCE_SUSPECTE_MS, on revient à la hauteur initiale
+// et le cadre ne bouge plus.
+const TYPE_MESSAGE_HAUTEUR_WIDGET = "dj-widget-hauteur";
+const HAUTEUR_INITIALE_WIDGET_PX = 384;
+const HAUTEUR_MAX_WIDGET_PX = 1200;
+const NB_CROISSANCES_SUSPECTES_WIDGET = 10;
+const DELAI_CROISSANCE_SUSPECTE_MS = 300;
 
 // Bloc ```html ou ```widget du markdown -- le modèle peut générer un
 // mini-outil autonome (calculateur, formulaire, mini-jeu) en HTML/CSS/JS
@@ -82,6 +97,24 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
         });
       })();
     </script>
+    <script>
+      // Envoie la hauteur du contenu au parent, qui adapte le cadre pour
+      // que le widget se lise sans défilement interne. Seule la hauteur
+      // de <body> est mesurée : celle de <html> ne descendrait jamais
+      // sous la hauteur du cadre, donc le cadre ne pourrait plus rétrécir.
+      (function () {
+        var derniere = -1;
+        function envoyer() {
+          var h = Math.ceil(document.body.getBoundingClientRect().height);
+          if (h === derniere) return;
+          derniere = h;
+          parent.postMessage({ type: '${TYPE_MESSAGE_HAUTEUR_WIDGET}', hauteur: h }, '*');
+        }
+        if (window.ResizeObserver) new ResizeObserver(envoyer).observe(document.body);
+        window.addEventListener('load', envoyer);
+        envoyer();
+      })();
+    </script>
     </body></html>`;
 }
 
@@ -99,12 +132,67 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
 export function WidgetSandbox({ code }: { code: string }) {
   const { resolu } = useTheme();
   const [codeStable, setCodeStable] = useState<string | null>(null);
+  const [hauteur, setHauteur] = useState(HAUTEUR_INITIALE_WIDGET_PX);
+  const cadreRef = useRef<HTMLIFrameElement | null>(null);
+  // Copie de `hauteur` lisible dans l'écouteur de messages sans le recréer.
+  const hauteurRef = useRef(HAUTEUR_INITIALE_WIDGET_PX);
+  // Suivi des agrandissements de suite (voir le commentaire des constantes).
+  const serieRef = useRef({ nombre: 0, dernierInstant: 0, fige: false });
 
   useEffect(() => {
     setCodeStable(null);
     const delai = setTimeout(() => setCodeStable(code), 500);
     return () => clearTimeout(delai);
   }, [code]);
+
+  // Nouveau document dans le cadre : on repart de la hauteur initiale et
+  // d'un suivi vierge.
+  useEffect(() => {
+    serieRef.current = { nombre: 0, dernierInstant: 0, fige: false };
+    hauteurRef.current = HAUTEUR_INITIALE_WIDGET_PX;
+    setHauteur(HAUTEUR_INITIALE_WIDGET_PX);
+  }, [codeStable, resolu]);
+
+  useEffect(() => {
+    function surMessage(e: MessageEvent) {
+      const cadre = cadreRef.current;
+      // Seul le cadre de ce widget est écouté : la fenêtre du widget est
+      // isolée (sandbox sans allow-same-origin), son origine est donc
+      // opaque et seule la fenêtre source permet de l'identifier.
+      if (!cadre || e.source !== cadre.contentWindow) return;
+      const donnees = e.data as { type?: unknown; hauteur?: unknown } | null;
+      if (!donnees || donnees.type !== TYPE_MESSAGE_HAUTEUR_WIDGET) return;
+      if (typeof donnees.hauteur !== "number" || !Number.isFinite(donnees.hauteur)) return;
+      // En plein écran le cadre remplit le panneau (voir BlocExpansible.tsx) :
+      // sa hauteur n'est plus celle du contenu, on n'en tient pas compte.
+      if (cadre.closest('[role="dialog"]')) return;
+
+      const serie = serieRef.current;
+      if (serie.fige) return;
+
+      const cible = Math.min(Math.max(Math.ceil(donnees.hauteur), 0), HAUTEUR_MAX_WIDGET_PX);
+      const actuelle = hauteurRef.current;
+      if (cible === actuelle) return;
+
+      if (cible > actuelle) {
+        const maintenant = Date.now();
+        serie.nombre = maintenant - serie.dernierInstant <= DELAI_CROISSANCE_SUSPECTE_MS ? serie.nombre + 1 : 1;
+        serie.dernierInstant = maintenant;
+        if (serie.nombre >= NB_CROISSANCES_SUSPECTES_WIDGET) {
+          serie.fige = true;
+          hauteurRef.current = HAUTEUR_INITIALE_WIDGET_PX;
+          setHauteur(HAUTEUR_INITIALE_WIDGET_PX);
+          return;
+        }
+      } else {
+        serie.nombre = 0;
+      }
+      hauteurRef.current = cible;
+      setHauteur(cible);
+    }
+    window.addEventListener("message", surMessage);
+    return () => window.removeEventListener("message", surMessage);
+  }, []);
 
   return (
     <BlocExpansible
@@ -122,9 +210,11 @@ export function WidgetSandbox({ code }: { code: string }) {
           </div>
         ) : (
           <iframe
+            ref={cadreRef}
             sandbox="allow-scripts allow-forms allow-modals"
             srcDoc={construireDocumentWidget(codeStable, resolu)}
-            className="h-96 w-full rounded-lg border border-dj-bordure"
+            style={{ height: hauteur }}
+            className="w-full rounded-lg border border-dj-bordure transition-[height] duration-200 ease-out"
             title="Widget interactif"
           />
         )
