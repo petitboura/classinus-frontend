@@ -53,7 +53,13 @@ public static class CibleClic {
   try { [void][CibleClic]::SetProcessDpiAwarenessContext([IntPtr](-4)) } catch { [void][CibleClic]::SetProcessDPIAware() }
   $h = [CibleClic]::Trouver(${x}, ${y}, ${pidClassinus})
   if ($h -eq [IntPtr]::Zero) { Sortir 'indisponible' 'Aucune fenêtre à cet endroit'; return }
-  $racine = [System.Windows.Automation.AutomationElement]::FromHandle($h)
+  $AE=[System.Windows.Automation.AutomationElement]
+  $cache=New-Object System.Windows.Automation.CacheRequest
+  foreach ($p in @($AE::BoundingRectangleProperty,$AE::IsOffscreenProperty,$AE::IsEnabledProperty,$AE::ControlTypeProperty,$AE::IsKeyboardFocusableProperty)) { $cache.Add($p) }
+  foreach ($p in @([System.Windows.Automation.TogglePattern]::Pattern,[System.Windows.Automation.InvokePattern]::Pattern,[System.Windows.Automation.SelectionItemPattern]::Pattern,[System.Windows.Automation.ExpandCollapsePattern]::Pattern)) { $cache.Add($p) }
+  $cache.TreeFilter=[System.Windows.Automation.Automation]::ControlViewCondition
+  $activationCache=$cache.Activate()
+  $racine = $AE::FromHandle($h)
   $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
   $file = New-Object 'System.Collections.Generic.Queue[object]'
   $file.Enqueue(@{el=$racine; profondeur=0})
@@ -63,22 +69,25 @@ public static class CibleClic {
   $direct=[System.Windows.Automation.AutomationElement]::FromPoint([System.Windows.Point]::new(${x},${y}))
   $ancetre=$direct
   for ($i=0; $null -ne $ancetre -and $i -lt 35; $i++) {
-    if ([System.Windows.Automation.Automation]::Compare($ancetre,$racine)) { $cible=$direct; $file.Clear(); break }
-    $ancetre=[System.Windows.Automation.TreeWalker]::RawViewWalker.GetParent($ancetre)
+    if ([System.Windows.Automation.Automation]::Compare($ancetre,$racine)) {
+      if (![System.Windows.Automation.Automation]::Compare($direct,$racine)) { $cible=$direct; $file.Clear() }
+      break
+    }
+    $ancetre=[System.Windows.Automation.TreeWalker]::RawViewWalker.GetParent($ancetre,$cache)
   }
   $diagnosticParcours=''
   while ($file.Count -gt 0 -and $noeuds -lt 1500) {
     $item=$file.Dequeue(); $noeuds++
     $el=$item.el; $niveau=$item.profondeur
     try {
-      $r=$el.Current.BoundingRectangle
+      $r=$el.Cached.BoundingRectangle
       $contient= !$r.IsEmpty -and ${x} -ge $r.Left -and ${x} -lt $r.Right -and ${y} -ge $r.Top -and ${y} -lt $r.Bottom
-      if ($contient -and !$el.Current.IsOffscreen -and $niveau -gt $profondeur) { $cible=$el; $profondeur=$niveau }
+      if ($contient -and !$el.Cached.IsOffscreen -and $niveau -gt $profondeur) { $cible=$el; $profondeur=$niveau }
       if (($contient -or $r.IsEmpty) -and $niveau -lt 30) {
-        $enfant=$walker.GetFirstChild($el)
+        $enfant=$walker.GetFirstChild($el,$cache)
         while ($null -ne $enfant -and $noeuds+$file.Count -lt 1500) {
           $file.Enqueue(@{el=$enfant; profondeur=$niveau+1})
-          $enfant=$walker.GetNextSibling($enfant)
+          $enfant=$walker.GetNextSibling($enfant,$cache)
         }
       }
     } catch { $diagnosticParcours=$_.Exception.Message }
@@ -86,17 +95,17 @@ public static class CibleClic {
   $pattern=$null; $action=$null; $elementAction=$null
   for ($i=0; $null -ne $cible -and $i -lt 5; $i++) {
     if ([System.Windows.Automation.Automation]::Compare($cible,$racine)) { break }
-    if (!$cible.Current.IsEnabled) { Sortir 'indisponible' 'Contrôle désactivé'; return }
+    if (!$cible.Cached.IsEnabled) { Sortir 'indisponible' 'Contrôle désactivé'; return }
     foreach ($nom in @('Toggle','Invoke','SelectionItem','ExpandCollapse')) {
       $type = ('System.Windows.Automation.'+$nom+'Pattern') -as [type]
       $objet=$null
-      if ($cible.TryGetCurrentPattern($type::Pattern,[ref]$objet)) { $pattern=$objet; $action=$nom; $elementAction=$cible; break }
+      if ($cible.TryGetCachedPattern($type::Pattern,[ref]$objet)) { $pattern=$objet; $action=$nom; $elementAction=$cible; break }
     }
     if ($null -ne $action) { break }
-    if ($cible.Current.ControlType -eq [System.Windows.Automation.ControlType]::Edit -and $cible.Current.IsKeyboardFocusable) {
+    if ($cible.Cached.ControlType -eq [System.Windows.Automation.ControlType]::Edit -and $cible.Cached.IsKeyboardFocusable) {
       $action='Focus'; $elementAction=$cible; break
     }
-    $cible=$walker.GetParent($cible)
+    $cible=$walker.GetParent($cible,$cache)
   }
   if ($null -eq $action) {
     @{statut='indisponible'; raison='Ce contrôle ne propose pas de clic indépendant'; diagnostic=('noeuds='+$noeuds+'; cible='+$profondeur+'; '+$diagnosticParcours)} | ConvertTo-Json -Compress
