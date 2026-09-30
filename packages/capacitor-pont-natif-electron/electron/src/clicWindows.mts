@@ -7,7 +7,7 @@ import { randomBytes } from "node:crypto";
 
 export type ResultatClicAccessible =
   | { statut: "effectue"; action: string }
-  | { statut: "indisponible"; raison: string }
+  | { statut: "indisponible"; raison: string; diagnostic?: string }
   | { statut: "incertain"; raison: string };
 
 export function construireScriptClic(x: number, y: number, pidClassinus: number, marqueur: string): string {
@@ -105,7 +105,7 @@ public static class CibleClic {
   Sortir 'effectue' $action
 } catch {
   if ([System.IO.File]::Exists('${chemin}')) { Sortir 'incertain' 'Le résultat du clic indépendant ne peut pas être confirmé' }
-  else { Sortir 'indisponible' 'Le clic indépendant est indisponible pour ce contrôle' }
+  else { @{statut='indisponible'; raison='Le clic indépendant est indisponible pour ce contrôle'; diagnostic=$_.Exception.Message} | ConvertTo-Json -Compress }
 }
 `;
 }
@@ -121,14 +121,14 @@ export async function cliquerParAccessibiliteWindows(point: { x: number; y: numb
   }
   return new Promise(resolve => {
     execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script],
-      { windowsHide: true, timeout: 10000, maxBuffer: 65536, encoding: "utf8" }, (_erreur, sortie) => {
+      { windowsHide: true, timeout: 10000, maxBuffer: 65536, encoding: "utf8" }, (_erreur, sortie, stderr) => {
         const commence = existsSync(marqueur);
         let resultat: ResultatClicAccessible = { statut: commence ? "incertain" : "indisponible", raison: "Le clic indépendant n'a pas été confirmé" };
         try {
           const brut = JSON.parse(String(sortie).replace(/^\uFEFF/, "").trim());
           if (brut.statut === "effectue" && typeof brut.action === "string") resultat = { statut: "effectue", action: brut.action };
-          else if (brut.statut === "indisponible" && !commence) resultat = { statut: "indisponible", raison: String(brut.raison) };
-        } catch { }
+          else if (brut.statut === "indisponible" && !commence) resultat = { statut: "indisponible", raison: String(brut.raison), ...(brut.diagnostic ? { diagnostic: String(brut.diagnostic) } : {}) };
+        } catch { if (!commence) resultat = { statut: "indisponible", raison: "Le clic indépendant n'a pas démarré", diagnostic: String(stderr).slice(0, 2000) }; }
         for (const fichier of [script, marqueur]) { try { unlinkSync(fichier); } catch { } }
         resolve(resultat);
       });

@@ -107,7 +107,8 @@ try {
   };
   const avant=await positionSouris();
   const bouton=premiere.elements.find(e=>e.nom==='Continuer');
-  assert.equal((await cliquerParAccessibiliteWindows(bouton)).statut,'effectue');
+  const clicBouton=await cliquerParAccessibiliteWindows(bouton);
+  assert.equal(clicBouton.statut,'effectue',JSON.stringify(clicBouton));
   assert.equal(await readFile(join(dossier,'clic-effectue'),'utf8'),'ok');
   const option=premiere.elements.find(e=>e.nom==='Option indépendante');
   assert(option,JSON.stringify(premiere));
