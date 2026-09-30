@@ -12,8 +12,9 @@ Sur Electron, `enregistrerToken` ouvre et maintient une DEUXIEME
 connexion WebSocket vers `clovis-backend`, dediee aux actions systeme
 (clic ecran, clavier, ouverture d'application, lecture d'ecran) --
 separee de la connexion de la fenetre principale (qui reste dediee aux
-clics dans la page Classinus). Execution reelle via `@nut-tree-fork/nut-js`
-(souris/clavier) et `screenshot-desktop` (capture d'ecran).
+clics dans la page Classinus). Le clic tente les actions UI Automation et
+les boutons natifs Windows sans déplacer la souris. `@nut-tree-fork/nut-js`
+sert au clavier et au repli souris annoncé. La lecture d'écran est textuelle.
 
 ## Construire ce paquet
 
@@ -111,6 +112,11 @@ journal et la bulle de la superposition doivent montrer les mêmes types
 d'entrées que pour une action dans la page.
 
 ## Clic indépendant et repli annoncé
+
+Lorsqu'un bouton Win32 ou WinForms n'expose aucun pattern UIA, son handle et
+sa classe native sont vérifiés avant l'envoi de `BM_CLICK`. Ce chemin reste
+indépendant du pointeur Windows. Les autres contrôles incompatibles utilisent
+le repli souris annoncé ci-dessous.
 
 `cliquer_ecran` place d’abord le curseur dessiné sur la cible et tente une action UI Automation (bouton, case, sélection, menu ou focus de champ). Aucun pilote souris n’est chargé sur ce chemin. Si aucune action compatible n’existe, la superposition affiche « Je ne peux pas cliquer ici avec mon curseur seul. Je vais utiliser ton curseur maintenant. » avant le clic par la vraie souris, sans validation de l’étudiant. Le pointeur est remis à sa position initiale si l’étudiant ne l’a pas repris. La superposition laisse traverser le clic pendant toute l’opération.
 

@@ -25,6 +25,7 @@ try {
   Add-Type -AssemblyName WindowsBase
   Add-Type -TypeDefinition @'
 using System;
+using System.Text;
 using System.Runtime.InteropServices;
 public static class CibleClic {
   public delegate bool EnumProc(IntPtr h, IntPtr p);
@@ -36,6 +37,9 @@ public static class CibleClic {
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
   [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr contexte);
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr h, StringBuilder texte, int max);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll", SetLastError=true)] public static extern IntPtr SendMessageTimeout(IntPtr h, uint msg, IntPtr w, IntPtr l, uint flags, uint delai, out UIntPtr resultat);
   [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr h, int a, out int v, int size);
   public static IntPtr Trouver(int x, int y, uint exclu) {
     IntPtr cible = IntPtr.Zero;
@@ -48,6 +52,17 @@ public static class CibleClic {
     }, IntPtr.Zero);
     return cible;
   }
+  public static bool EstBouton(IntPtr h) {
+    if(h==IntPtr.Zero) return false;
+    StringBuilder nom=new StringBuilder(256); GetClassName(h,nom,nom.Capacity);
+    string classe=nom.ToString();
+    return classe.Equals("Button",StringComparison.OrdinalIgnoreCase) || classe.StartsWith("WindowsForms10.BUTTON.",StringComparison.OrdinalIgnoreCase);
+  }
+  public static void CliquerBouton(IntPtr h, IntPtr fenetre) {
+    SetForegroundWindow(fenetre);
+    UIntPtr resultat;
+    if(SendMessageTimeout(h,0x00F5,IntPtr.Zero,IntPtr.Zero,2,2000,out resultat)==IntPtr.Zero) throw new Exception("Le bouton Windows n'a pas confirmé le clic.");
+  }
 }
 '@
   try { [void][CibleClic]::SetProcessDpiAwarenessContext([IntPtr](-4)) } catch { [void][CibleClic]::SetProcessDPIAware() }
@@ -55,7 +70,7 @@ public static class CibleClic {
   if ($h -eq [IntPtr]::Zero) { Sortir 'indisponible' 'Aucune fenêtre à cet endroit'; return }
   $AE=[System.Windows.Automation.AutomationElement]
   $cache=New-Object System.Windows.Automation.CacheRequest
-  foreach ($p in @($AE::BoundingRectangleProperty,$AE::IsOffscreenProperty,$AE::IsEnabledProperty,$AE::ControlTypeProperty,$AE::IsKeyboardFocusableProperty)) { $cache.Add($p) }
+  foreach ($p in @($AE::BoundingRectangleProperty,$AE::IsOffscreenProperty,$AE::IsEnabledProperty,$AE::ControlTypeProperty,$AE::IsKeyboardFocusableProperty,$AE::NativeWindowHandleProperty)) { $cache.Add($p) }
   $patterns=@{
     Toggle=[System.Windows.Automation.TogglePattern]::Pattern
     Invoke=[System.Windows.Automation.InvokePattern]::Pattern
@@ -114,6 +129,10 @@ public static class CibleClic {
     if ($cible.Cached.ControlType -eq [System.Windows.Automation.ControlType]::Edit -and $cible.Cached.IsKeyboardFocusable) {
       $action='Focus'; $elementAction=$cible; break
     }
+    # Certains fournisseurs UIA ne publient que Pane pour un bouton Win32.
+    # BM_CLICK agit sur ce bouton précis, sans déplacer ni injecter la souris.
+    $handleBouton=[IntPtr]$cible.Cached.NativeWindowHandle
+    if ([CibleClic]::EstBouton($handleBouton)) { $action='BoutonWindows'; break }
     $cible=$walker.GetParent($cible,$cache)
   }
   if ($null -eq $action) {
@@ -131,6 +150,7 @@ public static class CibleClic {
       else { $pattern.Expand() }
     }
     'Focus' { $elementAction.SetFocus() }
+    'BoutonWindows' { [CibleClic]::CliquerBouton($handleBouton,$h) }
   }
   Sortir 'effectue' $action
 } catch {

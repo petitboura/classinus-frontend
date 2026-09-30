@@ -122,7 +122,7 @@ try {
   const label=premiere.elements.find(e=>e.nom==='Texte visible depuis Windows');
   assert.equal((await cliquerParAccessibiliteWindows(label)).statut,'indisponible');
   assert.equal(await positionSouris(),avant);
-  console.log('OK Windows réel : bouton cliqué et case cochée par UIA, contrôle incompatible détecté, pointeur Windows inchangé.');
+  console.log('OK Windows réel : bouton cliqué et case cochée par actions indépendantes, contrôle incompatible détecté, pointeur Windows inchangé.');
   await writeFile(demandeFocus,'go');
   await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='superposition');
   verifier(await lireFenetreAuPremierPlan({},etat.superposition));
