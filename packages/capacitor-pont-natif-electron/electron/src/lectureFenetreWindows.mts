@@ -159,6 +159,19 @@ public interface IUiaTextRange {
   void M0(); void M1(); void M2(); void M3(); void M4(); void M5(); void M6(); void M7(); void M8();
   void GetText(int maxLength, [MarshalAs(UnmanagedType.BStr)] out string text);
 }
+public static class LectureMsaa {
+  // Ancienne API d'accessibilite (MSAA) : c'est elle que les menus Windows classiques
+  // (classe #32768) exposent de facon fiable quand UI Automation ne voit rien dedans.
+  [DllImport("oleacc.dll")] static extern int AccessibleObjectFromWindow(IntPtr hwnd, uint idObjet, ref Guid iid, [MarshalAs(UnmanagedType.IDispatch)] out object acc);
+  public static object Obtenir(IntPtr hwnd) {
+    try {
+      Guid iid = new Guid("618736e0-3c3d-11cf-810c-00aa00389b71");
+      object acc = null;
+      int hr = AccessibleObjectFromWindow(hwnd, 0xFFFFFFFC, ref iid, out acc);
+      return hr == 0 ? acc : null;
+    } catch (Exception) { return null; }
+  }
+}
 public static class LectureTexteCom {
   // Le wrapper .NET de UI Automation (TextPatternRange.GetText) plante Windows PowerShell avec
   // une violation d'acces sous Windows 11 : le texte est lu par l'API COM native a la place.
@@ -383,6 +396,37 @@ ${CODE_CSHARP}
     return $texte
   }
 
+  function LireMenuMsaa($hwnd) {
+    # Un menu classique : les choix sont les enfants de l'objet client, numerotes de 1 a N.
+    try {
+      $acc = [LectureMsaa]::Obtenir($hwnd)
+      if ($null -eq $acc) { return }
+      $nb = [int]$acc.accChildCount
+      for ($i = 1; $i -le $nb -and $i -le 40; $i++) {
+        if ($script:elements.Count -ge $nbMaxElements) { $script:coupe = $true; break }
+        $nom = [string]$acc.accName($i)
+        if ([string]::IsNullOrWhiteSpace($nom)) { continue }
+        $g = 0; $h = 0; $l = 0; $a = 0
+        $acc.accLocation([ref]$g, [ref]$h, [ref]$l, [ref]$a, $i)
+        if ($l -le 0 -or $a -le 0) { continue }
+        $script:elements.Add([ordered]@{
+          type = 'menu'
+          nom = (Couper $nom $longueurMaxNom)
+          valeur = $null
+          valeur_masquee = $false
+          etats = @()
+          x = [int]($g + $l / 2)
+          y = [int]($h + $a / 2)
+          gauche = [int]$g
+          haut = [int]$h
+          largeur = [int]$l
+          hauteur = [int]$a
+          zone = 'menu ouvert'
+        })
+      }
+    } catch { }
+  }
+
   function LireValeur($el, $typeCle) {
     $obj = $null
     $valeur = ''
@@ -496,6 +540,7 @@ ${CODE_CSHARP}
         $depuisBureau = $AE::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
         if ($null -ne $depuisBureau) { Visiter ($depuisBureau.GetUpdatedCache($cr)) 0 '' }
       }
+      if ($script:elements.Count -eq $avantAnnexe) { LireMenuMsaa $annexe }
     } catch { } finally { $script:zoneCourante = $null }
     if ($script:elements.Count -gt $avantAnnexe) { $menuOuvert = $true }
   }
