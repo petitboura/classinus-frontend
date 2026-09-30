@@ -56,8 +56,13 @@ public static class CibleClic {
   $AE=[System.Windows.Automation.AutomationElement]
   $cache=New-Object System.Windows.Automation.CacheRequest
   foreach ($p in @($AE::BoundingRectangleProperty,$AE::IsOffscreenProperty,$AE::IsEnabledProperty,$AE::ControlTypeProperty,$AE::IsKeyboardFocusableProperty)) { $cache.Add($p) }
-  foreach ($p in @([System.Windows.Automation.TogglePattern]::Pattern,[System.Windows.Automation.InvokePattern]::Pattern,[System.Windows.Automation.SelectionItemPattern]::Pattern,[System.Windows.Automation.ExpandCollapsePattern]::Pattern,[System.Windows.Automation.LegacyIAccessiblePattern]::Pattern)) { $cache.Add($p) }
-  $cache.Add([System.Windows.Automation.LegacyIAccessiblePattern]::DefaultActionProperty)
+  $patterns=@{
+    Toggle=[System.Windows.Automation.TogglePattern]::Pattern
+    Invoke=[System.Windows.Automation.InvokePattern]::Pattern
+    SelectionItem=[System.Windows.Automation.SelectionItemPattern]::Pattern
+    ExpandCollapse=[System.Windows.Automation.ExpandCollapsePattern]::Pattern
+  }
+  foreach ($p in $patterns.Values) { $cache.Add($p) }
   $cache.Add([System.Windows.Automation.ExpandCollapsePattern]::ExpandCollapseStateProperty)
   $cache.TreeFilter=[System.Windows.Automation.Automation]::ControlViewCondition
   $activationCache=$cache.Activate()
@@ -99,11 +104,9 @@ public static class CibleClic {
   for ($i=0; $null -ne $cible -and $i -lt 5; $i++) {
     if ([System.Windows.Automation.Automation]::Compare($cible,$racine)) { break }
     if (!$cible.Cached.IsEnabled) { Sortir 'indisponible' 'Contrôle désactivé'; return }
-    foreach ($nom in @('Toggle','Invoke','SelectionItem','ExpandCollapse','LegacyIAccessible')) {
-      $type = ('System.Windows.Automation.'+$nom+'Pattern') -as [type]
+    foreach ($nom in @('Toggle','Invoke','SelectionItem','ExpandCollapse')) {
       $objet=$null
-      if ($cible.TryGetCachedPattern($type::Pattern,[ref]$objet)) {
-        if ($nom -eq 'LegacyIAccessible' -and [string]::IsNullOrWhiteSpace($objet.Cached.DefaultAction)) { continue }
+      if ($cible.TryGetCachedPattern($patterns[$nom],[ref]$objet) -or $cible.TryGetCurrentPattern($patterns[$nom],[ref]$objet)) {
         $pattern=$objet; $action=$nom; $elementAction=$cible; break
       }
     }
@@ -128,7 +131,6 @@ public static class CibleClic {
       else { $pattern.Expand() }
     }
     'Focus' { $elementAction.SetFocus() }
-    'LegacyIAccessible' { $pattern.DoDefaultAction() }
   }
   Sortir 'effectue' $action
 } catch {
