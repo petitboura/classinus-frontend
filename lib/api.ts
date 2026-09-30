@@ -1762,7 +1762,8 @@ export async function ajouterComportement(
   nom?: string | null,
   lienType?: string | null,
   lienId?: string | null,
-  categorie?: CategorieConfiguration | null
+  categorie?: CategorieConfiguration | null,
+  quandUtiliser?: string | null
 ) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`, {
     method: "POST",
@@ -1772,6 +1773,7 @@ export async function ajouterComportement(
       lien_type: lienType || null,
       lien_id: lienId || null,
       categorie: categorie || null,
+      quand_utiliser: quandUtiliser || null,
     }),
   });
   return resultat as Comportement;
@@ -1818,10 +1820,16 @@ export async function attacherComportement(agentId: string, comportementId: stri
   return resultat as Comportement;
 }
 
-export async function modifierComportement(agentId: string, comportementId: string, texte: string, nom?: string | null) {
+export async function modifierComportement(
+  agentId: string,
+  comportementId: string,
+  texte: string,
+  nom?: string | null,
+  quandUtiliser?: string | null
+) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}`, {
     method: "PATCH",
-    body: JSON.stringify({ texte, nom: nom || null }),
+    body: JSON.stringify({ texte, nom: nom || null, quand_utiliser: quandUtiliser || null }),
   });
   return resultat as Comportement;
 }

@@ -58,6 +58,10 @@ export function EditeurComportement({
   boutonFermerDesactive,
   onActionEnCoursChange,
   categoriePreset,
+  libelleQuandUtiliser,
+  placeholderQuandUtiliser,
+  titreCreation,
+  titreEdition,
 }: {
   agentId: string;
   comportement: Comportement | null;
@@ -78,10 +82,27 @@ export function EditeurComportement({
    * fixé par l'appelant (un des 4 onglets Procédure/Règle/Comportement/
    * Style, voir ConfigurationBureau.tsx), jamais proposé comme un choix
    * à l'utilisateur -- aucun champ, aucun sélecteur dans ce composant.
-   * Ignoré silencieusement si `comportement` n'est pas null (la
-   * catégorie ne change jamais après la création). Absent -> skill
-   * classique inchangé ("Mes skills"), comportement par défaut. */
+   * Passé de la même façon en création ET en édition par
+   * ConfigurationCategorie.tsx (la catégorie ne change jamais après la
+   * création, mais sert ici uniquement à savoir s'il faut afficher le
+   * champ "quand l'utiliser" ci-dessous). Absent -> skill classique
+   * inchangé ("Mes skills"), aucun champ en plus. */
   categoriePreset?: "procedure" | "regle" | "comportement" | "style";
+  /** 29/09/2026, demande Bourama, même chantier : libellé + placeholder
+   * du champ optionnel "quand l'utiliser", affiché SEULEMENT si
+   * categoriePreset est fourni. Passés en props (au lieu d'un texte en
+   * dur ici) pour que ConfigurationBureau.tsx les tire de la fondation
+   * de traduction (lib/i18n/textesConfiguration.ts) -- ce composant
+   * reste générique, réutilisé aussi par les skills classiques qui,
+   * eux, n'ont pas ce champ. */
+  libelleQuandUtiliser?: string;
+  placeholderQuandUtiliser?: string;
+  /** 29/09/2026, même chantier : titre du panneau propre à la
+   * catégorie ("Nouvelle règle" / "Modifier cette règle"), sourcé par
+   * l'appelant depuis la fondation de traduction. Absent -> comportement
+   * inchangé ("Nouveau skill" / "Modifier ce skill"). */
+  titreCreation?: string;
+  titreEdition?: string;
 }) {
   const estCreation = comportement === null;
 
@@ -89,6 +110,12 @@ export function EditeurComportement({
   const [texteOuvert, setTexteOuvert] = useState(comportement?.texte || "");
   const [nomOuvert, setNomOuvert] = useState(comportement?.nom || "");
   const [nomAuto, setNomAuto] = useState(estCreation);
+  // 29/09/2026, demande Bourama : champ optionnel "quand l'utiliser",
+  // seulement pour les 4 catégories de Configuration (categoriePreset).
+  // En édition, pré-rempli avec la description actuelle -- c'est la
+  // seule valeur disponible côté serveur, rien n'y distingue une
+  // description tapée à la main d'une description auto-générée.
+  const [quandUtiliserOuvert, setQuandUtiliserOuvert] = useState(comportement?.description || "");
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
   const [erreurOuvert, setErreurOuvert] = useState<string | null>(null);
@@ -231,11 +258,13 @@ export function EditeurComportement({
     if (!texte) return;
     const nom = nomAuto ? null : nomOuvert.trim() || null;
 
+    const quandUtiliser = categoriePreset ? quandUtiliserOuvert.trim() || null : null;
+
     if (estCreation) {
       setEnregistrementEnCours(true);
       setErreurOuvert(null);
       try {
-        const cree = await ajouterComportement(agentId, texte, nom, undefined, undefined, categoriePreset);
+        const cree = await ajouterComportement(agentId, texte, nom, undefined, undefined, categoriePreset, quandUtiliser);
         onCree(cree);
         onFermer();
       } catch (e) {
@@ -247,14 +276,14 @@ export function EditeurComportement({
     }
 
     if (!comportementActuel) return;
-    if (texte === comportementActuel.texte && nom === (comportementActuel.nom || null)) {
+    if (texte === comportementActuel.texte && nom === (comportementActuel.nom || null) && quandUtiliser === (comportementActuel.description || null)) {
       onFermer();
       return;
     }
     setEnregistrementEnCours(true);
     setErreurOuvert(null);
     try {
-      const maj = await modifierComportement(agentId, comportementActuel.id, texte, nom);
+      const maj = await modifierComportement(agentId, comportementActuel.id, texte, nom, quandUtiliser);
       setComportementActuel(maj);
       onModifie(maj);
       onFermer();
@@ -305,7 +334,9 @@ export function EditeurComportement({
     <div className="flex h-full flex-col">
       <div className="mb-3 flex flex-shrink-0 items-center justify-between">
         <span className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-dj-texte">{estCreation ? "Nouveau skill" : "Modifier ce skill"}</span>
+          <span className="text-sm font-medium text-dj-texte">
+            {estCreation ? titreCreation || "Nouveau skill" : titreEdition || "Modifier ce skill"}
+          </span>
           {!estCreation && (
             <BulleSurvol
               texte="Ce que l'IA lit vraiment quand elle consulte ce comportement. Tu peux le corriger directement ici -- si tu réédites le texte brut plus tard, il sera régénéré et remplacera ce que tu écris ici."
@@ -389,10 +420,22 @@ export function EditeurComportement({
             </label>
           </div>
 
-          {!estCreation && (
-            <p className="pb-3 text-xs text-dj-texte-muet">
-              <span className="font-medium text-dj-texte-muet">Description :</span> {comportementActuel?.description || "—"}
-            </p>
+          {categoriePreset ? (
+            <div className="flex flex-col gap-1 pb-3">
+              <label className="text-xs font-medium text-dj-texte-muet">{libelleQuandUtiliser || "Quand l'utiliser (optionnel)"}</label>
+              <input
+                value={quandUtiliserOuvert}
+                onChange={(e) => setQuandUtiliserOuvert(e.target.value)}
+                placeholder={placeholderQuandUtiliser}
+                className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+              />
+            </div>
+          ) : (
+            !estCreation && (
+              <p className="pb-3 text-xs text-dj-texte-muet">
+                <span className="font-medium text-dj-texte-muet">Description :</span> {comportementActuel?.description || "—"}
+              </p>
+            )
           )}
 
           {estCreation && (

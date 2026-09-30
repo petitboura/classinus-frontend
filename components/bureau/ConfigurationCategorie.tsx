@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { lireMesComportements, activerDesactiverComportement, type Comportement, type CategorieConfiguration } from "@/lib/api";
+import { texteConfiguration, type IdTexteConfiguration } from "@/lib/i18n/textesConfiguration";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { EditeurComportement } from "@/components/EditeurComportement";
@@ -105,6 +106,10 @@ export function ConfigurationCategorie({
             agentId={agentId}
             comportement={panneau.type === "edition" ? panneau.c : null}
             categoriePreset={categorie}
+            libelleQuandUtiliser={texteConfiguration("champ.quandUtiliser.libelle")}
+            placeholderQuandUtiliser={texteConfiguration("champ.quandUtiliser.placeholder")}
+            titreCreation={texteConfiguration(`titre.creation.${categorie}` as IdTexteConfiguration)}
+            titreEdition={texteConfiguration(`titre.edition.${categorie}` as IdTexteConfiguration)}
             onFermer={() => demarrerFermeture(fermer)}
             onCree={(c) => queryClient.setQueryData<Comportement[]>(cle, (prec) => [...(prec || []), c])}
             onModifie={(c) => queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).map((x) => (x.id === c.id ? c : x)))}
