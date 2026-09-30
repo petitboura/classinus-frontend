@@ -13,7 +13,6 @@ const dossier = await mkdtemp(join(tmpdir(), 'classinus-uia-'));
 const fichierEtat = join(dossier, 'etat.json');
 const demandeFocus = join(dossier, 'superposition');
 const demandeMenu = join(dossier, 'menu-ouvrir');
-const fermerMenu = join(dossier, 'menu-fermer');
 const ps = s => s.replaceAll("'", "''");
 const titre = `Classinus UIA regression ${process.pid}`;
 const script = `
@@ -44,9 +43,12 @@ $champ.Text='Valeur fenêtre Windows'; $champ.Left=30; $champ.Top=140; $champ.Wi
 $secret = New-Object Windows.Forms.TextBox
 $secret.Text='SECRET-INTERDIT'; $secret.UseSystemPasswordChar=$true; $secret.Left=30; $secret.Top=190
 $form.Controls.AddRange(@($label,$bouton,$champ,$secret,$case))
-$menu = New-Object Windows.Forms.ContextMenuStrip
-[void]$menu.Items.Add('Copier le texte')
-[void]$menu.Items.Add('Coller le texte')
+# Menu Windows natif (classe #32768), comme Bloc-notes ou l'Explorateur : un ContextMenuStrip
+# WinForms n'expose aucun element a UI Automation et ne represente donc pas les vraies applications.
+$menu = New-Object Windows.Forms.ContextMenu
+[void]$menu.MenuItems.Add('Copier le texte')
+[void]$menu.MenuItems.Add('Coller le texte')
+$script:menuOuvert = $false
 
 $overlay = New-Object Windows.Forms.Form
 $overlay.Text='classinus-superposition-agent'
@@ -60,8 +62,11 @@ $form.Add_Shown({ $form.Activate(); [void][FocusTest]::SetForegroundWindow($form
 $timer = New-Object Windows.Forms.Timer
 $timer.Interval=100
 $timer.Add_Tick({
-  if ([System.IO.File]::Exists('${ps(demandeMenu)}') -and -not $menu.Visible) { $menu.Show($form, 400, 250); EcrireEtat 'menu' }
-  if ([System.IO.File]::Exists('${ps(fermerMenu)}') -and $menu.Visible) { $menu.Close() }
+  if ([System.IO.File]::Exists('${ps(demandeMenu)}') -and -not $script:menuOuvert) {
+    # Show est modal : le menu reste ouvert jusqu'a la fin du test, donc a faire en dernier.
+    $script:menuOuvert = $true; EcrireEtat 'menu'
+    $menu.Show($form, (New-Object Drawing.Point(400, 250)))
+  }
   if ([System.IO.File]::Exists('${ps(demandeFocus)}') -and -not $overlay.Visible) {
     $overlay.Show($form); $overlay.Activate(); [void][FocusTest]::SetForegroundWindow($overlay.Handle)
     EcrireEtat 'superposition'
@@ -131,9 +136,24 @@ try {
   assert.equal((await cliquerParAccessibiliteWindows(label)).statut,'indisponible');
   assert.equal(await positionSouris(),avant);
   console.log('OK Windows réel : bouton cliqué et case cochée par actions indépendantes, contrôle incompatible détecté, pointeur Windows inchangé.');
+  // Aucun menu n'est ouvert pour l'instant : la lecture ne doit pas en inventer.
+  assert.equal(premiere.menu_ouvert,false,JSON.stringify(premiere));
+  await writeFile(demandeFocus,'go');
+  await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='superposition');
+  verifier(await lireFenetreAuPremierPlan({},etat.superposition));
+  const focus = await lireFenetreAuPremierPlan({},etat.superposition,true);
+  assert(!('erreur' in focus),JSON.stringify(focus));
+  verifier(await lireFenetreAuPremierPlan({}));
+  console.log('OK Windows réel : texte, boutons, valeur, mot de passe masqué, miroir exclu, focus restauré.');
   await writeFile(demandeMenu,'go');
   await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='menu');
-  const avecMenu = await lireFenetreAuPremierPlan({},etat.superposition);
+  // Le menu s'affiche juste apres l'ecriture de l'etat : quelques essais, pas d'attente infinie.
+  let avecMenu;
+  for (let essai=0; essai<5; essai++) {
+    avecMenu = await lireFenetreAuPremierPlan({},etat.superposition);
+    if (avecMenu.menu_ouvert === true) break;
+    await new Promise(r=>setTimeout(r,500));
+  }
   assert.equal(avecMenu.titre_fenetre_active,titre,JSON.stringify(avecMenu));
   if (avecMenu.menu_ouvert !== true) {
     // Diagnostic : fenetres visibles dans l'ordre d'affichage (haut vers bas), pour voir ou est le menu.
@@ -197,16 +217,7 @@ foreach ($h in [DiagFenetres]::Sans_titre()) {
   const copier = avecMenu.elements.find(e=>e.nom==='Copier le texte');
   assert(copier && copier.zone==='menu ouvert' && Number.isFinite(copier.x),JSON.stringify(avecMenu));
   assert(avecMenu.elements.some(e=>e.nom==='Continuer' && !e.zone),'la fenêtre elle-même doit rester lue : '+JSON.stringify(avecMenu));
-  await writeFile(fermerMenu,'go');
-  await attendre(async()=>(await lireFenetreAuPremierPlan({},etat.superposition)).menu_ouvert===false);
-  console.log('OK Windows réel : menu contextuel ouvert lu avec sa zone, puis absent une fois refermé.');
-  await writeFile(demandeFocus,'go');
-  await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='superposition');
-  verifier(await lireFenetreAuPremierPlan({},etat.superposition));
-  const focus = await lireFenetreAuPremierPlan({},etat.superposition,true);
-  assert(!('erreur' in focus),JSON.stringify(focus));
-  verifier(await lireFenetreAuPremierPlan({}));
-  console.log('OK Windows réel : texte, boutons, valeur, mot de passe masqué, miroir exclu, focus restauré.');
+  console.log('OK Windows réel : menu Windows ouvert lu avec sa zone, fenêtre elle-même toujours lue.');
 } catch (e) {
   // Les journaux CI ne sont pas lisibles depuis l'exterieur : une commande de workflow
   // ::error:: en fait une annotation de check-run, consultable par l'API GitHub.
