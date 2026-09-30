@@ -126,6 +126,13 @@ try {
   assert(!('erreur' in focus),JSON.stringify(focus));
   verifier(await lireFenetreAuPremierPlan({}));
   console.log('OK Windows réel : texte, boutons, valeur, mot de passe masqué, miroir exclu, focus restauré.');
+} catch (e) {
+  // Les journaux CI ne sont pas lisibles depuis l'exterieur : une commande de workflow
+  // ::error:: en fait une annotation de check-run, consultable par l'API GitHub.
+  const detail = String((e && (e.stack || e.message)) || e).slice(0, 3000)
+    .replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+  console.log(`::error title=Echec du test UIA Windows::${detail}`);
+  throw e;
 } finally {
   application.kill();
   await rm(dossier,{recursive:true,force:true});
