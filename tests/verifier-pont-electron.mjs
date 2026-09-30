@@ -126,7 +126,8 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
       if(etat.pointageId) console.log('POINTAGE_AFFICHE',etat.curseur.x,etat.curseur.y);
     });`,resolveDir:racine},bundle:true,write:false,format:'iife',plugins:[{name:'etat-canal-test',setup(b){
       b.onResolve({filter:/contexteCanalEnDirect$/},a=>({path:a.path,namespace:'etat-canal-test'}));
-      b.onLoad({filter:/.*/,namespace:'etat-canal-test'},()=>({loader:'js',contents:['pousserJournalDepuisAgent','mettreAJourJournalDepuisAgent','afficherTexteDepuisAgent'].map(n=>`export const ${n}=()=>null;`).join('\n')}));
+      b.onResolve({filter:/canalAgentApplicatif$/},a=>({path:a.path,namespace:'etat-canal-test'}));
+      b.onLoad({filter:/.*/,namespace:'etat-canal-test'},a=>({loader:'js',contents:a.path.endsWith('canalAgentApplicatif') ? 'export const envoyerMessageEtudiant=()=>{};' : ['pousserJournalDepuisAgent','mettreAJourJournalDepuisAgent','afficherTexteDepuisAgent'].map(n=>`export const ${n}=()=>null;`).join('\n')}));
     }}]});
   await writeFile(join(temporaire,'app/miroir.js'),miroirBundle.outputFiles[0].text);
   await writeFile(join(temporaire,'app/miroir.html'),`<html><head><title>classinus-superposition-agent</title></head><body style="background:transparent"><div id="curseur" style="position:fixed;width:20px;height:20px;background:orange"></div><script src="miroir.js"></script></body></html>`);
