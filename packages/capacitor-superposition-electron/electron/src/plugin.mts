@@ -92,11 +92,74 @@ export async function avecSourisTraversante<T>(operation: () => Promise<T>): Pro
   }
 }
 
-function avecInformationCurseur(etat: EtatPousse): EtatPousse {
+// Marques dessinees par Clovis sur l'ecran (cercle, trait dessous, surlignage).
+// Gardees ici et ajoutees a CHAQUE etat envoye a la superposition : la fenetre
+// principale repousse l'etat en continu, sans ce rappel les marques sauteraient.
+type FormeMarque = "entourer" | "souligner" | "surligner";
+type MarqueEcran = { id: string; forme: FormeMarque; x: number; y: number; largeur: number; hauteur: number; dureeMs: number };
+const FORMES_MARQUE: FormeMarque[] = ["entourer", "souligner", "surligner"];
+const NB_MAX_MARQUES = 12;
+let marquesAffichees: MarqueEcran[] = [];
+
+function diffuserMarques(): void {
+  try {
+    if (notifierEtat && dernierEtat) notifierEtat(avecInformationCurseur(dernierEtat));
+  } catch {
+    // superposition fermee entre-temps : rien a mettre a jour
+  }
+}
+
+function avecInformationCurseur(etatBrut: EtatPousse): EtatPousse {
+  const etat: EtatPousse = { ...etatBrut, marques: marquesAffichees };
   if (!informationCurseur || performance.now() >= informationCurseur.jusqua) return etat;
   return { ...etat, informationId: informationCurseur.id, canal: {
     ...(etat.canal as Record<string, unknown>), dernierTexte: informationCurseur.texte, reponseVisible: false,
   } };
+}
+
+/**
+ * Marque un element de l'ecran (coordonnees et taille en pixels physiques, celles de
+ * lire_ecran). Clovis choisit le moment (delaiMs) et la duree (dureeMs), comme pour la bulle.
+ * Retourne tout de suite : la marque apparait puis disparait toute seule.
+ */
+export async function marquerEcran(p: {
+  forme: string; x: number; y: number; largeur: number; hauteur: number; delaiMs: number; dureeMs: number;
+}): Promise<{ succes: true }> {
+  if (!FORMES_MARQUE.includes(p.forme as FormeMarque)) throw new Error("Forme de marque inconnue (entourer, souligner ou surligner).");
+  if (![p.x, p.y, p.largeur, p.hauteur, p.delaiMs, p.dureeMs].every(Number.isFinite) || p.largeur <= 0 || p.hauteur <= 0) {
+    throw new Error("Position ou taille de la marque invalide.");
+  }
+  const fenetre = trouverFenetreSuperposition();
+  if (!fenetre || fenetre.isDestroyed() || !notifierEtat || !dernierEtat) throw new Error("La superposition de Clovis n'est pas prête.");
+  if (!(dernierEtat.canal as { actif?: boolean } | undefined)?.actif) throw new Error("Le canal en direct n'est pas actif.");
+  const enDip = (pt: PointEcranLocal) => process.platform === "win32" || process.platform === "linux"
+    ? screen.screenToDipPoint({ x: Math.round(pt.x), y: Math.round(pt.y) }) : pt;
+  const hautGauche = enDip({ x: p.x, y: p.y });
+  const basDroite = enDip({ x: p.x + p.largeur, y: p.y + p.hauteur });
+  if (!estSurUnEcran({ x: (hautGauche.x + basDroite.x) / 2, y: (hautGauche.y + basDroite.y) / 2 })) {
+    throw new Error("L'endroit à marquer est hors des écrans.");
+  }
+  const origine = fenetre.getContentBounds();
+  const zoom = fenetre.webContents.getZoomFactor();
+  const marque: MarqueEcran = {
+    id: randomUUID(),
+    forme: p.forme as FormeMarque,
+    x: (hautGauche.x - origine.x) / zoom,
+    y: (hautGauche.y - origine.y) / zoom,
+    largeur: Math.max(1, (basDroite.x - hautGauche.x) / zoom),
+    hauteur: Math.max(1, (basDroite.y - hautGauche.y) / zoom),
+    dureeMs: Math.min(Math.max(p.dureeMs, 1000), 60000),
+  };
+  const afficher = () => {
+    marquesAffichees = [...marquesAffichees, marque].slice(-NB_MAX_MARQUES);
+    diffuserMarques();
+    setTimeout(() => {
+      marquesAffichees = marquesAffichees.filter(m => m.id !== marque.id);
+      diffuserMarques();
+    }, marque.dureeMs);
+  };
+  if (p.delaiMs > 0) setTimeout(afficher, Math.min(p.delaiMs, 30000)); else afficher();
+  return { succes: true };
 }
 
 /** Accusé d'affichage automatique, jamais une demande de validation à l'étudiant. */
@@ -264,7 +327,7 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 
     const principale = trouverFenetrePrincipale();
     if (!principale || !etat.curseur) {
-      this.context.notifyListeners("etat", etat);
+      this.context.notifyListeners("etat", avecInformationCurseur(etat));
       return;
     }
     // Conversion local -> absolu : voir commentaire d'en-tete. Les autres

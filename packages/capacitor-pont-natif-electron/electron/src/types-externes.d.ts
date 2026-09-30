@@ -13,6 +13,9 @@ declare module "capacitor-superposition-electron/electron/dist/plugin.mjs" {
   export function pointerCurseurEcran(point: { x: number; y: number }): Promise<{ succes: true }>;
   export function annoncerUtilisationCurseurReel(texte: string): Promise<void>;
   export function avecSourisTraversante<T>(operation: () => Promise<T>): Promise<T>;
+  export function marquerEcran(p: {
+    forme: string; x: number; y: number; largeur: number; hauteur: number; delaiMs: number; dureeMs: number;
+  }): Promise<{ succes: true }>;
 }
 
 // screenshot-desktop n'a pas de paquet @types officiel au moment

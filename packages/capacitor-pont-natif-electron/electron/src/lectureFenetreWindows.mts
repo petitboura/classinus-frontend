@@ -62,6 +62,12 @@ export interface ElementLu {
   etats: string[];
   x: number;
   y: number;
+  // Coin haut gauche de l'element, en pixels d'ecran.
+  gauche: number;
+  haut: number;
+  // Taille de l'element en pixels d'ecran (pour entourer, souligner, surligner).
+  largeur: number;
+  hauteur: number;
 }
 
 export interface LectureFenetre {
@@ -425,6 +431,10 @@ ${CODE_CSHARP}
           etats = @(LireEtats $el)
           x = [int]($rect.X + $rect.Width / 2)
           y = [int]($rect.Y + $rect.Height / 2)
+          gauche = [int]$rect.X
+          haut = [int]$rect.Y
+          largeur = [int]$rect.Width
+          hauteur = [int]$rect.Height
         })
         if ($nom -ne '') { $nomTransmis = $nom }
       }
@@ -559,6 +569,10 @@ function lireUneFois(
             etats: normaliserTableau<string>(e.etats).filter((s) => typeof s === "string"),
             x: Number(e.x) || 0,
             y: Number(e.y) || 0,
+            gauche: Number(e.gauche) || 0,
+            haut: Number(e.haut) || 0,
+            largeur: Number(e.largeur) || 0,
+            hauteur: Number(e.hauteur) || 0,
           })),
           coupe: r.coupe === true,
           mode: r.mode === "uia" ? "uia" : "titre_seul",

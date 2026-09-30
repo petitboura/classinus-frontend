@@ -29,6 +29,7 @@ import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
+import { MarquesEcranAgent } from "@/components/MarquesEcranAgent";
 import { ContexteCurseurVirtuel, type ValeurCurseurVirtuel, type FormeCurseur } from "@/lib/contexteCurseurVirtuel";
 import { ContexteCanalEnDirect, type ValeurCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import {
@@ -37,6 +38,7 @@ import {
   definirCapturerSourisSuperposition,
   interactionsSuperposition,
   type EtatSuperposition,
+  type MarqueEcranAffichee,
 } from "@/lib/superpositionElectron";
 
 type CanalAffichage = Pick<
@@ -65,6 +67,7 @@ export default function PageAgentSuperposition() {
     enAction: false,
   });
   const [canal, setCanal] = useState(ETAT_CANAL_INITIAL);
+  const [marques, setMarques] = useState<MarqueEcranAffichee[]>([]);
   // Dernière position reçue : ne relayer que les vrais glissements.
   const dernierePositionRecue = useRef({ x: 0, y: 0 });
 
@@ -72,6 +75,7 @@ export default function PageAgentSuperposition() {
     marquerFenetreSuperposition();
     return ecouterEtatSuperposition((etat: EtatSuperposition) => {
       dernierePositionRecue.current = { x: etat.curseur.x, y: etat.curseur.y };
+      setMarques(Array.isArray(etat.marques) ? etat.marques : []);
       x.set(etat.curseur.x);
       y.set(etat.curseur.y);
       echelle.set(etat.curseur.echelle);
@@ -167,6 +171,7 @@ export default function PageAgentSuperposition() {
   return (
     <ContexteCurseurVirtuel.Provider value={valeurCurseur}>
       <ContexteCanalEnDirect.Provider value={valeurCanal}>
+        <MarquesEcranAgent marques={marques} />
         <CurseurVirtuelAgent />
         <BulleDialogueAgent />
         <BoutonJournalAgent />

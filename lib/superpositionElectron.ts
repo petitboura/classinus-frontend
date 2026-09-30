@@ -26,7 +26,18 @@ import {
   type ValeurCanalEnDirect,
 } from "@/lib/contexteCanalEnDirect";
 
+export interface MarqueEcranAffichee {
+  id: string;
+  forme: "entourer" | "souligner" | "surligner";
+  x: number;
+  y: number;
+  largeur: number;
+  hauteur: number;
+  dureeMs: number;
+}
+
 export interface EtatSuperposition {
+  marques?: MarqueEcranAffichee[];
   pointageId?: string;
   informationId?: string;
   curseur: { x: number; y: number; echelle: number; visible: boolean; forme: string; enAction: boolean };

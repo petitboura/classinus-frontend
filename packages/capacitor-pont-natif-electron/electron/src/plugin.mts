@@ -35,7 +35,7 @@ import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-elec
 import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/plugin.mjs";
 // Lot V : lecture en texte de la fenetre au premier plan (UI Automation).
 import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
-import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversante } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
+import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversante, marquerEcran } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
 import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
 import { cliquerEcran } from "./clicEcran.mjs";
 
@@ -155,6 +155,8 @@ function decrireActionSysteme(type: string, parametres: Record<string, unknown>)
   switch (type) {
     case "pointer_ecran":
       return "Clovis pointe à l'écran";
+    case "marquer_ecran":
+      return "Clovis marque un endroit de l'écran";
     case "cliquer_ecran":
       return "Clovis clique à l'écran";
     case "taper_clavier":
@@ -224,6 +226,16 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
     switch (type) {
       case "pointer_ecran":
         return await pointerCurseurEcran({ x: Number(parametres.x), y: Number(parametres.y) });
+      case "marquer_ecran":
+        return await marquerEcran({
+          forme: String(parametres.forme ?? ""),
+          x: Number(parametres.x),
+          y: Number(parametres.y),
+          largeur: Number(parametres.largeur),
+          hauteur: Number(parametres.hauteur),
+          delaiMs: Number(parametres.delai_secondes ?? 0) * 1000,
+          dureeMs: Number(parametres.duree_secondes ?? 5) * 1000,
+        });
       case "cliquer_ecran": {
         const x = Number(parametres.x);
         const y = Number(parametres.y);
