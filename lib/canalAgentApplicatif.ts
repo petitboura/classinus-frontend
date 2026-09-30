@@ -650,6 +650,9 @@ function traiterMessage(message: unknown) {
     montrer_action_id?: string;
     lire_page?: boolean;
     longueur_max?: number;
+    action_systeme?: string;
+    parametres?: Record<string, unknown>;
+    via_renderer?: boolean;
   };
   if (m.accuse_message_etudiant !== undefined) {
     traiterAccuseMessageEtudiant(m.accuse_message_etudiant, m.pris_en_compte);
@@ -663,6 +666,17 @@ function traiterMessage(message: unknown) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
   } else if (m.id && m.lire_page === true) {
     traiterDemandeLecturePage(m.id, m.longueur_max);
+  } else if (m.id && m.action_systeme && m.via_renderer === true && surElectron()) {
+    // Le serveur choisit ce relais OU la connexion native historique, jamais
+    // les deux : un clic/clavier ne doit surtout pas être exécuté deux fois.
+    const { id, action_systeme, parametres } = m;
+    void import("@capacitor/core").then(({ registerPlugin }) => {
+      const pont = registerPlugin<{
+        executerActionSysteme(options: { id: string; type: string; parametres: Record<string, unknown> }): Promise<unknown>;
+      }>("PontNatif");
+      return pont.executerActionSysteme({ id, type: action_systeme, parametres: parametres ?? {} });
+    }).then(resultat => envoyerReponse(id, resultat))
+      .catch(e => envoyerReponse(id, { erreur: e instanceof Error ? e.message : String(e) }));
   } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
     traiterDemandeEcriture(m.id, m.action_id, m.texte_a_ecrire);
   } else if (m.id && m.action_id) {
@@ -727,8 +741,10 @@ async function ouvrirCanal() {
       // Authentification applicative après l'ouverture : le bearer token
       // ne transite plus dans l'URL.
       const appareilId = await obtenirAppareilIdPourCanal();
+      const { Capacitor } = await import("@capacitor/core");
       if (ws.readyState !== WebSocket.OPEN) return;
-      ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId }));
+      ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId,
+        actions_systeme_via_renderer: surElectron() && Capacitor.isPluginAvailable("PontNatif") }));
       
       // Etat initial des actions disponibles pour CETTE connexion, sans
       // attendre un changement (chantier D), sinon le backend n'a rien

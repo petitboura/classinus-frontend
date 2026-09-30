@@ -173,14 +173,21 @@ async function traiterMessage(ws: WebSocket, brut: string): Promise<void> {
   }
   if (!estMessageActionSysteme(message)) return; // pas pour nous, on ignore silencieusement
 
-  const parametres = message.parametres || {};
-  const description = decrireActionSysteme(message.action_systeme, parametres);
-  notifierWeb?.("actionSysteme", { id: message.id, phase: "debut", description });
-  const resultat = await executerActionSysteme(message.action_systeme, parametres);
+  const resultat = await executerAvecJournal(message.id, message.action_systeme, message.parametres || {});
+  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ id: message.id, resultat }));
+}
+
+async function executerAvecJournal(id: string, type: string, parametres: Record<string, unknown>): Promise<unknown> {
+  const notifier = (donnees: Record<string, unknown>) => {
+    // Une erreur du miroir ne doit pas empêcher l'exécution ni sa réponse.
+    try { notifierWeb?.("actionSysteme", donnees); } catch (e) { console.warn("PontNatif : journal indisponible", e); }
+  };
+  notifier({ id, phase: "debut", description: decrireActionSysteme(type, parametres) });
+  const resultat = await executerActionSysteme(type, parametres);
   const enErreur =
     typeof resultat === "object" && resultat !== null && typeof (resultat as { erreur?: unknown }).erreur === "string";
-  notifierWeb?.("actionSysteme", { id: message.id, phase: "fin", statut: enErreur ? "erreur" : "succes" });
-  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ id: message.id, resultat }));
+  notifier({ id, phase: "fin", statut: enErreur ? "erreur" : "succes" });
+  return resultat;
 }
 
 function fenetreSuperposition(): BrowserWindow | undefined {
@@ -195,7 +202,7 @@ function handleSuperposition(): string {
 }
 
 async function restaurerFocusSousSuperposition(): Promise<void> {
-  if (!fenetreSuperposition()?.isFocused()) return;
+  if (!BrowserWindow.getAllWindows().some(f => !f.isDestroyed() && f.isFocused())) return;
   const resultat = await lireFenetreAuPremierPlan({}, handleSuperposition(), true);
   if ("erreur" in resultat) throw new Error(resultat.erreur);
 }
@@ -282,6 +289,11 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
 // Android/iOS, voir lib/supabase.ts) ---
 
 class PontNatifImpl extends ElectronPlugin {
+  async executerActionSysteme(options: { id: string; type: string; parametres?: Record<string, unknown> }): Promise<unknown> {
+    notifierWeb = (evenement, donnees) => this.context.notifyListeners(evenement, donnees);
+    return executerAvecJournal(options.id, options.type, options.parametres ?? {});
+  }
+
   async enregistrerToken(options: { token: string; apiUrl?: string }): Promise<void> {
     notifierWeb = (evenement, donnees) => this.context.notifyListeners(evenement, donnees);
     // Même destination que le renderer : les builds staging ne doivent pas ouvrir le canal système en production.
@@ -310,6 +322,6 @@ class PontNatifImpl extends ElectronPlugin {
 }
 
 export const PontNatif = defineElectronPlugin(
-  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente"] },
+  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente", "executerActionSysteme"] },
   PontNatifImpl
 );

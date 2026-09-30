@@ -188,12 +188,13 @@ ${CODE_CSHARP}
   }
 
   $fg = [LectureFenetres]::GetForegroundWindow()
-  # La barre de saisie peut avoir le focus : lire la vraie fenêtre en dessous,
-  # sans confondre toute l'application Classinus avec sa superposition.
-  if ($handleSuperposition -ne [IntPtr]::Zero -and $fg -eq $handleSuperposition) {
-    $fg = [IntPtr]::Zero
+  # Une demande dans Classinus ou dans sa barre flottante lui donne le focus.
+  # lire_ecran sert aux applications externes : retrouver la première fenêtre
+  # externe dans l'ordre Z, sans activer ni masquer de fenêtre pour une lecture.
+  if (($handleSuperposition -ne [IntPtr]::Zero -and $fg -eq $handleSuperposition) -or
+      [LectureFenetres]::Pid($fg) -eq $pidClassinus) {
     foreach ($h in [LectureFenetres]::Ouvertes()) {
-      if ($h -ne $handleSuperposition) { $fg = $h; break }
+      if ($h -ne $handleSuperposition -and [LectureFenetres]::Pid($h) -ne $pidClassinus) { $fg = $h; break }
     }
   }
   if ($fg -eq [IntPtr]::Zero) {
@@ -201,6 +202,9 @@ ${CODE_CSHARP}
   }
 
   if (${activerFenetre ? "$true" : "$false"}) {
+    if ([LectureFenetres]::Pid($fg) -eq $pidClassinus -or $fg -eq $handleSuperposition) {
+      throw "Aucune fenêtre externe disponible pour cette action."
+    }
     if (-not [LectureFenetres]::SetForegroundWindow($fg)) { throw "Impossible de rendre le focus à la fenêtre cible." }
     $resultat | ConvertTo-Json -Depth 6 -Compress
     exit 0
