@@ -150,6 +150,17 @@ public static class DiagFenetres {
   [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int i);
   [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint c);
   [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+  public static List<string> Sans_titre() {
+    List<string> r = new List<string>(); uint moi = 0; GetWindowThreadProcessId(GetForegroundWindow(), out moi);
+    EnumWindows(delegate(IntPtr h, IntPtr l) {
+      if (!IsWindowVisible(h)) return true;
+      StringBuilder t = new StringBuilder(256); GetWindowTextW(h, t, 256);
+      uint p; GetWindowThreadProcessId(h, out p);
+      if (p == moi && t.Length == 0) r.Add(h.ToInt64().ToString());
+      return true;
+    }, IntPtr.Zero);
+    return r;
+  }
   public static string Liste() {
     StringBuilder r = new StringBuilder(); int n = 0; IntPtr fg = GetForegroundWindow();
     EnumWindows(delegate(IntPtr h, IntPtr l) {
@@ -164,9 +175,23 @@ public static class DiagFenetres {
   }
 }
 '@
-[DiagFenetres]::Liste()`;
+[DiagFenetres]::Liste()
+Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+$AE = [System.Windows.Automation.AutomationElement]
+foreach ($h in [DiagFenetres]::Sans_titre()) {
+  "=== UIA de la fenetre sans titre " + $h
+  try {
+    $racine = $AE::FromHandle([IntPtr]$h)
+    "racine : type=" + $racine.Current.ControlType.ProgrammaticName + " nom=[" + $racine.Current.Name + "] classe=" + $racine.Current.ClassName + " horsecran=" + $racine.Current.IsOffscreen
+    $tous = $racine.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+    "descendants (vue brute) : " + $tous.Count
+    $i = 0
+    foreach ($e in $tous) { if ($i++ -ge 15) { break }; "  - " + $e.Current.ControlType.ProgrammaticName + " [" + $e.Current.Name + "] classe=" + $e.Current.ClassName + " horsecran=" + $e.Current.IsOffscreen + " cle=" + $e.Current.IsControlElement }
+    $ctl = $racine.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+  } catch { "erreur UIA : " + $_.Exception.Message }
+}`;
     const liste = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(diag,'utf16le').toString('base64')],{encoding:'utf8',timeout:30000});
-    throw new Error('Menu non détecté. Fenêtres visibles (haut vers bas) : '+liste.stdout.slice(0,2200)+' | lecture : '+JSON.stringify(avecMenu).slice(0,600));
+    throw new Error('Menu non détecté. '+liste.stdout.slice(0,3200)+' | lecture : '+JSON.stringify(avecMenu).slice(0,600));
   }
   assert.equal(avecMenu.menu_ouvert,true,JSON.stringify(avecMenu));
   const copier = avecMenu.elements.find(e=>e.nom==='Copier le texte');
