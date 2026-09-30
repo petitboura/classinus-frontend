@@ -38,6 +38,7 @@ import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
 import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversante, marquerEcran } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
 import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
 import { cliquerEcran } from "./clicEcran.mjs";
+import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -161,6 +162,13 @@ function decrireActionSysteme(type: string, parametres: Record<string, unknown>)
       return "Clovis clique à l'écran";
     case "taper_clavier":
       return "Clovis a écrit du texte";
+    case "appuyer_touches": {
+      // Annonce du raccourci dans le journal de l'etudiant, avant l'execution.
+      const analyse = analyserTouches(parametres.touches);
+      return analyse.ok
+        ? `Clovis utilise le raccourci ${analyse.combinaisons.map(libelleCombinaison).join(", ")}`
+        : "Clovis utilise le clavier";
+    }
     case "ouvrir_application": {
       const nom = String(parametres.nom ?? "").trim();
       return nom ? `Clovis a ouvert ${nom}` : "Clovis a ouvert une application";
@@ -276,6 +284,26 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         await restaurerFocusSousSuperposition();
         await keyboard.type(texte);
         return { ok: true };
+      }
+      case "appuyer_touches": {
+        // Touches seules et raccourcis (ctrl+c, alt+tab, enter...), comme un
+        // utilisateur. Une touche inconnue est refusee, jamais devinee.
+        const analyse = analyserTouches(parametres.touches);
+        if (!analyse.ok) return { erreur: analyse.erreur };
+        const { keyboard, Key } = await import("@nut-tree-fork/nut-js");
+        await restaurerFocusSousSuperposition();
+        for (const noms of analyse.combinaisons) {
+          const touches = noms.map((nom) => (Key as unknown as Record<string, number>)[nom]);
+          if (touches.some((t) => typeof t !== "number")) return { erreur: `touche non disponible sur ce système : ${noms.join("+")}` };
+          // Les touches sont toujours relachees, meme en cas d'erreur en cours
+          // de route : jamais de Ctrl ou de Windows reste enfonce.
+          try {
+            await keyboard.pressKey(...touches);
+          } finally {
+            await keyboard.releaseKey(...[...touches].reverse());
+          }
+        }
+        return { ok: true, combinaisons: analyse.combinaisons.map(libelleCombinaison) };
       }
       case "ouvrir_application": {
         const nom = String(parametres.nom ?? "").trim();

@@ -57,6 +57,20 @@ PowerShell avec une violation d'acces sous Windows 11. Ordre des methodes COM
 et GUID verifies contre `uiautomationclient.h` du SDK Windows. Non verifie sur
 une vraie machine Windows a ce jour.
 
+Menus ouverts : un menu, un menu contextuel ou une liste deroulante est une
+fenetre a part, absente de l'arbre de la fenetre au premier plan. Le script
+lit donc d'abord les fenetres annexes placees AU-DESSUS de la fenetre cible
+(classe `#32768`, ou meme processus avec fenetre outil / possedee / sans titre /
+nom contenant `Popup`, ou `ComboLBox`), maximum 6. Leurs elements portent
+`zone: "menu ouvert"` et le resultat `menu_ouvert: true`.
+
+Clavier : `taper_clavier` ecrit du texte ; `appuyer_touches` (module pur
+`touchesClavier.mts`) appuie sur des touches seules et des raccourcis
+(`ctrl+c`, `alt+tab`, `win+d`, `enter`, `ctrl+a ctrl+c`...), comme un
+utilisateur. Une touche inconnue est refusee, les touches sont toujours
+relachees (jamais de Ctrl reste enfonce), chaque raccourci est annonce dans le
+journal avant d'etre execute.
+
 Filet de securite : si PowerShell s'arrete brutalement sans rien renvoyer
 (plantage de Windows dans la lecture du texte long d'un document ou d'un
 champ, code 3221225477), la lecture est relancee une seule fois sans cette

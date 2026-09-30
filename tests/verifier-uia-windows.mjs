@@ -12,6 +12,8 @@ if (process.platform !== 'win32') throw new Error('Ce test nécessite Windows et
 const dossier = await mkdtemp(join(tmpdir(), 'classinus-uia-'));
 const fichierEtat = join(dossier, 'etat.json');
 const demandeFocus = join(dossier, 'superposition');
+const demandeMenu = join(dossier, 'menu-ouvrir');
+const fermerMenu = join(dossier, 'menu-fermer');
 const ps = s => s.replaceAll("'", "''");
 const titre = `Classinus UIA regression ${process.pid}`;
 const script = `
@@ -42,6 +44,10 @@ $champ.Text='Valeur fenêtre Windows'; $champ.Left=30; $champ.Top=140; $champ.Wi
 $secret = New-Object Windows.Forms.TextBox
 $secret.Text='SECRET-INTERDIT'; $secret.UseSystemPasswordChar=$true; $secret.Left=30; $secret.Top=190
 $form.Controls.AddRange(@($label,$bouton,$champ,$secret,$case))
+$menu = New-Object Windows.Forms.ContextMenuStrip
+[void]$menu.Items.Add('Copier le texte')
+[void]$menu.Items.Add('Coller le texte')
+
 $overlay = New-Object Windows.Forms.Form
 $overlay.Text='classinus-superposition-agent'
 $overlay.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedToolWindow
@@ -54,6 +60,8 @@ $form.Add_Shown({ $form.Activate(); [void][FocusTest]::SetForegroundWindow($form
 $timer = New-Object Windows.Forms.Timer
 $timer.Interval=100
 $timer.Add_Tick({
+  if ([System.IO.File]::Exists('${ps(demandeMenu)}') -and -not $menu.Visible) { $menu.Show($form, 400, 250); EcrireEtat 'menu' }
+  if ([System.IO.File]::Exists('${ps(fermerMenu)}') -and $menu.Visible) { $menu.Close() }
   if ([System.IO.File]::Exists('${ps(demandeFocus)}') -and -not $overlay.Visible) {
     $overlay.Show($form); $overlay.Activate(); [void][FocusTest]::SetForegroundWindow($overlay.Handle)
     EcrireEtat 'superposition'
@@ -123,6 +131,17 @@ try {
   assert.equal((await cliquerParAccessibiliteWindows(label)).statut,'indisponible');
   assert.equal(await positionSouris(),avant);
   console.log('OK Windows réel : bouton cliqué et case cochée par actions indépendantes, contrôle incompatible détecté, pointeur Windows inchangé.');
+  await writeFile(demandeMenu,'go');
+  await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='menu');
+  const avecMenu = await lireFenetreAuPremierPlan({},etat.superposition);
+  assert.equal(avecMenu.titre_fenetre_active,titre,JSON.stringify(avecMenu));
+  assert.equal(avecMenu.menu_ouvert,true,JSON.stringify(avecMenu));
+  const copier = avecMenu.elements.find(e=>e.nom==='Copier le texte');
+  assert(copier && copier.zone==='menu ouvert' && Number.isFinite(copier.x),JSON.stringify(avecMenu));
+  assert(avecMenu.elements.some(e=>e.nom==='Continuer' && !e.zone),'la fenêtre elle-même doit rester lue : '+JSON.stringify(avecMenu));
+  await writeFile(fermerMenu,'go');
+  await attendre(async()=>(await lireFenetreAuPremierPlan({},etat.superposition)).menu_ouvert===false);
+  console.log('OK Windows réel : menu contextuel ouvert lu avec sa zone, puis absent une fois refermé.');
   await writeFile(demandeFocus,'go');
   await attendre(async()=>JSON.parse(await readFile(fichierEtat,'utf8')).phase==='superposition');
   verifier(await lireFenetreAuPremierPlan({},etat.superposition));

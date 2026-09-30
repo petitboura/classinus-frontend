@@ -68,6 +68,9 @@ export interface ElementLu {
   // Taille de l'element en pixels d'ecran (pour entourer, souligner, surligner).
   largeur: number;
   hauteur: number;
+  // "menu ouvert" pour un element d'un menu, menu contextuel ou liste deroulante
+  // ouvert par la fenetre (fenetre a part) ; absent pour la fenetre elle-meme.
+  zone?: string;
 }
 
 export interface LectureFenetre {
@@ -81,6 +84,8 @@ export interface LectureFenetre {
   elements: ElementLu[];
   coupe: boolean;
   mode: "uia" | "titre_seul";
+  // Vrai si un menu, menu contextuel ou liste deroulante est ouvert au-dessus de la fenetre.
+  menu_ouvert?: boolean;
   // Vrai si la lecture du texte long (documents, champs multilignes) a fait
   // planter Windows et a ete abandonnee : les elements sont la, mais leur
   // texte long n'est pas lu.
@@ -211,6 +216,30 @@ public static class LectureFenetres {
     return edit && (GetWindowLong(h, -16) & 0x20) != 0;
   }
   public static uint Pid(IntPtr h) { uint p; GetWindowThreadProcessId(h, out p); return p; }
+  // Menus, menus contextuels et listes deroulantes ouverts par la fenetre cible : ce sont des
+  // fenetres a part, absentes de l'arbre de la fenetre au premier plan. Seules celles placees
+  // AU-DESSUS de la fenetre cible dans l'ordre d'affichage sont retenues.
+  public static List<IntPtr> Annexes(IntPtr cible, uint pidCible, uint pidClassinus, IntPtr superposition) {
+    List<IntPtr> liste = new List<IntPtr>();
+    EnumWindows(delegate(IntPtr h, IntPtr l) {
+      if (h == cible) return false;
+      if (h == superposition || !IsWindowVisible(h) || IsIconic(h)) return true;
+      uint p = Pid(h);
+      if (p == pidClassinus) return true;
+      int cache;
+      if (DwmGetWindowAttribute(h, 14, out cache, 4) == 0 && cache != 0) return true;
+      string c = Classe(h);
+      if (c != "#32768") {
+        if (p != pidCible) return true;
+        bool annexe = (GetWindowLong(h, -20) & 0x80) != 0 || GetWindow(h, 4) != IntPtr.Zero || Titre(h).Length == 0
+          || c.IndexOf("Popup", StringComparison.OrdinalIgnoreCase) >= 0 || c == "ComboLBox";
+        if (!annexe) return true;
+      }
+      if (liste.Count < 6) liste.Add(h);
+      return true;
+    }, IntPtr.Zero);
+    return liste;
+  }
   public static List<IntPtr> Ouvertes() {
     List<IntPtr> liste = new List<IntPtr>();
     EnumWindows(delegate(IntPtr h, IntPtr l) {
@@ -271,6 +300,7 @@ ${CODE_CSHARP}
 
   $script:coupe = $false
   $script:noeuds = 0
+  $script:zoneCourante = $null
   $script:elements = New-Object System.Collections.Generic.List[object]
   $resultat = [ordered]@{
     titre_fenetre_active = $null
@@ -423,7 +453,7 @@ ${CODE_CSHARP}
       }
       $doublon = ($typeCle -eq 'Text' -and $nom -ne '' -and $nom -eq $nomParent)
       if (-not $doublon -and ($nom -ne '' -or $valeur -ne '' -or $masquee)) {
-        $script:elements.Add([ordered]@{
+        $element = [ordered]@{
           type = $types[$typeCle]
           nom = $nom
           valeur = $(if ($valeur -ne '') { $valeur } else { $null })
@@ -435,7 +465,9 @@ ${CODE_CSHARP}
           haut = [int]$rect.Y
           largeur = [int]$rect.Width
           hauteur = [int]$rect.Height
-        })
+        }
+        if ($script:zoneCourante) { $element.zone = $script:zoneCourante }
+        $script:elements.Add($element)
         if ($nom -ne '') { $nomTransmis = $nom }
       }
     }
@@ -448,6 +480,20 @@ ${CODE_CSHARP}
       $enfant = $marcheur.GetNextSibling($enfant, $cr)
     }
   }
+
+  # Menus et listes ouverts par la fenetre : lus en premier, car ils sont au-dessus et ce sont
+  # eux que l'etudiant voit apres un clic sur un bouton de menu.
+  $menuOuvert = $false
+  foreach ($annexe in [LectureFenetres]::Annexes($fg, [uint32]$pidFg, [uint32]$pidClassinus, $handleSuperposition)) {
+    if ($script:coupe) { break }
+    $avantAnnexe = $script:elements.Count
+    try {
+      $script:zoneCourante = 'menu ouvert'
+      Visiter ($AE::FromHandle($annexe).GetUpdatedCache($cr)) 0 ''
+    } catch { } finally { $script:zoneCourante = $null }
+    if ($script:elements.Count -gt $avantAnnexe) { $menuOuvert = $true }
+  }
+  $resultat.menu_ouvert = $menuOuvert
 
   $racine = $AE::FromHandle($fg).GetUpdatedCache($cr)
   Visiter $racine 0 ''
@@ -573,7 +619,9 @@ function lireUneFois(
             haut: Number(e.haut) || 0,
             largeur: Number(e.largeur) || 0,
             hauteur: Number(e.hauteur) || 0,
+            ...(typeof e.zone === "string" ? { zone: e.zone } : {}),
           })),
+          menu_ouvert: r.menu_ouvert === true,
           coupe: r.coupe === true,
           mode: r.mode === "uia" ? "uia" : "titre_seul",
         });
