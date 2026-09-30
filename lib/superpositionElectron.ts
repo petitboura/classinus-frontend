@@ -123,7 +123,9 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
   useEffect(() => {
     if (!surElectron()) return;
 
-    const pousser = () => {
+    let annule = false;
+    let enAttente = false;
+    const envoyer = () => {
       void SuperpositionAgent.pousserEtat({
         curseur: {
           x: curseur.x.get(),
@@ -147,6 +149,17 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
       });
     };
 
+    // x, y et le repère changent ensemble : ne jamais envoyer une position
+    // intermédiaire qui mélange des coordonnées page et écran.
+    const pousser = () => {
+      if (enAttente) return;
+      enAttente = true;
+      queueMicrotask(() => {
+        enAttente = false;
+        if (!annule) envoyer();
+      });
+    };
+
     pousser();
     // deplacerVers anime x/y/echelle en continu (plusieurs fois par
     // trajectoire) : écouter ces MotionValue directement plutôt que de
@@ -157,6 +170,7 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
     const retraitEchelle = curseur.echelle.on("change", pousser);
     const retraitRepere = curseur.repere?.on("change", pousser);
     return () => {
+      annule = true;
       retraitX();
       retraitY();
       retraitEchelle();
@@ -215,9 +229,7 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
           // Le plugin indique le repère ; sur PC, garder une position écran
           // absolue évite de transporter le curseur avec la fenêtre Classinus.
           if (typeof action.args[0] === "number" && typeof action.args[1] === "number") {
-            c.x.set(action.args[0]);
-            c.y.set(action.args[1]);
-            c.repere?.set(action.repere ?? "page");
+            c.deposerPoint?.({ x: action.args[0], y: action.args[1] }, action.repere ?? "page");
           }
           break;
         case "envoyerMessageEtudiant":

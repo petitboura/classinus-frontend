@@ -17,8 +17,8 @@
 //   reponse, journal...). Relaye tel quel a la superposition via
 //   notifyListeners, SAUF le point ecran du curseur : il est fourni en
 //   coordonnees LOCALES a la page (comme un getBoundingClientRect normal),
-//   et ce plugin le convertit ici en coordonnees ECRAN ABSOLUES en
-//   ajoutant la position de la fenetre principale (getContentBounds) --
+//   et ce plugin ancre chaque NOUVEAU déplacement en ECRAN ABSOLU,
+//   puis conserve cet ancrage si la fenêtre principale bouge --
 //   necessaire car la fenetre de superposition couvre tout l'ecran (voir
 //   electron/main.ts) et n'a donc pas le meme repere que la page.
 // - envoyerInteraction : appele par la fenetre de SUPERPOSITION (glisser
@@ -73,8 +73,24 @@ let notifierEtat: ((etat: EtatPousse) => void) | null = null;
 let notifierInteraction: ((action: Record<string, unknown>) => void) | null = null;
 let pointageEnCours = false;
 let pointAffiche: PointEcranLocal | null = null;
-let dernierPointPrincipal: PointEcranLocal | null = null;
+let pointEcranAffiche: PointEcranLocal | null = null;
+let dernierPointPrincipal: (PointEcranLocal & { repere: unknown }) | null = null;
 const confirmationsPointage = new Map<string, () => void>();
+
+function estSurUnEcran(point: PointEcranLocal): boolean {
+  return Number.isFinite(point.x) && Number.isFinite(point.y) && screen.getAllDisplays().some(({ bounds: b }) =>
+    point.x >= b.x && point.x < b.x + b.width && point.y >= b.y && point.y < b.y + b.height);
+}
+
+function retenirSurUnEcran(point: PointEcranLocal): PointEcranLocal {
+  if (estSurUnEcran(point)) return point;
+  // La courbe peut déborder même si ses deux extrémités sont visibles.
+  const candidats = screen.getAllDisplays().map(({ bounds: b }) => ({
+    x: Math.max(b.x + 4, Math.min(point.x, b.x + b.width - 28)),
+    y: Math.max(b.y + 4, Math.min(point.y, b.y + b.height - 28)),
+  }));
+  return candidats.reduce((a, b) => Math.hypot(a.x - point.x, a.y - point.y) <= Math.hypot(b.x - point.x, b.y - point.y) ? a : b);
+}
 
 /** Trajectoire calculée dans Electron : aucun appel au pilote souris ni au RAF du renderer principal. */
 export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<{ succes: true }> {
@@ -114,7 +130,9 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
         if (fenetre.isDestroyed()) throw new Error("La superposition a été fermée pendant le pointage.");
         const progression = Math.min((performance.now() - debut) / duree, 1);
         const t = progression * progression * (3 - 2 * progression), u = 1 - t;
-        pointAffiche = { x: u * u * depart.x + 2 * u * t * controle.x + t * t * cible.x, y: u * u * depart.y + 2 * u * t * controle.y + t * t * cible.y };
+        const point = { x: u * u * depart.x + 2 * u * t * controle.x + t * t * cible.x, y: u * u * depart.y + 2 * u * t * controle.y + t * t * cible.y };
+        pointEcranAffiche = retenirSurUnEcran({ x: origine.x + point.x * zoom, y: origine.y + point.y * zoom });
+        pointAffiche = { x: (pointEcranAffiche.x - origine.x) / zoom, y: (pointEcranAffiche.y - origine.y) / zoom };
         notifier({ ...dernierEtat, curseur: { ...etat.curseur, ...pointAffiche, visible: true, enAction: progression < 1, forme: progression < 1 ? "defaut" : "main" }, ...(progression === 1 ? { pointageId: id } : {}) });
         if (progression === 1) resolve(); else animation = setTimeout(avancer, 16);
         } catch (e) { reject(e); }
@@ -174,9 +192,9 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     }
     const bornes = principale.getContentBounds();
     const zoom = principale.webContents.getZoomFactor();
-    const departEcran = p.repereDepart === "ecran" ? p.depart : {
+    const departEcran = pointEcranAffiche ?? (p.repereDepart === "ecran" ? p.depart : {
       x: bornes.x + p.depart.x * zoom, y: bornes.y + p.depart.y * zoom,
-    };
+    });
     if (p.repereCible === "ecran") {
       const cible = process.platform === "win32" || process.platform === "linux"
         ? screen.screenToDipPoint({ x: Math.round(p.cible.x), y: Math.round(p.cible.y) }) : p.cible;
@@ -212,16 +230,20 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     const point = etat.curseur.repere === "ecran" ? etat.curseur : {
       x: etat.curseur.x * zoom + bornes.x, y: etat.curseur.y * zoom + bornes.y,
     };
-    const positionPrincipale = { x: etat.curseur.x, y: etat.curseur.y };
-    // Une action DOM peut reprendre la main ; un simple rafraîchissement de journal ne déplace rien.
-    if (!pointageEnCours && dernierPointPrincipal && (positionPrincipale.x !== dernierPointPrincipal.x || positionPrincipale.y !== dernierPointPrincipal.y)) pointAffiche = null;
+    const positionPrincipale = { x: etat.curseur.x, y: etat.curseur.y, repere: etat.curseur.repere };
+    const positionChangee = !dernierPointPrincipal || positionPrincipale.x !== dernierPointPrincipal.x || positionPrincipale.y !== dernierPointPrincipal.y || positionPrincipale.repere !== dernierPointPrincipal.repere;
+    // Seul un déplacement du curseur change son ancrage écran. Bouger ou
+    // minimiser Classinus, ou rafraîchir le journal, conserve le dernier point.
+    if (!pointageEnCours && positionChangee && estSurUnEcran(point)) pointEcranAffiche = { x: point.x, y: point.y };
+    if (!pointEcranAffiche) {
+      const b = screen.getAllDisplays()[0].bounds;
+      pointEcranAffiche = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+    }
     dernierPointPrincipal = positionPrincipale;
-    const curseur = { ...etat.curseur, x: (point.x - origine.x) / zoomSuperposition, y: (point.y - origine.y) / zoomSuperposition };
+    pointAffiche = { x: (pointEcranAffiche.x - origine.x) / zoomSuperposition, y: (pointEcranAffiche.y - origine.y) / zoomSuperposition };
+    const curseur = { ...etat.curseur, ...pointAffiche, ...(pointageEnCours ? { visible: true, enAction: true } : {}) };
     dernierEtat = { ...etat, curseur };
-    this.context.notifyListeners("etat", {
-      ...etat,
-      curseur: pointAffiche ? { ...curseur, ...pointAffiche, visible: true, enAction: pointageEnCours } : curseur,
-    });
+    this.context.notifyListeners("etat", dernierEtat);
   }
 
   async envoyerInteraction(action: Record<string, unknown>): Promise<void> {
@@ -234,7 +256,9 @@ class SuperpositionAgentImpl extends ElectronPlugin {
         const superposition = trouverFenetreSuperposition();
         const origine = superposition?.getContentBounds() ?? { x: 0, y: 0 };
         const zoomSuperposition = superposition?.webContents.getZoomFactor() ?? 1;
-        this.context.notifyListeners("interaction", { ...action, repere: "ecran", args: [args[0] * zoomSuperposition + origine.x, args[1] * zoomSuperposition + origine.y] });
+        if (!Number.isFinite(args[0]) || !Number.isFinite(args[1]) || pointageEnCours) return;
+        pointEcranAffiche = retenirSurUnEcran({ x: args[0] * zoomSuperposition + origine.x, y: args[1] * zoomSuperposition + origine.y });
+        this.context.notifyListeners("interaction", { ...action, repere: "ecran", args: [pointEcranAffiche.x, pointEcranAffiche.y] });
         return;
       }
     }

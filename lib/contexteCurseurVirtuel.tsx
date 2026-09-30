@@ -61,6 +61,8 @@ export type ValeurCurseurVirtuel = {
   // s'active (voir AppShell.tsx), pour que le curseur soit visible dès
   // la première réponse, pas seulement au moment d'un premier clic.
   afficher: () => void;
+  deposerPoint?: (point: PointEcran, repere: RepereCurseur) => void;
+  surFinGlissement?: () => void;
 };
 
 export const ContexteCurseurVirtuel = createContext<ValeurCurseurVirtuel | null>(null);
@@ -185,6 +187,18 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
 
   const definirForme = useCallback((f: FormeCurseur) => setForme(f), []);
 
+  const deposerPoint = useCallback((point: PointEcran, repereCible: RepereCurseur) => {
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+    animationTrajetRef.current?.stop();
+    ++generationRef.current;
+    positionInitialisee.current = true;
+    repere.set(repereCible);
+    x.set(point.x);
+    y.set(point.y);
+    setVisible(true);
+    setEnAction(false);
+  }, [repere, x, y]);
+
   const deplacerVers = useCallback(
     async (cible: PointEcran | HTMLElement, options?: OptionsDeplacement): Promise<void> => {
       // Arrete toute trajectoire encore en cours avant d'en lancer une
@@ -242,6 +256,7 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
         duration: duree,
         ease: "easeInOut",
         onUpdate: (t) => {
+          if (generationRef.current !== generation) return;
           // Cible reelle re-mesuree a chaque frame : la courbe garde sa
           // forme initiale, mais le point final suit la position live
           // de l'element (scroll qui se termine, leger reflow) plutot
@@ -279,5 +294,5 @@ export function useFournirCurseurVirtuel(): ValeurCurseurVirtuel {
     [x, y, echelle, repere, centrer]
   );
 
-  return { x, y, echelle, repere, visible, forme, enAction, definirForme, deplacerVers, masquer, afficher };
+  return { x, y, echelle, repere, visible, forme, enAction, definirForme, deplacerVers, masquer, afficher, deposerPoint };
 }

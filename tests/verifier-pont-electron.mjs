@@ -94,6 +94,20 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
       await miroir.loadURL(new URL('miroir.html',w.webContents.getURL()).href);
       await new Promise(r=>setTimeout(r,100));
       await w.webContents.executeJavaScript('window.preparerTestPointage()');
+      await new Promise(r=>setTimeout(r,100));
+      const lirePosition=()=>miroir.webContents.executeJavaScript("JSON.stringify([document.getElementById('curseur').style.left,document.getElementById('curseur').style.top])");
+      const position=await lirePosition();
+      if(position==='[\"\",\"\"]') throw new Error('Le miroir ne reçoit pas la position initiale.');
+      w.setPosition(zone.x+40,zone.y+40);
+      await w.webContents.executeJavaScript('window.preparerTestPointage()');
+      await new Promise(r=>setTimeout(r,100));
+      if(await lirePosition()!==position) throw new Error('Le curseur suit encore la fenêtre déplacée.');
+      w.minimize();
+      await w.webContents.executeJavaScript('window.preparerTestPointage()');
+      await new Promise(r=>setTimeout(r,100));
+      if(await lirePosition()!==position) throw new Error('Le curseur disparaît à la minimisation.');
+      w.restore();
+      console.log('CURSEUR_STABLE_DEPLACEMENT_MINIMISATION true');
       console.log('MIROIR_PRET');
     });
   `);
@@ -150,6 +164,7 @@ $f.Add_Shown({[System.IO.File]::WriteAllText('${join(temporaire,'fenetre-prete')
   }
   assert(sorties.includes('PLATEFORME electron'), sorties);
   await attendre(()=>sorties.includes('MIROIR_PRET'));
+  assert(sorties.includes('CURSEUR_STABLE_DEPLACEMENT_MINIMISATION true'),sorties);
   // Même WS et même IPC que lire_ecran ; l'arrivée doit être confirmée par le miroir réel.
   connexionRenderer.send(JSON.stringify({id:'pointage-natif',action_systeme:'pointer_ecran',parametres:{x:320,y:240},via_renderer:true}));
   await attendre(()=>messages.some(m=>m.id==='pointage-natif'&&'resultat' in m));

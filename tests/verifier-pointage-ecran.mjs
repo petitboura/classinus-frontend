@@ -42,6 +42,17 @@ try {
   await pont.envoyerInteraction({fonction:'deposerCurseur',args:[1880,500]});
   assert.deepEqual(etat.notifications.at(-1).etat.args,[600,400]);
   assert.equal(etat.notifications.at(-1).etat.repere,'ecran');
+  // Un curseur au repos ne suit pas la fenêtre, même après minimisation Windows.
+  await pont.pousserEtat({curseur:{x:40,y:80,repere:'page',visible:true}});
+  const repos = {...etat.notifications.at(-1).etat.curseur};
+  etat.bornes = {x:-32000,y:-32000};
+  await pont.pousserEtat({curseur:{x:40,y:80,repere:'page',visible:true}});
+  assert.deepEqual(etat.notifications.at(-1).etat.curseur,repos);
+  await pont.pousserEtat({curseur:{x:50,y:90,repere:'page',visible:true}});
+  assert.deepEqual(etat.notifications.at(-1).etat.curseur,repos);
+  await pont.pousserEtat({curseur:{x:NaN,y:Infinity,repere:'ecran',visible:true}});
+  assert.deepEqual(etat.notifications.at(-1).etat.curseur,{...repos,repere:'ecran'});
+  etat.bornes = {x:800,y:250};
   // Renderer principal sans requestAnimationFrame : le trajet doit quand même finir.
   globalThis.requestAnimationFrame = () => { throw new Error('RAF principal suspendu'); };
   await pont.pousserEtat({curseur:{x:600,y:400,repere:'ecran',visible:true},canal:{actif:true}});
@@ -63,7 +74,7 @@ try {
   const contexte = join(temporaire,'contexte.mjs');
   await build({entryPoints:[join(racine,'lib/contexteCurseurVirtuel.tsx')],outfile:contexte,bundle:true,format:'esm',platform:'node',plugins:[substitutions({
     'react': `export const createContext=()=>({});export const useCallback=f=>f;export const useContext=()=>null;export const useRef=v=>({current:v});export const useState=v=>[v,()=>{}];`,
-    'framer-motion': `export const useMotionValue=v=>({get:()=>v,set:n=>{v=n}});export const animate=(_a,_b,o)=>{o.onUpdate?.(1);const p=Promise.resolve();p.stop=()=>{};return p;};`,
+    'framer-motion': `export const useMotionValue=v=>({get:()=>v,set:n=>{v=n}});export const animate=(_a,_b,o)=>{globalThis.testPointage.dernierUpdate=o.onUpdate;o.onUpdate?.(1);const p=Promise.resolve();p.stop=()=>{globalThis.testPointage.animationArretee=true};return p;};`,
     '@capacitor/core': `export const Capacitor={getPlatform:()=>"electron"};export const registerPlugin=()=>globalThis.testPointage.pont;`,
   })]});
   globalThis.window = {innerWidth:800,innerHeight:600};
@@ -76,7 +87,13 @@ try {
   await curseur.deplacerVers({x:20,y:30});
   assert.equal(curseur.repere.get(),'page');
   assert.equal(curseur.x.get(),20); assert.equal(curseur.y.get(),30);
-  console.log('OK : DPI 150 %, zoom, écrans à origine négative, position indépendante de la fenêtre, aller-retour page/écran, coordonnées invalides. Aucun pilote souris chargé.');
+  curseur.deposerPoint({x:700,y:500},'ecran');
+  etat.dernierUpdate(0.5); // une ancienne animation ne doit pas écraser le dépôt.
+  curseur.afficher();
+  assert(etat.animationArretee);
+  assert.equal(curseur.repere.get(),'ecran');
+  assert.equal(curseur.x.get(),700); assert.equal(curseur.y.get(),500);
+  console.log('OK : DPI 150 %, zoom, écrans à origine négative, fenêtre déplacée/minimisée, position invalide ignorée, dépôt préservé contre une ancienne animation. Aucun pilote souris chargé.');
 } finally {
   delete globalThis.testPointage; delete globalThis.window; delete globalThis.HTMLElement;
   await rm(temporaire,{recursive:true,force:true});

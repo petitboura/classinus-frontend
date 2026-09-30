@@ -65,8 +65,7 @@ export default function PageAgentSuperposition() {
     enAction: false,
   });
   const [canal, setCanal] = useState(ETAT_CANAL_INITIAL);
-  // Derniere position recue de la fenetre principale : sert a savoir si
-  // l'etudiant a reellement deplace le curseur (glisser) a la fin d'un appui.
+  // Dernière position reçue : ne relayer que les vrais glissements.
   const dernierePositionRecue = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -95,29 +94,20 @@ export default function PageAgentSuperposition() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Hit-testing : la fenetre est en passe-clic par defaut (voir
-  // electron/main.ts), la capture ne s'active que par dessus un élément
-  // reellement affiche par ces 4 composants -- tous deja marques
-  // data-agent-superposition="true" (chantiers precedents). "forward:
-  // true" cote main process laisse les mousemove remonter meme en mode
-  // passe-clic, voir le plugin SuperpositionAgent.
   // Fin d'un glissement du curseur : on previent la fenetre principale de
   // la nouvelle position, sinon elle repousse l'ancienne au prochain etat
   // et le curseur revient a sa place.
-  useEffect(() => {
-    function surRelachement() {
-      const px = x.get();
-      const py = y.get();
-      const ref = dernierePositionRecue.current;
-      if (Math.abs(px - ref.x) < 1 && Math.abs(py - ref.y) < 1) return;
-      dernierePositionRecue.current = { x: px, y: py };
-      interactionsSuperposition.deposerCurseur(px, py);
-    }
-    window.addEventListener("pointerup", surRelachement);
-    return () => window.removeEventListener("pointerup", surRelachement);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  function surFinGlissement() {
+    const px = x.get();
+    const py = y.get();
+    const ref = dernierePositionRecue.current;
+    if (!Number.isFinite(px) || !Number.isFinite(py)) return;
+    if (Math.abs(px - ref.x) < 1 && Math.abs(py - ref.y) < 1) return;
+    dernierePositionRecue.current = { x: px, y: py };
+    interactionsSuperposition.deposerCurseur(px, py);
+  }
 
+  // La capture s'active seulement au-dessus des éléments de la superposition.
   const surElementRef = useRef(false);
   useEffect(() => {
     function surDeplacement(e: MouseEvent) {
@@ -146,6 +136,7 @@ export default function PageAgentSuperposition() {
     deplacerVers: () => Promise.resolve(),
     masquer: () => {},
     afficher: () => {},
+    surFinGlissement,
   };
 
   const valeurCanal: ValeurCanalEnDirect = {
