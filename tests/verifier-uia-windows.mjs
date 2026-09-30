@@ -181,7 +181,7 @@ $AE = [System.Windows.Automation.AutomationElement]
 foreach ($h in [DiagFenetres]::Sans_titre()) {
   "=== UIA de la fenetre sans titre " + $h
   try {
-    $racine = $AE::FromHandle([IntPtr]$h)
+    $racine = $AE::FromHandle([IntPtr][long]$h)
     "racine : type=" + $racine.Current.ControlType.ProgrammaticName + " nom=[" + $racine.Current.Name + "] classe=" + $racine.Current.ClassName + " horsecran=" + $racine.Current.IsOffscreen
     $tous = $racine.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
     "descendants (vue brute) : " + $tous.Count
