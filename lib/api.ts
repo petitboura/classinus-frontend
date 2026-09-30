@@ -1501,10 +1501,18 @@ export type Comportement = {
   lien_libelle: string | null;
   actif: boolean;
   depuis_public: boolean;
+  categorie: CategorieConfiguration | null;
 };
 
-export async function lireMesComportements(agentId: string) {
-  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`);
+// 28/09/2026, demande Bourama : les 4 onglets séparés de "Configuration"
+// (Bureau). Chacun a son propre lieu de création (son propre bouton "+"),
+// jamais un choix proposé à l'utilisateur -- cette liste sert seulement
+// de garde-fou de type, jamais affichée telle quelle comme un sélecteur.
+export type CategorieConfiguration = "procedure" | "regle" | "comportement" | "style";
+
+export async function lireMesComportements(agentId: string, categorie?: CategorieConfiguration) {
+  const requete = categorie ? `?categorie=${categorie}` : "";
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements${requete}`);
   return resultat as Comportement[];
 }
 
@@ -1753,11 +1761,18 @@ export async function ajouterComportement(
   texte: string,
   nom?: string | null,
   lienType?: string | null,
-  lienId?: string | null
+  lienId?: string | null,
+  categorie?: CategorieConfiguration | null
 ) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`, {
     method: "POST",
-    body: JSON.stringify({ texte, nom: nom || null, lien_type: lienType || null, lien_id: lienId || null }),
+    body: JSON.stringify({
+      texte,
+      nom: nom || null,
+      lien_type: lienType || null,
+      lien_id: lienId || null,
+      categorie: categorie || null,
+    }),
   });
   return resultat as Comportement;
 }

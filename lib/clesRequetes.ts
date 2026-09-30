@@ -17,6 +17,11 @@ export const clesRequetes = {
   bibliothequeFichiers: ["bibliotheque", "fichiers"] as const,
   bibliothequeDossiers: ["bibliotheque", "dossiers"] as const,
   comportements: (agentId: string) => ["comportements", agentId] as const,
+  // 28/09/2026, demande Bourama, onglet "Configuration" de Bureau : clé
+  // séparée par catégorie, jamais mélangée au cache de "Mes skills"
+  // (comportements(agentId) ci-dessus, qui ne renvoie déjà plus les
+  // entrées catégorisées côté serveur, voir api/comportements_etudiants.py).
+  configurationSkills: (agentId: string, categorie: string) => ["configuration-skills", agentId, categorie] as const,
   codes: ["codes"] as const,
   programmeNotions: (codeId: string) => ["programme-notions", "notions", codeId] as const,
   etablissements: ["etablissements"] as const,

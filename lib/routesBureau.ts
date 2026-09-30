@@ -14,6 +14,9 @@ export const ROUTES_BUREAU = {
   entrerCode: "/bureau/entrer-code",
   etablissements: "/bureau/etablissements",
   signalements: "/bureau/signalements",
+  // 28/09/2026, demande Bourama : nouvel onglet, 4 catégories de skills
+  // (Procédure/Règle/Comportement/Style) séparées de "Mes skills".
+  configuration: "/bureau/configuration",
 } as const;
 
 /** Les pages filles de Bureau, sans la page d'accueil. */
@@ -24,4 +27,5 @@ export const PAGES_FILLES_BUREAU: readonly string[] = [
   ROUTES_BUREAU.entrerCode,
   ROUTES_BUREAU.etablissements,
   ROUTES_BUREAU.signalements,
+  ROUTES_BUREAU.configuration,
 ];

@@ -1,4 +1,4 @@
-import { CalendarCheck, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput } from "lucide-react";
+import { CalendarCheck, ClipboardList, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput } from "lucide-react";
 import { ROUTES_BUREAU } from "./routesBureau";
 import { construireGroupe, type SectionDeGroupe } from "./groupeSections";
 
@@ -46,6 +46,12 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
     label: "Signalements",
     description: "Les problèmes que tes élèves ont signalés sur une réponse",
     Icone: MessageSquareWarning,
+  },
+  {
+    href: ROUTES_BUREAU.configuration,
+    label: "Configuration",
+    description: "Procédures, règles, comportements et styles pour Classinus",
+    Icone: ClipboardList,
   },
 ];
 
