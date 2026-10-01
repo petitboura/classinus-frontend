@@ -15,6 +15,9 @@ export const ROUTES_BUREAU = {
   etablissements: "/bureau/etablissements",
   signalements: "/bureau/signalements",
   editeur: "/bureau/editeur",
+  // 28/09/2026, demande Bourama : nouvel onglet, 4 catégories de skills
+  // (Procédure/Règle/Comportement/Style) séparées de "Mes skills".
+  configuration: "/bureau/configuration",
 } as const;
 
 /** Les pages filles de Bureau, sans la page d'accueil. */
@@ -26,4 +29,5 @@ export const PAGES_FILLES_BUREAU: readonly string[] = [
   ROUTES_BUREAU.etablissements,
   ROUTES_BUREAU.signalements,
   ROUTES_BUREAU.editeur,
+  ROUTES_BUREAU.configuration,
 ];

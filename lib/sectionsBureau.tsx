@@ -1,4 +1,4 @@
-import { CalendarCheck, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput, Terminal } from "lucide-react";
+import { CalendarCheck, ClipboardList, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput, Terminal } from "lucide-react";
 import { ROUTES_BUREAU } from "./routesBureau";
 import type { SectionDeGroupe } from "./groupeSections";
 
@@ -52,5 +52,11 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
     label: "Éditeur de code",
     description: "Écris, exécute et enregistre du code dans ta bibliothèque",
     Icone: Terminal,
+  },
+  {
+    href: ROUTES_BUREAU.configuration,
+    label: "Configuration",
+    description: "Procédures, règles, comportements et styles pour Classinus",
+    Icone: ClipboardList,
   },
 ];

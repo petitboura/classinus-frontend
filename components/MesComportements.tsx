@@ -86,8 +86,11 @@ function extraireCorpsSkill(skillMd: string): string {
 
 // Puce d'un skill dans la liste (extrait le 22/08/2026 pour être réutilisé
 // à la fois dans la liste plate normale et dans les groupes par matière de
-// l'onglet "Audits" -- même rendu, une seule source de vérité).
-function ChipComportement({
+// l'onglet "Audits" -- même rendu, une seule source de vérité). Exportée le
+// 28/09/2026 pour être réutilisée telle quelle par les 4 onglets de
+// Configuration (Bureau) -- "tous suivent comme les skill" (demande
+// Bourama), même pilule, aucun nouveau style inventé pour Règle.
+export function ChipComportement({
   c,
   onOuvrir,
   onToggleActif,

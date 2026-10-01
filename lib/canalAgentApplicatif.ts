@@ -92,6 +92,8 @@ import {
   afficherReponseDepuisAgent,
   afficherTexteDepuisAgent,
   activerCanalDepuisAgent,
+  canalEnDirectEstActif,
+  ecouterActivationCanal,
   type ImageCanal,
   type SourceCanal,
   obtenirConversationIdCanal,
@@ -342,6 +344,8 @@ let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  // Canal en direct désactivé : rien de l'écran ne part (30/09/2026).
+  if (!canalEnDirectEstActif()) return;
   // Le WebSocket conserve la présence de l'éditeur pour les actions
   // interactives, mais le chat HTTP transmet aussi l'état exact du tour.
   // Cette synchronisation reste utile comme cache, sans être une condition
@@ -652,9 +656,19 @@ function traiterMessage(message: unknown) {
     // qu'un accuse negatif.
     envoyerViaRepli(m.message_etudiant_renvoye);
   } else if (m.texte_clovis !== undefined) {
-    traiterTexteClovis(m.texte_clovis, m.duree_secondes);
+    // Canal désactivé : aucune bulle, rien ne s'affiche.
+    if (canalEnDirectEstActif()) traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
+  } else if (
+    m.id &&
+    !canalEnDirectEstActif() &&
+    (m.lire_page === true || m.editeur !== undefined || m.action_id || m.selecteur_generique || m.montrer_action_id)
+  ) {
+    // Canal désactivé (30/09/2026, demande Bourama : c'est fini, plus aucune
+    // réponse) : lecture de page, éditeur, clic, écriture et pointage sont
+    // tous ignorés, rien ne s'exécute ni ne se lit.
+    envoyerReponse(m.id, { ignore: true });
   } else if (m.id && m.lire_page === true) {
     traiterDemandeLecturePage(m.id, m.longueur_max);
   } else if (m.id && m.editeur !== undefined) {
@@ -725,7 +739,7 @@ async function ouvrirCanal() {
       // attendre un changement (chantier D), sinon le backend n'a rien
       // tant qu'aucune action ne se (dé)monte apres l'ouverture.
       envoyerEtatActionsMaintenant();
-      demarrerObservationDom();
+      if (canalEnDirectEstActif()) demarrerObservationDom();
     };
 
     ws.onmessage = (evenement) => {
@@ -819,6 +833,25 @@ export function initialiserCanalAgentApplicatif() {
   // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
   // l'état sans attendre un autre changement de l'écran.
   ecouterEtatEditeur(envoyerEtatActions);
+
+  // Activation du canal : l'écran est envoyé et suivi. Désactivation : le
+  // suivi s'arrête et le serveur reçoit une liste vide, pour qu'il n'en
+  // garde plus rien en mémoire.
+  ecouterActivationCanal((actif) => {
+    if (actif) {
+      envoyerEtatActionsMaintenant();
+      if (socket && socket.readyState === WebSocket.OPEN) demarrerObservationDom();
+      return;
+    }
+    if (debounceEtatActions) {
+      clearTimeout(debounceEtatActions);
+      debounceEtatActions = null;
+    }
+    arreterObservationDom();
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ etat_actions: [] }));
+    }
+  });
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
