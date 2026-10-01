@@ -150,10 +150,12 @@ const GROUPES: Groupe[] = [
 // index) pour que chaque section garde toujours le même mouvement.
 const MOUVEMENT_NAV = "group-hover:translate-x-0.5";
 
-function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.ReactNode }) {
+function LibelleRail({ ouverte, children, titre = false }: { ouverte: boolean; children: React.ReactNode; titre?: boolean }) {
   return (
     <span
-      className={`overflow-hidden whitespace-nowrap text-sm transition-[max-width,opacity] duration-300 ease-out ${
+      className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
+        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm"
+      } ${
         ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
       }`}
     >
@@ -535,6 +537,11 @@ export function AppSidebar({
     router.push(href);
   }
   const [ouverte, setOuverte] = useState(false);
+  // Chat plein ecran sur ordinateur : le rail se deplie au survol du bouton du
+  // haut, par-dessus le chat (le chat ne bouge pas). Etat separe de `ouverte`,
+  // qui reste celui du tiroir mobile. Hors chat, railOuvert vaut `ouverte`.
+  const [survolRail, setSurvolRail] = useState(false);
+  const railOuvert = contexteChat ? survolRail : ouverte;
   // Fondu de fermeture du tiroir mobile (30/08/2026, audit "aucune
   // transition" -- même mécanisme que le chat lui-même et les popups de
   // sections, voir useFermetureAnimee.ts). `ouverte` reste vrai pendant
@@ -563,6 +570,13 @@ export function AppSidebar({
   // tant qu'une mise à jour n'a pas été installée.
   const { misAJourDisponible } = useMiseAJourDisponible();
   const asideRef = useRef<HTMLDivElement>(null);
+  // Vrai tant que la souris est sur le rail (chat desktop) : permet de replier
+  // le rail une fois les menus ouverts fermes, si la souris est deja partie.
+  const sourisSurRail = useRef(false);
+  const aUnMenuOuvert = actionsDeplie || historiqueDeplie || Boolean(groupeOuvertId) || profilDeplie;
+  useEffect(() => {
+    if (contexteChat && survolRail && !aUnMenuOuvert && !sourisSurRail.current) setSurvolRail(false);
+  }, [contexteChat, survolRail, aUnMenuOuvert]);
   const actionsRef = useRef<HTMLDivElement>(null);
 
   // 31/08/2026, demande Bourama : le bouton retour (natif + web mobile)
@@ -769,7 +783,7 @@ export function AppSidebar({
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
           <onglet.Icone size={18} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
-        {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={ouverte}>{onglet.label}</LibelleRail>}
+        {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
       </Link>
     );
   }
@@ -885,22 +899,44 @@ export function AppSidebar({
       )}
 
       <div
+        // Chat sur ordinateur : cette boite garde la largeur du rail replie
+        // (le chat ne bouge pas), le rail deplie passe par-dessus. Hors chat,
+        // la boite n'existe pas (contents) et le rail reste comme avant.
+        data-rail-lateral={contexteChat ? true : undefined}
+        className={contexteChat ? "relative hidden w-14 flex-shrink-0 md:block" : "contents"}
+      >
+      <div
         ref={asideRef}
-        data-rail-lateral
+        data-rail-lateral={contexteChat ? undefined : true}
         data-agent-zone="Barre latérale"
-        className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
+        onMouseEnter={() => {
+          sourisSurRail.current = true;
+        }}
+        onMouseLeave={() => {
+          sourisSurRail.current = false;
+          if (contexteChat && !(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
+        }}
+        className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
+          contexteChat ? "absolute inset-y-0 left-0 z-40" : ""
+        } ${contexteChat && railOuvert ? "shadow-xl" : ""} ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
-        } ${ouverte ? "md:w-72" : "md:w-14"}`}
+        } ${railOuvert ? "md:w-72" : "md:w-14"}`}
       >
         <button
-          onClick={() => setOuverte((v) => !v)}
-          aria-label={ouverte ? "Replier le panneau" : "Déplier le panneau"}
+          onClick={() => (contexteChat ? setSurvolRail(true) : setOuverte((v) => !v))}
+          onMouseEnter={() => contexteChat && setSurvolRail(true)}
+          onFocus={() => contexteChat && setSurvolRail(true)}
+          aria-label={railOuvert ? "Replier le panneau" : "Déplier le panneau"}
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             <PanelLeft size={18} className="transition-transform duration-200 group-hover:scale-95" />
           </span>
-          <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
+          {contexteChat ? (
+            <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
+          ) : (
+            <LibelleRail ouverte={railOuvert}>Replier</LibelleRail>
+          )}
         </button>
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
@@ -915,7 +951,7 @@ export function AppSidebar({
                 <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
                   <MessageSquarePlus size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
                 </span>
-                <LibelleRail ouverte={ouverte}>Nouvelle conversation</LibelleRail>
+                <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
               </button>
             )}
 
@@ -930,7 +966,7 @@ export function AppSidebar({
                   <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
                     <History size={18} className="transition-transform duration-300 group-hover:rotate-45" />
                   </span>
-                  <LibelleRail ouverte={ouverte}>Historique</LibelleRail>
+                  <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
                 </button>
                 {historiqueDeplie && (
                   <div className="absolute left-1 top-11 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
@@ -965,7 +1001,7 @@ export function AppSidebar({
           <MenuGroupe
             key={g.id}
             groupe={g}
-            ouverte={ouverte}
+            ouverte={railOuvert}
             LibelleRail={LibelleRail}
             pathname={pathname}
             contexteChat={contexteChat}
@@ -978,13 +1014,13 @@ export function AppSidebar({
           />
         ))}
 
-        {ouverte && (
+        {railOuvert && (
           <div className="mt-auto flex justify-center pt-2">
             <BoutonInstaller />
           </div>
         )}
 
-        <div ref={actionsRef} className={`relative rounded-xl ${ouverte ? "mt-2" : "mt-auto"}`}>
+        <div ref={actionsRef} className={`relative rounded-xl ${railOuvert ? "mt-2" : "mt-auto"}`}>
           <button
             onClick={basculerActions}
             title="Plus"
@@ -995,7 +1031,7 @@ export function AppSidebar({
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
               <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
             </span>
-            <LibelleRail ouverte={ouverte}>Plus</LibelleRail>
+            <LibelleRail ouverte={railOuvert}>Plus</LibelleRail>
           </button>
           {actionsDeplie && (
             <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
@@ -1106,7 +1142,7 @@ export function AppSidebar({
           <MenuProfil
             avatarUrl={avatarUrl}
             nomAffiche={nomAffiche}
-            ouverte={ouverte}
+            ouverte={railOuvert}
             LibelleRail={LibelleRail}
             menuOuvert={profilDeplie}
             onBasculerMenu={() => setProfilDeplie((v) => !v)}
@@ -1141,9 +1177,10 @@ export function AppSidebar({
                 <UserRound size={13} className="text-dj-texte-muet" />
               </span>
             </span>
-            <LibelleRail ouverte={ouverte}>Se connecter</LibelleRail>
+            <LibelleRail ouverte={railOuvert}>Se connecter</LibelleRail>
           </button>
         )}
+      </div>
       </div>
 
       {/* Panneau plein écran mobile, même logique que desktop -- masqué
