@@ -4,7 +4,7 @@ import { supabase } from "./supabase";
 import { appelerApiStream } from "./api";
 
 const MODELE_GEMINI_LIVE = "gemini-3.8-live";
-const URL_GEMINI_LIVE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
+const URL_GEMINI_LIVE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained";
 
 type ReponseToken = { token: string; model: string };
 type OptionsGeminiLive = {
@@ -122,6 +122,8 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   silence.gain.value = 0;
   let ferme = false;
   let connecte = false;
+  let pret = false;
+  let erreurSignalee = false;
 
   const nettoyer = () => {
     if (ferme) return;
@@ -144,6 +146,13 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     websocket.send(JSON.stringify({ clientContent: { turns: [{ role: "user", parts: [{ text: texte.trim() }] }], turnComplete: true } }));
   };
 
+  // Texte envoyé en temps réel (le canal accepte le texte dans realtimeInput,
+  // clientContent n'étant prévu que pour l'historique initial).
+  const saluer = () => {
+    if (websocket.readyState !== WebSocket.OPEN) return;
+    websocket.send(JSON.stringify({ realtimeInput: { text: "La voix vient de s'activer. Dis seulement à voix haute et en quelques mots : Je t'écoute." } }));
+  };
+
   websocket.onopen = () => {
     connecte = true;
     websocket.send(JSON.stringify({
@@ -162,6 +171,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   websocket.onmessage = async (event) => {
     let message: any;
     try { message = JSON.parse(event.data); } catch { return; }
+    if (message.setupComplete && !pret) { pret = true; etat("ecoute"); saluer(); }
     const serveur = message.serverContent;
     if (serveur?.modelTurn?.parts) {
       for (const part of serveur.modelTurn.parts) {
@@ -195,11 +205,20 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (serveur?.turnComplete) etat("ecoute");
   };
 
-  websocket.onerror = () => { if (!ferme) { etat("erreur"); options.surErreur?.("Le canal vocal Gemini a rencontré une erreur."); } };
-  websocket.onclose = () => { if (!ferme) { connecte = false; etat("ferme"); } };
+  websocket.onerror = () => {
+    if (ferme || erreurSignalee) return;
+    erreurSignalee = true;
+    options.surErreur?.("Le canal vocal Gemini a rencontré une erreur.");
+  };
+  websocket.onclose = () => {
+    if (ferme) return;
+    connecte = false;
+    if (!erreurSignalee) { erreurSignalee = true; options.surErreur?.("Le canal vocal s'est interrompu."); }
+    nettoyer();
+  };
 
   processeur.onaudioprocess = (event) => {
-    if (!connecte || ferme || websocket.readyState !== WebSocket.OPEN) return;
+    if (!connecte || !pret || ferme || websocket.readyState !== WebSocket.OPEN) return;
     const pcm = convertirFloat32EnPcm16(event.inputBuffer.getChannelData(0), contexteEntree.sampleRate);
     if (!pcm.length) return;
     websocket.send(JSON.stringify({ realtimeInput: { audio: { data: int16VersBase64(pcm), mimeType: "audio/pcm;rate=16000" } } }));
