@@ -650,12 +650,12 @@ export function AppSidebar({
   // Bureau, ajouté ce jour-là au rail desktop.
   // Bureau, Bibliothèque, Concentration et Personnaliser Classinus ne sont
   // plus des liens simples : ce sont des groupes (MenuGroupeRail.tsx) qui
-  // montrent leurs sous-sections au survol. Dans le chat, Bureau et
-  // Concentration restent dans "Plus" (même place qu'avant), avec leur liste
-  // sur le côté.
+  // montrent leurs sous-sections au survol. Dans le chat, Bureau est dans
+  // le rail comme les autres ; Concentration reste dans "Plus", avec sa
+  // liste sur le côté.
   const idsPlusFlat: OngletId[] = ["claude"];
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
-  const groupesDuRail = contexteChat ? [GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
+  const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
   const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
 
   // 30/08/2026, demande Bourama : le tiroir mobile du chat (plus bas,
@@ -857,7 +857,7 @@ export function AppSidebar({
             ouvert={groupeOuvertId === g.id}
             onOuvrir={() => setGroupeOuvertId(g.id)}
             onFermer={() => setGroupeOuvertId((v) => (v === g.id ? null : v))}
-            onBasculer={() => setGroupeOuvertId((v) => (v === g.id ? null : g.id))}
+            onNaviguer={() => marquerGroupeSansHistorique()}
           />
         ))}
 
@@ -883,22 +883,6 @@ export function AppSidebar({
           {actionsDeplie && (
             <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-2">
-                {contexteChat && (
-                  <MenuGroupe
-                    variante="plus"
-                    groupe={GROUPE_BUREAU}
-                    ouverte={railOuvert}
-                    LibelleRail={LibelleRail}
-                    pathname={pathname}
-                    contexteChat={contexteChat}
-                    ouvrirFenetre={ouvrirFenetre}
-                    naviguerVersSection={naviguerVersSection}
-                    ouvert={groupeOuvertId === "bureau"}
-                    onOuvrir={() => setGroupeOuvertId("bureau")}
-                    onFermer={() => setGroupeOuvertId((v) => (v === "bureau" ? null : v))}
-                    onBasculer={() => setGroupeOuvertId((v) => (v === "bureau" ? null : "bureau"))}
-                  />
-                )}
                 {ongletsDansActions.map((o) => {
                     const actif = pathname === o.href;
                     return (
@@ -946,7 +930,7 @@ export function AppSidebar({
                     ouvert={groupeOuvertId === "controle-session"}
                     onOuvrir={() => setGroupeOuvertId("controle-session")}
                     onFermer={() => setGroupeOuvertId((v) => (v === "controle-session" ? null : v))}
-                    onBasculer={() => setGroupeOuvertId((v) => (v === "controle-session" ? null : "controle-session"))}
+                    onNaviguer={() => marquerGroupeSansHistorique()}
                   />
                 )}
 
@@ -1162,7 +1146,6 @@ export function AppSidebar({
                   ouvert={groupeOuvertId === g.id}
                   onOuvrir={() => setGroupeOuvertId(g.id)}
                   onFermer={() => setGroupeOuvertId((v) => (v === g.id ? null : v))}
-                  onBasculer={() => setGroupeOuvertId((v) => (v === g.id ? null : g.id))}
                   onNaviguer={() => {
                     // 03/09/2026, même correctif que rendreLienOnglet plus
                     // haut : ce callback est toujours suivi d'une vraie

@@ -12,7 +12,7 @@ import { sectionsVisiblesDuGroupe, type GroupeRail } from "@/lib/groupesRail";
 // sous-sections au survol. Les quatre groupes passent par ce même composant,
 // donc le même comportement, la même apparence et la même source de
 // sous-sections (lib/groupesRail.ts). Contrôlé depuis AppSidebar (via
-// `ouvert` / `onBasculer` / `onFermer`) pour que le conteneur du rail sache
+// `ouvert` / `onOuvrir` / `onFermer`) pour que le conteneur du rail sache
 // quand passer en overflow-visible, comme pour "Historique" et "Plus".
 //
 // Trois variantes :
@@ -28,13 +28,13 @@ export type VarianteGroupe = "rail" | "mobile" | "plus";
 const DELAI_FERMETURE_MS = 250;
 
 const CLASSE_POSITION_LISTE: Record<VarianteGroupe, string> = {
-  rail: "left-0 top-10",
+  rail: "left-full top-0",
   mobile: "left-2 top-full",
   plus: "left-full top-0",
 };
 
 const CLASSE_ECART_LISTE: Record<VarianteGroupe, string> = {
-  rail: "mt-1",
+  rail: "ml-1",
   mobile: "mt-1",
   plus: "ml-1",
 };
@@ -51,7 +51,6 @@ export function MenuGroupe({
   ouvert,
   onOuvrir,
   onFermer,
-  onBasculer,
   onNaviguer,
 }: {
   groupe: GroupeRail;
@@ -67,7 +66,6 @@ export function MenuGroupe({
   ouvert: boolean;
   onOuvrir: () => void;
   onFermer: () => void;
-  onBasculer: () => void;
   onNaviguer?: () => void;
 }) {
   const mobile = variante === "mobile";
@@ -130,10 +128,13 @@ export function MenuGroupe({
         onClick={(e) => {
           if (contexteChat) {
             e.preventDefault();
-            onBasculer();
+            // Le survol a déjà ouvert la liste : un clic ne doit pas la
+            // refermer (il fallait cliquer deux fois). Basculer seulement
+            // quand il n'y a pas de survol (tactile), pour pouvoir ouvrir.
+            if (!ouvert) onOuvrir();
           } else {
-            onFermer();
             onNaviguer?.();
+            onFermer();
           }
         }}
         className={classeBouton}
@@ -169,8 +170,8 @@ export function MenuGroupe({
                   href={s.href}
                   aria-current={estActif ? "page" : undefined}
                   onClick={(e) => {
-                    onFermer();
                     onNaviguer?.();
+                    onFermer();
                     // Dans le chat, la sous-section s'ouvre en fenêtre
                     // flottante par-dessus (desktop seulement), avec le même
                     // contenu que sa vraie page. Sur mobile, vraie navigation.
