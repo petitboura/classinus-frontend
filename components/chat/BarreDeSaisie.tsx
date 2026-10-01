@@ -21,6 +21,7 @@ import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { useGeminiLive } from "@/lib/useGeminiLive";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -542,6 +543,12 @@ export function BarreDeSaisie({
   // chat, en plus du bouton flottant (masque sur /chat). Contexte
   // nullable : la barre de saisie peut etre montee hors AppShell.
   const canalEnDirect = useContext(ContexteCanalEnDirect);
+  // Mode vocal du menu des utilitaires : conversation vocale Gemini Live
+  // liée à la conversation du chat affichée.
+  const geminiLive = useGeminiLive(conversationId ?? null);
+  useEffect(() => {
+    if (geminiLive.erreur) alert(geminiLive.erreur);
+  }, [geminiLive.erreur]);
 
   useEffect(() => {
     if (!menuPlusOuvert) return;
@@ -623,6 +630,8 @@ export function BarreDeSaisie({
         return editeurMathsRicheOuvert;
       case "ui_dessin":
         return canvasOuvert;
+      case "ui_mode_vocal":
+        return geminiLive.etat !== "inactif" && geminiLive.etat !== "erreur";
       default:
         return false;
     }
@@ -646,7 +655,12 @@ export function BarreDeSaisie({
         setCanvasOuvert(true);
         break;
       case "ui_mode_vocal":
-        pasDisponible();
+        if (!conversationId) {
+          alert("Envoie d'abord un premier message pour lancer le mode vocal.");
+          break;
+        }
+        if (geminiLive.etat === "connexion") break;
+        geminiLive.basculer();
         break;
       case "ui_photo":
         inputPhotoRef.current?.click();

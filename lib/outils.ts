@@ -311,7 +311,7 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // Retiré de la barre comme bouton dédié le 28/07 (Bourama) : n'était
   // pas branché ("Pas disponible pour le moment" au clic), déplacé ici
   // en attendant une vraie implémentation.
-  { nom: "ui_mode_vocal", label: "Mode vocal (bientôt disponible)", Icone: AudioLines, onglet: "utilitaires" },
+  { nom: "ui_mode_vocal", label: "Mode vocal", Icone: AudioLines, onglet: "utilitaires" },
   // Retiré de la barre comme boutons dédiés le 26/09 (Bourama) : deux
   // boutons codés en dur (desktop et menu "+" mobile) déclenchaient
   // déjà inputPhotoRef, remplacés ici par une action ponctuelle au
