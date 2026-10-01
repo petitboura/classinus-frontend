@@ -1,5 +1,7 @@
 import { defineConfig } from '@capawesome/capacitor-electron/config';
 
+import { lancementDepuisSession } from './lancementSession';
+
 export default defineConfig({
   hooks: {
     onWindowCreated: (window) => {
@@ -10,7 +12,12 @@ export default defineConfig({
   window: {
     width: 1200,
     height: 800,
+    // Lancé par Windows à l'ouverture de session (voir demarrage.ts) : ni
+    // fenêtre ni écran d'ouverture, seul le bouton du canal en direct
+    // apparaît (superposition). Lancé à la main : comportement habituel.
+    showOnLaunch: !lancementDepuisSession(),
   },
+  ...(lancementDepuisSession() ? { splashScreen: { enabled: false } } : {}),
   // Correctif (29/09/2026, demande Bourama) : la politique de securite par
   // defaut du runtime (script-src 'self', sans 'unsafe-inline') bloque
   // silencieusement TOUT script en ligne, y compris ceux que Next.js insere

@@ -74,6 +74,8 @@ interface PluginSuperpositionAgent {
   pousserEtat(etat: { curseur?: Record<string, unknown>; [cle: string]: unknown }): Promise<void>;
   envoyerInteraction(action: ActionSuperposition): Promise<void>;
   definirCapturerSouris(parametres: { capturer: boolean }): Promise<void>;
+  lireDemarrageAutomatique(): Promise<{ disponible: boolean; actif: boolean }>;
+  definirDemarrageAutomatique(parametres: { actif: boolean }): Promise<void>;
   addListener(
     eventName: "etat" | "interaction",
     listenerFunc: (donnee: Record<string, unknown>) => void
@@ -84,6 +86,16 @@ const SuperpositionAgent = registerPlugin<PluginSuperpositionAgent>("Superpositi
 
 export function surElectron(): boolean {
   return Capacitor.getPlatform() === "electron";
+}
+
+// Démarrage automatique de Classinus avec Windows (01/10/2026, demande
+// Bourama), réglage des Paramètres (components/DemarrageAutomatiqueCarte.tsx).
+// Appelés uniquement depuis la fenêtre principale sur Electron.
+export function lireDemarrageAutomatique() {
+  return SuperpositionAgent.lireDemarrageAutomatique();
+}
+export function definirDemarrageAutomatique(actif: boolean) {
+  return SuperpositionAgent.definirDemarrageAutomatique({ actif });
 }
 
 // Contrôle le passe-clic de la fenêtre de superposition (voir
@@ -204,6 +216,17 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
     canal.conversationId,
     canal.journal,
   ]);
+
+  // Fenêtre principale quittée (déconnexion, page de connexion) : plus
+  // personne ne répondrait au bouton permanent de la superposition, qui doit
+  // donc disparaître. Il revient avec le premier état poussé à la prochaine
+  // montée (voir plugin.mts, afficherSuperpositionPermanente).
+  useEffect(() => {
+    if (!surElectron()) return;
+    return () => {
+      void SuperpositionAgent.pousserEtat({ retirer: true });
+    };
+  }, []);
 
   useEffect(() => {
     if (!surElectron()) return;

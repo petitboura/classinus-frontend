@@ -22,9 +22,15 @@
 // celles qui ne sont jamais appelees par ces 4 composants (verifie
 // composant par composant, ex. deplacerVers, afficherTexte) restent des
 // no-op, purement pour satisfaire le type ValeurCurseurVirtuel/ValeurCanalEnDirect.
+//
+// Bouton permanent (01/10/2026, demande Bourama) : cette fenêtre reste
+// affichée en permanence (voir electron/main.ts), mais tant que le canal est
+// inactif seul le bouton d'activation (CanalEnDirectFlottant) est dessiné.
+// Le curseur, la bulle, le bouton du journal et les marques apparaissent avec
+// une transition à l'activation du canal et disparaissent à sa désactivation.
 
 import { useEffect, useRef, useState } from "react";
-import { useMotionValue } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
@@ -171,10 +177,22 @@ export default function PageAgentSuperposition() {
   return (
     <ContexteCurseurVirtuel.Provider value={valeurCurseur}>
       <ContexteCanalEnDirect.Provider value={valeurCanal}>
-        <MarquesEcranAgent marques={marques} />
-        <CurseurVirtuelAgent />
-        <BulleDialogueAgent />
-        <BoutonJournalAgent />
+        <AnimatePresence>
+          {canal.actif && (
+            <motion.div
+              key="elements-canal-actif"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+            >
+              <MarquesEcranAgent marques={marques} />
+              <CurseurVirtuelAgent />
+              <BulleDialogueAgent />
+              <BoutonJournalAgent />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <CanalEnDirectFlottant />
       </ContexteCanalEnDirect.Provider>
     </ContexteCurseurVirtuel.Provider>

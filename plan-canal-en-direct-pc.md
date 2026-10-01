@@ -197,3 +197,39 @@ si ce fichier est present dans le depot. Cote backend, les quatre outils PC
 sont maintenant enregistres (`core/registre_outils.py`, categorie
 `agent_pc`) et proposes au modele seulement quand une connexion systeme PC
 est ouverte (`core/main.py`, `a_connexion_systeme_pc`).
+
+## Lot W : bouton permanent du canal en direct (fait le 01/10/2026)
+
+Demande de Bourama : pouvoir activer le canal en direct a tout moment, meme
+fenetre de Classinus fermee. Le bouton d'activation est desormais le seul
+element de la superposition affiche en permanence ; les autres boutons
+apparaissent (avec une transition) quand le canal est active.
+
+- **Fenetre principale cachee au lieu d'etre fermee** (`electron/arrierePlan.ts`).
+  La croix cache la fenetre, l'appli continue de tourner et une icone pres de
+  l'horloge propose Ouvrir Classinus et Quitter Classinus. C'est la fenetre
+  principale qui porte la vraie connexion du canal : la detruire le couperait.
+  Sans icone possible, fermer la fenetre quitte l'appli comme avant.
+- **Superposition affichee en permanence** (`plugin.mts`,
+  `afficherSuperpositionPermanente`). Elle est montree des que la fenetre
+  principale pousse son premier etat, et retiree quand la fenetre principale
+  quitte AppShell (deconnexion), pour qu'un bouton sans effet ne reste pas a
+  l'ecran. Remplace la decision du 28/09/2026 qui la cachait tant que le canal
+  etait inactif.
+- **Un seul bouton sur PC** : AppShell ne monte plus `CanalEnDirectFlottant`
+  sur Electron, seul celui de la superposition existe.
+- **Opacite au repos reglable** (`lib/opaciteBoutonCanal.ts`,
+  `components/ReglageOpaciteBoutonCanal.tsx`). Petit controle discret qui
+  apparait a cote du bouton une fois le canal active, avec apercu direct sur le
+  bouton. Jamais en dessous de 15 %, 50 % par defaut, 100 % au survol et quand
+  le canal est actif. Memorise dans le stockage local de la superposition.
+- **Demarrage avec Windows** (`electron/demarrage.ts`, `lancementSession.ts`).
+  Active par defaut au premier lancement de l'appli installee, desactivable
+  dans Parametres > Preferences (`components/DemarrageAutomatiqueCarte.tsx`,
+  methodes `lireDemarrageAutomatique` / `definirDemarrageAutomatique` du
+  plugin). Lance avec l'argument `--lancement-session` : ni fenetre ni ecran
+  d'ouverture, seul le bouton apparait.
+
+Limites connues : si l'etudiant n'est pas connecte, AppShell n'est pas monte
+donc le bouton n'apparait qu'apres la connexion ; quitter vraiment l'appli
+(Quitter dans l'icone pres de l'horloge) retire aussi le bouton.

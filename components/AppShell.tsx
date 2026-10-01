@@ -377,13 +377,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {!surElectronClient && <CurseurVirtuelAgent />}
           {!surElectronClient && <BulleDialogueAgent />}
           {!surElectronClient && <BoutonJournalAgent />}
-          {/* Le bouton d'activation (et ses contrôles) reste ici tant que
-              le canal est inactif, c'est comme ça qu'on l'active. Une
-              fois actif, il bascule lui aussi vers la superposition (même
-              raison que les trois juste au dessus), sinon le bouton
-              apparaîtrait en double, une fois dans l'appli et une fois
-              dans la superposition qui la recouvre. */}
-          {(!surElectronClient || !canalActif) && <CanalEnDirectFlottant />}
+          {/* Sur Electron (01/10/2026, demande Bourama), le bouton du canal
+              n'est plus monté ici du tout : la superposition l'affiche en
+              permanence, fenêtre fermée comprise, et c'est le seul
+              exemplaire (en avoir un second à l'écran serait un doublon).
+              Sur web et mobile il reste monté ici comme avant. */}
+          {!surElectronClient && <CanalEnDirectFlottant />}
           <PontMessageCanalVersChat />
           <PaletteCommandes
             connecte={connecte}
