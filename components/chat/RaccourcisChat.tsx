@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { RACCOURCIS_CHAT } from "@/lib/raccourcisChat";
+import { RACCOURCIS_CHAT_BUREAU, RACCOURCIS_CHAT_MOBILE } from "@/lib/raccourcisChat";
 
 // 01/10/2026, demande Bourama : raccourcis directs vers des sous-sections
-// utiles sur l'écran vide du chat (liste dans lib/raccourcisChat.ts).
-// Deux formes, un seul composant :
+// utiles sur l'écran vide du chat (listes dans lib/raccourcisChat.ts,
+// une par appareil). Deux formes, un seul composant :
 // - "bureau" (PC) : petits rectangles arrondis (icône + nom) sous la
 //   barre de saisie, dans la même famille de forme qu'elle mais plus
-//   petits, ni pilule ronde ni carré.
+//   petits, ni pilule ronde ni carré, tous sur une seule ligne.
 // - "mobile" : une liste, une ligne par raccourci, placée AU-DESSUS de la
 //   barre de saisie (qui reste collée en bas, avec le clavier). Chaque
 //   icône est centrée sur la même verticale que le bouton "+" de la barre
@@ -31,12 +31,12 @@ const DECALAGE_ALIGNEMENT_PLUS = "pl-[calc(1px+0.75rem)]";
 export function RaccourcisChat({ variante, visible = true }: Props) {
   if (variante === "bureau") {
     return (
-      <nav aria-label="Raccourcis" className="mt-3 hidden flex-wrap items-center justify-center gap-2 md:flex">
-        {RACCOURCIS_CHAT.map(({ id, label, href, Icone }) => (
+      <nav aria-label="Raccourcis" className="mt-3 hidden flex-nowrap items-center justify-center gap-1.5 md:flex">
+        {RACCOURCIS_CHAT_BUREAU.map(({ id, label, href, Icone }) => (
           <Link
             key={id}
             href={href}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+            className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
           >
             <Icone size={14} aria-hidden />
             {label}
@@ -56,7 +56,7 @@ export function RaccourcisChat({ variante, visible = true }: Props) {
     >
       <nav aria-label="Raccourcis" className="min-h-0 overflow-hidden">
         <ul className="pb-2">
-          {RACCOURCIS_CHAT.map(({ id, label, href, Icone }) => (
+          {RACCOURCIS_CHAT_MOBILE.map(({ id, label, href, Icone }) => (
             <li key={id}>
               <Link
                 href={href}
