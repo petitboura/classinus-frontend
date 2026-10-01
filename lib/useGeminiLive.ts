@@ -34,7 +34,11 @@ export function useGeminiLive(conversationId: string | null) {
     }
   }, [conversationId]);
 
-  useEffect(() => {\n    if (!conversationId) fermer();\n  }, [conversationId, fermer]);\n\n  const basculer = useCallback(() => {
+  useEffect(() => {
+    if (!conversationId) fermer();
+  }, [conversationId, fermer]);
+
+  const basculer = useCallback(() => {
     if (sessionRef.current) fermer();
     else void ouvrir();
   }, [fermer, ouvrir]);
