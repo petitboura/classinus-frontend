@@ -13,6 +13,11 @@
 // action n'a encore eu lieu (journal vide affiché comme tel), pour
 // rester repérable une fois qu'il y a quelque chose à voir.
 //
+// Sur ordinateur, la bulle "Ouvrir le chat" (ChatFlottant.tsx) occupe déjà
+// le coin bas droit : le journal se range juste au-dessus d'elle, centré sur
+// la même colonne, pour ne jamais la recouvrir. Sur /chat la bulle n'existe
+// pas, le journal garde le coin d'origine.
+//
 // Fermeture au clic extérieur et à Echap, même convention que les
 // autres panneaux/modales de l'app.
 
@@ -79,9 +84,10 @@ export function BoutonJournalAgent() {
 
   if (!contexte) return null;
   const { journal, actif } = contexte;
+  const surChat = estPageChat(pathname);
   // Masqué sur /chat sauf si le canal est déjà actif, même règle et même
   // décision (25/09/2026, Bourama) que CanalEnDirectFlottant.tsx.
-  if (estPageChat(pathname) && !actif) return null;
+  if (surChat && !actif) return null;
 
   return (
     <div
@@ -90,7 +96,9 @@ export function BoutonJournalAgent() {
         deplacement.ref(noeud);
       }}
       data-agent-superposition="true"
-      className="fixed bottom-4 right-4 z-agent-controles"
+      className={`fixed bottom-4 right-4 z-agent-controles ${
+        surChat ? "" : "md:bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] md:right-6"
+      }`}
       style={deplacement.style}
     >
       <button
