@@ -179,7 +179,14 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
 
   websocket.onmessage = async (event) => {
     let message: any;
-    try { message = JSON.parse(event.data); } catch { return; }
+    try {
+      // Google peut envoyer ses messages en binaire (Blob) : on les convertit en texte avant de les lire.
+      const brut = event.data instanceof Blob ? await event.data.text() : event.data;
+      message = JSON.parse(brut);
+    } catch {
+      messagesGoogle.push("message illisible (" + (event.data instanceof Blob ? "binaire" : typeof event.data) + ")");
+      return;
+    }
     messagesGoogle.push(Object.keys(message).join("+") + (message.error ? " " + JSON.stringify(message.error).slice(0, 200) : ""));
     if (message.setupComplete && !pret) { pret = true; etapes.push("session prête"); etat("ecoute"); saluer(); }
     const serveur = message.serverContent;
