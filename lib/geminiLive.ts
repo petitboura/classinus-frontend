@@ -4,7 +4,7 @@ import { supabase } from "./supabase";
 import { appelerApiStream } from "./api";
 
 const MODELE_GEMINI_LIVE = "gemini-3.8-live";
-const URL_GEMINI_LIVE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained";
+const URL_GEMINI_LIVE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
 
 type ReponseToken = { token: string; model: string };
 type OptionsGeminiLive = {
