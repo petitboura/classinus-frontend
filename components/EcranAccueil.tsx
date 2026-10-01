@@ -90,9 +90,13 @@ export function EcranAccueil() {
 
       // Conversations récentes -- même endpoint que ChatFlottant.tsx.
       try {
-        const fils: { conversation_id: string | null; titre: string; derniere_activite: string }[] =
-          await appelerApi("/api/historique/clovis/conversations");
-        for (const f of fils) {
+        // 01/10/2026 : premiere page seulement (20 plus recentes + epingles),
+        // plus la liste complete de toutes les conversations.
+        const page: {
+          epingles: { conversation_id: string | null; titre: string; derniere_activite: string }[];
+          fils: { conversation_id: string | null; titre: string; derniere_activite: string }[];
+        } = await appelerApi("/api/historique/clovis/fils?limite=20");
+        for (const f of [...page.epingles, ...page.fils]) {
           items.push({
             id: `conv-${f.conversation_id ?? "legacy"}`,
             type: "conversation",

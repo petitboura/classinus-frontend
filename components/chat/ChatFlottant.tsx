@@ -11,6 +11,7 @@ import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 import { ContexteChat, type EtatChat, type FilConversation } from "@/lib/contexteChat";
+import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useFenetreDeplacable, POIGNEES_REDIMENSIONNEMENT } from "@/lib/useFenetreDeplacable";
 import { TAILLE_MIN } from "@/lib/contexteFenetres";
@@ -556,17 +557,16 @@ export function ChatFlottant({
               {historiqueOuvert && (
                 <div
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="dj-scroll-isole absolute right-0 top-9 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg"
+                  className="absolute right-0 top-9 z-10 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-lg"
                 >
-                  {historique.map((fil) => (
-                    <button
-                      key={fil.conversation_id ?? "legacy"}
-                      onClick={() => selectionnerConversation(fil)}
-                      className="block w-full truncate rounded-xl px-2.5 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                    >
-                      {fil.titre}
-                    </button>
-                  ))}
+                  <ListeHistorique
+                    conversationActiveId={cle}
+                    onSelectionner={selectionnerConversation}
+                    onSupprimee={(fil) => {
+                      if (fil.conversation_id === cle) nouvelleConversation();
+                    }}
+                    className="max-h-72 p-1"
+                  />
                 </div>
               )}
             </div>
