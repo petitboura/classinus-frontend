@@ -537,19 +537,18 @@ export function AppSidebar({
     router.push(href);
   }
   const [ouverte, setOuverte] = useState(false);
-  // Chat plein ecran sur ordinateur : le rail se deplie au survol du bouton du
-  // haut, par-dessus le chat (le chat ne bouge pas). Etat separe de `ouverte`,
-  // qui reste celui du tiroir mobile. Hors chat, railOuvert vaut `ouverte`.
+  // Rail sur ordinateur (chat et reste de l'app) : il se deplie au survol du
+  // bouton du haut, par-dessus la page (la page ne bouge pas). Etat separe de
+  // `ouverte`, qui ne sert que pour le tiroir mobile du chat.
   const [survolRail, setSurvolRail] = useState(false);
-  const railOuvert = contexteChat ? survolRail : ouverte;
+  const railOuvert = survolRail;
   // Fondu de fermeture du tiroir mobile (30/08/2026, audit "aucune
   // transition" -- même mécanisme que le chat lui-même et les popups de
   // sections, voir useFermetureAnimee.ts). `ouverte` reste vrai pendant
   // tout le fondu (180ms) -- ne concerne QUE les fermetures déclenchées
   // depuis l'intérieur du tiroir mobile lui-même (fond noir, hamburger,
-  // liens, "Plus", profil) ; le rail desktop (même state `ouverte`, voir
-  // plus bas "Replier"/md:w-14) continue de se refermer directement, pas
-  // concerné par ce fondu.
+  // liens, "Plus", profil) ; le rail desktop a son propre état (survolRail,
+  // dépliage au survol), pas concerné par ce fondu.
   const { enSortie: tiroirEnSortie, demarrerFermeture: fermerTiroirMobile } = useFermetureAnimee();
   const [actionsDeplie, setActionsDeplie] = useState(false);
   const [groupeOuvertId, setGroupeOuvertId] = useState<string | null>(null);
@@ -570,13 +569,13 @@ export function AppSidebar({
   // tant qu'une mise à jour n'a pas été installée.
   const { misAJourDisponible } = useMiseAJourDisponible();
   const asideRef = useRef<HTMLDivElement>(null);
-  // Vrai tant que la souris est sur le rail (chat desktop) : permet de replier
-  // le rail une fois les menus ouverts fermes, si la souris est deja partie.
+  // Vrai tant que la souris est sur le rail : permet de replier le rail une
+  // fois les menus ouverts fermes, si la souris est deja partie.
   const sourisSurRail = useRef(false);
   const aUnMenuOuvert = actionsDeplie || historiqueDeplie || Boolean(groupeOuvertId) || profilDeplie;
   useEffect(() => {
-    if (contexteChat && survolRail && !aUnMenuOuvert && !sourisSurRail.current) setSurvolRail(false);
-  }, [contexteChat, survolRail, aUnMenuOuvert]);
+    if (survolRail && !aUnMenuOuvert && !sourisSurRail.current) setSurvolRail(false);
+  }, [survolRail, aUnMenuOuvert]);
   const actionsRef = useRef<HTMLDivElement>(null);
 
   // 31/08/2026, demande Bourama : le bouton retour (natif + web mobile)
@@ -584,9 +583,8 @@ export function AppSidebar({
   // l'appli -- voir lib/contexteRetour.tsx. Le tiroir mobile n'est
   // enregistré que pour l'instance concernée (contexteChat=true,
   // masquerChromeMobile=false) : dans l'autre instance (nav principale),
-  // `ouverte` pilote uniquement la largeur du rail desktop, pas un
-  // panneau à fermer au retour -- voir le commentaire sur
-  // tiroirEnSortie plus haut.
+  // il n'y a aucun tiroir mobile, donc rien à fermer au retour. Le rail
+  // desktop se déplie au survol (survolRail), sans état d'historique.
   // 03/09/2026, correctif Bourama ("même bug que le hamburger Plus, mais
   // dans le hamburger du chat plein écran") : même trou que
   // MenuHamburgerWeb.tsx/MenuHamburgerNatif.tsx (voir commit du
@@ -899,44 +897,38 @@ export function AppSidebar({
       )}
 
       <div
-        // Chat sur ordinateur : cette boite garde la largeur du rail replie
-        // (le chat ne bouge pas), le rail deplie passe par-dessus. Hors chat,
-        // la boite n'existe pas (contents) et le rail reste comme avant.
-        data-rail-lateral={contexteChat ? true : undefined}
-        className={contexteChat ? "relative hidden w-14 flex-shrink-0 md:block" : "contents"}
+        // Cette boite garde la largeur du rail replie (la page ne bouge pas),
+        // le rail deplie passe par-dessus.
+        data-rail-lateral
+        className="relative hidden w-14 flex-shrink-0 md:block"
       >
       <div
         ref={asideRef}
-        data-rail-lateral={contexteChat ? undefined : true}
         data-agent-zone="Barre latérale"
         onMouseEnter={() => {
           sourisSurRail.current = true;
         }}
         onMouseLeave={() => {
           sourisSurRail.current = false;
-          if (contexteChat && !(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
+          if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
         }}
-        className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
-          contexteChat ? "absolute inset-y-0 left-0 z-40" : ""
-        } ${contexteChat && railOuvert ? "shadow-xl" : ""} ${
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
+          railOuvert ? "shadow-xl" : ""
+        } ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${railOuvert ? "md:w-72" : "md:w-14"}`}
       >
         <button
-          onClick={() => (contexteChat ? setSurvolRail(true) : setOuverte((v) => !v))}
-          onMouseEnter={() => contexteChat && setSurvolRail(true)}
-          onFocus={() => contexteChat && setSurvolRail(true)}
+          onClick={() => setSurvolRail(true)}
+          onMouseEnter={() => setSurvolRail(true)}
+          onFocus={() => setSurvolRail(true)}
           aria-label={railOuvert ? "Replier le panneau" : "Déplier le panneau"}
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             <PanelLeft size={18} className="transition-transform duration-200 group-hover:scale-95" />
           </span>
-          {contexteChat ? (
-            <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
-          ) : (
-            <LibelleRail ouverte={railOuvert}>Replier</LibelleRail>
-          )}
+          <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
