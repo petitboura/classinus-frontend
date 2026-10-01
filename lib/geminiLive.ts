@@ -109,12 +109,14 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   const token = await obtenirToken();
   if (token.model !== MODELE_GEMINI_LIVE) throw new Error("Modèle Gemini Live inattendu.");
 
-  const websocket = new WebSocket(URL_GEMINI_LIVE + "?access_token=" + encodeURIComponent(token.token));
   const entree = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const contexteEntree = new AudioContext();
   const contexteSortie = new AudioContext({ sampleRate: 24000 });
   await contexteEntree.resume();
   await contexteSortie.resume();
+  // La connexion est ouverte seulement ici, après le micro et le son, pour que les écouteurs
+  // (ouverture, messages, fermeture) soient posés avant toute annonce de Google.
+  const websocket = new WebSocket(URL_GEMINI_LIVE + "?access_token=" + encodeURIComponent(token.token));
   const lecteur = creerLecteurAudio(contexteSortie);
   const source = contexteEntree.createMediaStreamSource(entree);
   const processeur = contexteEntree.createScriptProcessor(4096, 1, 1);
