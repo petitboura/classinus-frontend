@@ -331,11 +331,11 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
           title="Options"
           // Sur ordinateur le bouton apparait au survol de la ligne ; sur
           // ecran tactile (pas de survol) il reste toujours visible.
-          className={`mr-1 flex-shrink-0 rounded-md p-1.5 text-dj-texte-muet transition-[opacity,color,background-color] hover:bg-dj-surface hover:text-dj-texte focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 ${
+          className={`mr-1 flex-shrink-0 rounded-md p-1 text-dj-texte-muet transition-[opacity,color,background-color] hover:bg-dj-surface hover:text-dj-texte focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 ${
             menu ? "!opacity-100 text-dj-texte" : ""
           }`}
         >
-          <MoreHorizontal size={22} strokeWidth={2.75} />
+          <MoreHorizontal size={16} strokeWidth={2.25} />
         </button>
       </div>
       {erreur && <p className="px-2.5 pb-1 text-xs text-red-500">{erreur}</p>}
