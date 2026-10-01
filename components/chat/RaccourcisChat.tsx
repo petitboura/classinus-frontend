@@ -10,9 +10,10 @@ import { RACCOURCIS_CHAT_BUREAU, RACCOURCIS_CHAT_MOBILE } from "@/lib/raccourcis
 // une par appareil). Deux formes, un seul composant :
 // - "bureau" (PC) : petits rectangles arrondis (icône + nom) sous la
 //   barre de saisie, dans la même famille de forme qu'elle mais plus
-//   petits, ni pilule ronde ni carré, sur une seule ligne et répartis en
-//   colonnes égales pour que le premier et le dernier touchent les bords
-//   de la barre. Un clic ouvre la sous-section en fenêtre flottante par-dessus
+//   petits, ni pilule ronde ni carré, sur une seule ligne. Chaque bouton
+//   garde la largeur de son contenu (aucun libellé coupé), puis ils
+//   s'allongent tous du même surplus pour que le premier et le dernier
+//   touchent les bords de la barre. Un clic ouvre la sous-section en fenêtre flottante par-dessus
 //   le chat (même mécanisme que le rail, voir lib/contexteFenetres.tsx),
 //   sans quitter la page.
 // - "mobile" : une liste, une ligne par raccourci, placée AU-DESSUS de la
@@ -39,7 +40,7 @@ export function RaccourcisChat({ variante, visible = true }: Props) {
 
   if (variante === "bureau") {
     return (
-      <nav aria-label="Raccourcis" className="mt-3 hidden w-full grid-flow-col auto-cols-fr gap-1.5 md:grid">
+      <nav aria-label="Raccourcis" className="mt-3 hidden w-full flex-nowrap gap-1.5 md:flex">
         {RACCOURCIS_CHAT_BUREAU.map(({ id, label, href, Icone }) => (
           <Link
             key={id}
@@ -51,10 +52,10 @@ export function RaccourcisChat({ variante, visible = true }: Props) {
               e.preventDefault();
               ouvrir(href);
             }}
-            className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-dj-bordure bg-dj-surface px-2 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+            className="inline-flex flex-auto items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
           >
             <Icone size={14} aria-hidden className="flex-shrink-0" />
-            <span className="truncate">{label}</span>
+            {label}
           </Link>
         ))}
       </nav>
