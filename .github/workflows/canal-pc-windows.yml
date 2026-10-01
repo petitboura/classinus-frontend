@@ -1,9 +1,9 @@
 name: Lecture PC Windows
 on:
   push:
-    branches: [fix/canal-pc-lecture-complete, feature/canal-en-direct-pc-lot-q]
+    branches: [feature/canal-en-direct-pc]
   pull_request:
-    branches: [feature/canal-en-direct-pc-lot-q]
+    branches: [feature/canal-en-direct-pc]
   workflow_dispatch:
 jobs:
   lecture-windows:
