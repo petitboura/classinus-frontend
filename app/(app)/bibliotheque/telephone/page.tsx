@@ -1,5 +1,6 @@
 import { SectionPage } from "@/components/SectionPage";
-import { EspaceDossiers } from "@/components/EspaceDossiers";
+import { contenuSection, titreSection } from "@/lib/contenuSections";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { groupeBibliotheque } from "@/lib/sectionsBibliotheque";
 
 // 19/09/2026, demande Bourama : ancien onglet Dossiers du téléphone de la
@@ -8,9 +9,10 @@ import { groupeBibliotheque } from "@/lib/sectionsBibliotheque";
 // aucune condition à ajouter ici. Pas de rubrique d'aide pour cette page,
 // comme pour l'ancien onglet.
 export default function PageBibliothequeTelephone() {
+  const cle = ROUTES_BIBLIOTHEQUE.telephone;
   return (
-    <SectionPage title="Dossiers du téléphone" groupe={groupeBibliotheque()}>
-      <EspaceDossiers />
+    <SectionPage title={titreSection(cle)} groupe={groupeBibliotheque()}>
+      {contenuSection(cle)}
     </SectionPage>
   );
 }

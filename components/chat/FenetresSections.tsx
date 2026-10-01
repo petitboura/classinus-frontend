@@ -2,58 +2,38 @@
 
 import { useEffect, useContext, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, ExternalLink } from "lucide-react";
-import { ONGLETS, type OngletId } from "@/components/AppSidebar";
-import { useFenetres, TAILLE_MIN } from "@/lib/contexteFenetres";
+import { X, ExternalLink, Plug, type LucideIcon } from "lucide-react";
+import { useFenetres, TAILLE_MIN, type CleFenetre } from "@/lib/contexteFenetres";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { ContexteRetour } from "@/lib/contexteRetour";
 import { useFenetreDeplacable, POIGNEES_REDIMENSIONNEMENT } from "@/lib/useFenetreDeplacable";
-import { MesCodes } from "@/components/MesCodes";
-import { EspaceEntrerCode } from "@/components/EspaceEntrerCode";
-import { MesComportements } from "@/components/MesComportements";
-import { SkillsPublics } from "@/components/SkillsPublics";
-import { EspaceBibliotheque } from "@/components/EspaceBibliotheque";
-import { MaMemoire } from "@/components/MaMemoire";
-import { EspaceConnecterClaude } from "@/components/EspaceConnecterClaude";
-import { EspaceConcentration } from "@/components/EspaceConcentration";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/Skeleton";
+import { trouverSection } from "@/lib/groupesRail";
 
-const AGENT_ID = "clovis";
-
-// Contenu de chaque section (22/08/2026) -- repris tel quel des pages
-// app/(app)/*/page.tsx (mêmes composants, mêmes props), MOINS le
-// conteneur SectionPage (le titre y fait doublon avec la barre de titre
-// de la fenêtre flottante elle-même, voir plus bas).
-const CONTENU_PAR_ONGLET: Record<OngletId, React.ReactNode> = {
-  bureau: (
-    <div className="flex flex-col gap-4">
-      <MesCodes />
-      <EspaceEntrerCode />
+// Le contenu d'une fenêtre vient de lib/contenuSections.tsx, le même que
+// celui de la vraie page : plus de copie à garder à jour ici. Seul le guide
+// "Utiliser Classinus dans Claude" (une page seule, sans sous-sections)
+// est décrit à part (ContenuFenetre.tsx). Chargé à l'ouverture seulement,
+// avec un squelette pendant ce temps.
+const ContenuFenetre = dynamic(() => import("./ContenuFenetre"), {
+  ssr: false,
+  loading: () => (
+    <div className="space-y-2" aria-hidden>
+      <Skeleton className="h-[60px] w-full rounded-cgpt-carte" />
+      <Skeleton className="h-[60px] w-full rounded-cgpt-carte" />
+      <Skeleton className="h-[60px] w-full rounded-cgpt-carte" />
     </div>
   ),
-  comportements: <MesComportements agentId={AGENT_ID} />,
-  // 19/09/2026, ajouté car OngletId (Record exhaustif) inclut désormais
-  // "skills-publics" -- Mes skills (ci-dessus) garde ses deux onglets
-  // inchangés dans ce popup (sansOnglets non passé), donc ce popup
-  // dédié n'est ouvert que si quelqu'un navigue explicitement vers
-  // /skills-publics en contexte chat plein écran.
-  "skills-publics": <SkillsPublics />,
-  bibliotheque: <EspaceBibliotheque />,
-  memoire: <MaMemoire />,
-  claude: <EspaceConnecterClaude />,
-  // 30/08/2026, audit navigation web mobile vs natif, étape 2 : Concentration
-  // ajoutée à ONGLETS (AppSidebar.tsx), donc obligatoire ici aussi (Record
-  // exhaustif sur OngletId).
-  "controle-session": <EspaceConcentration />,
-};
+});
 
-// Reprend label, icône ET route réelle de chaque section (href, déjà
-// présent dans ONGLETS) -- href ajouté le 30/08/2026 (audit navigation)
-// pour le bouton "ouvrir en vraie page" de l'en-tête, voir plus bas.
-const INFOS_PAR_ONGLET: Record<OngletId, { label: string; href: string; Icone: (typeof ONGLETS)[number]["Icone"] }> =
-  Object.fromEntries(ONGLETS.map((o) => [o.id, { label: o.label, href: o.href, Icone: o.Icone }])) as Record<
-    OngletId,
-    { label: string; href: string; Icone: (typeof ONGLETS)[number]["Icone"] }
-  >;
+function infosFenetre(cle: CleFenetre): { label: string; href: string; Icone: LucideIcon } {
+  if (cle === "claude") {
+    return { label: "Utiliser Classinus dans Claude", href: "/connecter-claude", Icone: Plug };
+  }
+  const section = trouverSection(cle);
+  return { label: section?.label ?? cle, href: cle, Icone: section?.Icone ?? Plug };
+}
 
 function FenetreSection({
   cle,
@@ -65,7 +45,7 @@ function FenetreSection({
   z,
 }: {
   cle: string;
-  ongletId: OngletId;
+  ongletId: CleFenetre;
   x: number;
   y: number;
   width: number;
@@ -74,7 +54,7 @@ function FenetreSection({
 }) {
   const { fermer, monterAuPremierPlan, deplacer, redimensionner } = useFenetres();
   const router = useRouter();
-  const { label, href, Icone } = INFOS_PAR_ONGLET[ongletId];
+  const { label, href, Icone } = infosFenetre(ongletId);
   // Fondu d'apparition/disparition (30/08/2026, audit "aucune transition"
   // -- même mécanisme que le chat lui-même, voir useFermetureAnimee.ts et
   // fermerAvecFondu dans lib/contexteChat.tsx). Ne couvre que la fermeture
@@ -231,7 +211,9 @@ function FenetreSection({
             retiré -- le contenu utilise maintenant toute la largeur
             réelle de la fenêtre, déjà bornée par le redimensionnement
             (TAILLE_MIN/largeur d'écran, voir contexteFenetres.tsx). */}
-        <div className="mx-auto w-full">{CONTENU_PAR_ONGLET[ongletId]}</div>
+        <div className="mx-auto w-full">
+          <ContenuFenetre cle={ongletId} />
+        </div>
       </div>
       {POIGNEES_REDIMENSIONNEMENT.map((p) => (
         <div
