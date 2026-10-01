@@ -7,6 +7,8 @@ import { PAGES_FILLES_BUREAU } from "@/lib/routesBureau";
 import { PAGES_FILLES_CONCENTRATION } from "@/lib/routesConcentration";
 import { usePathname, useRouter } from "next/navigation";
 import { useFenetres } from "@/lib/contexteFenetres";
+import { MenuGroupe } from "@/components/MenuGroupeRail";
+import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LogOut,
@@ -26,7 +28,6 @@ import {
   History,
   PanelLeft,
   Settings,
-  Wand2,
   Hourglass,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -112,7 +113,7 @@ export const ONGLETS: {
   { id: "comportements", href: "/comportements", label: "Mes skills", Icone: ScrollText },
   // Ajouté le 19/09/2026 (ancien onglet "Public" de Mes skills, devenu sa
   // propre page /skills-publics, voir lib/sectionsPersonnaliser.tsx) --
-  // membre du groupe "Personnaliser Classinus" (ongletIds plus bas), pas
+  // membre du groupe "Personnaliser Classinus" (lib/groupesRail.ts), pas
   // un bouton direct du rail (même traitement que "comportements"/"memoire").
   { id: "skills-publics", href: "/skills-publics", label: "Skills publics", Icone: Download },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library, routesFilles: PAGES_FILLES_BIBLIOTHEQUE },
@@ -128,20 +129,6 @@ export const ONGLETS: {
   // Ajouté ici pour que le PC ait, au minimum, le même accès de
   // consultation que les deux autres plateformes.
   { id: "controle-session", href: "/controle-session", label: "Concentration", Icone: Hourglass, routesFilles: PAGES_FILLES_CONCENTRATION },
-];
-
-// Regroupement du rail par similarité d'usage (refonte sidebar,
-// 22/08/2026, demande Bourama : "chaque section n'a pas forcément un
-// bouton dédié, c'est peut-être un bouton qui ouvre une liste de cette
-// catégorie", même esprit que la page Paramètres). Bureau, Bibliothèque
-// et Notes restent en accès direct (usage quotidien). Mes skills et Ma
-// mémoire sont regroupés sous "Personnaliser Classinus" (les façons de
-// configurer ce que Classinus sait/fait). "Utiliser Classinus dans Claude" est
-// un guide de configuration ponctuel, il descend dans le menu "Plus"
-// plutôt que d'occuper un bouton du rail.
-type Groupe = { id: string; href: string; label: string; Icone: typeof Briefcase; ongletIds: OngletId[] };
-const GROUPES: Groupe[] = [
-  { id: "personnaliser", href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2, ongletIds: ["comportements", "skills-publics", "memoire"] },
 ];
 
 // Rotation des mouvements pour les icônes de nav (Accueil + les 7
@@ -327,140 +314,6 @@ function MenuProfil({
             <LogOut size={16} />
             Se déconnecter
           </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Bouton de groupe (refonte sidebar, 22/08/2026, demande Bourama) :
-// remplace un bloc de 2-3 boutons de rail dédiés par UN SEUL bouton qui
-// ouvre un petit popup listant les sections du groupe, même principe que
-// MenuProfil juste au-dessus. Contrôlé depuis AppSidebar (via `ouvert` /
-// `onBasculer` / `onFermer`) pour que le conteneur du rail sache quand
-// passer en overflow-visible, exactement comme pour "Historique" et
-// "Plus".
-function MenuGroupe({
-  groupe,
-  mobile = false,
-  ouverte,
-  LibelleRail,
-  pathname,
-  contexteChat,
-  ouvrirFenetre,
-  naviguerVersSection,
-  ouvert,
-  onOuvrir,
-  onFermer,
-  onBasculer,
-  onNaviguer,
-}: {
-  groupe: Groupe;
-  mobile?: boolean;
-  ouverte: boolean;
-  LibelleRail: React.ComponentType<{ ouverte: boolean; children: React.ReactNode }>;
-  pathname: string;
-  contexteChat: boolean;
-  ouvrirFenetre: (id: OngletId) => void;
-  // 03/09/2026, demande Bourama : requis quand mobile=true, voir onClick
-  // des sous-sections plus bas -- naviguer vraiment au lieu d'ouvrir la
-  // fenêtre flottante (ne fonctionne pas sur mobile). Renommée le
-  // 07/09/2026 (ex-fermerChatEtNaviguer) : depuis que /chat est une
-  // vraie route (étape 5, "chat plein écran = vraie section"), il n'y a
-  // plus de calque de chat à fermer avant de naviguer, plus juste une
-  // navigation normale.
-  naviguerVersSection: (href: string) => void;
-  ouvert: boolean;
-  onOuvrir: () => void;
-  onFermer: () => void;
-  onBasculer: () => void;
-  onNaviguer?: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const membres = ONGLETS.filter((o) => groupe.ongletIds.includes(o.id));
-  const actif = membres.some((o) => pathname === o.href) || pathname === groupe.href;
-
-  useEffect(() => {
-    if (!ouvert) return;
-    function onClicExterieur(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onFermer();
-    }
-    document.addEventListener("mousedown", onClicExterieur);
-    return () => document.removeEventListener("mousedown", onClicExterieur);
-  }, [ouvert, onFermer]);
-
-  return (
-    <div
-      ref={ref}
-      className={`relative w-full ${mobile ? "" : "mt-2"}`}
-      onMouseEnter={() => !mobile && onOuvrir()}
-      onMouseLeave={() => !mobile && onFermer()}
-    >
-      {/* Le bouton principal est un vrai lien (22/08/2026, demande
-          Bourama : "les pages c'était quand tu clique sur la section ou
-          la sous-section, le popup reste au survol"). En navigation
-          normale, cliquer navigue vraiment vers la page du groupe. En
-          chat plein écran, il n'y a pas de fenêtre flottante "groupe"
-          à ouvrir : le clic bascule juste le popup, comme avant. */}
-      <Link
-        href={groupe.href}
-        aria-current={actif ? "page" : undefined}
-        onClick={(e) => {
-          if (contexteChat) {
-            e.preventDefault();
-            onBasculer();
-          } else {
-            onFermer();
-            onNaviguer?.();
-          }
-        }}
-        className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
-          actif ? "text-dj-accent-1-texte" : ouvert ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-        } ${mobile ? "px-2 py-2" : ""}`}
-      >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <groupe.Icone size={18} className={`transition-transform duration-200 ${MOUVEMENT_NAV}`} />
-        </span>
-        {mobile ? <span className="text-sm">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
-      </Link>
-
-      {ouvert && (
-        <div
-          className={`absolute z-50 w-56 animate-dj-fade-in-rapide overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
-            mobile ? "left-2 top-full mt-1" : "left-0 top-11"
-          }`}
-        >
-          {membres.map((o) => {
-            const estActif = pathname === o.href;
-            return (
-              <Link
-                key={o.href}
-                href={o.href}
-                aria-current={estActif ? "page" : undefined}
-                onClick={(e) => {
-                  onFermer();
-                  onNaviguer?.();
-                  // Fenêtre flottante réservée au desktop (mobile=false) --
-                  // sur mobile (tiroir plein écran chat), fermer le chat et
-                  // naviguer vraiment, même mécanique que rendreLienOnglet.
-                  if (contexteChat) {
-                    e.preventDefault();
-                    if (mobile) {
-                      naviguerVersSection(o.href);
-                    } else {
-                      ouvrirFenetre(o.id);
-                    }
-                  }
-                }}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                  estActif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-                }`}
-              >
-                <o.Icone size={16} className="flex-shrink-0" />
-                {o.label}
-              </Link>
-            );
-          })}
         </div>
       )}
     </div>
@@ -767,10 +620,10 @@ export function AppSidebar({
           // la barre du bas.
           if (contexteChat && onglet.id) {
             e.preventDefault();
-            if (mobile) {
-              naviguerVersSection(onglet.href);
+            if (!mobile && onglet.id === "claude") {
+              ouvrirFenetre("claude");
             } else {
-              ouvrirFenetre(onglet.id);
+              naviguerVersSection(onglet.href);
             }
           }
         }}
@@ -789,24 +642,26 @@ export function AppSidebar({
   // Accès direct sur le rail : Bureau, Bibliothèque, Concentration (usage
   // quotidien). Mes skills, Ma mémoire et Plugins vivent sous le groupe
   // "Personnaliser Classinus" ; Mon programme et Audits sous "Scolarité"
-  // (voir GROUPES plus haut). "Utiliser Classinus dans Claude" vit dans le
+  // (voir lib/groupesRail.ts). "Utiliser Classinus dans Claude" vit dans le
   // menu "Plus". En contexte chat plein écran, Bureau et Concentration
   // descendent aussi dans "Plus" (place prise par Nouvelle conversation +
   // Historique, élargi le 22/08/2026, demande Bourama) : même traitement
   // pour Concentration (30/08/2026, audit navigation, étape 2) que pour
   // Bureau, ajouté ce jour-là au rail desktop.
-  const idsDirects: OngletId[] = contexteChat
-    ? ["bibliotheque"]
-    : ["bureau", "bibliotheque", "controle-session"];
-  const idsPlusFlat: OngletId[] = contexteChat ? ["bureau", "controle-session", "claude"] : ["claude"];
-  const ongletsDirects = ONGLETS.filter((o) => idsDirects.includes(o.id));
+  // Bureau, Bibliothèque, Concentration et Personnaliser Classinus ne sont
+  // plus des liens simples : ce sont des groupes (MenuGroupeRail.tsx) qui
+  // montrent leurs sous-sections au survol. Dans le chat, Bureau et
+  // Concentration restent dans "Plus" (même place qu'avant), avec leur liste
+  // sur le côté.
+  const idsPlusFlat: OngletId[] = ["claude"];
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
-  const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }, ...ongletsDirects];
+  const groupesDuRail = contexteChat ? [GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
+  const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
 
   // 30/08/2026, demande Bourama : le tiroir mobile du chat (plus bas,
   // ouverte && !masquerChromeMobile) doit reprendre les mêmes 4 boutons
   // que la barre d'onglets mobile -- Bibliothèque, Concentration,
-  // Bureau, Personnaliser Classinus (celui-ci via GROUPES, déjà rendu plus
+  // Bureau, Personnaliser Classinus (celui-ci via GROUPE_PERSONNALISER, déjà rendu plus
   // bas, pas repris ici) -- sans Accueil (rejoint le "Plus" unifié) ni
   // Chat (on y est déjà). Mobile uniquement : ne touche pas
   // navComplete/idsDirects ci-dessus, qui restent la version desktop
@@ -989,7 +844,7 @@ export function AppSidebar({
 
         {navComplete.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV }))}
 
-        {GROUPES.map((g) => (
+        {groupesDuRail.map((g) => (
           <MenuGroupe
             key={g.id}
             groupe={g}
@@ -1028,6 +883,22 @@ export function AppSidebar({
           {actionsDeplie && (
             <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-2">
+                {contexteChat && (
+                  <MenuGroupe
+                    variante="plus"
+                    groupe={GROUPE_BUREAU}
+                    ouverte={railOuvert}
+                    LibelleRail={LibelleRail}
+                    pathname={pathname}
+                    contexteChat={contexteChat}
+                    ouvrirFenetre={ouvrirFenetre}
+                    naviguerVersSection={naviguerVersSection}
+                    ouvert={groupeOuvertId === "bureau"}
+                    onOuvrir={() => setGroupeOuvertId("bureau")}
+                    onFermer={() => setGroupeOuvertId((v) => (v === "bureau" ? null : v))}
+                    onBasculer={() => setGroupeOuvertId((v) => (v === "bureau" ? null : "bureau"))}
+                  />
+                )}
                 {ongletsDansActions.map((o) => {
                     const actif = pathname === o.href;
                     return (
@@ -1049,7 +920,8 @@ export function AppSidebar({
                           setActionsDeplie(false);
                           if (contexteChat) {
                             e.preventDefault();
-                            ouvrirFenetre(o.id);
+                            if (o.id === "claude") ouvrirFenetre("claude");
+                            else naviguerVersSection(o.href);
                           }
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
@@ -1061,6 +933,22 @@ export function AppSidebar({
                       </Link>
                     );
                   })}
+                {contexteChat && (
+                  <MenuGroupe
+                    variante="plus"
+                    groupe={GROUPE_CONCENTRATION}
+                    ouverte={railOuvert}
+                    LibelleRail={LibelleRail}
+                    pathname={pathname}
+                    contexteChat={contexteChat}
+                    ouvrirFenetre={ouvrirFenetre}
+                    naviguerVersSection={naviguerVersSection}
+                    ouvert={groupeOuvertId === "controle-session"}
+                    onOuvrir={() => setGroupeOuvertId("controle-session")}
+                    onFermer={() => setGroupeOuvertId((v) => (v === "controle-session" ? null : v))}
+                    onBasculer={() => setGroupeOuvertId((v) => (v === "controle-session" ? null : "controle-session"))}
+                  />
+                )}
 
                 <button
                   onClick={partager}
@@ -1259,12 +1147,12 @@ export function AppSidebar({
 
             {ongletsMobileDirects.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV, mobile: true }))}
 
-            {GROUPES.map((g) =>
+            {[GROUPE_PERSONNALISER].map((g) =>
               contexteChat ? (
                 <MenuGroupe
                   key={g.id}
                   groupe={g}
-                  mobile
+                  variante="mobile"
                   ouverte
                   LibelleRail={LibelleRail}
                   pathname={pathname}
@@ -1294,7 +1182,7 @@ export function AppSidebar({
                   onglet: { href: g.href, label: g.label, Icone: g.Icone },
                   mouvement: MOUVEMENT_NAV,
                   mobile: true,
-                  actifSupplementaire: g.ongletIds.some((id) => pathname === ONGLETS.find((o) => o.id === id)?.href),
+                  actifSupplementaire: g.sections.some((sec) => pathname === sec.href),
                 })
               )
             )}

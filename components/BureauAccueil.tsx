@@ -5,8 +5,7 @@ import Link from "next/link";
 import { ListeSections } from "./ListeSections";
 import { Skeleton } from "./Skeleton";
 import { messageErreur } from "@/lib/erreurs";
-import { SECTIONS_BUREAU } from "@/lib/sectionsBureau";
-import { ROUTES_BUREAU } from "@/lib/routesBureau";
+import { sectionsBureauVisibles } from "@/lib/sectionsBureau";
 import { ROUTES_PARAMETRES } from "@/lib/routesParametres";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 
@@ -25,12 +24,6 @@ import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 // ensuite dans Paramètres > Préférences (voir ParametresPreferences.tsx),
 // pas ici. Accès direct par URL volontairement non bloqué (demande
 // explicite de Bourama : juste une préférence d'affichage de la liste).
-const SECTIONS_PROF_UNIQUEMENT = new Set<string>([
-  ROUTES_BUREAU.audit,
-  ROUTES_BUREAU.programme,
-  ROUTES_BUREAU.signalements,
-]);
-
 export function BureauAccueil() {
   const { chargement, estProfesseur, connecte, definirEstProfesseur } = useContext(ContexteStatutUtilisateur);
   const [enregistrement, setEnregistrement] = useState(false);
@@ -100,10 +93,7 @@ export function BureauAccueil() {
     );
   }
 
-  const sections =
-    estProfesseur === false
-      ? SECTIONS_BUREAU.filter((s) => !SECTIONS_PROF_UNIQUEMENT.has(s.href))
-      : SECTIONS_BUREAU;
+  const sections = sectionsBureauVisibles(estProfesseur);
 
   return (
     <div className="space-y-3">

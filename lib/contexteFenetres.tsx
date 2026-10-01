@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import type { OngletId } from "@/components/AppSidebar";
+import type { CleSection } from "@/lib/cleSections";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 
 // Fenêtres flottantes de sections par-dessus le chat plein écran
 // (22/08/2026, demande explicite Bourama : "je veux que quand on
@@ -24,9 +25,13 @@ import type { OngletId } from "@/components/AppSidebar";
 //    TOUTES les fenêtres d'un coup -- voir `fermerToutes`, appelé
 //    depuis ChatFlottant.tsx.
 
+// Ce que peut ouvrir une fenêtre flottante : une sous-section (mêmes adresses
+// que les vraies pages, voir lib/contenuSections.tsx) ou le guide "claude".
+export type CleFenetre = CleSection | "claude";
+
 export type FenetreSection = {
   cle: string;
-  ongletId: OngletId;
+  ongletId: CleFenetre;
   x: number;
   y: number;
   width: number;
@@ -36,7 +41,7 @@ export type FenetreSection = {
 
 type ContexteFenetresValeur = {
   fenetres: FenetreSection[];
-  ouvrir: (ongletId: OngletId) => void;
+  ouvrir: (ongletId: CleFenetre) => void;
   fermer: (cle: string) => void;
   fermerToutes: () => void;
   monterAuPremierPlan: (cle: string) => void;
@@ -54,7 +59,11 @@ const POSITION_BASE = { x: 80, y: 70 };
 // "bibliotheque" occupe tout l'espace disponible sur sa vraie page --
 // une fenêtre plus large lui va mieux. Source unique (réutilisée par
 // FenetresSections.tsx pour le rendu).
-export const ONGLETS_LARGES = new Set<OngletId>(["bibliotheque"]);
+export const ONGLETS_LARGES = new Set<CleFenetre>([
+  ROUTES_BIBLIOTHEQUE.perso,
+  ROUTES_BIBLIOTHEQUE.publique,
+  ROUTES_BIBLIOTHEQUE.telephone,
+]);
 const TAILLE_NORMALE = { width: 480, height: 560 };
 const TAILLE_LARGE = { width: 760, height: 640 };
 export const TAILLE_MIN = { width: 320, height: 280 };
@@ -86,7 +95,7 @@ export function useFournirFenetres(): ContexteFenetresValeur {
   // la cascade continue de progresser même après avoir fermé/rouvert.
   const nbOuvertures = useRef(0);
 
-  const ouvrir = useCallback((ongletId: OngletId) => {
+  const ouvrir = useCallback((ongletId: CleFenetre) => {
     setFenetres((f) => {
       // Déjà ouverte : on la remonte au premier plan plutôt que d'en
       // ouvrir une deuxième (demande Bourama du 22/08).
