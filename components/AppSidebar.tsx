@@ -25,6 +25,7 @@ import {
   MessageSquarePlus,
   History,
   PanelLeft,
+  Maximize2,
   Settings,
   Wand2,
   Hourglass,
@@ -37,6 +38,8 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
+import { ListeHistorique } from "@/components/chat/ListeHistorique";
+import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 import { ROUTES_APP } from "@/lib/routesApp";
 
@@ -83,6 +86,7 @@ type FilConversation = {
   conversation_id: string | null;
   titre: string;
   derniere_activite: string;
+  epingle?: boolean;
 };
 
 export type OngletId =
@@ -472,6 +476,7 @@ export function AppSidebar({
   onOuvrirCatalogue,
   contexteChat = false,
   historique = [],
+  onConversationSupprimee,
   conversationActiveId = null,
   aDesMessages = false,
   onNouvelleConversation,
@@ -509,6 +514,8 @@ export function AppSidebar({
   aDesMessages?: boolean;
   onNouvelleConversation?: () => void;
   onSelectionnerConversation?: (fil: FilConversation) => void;
+  // Appelee apres la suppression definitive d'une conversation de l'historique.
+  onConversationSupprimee?: (fil: FilConversation) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -556,6 +563,8 @@ export function AppSidebar({
   const [avisDeplie, setAvisDeplie] = useState(false);
   const [copie, setCopie] = useState(false);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
+  // Historique en plein ecran (01/10/2026), ouvert depuis le popup Historique.
+  const [historiquePleinEcran, setHistoriquePleinEcran] = useState(false);
   // Popup du menu profil (24/08/2026, correctif demande Bourama : voir
   // commentaire dans MenuProfil plus haut). Remonté ici pour piloter le
   // overflow-visible du rail, comme actionsDeplie/historiqueDeplie/groupeOuvertId.
@@ -969,23 +978,27 @@ export function AppSidebar({
                   <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
                 </button>
                 {historiqueDeplie && (
-                  <div className="absolute left-1 top-11 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
-                    {historique.map((fil) => {
-                      const estActive = fil.conversation_id === conversationActiveId;
-                      return (
-                        <button
-                          key={fil.conversation_id ?? "legacy"}
-                          onClick={() => !estActive && onSelectionnerConversation?.(fil)}
-                          disabled={estActive}
-                          className={`block w-full truncate rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                            estActive ? "text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute"
-                          }`}
-                        >
-                          {estActive ? "● " : ""}
-                          {fil.titre}
-                        </button>
-                      );
-                    })}
+                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                    <div className="flex items-center justify-between px-3 pb-0.5 pt-2">
+                      <span className="text-xs font-medium uppercase tracking-wide text-dj-texte-muet">Historique</span>
+                      <button
+                        onClick={() => {
+                          setHistoriqueDeplie(false);
+                          setHistoriquePleinEcran(true);
+                        }}
+                        title="Plein écran"
+                        aria-label="Afficher l'historique en plein écran"
+                        className="group flex h-7 w-7 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                      >
+                        <Maximize2 size={15} className="transition-transform duration-200 group-hover:scale-110" />
+                      </button>
+                    </div>
+                    <ListeHistorique
+                      conversationActiveId={conversationActiveId}
+                      onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+                      onSupprimee={onConversationSupprimee}
+                      className="max-h-72 p-1"
+                    />
                   </div>
                 )}
               </div>
@@ -1183,6 +1196,16 @@ export function AppSidebar({
       </div>
       </div>
 
+      {contexteChat && (
+        <HistoriquePleinEcran
+          ouvert={historiquePleinEcran}
+          onFermer={() => setHistoriquePleinEcran(false)}
+          conversationActiveId={conversationActiveId}
+          onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+          onSupprimee={onConversationSupprimee}
+        />
+      )}
+
       {/* Panneau plein écran mobile, même logique que desktop -- masqué
           dans l'appli native, remplacé par BarreOngletsNative.tsx.
           30/08/2026, audit "aucune transition" : reste monté pendant
@@ -1239,23 +1262,13 @@ export function AppSidebar({
                       Historique
                     </button>
                     {historiqueDeplie && (
-                      <div className="dj-scroll-isole absolute left-1 top-11 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
-                        {historique.map((fil) => {
-                          const estActive = fil.conversation_id === conversationActiveId;
-                          return (
-                            <button
-                              key={fil.conversation_id ?? "legacy"}
-                              onClick={() => !estActive && onSelectionnerConversation?.(fil)}
-                              disabled={estActive}
-                              className={`block w-full truncate rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                                estActive ? "text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute"
-                              }`}
-                            >
-                              {estActive ? "● " : ""}
-                              {fil.titre}
-                            </button>
-                          );
-                        })}
+                      <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                        <ListeHistorique
+                          conversationActiveId={conversationActiveId}
+                          onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+                          onSupprimee={onConversationSupprimee}
+                          className="max-h-72 p-1"
+                        />
                       </div>
                     )}
                   </div>

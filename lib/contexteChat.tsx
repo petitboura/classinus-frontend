@@ -43,7 +43,33 @@ export type FilConversation = {
   conversation_id: string | null;
   titre: string;
   derniere_activite: string;
+  // Historique epingle (01/10/2026). Absent ou false = fil normal.
+  epingle?: boolean;
 };
+
+// Reponse de GET /api/historique/{agent}/fils (une page de l'historique).
+type PageFilsApi = {
+  epingles: { conversation_id: string | null; cle: string; titre: string; derniere_activite: string; epingle: boolean }[];
+  fils: { conversation_id: string | null; cle: string; titre: string; derniere_activite: string; epingle: boolean }[];
+  suivant: { avant_activite: string; avant_cle: string } | null;
+};
+type CurseurHistorique = { avant_activite: string; avant_cle: string };
+
+// Nombre de conversations chargees par page de l'historique.
+const TAILLE_PAGE_HISTORIQUE = 20;
+
+function cleFil(fil: { conversation_id: string | null }): string {
+  return fil.conversation_id ?? "legacy";
+}
+
+function versFilConversation(f: PageFilsApi["fils"][number]): FilConversation {
+  return {
+    conversation_id: f.conversation_id,
+    titre: f.titre,
+    derniere_activite: f.derniere_activite,
+    epingle: f.epingle,
+  };
+}
 
 type ContexteChatValeur = {
   etat: EtatChat;
@@ -67,6 +93,16 @@ type ContexteChatValeur = {
   setOutilsActifsAgent: (v: { outils: string[]; actions_locales: string[] } | null) => void;
   historique: FilConversation[];
   setHistorique: (v: FilConversation[]) => void;
+  // Historique par pages (01/10/2026) : `historique` ne contient que les
+  // pages deja chargees (plus les epingles). chargerPlusHistorique ajoute la
+  // page suivante, appelee par le defilement de la liste (ListeHistorique.tsx).
+  historiqueAPlus: boolean;
+  chargementPlusHistorique: boolean;
+  erreurPlusHistorique: boolean;
+  chargerPlusHistorique: () => Promise<void>;
+  epinglerFil: (fil: FilConversation, epingle: boolean) => Promise<void>;
+  renommerFil: (fil: FilConversation, titre: string) => Promise<void>;
+  supprimerFil: (fil: FilConversation) => Promise<void>;
   texteInitialConversation: string | null;
   setTexteInitialConversation: (v: string | null) => void;
   // Fondu de fermeture (18/08/2026, demande Bourama : "le popup disparaît
@@ -177,6 +213,12 @@ export function useFournirContexteChat(): ContexteChatValeur {
     actions_locales: string[];
   } | null>(null);
   const [historique, setHistorique] = useState<FilConversation[]>([]);
+  const [curseurHistorique, setCurseurHistorique] = useState<CurseurHistorique | null>(null);
+  const [chargementPlusHistorique, setChargementPlusHistorique] = useState(false);
+  const [erreurPlusHistorique, setErreurPlusHistorique] = useState(false);
+  // Garde-fou contre deux chargements simultanes (le defilement peut
+  // declencher plusieurs fois la meme page avant la reponse).
+  const chargementPlusEnCours = useRef(false);
   const [texteInitialConversation, setTexteInitialConversation] = useState<string | null>(null);
 
   // Étape 2 (07/09/2026, chantier "chat plein écran = vraie section") :
@@ -196,15 +238,17 @@ export function useFournirContexteChat(): ContexteChatValeur {
         const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
         const [outils, fils] = await Promise.all([
           lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] })),
-          appelerApi(`/api/historique/${AGENT_INVITE_ID}/conversations`).catch((e) => {
+          appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`).catch((e) => {
             console.error("Erreur chargement historique conversations:", e);
-            return [] as FilConversation[];
+            return { epingles: [], fils: [], suivant: null } as PageFilsApi;
           }),
         ]);
         if (!annule) {
           setAgent(detail);
           setOutilsActifsAgent(outils);
-          setHistorique(fils as FilConversation[]);
+          const premierePage = fils as PageFilsApi;
+          setHistorique([...premierePage.epingles, ...premierePage.fils].map(versFilConversation));
+          setCurseurHistorique(premierePage.suivant);
           setChargement("pret");
         }
       } catch (e) {
@@ -217,6 +261,76 @@ export function useFournirContexteChat(): ContexteChatValeur {
     return () => {
       annule = true;
     };
+  }, []);
+
+  const chargerPlusHistorique = useCallback(async () => {
+    if (!curseurHistorique || chargementPlusEnCours.current) return;
+    chargementPlusEnCours.current = true;
+    setChargementPlusHistorique(true);
+    setErreurPlusHistorique(false);
+    try {
+      const params = new URLSearchParams({
+        limite: String(TAILLE_PAGE_HISTORIQUE),
+        avant_activite: curseurHistorique.avant_activite,
+        avant_cle: curseurHistorique.avant_cle,
+      });
+      const page: PageFilsApi = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?${params.toString()}`);
+      setHistorique((precedent) => {
+        // Un fil deja present (cree localement, ou desepingle entre deux
+        // pages) ne doit jamais apparaitre deux fois.
+        const deja = new Set(precedent.map(cleFil));
+        return [...precedent, ...page.fils.map(versFilConversation).filter((f) => !deja.has(cleFil(f)))];
+      });
+      setCurseurHistorique(page.suivant);
+    } catch (e) {
+      console.error("Erreur chargement de la suite de l'historique:", e);
+      setErreurPlusHistorique(true);
+    } finally {
+      chargementPlusEnCours.current = false;
+      setChargementPlusHistorique(false);
+    }
+  }, [curseurHistorique]);
+
+  // Epingler / desepingler : la liste n'est mise a jour qu'apres la reponse
+  // du serveur, pour qu'un refus s'affiche sur la ligne concernee (l'erreur
+  // est relancee) au lieu de faire sauter la ligne puis la remettre.
+  const epinglerFil = useCallback(
+    async (fil: FilConversation, epingle: boolean) => {
+      await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ epingle }),
+      });
+      setHistorique((precedent) => {
+        const cible = precedent.find((f) => cleFil(f) === cleFil(fil));
+        if (!cible) return precedent;
+        const autres = precedent.filter((f) => cleFil(f) !== cleFil(fil));
+        // Un fil qu'on vient d'epingler passe en tete des epingles.
+        if (epingle) return [{ ...cible, epingle: true }, ...autres];
+        // Desepingle plus ancien que tout ce qui est deja charge, alors
+        // qu'il reste des pages : il reapparaitra en faisant defiler, a sa
+        // vraie place (sinon il serait charge en double).
+        if (curseurHistorique) {
+          const dates = autres.filter((f) => !f.epingle).map((f) => Date.parse(f.derniere_activite));
+          if (dates.length > 0 && Date.parse(cible.derniere_activite) < Math.min(...dates)) return autres;
+        }
+        return [...autres, { ...cible, epingle: false }];
+      });
+    },
+    [curseurHistorique]
+  );
+
+  const renommerFil = useCallback(async (fil: FilConversation, titre: string) => {
+    const modifie: { titre: string } = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ titre }),
+    });
+    setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre: modifie.titre } : f)));
+  }, []);
+
+  // Suppression definitive cote serveur, puis retrait de la liste.
+  const supprimerFil = useCallback(async (fil: FilConversation) => {
+    await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, { method: "DELETE" });
+    setHistorique((precedent) => precedent.filter((f) => cleFil(f) !== cleFil(fil)));
   }, []);
 
   const fermerAvecFondu = useCallback(() => {
@@ -268,6 +382,13 @@ export function useFournirContexteChat(): ContexteChatValeur {
       setOutilsActifsAgent,
       historique,
       setHistorique,
+      historiqueAPlus: curseurHistorique !== null,
+      chargementPlusHistorique,
+      erreurPlusHistorique,
+      chargerPlusHistorique,
+      epinglerFil,
+      renommerFil,
+      supprimerFil,
       texteInitialConversation,
       setTexteInitialConversation,
     }),
@@ -290,6 +411,13 @@ export function useFournirContexteChat(): ContexteChatValeur {
       chargementFilConversation,
       outilsActifsAgent,
       historique,
+      curseurHistorique,
+      chargementPlusHistorique,
+      erreurPlusHistorique,
+      chargerPlusHistorique,
+      epinglerFil,
+      renommerFil,
+      supprimerFil,
       texteInitialConversation,
     ]
   );

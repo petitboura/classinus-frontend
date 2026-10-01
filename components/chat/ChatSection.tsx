@@ -199,6 +199,12 @@ export function ChatSection() {
           historique={historique}
           onNouvelleConversation={nouvelleConversation}
           onSelectionnerConversation={selectionnerConversation}
+          // Si on supprime la conversation ouverte, on repart sur une
+          // nouvelle conversation vide (sinon ses messages resteraient
+          // affiches alors qu'ils n'existent plus).
+          onConversationSupprimee={(fil) => {
+            if (fil.conversation_id === cle) nouvelleConversation();
+          }}
         />
 
         <div
