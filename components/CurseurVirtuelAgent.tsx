@@ -60,6 +60,7 @@ export function CurseurVirtuelAgent() {
           // (pointerEvents "none"), pour ne jamais interférer avec le
           // clic que Clovis est en train d'exécuter.
           drag={!enAction}
+          onDragEnd={() => contexte.surFinGlissement?.()}
           onTap={() => canal?.basculerReponse()}
           dragMomentum={false}
           dragElastic={0}

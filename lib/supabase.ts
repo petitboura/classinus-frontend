@@ -39,7 +39,18 @@ export const supabase = createClient(url, cleAnon, {
   },
 });
 
-if (typeof window !== "undefined") {
+// Correctif 29/09/2026 : la fenetre de SUPERPOSITION Electron
+// (app/agent-superposition) charge aussi ce fichier, donc ouvrait sa propre
+// connexion au canal agent. Quand Clovis demandait a lire la page, cette
+// connexion repondait la premiere avec son propre contenu (curseur, bulle,
+// boutons flottants, barre de saisie) au lieu de la vraie page Classinus.
+// Cette fenetre n'est qu'un miroir (voir lib/superpositionElectron.ts) :
+// elle n'ouvre AUCUNE connexion, seule la fenetre principale le fait.
+// Meme detection que public/dj-anti-flash-theme.js.
+const dansFenetreSuperposition =
+  typeof window !== "undefined" && window.location.pathname.indexOf("/agent-superposition") === 0;
+
+if (typeof window !== "undefined" && !dansFenetreSuperposition) {
   import("./canalTempsReel").then(({ initialiserCanalTempsReel }) => {
     initialiserCanalTempsReel();
   });
@@ -51,6 +62,8 @@ if (typeof window !== "undefined") {
 if (typeof window !== "undefined") {
   import("@capacitor/core").then(({ Capacitor, registerPlugin }) => {
     if (!Capacitor.isNativePlatform()) return;
+    // La superposition Electron n'est qu'un miroir : ni pont natif, ni canal.
+    if (dansFenetreSuperposition) return;
     console.log("PontNatif (JS): plateforme native detectee, initialisation du pont.");
 
     import("./canalTempsReel").then(({ enregistrerPluginDossiers, initialiserCanalTempsReel }) => {
@@ -63,7 +76,7 @@ if (typeof window !== "undefined") {
     });
 
     const PontNatif = registerPlugin<{
-      enregistrerToken(options: { token: string }): Promise<void>;
+      enregistrerToken(options: { token: string; apiUrl?: string }): Promise<void>;
       deconnexion(): Promise<void>;
       rattraperActionsEnAttente(): Promise<{ traitees: number }>;
     }>("PontNatif");
@@ -73,7 +86,7 @@ if (typeof window !== "undefined") {
     supabase.auth.onAuthStateChange((event, session) => {
       console.log(`PontNatif (JS): onAuthStateChange event=${event}, session=${session ? "presente" : "absente"}`);
       if (session?.access_token) {
-        PontNatif.enregistrerToken({ token: session.access_token })
+        PontNatif.enregistrerToken({ token: session.access_token, apiUrl: process.env.NEXT_PUBLIC_API_URL })
           .then(() => console.log("PontNatif (JS): enregistrerToken OK"))
           .catch((e) => console.warn("PontNatif (JS): echec enregistrerToken", e));
         if (!dejaRattrape) {

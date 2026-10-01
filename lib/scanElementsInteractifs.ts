@@ -155,6 +155,7 @@ export function scannerElementsInteractifs(): ElementInteractifDetecte[] {
   const cache: CacheAffichage = new Map();
 
   for (const element of elements) {
+    if (element.closest("[data-agent-superposition]")) continue;
     if (!estVisibleEtActif(element, cache)) continue;
 
     let id = idsConnus.get(element);

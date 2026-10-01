@@ -1,0 +1,27 @@
+{
+  "name": "capacitor-pont-natif-electron",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Implementation Electron du plugin Capacitor \"PontNatif\" -- deja appele automatiquement par lib/supabase.ts sur toute plateforme native (enregistrerToken a chaque changement de session Supabase). Sur Android/iOS il sert au token push + au rattrapage d'actions en attente ; sur Electron, enregistrerToken sert en plus a ouvrir/maintenir la deuxieme connexion WebSocket dediee aux actions systeme du canal agent applicatif (Lot S, voir plan-canal-en-direct-pc.md a la racine du depot). deconnexion() ferme cette connexion. rattraperActionsEnAttente() n'a pas d'equivalent PC (pas de file d'actions differees comme sur mobile) : renvoie simplement {traitees: 0}.",
+  "capacitor": {
+    "electron": { "src": "electron" }
+  },
+  "scripts": {
+    "build": "tsc -p electron/tsconfig.json"
+  },
+  "dependencies": {
+    "capacitor-dossiers-electron": "file:../capacitor-dossiers-electron",
+    "capacitor-superposition-electron": "file:../capacitor-superposition-electron",
+    "ws": "^8.18.0",
+    "screenshot-desktop": "^1.15.0",
+    "@nut-tree-fork/nut-js": "^4.2.6"
+  },
+  "devDependencies": {
+    "@capawesome/capacitor-electron": "^0.1.1",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.5.0"
+  },
+  "peerDependencies": {
+    "@capawesome/capacitor-electron": "^0.1.1"
+  }
+}

@@ -151,12 +151,25 @@ export default function RacineLayout({
             (flash blanc). Lecture directe de localStorage + matchMedia,
             volontairement hors de React (trop tôt dans le cycle de vie
             pour qu'un hook s'en charge). Doit rester IDENTIQUE à la
-            logique de lib/useTheme.ts (clé de stockage, valeurs). */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("clovis-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t;}}catch(e){}})();`,
-          }}
-        />
+            logique de lib/useTheme.ts (clé de stockage, valeurs).
+            Ajout du 28/09/2026 (Lot R, canal en direct sur PC) : pose aussi
+            data-superposition sur <html> quand la page est celle de la
+            fenêtre de superposition Electron (app/agent-superposition),
+            pour que globals.css la rende transparente et sans écran
+            d'ouverture (sinon un fond plein couvrirait tout l'écran).
+
+            Correctif (29/09/2026, demande Bourama) : en fichier externe
+            (public/dj-anti-flash-theme.js) plutôt qu'en ligne dans le
+            HTML. La politique de sécurité par défaut de
+            @capawesome/capacitor-electron (script-src 'self', sans
+            'unsafe-inline') bloque silencieusement tout script en ligne
+            en production Electron -- ce script ne s'exécutait donc
+            jamais dans l'appli PC. Un fichier de même origine passe cette
+            politique ; le comportement (synchrone, avant le premier
+            rendu de <body>) reste identique, un <script src> sans
+            async/defer bloque le parseur exactement comme un script en
+            ligne. */}
+        <script src="/dj-anti-flash-theme.js" />
       </head>
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
         {/* Écran d'ouverture (25/08, demande Bourama) -- voir
@@ -176,13 +189,16 @@ export default function RacineLayout({
             globale dans globals.css), forcer l'attente reviendrait à
             imposer un écran figé inutile à ces personnes. Doit rester
             APRÈS le <div id="clovis-splash"> dans le HTML pour le
-            trouver dans le DOM au moment où il s'exécute. */}
+            trouver dans le DOM au moment où il s'exécute.
+
+            Correctif (29/09/2026) : même raison qu'au dessus, en fichier
+            externe (public/dj-splash-retrait.js). C'est précisément ce
+            script (le filet de sécurité à 6s compris) qui, bloqué en
+            ligne par la politique de sécurité Electron, laissait l'écran
+            d'ouverture figé pour toujours en production Electron : plus
+            rien n'appelait jamais partir(). */}
         <SplashOuverture />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var el=document.getElementById("clovis-splash");if(!el)return;var reduit=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var DUREE_MIN=reduit?0:3900;var pret=false,tempsEcoule=false,parti=false;function partir(){if(parti)return;parti=true;el.classList.add("clovis-splash-sortie");el.addEventListener("transitionend",function(){if(el.parentNode)el.parentNode.removeChild(el);},{once:true});}function tenter(){if(pret&&tempsEcoule)partir();}document.addEventListener("clovis:pret",function(){pret=true;tenter();},{once:true});setTimeout(function(){tempsEcoule=true;tenter();},DUREE_MIN);setTimeout(partir,6000);}catch(e){}})();`,
-          }}
-        />
+        <script src="/dj-splash-retrait.js" />
         <ServiceWorkerRegistration />
         <ReveilBackend />
         <FournisseurRequetes>{children}</FournisseurRequetes>

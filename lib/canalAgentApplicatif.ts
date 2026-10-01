@@ -80,6 +80,7 @@ import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
 import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
+import { estDansFenetreSuperposition, surElectron, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -307,6 +308,19 @@ function envoyerViaRepli(texte: string) {
 export function envoyerMessageEtudiant(texte: string) {
   const propre = texte.trim();
   if (!propre) return;
+  // Ajout du 27/09/2026 (Lot R, voir plan-canal-en-direct-pc.md) : cette
+  // fonction est importée directement par ControlesInteractionCanal.tsx
+  // et BulleDialogueAgent.tsx (pas via ContexteCanalEnDirect), et ces
+  // composants sont réutilisés tels quels dans la fenêtre de
+  // superposition. Cette fenêtre n'a jamais de vraie connexion (socket
+  // reste undefined dans son propre module JS) : relayer vers la fenêtre
+  // principale plutôt que de tomber dans le repli HTTP local, qui
+  // échouerait silencieusement (obtenirConversationIdCanal lirait le
+  // canalGlobal de CETTE fenêtre, jamais enregistré ici).
+  if (estDansFenetreSuperposition()) {
+    relayerEnvoiMessageEtudiant(propre);
+    return;
+  }
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     envoyerViaRepli(propre);
     return;
@@ -595,6 +609,23 @@ async function traiterDemandeMontrer(id: string, actionId: string) {
   envoyerReponse(id, { succes: true });
 }
 
+async function traiterPointageEcran(id: string, point: { x: number; y: number }) {
+  if (!surElectron()) { envoyerReponse(id, { ignore: true }); return; }
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+    envoyerReponse(id, { erreur: "Coordonnées de pointage invalides." });
+    return;
+  }
+  const idJournal = pousserJournalDepuisAgent("Clovis pointe à l'écran", "en_cours");
+  try {
+    await deplacerCurseurDepuisAgent(point, { cliquer: false, forme: "main", repere: "ecran" });
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
+    envoyerReponse(id, { succes: true });
+  } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Pointage impossible." });
+  }
+}
+
 /**
  * Chantier P : commentaire libre de Clovis. Aucune reponse envoyee, le
  * serveur n'en attend pas. Un texte vide ou non textuel est ignore
@@ -627,6 +658,7 @@ function traiterOuvertureCanal(valeur: unknown) {
 }
 
 function traiterMessage(message: unknown) {
+  if (estDansFenetreSuperposition()) return;
   if (!message || typeof message !== "object") return;
   const m = message as {
     accuse_message_etudiant?: unknown;
@@ -642,8 +674,12 @@ function traiterMessage(message: unknown) {
     description?: string;
     montrer_action_id?: string;
     editeur?: unknown;
+    pointer_ecran?: { x: number; y: number };
     lire_page?: boolean;
     longueur_max?: number;
+    action_systeme?: string;
+    parametres?: Record<string, unknown>;
+    via_renderer?: boolean;
   };
   if (m.accuse_message_etudiant !== undefined) {
     traiterAccuseMessageEtudiant(m.accuse_message_etudiant, m.pris_en_compte);
@@ -655,10 +691,23 @@ function traiterMessage(message: unknown) {
     traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
+  } else if (m.id && m.pointer_ecran) {
+    void traiterPointageEcran(m.id, m.pointer_ecran);
   } else if (m.id && m.lire_page === true) {
     traiterDemandeLecturePage(m.id, m.longueur_max);
   } else if (m.id && m.editeur !== undefined) {
     traiterDemandeEditeur(m.id, m.editeur, envoyerReponse);
+  } else if (m.id && m.action_systeme && m.via_renderer === true && surElectron()) {
+    // Le serveur choisit ce relais OU la connexion native historique, jamais
+    // les deux : un clic/clavier ne doit surtout pas être exécuté deux fois.
+    const { id, action_systeme, parametres } = m;
+    void import("@capacitor/core").then(({ registerPlugin }) => {
+      const pont = registerPlugin<{
+        executerActionSysteme(options: { id: string; type: string; parametres: Record<string, unknown> }): Promise<unknown>;
+      }>("PontNatif");
+      return pont.executerActionSysteme({ id, type: action_systeme, parametres: parametres ?? {} });
+    }).then(resultat => envoyerReponse(id, resultat))
+      .catch(e => envoyerReponse(id, { erreur: e instanceof Error ? e.message : String(e) }));
   } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
     traiterDemandeEcriture(m.id, m.action_id, m.texte_a_ecrire);
   } else if (m.id && m.action_id) {
@@ -692,8 +741,13 @@ function canalDejaOuvertOuEnCours(): boolean {
 // exécutée deux fois, le second clic pouvant défaire le premier.
 let ouvertureEnCours = false;
 
+// Le renderer principal Electron reste responsable du DOM, même derrière une autre application.
+function peutMaintenirCanal(): boolean {
+  return !estDansFenetreSuperposition() && (surElectron() || document.visibilityState === "visible");
+}
+
 async function ouvrirCanal() {
-  if (document.visibilityState !== "visible") return;
+  if (!peutMaintenirCanal()) return;
   if (ouvertureEnCours || canalDejaOuvertOuEnCours()) return;
 
   ouvertureEnCours = true;
@@ -704,7 +758,7 @@ async function ouvrirCanal() {
     if (!session?.access_token) return;
 
     // L'onglet a pu être masqué ou une connexion ouverte pendant l'attente.
-    if (document.visibilityState !== "visible") return;
+    if (!peutMaintenirCanal()) return;
     if (canalDejaOuvertOuEnCours()) return;
 
     const url = urlWebSocket();
@@ -718,8 +772,10 @@ async function ouvrirCanal() {
       // Authentification applicative après l'ouverture : le bearer token
       // ne transite plus dans l'URL.
       const appareilId = await obtenirAppareilIdPourCanal();
+      const { Capacitor } = await import("@capacitor/core");
       if (ws.readyState !== WebSocket.OPEN) return;
-      ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId }));
+      ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId,
+        actions_systeme_via_renderer: surElectron() && Capacitor.isPluginAvailable("PontNatif") }));
       
       // Etat initial des actions disponibles pour CETTE connexion, sans
       // attendre un changement (chantier D), sinon le backend n'a rien
@@ -737,7 +793,8 @@ async function ouvrirCanal() {
     };
 
     ws.onclose = () => {
-      if (socket === ws) socket = null;
+      if (socket !== ws) return;
+      socket = null;
       arreterObservationDom();
       if (!fermetureVoulue) reconnexion.fermeeSansLeVouloir();
       planifierReconnexion();
@@ -792,7 +849,7 @@ function arreterObservationDom() {
 }
 
 function reconnecterApresRafraichissementToken() {
-  if (document.visibilityState !== "visible") return;
+  if (!peutMaintenirCanal()) return;
   fermetureVoulue = true;
   socket?.close();
   socket = null;
@@ -813,7 +870,7 @@ function fermerCanal() {
 
 /** À appeler une seule fois, même schéma que initialiserCanalTempsReel. */
 export function initialiserCanalAgentApplicatif() {
-  if (dejaInitialise || typeof window === "undefined") return;
+  if (dejaInitialise || typeof window === "undefined" || estDansFenetreSuperposition()) return;
   dejaInitialise = true;
 
   // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
@@ -821,7 +878,7 @@ export function initialiserCanalAgentApplicatif() {
   ecouterEtatEditeur(envoyerEtatActions);
 
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
+    if (peutMaintenirCanal()) {
       ouvrirCanal();
     } else {
       fermerCanal();

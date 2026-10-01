@@ -35,6 +35,7 @@ import {
   enregistrerCanalEnDirect,
 } from "@/lib/contexteCanalEnDirect";
 import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
+import { useEmetteurSuperposition, surElectron } from "@/lib/superpositionElectron";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -58,6 +59,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Capacitor.isNativePlatform() n'a pas répondu -- évite un flash du
   // hamburger web au tout premier rendu dans l'appli native.
   const [natif, setNatif] = useState(false);
+  // Correctif (28/09/2026, demande Bourama) : sur Electron, le curseur, la
+  // bulle et le journal du canal en direct ne se montent JAMAIS ici (voir
+  // plus bas), c'est la fenêtre de superposition (app/agent-superposition/page.tsx,
+  // voir electron/main.ts) qui les affiche, fusionnés en une seule
+  // instance, par dessus l'appli ET par dessus le reste du bureau, et
+  // seulement quand le canal est actif (voir
+  // packages/capacitor-superposition-electron/electron/src/plugin.mts).
+  // Les monter aussi ici les aurait dupliqués. Même détection différée
+  // que `natif` juste au dessus (Capacitor.getPlatform() n'est connu que
+  // côté client, un state initial à false évite un décalage
+  // serveur/navigateur à l'hydratation).
+  const [surElectronClient, setSurElectronClient] = useState(false);
   // Remonté ici depuis ChatFlottant.tsx (16/08/2026) pour pouvoir être
   // ouvert depuis d'autres écrans -- voir lib/contexteChat.tsx et le
   // bouton "Ouvrir le chat" de l'écran d'accueil.
@@ -90,6 +103,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // layout racine pour survivre à tout changement de section -- voir
   // lib/contexteCanalEnDirect.tsx.
   const canalEnDirectValeur = useFournirCanalEnDirect();
+  // Lot R (27/09/2026, voir plan-canal-en-direct-pc.md) : pousse cet état
+  // vers la fenêtre de superposition Electron (ne fait rien ailleurs que
+  // sur la plateforme "electron", voir lib/superpositionElectron.ts).
+  useEmetteurSuperposition(curseurVirtuelValeur, canalEnDirectValeur);
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);
@@ -202,6 +219,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     import("@capacitor/core").then(({ Capacitor }) => {
       const estNatif = Capacitor.isNativePlatform();
       if (!annule) setNatif(estNatif);
+      if (!annule) setSurElectronClient(surElectron());
       // Chantier "web mobile façon appli" (28/08/2026) : attribut lu par
       // --dj-barre-onglets-web dans app/globals.css, pour que cette
       // variable CSS (marge réservée par la nouvelle barre du bas web)
@@ -360,10 +378,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             natif={natif}
           />
           <FenetresSections />
-          <CurseurVirtuelAgent />
-          <BulleDialogueAgent />
-          <BoutonJournalAgent />
-          <CanalEnDirectFlottant />
+          {/* Correctif (28/09/2026) : sur Electron, ces trois là vivent
+              uniquement dans la fenêtre de superposition (voir le state
+              surElectronClient plus haut) : les monter ici en plus les
+              aurait affichés en double. Sur web/mobile, pas de fenêtre de
+              superposition : ils restent montés ici comme avant. */}
+          {!surElectronClient && <CurseurVirtuelAgent />}
+          {!surElectronClient && <BulleDialogueAgent />}
+          {!surElectronClient && <BoutonJournalAgent />}
+          {/* Le bouton d'activation (et ses contrôles) reste ici tant que
+              le canal est inactif, c'est comme ça qu'on l'active. Une
+              fois actif, il bascule lui aussi vers la superposition (même
+              raison que les trois juste au dessus), sinon le bouton
+              apparaîtrait en double, une fois dans l'appli et une fois
+              dans la superposition qui la recouvre. */}
+          {(!surElectronClient || !canalActif) && <CanalEnDirectFlottant />}
           <PontMessageCanalVersChat />
           <PaletteCommandes
             connecte={connecte}

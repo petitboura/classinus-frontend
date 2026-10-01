@@ -13,3 +13,12 @@ android/app/src/main/assets/public/
 android/keystore.properties
 *.keystore
 *.jks
+
+# Chantier "canal en direct sort de l'appli" (27/09/2026), Lot Q : sorties de
+# build Electron, jamais committees -- se regenerent via npm run build
+# (scaffold electron/, voir son propre package.json) ou npm run build (dans
+# packages/capacitor-dossiers-electron/, voir son README).
+electron/build/
+electron/dist/
+electron/vendor/
+packages/*/electron/dist/
