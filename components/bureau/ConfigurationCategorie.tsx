@@ -4,46 +4,46 @@ import { useState, type MouseEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type LucideIcon } from "lucide-react";
 import { clesRequetes } from "@/lib/clesRequetes";
-import { lireMesComportements, activerDesactiverComportement, type Comportement, type CategorieConfiguration } from "@/lib/api";
-import { texteConfiguration, type IdTexteConfiguration } from "@/lib/i18n/textesConfiguration";
+import {
+  lireMesComportements,
+  activerDesactiverComportement,
+  ajouterComportement,
+  type Comportement,
+  type CategorieConfiguration,
+} from "@/lib/api";
+import { messageErreur } from "@/lib/erreurs";
+import { texteConfiguration } from "@/lib/i18n/textesConfiguration";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
-import { EditeurComportement } from "@/components/EditeurComportement";
-import { ChipComportement } from "@/components/MesComportements";
-import { Skeleton } from "@/components/Skeleton";
+import { EditeurConfiguration } from "@/components/bureau/configuration/EditeurConfiguration";
+import {
+  CarteProcedure,
+  LigneRegle,
+  CarteComportement,
+  CarteStyle,
+  AjoutProcedure,
+  AjoutRegle,
+  AjoutComportement,
+  AjoutStyle,
+  SqueletteConfiguration,
+} from "@/components/bureau/configuration/AffichageConfiguration";
 
-// 28/09/2026, demande Bourama : onglet "Configuration" de Bureau. Les 4
-// catégories (Procédure/Règle/Comportement/Style) sont des skills
-// classiques "habillés" (même table, même EditeurComportement, même
-// pilule ChipComportement -- "tous suivent comme les skill") avec juste
-// une étiquette categorie en plus, jamais choisie par l'utilisateur : ce
+// 28/09/2026, demande Bourama : onglet "Configuration" de Bureau. Ce
 // composant est monté une fois par onglet, avec SA catégorie fixée en
-// prop, jamais un sélecteur. Trimmé par rapport à MesComportements.tsx
-// (pas d'onglet "Public", pas de CTA compte requis, pas de filtre
-// origine/ComportementsRecus) : Bureau exige déjà un compte, et ces 4
-// catégories ne sont jamais reçues par code ni importées du catalogue
-// public, seulement créées ici.
+// prop, jamais un sélecteur. 01/10/2026, demande Bourama ("chacune doit
+// être différente, leur éditeur, leur bouton d'ajout et leur affichage
+// après création") : chaque catégorie a maintenant son propre éditeur
+// (EditeurConfiguration), son propre bouton d'ajout et sa propre façon de
+// s'afficher (AffichageConfiguration), au lieu de la pastille et de
+// l'éditeur des skills classiques. La règle n'ouvre aucun panneau pour
+// être créée : son champ est directement dans la liste.
 export function ConfigurationCategorie({
   agentId,
   categorie,
-  libelleNouveau,
-  texteVide,
-  placeholderTexte,
   Icone,
 }: {
   agentId: string;
   categorie: CategorieConfiguration;
-  /** Texte du bouton "+", propre à cet onglet (ex : "Nouvelle règle"). */
-  libelleNouveau: string;
-  /** Texte affiché quand la liste de cette catégorie est vide. */
-  texteVide: string;
-  /** 29/09/2026, demande Bourama : placeholder du champ principal,
-   * propre à cette catégorie. */
-  placeholderTexte: string;
-  /** 29/09/2026, demande Bourama ("chacune doivent être différente
-   * entre elle") : icône propre à cette catégorie, affichée sur le
-   * bouton "+" ET dans l'éditeur lui même (voir EditeurComportement).
-   * Jamais réutilisée d'un autre écran, voir lib/sectionsBureau.tsx. */
   Icone: LucideIcon;
 }) {
   const queryClient = useQueryClient();
@@ -56,6 +56,7 @@ export function ConfigurationCategorie({
   const [panneau, setPanneau] = useState<{ type: "edition"; c: Comportement } | { type: "creation" } | null>(null);
   const [actionPanneauEnCours, setActionPanneauEnCours] = useState(false);
   const [actifEnCours, setActifEnCours] = useState<string | null>(null);
+  const [erreurAjoutRegle, setErreurAjoutRegle] = useState<string | null>(null);
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
 
   function fermer() {
@@ -70,58 +71,87 @@ export function ConfigurationCategorie({
       const maj = await activerDesactiverComportement(agentId, c.id, !c.actif);
       queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).map((x) => (x.id === maj.id ? maj : x)));
     } catch {
-      // Silencieux comme dans MesComportements.tsx : la pilule reste
-      // simplement dans son état précédent, pas de blocage de l'écran
-      // pour un aller-retour réseau raté.
+      // Silencieux : la bascule reste dans son état précédent, pas de
+      // blocage de l'écran pour un aller retour réseau raté.
     } finally {
       setActifEnCours(null);
     }
   }
 
-  if (liste === undefined) {
-    return (
-      <div className="flex flex-col gap-4" aria-hidden>
-        <Skeleton className="h-9 w-44 rounded-full border border-dj-bordure" />
-        <div className="flex flex-wrap gap-2">
-          {[128, 176, 96, 208, 144].map((largeur, i) => (
-            <Skeleton key={i} className="h-9 rounded-full border border-dj-bordure" style={{ width: `${largeur}px`, animationDelay: `${i * 60}ms` }} />
-          ))}
-        </div>
-      </div>
-    );
+  async function ajouterRegle(texte: string): Promise<boolean> {
+    setErreurAjoutRegle(null);
+    try {
+      const cree = await ajouterComportement(agentId, texte, null, undefined, undefined, "regle", null);
+      queryClient.setQueryData<Comportement[]>(cle, (prec) => [...(prec || []), cree]);
+      return true;
+    } catch (e) {
+      setErreurAjoutRegle(messageErreur(e));
+      return false;
+    }
   }
+
+  if (liste === undefined) return <SqueletteConfiguration categorie={categorie} />;
+
+  const ouvrir = (c: Comportement) => setPanneau({ type: "edition", c });
+  const creer = () => setPanneau({ type: "creation" });
+  const props = { onOuvrir: ouvrir, onToggleActif: toggleActif };
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
-      <button
-        onClick={() => setPanneau({ type: "creation" })}
-        className="flex w-fit items-center gap-1.5 rounded-full border border-dj-bordure bg-dj-surface px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
-      >
-        <Icone size={14} /> {libelleNouveau}
-      </button>
+      {categorie === "regle" && (
+        <div className="flex flex-col gap-1.5">
+          <AjoutRegle onAjouter={ajouterRegle} />
+          {erreurAjoutRegle && <p className="text-xs text-[var(--dj-erreur)]">{erreurAjoutRegle}</p>}
+        </div>
+      )}
+      {categorie === "comportement" && <AjoutComportement onClick={creer} />}
+      {categorie === "style" && <AjoutStyle onClick={creer} />}
 
-      {liste.length === 0 ? (
-        <p className="text-sm text-dj-texte-muet">{texteVide}</p>
-      ) : (
-        <div className="flex flex-wrap gap-2">
+      {liste.length === 0 && categorie !== "procedure" && (
+        <p className="text-sm text-dj-texte-muet">{texteConfiguration(`vide.${categorie}`)}</p>
+      )}
+
+      {categorie === "procedure" && (
+        <div className="grid gap-3 sm:grid-cols-2">
           {liste.map((c) => (
-            <ChipComportement key={c.id} c={c} onOuvrir={(c) => setPanneau({ type: "edition", c })} onToggleActif={toggleActif} />
+            <CarteProcedure key={c.id} c={c} {...props} />
+          ))}
+          <AjoutProcedure onClick={creer} />
+        </div>
+      )}
+      {categorie === "regle" && liste.length > 0 && (
+        <div className="flex flex-col divide-y divide-dj-bordure">
+          {liste.map((c) => (
+            <LigneRegle key={c.id} c={c} {...props} />
+          ))}
+        </div>
+      )}
+      {categorie === "comportement" && liste.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {liste.map((c) => (
+            <CarteComportement key={c.id} c={c} {...props} />
+          ))}
+        </div>
+      )}
+      {categorie === "style" && liste.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {liste.map((c) => (
+            <CarteStyle key={c.id} c={c} {...props} />
           ))}
         </div>
       )}
 
       {panneau && (
-        <PanneauFlottant large enSortie={enSortie} onFerme={actionPanneauEnCours ? undefined : () => demarrerFermeture(fermer)}>
-          <EditeurComportement
+        <PanneauFlottant
+          large={categorie !== "regle"}
+          enSortie={enSortie}
+          onFerme={actionPanneauEnCours ? undefined : () => demarrerFermeture(fermer)}
+        >
+          <EditeurConfiguration
             agentId={agentId}
+            categorie={categorie}
             comportement={panneau.type === "edition" ? panneau.c : null}
-            categoriePreset={categorie}
-            libelleQuandUtiliser={texteConfiguration("champ.quandUtiliser.libelle")}
-            placeholderQuandUtiliser={texteConfiguration("champ.quandUtiliser.placeholder")}
-            titreCreation={texteConfiguration(`titre.creation.${categorie}` as IdTexteConfiguration)}
-            titreEdition={texteConfiguration(`titre.edition.${categorie}` as IdTexteConfiguration)}
-            placeholderTexte={placeholderTexte}
-            IconeCategorie={Icone}
+            Icone={Icone}
             onFermer={() => demarrerFermeture(fermer)}
             onCree={(c) => queryClient.setQueryData<Comportement[]>(cle, (prec) => [...(prec || []), c])}
             onModifie={(c) => queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).map((x) => (x.id === c.id ? c : x)))}
