@@ -34,7 +34,8 @@ components/
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
                           components/mobile/ à la place
   AppSidebar.tsx          sidebar desktop (Bureau/Bibliothèque/Notes en direct, groupes
-                          "Personnaliser Clovis" et "Scolarité")
+                          "Personnaliser Clovis" et "Scolarité") ; repliée par défaut, elle se
+                          déplie au survol du bouton "Classinus" par-dessus la page, sans la décaler
   mobile/
     BarreOngletsNative.tsx  vraie barre d'onglets système (plugin Capgo, pas une barre CSS/React) :
                              Bibliothèque, Contrôle de session, Chat (au milieu), Notes, Personnaliser

@@ -3,7 +3,7 @@
 import { useContext } from "react";
 import { SectionPage } from "./SectionPage";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
-import { SECTIONS_BUREAU } from "@/lib/sectionsBureau";
+import { sectionsBureauVisibles } from "@/lib/sectionsBureau";
 import { ROUTES_BUREAU } from "@/lib/routesBureau";
 import { construireGroupe } from "@/lib/groupeSections";
 
@@ -21,16 +21,10 @@ import { construireGroupe } from "@/lib/groupeSections";
 // toute l'appli, voir ce fichier -- pas un nouvel appel réseau par page)
 // et construit le groupe filtré ici, côté client, où l'info est
 // disponible -- une page.tsx (Server Component) ne peut pas savoir ça.
-const SECTIONS_PROF_UNIQUEMENT = new Set<string>([
-  ROUTES_BUREAU.audit,
-  ROUTES_BUREAU.programme,
-  ROUTES_BUREAU.signalements,
-]);
 
 export function SectionPageBureau({ title, children }: { title: string; children: React.ReactNode }) {
   const { estProfesseur } = useContext(ContexteStatutUtilisateur);
-  const sections =
-    estProfesseur === false ? SECTIONS_BUREAU.filter((s) => !SECTIONS_PROF_UNIQUEMENT.has(s.href)) : SECTIONS_BUREAU;
+  const sections = sectionsBureauVisibles(estProfesseur);
   const groupe = construireGroupe("Bureau", ROUTES_BUREAU.accueil, sections);
 
   return (

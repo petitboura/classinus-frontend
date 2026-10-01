@@ -60,3 +60,16 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
     Icone: ClipboardList,
   },
 ];
+
+// Sections que seul un prof voit. Source unique : lue par la page d'accueil
+// de Bureau, le menu des pages voisines et le menu au survol du rail.
+export const SECTIONS_BUREAU_PROF_UNIQUEMENT: ReadonlySet<string> = new Set<string>([
+  ROUTES_BUREAU.audit,
+  ROUTES_BUREAU.programme,
+  ROUTES_BUREAU.signalements,
+]);
+
+/** Les sections de Bureau visibles selon le statut (estProfesseur false = pas prof). */
+export function sectionsBureauVisibles(estProfesseur: boolean | null): SectionDeGroupe[] {
+  return estProfesseur === false ? SECTIONS_BUREAU.filter((s) => !SECTIONS_BUREAU_PROF_UNIQUEMENT.has(s.href)) : SECTIONS_BUREAU;
+}

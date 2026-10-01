@@ -1,5 +1,6 @@
 import { SectionPage } from "@/components/SectionPage";
-import { EspaceBibliotheque } from "@/components/EspaceBibliotheque";
+import { contenuSection, titreSection } from "@/lib/contenuSections";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { groupeBibliotheque } from "@/lib/sectionsBibliotheque";
 
 // 19/09/2026, demande Bourama : ancien onglet Perso de la Bibliothèque,
@@ -7,9 +8,10 @@ import { groupeBibliotheque } from "@/lib/sectionsBibliotheque";
 // bibliotheque/perso/[id] (fichier perso partagé) sans conflit : la page
 // de liste n'a pas d'identifiant.
 export default function PageBibliothequePerso() {
+  const cle = ROUTES_BIBLIOTHEQUE.perso;
   return (
-    <SectionPage title="Perso" groupe={groupeBibliotheque()}>
-      <EspaceBibliotheque sansOnglets />
+    <SectionPage title={titreSection(cle)} groupe={groupeBibliotheque()}>
+      {contenuSection(cle)}
     </SectionPage>
   );
 }
