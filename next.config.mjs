@@ -25,7 +25,7 @@
 // Le web Vercel n'est pas touche (CAPACITOR_BUILD absent).
 if (process.env.CAPACITOR_BUILD === "true") {
   process.env.NEXT_PUBLIC_API_URL =
-    "https://classinus-backend-lot-u-test-staging.up.railway.app";
+    "https://clovis-backend-staging.up.railway.app";
 }
 
 const nextConfig = {
