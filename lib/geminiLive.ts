@@ -124,10 +124,17 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   let connecte = false;
   let pret = false;
   let erreurSignalee = false;
+  // Diagnostic temporaire : étapes atteintes et derniers messages de Google.
+  const etapes: string[] = [];
+  const messagesGoogle: string[] = [];
+  let audioRecu = false;
+  let minuteurDiagnostic: ReturnType<typeof setTimeout> | null = null;
+  const resumeDiagnostic = () => "Étapes atteintes : " + (etapes.join(", ") || "aucune") + ". Derniers messages de Google : " + (messagesGoogle.slice(-4).join(" ; ") || "aucun") + ".";
 
   const nettoyer = () => {
     if (ferme) return;
     ferme = true;
+    if (minuteurDiagnostic) clearTimeout(minuteurDiagnostic);
     processeur.disconnect(); source.disconnect(); silence.disconnect();
     entree.getTracks().forEach((track) => track.stop());
     lecteur.interrompre();
@@ -150,11 +157,13 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   // clientContent n'étant prévu que pour l'historique initial).
   const saluer = () => {
     if (websocket.readyState !== WebSocket.OPEN) return;
+    etapes.push("salutation envoyée");
     websocket.send(JSON.stringify({ realtimeInput: { text: "La voix vient de s'activer. Dis seulement à voix haute et en quelques mots : Je t'écoute." } }));
   };
 
   websocket.onopen = () => {
     connecte = true;
+    etapes.push("connexion Google ouverte");
     websocket.send(JSON.stringify({
       setup: {
         model: "models/" + MODELE_GEMINI_LIVE,
@@ -171,11 +180,15 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   websocket.onmessage = async (event) => {
     let message: any;
     try { message = JSON.parse(event.data); } catch { return; }
-    if (message.setupComplete && !pret) { pret = true; etat("ecoute"); saluer(); }
+    messagesGoogle.push(Object.keys(message).join("+") + (message.error ? " " + JSON.stringify(message.error).slice(0, 200) : ""));
+    if (message.setupComplete && !pret) { pret = true; etapes.push("session prête"); etat("ecoute"); saluer(); }
     const serveur = message.serverContent;
     if (serveur?.modelTurn?.parts) {
       for (const part of serveur.modelTurn.parts) {
-        if (part.inlineData?.data) { lecteur.jouer(base64VersInt16(part.inlineData.data)); etat("reponse"); }
+        if (part.inlineData?.data) {
+          if (!audioRecu) { audioRecu = true; etapes.push("son reçu"); }
+          lecteur.jouer(base64VersInt16(part.inlineData.data)); etat("reponse");
+        }
       }
     }
     if (message.toolCall?.functionCalls) {
@@ -210,10 +223,13 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     erreurSignalee = true;
     options.surErreur?.("Le canal vocal Gemini a rencontré une erreur.");
   };
-  websocket.onclose = () => {
+  websocket.onclose = (evenement) => {
     if (ferme) return;
     connecte = false;
-    if (!erreurSignalee) { erreurSignalee = true; options.surErreur?.("Le canal vocal s'est interrompu."); }
+    if (!erreurSignalee) {
+      erreurSignalee = true;
+      options.surErreur?.("Le canal vocal s'est interrompu. Code " + evenement.code + (evenement.reason ? ", raison : " + evenement.reason : "") + ". " + resumeDiagnostic());
+    }
     nettoyer();
   };
 
@@ -223,6 +239,10 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (!pcm.length) return;
     websocket.send(JSON.stringify({ realtimeInput: { audio: { data: int16VersBase64(pcm), mimeType: "audio/pcm;rate=16000" } } }));
   };
+  minuteurDiagnostic = setTimeout(() => {
+    if (ferme || audioRecu || erreurSignalee) return;
+    options.surErreur?.("Diagnostic voix : aucun son reçu après 8 secondes. " + resumeDiagnostic());
+  }, 8000);
   source.connect(processeur); processeur.connect(silence); silence.connect(contexteEntree.destination);
   return { fermer: nettoyer, interrompre, envoyerTexte };
 }
