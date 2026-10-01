@@ -13,6 +13,7 @@ import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { SelecteurModeActif } from "./SelecteurModeActif";
+import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
@@ -56,6 +57,7 @@ export function ChatIA({
   outilsActifsAgent = null,
   pleinEcran = false,
   natif = false,
+  raccourcis = false,
 }: {
   agentId: string;
   nomAgent: string;
@@ -134,8 +136,15 @@ export function ChatIA({
   // côté backend (04/09/2026, demande Bourama). Jamais recalculé ici :
   // une seule source de vérité pour cette détection dans l'app.
   natif?: boolean;
+  // 01/10/2026, demande Bourama : affiche les raccourcis vers des
+  // sous-sections (RaccourcisChat.tsx) sur l'écran vide. Seulement pour la
+  // vraie page du chat (ChatSection.tsx), jamais pour la popup mini.
+  raccourcis?: boolean;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
+  // 01/10/2026 : vrai tant que le curseur est dans le champ de saisie (écran
+  // vide, voir le commentaire de l'écran de démarrage plus bas).
+  const [saisieActive, setSaisieActive] = useState(false);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
   // Correctif mobile (2026-07-30, demande Bourama) : aucun scroll auto
   // n'existait avant -- sur desktop le "scroll anchoring" natif du
@@ -1551,12 +1560,21 @@ export function ChatIA({
   // bas dans ce fichier.
   if (messages.length === 0) {
     return (
-      <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center px-4">
+      <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0">
         {/* Minuteurs (20/09/2026) : visibles aussi sur l'écran d'accueil, par exemple un minuteur lancé dans une conversation précédente. */}
         <div className="absolute inset-x-0 top-0">
           <DockMinuteurs conversationId={conversationId} />
         </div>
-        <div className="w-full max-w-xl animate-dj-fade-up">
+        {/* 01/10/2026, demande Bourama (raccourcis, voir RaccourcisChat.tsx).
+            Le centrage vertical passe de justify-center à trois espaceurs
+            dont la croissance s'anime : sur PC rien ne change (titre + barre
+            toujours centrés). Sur mobile, avec les raccourcis : tant que
+            l'étudiant n'écrit pas, la barre reste en bas avec la liste
+            au-dessus et le titre au milieu de la place libre ; dès qu'il
+            clique pour écrire, la barre monte au milieu avec le titre et la
+            liste se replie. Sans raccourcis (popup mini), centré comme avant. */}
+        <div className="flex min-h-0 w-full max-w-xl flex-1 flex-col animate-dj-fade-up">
+          <div className="shrink-0 grow basis-0" />
           {titreAccueil ? (
             <div className="mb-8 flex flex-col items-center text-center">
               <div className="flex items-center gap-3">
@@ -1575,6 +1593,13 @@ export function ChatIA({
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
           )}
+          <div
+            className={
+              "shrink-0 basis-0 transition-[flex-grow] duration-300 ease-cgpt-doux " +
+              (!raccourcis || saisieActive ? "grow-0" : "grow md:grow-0")
+            }
+          />
+          {raccourcis && <RaccourcisChat variante="mobile" visible={!saisieActive} />}
           {/* Mode actif (Partie 6, 06/09) : rendu fixe sur mobile (peu
               importe l'emplacement DOM), juste au-dessus de la barre de
               saisie sur PC -- voir SelecteurModeActif.tsx. */}
@@ -1583,20 +1608,38 @@ export function ChatIA({
             onAccesBloqueChange={setAccesBloqueMineur}
             onEleveChoisitModeChange={setEleveChoisitMode}
           />
-          <BarreDeSaisie
-            onEnvoyer={envoyerMessage}
-            desactive={genEnCours || affichageEnCours || accesBloqueMineur}
-            genererEnCours={genEnCours}
-            onArreter={arreterGeneration}
-            agentId={agentId}
-            texteInitial={texteInitial}
-            modelesDisponibles={modelesDisponibles}
-            modeleSelectionne={modeleSelectionne}
-            onModeleChange={setModeleSelectionne}
-            boutonSansEnseignant={boutonSansEnseignant}
-            outilsActifsAgent={outilsActifsAgent}
-            conversationId={conversationId}
-            eleveChoisitMode={eleveChoisitMode}
+          <div
+            onFocusCapture={(e) => {
+              if (e.target instanceof HTMLTextAreaElement) setSaisieActive(true);
+            }}
+            onBlurCapture={(e) => {
+              if (e.target instanceof HTMLTextAreaElement && !e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setSaisieActive(false);
+              }
+            }}
+          >
+            <BarreDeSaisie
+              onEnvoyer={envoyerMessage}
+              desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+              genererEnCours={genEnCours}
+              onArreter={arreterGeneration}
+              agentId={agentId}
+              texteInitial={texteInitial}
+              modelesDisponibles={modelesDisponibles}
+              modeleSelectionne={modeleSelectionne}
+              onModeleChange={setModeleSelectionne}
+              boutonSansEnseignant={boutonSansEnseignant}
+              outilsActifsAgent={outilsActifsAgent}
+              conversationId={conversationId}
+              eleveChoisitMode={eleveChoisitMode}
+            />
+          </div>
+          {raccourcis && <RaccourcisChat variante="bureau" />}
+          <div
+            className={
+              "shrink-0 basis-0 transition-[flex-grow] duration-300 ease-cgpt-doux " +
+              (!raccourcis || saisieActive ? "grow" : "grow-0 md:grow")
+            }
           />
         </div>
       </div>

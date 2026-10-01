@@ -33,8 +33,10 @@ export default function PageDecouvrirAccueil() {
         l&apos;ouverture de Classinus. Pose lui tes questions, et retrouve
         tes documents personnels ainsi que ceux partagés par les autres élèves dans la bibliothèque. Il peut aussi te
         préparer des fiches de révision, des QCM interactifs, ou encore des animations pour t&apos;aider à comprendre
-        un cours. Dans le tableau de bord, tu retrouves aussi tes raccourcis vers chaque partie de Classinus et ton
-        activité récente.
+        un cours. Sur l&apos;écran vide du chat, des raccourcis te mènent directement à la configuration, à l&apos;éditeur,
+        à ta mémoire et à tes skills, ainsi qu&apos;à ta bibliothèque perso sur ordinateur, ou au dossier de ton
+        téléphone et à ton temps d&apos;écran sur mobile. Dans le tableau de bord, tu retrouves aussi tes raccourcis
+        vers chaque partie de Classinus et ton activité récente.
       </p>
     </main>
   );

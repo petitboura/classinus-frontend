@@ -280,6 +280,7 @@ export function ChatSection() {
               onNouvelleConversationDemarree={ajouterConversationHistorique}
               pleinEcran
               natif={natif}
+              raccourcis
             />
           )}
         </div>
