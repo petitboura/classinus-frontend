@@ -159,8 +159,29 @@ export function useCanalEnDirect(): ValeurCanalEnDirect {
 // AppShell.tsx enregistre la vraie valeur dès que le Provider est monté.
 let canalGlobal: ValeurCanalEnDirect | null = null;
 
+// Ajouté le 30/09/2026 (demande Bourama : désactiver le canal doit vraiment
+// couper l'envoi de l'écran). Les modules hors React lisent l'état actif ici
+// et sont prévenus à chaque activation ou désactivation.
+let dernierEtatActifConnu = false;
+const ecouteursActivation = new Set<(actif: boolean) => void>();
+
 export function enregistrerCanalEnDirect(valeur: ValeurCanalEnDirect) {
   canalGlobal = valeur;
+  if (valeur.actif !== dernierEtatActifConnu) {
+    dernierEtatActifConnu = valeur.actif;
+    ecouteursActivation.forEach((ecouteur) => ecouteur(valeur.actif));
+  }
+}
+
+export function canalEnDirectEstActif(): boolean {
+  return canalGlobal?.actif ?? false;
+}
+
+export function ecouterActivationCanal(ecouteur: (actif: boolean) => void): () => void {
+  ecouteursActivation.add(ecouteur);
+  return () => {
+    ecouteursActivation.delete(ecouteur);
+  };
 }
 
 /**
