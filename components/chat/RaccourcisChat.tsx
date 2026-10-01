@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { estCleSection } from "@/lib/cleSections";
+import { useFenetres } from "@/lib/contexteFenetres";
 import { RACCOURCIS_CHAT_BUREAU, RACCOURCIS_CHAT_MOBILE } from "@/lib/raccourcisChat";
 
 // 01/10/2026, demande Bourama : raccourcis directs vers des sous-sections
@@ -8,7 +10,11 @@ import { RACCOURCIS_CHAT_BUREAU, RACCOURCIS_CHAT_MOBILE } from "@/lib/raccourcis
 // une par appareil). Deux formes, un seul composant :
 // - "bureau" (PC) : petits rectangles arrondis (icône + nom) sous la
 //   barre de saisie, dans la même famille de forme qu'elle mais plus
-//   petits, ni pilule ronde ni carré, tous sur une seule ligne.
+//   petits, ni pilule ronde ni carré, sur une seule ligne et répartis en
+//   colonnes égales pour que le premier et le dernier touchent les bords
+//   de la barre. Un clic ouvre la sous-section en fenêtre flottante par-dessus
+//   le chat (même mécanisme que le rail, voir lib/contexteFenetres.tsx),
+//   sans quitter la page.
 // - "mobile" : une liste, une ligne par raccourci, placée AU-DESSUS de la
 //   barre de saisie (qui reste collée en bas, avec le clavier). Chaque
 //   icône est centrée sur la même verticale que le bouton "+" de la barre
@@ -29,17 +35,26 @@ type Props = {
 const DECALAGE_ALIGNEMENT_PLUS = "pl-[calc(1px+0.75rem)]";
 
 export function RaccourcisChat({ variante, visible = true }: Props) {
+  const { ouvrir } = useFenetres();
+
   if (variante === "bureau") {
     return (
-      <nav aria-label="Raccourcis" className="mt-3 hidden flex-nowrap items-center justify-center gap-1.5 md:flex">
+      <nav aria-label="Raccourcis" className="mt-3 hidden w-full grid-flow-col auto-cols-fr gap-1.5 md:grid">
         {RACCOURCIS_CHAT_BUREAU.map(({ id, label, href, Icone }) => (
           <Link
             key={id}
             href={href}
-            className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+            onClick={(e) => {
+              // Clic simple : fenêtre flottante. Ctrl/Cmd/clic molette gardent
+              // le comportement de lien (nouvel onglet), comme tout lien.
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !estCleSection(href)) return;
+              e.preventDefault();
+              ouvrir(href);
+            }}
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-dj-bordure bg-dj-surface px-2 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
           >
-            <Icone size={14} aria-hidden />
-            {label}
+            <Icone size={14} aria-hidden className="flex-shrink-0" />
+            <span className="truncate">{label}</span>
           </Link>
         ))}
       </nav>
