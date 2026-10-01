@@ -10,6 +10,7 @@ import { messageErreur } from "@/lib/erreurs";
 // plus bas dans ce fichier.
 import { useCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
+import { ROUTES_APP } from "@/lib/routesApp";
 
 // "plein_ecran" retiré du type le 07/09/2026 (chantier "chat plein écran
 // = vraie section", étape 5) : /chat est désormais une route comme les
@@ -312,7 +313,7 @@ export function useOuvrirChatAvecTexte() {
   return (texte: string) => {
     ctx?.setDemandePrefill(texte);
     ctx?.fermerAvecFondu();
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 
@@ -348,7 +349,7 @@ export function useOuvrirGuide() {
     }
     ctx?.setDemandeGuide({ conversationId, texte: "Lance le guide de découverte de Classinus." });
     ctx?.fermerAvecFondu();
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 
@@ -378,7 +379,7 @@ export function useOuvrirDemo() {
     }
     ctx?.setDemandeGuide({ conversationId, texte: "Lance la démo de Classinus." });
     ctx?.fermerAvecFondu();
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 
@@ -481,7 +482,7 @@ export function useOuvrirConversationPleinEcran() {
   return (conversationId: string | null, texteInitial?: string) => {
     ctx?.setTexteInitialConversation(texteInitial ?? null);
     ctx?.setDemandeOuvrirConversation({ conversationId });
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 
@@ -500,7 +501,7 @@ export function useNouvelleConversationPleinEcran() {
     ctx?.setMessagesInitiaux([]);
     ctx?.setNbMessages(0);
     ctx?.setTexteInitialConversation(texteInitial ?? null);
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 

@@ -16,6 +16,7 @@ import { useFenetreDeplacable, POIGNEES_REDIMENSIONNEMENT } from "@/lib/useFenet
 import { TAILLE_MIN } from "@/lib/contexteFenetres";
 import { texteAccueilSelonHeure } from "@/lib/salutations";
 import { Skeleton } from "@/components/Skeleton";
+import { ROUTES_APP, estPageChat } from "@/lib/routesApp";
 
 // Chat flottant global (refonte "Mon espace = l'app", 15/08/2026, demande
 // Bourama : "il faut un bouton pour ouvrir le chat en plein écran"). Avant
@@ -35,7 +36,7 @@ import { Skeleton } from "@/components/Skeleton";
 // l'app) est retiré -- plus aucun déclencheur ne le pose (bulle, barres
 // d'onglets, palette de commandes, préremplissage automatique naviguent
 // tous vers la vraie route /chat désormais -- pour le bouton Maximize2
-// du mini, via un vrai <Link href="/chat"> plus bas, voir
+// du mini, via un vrai <Link href={ROUTES_APP.chat}> plus bas, voir
 // fermerMiniAvantNavigation ; pour le reste, voir
 // lib/contexteChat.tsx::useOuvrirChatAvecTexte). Le mode
 // plein écran vit maintenant uniquement dans ChatSection.tsx (/chat).
@@ -363,7 +364,7 @@ export function ChatFlottant({
   // dans le bouton" -- un onClick + router.push() n'est pas un vrai
   // lien, pas de preview d'URL au survol contrairement aux autres
   // boutons de section de l'app, potentiel de bug pour rien) : la
-  // navigation elle-même passe désormais par un vrai <Link href="/chat">
+  // navigation elle-même passe désormais par un vrai <Link href={ROUTES_APP.chat}>
   // (voir plus bas) -- cette fonction ne gère plus QUE l'effet de bord
   // (fermer le mini avec le même fondu que fermerChatEtNaviguer, et
   // marquerMiniSansHistorique pour que le démontage du calque "mini" ne
@@ -420,7 +421,7 @@ export function ChatFlottant({
   // Voir le commentaire plus haut (déclaration de `pathname`) : la page
   // /chat a déjà sa propre interface de chat, donc ni la bulle fermée ni
   // le popup mini ne doivent s'afficher par-dessus elle.
-  if (pathname === "/chat") return null;
+  if (estPageChat(pathname)) return null;
 
   // Bulle fermée : affichée sur desktop uniquement, seul endroit où
   // elle sert encore, faute d'un onglet "Chat" dédié là-bas. Masquée en
@@ -571,7 +572,7 @@ export function ChatFlottant({
             </div>
           )}
           <Link
-            href="/chat"
+            href={ROUTES_APP.chat}
             onClick={fermerMiniAvantNavigation}
             onPointerDown={(e) => e.stopPropagation()}
             title="Plein écran"

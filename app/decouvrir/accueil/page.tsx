@@ -29,10 +29,11 @@ export default function PageDecouvrirAccueil() {
 
       <h1 className="mt-4 font-display text-2xl font-bold text-dj-texte">Le coin des étudiants</h1>
       <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
-        Un compagnon d&apos;études avec IA, disponible directement dans le chat. Pose lui tes questions, et retrouve
+        Un compagnon d&apos;études avec IA, disponible directement dans le chat : c&apos;est là que tu arrives dès
+        l&apos;ouverture de Classinus. Pose lui tes questions, et retrouve
         tes documents personnels ainsi que ceux partagés par les autres élèves dans la bibliothèque. Il peut aussi te
         préparer des fiches de révision, des QCM interactifs, ou encore des animations pour t&apos;aider à comprendre
-        un cours. Depuis l&apos;accueil, tu retrouves aussi tes raccourcis vers chaque partie de Classinus et ton
+        un cours. Dans le tableau de bord, tu retrouves aussi tes raccourcis vers chaque partie de Classinus et ton
         activité récente.
       </p>
     </main>
