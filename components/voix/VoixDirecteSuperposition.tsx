@@ -3,9 +3,9 @@
 // Créé le 02/10/2026, Bourama : affichage de la voix en direct. Monté une
 // seule fois dans AppShell, il pose l'onde (components/voix/OndeVoix.tsx) par
 // dessus tout, jamais comme un but final :
-// - dans le chat : onde en plein écran, avec un bouton pour la réduire en
-//   bulle sur le côté (le chat reste visible derrière) et un bouton pour
-//   arrêter la voix. Toucher la bulle rouvre le plein écran. Le retour du
+// - dans le chat : onde en plein écran, avec en haut à droite un bouton pour
+//   la réduire en bulle sur le côté (le chat reste visible derrière) et un
+//   bouton pour arrêter la voix. Rien d'autre au centre que l'onde. Toucher la bulle rouvre le plein écran. Le retour du
 //   téléphone réduit l'onde au lieu de quitter l'appli ;
 // - canal en direct activé : une petite bulle, la même onde en miniature, qui
 //   suit le curseur de Classinus, jamais le pointeur de l'étudiant. Elle ne
@@ -101,26 +101,28 @@ export function VoixDirecteSuperposition({ sansBulleCanal = false }: Props) {
               <OndeVoix />
             </motion.div>
 
-            <button
-              type="button"
-              onClick={voix.reduire}
-              aria-label="Réduire en bulle"
-              title="Réduire en bulle"
-              className="absolute right-4 top-[calc(env(safe-area-inset-top,0px)+1rem)] flex h-11 w-11 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
-            >
-              <Minimize2 size={20} />
-            </button>
-
-            <button
-              type="button"
-              onClick={voix.fermer}
-              aria-label="Arrêter la voix"
-              title="Arrêter la voix"
-              className="absolute left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte transition-colors hover:border-dj-bordure-forte"
-              style={{ bottom: `calc(2rem + ${BAS_SECURISE})` }}
-            >
-              <X size={24} />
-            </button>
+            {/* Les deux boutons sont groupés en haut à droite : le centre de l'écran
+                reste réservé à l'onde, rien ne passe jamais dessus. */}
+            <div className="absolute right-4 top-[calc(env(safe-area-inset-top,0px)+1rem)] flex items-center gap-3">
+              <button
+                type="button"
+                onClick={voix.reduire}
+                aria-label="Réduire en bulle"
+                title="Réduire en bulle"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+              >
+                <Minimize2 size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={voix.fermer}
+                aria-label="Arrêter la voix"
+                title="Arrêter la voix"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte transition-colors hover:border-dj-bordure-forte"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
