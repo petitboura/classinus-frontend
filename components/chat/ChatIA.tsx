@@ -862,7 +862,7 @@ export function ChatIA({
     if (!ctxMinuteurs || nbFinsMinuteurs === 0) return;
     if (genEnCours || affichageEnCours || accesBloqueMineur) return;
     const fin = ctxMinuteurs.prendreFinEnAttente();
-    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, null, false, false, [], true);
+    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, [], false, false, [], true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbFinsMinuteurs, genEnCours, affichageEnCours, accesBloqueMineur]);
 
@@ -871,7 +871,7 @@ export function ChatIA({
     longueur: LongueurReponse,
     fichiers: File[],
     localisation: LocalisationJointe = null,
-    texteColle: string | null = null,
+    textesColles: string[] = [],
     rechercheForcee: boolean = false,
     sansEnseignant: boolean = false,
     // Zip(s) dont le dézipage a démarré dès la sélection (26/09/2026,
@@ -903,7 +903,7 @@ export function ChatIA({
     // seul, sans fichier joint) : reprendreAgent ne gère pas encore
     // l'upload de fichiers sur ce chemin, voir sa docstring.
     const dernierMessage = messages[messages.length - 1];
-    if (!automatique && dernierMessage?.repriseDisponible && fichiers.length === 0 && !texteColle) {
+    if (!automatique && dernierMessage?.repriseDisponible && fichiers.length === 0 && textesColles.length === 0) {
       await reprendreAgent(messages.length - 1, texte);
       return;
     }
@@ -936,12 +936,15 @@ export function ChatIA({
       // pièce jointe de type "texte" (ligne défilable, ouverture en lecture
       // seule), au lieu de disparaître une fois parti avec le message.
       piecesJointes:
-        fichiers.length || texteColle
+        fichiers.length || textesColles.length
           ? [
               ...fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) })),
-              ...(texteColle
-                ? [{ nom: "Texte collé", type: "texte" as const, contenu: texteColle, langage: detecterLangageCode(texteColle) }]
-                : []),
+              ...textesColles.map((contenu) => ({
+                nom: "Texte collé",
+                type: "texte" as const,
+                contenu,
+                langage: detecterLangageCode(contenu),
+              })),
             ]
           : null,
     };
@@ -1031,7 +1034,7 @@ export function ChatIA({
     // plus faire échouer tout le message si une image valide l'accompagne.
     const imageUrls: string[] = [];
     const imagesBase64: string[] = [];
-    let texteEnrichi = texteColle ? `${texte}\n\n[Texte collé joint]\n${texteColle}` : texte;
+    let texteEnrichi = texte + textesColles.map((contenu) => `\n\n[Texte collé joint]\n${contenu}`).join("");
 
     if (fichiers.length) {
       const resultats = await Promise.allSettled(
@@ -1121,7 +1124,7 @@ export function ChatIA({
         );
       }
 
-      if (echecs.length === fichiers.length && !texte.trim() && !texteColle) {
+      if (echecs.length === fichiers.length && !texte.trim() && textesColles.length === 0) {
         // Cas limite : absolument aucun fichier n'a pu être traité, et pas
         // de texte à côté pour porter le message quand même -- rien
         // d'utile à envoyer au modèle.

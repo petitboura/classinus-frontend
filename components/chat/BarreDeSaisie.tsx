@@ -22,7 +22,7 @@ import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
-import { detecterLangageCode, libellePieceJointe } from "@/lib/texteColle";
+import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -125,34 +125,6 @@ function rendreFormuleKatex(latex: string, bloc: boolean): string {
   }
 }
 
-// Types acceptés par le sélecteur de fichier -- élargi le 2026-07-20 pour
-// couvrir images (Gemini vision), documents PDF/Word/Excel (extraction
-// texte) ET vidéo (audio transcrit + frames analysées par Gemini), voir
-// api/uploads.py.
-const TYPES_FICHIERS_ACCEPTES =
-  "image/jpeg,image/png,image/webp," +
-  "application/pdf," +
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document," +
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet," +
-  "video/mp4,video/webm,video/quicktime," +
-  // Zip (26/09/2026, chantier "zip en conversation", demande Bourama) :
-  // dézipage démarré dès la sélection, voir ajouterFichiers ci-dessous et
-  // api/uploads.py:demarrer_zip_chat. Le MIME type seul ne suffit pas ici
-  // (bug signalé 27/09 : le sélecteur de fichier masquait les .zip) --
-  // selon l'OS/le navigateur, un .zip peut être rapporté comme
-  // application/zip, application/x-zip-compressed, ou même
-  // application/octet-stream (générique), donc invisible si on ne filtre
-  // que sur ces types précis. L'extension .zip est ajoutée en plus des
-  // types MIME : le navigateur accepte un fichier qui correspond à
-  // N'IMPORTE LEQUEL des critères listés, l'extension comble donc les cas
-  // où le MIME rapporté ne correspond à aucun des deux ci-dessus.
-  "application/zip,application/x-zip-compressed,.zip," +
-  // Upload d'un vrai fichier audio (2026-07-22, préparé par Bourama --
-  // distinct de la dictée micro juste en dessous, qui passe par le même
-  // endpoint /audio-chat mais un chemin de code différent, voir
-  // ChatIA.tsx:envoyerMessage).
-  "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a,audio/aac";
-
 export function BarreDeSaisie({
   onEnvoyer,
   desactive,
@@ -173,7 +145,7 @@ export function BarreDeSaisie({
     longueur: LongueurReponse,
     fichiers: File[],
     localisation: LocalisationJointe,
-    texteColle: string | null,
+    textesColles: string[],
     rechercheForcee: boolean,
     sansEnseignant: boolean,
     // Zip(s) en cours/terminé(s) de dézipage (26/09/2026) : job_id(s)
@@ -632,14 +604,10 @@ export function BarreDeSaisie({
   // peut retirer/relire, comme un fichier joint mais sans upload : le
   // texte est déjà là côté client, pas besoin d'aller-retour serveur).
   const SEUIL_COLLAGE_LONG = 800;
-  const [texteColle, setTexteColle] = useState<string | null>(null);
-  const [texteColleOuvert, setTexteColleOuvert] = useState(false);
+  const [textesColles, setTextesColles] = useState<TexteColle[]>([]);
+  const [texteColleOuvertId, setTexteColleOuvertId] = useState<string | null>(null);
   // 18/08/2026, voir lib/useFermetureAnimee.ts -- une instance par
   // PanneauFlottant de ce fichier, chacun avec sa propre fermeture.
-  // Langage détecté si le collage est du code (2026-07-25) -- null pour
-  // un collage de texte normal (>800 caractères, comportement existant
-  // inchangé), une valeur hljs (ex. "python") sinon.
-  const [langageDetecte, setLangageDetecte] = useState<string | null>(null);
   // Plein écran de la saisie (2026-07-23, demande de Bourama : l'agrandissement
   // auto restait trop limité pour écrire un long message confortablement).
   const [pleinEcranSaisie, setPleinEcranSaisie] = useState(false);
@@ -1383,19 +1351,19 @@ export function BarreDeSaisie({
 
     if (texteColleBrut.length > SEUIL_COLLAGE_LONG || langage) {
       e.preventDefault();
-      setTexteColle(texteColleBrut);
-      setLangageDetecte(langage);
+      // Chaque collage s'ajoute aux précédents, jamais ne les remplace.
+      setTextesColles((prec) => [...prec, { id: crypto.randomUUID(), contenu: texteColleBrut, langage }]);
     }
   }
 
   function envoyer() {
-    if ((!texte.trim() && !texteColle) || desactive) return;
+    if ((!texte.trim() && textesColles.length === 0) || desactive) return;
     onEnvoyer(
       texte,
       longueur,
       fichiers.map((f) => f.fichier),
       localisation,
-      texteColle,
+      textesColles.map((t) => t.contenu),
       rechercheForcee,
       sansEnseignant,
       // Zip(s) dont le dézipage a démarré dès la sélection (voir
@@ -1407,8 +1375,7 @@ export function BarreDeSaisie({
     setTexte("");
     viderFichiers();
     setLocalisation(null);
-    setTexteColle(null);
-    setLangageDetecte(null);
+    setTextesColles([]);
     setRechercheForcee(false);
     setSansEnseignant(false);
     requestAnimationFrame(ajusterHauteurTexte);
@@ -1495,14 +1462,18 @@ export function BarreDeSaisie({
       url: apercu ?? urlMedia ?? null,
     })),
     ...(localisation ? [{ id: "position", nom: "Position jointe", genre: "position" as const }] : []),
-    ...(texteColle
-      ? [{ id: "texte-colle", nom: "Texte collé", genre: "texte" as const, contenu: texteColle, langage: langageDetecte }]
-      : []),
+    ...textesColles.map((t) => ({
+      id: `texte:${t.id}`,
+      nom: "Texte collé",
+      genre: "texte" as const,
+      contenu: t.contenu,
+      langage: t.langage,
+    })),
   ];
 
   function ouvrirPiece(piece: PieceApercu) {
     if (piece.genre === "image") setImageAgrandieId(piece.id);
-    else if (piece.genre === "texte") setTexteColleOuvert(true);
+    else if (piece.genre === "texte") setTexteColleOuvertId(piece.id.slice("texte:".length));
     else if (piece.genre === "video" || piece.genre === "audio") setMediaOuvertId(piece.id);
     else {
       // Le blob local est intrinsèquement sûr (fichier choisi par
@@ -1514,13 +1485,15 @@ export function BarreDeSaisie({
 
   function retirerPiece(id: string) {
     if (id === "position") setLocalisation(null);
-    else if (id === "texte-colle") {
-      setTexteColle(null);
-      setLangageDetecte(null);
+    else if (id.startsWith("texte:")) {
+      const idTexte = id.slice("texte:".length);
+      setTextesColles((prec) => prec.filter((t) => t.id !== idTexte));
+      setTexteColleOuvertId((prec) => (prec === idTexte ? null : prec));
     } else retirerFichier(id);
   }
 
   const mediaOuvert = mediaOuvertId ? fichiers.find((f) => f.id === mediaOuvertId) : undefined;
+  const texteColleOuvert = texteColleOuvertId ? textesColles.find((t) => t.id === texteColleOuvertId) : undefined;
 
   return (
     <div className="w-full">
@@ -1670,7 +1643,8 @@ export function BarreDeSaisie({
           <div className="flex items-center gap-3">
             {/* Punaise (remplace le "+"), contour monochrome, même fonction
                 (upload fichier) -- section 3.3. Accepte images ET documents
-                depuis le 2026-07-20 (voir TYPES_FICHIERS_ACCEPTES). */}
+                depuis le 2026-07-20. Aucun filtre de type dans le sélecteur : un format refusé par le
+                serveur s'affiche en erreur sur sa pièce après l'envoi. */}
             <button
               onClick={() => inputFichierRef.current?.click()}
               aria-label="Joindre un fichier"
@@ -1681,7 +1655,6 @@ export function BarreDeSaisie({
             <input
               ref={inputFichierRef}
               type="file"
-              accept={TYPES_FICHIERS_ACCEPTES}
               multiple
               className="hidden"
               onChange={(e) => {
@@ -2223,7 +2196,7 @@ export function BarreDeSaisie({
               >
                 <Square size={14} />
               </button>
-            ) : texte.trim() || texteColle ? (
+            ) : texte.trim() || textesColles.length > 0 ? (
               <button
                 onClick={envoyer}
                 disabled={desactive}
@@ -2482,7 +2455,7 @@ export function BarreDeSaisie({
           >
             <Square size={14} />
           </button>
-        ) : texte.trim() || texteColle ? (
+        ) : texte.trim() || textesColles.length > 0 ? (
           <button
             onClick={envoyer}
             disabled={desactive}
@@ -2811,8 +2784,12 @@ export function BarreDeSaisie({
         </div>
       )}
 
-      {texteColleOuvert && texteColle && (
-        <FenetreTexteColle texte={texteColle} langage={langageDetecte} onFermer={() => setTexteColleOuvert(false)} />
+      {texteColleOuvert && (
+        <FenetreTexteColle
+          texte={texteColleOuvert.contenu}
+          langage={texteColleOuvert.langage}
+          onFermer={() => setTexteColleOuvertId(null)}
+        />
       )}
 
       {mediaOuvert?.urlMedia && (
@@ -2946,7 +2923,7 @@ export function BarreDeSaisie({
                 envoyer();
                 fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));
               }}
-              disabled={(!texte.trim() && !texteColle) || desactive}
+              disabled={(!texte.trim() && textesColles.length === 0) || desactive}
               aria-label="Envoyer"
               className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >

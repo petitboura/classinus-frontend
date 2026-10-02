@@ -438,23 +438,27 @@ export function nettoyerMessageHistorique(content: string): {
   // texte à ne pas réafficher en entier au rechargement, même bug que
   // celui corrigé plus haut pour audio/vidéo/image/document). Repli
   // simple : on le retire du texte affiché, sans reconstruire de puce.
-  // Le bloc du texte collé précède les blocs de fichiers dans le message
-  // envoyé (voir ChatIA.tsx), il s'arrête donc au premier bloc de fichier
-  // ou à la fin du texte. Il redevient une pièce jointe de type "texte", avec
-  // son contenu complet pour la fenêtre de lecture.
+  // Les blocs de textes collés précèdent les blocs de fichiers dans le
+  // message envoyé (voir ChatIA.tsx), la zone des collages s'arrête donc au
+  // premier bloc de fichier ou à la fin du texte. Chaque bloc redevient une
+  // pièce jointe de type "texte", avec son contenu complet pour la fenêtre
+  // de lecture.
   const MARQUEUR_COLLE = "\n\n[Texte collé joint]\n";
-  let texteColle: string | null = null;
+  const textesColles: string[] = [];
   const debutColle = content.indexOf(MARQUEUR_COLLE);
   if (debutColle >= 0) {
-    const apres = content.slice(debutColle + MARQUEUR_COLLE.length);
-    const suivant = apres.search(new RegExp(DEBUT_BLOC_PIECE_JOINTE.source));
-    texteColle = suivant >= 0 ? apres.slice(0, suivant) : apres;
-    content = content.slice(0, debutColle) + (suivant >= 0 ? apres.slice(suivant) : "");
+    const reste = content.slice(debutColle);
+    const finZone = reste.search(new RegExp(DEBUT_BLOC_PIECE_JOINTE.source));
+    const zone = finZone >= 0 ? reste.slice(0, finZone) : reste;
+    textesColles.push(...zone.split(MARQUEUR_COLLE).slice(1));
+    content = content.slice(0, debutColle) + (finZone >= 0 ? reste.slice(finZone) : "");
   }
-  const pieceTexteColle: NonNullable<MessageAffiche["piecesJointes"]> =
-    texteColle !== null
-      ? [{ nom: "Texte collé", type: "texte", contenu: texteColle, langage: detecterLangageCode(texteColle) }]
-      : [];
+  const pieceTexteColle: NonNullable<MessageAffiche["piecesJointes"]> = textesColles.map((contenu) => ({
+    nom: "Texte collé",
+    type: "texte",
+    contenu,
+    langage: detecterLangageCode(contenu),
+  }));
 
   const debuts = [...content.matchAll(DEBUT_BLOC_PIECE_JOINTE)].map((m) => m.index ?? -1).filter((i) => i >= 0);
   if (debuts.length === 0) {

@@ -1,5 +1,9 @@
 import hljs from "@/lib/coloration";
 
+// Un texte collé joint au message : plusieurs peuvent coexister, chacun
+// avec son contenu complet et le langage détecté (null pour du texte normal).
+export type TexteColle = { id: string; contenu: string; langage: string | null };
+
 // Détection de langage pour un collage de code (2026-07-25, demande de
 // Bourama : coller du code aujourd'hui atterrit comme texte brut, sans
 // aucun traitement). Testé manuellement le 25/07 : s'appuyer uniquement
