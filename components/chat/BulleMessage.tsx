@@ -414,8 +414,8 @@ function extraireUneBloc(bloc: string): { nom: string; type: "image" | "document
     const urlImage = /\[Image jointe : (.+?)\]/.exec(bloc)?.[1] ?? "";
     nom = urlImage.split("/").pop()?.split("?")[0] || "image";
   }
-  // Retire un éventuel " (tronqué)" laissé par le marqueur document.
-  nom = nom.replace(/\s*\(tronqué\)$/, "");
+  // Retire un éventuel " (tronqué)" ou " (illisible)" laissé par le marqueur document.
+  nom = nom.replace(/\s*\((?:tronqué|illisible)\)$/, "");
 
   // URL réelle du fichier : toujours en toute fin de bloc si présente
   // (image : c'est directement le contenu entre crochets ; les 3

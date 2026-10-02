@@ -1075,13 +1075,22 @@ export function ChatIA({
               : `\n\n[Vidéo jointe : ${fichier.name} -- pas de son exploitable, images seules]${lienVideo}`;
             return { texteBloc, imagesBase64: frames_base64.length ? frames_base64 : undefined };
           }
-          const { texte: texteDocument, tronque, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
+          const { texte: texteDocument, tronque, lisible, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
           const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";
           // Aperçu PDF (25/07) : lien séparé, volontairement en .pdf --
           // FichierChip.tsx détecte l'extension et affiche automatiquement
           // le visualiseur PDF intégré pour ce lien, sans aucun changement
           // nécessaire dans FichierChip.tsx lui-même (voir core/conversion_pdf.py).
           const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
+          // Fichier accepté mais dont le contenu n'a pas pu être lu (binaire
+          // inconnu, ancien format sans conversion) : le serveur le garde, et
+          // le modèle est prévenu pour l'expliquer à l'étudiant au lieu de
+          // croire qu'il a lu quelque chose.
+          if (!lisible) {
+            return {
+              texteBloc: `\n\n[Document joint : ${fichier.name} (illisible)]\nLe contenu de ce fichier n'a pas pu être lu, seul son nom est connu.${lienDocument}`,
+            };
+          }
           return {
             texteBloc: `\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`,
           };
