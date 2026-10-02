@@ -186,7 +186,7 @@ export class ChatIndisponiblePourVoix extends Error {
 }
 
 // Vrai quand l'écran de l'utilisateur affiche vraiment l'appli : onglet
-// visible sur le web, fenêtre ni réduite ni masquée sur PC (Electron).
+// visible (onglet ou fenêtre ni réduit ni masqué).
 function ecranVisible(): boolean {
   return typeof document === "undefined" || document.visibilityState === "visible";
 }

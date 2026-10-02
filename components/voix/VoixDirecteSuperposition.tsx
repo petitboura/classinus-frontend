@@ -36,13 +36,7 @@ function limiter(valeur: number, min: number, max: number): number {
   return Math.min(Math.max(valeur, min), Math.max(min, max));
 }
 
-type Props = {
-  // Sur le client Electron, la bulle du canal vit dans la fenêtre de
-  // superposition système (autre chantier) : on ne l'affiche pas ici.
-  sansBulleCanal?: boolean;
-};
-
-export function VoixDirecteSuperposition({ sansBulleCanal = false }: Props) {
+export function VoixDirecteSuperposition() {
   const voix = useContext(ContexteVoixDirecte);
   const canal = useContext(ContexteCanalEnDirect);
   const curseur = useContext(ContexteCurseurVirtuel);
@@ -52,7 +46,7 @@ export function VoixDirecteSuperposition({ sansBulleCanal = false }: Props) {
   const reduit = voix?.reduit ?? false;
   const pleinEcran = actif && !modeCanal && !reduit;
   const bulleChat = actif && !modeCanal && reduit;
-  const bulleCanal = actif && modeCanal && !sansBulleCanal;
+  const bulleCanal = actif && modeCanal;
 
   // Le retour du téléphone réduit l'onde au lieu de quitter l'appli.
   useFermetureAuRetour(pleinEcran, () => voix?.reduire());
