@@ -826,8 +826,7 @@ export function AppSidebar({
                 </button>
                 {historiqueDeplie && (
                   <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
-                    <div className="flex items-center justify-between px-3 pb-0.5 pt-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-dj-texte-muet">Historique</span>
+                    <div className="flex items-center justify-end px-2 pt-2">
                       <button
                         onClick={() => {
                           setHistoriqueDeplie(false);

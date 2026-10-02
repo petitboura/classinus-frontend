@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { MessageAffiche } from "@/components/chat/BulleMessage";
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+import { supabase } from "@/lib/supabase";
 // Chantier "demo + guide visuel" (20/09/2026) : le Guide visuel et la
 // Demo tournent tous deux sur le canal en direct, voir useOuvrirDecouverteCanal
 // plus bas dans ce fichier.
@@ -62,6 +63,32 @@ function cleFil(fil: { conversation_id: string | null }): string {
   return fil.conversation_id ?? "legacy";
 }
 
+// Cache local de la premiere page de l'historique : la liste s'affiche
+// instantanement a l'ouverture de l'appli, puis le serveur la remet a jour
+// en arriere-plan. Range par utilisateur (jamais montre a un autre compte).
+const CLE_CACHE_HISTORIQUE = "classinus.historique.v1";
+
+type CacheHistorique = { uid: string; fils: FilConversation[]; suivant: CurseurHistorique | null };
+
+function lireCacheHistorique(uid: string): CacheHistorique | null {
+  try {
+    const brut = window.localStorage.getItem(CLE_CACHE_HISTORIQUE);
+    if (!brut) return null;
+    const cache = JSON.parse(brut) as CacheHistorique;
+    return cache.uid === uid && Array.isArray(cache.fils) ? cache : null;
+  } catch {
+    return null;
+  }
+}
+
+function ecrireCacheHistorique(cache: CacheHistorique) {
+  try {
+    window.localStorage.setItem(CLE_CACHE_HISTORIQUE, JSON.stringify(cache));
+  } catch {
+    // Stockage plein ou indisponible : le cache est facultatif.
+  }
+}
+
 function versFilConversation(f: PageFilsApi["fils"][number]): FilConversation {
   return {
     conversation_id: f.conversation_id,
@@ -100,9 +127,13 @@ type ContexteChatValeur = {
   chargementPlusHistorique: boolean;
   erreurPlusHistorique: boolean;
   chargerPlusHistorique: () => Promise<void>;
-  epinglerFil: (fil: FilConversation, epingle: boolean) => Promise<void>;
-  renommerFil: (fil: FilConversation, titre: string) => Promise<void>;
-  supprimerFil: (fil: FilConversation) => Promise<void>;
+  // Epingler / renommer / supprimer : la liste change TOUT DE SUITE, le
+  // serveur suit en arriere-plan ; si le serveur refuse, la liste revient
+  // en arriere et erreurActionHistorique affiche pourquoi.
+  epinglerFil: (fil: FilConversation, epingle: boolean) => void;
+  renommerFil: (fil: FilConversation, titre: string) => void;
+  supprimerFil: (fil: FilConversation) => void;
+  erreurActionHistorique: string | null;
   texteInitialConversation: string | null;
   setTexteInitialConversation: (v: string | null) => void;
   // Fondu de fermeture (18/08/2026, demande Bourama : "le popup disparaît
@@ -219,6 +250,14 @@ export function useFournirContexteChat(): ContexteChatValeur {
   // Garde-fou contre deux chargements simultanes (le defilement peut
   // declencher plusieurs fois la meme page avant la reponse).
   const chargementPlusEnCours = useRef(false);
+  const [erreurActionHistorique, setErreurActionHistorique] = useState<string | null>(null);
+  const minuteurErreurRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Copie a jour de la liste, pour memoriser l'ordre avant une action
+  // (annulation si le serveur refuse) sans dependre d'un rendu.
+  const historiqueRef = useRef<FilConversation[]>([]);
+  historiqueRef.current = historique;
+  const uidHistoriqueRef = useRef<string | null>(null);
+  const historiqueSynchroniseRef = useRef(false);
   const [texteInitialConversation, setTexteInitialConversation] = useState<string | null>(null);
 
   // Étape 2 (07/09/2026, chantier "chat plein écran = vraie section") :
@@ -236,19 +275,10 @@ export function useFournirContexteChat(): ContexteChatValeur {
     (async () => {
       try {
         const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
-        const [outils, fils] = await Promise.all([
-          lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] })),
-          appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`).catch((e) => {
-            console.error("Erreur chargement historique conversations:", e);
-            return { epingles: [], fils: [], suivant: null } as PageFilsApi;
-          }),
-        ]);
+        const outils = await lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] }));
         if (!annule) {
           setAgent(detail);
           setOutilsActifsAgent(outils);
-          const premierePage = fils as PageFilsApi;
-          setHistorique([...premierePage.epingles, ...premierePage.fils].map(versFilConversation));
-          setCurseurHistorique(premierePage.suivant);
           setChargement("pret");
         }
       } catch (e) {
@@ -262,6 +292,56 @@ export function useFournirContexteChat(): ContexteChatValeur {
       annule = true;
     };
   }, []);
+
+  // Historique charge a part, en parallele du reste (avant, il attendait
+  // le detail de l'agent puis les outils : liste lente a apparaitre).
+  // 1) le cache local s'affiche tout de suite ; 2) la premiere page du
+  // serveur le remplace des qu'elle arrive.
+  useEffect(() => {
+    let annule = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const uid = data.session?.user.id ?? null;
+      if (annule || !uid) return;
+      uidHistoriqueRef.current = uid;
+      const cache = lireCacheHistorique(uid);
+      if (cache && !historiqueSynchroniseRef.current) {
+        setHistorique(cache.fils);
+        setCurseurHistorique(cache.suivant);
+      }
+      try {
+        const page: PageFilsApi = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`);
+        if (annule) return;
+        historiqueSynchroniseRef.current = true;
+        setHistorique([...page.epingles, ...page.fils].map(versFilConversation));
+        setCurseurHistorique(page.suivant);
+      } catch (e) {
+        console.error("Erreur chargement historique conversations:", e);
+      }
+    })();
+    return () => {
+      annule = true;
+    };
+  }, []);
+
+  // Garde le cache a jour : epingles + 20 plus recents.
+  useEffect(() => {
+    const uid = uidHistoriqueRef.current;
+    if (!uid || !historiqueSynchroniseRef.current) return;
+    const recents = historique
+      .filter((f) => !f.epingle)
+      .sort((a, b) => Date.parse(b.derniere_activite) - Date.parse(a.derniere_activite))
+      .slice(0, TAILLE_PAGE_HISTORIQUE);
+    ecrireCacheHistorique({
+      uid,
+      fils: [...historique.filter((f) => f.epingle), ...recents],
+      // Le curseur du cache designe la fin des 20 recents gardes.
+      suivant:
+        recents.length > 0 && (curseurHistorique !== null || historique.filter((f) => !f.epingle).length > recents.length)
+          ? { avant_activite: recents[recents.length - 1].derniere_activite, avant_cle: cleFil(recents[recents.length - 1]) }
+          : null,
+    });
+  }, [historique, curseurHistorique]);
 
   const chargerPlusHistorique = useCallback(async () => {
     if (!curseurHistorique || chargementPlusEnCours.current) return;
@@ -291,46 +371,72 @@ export function useFournirContexteChat(): ContexteChatValeur {
     }
   }, [curseurHistorique]);
 
-  // Epingler / desepingler : la liste n'est mise a jour qu'apres la reponse
-  // du serveur, pour qu'un refus s'affiche sur la ligne concernee (l'erreur
-  // est relancee) au lieu de faire sauter la ligne puis la remettre.
+  function signalerErreurAction(e: unknown) {
+    setErreurActionHistorique(messageErreur(e));
+    if (minuteurErreurRef.current) clearTimeout(minuteurErreurRef.current);
+    minuteurErreurRef.current = setTimeout(() => setErreurActionHistorique(null), 6000);
+  }
+
+  // Remet un fil a sa place d'avant une action refusee par le serveur.
+  function restaurerFil(original: FilConversation, indexOriginal: number) {
+    setHistorique((precedent) => {
+      const sansLui = precedent.filter((f) => cleFil(f) !== cleFil(original));
+      sansLui.splice(Math.min(indexOriginal, sansLui.length), 0, original);
+      return sansLui;
+    });
+  }
+
   const epinglerFil = useCallback(
-    async (fil: FilConversation, epingle: boolean) => {
-      await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ epingle }),
-      });
+    (fil: FilConversation, epingle: boolean) => {
+      const index = historiqueRef.current.findIndex((f) => cleFil(f) === cleFil(fil));
+      const original = index >= 0 ? historiqueRef.current[index] : null;
+      if (!original) return;
       setHistorique((precedent) => {
-        const cible = precedent.find((f) => cleFil(f) === cleFil(fil));
-        if (!cible) return precedent;
         const autres = precedent.filter((f) => cleFil(f) !== cleFil(fil));
         // Un fil qu'on vient d'epingler passe en tete des epingles.
-        if (epingle) return [{ ...cible, epingle: true }, ...autres];
+        if (epingle) return [{ ...original, epingle: true }, ...autres];
         // Desepingle plus ancien que tout ce qui est deja charge, alors
         // qu'il reste des pages : il reapparaitra en faisant defiler, a sa
         // vraie place (sinon il serait charge en double).
         if (curseurHistorique) {
           const dates = autres.filter((f) => !f.epingle).map((f) => Date.parse(f.derniere_activite));
-          if (dates.length > 0 && Date.parse(cible.derniere_activite) < Math.min(...dates)) return autres;
+          if (dates.length > 0 && Date.parse(original.derniere_activite) < Math.min(...dates)) return autres;
         }
-        return [...autres, { ...cible, epingle: false }];
+        return [...autres, { ...original, epingle: false }];
+      });
+      appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ epingle }),
+      }).catch((e) => {
+        restaurerFil(original, index);
+        signalerErreurAction(e);
       });
     },
     [curseurHistorique]
   );
 
-  const renommerFil = useCallback(async (fil: FilConversation, titre: string) => {
-    const modifie: { titre: string } = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+  const renommerFil = useCallback((fil: FilConversation, titre: string) => {
+    const ancienTitre = historiqueRef.current.find((f) => cleFil(f) === cleFil(fil))?.titre ?? fil.titre;
+    setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre } : f)));
+    appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
       method: "PATCH",
       body: JSON.stringify({ titre }),
+    }).catch((e) => {
+      setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre: ancienTitre } : f)));
+      signalerErreurAction(e);
     });
-    setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre: modifie.titre } : f)));
   }, []);
 
-  // Suppression definitive cote serveur, puis retrait de la liste.
-  const supprimerFil = useCallback(async (fil: FilConversation) => {
-    await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, { method: "DELETE" });
+  // Le fil disparait tout de suite ; la suppression definitive se fait
+  // cote serveur en arriere-plan (et revient si elle echoue).
+  const supprimerFil = useCallback((fil: FilConversation) => {
+    const index = historiqueRef.current.findIndex((f) => cleFil(f) === cleFil(fil));
+    const original = index >= 0 ? historiqueRef.current[index] : null;
     setHistorique((precedent) => precedent.filter((f) => cleFil(f) !== cleFil(fil)));
+    appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, { method: "DELETE" }).catch((e) => {
+      if (original) restaurerFil(original, index);
+      signalerErreurAction(e);
+    });
   }, []);
 
   const fermerAvecFondu = useCallback(() => {
@@ -389,6 +495,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       epinglerFil,
       renommerFil,
       supprimerFil,
+      erreurActionHistorique,
       texteInitialConversation,
       setTexteInitialConversation,
     }),
@@ -418,6 +525,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       epinglerFil,
       renommerFil,
       supprimerFil,
+      erreurActionHistorique,
       texteInitialConversation,
     ]
   );

@@ -10,9 +10,8 @@
 
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, Clock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
-import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 const LONGUEUR_MAX_TITRE = 80;
@@ -50,10 +49,14 @@ export function ListeHistorique({
   const aPlus = ctx?.historiqueAPlus ?? false;
   const chargementPlus = ctx?.chargementPlusHistorique ?? false;
   const erreurPlus = ctx?.erreurPlusHistorique ?? false;
+  const erreurAction = ctx?.erreurActionHistorique ?? null;
   const chargerPlus = ctx?.chargerPlusHistorique;
 
   const racineRef = useRef<HTMLDivElement>(null);
   const sentinelleRef = useRef<HTMLDivElement>(null);
+  // Les deux sections sont pliees a chaque ouverture de la liste.
+  const [epinglesOuverts, setEpinglesOuverts] = useState(false);
+  const [recentsOuverts, setRecentsOuverts] = useState(false);
 
   // Epingles : dans l'ordre recu (le plus recemment epingle en premier).
   // Recents : toujours du plus recemment actif au plus ancien, meme apres
@@ -64,11 +67,12 @@ export function ListeHistorique({
     .sort((a, b) => Date.parse(b.derniere_activite) - Date.parse(a.derniere_activite));
 
   // Charge la page suivante quand le bas de la liste approche (defilement
-  // progressif). La liste elle-meme est le conteneur observe.
+  // progressif). La liste elle-meme est le conteneur observe. Rien a
+  // charger tant que la section Recents est pliee (sentinelle absente).
   useEffect(() => {
     const racine = racineRef.current;
     const sentinelle = sentinelleRef.current;
-    if (!racine || !sentinelle || !aPlus || erreurPlus || !chargerPlus) return;
+    if (!racine || !sentinelle || !recentsOuverts || !aPlus || erreurPlus || !chargerPlus) return;
     const observateur = new IntersectionObserver(
       (entrees) => {
         if (entrees.some((e) => e.isIntersecting)) void chargerPlus();
@@ -79,7 +83,7 @@ export function ListeHistorique({
     return () => observateur.disconnect();
     // historique.length : apres chaque page recue la sentinelle est
     // observee a nouveau (elle est deja visible si la liste reste courte).
-  }, [aPlus, erreurPlus, chargerPlus, historique.length]);
+  }, [recentsOuverts, aPlus, erreurPlus, chargerPlus, historique.length]);
 
   const grand = variante === "pleinEcran";
 
@@ -98,33 +102,79 @@ export function ListeHistorique({
 
   return (
     <div ref={racineRef} className={`dj-scroll-isole overflow-y-auto ${className}`}>
-      {epingles.length > 0 && (
-        <>
-          <p className="flex items-center gap-1.5 px-2.5 pb-1 pt-1.5 text-xs font-medium uppercase tracking-wide text-dj-texte-muet">
-            <Pin size={12} />
-            Épinglés
-          </p>
-          {rendreLignes(epingles)}
-          {recents.length > 0 && (
-            <p className="px-2.5 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-dj-texte-muet">Récents</p>
-          )}
-        </>
+      {erreurAction && (
+        <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
+          {erreurAction}
+        </p>
       )}
-      {rendreLignes(recents)}
 
-      {aPlus && (
-        <div ref={sentinelleRef} className="py-1">
-          {chargementPlus && <SqueletteLignes grand={grand} />}
-          {erreurPlus && (
-            <button
-              onClick={() => void chargerPlus?.()}
-              className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              Impossible de charger la suite. Réessayer
-            </button>
-          )}
-        </div>
+      {epingles.length > 0 && (
+        <SectionPliable
+          Icone={Pin}
+          titre="Épinglés"
+          nombre={epingles.length}
+          ouverte={epinglesOuverts}
+          onBasculer={() => setEpinglesOuverts((v) => !v)}
+          grand={grand}
+        >
+          {rendreLignes(epingles)}
+        </SectionPliable>
       )}
+
+      <SectionPliable
+        Icone={Clock}
+        titre="Récents"
+        ouverte={recentsOuverts}
+        onBasculer={() => setRecentsOuverts((v) => !v)}
+        grand={grand}
+      >
+        {rendreLignes(recents)}
+        {aPlus && (
+          <div ref={sentinelleRef} className="py-1">
+            {chargementPlus && <SqueletteLignes grand={grand} />}
+            {erreurPlus && (
+              <button
+                onClick={() => void chargerPlus?.()}
+                className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              >
+                Impossible de charger la suite. Réessayer
+              </button>
+            )}
+          </div>
+        )}
+      </SectionPliable>
+    </div>
+  );
+}
+
+type PropsSection = {
+  Icone: typeof Pin;
+  titre: string;
+  nombre?: number;
+  ouverte: boolean;
+  onBasculer: () => void;
+  grand: boolean;
+  children: React.ReactNode;
+};
+
+// Section repliable de la liste (Epingles, Recents). Le contenu n'est
+// monte que quand la section est ouverte : une section pliee ne coute rien.
+function SectionPliable({ Icone, titre, nombre, ouverte, onBasculer, grand, children }: PropsSection) {
+  return (
+    <div>
+      <button
+        onClick={onBasculer}
+        aria-expanded={ouverte}
+        className={`group flex w-full items-center gap-2 rounded-lg px-2.5 text-left font-medium text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+          grand ? "min-h-10 text-sm" : "min-h-8 text-xs"
+        }`}
+      >
+        <ChevronRight size={14} className={`flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-90" : ""}`} />
+        <Icone size={grand ? 16 : 14} className="flex-shrink-0" />
+        <span className="uppercase tracking-wide">{titre}</span>
+        {nombre !== undefined && <span className="ml-auto text-xs font-normal opacity-70">{nombre}</span>}
+      </button>
+      {ouverte && <div className="animate-dj-fade-in-rapide">{children}</div>}
     </div>
   );
 }
@@ -156,8 +206,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
   const ctx = useContext(ContexteChat);
   const [mode, setMode] = useState<ModeLigne>("normal");
   const [titreSaisi, setTitreSaisi] = useState(fil.titre);
-  const [occupe, setOccupe] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ haut: number; gauche: number } | null>(null);
   const boutonMenuRef = useRef<HTMLButtonElement>(null);
   const champRef = useRef<HTMLInputElement>(null);
@@ -177,7 +225,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
     const gauche = Math.max(8, Math.min(r.right - LARGEUR_MENU_PX, window.innerWidth - LARGEUR_MENU_PX - 8));
     // Bascule vers le haut quand il n'y a pas la place en dessous.
     const haut = r.bottom + 4 + HAUTEUR_MENU_PX > window.innerHeight ? r.top - HAUTEUR_MENU_PX - 4 : r.bottom + 4;
-    setErreur(null);
     setMenu({ haut: Math.max(8, haut), gauche });
   }
 
@@ -191,38 +238,22 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
     [fermerMenuAnime]
   );
 
-  async function executer(action: () => Promise<void>) {
-    setOccupe(true);
-    setErreur(null);
-    try {
-      await action();
-      return true;
-    } catch (e) {
-      setErreur(messageErreur(e));
-      return false;
-    } finally {
-      setOccupe(false);
-    }
+  // Les trois actions changent la liste tout de suite (voir ContexteChat) :
+  // la ligne n'attend jamais le serveur.
+  function basculerEpingle() {
+    ctx?.epinglerFil(fil, !fil.epingle);
   }
 
-  async function basculerEpingle() {
-    if (!ctx) return;
-    await executer(() => ctx.epinglerFil(fil, !fil.epingle));
-  }
-
-  async function validerRenommage() {
+  function validerRenommage() {
     const titre = titreSaisi.replace(/\s+/g, " ").trim();
     if (!ctx || !titre) return;
-    if (titre === fil.titre) {
-      setMode("normal");
-      return;
-    }
-    if (await executer(() => ctx.renommerFil(fil, titre))) setMode("normal");
+    setMode("normal");
+    if (titre !== fil.titre) ctx.renommerFil(fil, titre);
   }
 
-  async function confirmerSuppression() {
-    if (!ctx) return;
-    if (await executer(() => ctx.supprimerFil(fil))) onSupprimee?.(fil);
+  function confirmerSuppression() {
+    ctx?.supprimerFil(fil);
+    onSupprimee?.(fil);
   }
 
   const hauteur = grand ? "min-h-11" : "min-h-9";
@@ -238,20 +269,18 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             maxLength={LONGUEUR_MAX_TITRE}
             onChange={(e) => setTitreSaisi(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") void validerRenommage();
+              if (e.key === "Enter") validerRenommage();
               if (e.key === "Escape") {
                 e.stopPropagation();
                 setMode("normal");
-                setErreur(null);
               }
             }}
-            disabled={occupe}
             aria-label="Nouveau titre de la conversation"
             className={`min-w-0 flex-1 rounded-lg border border-dj-bordure bg-dj-fond px-2.5 py-1.5 ${texte} text-dj-texte outline-none transition-colors focus:border-dj-texte-muet`}
           />
           <button
-            onClick={() => void validerRenommage()}
-            disabled={occupe || !titreSaisi.trim()}
+            onClick={validerRenommage}
+            disabled={!titreSaisi.trim()}
             aria-label="Valider le titre"
             className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte disabled:opacity-40"
           >
@@ -260,7 +289,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
           <button
             onClick={() => {
               setMode("normal");
-              setErreur(null);
             }}
             aria-label="Annuler"
             className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -268,7 +296,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             <X size={18} />
           </button>
         </div>
-        {erreur && <p className="px-1 pt-1 text-xs text-red-500">{erreur}</p>}
       </div>
     );
   }
@@ -280,8 +307,7 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
         <p className="truncate pt-0.5 text-xs text-dj-texte-muet">{fil.titre}</p>
         <div className="flex items-center gap-2 pt-2">
           <button
-            onClick={() => void confirmerSuppression()}
-            disabled={occupe}
+            onClick={confirmerSuppression}
             className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             Supprimer
@@ -289,15 +315,12 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
           <button
             onClick={() => {
               setMode("normal");
-              setErreur(null);
             }}
-            disabled={occupe}
             className="rounded-lg px-3 py-1.5 text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
           >
             Annuler
           </button>
         </div>
-        {erreur && <p className="pt-1.5 text-xs text-red-500">{erreur}</p>}
       </div>
     );
   }
@@ -316,7 +339,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             estActive ? "text-dj-accent-1-texte" : "text-dj-texte"
           }`}
         >
-          {fil.epingle && <Pin size={12} className="flex-shrink-0 text-dj-texte-muet" />}
           <span className="truncate">
             {estActive ? "● " : ""}
             {fil.titre}
@@ -338,25 +360,21 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
           <MoreHorizontal size={16} strokeWidth={2.25} />
         </button>
       </div>
-      {erreur && <p className="px-2.5 pb-1 text-xs text-red-500">{erreur}</p>}
       {menu && (
         <MenuFil
           position={menu}
           enSortie={menuEnSortie}
           epingle={Boolean(fil.epingle)}
-          occupe={occupe}
           onFermer={() => fermerMenu()}
-          onEpingler={() => fermerMenu(() => void basculerEpingle())}
+          onEpingler={() => fermerMenu(basculerEpingle)}
           onRenommer={() =>
             fermerMenu(() => {
               setTitreSaisi(fil.titre);
-              setErreur(null);
               setMode("renommer");
             })
           }
           onSupprimer={() =>
             fermerMenu(() => {
-              setErreur(null);
               setMode("confirmerSuppression");
             })
           }
@@ -370,7 +388,6 @@ type PropsMenu = {
   position: { haut: number; gauche: number };
   enSortie: boolean;
   epingle: boolean;
-  occupe: boolean;
   onFermer: () => void;
   onEpingler: () => void;
   onRenommer: () => void;
@@ -379,7 +396,7 @@ type PropsMenu = {
 
 // Menu des trois points. Rendu dans document.body : la liste est dans un
 // conteneur qui defile et qui rognerait un menu positionne a l'interieur.
-function MenuFil({ position, enSortie, epingle, occupe, onFermer, onEpingler, onRenommer, onSupprimer }: PropsMenu) {
+function MenuFil({ position, enSortie, epingle, onFermer, onEpingler, onRenommer, onSupprimer }: PropsMenu) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [monte, setMonte] = useState(false);
   useLayoutEffect(() => setMonte(true), []);
@@ -422,15 +439,15 @@ function MenuFil({ position, enSortie, epingle, occupe, onFermer, onEpingler, on
         enSortie ? "animate-cgpt-sortie-modal" : "animate-dj-fade-in-rapide"
       }`}
     >
-      <button role="menuitem" onClick={onEpingler} disabled={occupe} className={`${classeItem} text-dj-texte`}>
+      <button role="menuitem" onClick={onEpingler} className={`${classeItem} text-dj-texte`}>
         {epingle ? <PinOff size={16} /> : <Pin size={16} />}
         {epingle ? "Désépingler" : "Épingler"}
       </button>
-      <button role="menuitem" onClick={onRenommer} disabled={occupe} className={`${classeItem} text-dj-texte`}>
+      <button role="menuitem" onClick={onRenommer} className={`${classeItem} text-dj-texte`}>
         <Pencil size={16} />
         Renommer
       </button>
-      <button role="menuitem" onClick={onSupprimer} disabled={occupe} className={`${classeItem} text-red-500`}>
+      <button role="menuitem" onClick={onSupprimer} className={`${classeItem} text-red-500`}>
         <Trash2 size={16} />
         Supprimer
       </button>
