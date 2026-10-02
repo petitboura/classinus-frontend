@@ -1279,7 +1279,7 @@ export async function uploaderImageChat(fichier: File) {
  */
 export async function uploaderDocumentChat(fichier: File) {
   const resultat = await appelerApiFichier("/api/uploads/document-chat", fichier);
-  return resultat as { texte: string; tronque: boolean; url: string | null; url_apercu: string | null };
+  return resultat as { texte: string; tronque: boolean; lisible: boolean; url: string | null; url_apercu: string | null };
 }
 
 /**
@@ -2030,8 +2030,8 @@ export type CodePartage = {
   actif: boolean;
   // 25/09/2026, demande Bourama : "l'élève peut choisir lui-même son
   // mode source et son mode pédagogique", coché par défaut. Décoché ->
-  // le sélecteur disparaît côté élève (voir SelecteurModeActif.tsx /
-  // SelecteurPersonaPedagogique.tsx / BarreDeSaisie.tsx).
+  // le sélecteur disparaît côté élève (voir barre/BoutonReglages.tsx,
+  // barre/useModeActif.ts et BarreDeSaisie.tsx).
   eleve_choisit_mode: boolean;
   created_at: string;
   updated_at: string;
@@ -2116,7 +2116,7 @@ export async function obtenirModeActif(conversationId: string) {
     verrouille: boolean;
     // true si un choix explicite existe déjà pour cette conversation
     // (y compris "Aucun mode"), false si rien n'a jamais été choisi
-    // (11/09/2026, ajout d'un vrai "Aucun mode" -- voir SelecteurModeActif.tsx).
+    // (11/09/2026, ajout d'un vrai "Aucun mode" -- voir barre/useModeActif.ts).
     choisi: boolean;
   }>;
 }

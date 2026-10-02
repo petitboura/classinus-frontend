@@ -50,6 +50,17 @@ components/
                           pour la route /chat (chantier en cours "chat plein écran = vraie section" --
                           ChatFlottant.tsx gère encore l'ancien overlay fixed en parallèle tant que le
                           chantier n'est pas terminé) ;
+                          chat/barre/ (01/10/2026) : morceaux de la barre de saisie, le bouton "+" et son
+                          menu (MenuPlus.tsx), le bouton "Réglages" avec ses lignes
+                          dépliables et sa bulle des réglages actuels au survol (BoutonReglages.tsx, LigneReglage.tsx), les données du mode
+                          pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
+                          useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
+                          de réglages partagées (reglagesReponse.ts) ;
+                          LigneApercuPieces.tsx (02/10/2026) : ligne unique défilable des pièces jointes,
+                          avant envoi (BarreDeSaisie.tsx) et après envoi (BulleMessage.tsx) ; carrés pour
+                          images et vidéos, pilules empilées par deux pour le reste ; FenetreTexteColle.tsx
+                          et FenetreMedia.tsx : fenêtres de lecture d'un texte collé et d'un audio ou d'une
+                          vidéo ; lib/texteColle.ts : détection du langage d'un texte collé ;
                           PleinEcranApercu.tsx (20/09/2026) : vrai plein écran de bord à bord du bouton
                           Agrandir des aperçus (BlocExpansible.tsx : widget, PDF, Office, texte), monté
                           dans <body> par un portail pour ne jamais être recadré par le message ;

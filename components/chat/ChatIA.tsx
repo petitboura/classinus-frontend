@@ -12,7 +12,6 @@ import { StatutOutil, EtatStatut } from "./StatutOutil";
 import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
-import { SelecteurModeActif } from "./SelecteurModeActif";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat } from "@/lib/contexteChat";
@@ -23,6 +22,7 @@ import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
+import { detecterLangageCode } from "@/lib/texteColle";
 
 // L'aperçu interne (VisionneurPositionGlobal) n'est plus monté ici depuis
 // le 20/09/2026 : il vit dans le layout racine (VisionneurGlobalRacine.tsx)
@@ -161,11 +161,6 @@ export function ChatIA({
   const { activer: activerNotificationsPush } = useNotificationsPush();
   const [genEnCours, setGenEnCours] = useState(false);
   const [accesBloqueMineur, setAccesBloqueMineur] = useState(false);
-  // 25/09/2026, demande Bourama : réglage eleve_choisit_mode du code
-  // actif, remonté par SelecteurModeActif -- true par défaut (aucun code
-  // actif, ou réglage non décoché par l'enseignant), pilote la
-  // visibilité de SelecteurPersonaPedagogique dans BarreDeSaisie.
-  const [eleveChoisitMode, setEleveChoisitMode] = useState(true);
   // Rythme d'affichage du texte de réponse DÉCOUPLÉ de son arrivée
   // réseau (demande Bourama : "le streaming n'est pas contrôlé, si
   // plusieurs textes sont donnés ils s'affichent [tous d'un coup]").
@@ -861,7 +856,7 @@ export function ChatIA({
     if (!ctxMinuteurs || nbFinsMinuteurs === 0) return;
     if (genEnCours || affichageEnCours || accesBloqueMineur) return;
     const fin = ctxMinuteurs.prendreFinEnAttente();
-    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, null, false, false, [], true);
+    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, [], false, false, [], true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbFinsMinuteurs, genEnCours, affichageEnCours, accesBloqueMineur]);
 
@@ -870,7 +865,7 @@ export function ChatIA({
     longueur: LongueurReponse,
     fichiers: File[],
     localisation: LocalisationJointe = null,
-    texteColle: string | null = null,
+    textesColles: string[] = [],
     rechercheForcee: boolean = false,
     sansEnseignant: boolean = false,
     // Zip(s) dont le dézipage a démarré dès la sélection (26/09/2026,
@@ -902,7 +897,7 @@ export function ChatIA({
     // seul, sans fichier joint) : reprendreAgent ne gère pas encore
     // l'upload de fichiers sur ce chemin, voir sa docstring.
     const dernierMessage = messages[messages.length - 1];
-    if (!automatique && dernierMessage?.repriseDisponible && fichiers.length === 0 && !texteColle) {
+    if (!automatique && dernierMessage?.repriseDisponible && fichiers.length === 0 && textesColles.length === 0) {
       await reprendreAgent(messages.length - 1, texte);
       return;
     }
@@ -931,9 +926,21 @@ export function ChatIA({
       content: texte,
       created_at: new Date().toISOString(),
       automatique: automatique || undefined,
-      piecesJointes: fichiers.length
-        ? fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) }))
-        : null,
+      // Le texte collé reste visible dans le message après l'envoi, comme une
+      // pièce jointe de type "texte" (ligne défilable, ouverture en lecture
+      // seule), au lieu de disparaître une fois parti avec le message.
+      piecesJointes:
+        fichiers.length || textesColles.length
+          ? [
+              ...fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) })),
+              ...textesColles.map((contenu) => ({
+                nom: "Texte collé",
+                type: "texte" as const,
+                contenu,
+                langage: detecterLangageCode(contenu),
+              })),
+            ]
+          : null,
     };
     // Ajouté 15/09/2026 (demande Bourama) : avant, seul le texte final
     // (role/content) partait au backend -- tout résultat d'outil obtenu à
@@ -1021,7 +1028,7 @@ export function ChatIA({
     // plus faire échouer tout le message si une image valide l'accompagne.
     const imageUrls: string[] = [];
     const imagesBase64: string[] = [];
-    let texteEnrichi = texteColle ? `${texte}\n\n[Texte collé joint]\n${texteColle}` : texte;
+    let texteEnrichi = texte + textesColles.map((contenu) => `\n\n[Texte collé joint]\n${contenu}`).join("");
 
     if (fichiers.length) {
       const resultats = await Promise.allSettled(
@@ -1062,13 +1069,22 @@ export function ChatIA({
               : `\n\n[Vidéo jointe : ${fichier.name} -- pas de son exploitable, images seules]${lienVideo}`;
             return { texteBloc, imagesBase64: frames_base64.length ? frames_base64 : undefined };
           }
-          const { texte: texteDocument, tronque, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
+          const { texte: texteDocument, tronque, lisible, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
           const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";
           // Aperçu PDF (25/07) : lien séparé, volontairement en .pdf --
           // FichierChip.tsx détecte l'extension et affiche automatiquement
           // le visualiseur PDF intégré pour ce lien, sans aucun changement
           // nécessaire dans FichierChip.tsx lui-même (voir core/conversion_pdf.py).
           const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
+          // Fichier accepté mais dont le contenu n'a pas pu être lu (binaire
+          // inconnu, ancien format sans conversion) : le serveur le garde, et
+          // le modèle est prévenu pour l'expliquer à l'étudiant au lieu de
+          // croire qu'il a lu quelque chose.
+          if (!lisible) {
+            return {
+              texteBloc: `\n\n[Document joint : ${fichier.name} (illisible)]\nLe contenu de ce fichier n'a pas pu être lu, seul son nom est connu.${lienDocument}`,
+            };
+          }
           return {
             texteBloc: `\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`,
           };
@@ -1111,7 +1127,7 @@ export function ChatIA({
         );
       }
 
-      if (echecs.length === fichiers.length && !texte.trim() && !texteColle) {
+      if (echecs.length === fichiers.length && !texte.trim() && textesColles.length === 0) {
         // Cas limite : absolument aucun fichier n'a pu être traité, et pas
         // de texte à côté pour porter le message quand même -- rien
         // d'utile à envoyer au modèle.
@@ -1600,14 +1616,6 @@ export function ChatIA({
             }
           />
           {raccourcis && <RaccourcisChat variante="mobile" visible={!saisieActive} />}
-          {/* Mode actif (Partie 6, 06/09) : rendu fixe sur mobile (peu
-              importe l'emplacement DOM), juste au-dessus de la barre de
-              saisie sur PC -- voir SelecteurModeActif.tsx. */}
-          <SelecteurModeActif
-            conversationId={conversationId}
-            onAccesBloqueChange={setAccesBloqueMineur}
-            onEleveChoisitModeChange={setEleveChoisitMode}
-          />
           <div
             onFocusCapture={(e) => {
               if (e.target instanceof HTMLTextAreaElement) setSaisieActive(true);
@@ -1631,7 +1639,7 @@ export function ChatIA({
               boutonSansEnseignant={boutonSansEnseignant}
               outilsActifsAgent={outilsActifsAgent}
               conversationId={conversationId}
-              eleveChoisitMode={eleveChoisitMode}
+              onAccesBloqueChange={setAccesBloqueMineur}
             />
           </div>
           {raccourcis && <RaccourcisChat variante="bureau" />}
@@ -1831,13 +1839,6 @@ export function ChatIA({
           app/globals.css). Retiré : --safe-bottom seul couvre le vrai
           besoin (la zone système du bas). */}
       <div className="mx-auto w-full max-w-3xl px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]">
-        {/* Mode actif (Partie 6, 06/09) : voir le commentaire équivalent
-            dans la branche d'accueil ci-dessus. */}
-        <SelecteurModeActif
-          conversationId={conversationId}
-          onAccesBloqueChange={setAccesBloqueMineur}
-          onEleveChoisitModeChange={setEleveChoisitMode}
-        />
         <BarreDeSaisie
           onEnvoyer={envoyerMessage}
           desactive={genEnCours || affichageEnCours || accesBloqueMineur}
@@ -1850,7 +1851,7 @@ export function ChatIA({
           boutonSansEnseignant={boutonSansEnseignant}
           outilsActifsAgent={outilsActifsAgent}
           conversationId={conversationId}
-          eleveChoisitMode={eleveChoisitMode}
+          onAccesBloqueChange={setAccesBloqueMineur}
         />
       </div>
 
