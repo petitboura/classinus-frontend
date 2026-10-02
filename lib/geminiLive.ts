@@ -17,6 +17,7 @@ type ReponseToken = {
   description_outil: string;
   relance_attente: string;
   annonce_reponse: string;
+  annonce_bulle: string;
   delai_relance_secondes: number;
   relances_max: number;
 };
@@ -39,6 +40,8 @@ export type SessionGeminiLive = {
   interrompre: () => void;
   // Réponse écrite de Clovis à un message tapé dans le chat : la voix en dit l'essentiel.
   annoncerReponse: (texte: string) => void;
+  // Canal en direct : lit à voix haute un message de la bulle de Classinus.
+  direMessageBulle: (texte: string) => void;
 };
 
 const NOM_OUTIL_CLOVIS = "demander_a_clovis";
@@ -224,19 +227,41 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ realtimeInput: { activityEnd: {} } }));
   };
 
-  // Réponse écrite de Clovis à un message que l'étudiant a tapé dans le chat :
-  // la voix en dit l'essentiel, avec la consigne venue du serveur. Si elle parle
-  // déjà, l'annonce attend la fin de sa phrase au lieu de la couper.
-  let annonceEnAttente: string | null = null;
-  const envoyerAnnonce = (texte: string) => {
-    websocket.send(JSON.stringify({ realtimeInput: { text: `${token.annonce_reponse}\n\n${texte}` } }));
+  // Tout ce que la voix doit lire à voix haute en dehors d'une demande faite à
+  // l'oral passe par cette file, un message à la fois : la réponse écrite à un
+  // message tapé dans le chat, et les messages de la bulle du canal en direct.
+  // Si la voix parle déjà, ou si un message précédent n'est pas fini d'être lu,
+  // le suivant attend son tour au lieu de couper la phrase en cours.
+  const annoncesEnAttente: { consigne: string; texte: string }[] = [];
+  let annonceEnCours = false;
+  // Un même texte n'est jamais lu deux fois de suite (ex. la même réponse
+  // affichée à la fois dans le chat et dans la bulle).
+  const dernieresAnnonces: string[] = [];
+  const dejaDit = (texte: string) => dernieresAnnonces.includes(texte);
+  const retenirAnnonce = (texte: string) => {
+    dernieresAnnonces.push(texte);
+    if (dernieresAnnonces.length > 6) dernieresAnnonces.shift();
   };
-  const annoncerReponse = (texte: string) => {
+  const lireProchaineAnnonce = () => {
+    if (ferme || !pret || annonceEnCours || etatCourant === "reponse" || websocket.readyState !== WebSocket.OPEN) return;
+    const prochaine = annoncesEnAttente.shift();
+    if (!prochaine) return;
+    annonceEnCours = true;
+    websocket.send(JSON.stringify({ realtimeInput: { text: `${prochaine.consigne}\n\n${prochaine.texte}` } }));
+  };
+  const ajouterAnnonce = (consigne: string | undefined, texte: string) => {
     const propre = texte.trim();
-    if (ferme || !pret || !propre || !token.annonce_reponse?.trim() || websocket.readyState !== WebSocket.OPEN) return;
-    if (etatCourant === "reponse") { annonceEnAttente = propre; return; }
-    envoyerAnnonce(propre);
+    if (ferme || !pret || !propre || !consigne?.trim() || websocket.readyState !== WebSocket.OPEN) return;
+    if (dejaDit(propre) || annoncesEnAttente.some((a) => a.texte === propre)) return;
+    retenirAnnonce(propre);
+    annoncesEnAttente.push({ consigne, texte: propre });
+    lireProchaineAnnonce();
   };
+  // Réponse écrite de Classinus à un message que l'étudiant a tapé dans le chat :
+  // la voix la lit en entier, avec la consigne venue du serveur.
+  const annoncerReponse = (texte: string) => ajouterAnnonce(token.annonce_reponse, texte);
+  // Message affiché dans la bulle de Classinus (canal en direct).
+  const direMessageBulle = (texte: string) => ajouterAnnonce(token.annonce_bulle, texte);
 
   // Texte envoyé en temps réel (le canal accepte le texte dans realtimeInput,
   // clientContent n'étant prévu que pour l'historique initial).
@@ -333,11 +358,8 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     }
     if (serveur?.turnComplete) {
       etat("ecoute");
-      if (annonceEnAttente && websocket.readyState === WebSocket.OPEN) {
-        const enAttente = annonceEnAttente;
-        annonceEnAttente = null;
-        envoyerAnnonce(enAttente);
-      }
+      annonceEnCours = false;
+      lireProchaineAnnonce();
     }
   };
 
@@ -364,5 +386,5 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     websocket.send(JSON.stringify({ realtimeInput: { audio: { data: int16VersBase64(pcm), mimeType: "audio/pcm;rate=16000" } } }));
   };
   source.connect(processeur); processeur.connect(silence); silence.connect(contexteEntree.destination);
-  return { niveaux, fermer: nettoyer, interrompre, annoncerReponse };
+  return { niveaux, fermer: nettoyer, interrompre, annoncerReponse, direMessageBulle };
 }

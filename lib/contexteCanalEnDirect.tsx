@@ -204,6 +204,22 @@ export function activerCanalDepuisAgent(conversationId?: string) {
   canalGlobal.activer(conversationId);
 }
 
+// Voix en direct (02/10/2026, demande Bourama) : quand la voix est allumée, ce
+// que Classinus dit dans sa bulle est lu à voix haute. La voix s'abonne ici ;
+// seuls les commentaires de Classinus et ses réponses sont transmis, jamais le
+// simple nom d'une action. Hors du contexte React, comme afficherTexteDepuisAgent.
+export type MessageBulle = { texte: string; type: "commentaire" | "reponse" };
+const ecouteursMessagesBulle = new Set<(message: MessageBulle) => void>();
+export function abonnerMessagesBulle(ecouteur: (message: MessageBulle) => void): () => void {
+  ecouteursMessagesBulle.add(ecouteur);
+  return () => {
+    ecouteursMessagesBulle.delete(ecouteur);
+  };
+}
+function signalerMessageBulle(message: MessageBulle) {
+  ecouteursMessagesBulle.forEach((ecouteur) => ecouteur(message));
+}
+
 export function afficherTexteDepuisAgent(texte: string, options?: OptionsAfficherTexte) {
   canalGlobal?.afficherTexte(texte, options);
 }
@@ -373,6 +389,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     // bulle disparaissait avant d'être lue). Un autre commentaire, lui, le
     // remplace normalement.
     if (!options?.commentaire && Date.now() < epingleJusqua.current) return;
+    if (options?.commentaire) signalerMessageBulle({ texte, type: "commentaire" });
     if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
     // Une information remplace la réponse affichée (une seule bulle à la
     // fois) ; la réponse reste rouvrable via le curseur.
@@ -399,6 +416,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     (reponse: Omit<ReponseCanal, "id">) => {
       compteurReponse += 1;
       const complete: ReponseCanal = { ...reponse, id: compteurReponse };
+      signalerMessageBulle({ texte: complete.texte, type: "reponse" });
       derniereReponseRef.current = complete;
       setDerniereReponse(complete);
       if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);

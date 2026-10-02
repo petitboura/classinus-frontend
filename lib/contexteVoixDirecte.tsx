@@ -19,6 +19,7 @@
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
+import { abonnerMessagesBulle } from "./contexteCanalEnDirect";
 import { ChatIndisponiblePourVoix } from "./contexteChat";
 import { conversationActive, conversationPourVoix } from "./conversationPartagee";
 
@@ -147,6 +148,14 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
     if (conversationSessionRef.current !== conversationId && conversationActive() !== conversationId) return;
     sessionRef.current.annoncerReponse(texte);
   }, []);
+
+  // Canal en direct : tout ce que Classinus dit dans sa bulle (commentaires et
+  // réponses) est lu à voix haute tant que la voix est allumée. Voix éteinte,
+  // la bulle reste silencieuse comme avant.
+  useEffect(
+    () => abonnerMessagesBulle((message) => sessionRef.current?.direMessageBulle(message.texte)),
+    []
+  );
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 
