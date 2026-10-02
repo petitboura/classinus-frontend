@@ -10,7 +10,7 @@
 
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, Clock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, Clock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
@@ -172,7 +172,7 @@ function SectionPliable({ Icone, titre, nombre, ouverte, onBasculer, grand, chil
         <Icone size={grand ? 16 : 14} className="flex-shrink-0" />
         <span className="uppercase tracking-wide">{titre}</span>
         {nombre !== undefined && <span className="text-xs font-normal opacity-70">{nombre}</span>}
-        <ChevronDown size={14} className={`ml-auto flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-180" : ""}`} />
+        <ChevronRight size={14} className={`ml-auto flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-90" : ""}`} />
       </button>
       {ouverte && <div className="animate-dj-fade-in-rapide">{children}</div>}
     </div>
