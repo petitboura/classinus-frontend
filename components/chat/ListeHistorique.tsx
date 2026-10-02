@@ -366,7 +366,13 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
           enSortie={menuEnSortie}
           epingle={Boolean(fil.epingle)}
           onFermer={() => fermerMenu()}
-          onEpingler={() => fermerMenu(basculerEpingle)}
+          onEpingler={() => {
+            // La liste change tout de suite : on n'attend pas la fin de
+            // l'animation de fermeture du menu (180 ms), les deux se font
+            // en meme temps. Le serveur suit en arriere-plan (ContexteChat).
+            basculerEpingle();
+            fermerMenu();
+          }}
           onRenommer={() =>
             fermerMenu(() => {
               setTitreSaisi(fil.titre);
