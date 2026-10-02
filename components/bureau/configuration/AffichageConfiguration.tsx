@@ -7,6 +7,7 @@ import { lireProcedure, lireComportement } from "@/lib/formatsConfiguration";
 import { texteConfiguration, texteNombreEtapes, texteAutresEtapes } from "@/lib/i18n/textesConfiguration";
 import { BulleSurvol } from "@/components/BulleSurvol";
 import { Skeleton } from "@/components/Skeleton";
+import { ZoneCliquable } from "@/components/ZoneCliquable";
 
 // 01/10/2026, demande Bourama : chaque catégorie a sa propre façon de
 // s'afficher APRÈS création et son propre bouton d'ajout, pour que
@@ -20,29 +21,6 @@ type PropsElement = {
   // Menu des trois points propre à l'élément, construit par le parent.
   menu?: ReactNode;
 };
-
-// La carte entière s'ouvre au clic, mais elle contient d'autres boutons
-// (bascule, menu) : un vrai bouton ne peut pas en contenir d'autres.
-function ZoneCliquable({ onClick, title, className, children }: { onClick: () => void; title: string; className: string; children: ReactNode }) {
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      title={title}
-      className={`cursor-pointer ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
 
 function Bascule({ c, onToggleActif }: { c: Comportement; onToggleActif: PropsElement["onToggleActif"] }) {
   return (

@@ -17,21 +17,25 @@ import { SelecteurCodesPartage } from "@/components/SelecteurCodesPartage";
 import { PopupProposerProfilPublic } from "@/components/PopupProposerProfilPublic";
 
 // 02/10/2026, demande Bourama : après création, les cartes des 4 onglets
-// de Configuration n'avaient que la bascule activer/désactiver, il fallait
-// ouvrir l'éditeur pour tout le reste. Ce menu des trois points regroupe
-// les actions qui n'ont pas besoin de l'éditeur : lier à un code,
-// utiliser avec l'IA, partager, télécharger, publier, supprimer. Les
-// fenêtres et le message de retour sont rendus dans document.body : une
-// carte désactivée est à demi transparente, et ses enfants le seraient
-// aussi.
+// de Configuration et les pastilles de Mes skills n'avaient que la
+// bascule activer/désactiver, il fallait ouvrir l'éditeur pour tout le
+// reste. Ce menu des trois points regroupe les actions qui n'ont pas
+// besoin de l'éditeur. Les 4 onglets de Configuration doivent rester
+// différents des skills : ils n'ont que lier à un code, utiliser avec
+// l'IA et supprimer. Partager, télécharger et publier sont réservés aux
+// skills (avecActionsSkill). Les fenêtres et le message de retour sont
+// rendus dans document.body : une carte désactivée est à demi
+// transparente, et ses enfants le seraient aussi.
 export function MenuElementConfiguration({
   agentId,
   c,
   onSupprime,
+  avecActionsSkill = false,
 }: {
   agentId: string;
   c: Comportement;
   onSupprime: (id: string) => void;
+  avecActionsSkill?: boolean;
 }) {
   const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   const [codesOuvert, setCodesOuvert] = useState(false);
@@ -97,6 +101,8 @@ export function MenuElementConfiguration({
             `puis discutons-en ensemble.`
         ),
     },
+    ...(avecActionsSkill
+      ? [
     {
       cle: "partager",
       label: texteConfiguration("action.partager"),
@@ -105,6 +111,8 @@ export function MenuElementConfiguration({
     },
     { cle: "telecharger", label: texteConfiguration("action.telecharger"), icone: <Download size={14} />, onClick: () => void telecharger() },
     { cle: "publier", label: texteConfiguration("action.publier"), icone: <Upload size={14} />, onClick: () => void publier() },
+        ]
+      : []),
     { cle: "supprimer", label: texteConfiguration("action.supprimer"), icone: <Trash2 size={14} />, onClick: supprimer, destructif: true },
   ];
 
