@@ -47,7 +47,10 @@ export function LanceurMinuteur({
   }
 
   return (
-    <div className="absolute right-2 top-1 z-20">
+    // 03/10/2026, demande Bourama : la cloche des notifications (fixed, en haut
+    // à droite de l'écran, 32px de large à 8px du bord) occupait déjà ce coin ;
+    // l'horloge se place juste à sa gauche pour ne plus la recouvrir.
+    <div className="absolute right-11 top-1.5 z-20">
       <button
         type="button"
         onClick={() => setOuvert((v) => !v)}

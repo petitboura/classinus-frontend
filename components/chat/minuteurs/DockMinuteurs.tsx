@@ -68,7 +68,7 @@ export function DockMinuteurs({ conversationId }: { conversationId: string }) {
 
   return (
     <>
-      <div className="flex-none space-y-2 px-4 pr-11 pt-2 empty:hidden">
+      <div className="flex-none space-y-2 px-4 pr-[4.5rem] pt-2 empty:hidden">
         <AnimatePresence initial={false}>
           {ctx.erreur && (
             <motion.p
