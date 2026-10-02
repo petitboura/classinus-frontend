@@ -3,14 +3,25 @@
 import { supabase } from "./supabase";
 import { appelerApiStream } from "./api";
 
-const MODELE_GEMINI_LIVE = "gemini-3.8-live";
-const URL_GEMINI_LIVE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
-
-type ReponseToken = { token: string; model: string };
+// Le modèle vocal, l'adresse de connexion, les consignes, la phrase d'accueil et la
+// description de l'outil ne sont plus écrits ici : ils viennent du serveur avec le
+// jeton (voir core/gemini_live_config.py côté backend), pour pouvoir les changer
+// sans toucher à ce fichier.
+type ReponseToken = {
+  token: string;
+  model: string;
+  url: string;
+  consignes: string;
+  accueil: string;
+  description_outil: string;
+};
 type OptionsGeminiLive = {
   conversationId: string;
   surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "erreur" | "ferme") => void;
   surErreur?: (message: string) => void;
+  // La voix est un interprète : elle transmet la demande à Clovis par cette
+  // fonction et reçoit en retour sa réponse écrite. Sans elle, chemin direct.
+  surDemande?: (question: string) => Promise<string>;
 };
 
 export type SessionGeminiLive = {
@@ -19,17 +30,31 @@ export type SessionGeminiLive = {
   envoyerTexte: (texte: string) => void;
 };
 
-const OUTIL_CLOVIS = {
-  name: "demander_a_clovis",
-  description: "Envoie la demande de l étudiant au cerveau principal de Classinus, Clovis. Utilise cet outil pour toute vraie demande pédagogique, question, recherche, calcul ou action. Gemini Live est seulement l interface vocale.",
-  parameters: {
-    type: "OBJECT",
-    properties: {
-      question: { type: "STRING", description: "Demande de l étudiant à transmettre à Clovis." },
+const NOM_OUTIL_CLOVIS = "demander_a_clovis";
+
+function declarerOutilClovis(description: string) {
+  return {
+    name: NOM_OUTIL_CLOVIS,
+    description,
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        question: { type: "STRING", description: "La demande de l étudiant, transmise fidèlement avec ses propres mots." },
+      },
+      required: ["question"],
     },
-    required: ["question"],
-  },
-};
+  };
+}
+
+// Chemin direct vers Clovis, sans passer par le chat affiché : utilisé seulement
+// quand aucun chat n'est ouvert pour recevoir la demande.
+export async function demanderAClovisDirectement(question: string, conversationId: string): Promise<string> {
+  let reponseClovis = "";
+  await appelerApiStream("/api/chat", { message: question, agent_id: "clovis", historique: [], conversation_id: conversationId, longueur_reponse: "moyenne", canal_en_direct: true, fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone }, (evenement) => {
+    if (evenement?.type === "reponse" && typeof evenement.texte === "string") reponseClovis += evenement.texte;
+  });
+  return reponseClovis;
+}
 
 function base64VersInt16(base64: string): Int16Array {
   const binaire = atob(base64);
@@ -107,7 +132,8 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   const etat = options.surEtat ?? (() => {});
   etat("connexion");
   const token = await obtenirToken();
-  if (token.model !== MODELE_GEMINI_LIVE) throw new Error("Modèle Gemini Live inattendu.");
+  if (!token.model || !token.url) throw new Error("Impossible d initialiser le canal vocal.");
+  const outilClovis = declarerOutilClovis(token.description_outil);
 
   const entree = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const contexteEntree = new AudioContext();
@@ -116,7 +142,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   await contexteSortie.resume();
   // La connexion est ouverte seulement ici, après le micro et le son, pour que les écouteurs
   // (ouverture, messages, fermeture) soient posés avant toute annonce de Google.
-  const websocket = new WebSocket(URL_GEMINI_LIVE + "?access_token=" + encodeURIComponent(token.token));
+  const websocket = new WebSocket(token.url + "?access_token=" + encodeURIComponent(token.token));
   const lecteur = creerLecteurAudio(contexteSortie);
   const source = contexteEntree.createMediaStreamSource(entree);
   const processeur = contexteEntree.createScriptProcessor(4096, 1, 1);
@@ -126,17 +152,10 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   let connecte = false;
   let pret = false;
   let erreurSignalee = false;
-  // Diagnostic temporaire : étapes atteintes et derniers messages de Google.
-  const etapes: string[] = [];
-  const messagesGoogle: string[] = [];
-  let audioRecu = false;
-  let minuteurDiagnostic: ReturnType<typeof setTimeout> | null = null;
-  const resumeDiagnostic = () => "Étapes atteintes : " + (etapes.join(", ") || "aucune") + ". Derniers messages de Google : " + (messagesGoogle.slice(-4).join(" ; ") || "aucun") + ".";
 
   const nettoyer = () => {
     if (ferme) return;
     ferme = true;
-    if (minuteurDiagnostic) clearTimeout(minuteurDiagnostic);
     processeur.disconnect(); source.disconnect(); silence.disconnect();
     entree.getTracks().forEach((track) => track.stop());
     lecteur.interrompre();
@@ -158,22 +177,20 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   // Texte envoyé en temps réel (le canal accepte le texte dans realtimeInput,
   // clientContent n'étant prévu que pour l'historique initial).
   const saluer = () => {
-    if (websocket.readyState !== WebSocket.OPEN) return;
-    etapes.push("salutation envoyée");
-    websocket.send(JSON.stringify({ realtimeInput: { text: "La voix vient de s'activer. Dis seulement à voix haute et en quelques mots : Je t'écoute." } }));
+    if (!token.accueil.trim() || websocket.readyState !== WebSocket.OPEN) return;
+    websocket.send(JSON.stringify({ realtimeInput: { text: token.accueil } }));
   };
 
   websocket.onopen = () => {
     connecte = true;
-    etapes.push("connexion Google ouverte");
     websocket.send(JSON.stringify({
       setup: {
-        model: "models/" + MODELE_GEMINI_LIVE,
+        model: "models/" + token.model,
         generationConfig: { responseModalities: ["AUDIO"] },
         inputAudioTranscription: {},
         outputAudioTranscription: {},
-        systemInstruction: { parts: [{ text: "Tu es l interface vocale temps réel de Classinus. Pour toute demande réelle de l étudiant, utilise obligatoirement demander_a_clovis. Clovis est le cerveau principal : il possède la mémoire, les outils et les connaissances de Classinus. Après sa réponse, lis-la naturellement à voix haute. Pour une salutation très courte, tu peux répondre directement." }] },
-        tools: [{ functionDeclarations: [OUTIL_CLOVIS] }],
+        systemInstruction: { parts: [{ text: token.consignes }] },
+        tools: [{ functionDeclarations: [outilClovis] }],
       },
     }));
     etat("connecte");
@@ -186,24 +203,19 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
       const brut = event.data instanceof Blob ? await event.data.text() : event.data;
       message = JSON.parse(brut);
     } catch {
-      messagesGoogle.push("message illisible (" + (event.data instanceof Blob ? "binaire" : typeof event.data) + ")");
       return;
     }
-    messagesGoogle.push(Object.keys(message).join("+") + (message.error ? " " + JSON.stringify(message.error).slice(0, 200) : ""));
-    if (message.setupComplete && !pret) { pret = true; etapes.push("session prête"); etat("ecoute"); saluer(); }
+    if (message.setupComplete && !pret) { pret = true; etat("ecoute"); saluer(); }
     const serveur = message.serverContent;
     if (serveur?.modelTurn?.parts) {
       for (const part of serveur.modelTurn.parts) {
-        if (part.inlineData?.data) {
-          if (!audioRecu) { audioRecu = true; etapes.push("son reçu"); }
-          lecteur.jouer(base64VersInt16(part.inlineData.data)); etat("reponse");
-        }
+        if (part.inlineData?.data) { lecteur.jouer(base64VersInt16(part.inlineData.data)); etat("reponse"); }
       }
     }
     if (message.toolCall?.functionCalls) {
       const functionResponses = [];
       for (const appel of message.toolCall.functionCalls) {
-        if (appel.name !== OUTIL_CLOVIS.name) {
+        if (appel.name !== NOM_OUTIL_CLOVIS) {
           functionResponses.push({ id: appel.id, name: appel.name, response: { error: "Outil inconnu." } });
           continue;
         }
@@ -213,10 +225,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
           continue;
         }
         try {
-          let reponseClovis = "";
-          await appelerApiStream("/api/chat", { message: question, agent_id: "clovis", historique: [], conversation_id: options.conversationId, longueur_reponse: "moyenne", canal_en_direct: true, fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone }, (evenement) => {
-            if (evenement?.type === "reponse" && typeof evenement.texte === "string") reponseClovis += evenement.texte;
-          });
+          const reponseClovis = options.surDemande ? await options.surDemande(question) : await demanderAClovisDirectement(question, options.conversationId);
           functionResponses.push({ id: appel.id, name: appel.name, response: { result: reponseClovis || "Clovis n a pas renvoyé de réponse textuelle." } });
         } catch (e) {
           functionResponses.push({ id: appel.id, name: appel.name, response: { error: e instanceof Error ? e.message : "Erreur lors de l appel à Clovis." } });
@@ -237,7 +246,8 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     connecte = false;
     if (!erreurSignalee) {
       erreurSignalee = true;
-      options.surErreur?.("Le canal vocal s'est interrompu. Code " + evenement.code + (evenement.reason ? ", raison : " + evenement.reason : "") + ". " + resumeDiagnostic());
+      console.warn("Canal vocal interrompu, code " + evenement.code + (evenement.reason ? ", raison : " + evenement.reason : ""));
+      options.surErreur?.("Le canal vocal s'est interrompu.");
     }
     nettoyer();
   };
@@ -248,10 +258,6 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (!pcm.length) return;
     websocket.send(JSON.stringify({ realtimeInput: { audio: { data: int16VersBase64(pcm), mimeType: "audio/pcm;rate=16000" } } }));
   };
-  minuteurDiagnostic = setTimeout(() => {
-    if (ferme || audioRecu || erreurSignalee) return;
-    options.surErreur?.("Diagnostic voix : aucun son reçu après 8 secondes. " + resumeDiagnostic());
-  }, 8000);
   source.connect(processeur); processeur.connect(silence); silence.connect(contexteEntree.destination);
   return { fermer: nettoyer, interrompre, envoyerTexte };
 }
