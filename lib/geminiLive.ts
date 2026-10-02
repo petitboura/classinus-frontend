@@ -356,6 +356,14 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
       }
       if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ toolResponse: { functionResponses } }));
     }
+    // L'étudiant a pris la parole pendant que la voix parlait : Gemini arrête sa
+    // génération et le signale ici. Le son déjà reçu (envoyé en avance, plus vite
+    // que la lecture) doit être coupé tout de suite, sinon la voix finit sa phrase
+    // puis répond seulement après.
+    if (serveur?.interrupted) {
+      lecteur.interrompre();
+      etat("ecoute");
+    }
     if (serveur?.turnComplete) {
       etat("ecoute");
       annonceEnCours = false;
