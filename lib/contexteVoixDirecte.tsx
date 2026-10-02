@@ -18,14 +18,22 @@
 // voit allumée et peut l'éteindre, mais aucun ne peut en lancer une deuxième.
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { demanderAClovisDirectement, ouvrirGeminiLive, type SessionGeminiLive } from "./geminiLive";
+import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
 
-export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "erreur";
+export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur";
 
 export type ContexteVoixDirecteValeur = {
   etat: EtatVoixDirecte;
   actif: boolean;
   erreur: string | null;
+  // Onde en plein écran (false) ou réduite en bulle (true). Choisi par
+  // l'étudiant avec le bouton de l'onde ; le canal en direct impose la bulle.
+  reduit: boolean;
+  reduire: () => void;
+  agrandir: () => void;
+  // Niveaux sonores instantanés (micro et haut parleur), lus à chaque image
+  // par l'onde sans passer par React.
+  lireNiveaux: () => NiveauxVoix;
   ouvrir: (conversationId: string) => Promise<void>;
   fermer: () => void;
   // Ferme la voix seulement si elle est liée à cette conversation (un écran
@@ -50,6 +58,10 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
   const ouvertureEnCoursRef = useRef(false);
   const [etat, setEtat] = useState<EtatVoixDirecte>("inactif");
   const [erreur, setErreur] = useState<string | null>(null);
+  const [reduit, setReduit] = useState(false);
+  const reduire = useCallback(() => setReduit(true), []);
+  const agrandir = useCallback(() => setReduit(false), []);
+  const lireNiveaux = useCallback((): NiveauxVoix => sessionRef.current?.niveaux() ?? { entree: 0, sortie: 0 }, []);
 
   // Les dépendances changent à chaque rendu : on les lit via un ref pour que
   // ouvrir/fermer restent stables.
@@ -62,6 +74,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
     sessionRef.current?.fermer();
     sessionRef.current = null;
     conversationSessionRef.current = null;
+    setReduit(false);
     setEtat("inactif");
   }, []);
 
@@ -75,6 +88,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
   const ouvrir = useCallback(async (conversationId: string) => {
     if (sessionRef.current || ouvertureEnCoursRef.current || !conversationId) return;
     setErreur(null);
+    setReduit(false);
     ouvertureEnCoursRef.current = true;
     conversationSessionRef.current = conversationId;
     try {
@@ -84,6 +98,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
           if (nouvelEtat === "ferme") {
             sessionRef.current = null;
             conversationSessionRef.current = null;
+            setReduit(false);
             setEtat("inactif");
           } else {
             setEtat(nouvelEtat);
@@ -118,7 +133,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
   const actif = etat !== "inactif" && etat !== "erreur";
 
   return useMemo(
-    () => ({ etat, actif, erreur, ouvrir, fermer, fermerPourConversation, basculer }),
-    [etat, actif, erreur, ouvrir, fermer, fermerPourConversation, basculer]
+    () => ({ etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer }),
+    [etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer]
   );
 }

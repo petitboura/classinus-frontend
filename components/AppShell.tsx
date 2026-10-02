@@ -24,6 +24,7 @@ import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
+import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
@@ -393,6 +394,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               superposition : ils restent montés ici comme avant. */}
           {!surElectronClient && <CurseurVirtuelAgent />}
           {!surElectronClient && <BulleDialogueAgent />}
+          <VoixDirecteSuperposition sansBulleCanal={surElectronClient} />
           {!surElectronClient && <BoutonJournalAgent />}
           {/* Le bouton d'activation (et ses contrôles) reste ici tant que
               le canal est inactif, c'est comme ça qu'on l'active. Une
