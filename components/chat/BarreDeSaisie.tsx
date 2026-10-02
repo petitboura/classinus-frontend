@@ -1,10 +1,9 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, HardDrive, GraduationCap, AlignLeft, Radio } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, FileText, ArrowUpRight, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, SlidersHorizontal, UserX, Radio } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent, demarrerZipChat } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
-import { IconeNotion } from "@/components/icons/IconeNotion";
 import { LecteurMedia } from "./LecteurMedia";
 import { CanvasDessin } from "./CanvasDessin";
 import { VisionneuseImage } from "./VisionneuseImage";
@@ -20,7 +19,12 @@ import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
-import { SelecteurPersonaPedagogique } from "./SelecteurPersonaPedagogique";
+import { BoutonReglages } from "./barre/BoutonReglages";
+import { MenuPlus, type EntreeMenuPlus } from "./barre/MenuPlus";
+import { BandeauAccesBloque } from "./barre/BandeauAccesBloque";
+import { useModeActif } from "./barre/useModeActif";
+import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
+import type { LongueurReponse } from "./barre/reglagesReponse";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 
@@ -41,25 +45,9 @@ const EditeurFormule = dynamic(() => import("./EditeurFormule").then((m) => m.Ed
   ssr: false,
 });
 
-export type LongueurReponse = "courte" | "moyenne" | "longue";
-
-// Regroupement du selecteur de modele premium par distributeur (02/08/2026,
-// voir ModelesPremiumAgent.tsx cote dashboard pour le meme mapping) --
-// ordre d'affichage volontairement identique a la hierarchie backend
-// (core/fournisseurs_llm.py:ORDRE_DISTRIBUTEURS).
-const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["claude", "gpt", "gemini", "deepseek"];
-const LABELS_DISTRIBUTEUR: Record<string, string> = {
-  claude: "Claude",
-  gpt: "GPT",
-  gemini: "Gemini",
-  deepseek: "DeepSeek",
-};
-
-const LABELS_LONGUEUR: Record<LongueurReponse, string> = {
-  courte: "Courte",
-  moyenne: "Moyenne",
-  longue: "Longue",
-};
+// Le type et les listes de réglages de réponse (longueur, modèles, modes) vivent
+// dans barre/reglagesReponse.ts, source unique partagée avec BoutonReglages.
+export type { LongueurReponse } from "./barre/reglagesReponse";
 export type LocalisationJointe = { latitude: number; longitude: number } | null;
 
 // Listes OUTILS_DISPONIBLES / ONGLETS_OUTILS / APPLIS_DISPONIBLES
@@ -138,7 +126,7 @@ export function BarreDeSaisie({
   outilsActifsAgent = null,
   texteInitial,
   conversationId,
-  eleveChoisitMode = true,
+  onAccesBloqueChange,
 }: {
   onEnvoyer: (
     texte: string,
@@ -185,7 +173,7 @@ export function BarreDeSaisie({
   // par le parent (ChatIA -> page.tsx), chargé pendant l'écran de
   // chargement plein écran initial. Ce composant ne va plus le chercher
   // lui-même après son montage : plus de bouton "Utilitaires" ou de
-  // slots d'outils récents qui apparaissent après coup, ils sont déjà
+  // raccourcis d'outils récents qui apparaissent après coup, ils sont déjà
   // là dès le premier rendu de la barre.
   outilsActifsAgent?: { outils: string[]; actions_locales: string[] } | null;
   // Partie 5 (06/09/2026) : dépose ce texte dans le champ dès le
@@ -196,18 +184,14 @@ export function BarreDeSaisie({
   // changée dans ChatFlottant.tsx) quand cette prop est fournie, jamais
   // réappliqué en cours de frappe.
   texteInitial?: string;
-  // Persona pédagogique (jonction items 1+8+9, 14/09/2026) -- transmis
-  // tel quel à SelecteurPersonaPedagogique, même principe que
-  // conversationId sur SelecteurModeActif (monté à côté de ce
-  // composant dans ChatIA.tsx, pas dedans).
+  // Conversation en cours : sert au mode pédagogique, aux modes ressources et
+  // au code enseignant actif (ligne "Code enseignant" du bouton Réglages).
+  // Sans conversationId (écran d'accueil avant le premier message), ces
+  // réglages ne chargent ni n'envoient rien.
   conversationId?: string;
-  // 25/09/2026, demande Bourama : réglage eleve_choisit_mode du code
-  // actif, remonté par SelecteurModeActif via ChatIA.tsx (même
-  // principe que conversationId juste au-dessus). true par défaut
-  // (aucun code actif, ou réglage non décoché) -- décoché par
-  // l'enseignant -> SelecteurPersonaPedagogique ne doit plus être
-  // affiché du tout, ni son bouton d'ouverture mobile.
-  eleveChoisitMode?: boolean;
+  // Remonte à ChatIA qu'un mineur sans aucun code est bloqué (voir
+  // useModeActif), pour que la barre de saisie soit désactivée.
+  onAccesBloqueChange?: (bloque: boolean) => void;
 }) {
   const [texte, setTexte] = useState(() => texteInitial ?? "");
   const [longueur, setLongueur] = useState<LongueurReponse>("moyenne");
@@ -263,7 +247,7 @@ export function BarreDeSaisie({
   }
 
   // Listes réellement proposables pour CET agent (flux 2) -- toute la
-  // suite de ce composant (menus + slots, desktop et mobile) doit
+  // suite de ce composant (menus + raccourcis, desktop et mobile) doit
   // utiliser CES listes filtrées, jamais OUTILS_DISPONIBLES /
   // APPLIS_DISPONIBLES brutes.
   // outilsDisponibles (2026-08-15) : registre vivant chargé depuis le
@@ -308,9 +292,13 @@ export function BarreDeSaisie({
   // que les autres (outilAutorisePourAgent), juste un sous-ensemble de
   // outilsPourAgent au lieu d'un onglet parmi d'autres.
   const outilsUtilitairesPourAgent = outilsPourAgent.filter((o) => o.onglet === "utilitaires");
+  // Prendre une photo et Mode vocal vivent dans le menu du "+" (01/10/2026),
+  // la liste du bouton Utilitaires ne les répète pas.
+  const OUTILS_DU_MENU_PLUS = ["ui_photo", "ui_mode_vocal"];
+  const utilitairesBouton = outilsUtilitairesPourAgent.filter((o) => !OUTILS_DU_MENU_PLUS.includes(o.nom));
 
   // Interrupteur (13/08/2026, demande Bourama) -- désactive l'AFFICHAGE du
-  // bouton "Applications" (menu complet, slots fixes, raccourci "dernier
+  // bouton "Applications" (menu complet, application seule, raccourci "dernier
   // utilisé") sans toucher au reste du code (state, effets, appels API,
   // logique de sélection). Remettre à true pour le réactiver.
   // Le menu déroulant "Outils" (sélection manuelle d'un outil backend
@@ -335,197 +323,44 @@ export function BarreDeSaisie({
   // dans le cas multi-appli (Notion + Drive tous les deux actifs).
   const notionDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "notion");
   const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
-  // Menus custom pour les selecteurs modele premium / longueur de reponse
-  // (02/08/2026, Bourama : "ce style d'affichage n'est pas propre a ma
-  // plateforme" -- <select> natif remplace par le meme pattern
-  // bouton+panneau flottant que menuAppliOuvert juste en dessous, pour
-  // rester coherent avec le reste de l'UI).
-  const [menuModeleOuvert, setMenuModeleOuvert] = useState(false);
-  const boutonModeleRef = useRef<HTMLButtonElement>(null);
-  const menuModeleRef = useRef<HTMLDivElement>(null);
-  const [menuLongueurOuvert, setMenuLongueurOuvert] = useState(false);
-  const boutonLongueurRef = useRef<HTMLButtonElement>(null);
-  const menuLongueurRef = useRef<HTMLDivElement>(null);
-  const menuLongueurMobileRef = useRef<HTMLDivElement>(null);
-  // Panneau "Mode pédagogique" mobile (14/09/2026, bug remonté par Bourama :
-  // "aucun moyen de choisir un mode sur mobile" -- le bouton+panneau de
-  // SelecteurPersonaPedagogique.tsx vit dans la barre d'outils desktop
-  // ("hidden ... md:block" plus bas), donc invisible ET inatteignable sur
-  // mobile. Ce booléen pilote une feuille du bas dédiée (variante="feuille"
-  // de ce composant), ouverte depuis le menu "+" mobile, même famille que
-  // menuUtilitairesOuvert juste au-dessus.
-  const [menuPersonaMobileOuvert, setMenuPersonaMobileOuvert] = useState(false);
+  // Les réglages de réponse (modèle, longueur, mode pédagogique, modes
+  // ressources, code enseignant) vivent dans le bouton Réglages
+  // (barre/BoutonReglages.tsx). Leurs données sont chargées une seule fois
+  // ici, les deux instances du bouton (PC et mobile) les partagent.
+  const pedagogie = useReglagesPedagogiques(conversationId);
+  const modeActif = useModeActif(conversationId, onAccesBloqueChange);
   // Menu du bouton "Utilitaires" (2026-08-01) -- multi-sélection cumulative
   // via estOutilActif/executerActionOutil déjà génériques, pas d'onglets :
-  // une seule liste plate (outilsUtilitairesPourAgent).
+  // une seule liste plate (utilitairesBouton).
   const [menuUtilitairesOuvert, setMenuUtilitairesOuvert] = useState(false);
   const menuUtilitairesRef = useRef<HTMLDivElement>(null);
   const menuUtilitairesMobileRef = useRef<HTMLDivElement>(null);
   const boutonUtilitairesRef = useRef<HTMLButtonElement>(null);
-
-  // Slots variables (2026-07-28, refonte barre de saisie ; révisé le
-  // 2026-08-01 suite retours Bourama) -- 3 emplacements "derniers
-  // outils/utilitaires utilisés" (desktop) + 1 emplacement "dernière
-  // appli utilisée" (desktop, visible seulement si l'agent a PLUSIEURS
-  // applis actives -- voir appliButtonVisible plus haut ; si une seule
-  // appli, elle reste fixe et ne varie jamais, voir appliSlotUnique,
-  // inchangé) + 1 slot unique mobile qui fusionne les trois catégories.
-  //
-  // Historique UNIQUE {type, nom}[], le plus récent en tête, dont on
-  // dérive tout le reste par filtre à l'affichage :
-  // - type "outil" couvre à la fois le menu Outils ET le bouton
-  //   Utilitaires (les deux appellent enregistrerUtilisationOutil via
-  //   executerActionOutil) -- demande Bourama "les utilitaires sont
-  //   inclus dans les slots variables des outils, donc les trois [3
-  //   slots desktop]".
-  // - type "appli" ne sert que quand appliButtonVisible (>1 appli) ;
-  //   si une seule appli, ce type n'est pas utilisé pour ce slot-là
-  //   (appliSlotUnique fixe reste indépendant), mais reste utile pour
-  //   le slot combiné mobile ci-dessous.
-  //
-  // Persisté dans localStorage (demande Bourama 01/08 : "ils doivent
-  // rester et continuer à varier plutôt que de reprendre à chaque fois
-  // que t'ouvres l'app") -- global au navigateur, pas scindé par agent
-  // (les slots sont de toute façon refiltrés par agent à l'affichage,
-  // donc un outil non autorisé pour l'agent courant est simplement
-  // ignoré sans avoir besoin d'un historique séparé par agent).
-  type RecentSlot = { type: "outil" | "appli"; nom: string };
-  const CLE_LS_RECENTS = "dj_barre_recents_v1";
-  const NB_SLOTS_OUTILS_RECENTS = 3;
-  const [recentsCombines, setRecentsCombines] = useState<RecentSlot[]>([]);
-
-  useEffect(() => {
-    try {
-      const brut = window.localStorage.getItem(CLE_LS_RECENTS);
-      if (!brut) return;
-      const parsed = JSON.parse(brut);
-      if (Array.isArray(parsed)) setRecentsCombines(parsed);
-    } catch {
-      // localStorage indisponible (navigation privée, quota dépassé...)
-      // -- tant pis, les slots repartent de zéro pour cette session,
-      // ce n'est pas bloquant pour le reste de la barre.
-    }
-  }, []);
-
-  function enregistrerRecent(type: "outil" | "appli", nom: string) {
-    setRecentsCombines((prec) => {
-      const suivant = [{ type, nom }, ...prec.filter((r) => !(r.type === type && r.nom === nom))].slice(0, 10);
-      try {
-        window.localStorage.setItem(CLE_LS_RECENTS, JSON.stringify(suivant));
-      } catch {
-        // idem, non bloquant
-      }
-      return suivant;
-    });
-  }
-
-  // Dérivés utilisés par le rendu (desktop 3 slots outils/utilitaires,
-  // desktop 1 slot appli variable) :
-  // Défaut (02/08, demande Bourama, corrigé après clarification : "par
-  // défaut, pas épingler") : le clavier LaTeX (ui_formule) n'apparaît que
-  // tant qu'il n'y a AUCUN historique -- ce qui couvre l'ouverture par un
-  // nouvel utilisateur qui n'a encore rien utilisé. Dès qu'un outil a été
-  // utilisé au moins une fois, les slots redeviennent entièrement
-  // dynamiques (ui_formule peut en sortir comme n'importe quel autre).
-  const OUTIL_SLOT_FIXE = "ui_formule";
-  const outilsRecentsBruts = recentsCombines.filter((r) => r.type === "outil").map((r) => r.nom);
-  const outilsRecents = (outilsRecentsBruts.length > 0 ? outilsRecentsBruts : [OUTIL_SLOT_FIXE]).slice(
-    0,
-    NB_SLOTS_OUTILS_RECENTS
-  );
-  const appliRecente =
-    recentsCombines.find((r) => r.type === "appli")?.nom ?? applisPourAgent[0]?.nom ?? null;
+  const boutonUtilitairesMobileRef = useRef<HTMLButtonElement>(null);
   const [menuAppliOuvert, setMenuAppliOuvert] = useState(false);
   const menuAppliRef = useRef<HTMLDivElement>(null);
   const menuAppliMobileRef = useRef<HTMLDivElement>(null);
-  const boutonAppliRef = useRef<HTMLButtonElement>(null);
-
-  // Menu du bouton "+" mobile (2026-07-28, refonte mobile demandée par
-  // Bourama : "en une ligne, + à gauche, champ, 2 boutons à droite") --
-  // regroupe les 3 icônes fixes desktop (Joindre un fichier / Outils /
-  // Applications) qui n'ont plus la place d'être affichées côte à côte
-  // sur petit écran. Déclenche les MÊMES états que les icônes desktop
-  // (setMenuOutilsOuvert / setMenuAppliOuvert) -- pas de logique dupliquée,
-  // juste un point d'entrée en plus.
-  const [menuPlusOuvert, setMenuPlusOuvert] = useState(false);
-  const menuPlusRef = useRef<HTMLDivElement>(null);
-  const boutonPlusRef = useRef<HTMLButtonElement>(null);
-  // Guide/Démo (etape 5, 16/09 et 20/09/2026) retirés du chat le
-  // 25/09/2026 (demande Bourama) -- useOuvrirGuide/useOuvrirDemo/
-  // useOuvrirDecouverteCanal ne sont plus appelés depuis ce fichier.
-  // Canal en direct, chantier L (19/09/2026) : point d'entree depuis le
-  // chat, en plus du bouton flottant (masque sur /chat). Contexte
-  // nullable : la barre de saisie peut etre montee hors AppShell.
+  // Canal en direct, chantier L (19/09/2026) : point d'entrée depuis le chat,
+  // dans le menu du "+", en plus du bouton flottant (masqué sur /chat).
+  // Contexte nullable : la barre de saisie peut être montée hors AppShell.
   const canalEnDirect = useContext(ContexteCanalEnDirect);
-
-  useEffect(() => {
-    if (!menuPlusOuvert) return;
-    function gererClicExterieur(e: MouseEvent) {
-      const cible = e.target as Node;
-      if (menuPlusRef.current?.contains(cible)) return;
-      if (boutonPlusRef.current?.contains(cible)) return;
-      setMenuPlusOuvert(false);
-    }
-    document.addEventListener("mousedown", gererClicExterieur);
-    return () => document.removeEventListener("mousedown", gererClicExterieur);
-  }, [menuPlusOuvert]);
 
   useEffect(() => {
     if (!menuAppliOuvert) return;
     function gererClicExterieur(e: MouseEvent) {
       const cible = e.target as Node;
       if (menuAppliRef.current?.contains(cible)) return;
-      if (boutonAppliRef.current?.contains(cible)) return;
       if (menuAppliMobileRef.current?.contains(cible)) return;
-      if (boutonPlusRef.current?.contains(cible)) return;
       setMenuAppliOuvert(false);
     }
     document.addEventListener("mousedown", gererClicExterieur);
     return () => document.removeEventListener("mousedown", gererClicExterieur);
   }, [menuAppliOuvert]);
 
-  useEffect(() => {
-    if (!menuModeleOuvert) return;
-    function gererClicExterieur(e: MouseEvent) {
-      const cible = e.target as Node;
-      if (menuModeleRef.current?.contains(cible)) return;
-      if (boutonModeleRef.current?.contains(cible)) return;
-      setMenuModeleOuvert(false);
-    }
-    document.addEventListener("mousedown", gererClicExterieur);
-    return () => document.removeEventListener("mousedown", gererClicExterieur);
-  }, [menuModeleOuvert]);
-
-  useEffect(() => {
-    if (!menuLongueurOuvert) return;
-    function gererClicExterieur(e: MouseEvent) {
-      const cible = e.target as Node;
-      if (menuLongueurRef.current?.contains(cible)) return;
-      if (boutonLongueurRef.current?.contains(cible)) return;
-      // Feuille mobile (14/09/2026) -- même état menuLongueurOuvert que le
-      // panneau desktop, réutilisé pour éviter un deuxième state redondant
-      // (même principe que menuUtilitairesOuvert). boutonPlusRef exclu pour
-      // ne pas se refermer instantanément au clic qui vient de l'ouvrir.
-      if (menuLongueurMobileRef.current?.contains(cible)) return;
-      if (boutonPlusRef.current?.contains(cible)) return;
-      setMenuLongueurOuvert(false);
-    }
-    document.addEventListener("mousedown", gererClicExterieur);
-    return () => document.removeEventListener("mousedown", gererClicExterieur);
-  }, [menuLongueurOuvert]);
-
-  function enregistrerUtilisationOutil(nom: string) {
-    enregistrerRecent("outil", nom);
-  }
-
-  function enregistrerUtilisationAppli(nom: string) {
-    enregistrerRecent("appli", nom);
-  }
-
   // Certaines entrées de OUTILS_DISPONIBLES (préfixe "ui_") ne sont pas des
   // outils backend forcés mais d'anciennes icônes autonomes de la barre --
   // ces deux fonctions font le routage, que l'entrée soit cliquée depuis le
-  // menu "Outils" ou depuis son propre slot variable (même comportement).
+  // menu "Outils" ou depuis un raccourci de la rangée du "+" (même comportement).
   function estOutilActif(nom: string): boolean {
     switch (nom) {
       case "ui_localisation":
@@ -567,7 +402,6 @@ export function BarreDeSaisie({
         inputPhotoRef.current?.click();
         break;
     }
-    enregistrerUtilisationOutil(nom);
   }
 
   function executerActionAppli(nom: string) {
@@ -582,7 +416,6 @@ export function BarreDeSaisie({
         cliquerGoogleDrive();
         break;
     }
-    enregistrerUtilisationAppli(nom);
   }
 
   useEffect(() => {
@@ -591,8 +424,8 @@ export function BarreDeSaisie({
       const cible = e.target as Node;
       if (menuUtilitairesRef.current?.contains(cible)) return;
       if (boutonUtilitairesRef.current?.contains(cible)) return;
+      if (boutonUtilitairesMobileRef.current?.contains(cible)) return;
       if (menuUtilitairesMobileRef.current?.contains(cible)) return;
-      if (boutonPlusRef.current?.contains(cible)) return;
       setMenuUtilitairesOuvert(false);
     }
     document.addEventListener("mousedown", gererClicExterieur);
@@ -1446,6 +1279,68 @@ export function BarreDeSaisie({
     );
   }
 
+  // Entrées du menu "+" (01/10/2026), dans l'ordre : Joindre un fichier,
+  // Prendre une photo, Mode vocal, Canal en direct, Application. Dicter et
+  // Utilitaires ont leur bouton permanent à droite, Longueur / Mode
+  // pédagogique sont dans Réglages et Plein écran est collé au coin de la
+  // barre : aucun doublon ici. Photo et Mode vocal sont des entrées du
+  // registre des utilitaires (lib/outils.ts) : elles ne sont proposées que si
+  // l'agent les autorise, et ne figurent plus dans la liste d'Utilitaires.
+  function entreesMenuPlus(): EntreeMenuPlus[] {
+    const entrees: EntreeMenuPlus[] = [
+      {
+        cle: "fichier",
+        Icone: Pin,
+        libelle: "Joindre un fichier",
+        onClick: () => inputFichierRef.current?.click(),
+      },
+    ];
+    for (const nom of OUTILS_DU_MENU_PLUS) {
+      const outil = outilsUtilitairesPourAgent.find((o) => o.nom === nom);
+      if (!outil) continue;
+      entrees.push({ cle: nom, Icone: outil.Icone, libelle: outil.label, onClick: () => executerActionOutil(nom) });
+    }
+    // Guide/Démo retirés du chat (25/09/2026, demande Bourama). Canal en
+    // direct (chantier L, 19/09/2026) : contexte nullable, la barre peut être
+    // montée hors AppShell.
+    if (canalEnDirect) {
+      entrees.push({
+        cle: "canal",
+        Icone: Radio,
+        libelle: canalEnDirect.actif ? "Désactiver le canal en direct" : "Activer le canal en direct",
+        onClick: () => {
+          if (canalEnDirect.actif) canalEnDirect.desactiver();
+          else canalEnDirect.activer();
+        },
+      });
+    }
+    // Plusieurs applications : une entrée qui ouvre leur liste. Une seule :
+    // une entrée directe vers cette application.
+    if (appliButtonVisible) {
+      entrees.push({
+        cle: "applications",
+        Icone: LayoutGrid,
+        libelle: "Applications",
+        onClick: () => setMenuAppliOuvert(true),
+      });
+    }
+    if (appliSlotUnique) {
+      entrees.push({
+        cle: "application",
+        Icone: appliSlotUnique.Icone,
+        libelle: appliSlotUnique.label,
+        onClick: () => executerActionAppli(appliSlotUnique.nom),
+        // Mêmes protections que l'ancien bouton dédié : dépôts GitHub en
+        // cours de chargement, Google Drive en cours de connexion ou déjà
+        // connecté (aucun choix à faire dans ce cas).
+        desactive:
+          (appliSlotUnique.nom === "github" && githubEnCours) ||
+          (appliSlotUnique.nom === "google_drive" && (driveEnCours || !!driveConnecte)),
+      });
+    }
+    return entrees;
+  }
+
   function genreDeFichier(f: File): GenrePiece {
     if (f.type.startsWith("image/")) return "image";
     if (f.type.startsWith("video/")) return "video";
@@ -1497,6 +1392,10 @@ export function BarreDeSaisie({
 
   return (
     <div className="w-full">
+      {/* Mineur sans code enseignant : accès bloqué, le bandeau explique
+          pourquoi (voir barre/BandeauAccesBloque.tsx). */}
+      {modeActif.accesBloque && <BandeauAccesBloque />}
+
       {/* Ligne défilable des pièces jointes avant envoi (fichiers, position,
           texte collé), même composant que dans la bulle du message envoyé. */}
       {piecesApercu.length > 0 && (
@@ -1547,6 +1446,18 @@ export function BarreDeSaisie({
         // ci-dessous (ligne ~2211), déjà pensée pour un espace étroit.
         className="relative hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3 focus-within:border-dj-bordure-forte md:block"
       >
+        {/* Plein écran (01/10/2026) : posé dehors, collé juste au-dessus du coin haut
+            droit de la barre, petite flèche sans bulle. Ouvre la même
+            zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}
+        <button
+          type="button"
+          onClick={() => setPleinEcranSaisie(true)}
+          aria-label="Agrandir en plein écran"
+          title="Plein écran"
+          className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
+        >
+          <ArrowUpRight size={12} strokeWidth={1.75} />
+        </button>
         {/* Aperçu formules (2026-07-27) -- affiché seulement si le
             brouillon contient au moins un "$", pour ne pas dupliquer
             inutilement un simple message texte sans maths. Placé
@@ -1639,19 +1550,102 @@ export function BarreDeSaisie({
           />
         )}
 
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-y-2">
+        <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
-            {/* Punaise (remplace le "+"), contour monochrome, même fonction
-                (upload fichier) -- section 3.3. Accepte images ET documents
-                depuis le 2026-07-20. Aucun filtre de type dans le sélecteur : un format refusé par le
-                serveur s'affiche en erreur sur sa pièce après l'envoi. */}
-            <button
-              onClick={() => inputFichierRef.current?.click()}
-              aria-label="Joindre un fichier"
-              className="text-dj-texte-muet transition-colors hover:text-dj-texte"
-            >
-              <Pin size={18} />
-            </button>
+            {/* Bouton "+" (01/10/2026, refonte de la barre de saisie) : un
+                seul bouton à gauche. Son menu contient Joindre un fichier,
+                Prendre une photo, Mode vocal, Canal en direct et
+                Application (voir barre/MenuPlus.tsx). Joindre un fichier
+                n'a aucun filtre de type dans le sélecteur : un format
+                refusé par le serveur s'affiche en erreur sur sa pièce
+                après l'envoi. */}
+            <MenuPlus
+              variante="bureau"
+              entrees={entreesMenuPlus()}
+              enfantsAncres={
+                <>
+                  {/* Liste des applications (plusieurs applis actives),
+                      ouverte depuis l'entrée "Applications" du menu "+". */}
+                  {appliButtonVisible && (
+                    <div
+                      ref={menuAppliRef}
+                      className={
+                        "absolute bottom-full left-0 z-30 mb-2 max-h-72 w-56 origin-bottom-left overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
+                        (menuAppliOuvert
+                          ? "visible translate-y-0 scale-100 opacity-100"
+                          : "invisible translate-y-1 scale-95 opacity-0")
+                      }
+                    >
+                      {[...applisPourAgent]
+                        .sort((a, b) => a.label.localeCompare(b.label, "fr"))
+                        .map(({ nom, label, Icone }) => (
+                          <button
+                            key={nom}
+                            onClick={() => {
+                              executerActionAppli(nom);
+                              setMenuAppliOuvert(false);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                          >
+                            <Icone size={14} />
+                            <span className="flex-1">{label}</span>
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                  {/* Sélecteur de pages Notion : ouvert par cliquerNotion()
+                      (via executerActionAppli), que Notion soit l'application
+                      seule ou l'une de plusieurs. Le panneau mobile
+                      (md:hidden, plus bas dans le fichier) couvre le petit
+                      écran. */}
+                  {selecteurNotionOuvert && (
+                    <div
+                      ref={selecteurNotionRef}
+                      className="absolute bottom-full left-0 z-30 mb-2 hidden w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl md:block"
+                    >
+                      {contenuSelecteurNotion("bg-dj-surface", "bg-dj-surface")}
+                    </div>
+                  )}
+                  {/* Sélecteur de dépôts GitHub. */}
+                  <div ref={selecteurRef}>
+                  {selecteurOuvert && (
+                    <div className="absolute bottom-full left-0 z-30 mb-2 max-h-64 w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
+                      {depots === null && (
+                        <div className="space-y-1.5 px-3 py-2" aria-hidden>
+                          <Skeleton className="h-3 w-3/4 rounded" />
+                          <Skeleton className="h-3 w-1/2 rounded" style={{ animationDelay: "120ms" }} />
+                          <Skeleton className="h-3 w-2/3 rounded" style={{ animationDelay: "240ms" }} />
+                        </div>
+                      )}
+                      {depots?.length === 0 && (
+                        <p className="px-3 py-2 text-xs text-dj-texte-muet">Aucun dépôt trouvé.</p>
+                      )}
+                      {depots?.map((d) => (
+                        <button
+                          key={d.nom_complet}
+                          type="button"
+                          onClick={() => choisirDepot(d.nom_complet)}
+                          className="block w-full rounded-lg px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            {d.nom_complet}
+                            {d.prive && (
+                              <span className="rounded bg-dj-surface px-1.5 py-0.5 text-[10px] text-dj-texte-muet">
+                                privé
+                              </span>
+                            )}
+                          </span>
+                          {d.description && (
+                            <span className="line-clamp-1 text-xs text-dj-texte-muet">{d.description}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  </div>
+                </>
+              }
+            />
             <input
               ref={inputFichierRef}
               type="file"
@@ -1661,7 +1655,7 @@ export function BarreDeSaisie({
                 ajouterFichiers(Array.from(e.target.files ?? []));
                 // Sans ça, choisir deux fois DE SUITE le(s) même(s)
                 // fichier(s) (ex: retirer puis rejoindre le même) ne
-                // redéclenche pas onChange -- même valeur input.
+                // redéclenche pas onChange, même valeur input.
                 e.target.value = "";
               }}
             />
@@ -1680,169 +1674,6 @@ export function BarreDeSaisie({
                 e.target.value = "";
               }}
             />
-
-            {/* Slots variables "Utilitaires récents" (2026-07-28, refonte
-                demandée par Bourama -- révisé le 2026-08-20 lors du
-                nettoyage du menu Outils manuel mort). Jusqu'à 3 raccourcis
-                vers les derniers utilitaires ui_* utilisés (localisation,
-                formule, recherche, dessin). Le menu Outils manuel
-                (sélection d'un outil backend forcé) a été retiré
-                entièrement : mort depuis son kill-switch du 13/08, jamais
-                réactivé, remplacé par le routeur automatique côté backend
-                pour l'agent clovis. CORRECTION (2026-08-20) : la
-                condition précédente dépendait d'un flag mort
-                (AFFICHER_BOUTON_OUTILS), qui empêchait ces slots de
-                remonter le moindre utilitaire récent malgré l'intention
-                d'origine -- corrigé, filtré par sécurité sur ce qui est
-                encore autorisé pour l'agent (outilsUtilitairesPourAgent). */}
-            {outilsRecents
-              .filter((n) => outilsUtilitairesPourAgent.some((o) => o.nom === n))
-              .map((nom) => {
-                const entree = outilsDisponibles.find((o) => o.nom === nom);
-                if (!entree) return null;
-                const actif = estOutilActif(nom);
-                return (
-                  <button
-                    key={nom}
-                    onClick={() => executerActionOutil(nom)}
-                    disabled={nom === "ui_localisation" && localisationEnCours}
-                    aria-label={entree.label}
-                    title={entree.label}
-                    className={
-                      "animate-dj-fade-in-rapide " +
-                      (actif ? "text-dj-texte transition-colors" : "text-dj-texte-muet transition-colors hover:text-dj-texte") +
-                      " disabled:opacity-60"
-                    }
-                  >
-                    <entree.Icone size={18} />
-                  </button>
-                );
-              })}
-
-            {/* Slot variable "Appli" (2026-07-28, corrigé le 2026-07-30
-                pour dépendre du nombre RÉEL d'applis activées pour CET
-                agent -- flux 3) -- affiché seul (sans bouton dropdown)
-                uniquement si l'agent n'a exactement qu'une seule appli
-                activée. Cas GitHub traité à part pour conserver le
-                sélecteur de dépôts déjà en place -- les futures applis
-                passeront par executerActionAppli seul, sans dropdown
-                dédié, tant qu'elles n'en ont pas besoin. */}
-            {appliSlotUnique?.nom === "github" && (
-              <div className="relative" ref={selecteurRef}>
-                <button
-                  onClick={() => executerActionAppli("github")}
-                  disabled={githubEnCours}
-                  aria-label={githubConnecte ? "Choisir un dépôt GitHub" : "Connecter GitHub"}
-                  title={githubConnecte ? "Choisir un dépôt GitHub" : "Connecter GitHub"}
-                  className={
-                    githubConnecte
-                      ? "relative text-dj-texte transition-colors"
-                      : "relative text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
-                  }
-                >
-                  <Github size={18} />
-                  {githubConnecte && (
-                    <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                  )}
-                </button>
-
-                {selecteurOuvert && (
-                  <div className="absolute bottom-full left-0 z-30 mb-2 max-h-64 w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
-                    {depots === null && (
-                      <div className="space-y-1.5 px-3 py-2" aria-hidden>
-                        <Skeleton className="h-3 w-3/4 rounded" />
-                        <Skeleton className="h-3 w-1/2 rounded" style={{ animationDelay: "120ms" }} />
-                        <Skeleton className="h-3 w-2/3 rounded" style={{ animationDelay: "240ms" }} />
-                      </div>
-                    )}
-                    {depots?.length === 0 && (
-                      <p className="px-3 py-2 text-xs text-dj-texte-muet">Aucun dépôt trouvé.</p>
-                    )}
-                    {depots?.map((d) => (
-                      <button
-                        key={d.nom_complet}
-                        type="button"
-                        onClick={() => choisirDepot(d.nom_complet)}
-                        className="block w-full rounded-lg px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {d.nom_complet}
-                          {d.prive && (
-                            <span className="rounded bg-dj-surface px-1.5 py-0.5 text-[10px] text-dj-texte-muet">
-                              privé
-                            </span>
-                          )}
-                        </span>
-                        {d.description && (
-                          <span className="line-clamp-1 text-xs text-dj-texte-muet">{d.description}</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Notion (01/08) -- même traitement à part que GitHub
-                ci-dessus, pour le cas où un agent n'a QUE Notion
-                d'activé (pas GitHub) : sans ce bloc dédié, appliSlotUnique
-                vaudrait "notion" mais rien ne le rendrait jamais, le
-                bouton Appli resterait invisible pour cet agent -- exactement
-                le bug diagnostiqué pour Nucleos. */}
-            {appliSlotUnique?.nom === "notion" && (
-              <div className="relative" ref={selecteurNotionRef}>
-                <button
-                  onClick={() => executerActionAppli("notion")}
-                  disabled={notionEnCours}
-                  aria-label={notionConnecte ? "Choisir une page Notion" : "Connecter Notion"}
-                  title={notionConnecte ? "Choisir une page Notion" : "Connecter Notion"}
-                  className={
-                    notionConnecte
-                      ? "relative text-dj-texte transition-colors"
-                      : "relative text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
-                  }
-                >
-                  <IconeNotion size={18} />
-                  {notionConnecte && (
-                    <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                  )}
-                </button>
-
-                {selecteurNotionOuvert && (
-                  <div className="absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
-                    {contenuSelecteurNotion("bg-dj-surface", "bg-dj-surface")}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Google Drive (01/09) -- même raison d'être que les blocs
-                GitHub/Notion ci-dessus : couvre le cas où un agent n'a QUE
-                Drive d'activé (github/notion étant désactivés côté
-                plateforme au 01/09), sans quoi appliSlotUnique vaudrait
-                "google_drive" mais rien ne le rendrait (bug Nucleos). Pas
-                de sélecteur ici (contrairement à GitHub/Notion) : les
-                outils Drive n'ont besoin d'aucune sélection préalable dans
-                le champ de texte, juste d'être connecté. */}
-            {appliSlotUnique?.nom === "google_drive" && (
-              <button
-                onClick={() => executerActionAppli("google_drive")}
-                disabled={driveEnCours || !!driveConnecte}
-                aria-label={driveConnecte ? "Google Drive connecté" : "Connecter Google Drive"}
-                title={driveConnecte ? "Google Drive connecté" : "Connecter Google Drive"}
-                className={
-                  driveConnecte
-                    ? "relative text-dj-texte transition-colors"
-                    : "relative text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
-                }
-              >
-                <HardDrive size={18} />
-                {driveConnecte && (
-                  <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                )}
-              </button>
-            )}
-
 
             {/* Bouton "Sans enseignant" (06/08/2026, demande Bourama) --
                 uniquement pour les agents à contenu dynamique par matière
@@ -1865,8 +1696,20 @@ export function BarreDeSaisie({
                 <UserX size={18} />
               </button>
             )}
+          </div>
 
-
+          <div className="flex items-center gap-3">
+            <BoutonReglages
+              variante="bureau"
+              modelesDisponibles={modelesDisponibles}
+              modeleSelectionne={modeleSelectionne}
+              onModeleChange={onModeleChange}
+              longueur={longueur}
+              onLongueurChange={setLongueur}
+              eleveChoisitMode={modeActif.eleveChoisitMode}
+              pedagogie={pedagogie}
+              modeActif={modeActif}
+            />
             {/* Bouton Utilitaires (2026-08-01, demande Bourama : "seront
                 un autre bouton à part, plus dans outils") -- ex-onglet
                 "utilitaires" du menu Outils, sorti dans son propre bouton
@@ -1875,7 +1718,7 @@ export function BarreDeSaisie({
                 génériques, y compris pour les entrées "ui_" locales) --
                 juste pas d'onglets ici, une seule liste plate. Masqué si
                 l'agent n'a aucune entrée utilitaire autorisée. */}
-            {outilsUtilitairesPourAgent.length > 0 && (
+            {utilitairesBouton.length > 0 && (
             <div className="relative">
               <button
                 ref={boutonUtilitairesRef}
@@ -1884,7 +1727,7 @@ export function BarreDeSaisie({
                 title="Choisir un ou plusieurs utilitaires"
                 className={
                   "relative rounded-cgpt-bouton p-1 transition-colors " +
-                  (menuUtilitairesOuvert || outilsUtilitairesPourAgent.some((o) => estOutilActif(o.nom))
+                  (menuUtilitairesOuvert || utilitairesBouton.some((o) => estOutilActif(o.nom))
                     ? "bg-dj-accent-1/10 text-dj-accent-1-texte"
                     : "text-dj-texte-muet hover:text-dj-texte")
                 }
@@ -1894,13 +1737,13 @@ export function BarreDeSaisie({
               <div
                 ref={menuUtilitairesRef}
                 className={
-                  "absolute bottom-full left-0 z-20 mb-2 max-h-72 w-64 max-w-[calc(100vw-2rem)] origin-bottom-left overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
+                  "absolute bottom-full right-0 z-20 mb-2 max-h-64 w-56 max-w-[calc(100vw-2rem)] origin-bottom-right overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
                   (menuUtilitairesOuvert
                     ? "translate-y-0 scale-100 opacity-100"
                     : "pointer-events-none translate-y-1 scale-95 opacity-0")
                 }
               >
-                {[...outilsUtilitairesPourAgent]
+                {[...utilitairesBouton]
                   .sort((a, b) => a.label.localeCompare(b.label, "fr"))
                   .map(({ nom, label, Icone }) => {
                     const actif = estOutilActif(nom);
@@ -1908,6 +1751,7 @@ export function BarreDeSaisie({
                       <button
                         key={nom}
                         onClick={() => executerActionOutil(nom)}
+                        disabled={nom === "ui_localisation" && localisationEnCours}
                         className={
                           "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs transition-colors " +
                           (actif ? "bg-dj-accent-1/10 text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute")
@@ -1919,267 +1763,10 @@ export function BarreDeSaisie({
                       </button>
                     );
                   })}
-                {/* Guide/Démo retirés du chat (25/09/2026, demande Bourama)
-                    -- ces 3 entrées ("Guide (texte)", "Guide (visuel)",
-                    "Démo") étaient le seul point d'entrée du guide depuis
-                    /chat (voir historique juste au-dessus : bouton flottant
-                    déjà masqué sur cette page). Il n'y a donc plus d'accès
-                    au guide/à la démo depuis /chat, décision assumée. */}
-                {canalEnDirect && (
-                  <button
-                    onClick={() => {
-                      if (canalEnDirect.actif) canalEnDirect.desactiver();
-                      else canalEnDirect.activer();
-                      setMenuUtilitairesOuvert(false);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                  >
-                    <Radio size={14} />
-                    <span className="flex-1">{canalEnDirect.actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}</span>
-                  </button>
-                )}
               </div>
             </div>
             )}
 
-            {/* Slot variable "dernière appli utilisée" (2026-08-01, bug
-                signalé par Bourama : appliRecente était calculé mais
-                jamais affiché nulle part). Ne s'affiche QUE quand
-                appliButtonVisible (plusieurs applis actives) -- si une
-                seule appli, elle reste fixe via appliSlotUnique
-                ci-dessus et ne varie jamais, conforme à la règle de
-                Bourama ("apparaît et reste... et ne change pas").
-                Ici au contraire ça varie : dernière appli cliquée,
-                repli sur applisPourAgent[0] tant qu'aucune n'a encore
-                été cliquée (même dérivation que `appliRecente`). */}
-            {appliButtonVisible && appliRecente && (() => {
-              const appli = applisPourAgent.find((a) => a.nom === appliRecente);
-              if (!appli) return null;
-              const Icone = appli.Icone;
-              return (
-                <button
-                  onClick={() => executerActionAppli(appli.nom)}
-                  aria-label={appli.label}
-                  title={appli.label}
-                  className="relative rounded-cgpt-bouton p-1 text-dj-texte-muet transition-colors hover:text-dj-texte"
-                >
-                  <Icone size={18} />
-                </button>
-              );
-            })()}
-
-            {/* Icône Appli (2026-07-28) -- icône FIXE (ne varie jamais),
-                pendante de l'icône Outils juste au-dessus : ouvre la liste
-                complète des applis (nécessitant une connexion utilisateur),
-                voir APPLIS_DISPONIBLES en haut du fichier.
-                CORRECTION (2026-07-30, flux 3) : ce bouton-dropdown ne
-                s'affiche que s'il y a PLUSIEURS applis activées pour
-                l'agent (sinon c'est le slot unique ci-dessus qui s'affiche
-                directement, sans avoir besoin de choisir). */}
-            {appliButtonVisible && (
-            <div className="relative">
-              <button
-                ref={boutonAppliRef}
-                onClick={() => setMenuAppliOuvert((v) => !v)}
-                aria-label="Choisir une application"
-                title="Choisir une application"
-                className={
-                  "relative rounded-cgpt-bouton p-1 transition-colors " +
-                  (menuAppliOuvert ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
-                }
-              >
-                <LayoutGrid size={18} />
-              </button>
-              <div
-                ref={menuAppliRef}
-                className={
-                  "absolute bottom-full left-0 z-20 mb-2 max-h-72 w-56 origin-bottom-left overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
-                  (menuAppliOuvert
-                    ? "translate-y-0 scale-100 opacity-100"
-                    : "pointer-events-none translate-y-1 scale-95 opacity-0")
-                }
-              >
-                {[...applisPourAgent]
-                  .sort((a, b) => a.label.localeCompare(b.label, "fr"))
-                  .map(({ nom, label, Icone }) => (
-                  <button
-                    key={nom}
-                    onClick={() => {
-                      executerActionAppli(nom);
-                      setMenuAppliOuvert(false);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                  >
-                    <Icone size={14} />
-                    <span className="flex-1">{label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            )}
-
-            {/* Sélecteur de pages Notion desktop pour le cas MULTI-appli
-                (01/08, ex. Nucleos avec GitHub + Notion tous les deux
-                actifs) -- le bloc appliSlotUnique plus haut ne couvre que
-                le cas où Notion est la SEULE appli active. Ici, cliquer
-                "Notion" dans le menu déroulant juste au-dessus déclenche
-                cliquerNotion() (via executerActionAppli) qui bascule
-                selecteurNotionOuvert -- ce panneau l'affiche, ancré au
-                même endroit que le bouton Appli. Le panneau mobile
-                (md:hidden, plus bas dans le fichier) couvre le petit écran. */}
-            {appliButtonVisible && selecteurNotionOuvert && (
-              <div className="relative hidden md:block" ref={selecteurNotionRef}>
-                <div className="absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
-                  {contenuSelecteurNotion("bg-dj-surface", "bg-dj-surface")}
-                </div>
-              </div>
-            )}
-
-            {/* Sélecteur de modèle premium (02/08/2026, voir capture
-                Bourama : "Sonnet 5   Moyen ⌄" dans la barre de saisie
-                desktop, puis "ce style d'affichage n'est pas propre à ma
-                plateforme" -- select natif remplacé par le même pattern
-                bouton+panneau flottant que le menu Appli plus haut,
-                regroupé par distributeur). Masqué si l'agent n'a aucun
-                modèle premium débloqué (voir ChatIA.tsx et
-                core/fournisseurs_llm.py). "Auto" = pas de préférence,
-                cascade Groq/Gemini habituelle. */}
-            {modelesDisponibles.length > 0 && (
-              <div className="relative">
-                <button
-                  ref={boutonModeleRef}
-                  type="button"
-                  onClick={() => setMenuModeleOuvert((v) => !v)}
-                  aria-label="Choisir le modèle"
-                  className={
-                    "flex items-center gap-0.5 rounded-md px-1 py-0.5 text-xs transition-colors " +
-                    (menuModeleOuvert ? "text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
-                  }
-                >
-                  {modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "Auto"}
-                  <ChevronDown size={12} />
-                </button>
-                <div
-                  ref={menuModeleRef}
-                  className={
-                    "absolute bottom-full right-0 z-20 mb-2 max-h-80 w-56 origin-bottom-right overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
-                    (menuModeleOuvert
-                      ? "translate-y-0 scale-100 opacity-100"
-                      : "pointer-events-none translate-y-1 scale-95 opacity-0")
-                  }
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onModeleChange?.(null);
-                      setMenuModeleOuvert(false);
-                    }}
-                    className={
-                      "flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs transition-colors hover:bg-dj-surface-haute " +
-                      (!modeleSelectionne ? "text-dj-accent-1-texte" : "text-dj-texte")
-                    }
-                  >
-                    Auto
-                    {!modeleSelectionne && <Check size={13} />}
-                  </button>
-                  {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter((d) =>
-                    modelesDisponibles.some((m) => m.distributeur === d)
-                  ).map((distributeur) => (
-                    <div key={distributeur} className="mt-1">
-                      <div className="px-2 pt-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-dj-texte-muet">
-                        {LABELS_DISTRIBUTEUR[distributeur] ?? distributeur}
-                      </div>
-                      {modelesDisponibles
-                        .filter((m) => m.distributeur === distributeur)
-                        .map((m) => (
-                          <button
-                            key={m.modele_id}
-                            type="button"
-                            onClick={() => {
-                              onModeleChange?.(m.modele_id);
-                              setMenuModeleOuvert(false);
-                            }}
-                            className={
-                              "flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs transition-colors hover:bg-dj-surface-haute " +
-                              (modeleSelectionne === m.modele_id ? "text-dj-accent-1-texte" : "text-dj-texte")
-                            }
-                          >
-                            {m.label}
-                            {modeleSelectionne === m.modele_id && <Check size={13} />}
-                          </button>
-                        ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Sélecteur Courte/Moyenne/Longue (remplace "Sonnet 5/Moyen"),
-                modifiable à chaque message -- section 3.3. Même pattern
-                bouton+panneau que le sélecteur de modèle juste au-dessus
-                (02/08/2026, select natif retiré pour rester cohérent avec
-                le style de la plateforme). */}
-            <div className="relative">
-              <button
-                ref={boutonLongueurRef}
-                type="button"
-                onClick={() => setMenuLongueurOuvert((v) => !v)}
-                aria-label="Choisir la longueur de réponse"
-                className={
-                  "flex items-center gap-0.5 rounded-md px-1 py-0.5 text-xs transition-colors " +
-                  (menuLongueurOuvert ? "text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
-                }
-              >
-                {LABELS_LONGUEUR[longueur]}
-                <ChevronDown size={12} />
-              </button>
-              <div
-                ref={menuLongueurRef}
-                className={
-                  "absolute bottom-full right-0 z-20 mb-2 w-40 origin-bottom-right overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
-                  (menuLongueurOuvert
-                    ? "translate-y-0 scale-100 opacity-100"
-                    : "pointer-events-none translate-y-1 scale-95 opacity-0")
-                }
-              >
-                {(["courte", "moyenne", "longue"] as LongueurReponse[]).map((valeur) => (
-                  <button
-                    key={valeur}
-                    type="button"
-                    onClick={() => {
-                      setLongueur(valeur);
-                      setMenuLongueurOuvert(false);
-                    }}
-                    className={
-                      "flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs transition-colors hover:bg-dj-surface-haute " +
-                      (longueur === valeur ? "text-dj-accent-1-texte" : "text-dj-texte")
-                    }
-                  >
-                    {LABELS_LONGUEUR[valeur]}
-                    {longueur === valeur && <Check size={13} />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Persona pédagogique (jonction items 1+8+9 des specs
-                indépendantes, 14/09/2026) -- voir SelecteurPersonaPedagogique.tsx
-                pour le détail (branché sur le stockage backend). Masqué si
-                l'enseignant a décoché "l'élève peut choisir son mode"
-                (25/09/2026, voir eleveChoisitMode ci-dessus). */}
-            {eleveChoisitMode && <SelecteurPersonaPedagogique conversationId={conversationId} />}
-
-            <button
-              type="button"
-              onClick={() => setPleinEcranSaisie(true)}
-              aria-label="Agrandir en plein écran"
-              className="text-dj-texte-muet transition-colors hover:text-dj-texte"
-            >
-              <Maximize2 size={16} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3">
             {dictant ? (
               <button
                 onClick={arreterDictee}
@@ -2254,7 +1841,19 @@ export function BarreDeSaisie({
           )}
         </div>
       )}
-      <div className="flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
+      <div className="relative flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
+        {/* Plein écran (01/10/2026) : posé dehors, collé juste au-dessus du coin haut
+            droit de la barre, petite flèche sans bulle. Ouvre la même
+            zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}
+        <button
+          type="button"
+          onClick={() => setPleinEcranSaisie(true)}
+          aria-label="Agrandir en plein écran"
+          title="Plein écran"
+          className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
+        >
+          <ArrowUpRight size={12} strokeWidth={1.75} />
+        </button>
         <textarea
           ref={zoneTexteMobileRef}
           value={texte}
@@ -2284,6 +1883,7 @@ export function BarreDeSaisie({
           className="max-h-32 min-h-8 w-full resize-none overflow-y-auto bg-transparent px-1 py-1 text-base leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
         />
 
+
         {/* Deuxième ligne (14/08, demande Bourama : forme carte en deux
             lignes empilées comme la référence Claude fournie, au lieu
             d'une seule ligne "pilule" plate -- texte au-dessus, icônes
@@ -2295,150 +1895,37 @@ export function BarreDeSaisie({
             cible tactile principale (44-48px) -- relevés à h-11 w-11
             (44px), sans changer leur position ni leur icône. */}
         <div className="flex items-center justify-between gap-1">
-        <div className="relative flex-shrink-0">
+          <MenuPlus variante="mobile" entrees={entreesMenuPlus()} />
+
+        <div className="flex items-center gap-1">
+        <BoutonReglages
+          variante="mobile"
+          modelesDisponibles={modelesDisponibles}
+          modeleSelectionne={modeleSelectionne}
+          onModeleChange={onModeleChange}
+          longueur={longueur}
+          onLongueurChange={setLongueur}
+          eleveChoisitMode={modeActif.eleveChoisitMode}
+          pedagogie={pedagogie}
+          modeActif={modeActif}
+        />
+        {utilitairesBouton.length > 0 && (
           <button
-            ref={boutonPlusRef}
+            ref={boutonUtilitairesMobileRef}
             type="button"
-            onClick={() => setMenuPlusOuvert((v) => !v)}
-            aria-label="Plus d'options"
+            onClick={() => setMenuUtilitairesOuvert((v) => !v)}
+            aria-label="Choisir un ou plusieurs utilitaires"
+            title="Utilitaires"
             className={
               "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton transition-colors " +
-              (menuPlusOuvert
-                ? "bg-dj-surface text-dj-texte"
+              (menuUtilitairesOuvert || utilitairesBouton.some((o) => estOutilActif(o.nom))
+                ? "bg-dj-accent-1/10 text-dj-accent-1-texte"
                 : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte")
             }
           >
-            <Plus size={18} />
+            <SlidersHorizontal size={18} />
           </button>
-
-          {menuPlusOuvert && (
-            <div
-              ref={menuPlusRef}
-              className="absolute bottom-full left-0 z-30 mb-2 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl"
-            >
-              {/* Guide/Démo retirés du chat (25/09/2026, demande Bourama),
-                  même décision que dans le menu "Utilitaires" desktop. */}
-              {canalEnDirect && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (canalEnDirect.actif) canalEnDirect.desactiver();
-                    else canalEnDirect.activer();
-                    setMenuPlusOuvert(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                >
-                  <Radio size={16} /> {canalEnDirect.actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  inputFichierRef.current?.click();
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <Pin size={16} /> Joindre un fichier
-              </button>
-              {/* Longueur de réponse + Mode pédagogique (14/09/2026, bug
-                  remonté par Bourama : sur mobile, aucun moyen d'atteindre
-                  ces deux réglages -- ils ne vivaient que dans la barre
-                  d'outils desktop ("hidden ... md:block" plus bas), display:none
-                  sur mobile donc invisibles ET inatteignables au clic malgré
-                  leur state déjà fonctionnel. Ajoutés ici comme les autres
-                  entrées du menu "+", chacun ouvrant sa propre feuille du bas
-                  (voir menuLongueurMobileRef et le rendu variante="feuille"
-                  de SelecteurPersonaPedagogique plus bas dans ce fichier). */}
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuLongueurOuvert(true);
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <AlignLeft size={16} /> Longueur de réponse
-              </button>
-              {/* Masquée si l'enseignant a décoché "l'élève peut choisir
-                  son mode" (25/09/2026) -- même réglage que la feuille
-                  elle-même plus bas dans ce fichier. */}
-              {eleveChoisitMode && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuPersonaMobileOuvert(true);
-                    setMenuPlusOuvert(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                >
-                  <GraduationCap size={16} /> Mode pédagogique
-                </button>
-              )}
-              {/* CORRECTION (2026-07-30, flux 3) : cette entrée n'a de
-                  sens que si le bouton dropdown Applications existe
-                  (>1 appli) -- sinon une entrée directe suffit
-                  (appliSlotUnique ci-dessous). Le menu Outils manuel
-                  (dropdown ici, panneau plus bas) a été retiré entièrement
-                  le 2026-08-20 : mort depuis le kill-switch
-                  AFFICHER_BOUTON_OUTILS du 13/08, jamais réactivé. */}
-              {outilsUtilitairesPourAgent.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuUtilitairesOuvert(true);
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <SlidersHorizontal size={16} /> Utilitaires
-              </button>
-              )}
-              {appliButtonVisible && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuAppliOuvert(true);
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <LayoutGrid size={16} /> Applications
-              </button>
-              )}
-              {appliSlotUnique && (
-              <button
-                type="button"
-                onClick={() => {
-                  executerActionAppli(appliSlotUnique.nom);
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <appliSlotUnique.Icone size={16} /> {appliSlotUnique.label}
-              </button>
-              )}
-              {/* Plein écran (2026-07-30, demande Bourama) : même rôle que
-                  le bouton Maximize2 du composer desktop -- ouvre la même
-                  zone d'écriture agrandie (pleinEcranSaisie, partagée entre
-                  PC et mobile, voir plus bas dans ce fichier). Logé dans le
-                  menu "+" plutôt qu'en icône dédiée, faute de place dans la
-                  barre compacte mobile. */}
-              <button
-                type="button"
-                onClick={() => {
-                  setPleinEcranSaisie(true);
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <Maximize2 size={16} /> Plein écran
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1">
+        )}
         {dictant ? (
           <button
             onClick={arreterDictee}
@@ -2474,88 +1961,6 @@ export function BarreDeSaisie({
             >
               <Mic size={16} />
             </button>
-            {/* Slot variable unique mobile (2026-07-28 ; revu 2026-08-01
-                suite retour Bourama : "sur mobile le un slot gère les
-                trois, outils utilitaires, appli" -- ce slot fusionne
-                les catégories via `recentsCombines` (l'historique
-                persisté), pas juste les outils comme avant.
-                RÉVISÉ 2026-08-20 (nettoyage du menu Outils manuel mort,
-                demande Bourama) : le menu Outils dropdown/panneau a été
-                retiré entièrement (mort depuis le kill-switch
-                AFFICHER_BOUTON_OUTILS du 13/08). Le type "outil" ne
-                couvre donc plus que les Utilitaires (ui_*,
-                outilsUtilitairesPourAgent) -- CORRECTION au passage :
-                l'ancienne condition `AFFICHER_BOUTON_OUTILS && ...`
-                bloquait déjà silencieusement toute remontée d'un
-                utilitaire récent ici, contrairement à l'intention
-                d'origine ("les trois" incluait les utilitaires) ; le
-                filtre ci-dessous répare ça.
-                Algorithme : on calcule d'abord un "candidat par défaut"
-                (ce qui s'affiche tant qu'aucun clic pertinent n'a
-                encore eu lieu), par ordre de priorité :
-                  1. premier utilitaire autorisé pour cet agent
-                  2. appliSlotUnique (agent à exactement 1 appli, fixe,
-                     ne varie jamais -- règle Bourama)
-                  3. première appli autorisée (si appliButtonVisible,
-                     >1 appli)
-                  4. rien (agent sans utilitaire ni appli)
-                Puis on cherche dans recentsCombines la première entrée
-                encore valide pour cet agent (utilitaire valide s'il est
-                dans outilsUtilitairesPourAgent ; appli valide seulement
-                si appliButtonVisible, car une appli unique ne "varie"
-                pas) -- si trouvée, elle REMPLACE le candidat par défaut
-                (c'est la partie qui "varie"). */}
-            {(() => {
-              type Candidat =
-                | { genre: "outil"; nom: string; label: string; Icone: typeof Wrench }
-                | { genre: "appli"; nom: string; label: string; Icone: typeof Github }
-                | null;
-
-              let candidat: Candidat = null;
-              if (outilsUtilitairesPourAgent[0]) {
-                candidat = { genre: "outil", ...outilsUtilitairesPourAgent[0] };
-              } else if (appliSlotUnique) {
-                candidat = { genre: "appli", ...appliSlotUnique };
-              } else if (appliButtonVisible && applisPourAgent[0]) {
-                candidat = { genre: "appli", ...applisPourAgent[0] };
-              }
-
-              const recentValide = recentsCombines.find((r) => {
-                if (r.type === "outil") return outilsUtilitairesPourAgent.some((o) => o.nom === r.nom);
-                return appliButtonVisible && applisPourAgent.some((a) => a.nom === r.nom);
-              });
-              if (recentValide) {
-                if (recentValide.type === "outil") {
-                  const outil = outilsDisponibles.find((o) => o.nom === recentValide.nom);
-                  if (outil) candidat = { genre: "outil", ...outil };
-                } else {
-                  const appli = APPLIS_DISPONIBLES.find((a) => a.nom === recentValide.nom);
-                  if (appli) candidat = { genre: "appli", ...appli };
-                }
-              }
-
-              if (!candidat) return null;
-
-              const Icone = candidat.Icone;
-              const actif = candidat.genre === "outil" ? estOutilActif(candidat.nom) : false;
-              return (
-                <button
-                  onClick={() =>
-                    candidat.genre === "outil" ? executerActionOutil(candidat.nom) : executerActionAppli(candidat.nom)
-                  }
-                  aria-label={candidat.label}
-                  title={candidat.label}
-                  className={
-                    "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton transition-colors " +
-                    (actif
-                      ? "bg-dj-surface text-dj-accent-1-texte"
-                      : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte")
-                  }
-                >
-                  <Icone size={16} />
-                </button>
-              );
-            })()}
           </>
         )}
         </div>
@@ -2605,9 +2010,9 @@ export function BarreDeSaisie({
       {menuUtilitairesOuvert && (
         <div
           ref={menuUtilitairesMobileRef}
-          className="fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] z-40 flex max-h-[60vh] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
+          className="fixed bottom-[calc(6rem+var(--safe-bottom))] right-4 z-40 flex max-h-[45vh] w-64 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
         >
-          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-2">
+          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
             <span className="text-xs font-medium text-dj-texte-muet">Utilitaires</span>
             <button
               onClick={() => setMenuUtilitairesOuvert(false)}
@@ -2618,7 +2023,7 @@ export function BarreDeSaisie({
             </button>
           </div>
           <div className="overflow-y-auto p-1">
-            {[...outilsUtilitairesPourAgent]
+            {[...utilitairesBouton]
               .sort((a, b) => a.label.localeCompare(b.label, "fr"))
               .map(({ nom, label, Icone }) => {
                 const actif = estOutilActif(nom);
@@ -2626,12 +2031,13 @@ export function BarreDeSaisie({
                   <button
                     key={nom}
                     onClick={() => executerActionOutil(nom)}
+                    disabled={nom === "ui_localisation" && localisationEnCours}
                     className={
-                      "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors " +
+                      "flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors " +
                       (actif ? "bg-dj-accent-1/10 text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute")
                     }
                   >
-                    <Icone size={16} />
+                    <Icone size={15} />
                     <span className="flex-1">{label}</span>
                     {actif && <Check size={14} />}
                   </button>
@@ -2639,62 +2045,6 @@ export function BarreDeSaisie({
               })}
           </div>
         </div>
-      )}
-
-      {/* Feuille "Longueur de réponse" mobile (14/09/2026) -- même état
-          menuLongueurOuvert que le panneau desktop (voir plus bas dans ce
-          fichier), même famille visuelle que le panneau Utilitaires
-          juste au-dessus. */}
-      {menuLongueurOuvert && (
-        <div
-          ref={menuLongueurMobileRef}
-          className="fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] z-40 max-h-[60vh] overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
-        >
-          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-2">
-            <span className="text-xs font-medium text-dj-texte-muet">Longueur de réponse</span>
-            <button
-              onClick={() => setMenuLongueurOuvert(false)}
-              aria-label="Fermer"
-              className="flex-shrink-0 text-dj-texte-muet hover:text-dj-texte"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div className="overflow-y-auto p-1">
-            {(["courte", "moyenne", "longue"] as LongueurReponse[]).map((valeur) => (
-              <button
-                key={valeur}
-                type="button"
-                onClick={() => {
-                  setLongueur(valeur);
-                  setMenuLongueurOuvert(false);
-                }}
-                className={
-                  "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors hover:bg-dj-surface-haute " +
-                  (longueur === valeur ? "text-dj-accent-1-texte" : "text-dj-texte")
-                }
-              >
-                {LABELS_LONGUEUR[valeur]}
-                {longueur === valeur && <Check size={14} />}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Feuille "Mode pédagogique" mobile (14/09/2026) -- variante="feuille"
-          de SelecteurPersonaPedagogique.tsx, pilotée depuis ici
-          (menuPersonaMobileOuvert), même famille visuelle. Voir ce fichier
-          pour le détail (chargement/persistance backend inchangés, seule la
-          présentation change selon la variante). Masquée si l'enseignant a
-          décoché "l'élève peut choisir son mode" (25/09/2026). */}
-      {eleveChoisitMode && (
-        <SelecteurPersonaPedagogique
-          conversationId={conversationId}
-          variante="feuille"
-          ouvert={menuPersonaMobileOuvert}
-          onFermer={() => setMenuPersonaMobileOuvert(false)}
-        />
       )}
 
       {/* Panneau Applications mobile (2026-07-28) -- même principe,

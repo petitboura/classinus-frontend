@@ -338,7 +338,7 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
 // mais réservée à ce qui nécessite une connexion/authentification
 // utilisateur (OAuth, session tierce...). Notion ajouté le 01/08 (deuxième
 // entrée) -- la structure était déjà prête à en accueillir d'autres sans
-// retoucher la logique de récence/slot variable de BarreDeSaisie.tsx. Sert
+// retoucher la logique des raccourcis récents de BarreDeSaisie.tsx. Sert
 // aussi de source pour les en-têtes de groupe (icône + nom) de l'onglet
 // "Action dans l'app" ci-dessus, via le champ `appli` des entrées de
 // OUTILS_DISPONIBLES -- et pour app/dashboard/applications/page.tsx (liste
