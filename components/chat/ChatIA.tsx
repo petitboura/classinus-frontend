@@ -17,6 +17,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
+import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
 import { texteMessageAutomatique } from "@/lib/minuteurs";
 import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
@@ -865,6 +866,11 @@ export function ChatIA({
   // libre, comme la file du canal.
   const enregistrerChatPourVoix = ctxChatCanal?.enregistrerChatPourVoix;
   useEffect(() => enregistrerChatPourVoix?.(conversationId), [enregistrerChatPourVoix, conversationId]);
+  // Recopie la conversation pour que le canal et la voix la poursuivent à
+  // l'identique quand ce chat est masqué ou fermé (tours directs).
+  useEffect(() => {
+    if (conversationId && !genEnCours) ecrireEtatDepuisChat(conversationId, messages);
+  }, [conversationId, messages, genEnCours]);
   const nbDemandesVoix = ctxChatCanal?.nbDemandesVoixEnAttente ?? 0;
   useEffect(() => {
     if (!ctxChatCanal || nbDemandesVoix === 0) return;

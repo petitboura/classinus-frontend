@@ -25,6 +25,7 @@
 // chantier.
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { definirConversationCanal } from "./conversationPartagee";
 
 // "refuse" retiré (19/09/2026) : plus aucune confirmation ne peut
 // produire cet état, voir lib/canalAgentApplicatif.ts.
@@ -98,16 +99,10 @@ export type ValeurCanalEnDirect = {
   // genere ici comme avant, comportement inchange.
   activer: (conversationId?: string) => void;
   desactiver: () => void;
-  // Ajouté le 19/09/2026 (decision Bourama : le canal doit pouvoir
-  // déclencher lui même un vrai tour de Clovis, "comme si de rien
-  // n'était", sans jamais ouvrir le chat) : conversation dédiée à la
-  // session du canal, générée UNE FOIS à l'activation, réutilisée pour
-  // tous les messages envoyés tant que le canal reste actif -- jamais
-  // celle du chat normal (voir lib/canalAgentApplicatif.ts,
-  // envoyerTourCanalDirect). Distincte à dessein : le canal reste
-  // "quelque chose à part", pas mélangé à une conversation de chat en
-  // cours. Cette conversation reste consultable normalement plus tard
-  // depuis l'historique du chat, comme n'importe quelle autre.
+  // Conversation propre du canal, générée UNE FOIS à l'activation. Depuis le
+  // 02/10/2026 (décision Bourama), le canal suit le chat : tant qu'un chat est
+  // à l'écran, la conversation continuée est la sienne (voir
+  // lib/conversationPartagee.ts) ; celle-ci ne sert que s'il n'y a pas de chat.
   conversationId: string | null;
 
   modeInteraction: ModeInteraction;
@@ -319,9 +314,17 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     ecrirePreference(CLE_MOTEUR_DICTEE, moteur);
   }, []);
 
+  // Garde le module de conversation partagée au courant de la conversation propre
+  // du canal (null une fois désactivé), pour qu'il suive le chat quand il y en a un.
+  const conversationImposeeRef = useRef(false);
+  useEffect(() => {
+    definirConversationCanal(conversationId, conversationImposeeRef.current);
+  }, [conversationId]);
+
   const activer = useCallback((conversationId?: string) => {
     setActif(true);
-    // Nouvelle conversation dédiée à chaque activation (voir le
+    conversationImposeeRef.current = conversationId !== undefined;
+    // Nouvelle conversation propre à chaque activation (voir le
     // commentaire du type ValeurCanalEnDirect plus haut) -- jamais
     // réutilisée d'une activation à l'autre, cohérent avec la décision
     // "pas de persistance à travers un rechargement" déjà prise pour le

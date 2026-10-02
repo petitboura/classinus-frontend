@@ -2,6 +2,7 @@
 
 import { supabase } from "./supabase";
 import { appelerApiStream } from "./api";
+import { ajouterTourDirect, lireEtatConversation, type IdMessage } from "./conversationPartagee";
 
 // Le modèle vocal, l'adresse de connexion, les consignes, la phrase d'accueil et la
 // description de l'outil ne sont plus écrits ici : ils viennent du serveur avec le
@@ -60,9 +61,19 @@ function declarerOutilClovis(description: string) {
 // quand aucun chat n'est ouvert pour recevoir la demande.
 export async function demanderAClovisDirectement(question: string, conversationId: string): Promise<string> {
   let reponseClovis = "";
-  await appelerApiStream("/api/chat", { message: question, agent_id: "clovis", historique: [], conversation_id: conversationId, longueur_reponse: "moyenne", canal_en_direct: true, fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone }, (evenement) => {
+  let idUser: IdMessage | null = null;
+  let idAssistant: IdMessage | null = null;
+  // Suite de la conversation, pas un nouveau départ : historique et parent_id
+  // viennent de l'état partagé (voir lib/conversationPartagee.ts).
+  const etat = lireEtatConversation(conversationId);
+  await appelerApiStream("/api/chat", { message: question, agent_id: "clovis", historique: etat.historique, conversation_id: conversationId, parent_id: etat.dernierMessageId, longueur_reponse: "moyenne", canal_en_direct: true, fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone }, (evenement) => {
     if (evenement?.type === "reponse" && typeof evenement.texte === "string") reponseClovis += evenement.texte;
+    else if (evenement?.type === "meta") {
+      idUser = evenement.message_id_user ?? idUser;
+      idAssistant = evenement.message_id_assistant ?? idAssistant;
+    }
   });
+  ajouterTourDirect(conversationId, question, reponseClovis, idUser, idAssistant);
   return reponseClovis;
 }
 

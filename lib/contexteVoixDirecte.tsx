@@ -20,6 +20,7 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
 import { ChatIndisponiblePourVoix } from "./contexteChat";
+import { conversationActive, conversationPourVoix } from "./conversationPartagee";
 
 export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur";
 
@@ -110,12 +111,15 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
         },
         surErreur: setErreur,
         surDemande: async (question) => {
-          if (!dependancesRef.current.chatPretPourVoix(conversationId)) return demanderAClovisDirectement(question, conversationId);
+          // Tant que le canal est actif, la voix suit la conversation partagée
+          // (celle du chat affiché) ; sinon elle garde celle où elle a été ouverte.
+          const cible = conversationPourVoix(conversationId);
+          if (!dependancesRef.current.chatPretPourVoix(cible)) return demanderAClovisDirectement(question, cible);
           try {
-            return await dependancesRef.current.deposerDemandeVoix(question, conversationId);
+            return await dependancesRef.current.deposerDemandeVoix(question, cible);
           } catch (e) {
             // Le chat a disparu avant de prendre la demande : chemin direct.
-            if (e instanceof ChatIndisponiblePourVoix) return demanderAClovisDirectement(question, conversationId);
+            if (e instanceof ChatIndisponiblePourVoix) return demanderAClovisDirectement(question, cible);
             throw e;
           }
         },
@@ -139,8 +143,9 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
   );
 
   const annoncerReponse = useCallback((conversationId: string | null, texte: string) => {
-    if (!conversationId || conversationSessionRef.current !== conversationId) return;
-    sessionRef.current?.annoncerReponse(texte);
+    if (!conversationId || !sessionRef.current) return;
+    if (conversationSessionRef.current !== conversationId && conversationActive() !== conversationId) return;
+    sessionRef.current.annoncerReponse(texte);
   }, []);
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);

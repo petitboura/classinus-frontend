@@ -168,6 +168,8 @@ type ContexteChatValeur = {
   // La demande n'est confiée qu'au chat qui affiche la MÊME conversation que
   // la voix, pour ne jamais écrire dans une autre conversation.
   chatPretPourVoix: (conversationId: string) => boolean;
+  // Un chat est-il à l'écran, et sur quelle conversation (null = pas encore créée).
+  etatChatAffiche: () => { visible: boolean; conversationId: string | null };
   enregistrerChatPourVoix: (conversationId: string | null) => () => void;
   nbDemandesVoixEnAttente: number;
   deposerDemandeVoix: (texte: string, conversationId: string) => Promise<string>;
@@ -248,6 +250,10 @@ export function useFournirContexteChat(): ContexteChatValeur {
     (conversationId: string) => chatsPretsVoixRef.current.includes(conversationId) && ecranVisible(),
     []
   );
+  const etatChatAffiche = useCallback(() => {
+    const ids = chatsPretsVoixRef.current;
+    return { visible: ids.length > 0 && ecranVisible(), conversationId: ids.find((id) => id) ?? null };
+  }, []);
   const enregistrerChatPourVoix = useCallback((conversationId: string | null) => {
     chatsPretsVoixRef.current.push(conversationId);
     return () => {
@@ -443,6 +449,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       deposerMessageEnAttente,
       prendreMessageEnAttente,
       chatPretPourVoix,
+      etatChatAffiche,
       enregistrerChatPourVoix,
       nbDemandesVoixEnAttente,
       deposerDemandeVoix,
@@ -486,6 +493,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       deposerMessageEnAttente,
       prendreMessageEnAttente,
       chatPretPourVoix,
+      etatChatAffiche,
       enregistrerChatPourVoix,
       nbDemandesVoixEnAttente,
       deposerDemandeVoix,

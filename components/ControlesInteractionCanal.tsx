@@ -23,6 +23,7 @@ import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnD
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
+import { conversationActive } from "@/lib/conversationPartagee";
 
 const DUREE_ERREUR_MS = 6000;
 
@@ -43,7 +44,7 @@ export function ControlesInteractionCanal() {
   const geminiLive = {
     actif: voixDirecte?.actif ?? false,
     etat: voixDirecte?.etat ?? "inactif",
-    basculer: () => voixDirecte?.basculer(conversationId),
+    basculer: () => voixDirecte?.basculer(conversationActive() ?? conversationId),
   };
   const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
   useEffect(() => () => fermerVoixPourConversation?.(conversationId), [conversationId, fermerVoixPourConversation]);
