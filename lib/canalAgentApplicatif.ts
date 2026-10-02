@@ -93,6 +93,7 @@ import {
   afficherReponseDepuisAgent,
   afficherTexteDepuisAgent,
   activerCanalDepuisAgent,
+  desactiverCanalDepuisAgent,
   canalEnDirectEstActif,
   ecouterActivationCanal,
   type ImageCanal,
@@ -662,6 +663,16 @@ function traiterOuvertureCanal(valeur: unknown) {
   activerCanalDepuisAgent(conversationId);
 }
 
+/**
+ * 02/10/2026 (demande Bourama) : Clovis demande de désactiver le canal en
+ * direct. Aucune réponse envoyée, le serveur n'en attend pas. La fermeture
+ * est différée d'un instant pour laisser partir la dernière réponse d'outil
+ * en cours (le serveur répond à l'outil juste après avoir envoyé l'ordre).
+ */
+function traiterFermetureCanal() {
+  setTimeout(() => desactiverCanalDepuisAgent(), 300);
+}
+
 function traiterMessage(message: unknown) {
   if (estDansFenetreSuperposition()) return;
   if (!message || typeof message !== "object") return;
@@ -672,6 +683,7 @@ function traiterMessage(message: unknown) {
     texte_clovis?: unknown;
     duree_secondes?: unknown;
     ouvrir_canal_en_direct?: unknown;
+    fermer_canal_en_direct?: unknown;
     id?: string;
     action_id?: string;
     texte_a_ecrire?: string;
@@ -697,6 +709,8 @@ function traiterMessage(message: unknown) {
     if (canalEnDirectEstActif()) traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
+  } else if (m.fermer_canal_en_direct !== undefined) {
+    traiterFermetureCanal();
   } else if (
     m.id &&
     !canalEnDirectEstActif() &&

@@ -204,6 +204,16 @@ export function activerCanalDepuisAgent(conversationId?: string) {
   canalGlobal.activer(conversationId);
 }
 
+/**
+ * 02/10/2026 (demande Bourama) : Clovis désactive le canal en direct lui-même
+ * (outil desactiver_canal_en_direct côté backend), comme le fait le bouton du
+ * canal. Sans effet si le canal est déjà inactif ou si aucun Provider n'est monté.
+ */
+export function desactiverCanalDepuisAgent() {
+  if (!canalGlobal || !canalGlobal.actif) return;
+  canalGlobal.desactiver();
+}
+
 // Voix en direct (02/10/2026, demande Bourama) : quand la voix est allumée, ce
 // que Classinus dit dans sa bulle est lu à voix haute. La voix s'abonne ici ;
 // seuls les commentaires de Classinus et ses réponses sont transmis, jamais le
