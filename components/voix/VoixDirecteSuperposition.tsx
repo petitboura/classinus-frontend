@@ -30,7 +30,10 @@ const POSITION_REPLI_Y = 72;
 
 // Même zone basse que les boutons du canal en direct : barre d'onglets web et
 // barre de navigation native, toutes deux à 0 quand elles n'existent pas.
-const BAS_SECURISE = "calc(env(safe-area-inset-bottom,0px)+var(--dj-barre-onglets-web,0px)+var(--cap-native-navigation-bottom,0px))";
+// Les espaces autour des "+" sont obligatoires en CSS : sans eux le calcul
+// entier est rejeté, la position basse de la bulle est ignorée et elle
+// retombe en haut à droite, par dessus la cloche et l'horloge (03/10/2026).
+const BAS_SECURISE = "(env(safe-area-inset-bottom, 0px) + var(--dj-barre-onglets-web, 0px) + var(--cap-native-navigation-bottom, 0px))";
 
 function limiter(valeur: number, min: number, max: number): number {
   return Math.min(Math.max(valeur, min), Math.max(min, max));
