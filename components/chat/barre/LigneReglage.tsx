@@ -14,6 +14,7 @@ import type { LucideIcon } from "lucide-react";
 export function LigneReglage({
   Icone,
   titre,
+  valeur,
   ouverte,
   grand,
   onSurvol,
@@ -22,6 +23,9 @@ export function LigneReglage({
 }: {
   Icone: LucideIcon;
   titre: string;
+  // Choix actuellement appliqué, affiché à droite du titre : on voit ce qui
+  // est réglé sans avoir à déplier la ligne.
+  valeur?: string;
   ouverte: boolean;
   // Taille tactile (mobile) plutôt que compacte (PC).
   grand: boolean;
@@ -42,12 +46,13 @@ export function LigneReglage({
         onClick={onBasculer}
         className={
           "flex w-full items-center gap-2 rounded-xl text-left transition-colors hover:bg-dj-surface-haute " +
-          (grand ? "px-3 py-2.5 text-sm " : "px-2 py-1.5 text-xs ") +
+          (grand ? "px-2.5 py-2 text-[13px] " : "px-2 py-1.5 text-xs ") +
           (ouverte ? "text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
         }
       >
-        <Icone size={grand ? 16 : 14} className="flex-shrink-0" />
-        <span className="flex-1">{titre}</span>
+        <Icone size={grand ? 15 : 14} className="flex-shrink-0" />
+        <span className="flex-1 truncate">{titre}</span>
+        {valeur && <span className="max-w-[45%] flex-shrink-0 truncate text-[11px] text-dj-texte-muet">{valeur}</span>}
         <ChevronRight
           size={grand ? 14 : 12}
           className={"flex-shrink-0 transition-transform duration-200 " + (ouverte ? "rotate-90" : "")}

@@ -42,7 +42,7 @@ function Choix({
       aria-pressed={actif}
       className={
         "flex w-full items-center justify-between gap-2 rounded-xl text-left transition-colors hover:bg-dj-surface-haute disabled:cursor-not-allowed disabled:opacity-60 " +
-        (grand ? "px-3 py-2.5 text-sm " : "px-2 py-1.5 text-xs ") +
+        (grand ? "px-2.5 py-2 text-[13px] " : "px-2 py-1.5 text-xs ") +
         (actif ? "text-dj-accent-1-texte" : "text-dj-texte")
       }
     >
@@ -106,6 +106,24 @@ export function BoutonReglages({
   const afficherModele = modelesDisponibles.length > 0;
   const afficherPersona = eleveChoisitMode;
   const afficherCode = !modeActif.chargement && modeActif.rattachements.length > 0;
+
+  // Choix actuel de chaque ligne, montré à droite du titre et résumé dans
+  // l'infobulle du bouton.
+  const valeurModele = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "Auto";
+  const valeurLongueur = LABELS_LONGUEUR[longueur];
+  const valeurPersona = PERSONAS.find((p) => p.id === pedagogie.persona)?.label ?? "Aucun mode";
+  const valeurSource = MODES_SOURCE.find((m) => m.id === pedagogie.modeSource)?.label ?? "Aucun";
+  const codeActif = modeActif.rattachements.find((r) => r.rattachement_id === modeActif.modeActifId);
+  const valeurCode = codeActif ? codeActif.nom_code || codeActif.code : modeActif.choisi ? "Aucun mode" : "Aucun";
+  const resume = [
+    afficherModele && `Modèle : ${valeurModele}`,
+    `Longueur de réponse : ${valeurLongueur}`,
+    afficherPersona && `Mode pédagogique : ${valeurPersona}`,
+    `Modes ressources : ${valeurSource}`,
+    afficherCode && `Code enseignant : ${valeurCode}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   // Tout repli du panneau referme aussi la ligne dépliée.
   useEffect(() => {
@@ -186,7 +204,7 @@ export function BoutonReglages({
         aria-label="Réglages de la réponse"
         aria-haspopup="menu"
         aria-expanded={ouvert}
-        title="Réglages de la réponse"
+        title={resume}
         className={
           "flex items-center gap-1 rounded-cgpt-bouton transition-colors " +
           (mobile ? "h-11 px-2.5 text-sm " : "px-1.5 py-1 text-xs ") +
@@ -204,13 +222,13 @@ export function BoutonReglages({
         className={
           "z-40 border border-dj-bordure bg-dj-surface shadow-lg transition-all duration-150 ease-cgpt-doux " +
           (mobile
-            ? "fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] flex max-h-[60vh] flex-col overflow-hidden rounded-2xl shadow-xl "
-            : "dj-scroll-isole absolute bottom-full right-0 mb-2 max-h-[min(70vh,28rem)] w-64 origin-bottom-right overflow-y-auto rounded-cgpt-carte p-1 ") +
+            ? "fixed bottom-[calc(6rem+var(--safe-bottom))] right-4 flex max-h-[45vh] w-64 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl shadow-xl "
+            : "dj-scroll-isole absolute bottom-full right-0 mb-2 max-h-[min(60vh,22rem)] w-56 origin-bottom-right overflow-y-auto rounded-cgpt-carte p-1 ") +
           (ouvert ? "visible translate-y-0 scale-100 opacity-100" : "invisible translate-y-1 scale-95 opacity-0")
         }
       >
         {mobile && (
-          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-2">
+          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
             <span className="text-xs font-medium text-dj-texte-muet">Réglages</span>
             <button
               type="button"
@@ -224,7 +242,7 @@ export function BoutonReglages({
         )}
         <div className={mobile ? "overflow-y-auto p-1" : ""}>
           {afficherModele && (
-            <LigneReglage Icone={Sparkles} titre="Modèle" {...ligneProps("modele")}>
+            <LigneReglage Icone={Sparkles} titre="Modèle" valeur={valeurModele} {...ligneProps("modele")}>
               <Choix
                 grand={mobile}
                 actif={!modeleSelectionne}
@@ -262,7 +280,7 @@ export function BoutonReglages({
             </LigneReglage>
           )}
 
-          <LigneReglage Icone={AlignLeft} titre="Longueur de réponse" {...ligneProps("longueur")}>
+          <LigneReglage Icone={AlignLeft} titre="Longueur de réponse" valeur={valeurLongueur} {...ligneProps("longueur")}>
             {NIVEAUX_LONGUEUR.map((valeur) => (
               <Choix
                 grand={mobile}
@@ -279,7 +297,7 @@ export function BoutonReglages({
           </LigneReglage>
 
           {afficherPersona && (
-            <LigneReglage Icone={GraduationCap} titre="Mode pédagogique" {...ligneProps("persona")}>
+            <LigneReglage Icone={GraduationCap} titre="Mode pédagogique" valeur={valeurPersona} {...ligneProps("persona")}>
               <Choix
                 grand={mobile}
                 actif={!pedagogie.persona}
@@ -306,7 +324,7 @@ export function BoutonReglages({
             </LigneReglage>
           )}
 
-          <LigneReglage Icone={BookOpen} titre="Modes ressources" {...ligneProps("source")}>
+          <LigneReglage Icone={BookOpen} titre="Modes ressources" valeur={valeurSource} {...ligneProps("source")}>
             <Choix
                 grand={mobile}
               actif={!pedagogie.modeSource}
@@ -333,7 +351,7 @@ export function BoutonReglages({
           </LigneReglage>
 
           {afficherCode && (
-            <LigneReglage Icone={KeyRound} titre="Code enseignant" {...ligneProps("code")}>
+            <LigneReglage Icone={KeyRound} titre="Code enseignant" valeur={valeurCode} {...ligneProps("code")}>
               {modeActif.verrouille && (
                 <p className="flex items-center gap-1.5 px-2 py-1 text-xs text-dj-texte-muet">
                   <Lock size={11} className="flex-shrink-0" />

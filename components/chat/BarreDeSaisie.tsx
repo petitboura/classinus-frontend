@@ -1570,17 +1570,17 @@ export function BarreDeSaisie({
         // ci-dessous (ligne ~2211), déjà pensée pour un espace étroit.
         className="relative hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3 focus-within:border-dj-bordure-forte md:block"
       >
-        {/* Plein écran (01/10/2026) : posé dehors, collé sur le coin haut droit de
-            la barre (il en dépasse à moitié), icône discrète. Ouvre la même
+        {/* Plein écran (01/10/2026) : posé dehors, collé juste au-dessus du coin haut
+            droit de la barre, petite flèche sans bulle. Ouvre la même
             zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}
         <button
           type="button"
           onClick={() => setPleinEcranSaisie(true)}
           aria-label="Agrandir en plein écran"
           title="Plein écran"
-          className="absolute -right-2 -top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet opacity-80 shadow-sm transition-all hover:text-dj-texte hover:opacity-100"
+          className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
         >
-          <ArrowUpRight size={14} strokeWidth={1.75} />
+          <ArrowUpRight size={12} strokeWidth={1.75} />
         </button>
         {/* Aperçu formules (2026-07-27) -- affiché seulement si le
             brouillon contient au moins un "$", pour ne pas dupliquer
@@ -1859,7 +1859,7 @@ export function BarreDeSaisie({
               <div
                 ref={menuUtilitairesRef}
                 className={
-                  "absolute bottom-full right-0 z-20 mb-2 max-h-72 w-64 max-w-[calc(100vw-2rem)] origin-bottom-right overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
+                  "absolute bottom-full right-0 z-20 mb-2 max-h-64 w-56 max-w-[calc(100vw-2rem)] origin-bottom-right overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
                   (menuUtilitairesOuvert
                     ? "translate-y-0 scale-100 opacity-100"
                     : "pointer-events-none translate-y-1 scale-95 opacity-0")
@@ -1964,17 +1964,17 @@ export function BarreDeSaisie({
         </div>
       )}
       <div className="relative flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
-        {/* Plein écran (01/10/2026) : posé dehors, collé sur le coin haut droit de
-            la barre (il en dépasse à moitié), icône discrète. Ouvre la même
+        {/* Plein écran (01/10/2026) : posé dehors, collé juste au-dessus du coin haut
+            droit de la barre, petite flèche sans bulle. Ouvre la même
             zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}
         <button
           type="button"
           onClick={() => setPleinEcranSaisie(true)}
           aria-label="Agrandir en plein écran"
           title="Plein écran"
-          className="absolute -right-2 -top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet opacity-80 shadow-sm transition-all hover:text-dj-texte hover:opacity-100"
+          className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
         >
-          <ArrowUpRight size={14} strokeWidth={1.75} />
+          <ArrowUpRight size={12} strokeWidth={1.75} />
         </button>
         <textarea
           ref={zoneTexteMobileRef}
@@ -2132,9 +2132,9 @@ export function BarreDeSaisie({
       {menuUtilitairesOuvert && (
         <div
           ref={menuUtilitairesMobileRef}
-          className="fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] z-40 flex max-h-[60vh] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
+          className="fixed bottom-[calc(6rem+var(--safe-bottom))] right-4 z-40 flex max-h-[45vh] w-64 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
         >
-          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-2">
+          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
             <span className="text-xs font-medium text-dj-texte-muet">Utilitaires</span>
             <button
               onClick={() => setMenuUtilitairesOuvert(false)}
@@ -2155,11 +2155,11 @@ export function BarreDeSaisie({
                     onClick={() => executerActionOutil(nom)}
                     disabled={nom === "ui_localisation" && localisationEnCours}
                     className={
-                      "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors " +
+                      "flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors " +
                       (actif ? "bg-dj-accent-1/10 text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute")
                     }
                   >
-                    <Icone size={16} />
+                    <Icone size={15} />
                     <span className="flex-1">{label}</span>
                     {actif && <Check size={14} />}
                   </button>
