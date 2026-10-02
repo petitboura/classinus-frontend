@@ -52,7 +52,7 @@ components/
                           chantier n'est pas terminé) ;
                           chat/barre/ (01/10/2026) : morceaux de la barre de saisie, le bouton "+" et son
                           menu (MenuPlus.tsx), le bouton "Réglages" avec ses lignes
-                          dépliables (BoutonReglages.tsx, LigneReglage.tsx), les données du mode
+                          dépliables et sa bulle des réglages actuels au survol (BoutonReglages.tsx, LigneReglage.tsx), les données du mode
                           pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
                           useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
                           de réglages partagées (reglagesReponse.ts) ;

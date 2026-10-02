@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Lock, X, Sparkles, AlignLeft, GraduationCap, BookOpen, KeyRound } from "lucide-react";
 import { LigneReglage } from "./LigneReglage";
 import {
@@ -63,7 +63,10 @@ function Choix({
  * choix juste en dessous, avec le choix actuel marqué. Une seule ligne est
  * dépliée à la fois : en ouvrir une replie l'autre.
  *
- * Sur PC une ligne se déplie au survol ET au clic. Sur mobile, au simple
+ * Sur PC, survoler le bouton fait apparaître une bulle aux couleurs de l'app
+ * qui liste les réglages actuels sans avoir à ouvrir le panneau (les lignes
+ * du panneau, elles, n'affichent aucune valeur). Sur PC une ligne se déplie
+ * au survol ET au clic. Sur mobile, au simple
  * appui. Le raccourci clavier "/" (champ vide, PC) ouvre directement le
  * bouton, sans déplier de ligne.
  *
@@ -95,8 +98,12 @@ export function BoutonReglages({
   modeActif: EtatModeActif;
 }) {
   const mobile = variante === "mobile";
+  const idBulle = useId();
   const [ouvert, setOuvert] = useState(false);
   const [ligneOuverte, setLigneOuverte] = useState<LigneId | null>(null);
+  // Bulle des réglages actuels, visible au survol souris du bouton (PC) tant
+  // que le panneau est fermé.
+  const [survolBouton, setSurvolBouton] = useState(false);
   const boutonRef = useRef<HTMLButtonElement>(null);
   const panneauRef = useRef<HTMLDivElement>(null);
   // Ligne dépliée par le survol de la souris : le clic qui suit ne doit pas la
@@ -107,23 +114,19 @@ export function BoutonReglages({
   const afficherPersona = eleveChoisitMode;
   const afficherCode = !modeActif.chargement && modeActif.rattachements.length > 0;
 
-  // Choix actuel de chaque ligne, montré à droite du titre et résumé dans
-  // l'infobulle du bouton.
+  // Choix actuel de chaque ligne, lu dans la bulle au survol du bouton.
   const valeurModele = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "Auto";
   const valeurLongueur = LABELS_LONGUEUR[longueur];
   const valeurPersona = PERSONAS.find((p) => p.id === pedagogie.persona)?.label ?? "Aucun mode";
   const valeurSource = MODES_SOURCE.find((m) => m.id === pedagogie.modeSource)?.label ?? "Aucun";
   const codeActif = modeActif.rattachements.find((r) => r.rattachement_id === modeActif.modeActifId);
   const valeurCode = codeActif ? codeActif.nom_code || codeActif.code : modeActif.choisi ? "Aucun mode" : "Aucun";
-  const resume = [
-    afficherModele && `Modèle : ${valeurModele}`,
-    `Longueur de réponse : ${valeurLongueur}`,
-    afficherPersona && `Mode pédagogique : ${valeurPersona}`,
-    `Modes ressources : ${valeurSource}`,
-    afficherCode && `Code enseignant : ${valeurCode}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const resume: { titre: string; valeur: string }[] = [];
+  if (afficherModele) resume.push({ titre: "Modèle", valeur: valeurModele });
+  resume.push({ titre: "Longueur de réponse", valeur: valeurLongueur });
+  if (afficherPersona) resume.push({ titre: "Mode pédagogique", valeur: valeurPersona });
+  resume.push({ titre: "Modes ressources", valeur: valeurSource });
+  if (afficherCode) resume.push({ titre: "Code enseignant", valeur: valeurCode });
 
   // Tout repli du panneau referme aussi la ligne dépliée.
   useEffect(() => {
@@ -204,7 +207,11 @@ export function BoutonReglages({
         aria-label="Réglages de la réponse"
         aria-haspopup="menu"
         aria-expanded={ouvert}
-        title={resume}
+        aria-describedby={mobile ? undefined : idBulle}
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse") setSurvolBouton(true);
+        }}
+        onPointerLeave={() => setSurvolBouton(false)}
         className={
           "flex items-center gap-1 rounded-cgpt-bouton transition-colors " +
           (mobile ? "h-11 px-2.5 text-sm " : "px-1.5 py-1 text-xs ") +
@@ -214,6 +221,24 @@ export function BoutonReglages({
         Réglages
         <ChevronDown size={12} className={"transition-transform duration-200 " + (ouvert ? "rotate-180" : "")} />
       </button>
+
+      {!mobile && (
+        <div
+          id={idBulle}
+          role="tooltip"
+          className={
+            "pointer-events-none absolute bottom-full right-0 z-40 mb-2 w-max max-w-[18rem] origin-bottom-right rounded-cgpt-bouton border border-dj-bordure bg-dj-surface p-2 text-[11px] shadow-xl transition-all duration-150 ease-cgpt-doux " +
+            (survolBouton && !ouvert ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0")
+          }
+        >
+          {resume.map((ligne) => (
+            <div key={ligne.titre} className="flex items-baseline justify-between gap-4 py-0.5">
+              <span className="text-dj-texte-muet">{ligne.titre}</span>
+              <span className="truncate text-dj-texte">{ligne.valeur}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div
         ref={panneauRef}
@@ -242,7 +267,7 @@ export function BoutonReglages({
         )}
         <div className={mobile ? "overflow-y-auto p-1" : ""}>
           {afficherModele && (
-            <LigneReglage Icone={Sparkles} titre="Modèle" valeur={valeurModele} {...ligneProps("modele")}>
+            <LigneReglage Icone={Sparkles} titre="Modèle" {...ligneProps("modele")}>
               <Choix
                 grand={mobile}
                 actif={!modeleSelectionne}
@@ -280,7 +305,7 @@ export function BoutonReglages({
             </LigneReglage>
           )}
 
-          <LigneReglage Icone={AlignLeft} titre="Longueur de réponse" valeur={valeurLongueur} {...ligneProps("longueur")}>
+          <LigneReglage Icone={AlignLeft} titre="Longueur de réponse" {...ligneProps("longueur")}>
             {NIVEAUX_LONGUEUR.map((valeur) => (
               <Choix
                 grand={mobile}
@@ -297,7 +322,7 @@ export function BoutonReglages({
           </LigneReglage>
 
           {afficherPersona && (
-            <LigneReglage Icone={GraduationCap} titre="Mode pédagogique" valeur={valeurPersona} {...ligneProps("persona")}>
+            <LigneReglage Icone={GraduationCap} titre="Mode pédagogique" {...ligneProps("persona")}>
               <Choix
                 grand={mobile}
                 actif={!pedagogie.persona}
@@ -324,7 +349,7 @@ export function BoutonReglages({
             </LigneReglage>
           )}
 
-          <LigneReglage Icone={BookOpen} titre="Modes ressources" valeur={valeurSource} {...ligneProps("source")}>
+          <LigneReglage Icone={BookOpen} titre="Modes ressources" {...ligneProps("source")}>
             <Choix
                 grand={mobile}
               actif={!pedagogie.modeSource}
@@ -351,7 +376,7 @@ export function BoutonReglages({
           </LigneReglage>
 
           {afficherCode && (
-            <LigneReglage Icone={KeyRound} titre="Code enseignant" valeur={valeurCode} {...ligneProps("code")}>
+            <LigneReglage Icone={KeyRound} titre="Code enseignant" {...ligneProps("code")}>
               {modeActif.verrouille && (
                 <p className="flex items-center gap-1.5 px-2 py-1 text-xs text-dj-texte-muet">
                   <Lock size={11} className="flex-shrink-0" />
