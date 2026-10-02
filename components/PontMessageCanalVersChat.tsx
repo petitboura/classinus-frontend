@@ -21,6 +21,7 @@
 import { useContext, useEffect, useRef } from "react";
 import { enregistrerRepliMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { ContexteChat } from "@/lib/contexteChat";
+import { enregistrerLecteurChat } from "@/lib/conversationPartagee";
 
 export function PontMessageCanalVersChat() {
   const ctxChat = useContext(ContexteChat);
@@ -38,6 +39,12 @@ export function PontMessageCanalVersChat() {
       ctxRef.current?.deposerMessageEnAttente(texte);
     });
     return () => enregistrerRepliMessageEtudiant(null);
+  }, []);
+
+  // Dit au canal et à la voix si un chat est à l'écran et sur quelle conversation.
+  useEffect(() => {
+    enregistrerLecteurChat(() => ctxRef.current?.etatChatAffiche() ?? { visible: false, conversationId: null });
+    return () => enregistrerLecteurChat(null);
   }, []);
 
   return null;

@@ -80,6 +80,10 @@
 	     meme si EKEventEditViewController gere lui-meme sa propre demande d'autorisation. -->
 	<key>NSCalendarsUsageDescription</key>
 	<string>Classinus peut t'aider à ajouter des événements à ton calendrier quand tu le lui demandes.</string>
+	<!-- 02/10/2026 (Bourama, voix en direct) : sans ce texte, iOS refuse l'acces au micro
+	     et la voix en direct (Gemini Live, lib/geminiLive.ts) ne peut pas demarrer. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Classinus utilise ton micro pour que tu puisses lui parler à voix haute.</string>
 	<!-- Reveil en arriere-plan pour la reception push APNs (voir AppDelegate.swift). -->
 	<key>UIBackgroundModes</key>
 	<array>

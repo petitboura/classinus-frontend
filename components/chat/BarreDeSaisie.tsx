@@ -27,6 +27,7 @@ import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
 import type { LongueurReponse } from "./barre/reglagesReponse";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
+import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -344,6 +345,23 @@ export function BarreDeSaisie({
   // dans le menu du "+", en plus du bouton flottant (masqué sur /chat).
   // Contexte nullable : la barre de saisie peut être montée hors AppShell.
   const canalEnDirect = useContext(ContexteCanalEnDirect);
+  // Mode vocal du menu des utilitaires : conversation vocale Gemini Live
+  // liée à la conversation du chat affichée.
+  // Depuis le 02/10/2026, la voix est une pièce partagée montée dans AppShell
+  // (lib/contexteVoixDirecte.tsx) : cette barre ne fait que la piloter.
+  const voixDirecte = useContext(ContexteVoixDirecte);
+  const geminiLive = {
+    etat: voixDirecte?.etat ?? "inactif",
+    erreur: voixDirecte?.erreur ?? null,
+    basculer: () => voixDirecte?.basculer(conversationId ?? null),
+  };
+  useEffect(() => {
+    if (geminiLive.erreur) alert(geminiLive.erreur);
+  }, [geminiLive.erreur]);
+  // La voix reste liée à la conversation affichée : elle s'arrête quand on
+  // change de conversation ou quand le chat se ferme.
+  const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
+  useEffect(() => () => fermerVoixPourConversation?.(conversationId ?? null), [conversationId, fermerVoixPourConversation]);
 
   useEffect(() => {
     if (!menuAppliOuvert) return;
@@ -373,6 +391,8 @@ export function BarreDeSaisie({
         return editeurMathsRicheOuvert;
       case "ui_dessin":
         return canvasOuvert;
+      case "ui_mode_vocal":
+        return geminiLive.etat !== "inactif" && geminiLive.etat !== "erreur";
       default:
         return false;
     }
@@ -396,7 +416,12 @@ export function BarreDeSaisie({
         setCanvasOuvert(true);
         break;
       case "ui_mode_vocal":
-        pasDisponible();
+        if (!conversationId) {
+          alert("Envoie d'abord un premier message pour lancer le mode vocal.");
+          break;
+        }
+        if (geminiLive.etat === "connexion") break;
+        geminiLive.basculer();
         break;
       case "ui_photo":
         inputPhotoRef.current?.click();

@@ -14,8 +14,10 @@ import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
-import { ContexteChat } from "@/lib/contexteChat";
+import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
+import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
 import { texteMessageAutomatique } from "@/lib/minuteurs";
 import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
@@ -625,6 +627,13 @@ export function ChatIA({
   // confirmation (repriseApresConfirmation) -- même flux d'événements SSE
   // dans les deux cas (voir core/main.py:chat(), docstring).
   function traiterEvenement(evenement: any) {
+    // Voix en direct (02/10/2026) : pendant un tour demandé par la voix, on
+    // garde le texte écrit de la réponse pour le lui renvoyer, sans rien
+    // changer à l'affichage du chat ci-dessous.
+    if (voixEnCoursRef.current || tourEcritSuiviRef.current) {
+      if (evenement.type === "reponse" && typeof evenement.texte === "string") texteTourVoixRef.current += evenement.texte;
+      else if (evenement.type === "reponse_annulee") texteTourVoixRef.current = "";
+    }
     if (evenement.type === "reponse") {
       // Le texte de la réponse arrive : la phase "outils" est terminée,
       // on efface les indicateurs de statut plutôt que de les laisser
@@ -824,6 +833,14 @@ export function ChatIA({
   // des que le chat est libre (voir lib/contexteChat.tsx, file de messages
   // en attente). Un seul message a la fois, le suivant attend la fin de la
   // reponse.
+  // Voix en direct : demande de la voix en cours de traitement et texte écrit
+  // de la réponse de Clovis pour ce tour (voir l'effet plus bas).
+  const voixEnCoursRef = useRef<DemandeVoixEnAttente | null>(null);
+  const texteTourVoixRef = useRef("");
+  // Tour déclenché par un message tapé (pas par la voix) : on garde aussi le
+  // texte de la réponse pour que la voix, si elle est active, en dise l'essentiel.
+  const tourEcritSuiviRef = useRef(false);
+  const voixDirecte = useContext(ContexteVoixDirecte);
   const ctxChatCanal = useContext(ContexteChat);
   const nbMessagesEnAttenteCanal = ctxChatCanal?.nbMessagesEnAttente ?? 0;
   // Canal en direct, suite (19/09/2026, decision Bourama : "dès que le
@@ -840,6 +857,37 @@ export function ChatIA({
     if (texte) void envoyerMessage(texte, "moyenne", []);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbMessagesEnAttenteCanal, genEnCours, affichageEnCours, accesBloqueMineur]);
+
+  // Voix en direct (02/10/2026, demande Bourama) : la voix est un
+  // interprète. Sa demande part ici comme un vrai message du chat, donc la
+  // question et la réponse s'affichent en direct dans la conversation, et la
+  // réponse écrite de Clovis est ensuite renvoyée à la voix pour qu'elle la
+  // résume. Un seul tour à la fois : la demande attend que le chat soit
+  // libre, comme la file du canal.
+  const enregistrerChatPourVoix = ctxChatCanal?.enregistrerChatPourVoix;
+  useEffect(() => enregistrerChatPourVoix?.(conversationId), [enregistrerChatPourVoix, conversationId]);
+  // Recopie la conversation pour que le canal et la voix la poursuivent à
+  // l'identique quand ce chat est masqué ou fermé (tours directs).
+  useEffect(() => {
+    if (conversationId && !genEnCours) ecrireEtatDepuisChat(conversationId, messages);
+  }, [conversationId, messages, genEnCours]);
+  const nbDemandesVoix = ctxChatCanal?.nbDemandesVoixEnAttente ?? 0;
+  useEffect(() => {
+    if (!ctxChatCanal || nbDemandesVoix === 0) return;
+    if (genEnCours || affichageEnCours || accesBloqueMineur) return;
+    const demande = ctxChatCanal.prendreDemandeVoix(conversationId);
+    if (!demande) return;
+    texteTourVoixRef.current = "";
+    voixEnCoursRef.current = demande;
+    envoyerMessage(demande.texte, "moyenne", [])
+      .then(() => demande.resoudre(texteTourVoixRef.current.trim()))
+      .catch((e) => demande.rejeter(e instanceof Error ? e : new Error("Erreur lors de l'envoi au chat.")))
+      .finally(() => {
+        if (voixEnCoursRef.current === demande) voixEnCoursRef.current = null;
+        texteTourVoixRef.current = "";
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
+  }, [nbDemandesVoix, genEnCours, affichageEnCours, accesBloqueMineur]);
 
   // Minuteurs du chat (20/09/2026, demande Bourama). Tant que ce chat est
   // ouvert, il peut recevoir la fin d'un minuteur (sans lui, le serveur
@@ -1144,6 +1192,11 @@ export function ChatIA({
       }
     }
 
+    if (!automatique && !voixEnCoursRef.current) {
+      texteTourVoixRef.current = "";
+      tourEcritSuiviRef.current = true;
+    }
+
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
@@ -1206,6 +1259,7 @@ export function ChatIA({
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
+      if (tourEcritSuiviRef.current) voixDirecte?.annoncerReponse(conversationId, texteTourVoixRef.current);
     } catch (e) {
       reinitialiserAffichageControle();
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1228,6 +1282,10 @@ export function ChatIA({
     } finally {
       controleurAbandonRef.current = null;
       setGenEnCours(false);
+      if (tourEcritSuiviRef.current) {
+        tourEcritSuiviRef.current = false;
+        texteTourVoixRef.current = "";
+      }
       // Correctif 12/09/2026 (voir appliquerEvenementOutil, cas
       // "raisonnement") : si le tout dernier événement de la génération
       // était un raisonnement mis en file (texte précédent encore en

@@ -36,6 +36,12 @@ components/
   AppSidebar.tsx          sidebar desktop (Bureau/Bibliothèque/Notes en direct, groupes
                           "Personnaliser Clovis" et "Scolarité") ; repliée par défaut, elle se
                           déplie au survol du bouton "Classinus" par-dessus la page, sans la décaler
+  voix/                   voix en direct (Gemini Live) : OndeVoix (onde dessinée, trois aspects selon l'état)
+                          et VoixDirecteSuperposition (onde plein écran dans le chat, bulle réduite,
+                          bulle qui suit le curseur de Classinus quand le canal en direct est actif).
+                          Aucun texte d'état à l'écran. Session unique partagée : lib/contexteVoixDirecte.tsx,
+                          montée dans AppShell ; réglages (modèle, consignes, relances) côté serveur
+                          dans core/gemini_live_config.py.
   mobile/
     BarreOngletsNative.tsx  vraie barre d'onglets système (plugin Capgo, pas une barre CSS/React) :
                              Bibliothèque, Contrôle de session, Chat (au milieu), Notes, Personnaliser

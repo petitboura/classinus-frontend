@@ -159,6 +159,43 @@ type ContexteChatValeur = {
   nbMessagesEnAttente: number;
   deposerMessageEnAttente: (texte: string) => void;
   prendreMessageEnAttente: () => string | null;
+  // Voix en direct (02/10/2026, demande Bourama) : la voix est un
+  // interprète, elle ne doit pas travailler en cachette. Sa demande part
+  // comme un vrai message du chat (visible en direct dans la conversation)
+  // et la réponse écrite de Clovis revient à la voix, qui la résume. Un
+  // chat monté se déclare prêt avec enregistrerChatPourVoix ; sans chat
+  // prêt, la voix garde son ancien chemin direct vers le serveur.
+  // La demande n'est confiée qu'au chat qui affiche la MÊME conversation que
+  // la voix, pour ne jamais écrire dans une autre conversation.
+  chatPretPourVoix: (conversationId: string) => boolean;
+  // Un chat est-il à l'écran, et sur quelle conversation (null = pas encore créée).
+  etatChatAffiche: () => { visible: boolean; conversationId: string | null };
+  enregistrerChatPourVoix: (conversationId: string | null) => () => void;
+  nbDemandesVoixEnAttente: number;
+  deposerDemandeVoix: (texte: string, conversationId: string) => Promise<string>;
+  prendreDemandeVoix: (conversationId: string | null) => DemandeVoixEnAttente | null;
+};
+
+// Levée quand le chat qui devait recevoir une demande de la voix disparaît
+// avant de l'avoir prise (page quittée, popup fermé).
+export class ChatIndisponiblePourVoix extends Error {
+  constructor() {
+    super("Le chat n'est plus disponible pour la voix.");
+    this.name = "ChatIndisponiblePourVoix";
+  }
+}
+
+// Vrai quand l'écran de l'utilisateur affiche vraiment l'appli : onglet
+// visible (onglet ou fenêtre ni réduit ni masqué).
+function ecranVisible(): boolean {
+  return typeof document === "undefined" || document.visibilityState === "visible";
+}
+
+export type DemandeVoixEnAttente = {
+  texte: string;
+  conversationId: string;
+  resoudre: (reponse: string) => void;
+  rejeter: (erreur: Error) => void;
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
@@ -198,6 +235,53 @@ export function useFournirContexteChat(): ContexteChatValeur {
     const texte = messagesEnAttenteRef.current.shift() ?? null;
     setNbMessagesEnAttente(messagesEnAttenteRef.current.length);
     return texte;
+  }, []);
+
+  // Voix en direct : file des demandes de la voix, même principe que la
+  // file des messages du canal (un ref atomique, le state ne sert qu'à
+  // réveiller l'effet du chat).
+  const demandesVoixRef = useRef<DemandeVoixEnAttente[]>([]);
+  const chatsPretsVoixRef = useRef<(string | null)[]>([]);
+  const [nbDemandesVoixEnAttente, setNbDemandesVoixEnAttente] = useState(0);
+  // Un chat n'est prêt pour la voix que s'il est monté sur cette conversation
+  // ET réellement à l'écran (onglet visible, fenêtre non réduite ni masquée).
+  // Sinon la voix prend le chemin direct et la réponse reste à la voix.
+  const chatPretPourVoix = useCallback(
+    (conversationId: string) => chatsPretsVoixRef.current.includes(conversationId) && ecranVisible(),
+    []
+  );
+  const etatChatAffiche = useCallback(() => {
+    const ids = chatsPretsVoixRef.current;
+    return { visible: ids.length > 0 && ecranVisible(), conversationId: ids.find((id) => id) ?? null };
+  }, []);
+  const enregistrerChatPourVoix = useCallback((conversationId: string | null) => {
+    chatsPretsVoixRef.current.push(conversationId);
+    return () => {
+      const i = chatsPretsVoixRef.current.indexOf(conversationId);
+      if (i >= 0) chatsPretsVoixRef.current.splice(i, 1);
+      // Dernier chat de cette conversation parti : les demandes de la voix qui
+      // l'attendaient ne seront jamais prises. On les rend à la voix, qui
+      // reprend alors le chemin direct au lieu de rester bloquée.
+      if (!conversationId || chatsPretsVoixRef.current.includes(conversationId)) return;
+      const orphelines = demandesVoixRef.current.filter((d) => d.conversationId === conversationId);
+      if (orphelines.length === 0) return;
+      demandesVoixRef.current = demandesVoixRef.current.filter((d) => d.conversationId !== conversationId);
+      setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+      orphelines.forEach((d) => d.rejeter(new ChatIndisponiblePourVoix()));
+    };
+  }, []);
+  const deposerDemandeVoix = useCallback((texte: string, conversationId: string) => {
+    return new Promise<string>((resoudre, rejeter) => {
+      demandesVoixRef.current.push({ texte, conversationId, resoudre, rejeter });
+      setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+    });
+  }, []);
+  const prendreDemandeVoix = useCallback((conversationId: string | null): DemandeVoixEnAttente | null => {
+    const i = demandesVoixRef.current.findIndex((d) => d.conversationId === conversationId);
+    if (i < 0) return null;
+    const [demande] = demandesVoixRef.current.splice(i, 1);
+    setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+    return demande;
   }, []);
 
   // Étape 1 -- état de la conversation, avant local à ChatFlottant.tsx.
@@ -364,6 +448,12 @@ export function useFournirContexteChat(): ContexteChatValeur {
       nbMessagesEnAttente,
       deposerMessageEnAttente,
       prendreMessageEnAttente,
+      chatPretPourVoix,
+      etatChatAffiche,
+      enregistrerChatPourVoix,
+      nbDemandesVoixEnAttente,
+      deposerDemandeVoix,
+      prendreDemandeVoix,
       chargement,
       setChargement,
       erreur,
@@ -402,6 +492,12 @@ export function useFournirContexteChat(): ContexteChatValeur {
       nbMessagesEnAttente,
       deposerMessageEnAttente,
       prendreMessageEnAttente,
+      chatPretPourVoix,
+      etatChatAffiche,
+      enregistrerChatPourVoix,
+      nbDemandesVoixEnAttente,
+      deposerDemandeVoix,
+      prendreDemandeVoix,
       chargement,
       erreur,
       agent,
