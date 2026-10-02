@@ -118,7 +118,7 @@ export function MenuElementConfiguration({
 
   return (
     <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="flex flex-shrink-0 items-center">
-      <MenuActionsCarte actions={actions} ariaLabel={texteConfiguration("menu.aria")} />
+      <MenuActionsCarte actions={actions} ariaLabel={texteConfiguration("menu.aria")} contraste portail />
 
       {(codesOuvert || codesEnSortie) &&
         createPortal(
@@ -155,7 +155,7 @@ export function MenuElementConfiguration({
             style={{ bottom: "calc(1.25rem + var(--cap-native-navigation-bottom,0px) + var(--dj-barre-onglets-web,0px))" }}
           >
             <p
-              className={`max-w-full animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface px-4 py-2.5 text-sm shadow-[0_4px_20px_rgba(0,0,0,0.35)] ${
+              className={`max-w-full animate-dj-fade-in-rapide rounded-xl border border-dj-bordure-forte bg-dj-surface px-4 py-2.5 text-sm shadow-[0_8px_30px_rgba(0,0,0,0.5)] ${
                 retour.erreur ? "text-[var(--dj-erreur)]" : "text-dj-texte"
               }`}
             >

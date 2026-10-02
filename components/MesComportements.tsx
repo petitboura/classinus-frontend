@@ -122,7 +122,7 @@ export function ChipComportement({
             bulle ne doit pas lui voler ce clic -- seul le survol la révèle
             ici (le clic reste géré par le bouton parent). */}
         <div className="min-w-0 flex-1">
-          <BulleSurvol texte={c.description || "(pas de description)"} className="truncate text-sm text-dj-texte" revelerAuClic={false}>
+          <BulleSurvol texte={c.description || "(pas de description)"} className="block truncate text-sm text-dj-texte" revelerAuClic={false}>
             {c.nom || c.description}
           </BulleSurvol>
         </div>

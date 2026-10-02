@@ -48,7 +48,7 @@ export function CarteProcedure({ c, onOuvrir, onToggleActif, menu }: PropsElemen
       <div className="flex items-center gap-2">
         <ListOrdered size={15} className="flex-shrink-0 text-dj-texte-muet" />
         <div className="min-w-0 flex-1">
-          <BulleSurvol texte={c.description || c.nom} className="truncate text-sm font-medium text-dj-texte" revelerAuClic={false}>
+          <BulleSurvol texte={c.description || c.nom} className="block truncate text-sm font-medium text-dj-texte" revelerAuClic={false}>
             {c.nom || etapes[0]}
           </BulleSurvol>
         </div>
@@ -62,7 +62,7 @@ export function CarteProcedure({ c, onOuvrir, onToggleActif, menu }: PropsElemen
         {apercu.map((e, i) => (
           <li key={i} className="flex items-start gap-2 text-xs text-dj-texte-muet">
             <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-dj-bordure text-[10px]">{i + 1}</span>
-            <span className="line-clamp-1 min-w-0 flex-1">{e}</span>
+            <span className="line-clamp-1 min-w-0 flex-1 break-words">{e}</span>
           </li>
         ))}
         {etapes.length > apercu.length && <li className="pl-6 text-[11px] text-dj-texte-muet">{texteAutresEtapes(etapes.length - apercu.length)}</li>}
@@ -80,7 +80,7 @@ export function LigneRegle({ c, onOuvrir, onToggleActif, menu }: PropsElement) {
       className={`flex w-full items-center gap-3 px-1 py-2.5 text-left transition-colors hover:bg-dj-surface-haute ${c.actif ? "" : "opacity-50"}`}
     >
       <Scale size={14} className="flex-shrink-0 text-dj-texte-muet" />
-      <span className="min-w-0 flex-1 text-sm text-dj-texte">{c.texte}</span>
+      <span className="min-w-0 flex-1 break-words text-sm text-dj-texte">{c.texte}</span>
       <Bascule c={c} onToggleActif={onToggleActif} />
         {menu}
     </ZoneCliquable>
@@ -95,7 +95,7 @@ export function CarteComportement({ c, onOuvrir, onToggleActif, menu }: PropsEle
       <div className="flex items-center gap-2">
         <UserCog size={15} className="flex-shrink-0 text-dj-texte-muet" />
         <div className="min-w-0 flex-1">
-          <BulleSurvol texte={c.description || c.nom} className="truncate text-sm font-medium text-dj-texte" revelerAuClic={false}>
+          <BulleSurvol texte={c.description || c.nom} className="block truncate text-sm font-medium text-dj-texte" revelerAuClic={false}>
             {c.nom || cas || reaction}
           </BulleSurvol>
         </div>
@@ -105,13 +105,13 @@ export function CarteComportement({ c, onOuvrir, onToggleActif, menu }: PropsEle
       {cas && (
         <div className="flex flex-col gap-0.5">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-dj-texte-muet">{texteConfiguration("comportement.cas.libelle")}</span>
-          <span className="line-clamp-2 text-sm text-dj-texte">{cas}</span>
+          <span className="line-clamp-2 break-words text-sm text-dj-texte">{cas}</span>
         </div>
       )}
       {cas && <ArrowDown size={14} className="text-dj-texte-muet" />}
       <div className="flex flex-col gap-0.5">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-dj-texte-muet">{texteConfiguration("comportement.reaction.libelle")}</span>
-        <span className="line-clamp-3 text-sm text-dj-texte">{reaction}</span>
+        <span className="line-clamp-3 break-words text-sm text-dj-texte">{reaction}</span>
       </div>
     </ZoneCliquable>
   );
@@ -124,14 +124,14 @@ export function CarteStyle({ c, onOuvrir, onToggleActif, menu }: PropsElement) {
       <div className="flex items-center gap-2">
         <Feather size={15} className="flex-shrink-0 text-dj-texte-muet" />
         <div className="min-w-0 flex-1">
-          <BulleSurvol texte={c.description || c.nom} className="truncate text-sm font-medium text-dj-texte" revelerAuClic={false}>
+          <BulleSurvol texte={c.description || c.nom} className="block truncate text-sm font-medium text-dj-texte" revelerAuClic={false}>
             {c.nom || c.texte}
           </BulleSurvol>
         </div>
         <Bascule c={c} onToggleActif={onToggleActif} />
         {menu}
       </div>
-      <blockquote className="line-clamp-4 border-l-2 border-dj-bordure-forte pl-3 font-lecture text-sm italic text-dj-texte-muet">
+      <blockquote className="line-clamp-4 break-words border-l-2 border-dj-bordure-forte pl-3 font-lecture text-sm italic text-dj-texte-muet">
         « {c.texte} »
       </blockquote>
     </ZoneCliquable>
