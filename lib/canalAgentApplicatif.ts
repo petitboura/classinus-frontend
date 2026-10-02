@@ -697,17 +697,28 @@ function traiterMessage(message: unknown) {
     if (canalEnDirectEstActif()) traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
-  } else if (m.id && m.pointer_ecran) {
-    void traiterPointageEcran(m.id, m.pointer_ecran);
   } else if (
     m.id &&
     !canalEnDirectEstActif() &&
-    (m.lire_page === true || m.editeur !== undefined || m.action_id || m.selecteur_generique || m.montrer_action_id)
+    (
+      m.lire_page === true ||
+      m.editeur !== undefined ||
+      m.action_id ||
+      m.selecteur_generique ||
+      m.montrer_action_id ||
+      m.pointer_ecran ||
+      m.action_systeme
+    )
   ) {
     // Canal désactivé (30/09/2026, demande Bourama : c'est fini, plus aucune
     // réponse) : lecture de page, éditeur, clic, écriture et pointage sont
-    // tous ignorés, rien ne s'exécute ni ne se lit.
+    // tous ignorés, rien ne s'exécute ni ne se lit. 02/10/2026, demande
+    // Bourama : même règle pour les actions sur le PC (pointage, clic,
+    // clavier, ouverture d'application, lecture de l'écran), relayées par
+    // le renderer principal Electron.
     envoyerReponse(m.id, { ignore: true });
+  } else if (m.id && m.pointer_ecran) {
+    void traiterPointageEcran(m.id, m.pointer_ecran);
   } else if (m.id && m.lire_page === true) {
     traiterDemandeLecturePage(m.id, m.longueur_max);
   } else if (m.id && m.editeur !== undefined) {

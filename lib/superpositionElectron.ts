@@ -25,6 +25,8 @@ import {
   afficherTexteDepuisAgent,
   type ValeurCanalEnDirect,
 } from "@/lib/contexteCanalEnDirect";
+import type { ContexteVoixDirecteValeur } from "@/lib/contexteVoixDirecte";
+import { conversationActive } from "@/lib/conversationPartagee";
 
 export interface MarqueEcranAffichee {
   id: string;
@@ -41,6 +43,10 @@ export interface EtatSuperposition {
   pointageId?: string;
   informationId?: string;
   curseur: { x: number; y: number; echelle: number; visible: boolean; forme: string; enAction: boolean };
+  // Voix en direct (02/10/2026) : la session vit dans la fenêtre principale,
+  // la superposition n'en reçoit que l'état et les niveaux sonores pour
+  // dessiner la bulle de l'onde à côté du curseur, comme sur le site.
+  voix?: { actif: boolean; etat: string; niveaux: { entree: number; sortie: number } };
   canal: {
     actif: boolean;
     modeInteraction: string;
@@ -53,6 +59,10 @@ export interface EtatSuperposition {
   };
 }
 
+// Fréquence d'envoi des niveaux sonores vers la bulle de voix (environ 20 fois
+// par seconde, l'onde lisse ensuite entre deux envois).
+const INTERVALLE_NIVEAUX_VOIX_MS = 50;
+
 interface ActionSuperposition {
   repere?: "page" | "ecran";
   fonction:
@@ -64,6 +74,7 @@ interface ActionSuperposition {
     | "choisirModeInteraction"
     | "choisirMoteurDictee"
     | "envoyerMessageEtudiant"
+    | "basculerVoix"
     | "deposerCurseur";
   args: unknown[];
 }
@@ -140,10 +151,25 @@ export function estDansFenetreSuperposition(): boolean {
  * curseur, animés en continu par framer-motion) et écoute les
  * interactions relayées depuis la superposition.
  */
-export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: ValeurCanalEnDirect) {
-  const refValeurs = useRef({ curseur, canal });
-  refValeurs.current = { curseur, canal };
+export function useEmetteurSuperposition(
+  curseur: ValeurCurseurVirtuel,
+  canal: ValeurCanalEnDirect,
+  voix: ContexteVoixDirecteValeur | null = null
+) {
+  const refValeurs = useRef({ curseur, canal, voix });
+  refValeurs.current = { curseur, canal, voix };
+  const envoyerRef = useRef<(() => void) | null>(null);
   useJournalActionsSysteme();
+
+  // Comme sur le site (ControlesInteractionCanal.tsx) : désactiver le canal
+  // coupe la voix liée à sa conversation. Sur Electron, les contrôles vivent
+  // dans la superposition, donc cette coupure doit se faire ici.
+  const conversationCanal = canal.actif ? canal.conversationId : null;
+  const fermerVoixPourConversation = voix?.fermerPourConversation;
+  useEffect(() => {
+    if (!surElectron()) return;
+    return () => fermerVoixPourConversation?.(conversationCanal);
+  }, [conversationCanal, fermerVoixPourConversation]);
 
   useEffect(() => {
     if (!surElectron()) return;
@@ -161,6 +187,15 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
           enAction: curseur.enAction,
           repere: curseur.repere?.get() ?? "page",
         },
+        // Les niveaux ne servent qu'à la bulle du canal : hors canal actif,
+        // inutile de lire la session à chaque envoi.
+        voix: voix
+          ? {
+              actif: voix.actif,
+              etat: voix.etat,
+              niveaux: voix.actif && canal.actif ? voix.lireNiveaux() : { entree: 0, sortie: 0 },
+            }
+          : undefined,
         canal: {
           actif: canal.actif,
           modeInteraction: canal.modeInteraction,
@@ -185,6 +220,7 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
       });
     };
 
+    envoyerRef.current = pousser;
     pousser();
     // deplacerVers anime x/y/echelle en continu (plusieurs fois par
     // trajectoire) : écouter ces MotionValue directement plutôt que de
@@ -196,6 +232,7 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
     const retraitRepere = curseur.repere?.on("change", pousser);
     return () => {
       annule = true;
+      envoyerRef.current = null;
       retraitX();
       retraitY();
       retraitEchelle();
@@ -204,6 +241,8 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
   }, [
     curseur,
     canal,
+    voix?.actif,
+    voix?.etat,
     curseur.visible,
     curseur.forme,
     curseur.enAction,
@@ -216,6 +255,16 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
     canal.conversationId,
     canal.journal,
   ]);
+
+  // Niveaux sonores de la voix : tant que la bulle de voix est affichée dans
+  // la superposition (voix et canal actifs), renvoyer l'état quelques fois par
+  // seconde pour que l'onde suive la voix. Rien ne tourne autrement.
+  const bulleVoixAffichee = surElectron() && Boolean(voix?.actif) && canal.actif;
+  useEffect(() => {
+    if (!bulleVoixAffichee) return;
+    const minuteur = setInterval(() => envoyerRef.current?.(), INTERVALLE_NIVEAUX_VOIX_MS);
+    return () => clearInterval(minuteur);
+  }, [bulleVoixAffichee]);
 
   // Fenêtre principale quittée (déconnexion, page de connexion) : plus
   // personne ne répondrait au bouton permanent de la superposition, qui doit
@@ -267,6 +316,11 @@ export function useEmetteurSuperposition(curseur: ValeurCurseurVirtuel, canal: V
           if (typeof action.args[0] === "number" && typeof action.args[1] === "number") {
             c.deposerPoint?.({ x: action.args[0], y: action.args[1] }, action.repere ?? "page");
           }
+          break;
+        case "basculerVoix":
+          // Même appel que le bouton du canal sur le site : la conversation
+          // partagée (celle du chat affiché) prime sur celle de la superposition.
+          refValeurs.current.voix?.basculer(conversationActive() ?? ((action.args[0] as string | null | undefined) ?? null));
           break;
         case "envoyerMessageEtudiant":
           // Import dynamique : évite un cycle statique avec
@@ -382,4 +436,5 @@ export const interactionsSuperposition = {
   desactiver: () => relayerInteraction("desactiver"),
   choisirModeInteraction: (mode: "voix" | "texte") => relayerInteraction("choisirModeInteraction", mode),
   choisirMoteurDictee: (moteur: "whisper" | "navigateur") => relayerInteraction("choisirMoteurDictee", moteur),
+  basculerVoix: (conversationId: string | null) => relayerInteraction("basculerVoix", conversationId),
 };

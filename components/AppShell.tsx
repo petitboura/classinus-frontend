@@ -106,16 +106,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // layout racine pour survivre à tout changement de section -- voir
   // lib/contexteCanalEnDirect.tsx.
   const canalEnDirectValeur = useFournirCanalEnDirect();
-  // Lot R (27/09/2026, voir plan-canal-en-direct-pc.md) : pousse cet état
-  // vers la fenêtre de superposition Electron (ne fait rien ailleurs que
-  // sur la plateforme "electron", voir lib/superpositionElectron.ts).
-  useEmetteurSuperposition(curseurVirtuelValeur, canalEnDirectValeur);
   // Voix en direct (02/10/2026) : une seule session pour toute l'appli, voir
   // lib/contexteVoixDirecte.tsx.
   const voixDirecteValeur = useFournirVoixDirecte({
     chatPretPourVoix: contexteChatValeur.chatPretPourVoix,
     deposerDemandeVoix: contexteChatValeur.deposerDemandeVoix,
   });
+  // Lot R (27/09/2026, voir plan-canal-en-direct-pc.md) : pousse cet état
+  // vers la fenêtre de superposition Electron (ne fait rien ailleurs que
+  // sur la plateforme "electron", voir lib/superpositionElectron.ts). Depuis
+  // le 02/10/2026, y compris l'état de la voix en direct, pour que sa bulle
+  // suive le curseur dans la superposition comme sur le site.
+  useEmetteurSuperposition(curseurVirtuelValeur, canalEnDirectValeur, voixDirecteValeur);
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);

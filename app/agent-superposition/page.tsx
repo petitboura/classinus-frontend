@@ -28,16 +28,23 @@
 // inactif seul le bouton d'activation (CanalEnDirectFlottant) est dessiné.
 // Le curseur, la bulle, le bouton du journal et les marques apparaissent avec
 // une transition à l'activation du canal et disparaissent à sa désactivation.
+//
+// Voix en direct (02/10/2026, demande Bourama) : même comportement que sur le
+// site pour le canal, c'est à dire une petite bulle d'onde qui suit le curseur
+// (components/voix/VoixDirecteSuperposition.tsx). La session reste dans la
+// fenêtre principale, cette page n'en reçoit que l'état et les niveaux.
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { MarquesEcranAgent } from "@/components/MarquesEcranAgent";
+import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
 import { ContexteCurseurVirtuel, type ValeurCurseurVirtuel, type FormeCurseur } from "@/lib/contexteCurseurVirtuel";
 import { ContexteCanalEnDirect, type ValeurCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { ContexteVoixDirecte, type ContexteVoixDirecteValeur, type EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import {
   marquerFenetreSuperposition,
   ecouterEtatSuperposition,
@@ -51,6 +58,14 @@ type CanalAffichage = Pick<
   ValeurCanalEnDirect,
   "actif" | "modeInteraction" | "moteurDictee" | "dernierTexte" | "reponseVisible" | "derniereReponse" | "conversationId" | "journal"
 >;
+
+type VoixAffichage = { actif: boolean; etat: EtatVoixDirecte };
+
+const ETAT_VOIX_INITIAL: VoixAffichage = { actif: false, etat: "inactif" };
+
+// Part du chemin parcouru vers le niveau reçu à chaque image : les niveaux
+// n'arrivent qu'environ 20 fois par seconde, l'onde est dessinée à chaque image.
+const LISSAGE_NIVEAUX = 0.35;
 
 const ETAT_CANAL_INITIAL: CanalAffichage = {
   actif: false,
@@ -74,6 +89,11 @@ export default function PageAgentSuperposition() {
   });
   const [canal, setCanal] = useState(ETAT_CANAL_INITIAL);
   const [marques, setMarques] = useState<MarqueEcranAffichee[]>([]);
+  const [voix, setVoix] = useState<VoixAffichage>(ETAT_VOIX_INITIAL);
+  // Niveaux sonores reçus (cible) et niveaux affichés (lissés), lus par l'onde
+  // à chaque image sans repasser par React.
+  const niveauxCibleRef = useRef({ entree: 0, sortie: 0 });
+  const niveauxAfficheRef = useRef({ entree: 0, sortie: 0 });
   // Dernière position reçue : ne relayer que les vrais glissements.
   const dernierePositionRecue = useRef({ x: 0, y: 0 });
 
@@ -82,6 +102,12 @@ export default function PageAgentSuperposition() {
     return ecouterEtatSuperposition((etat: EtatSuperposition) => {
       dernierePositionRecue.current = { x: etat.curseur.x, y: etat.curseur.y };
       setMarques(Array.isArray(etat.marques) ? etat.marques : []);
+      setVoix((precedent) => {
+        const actif = etat.voix?.actif ?? false;
+        const etatVoix = (etat.voix?.etat ?? "inactif") as EtatVoixDirecte;
+        return precedent.actif === actif && precedent.etat === etatVoix ? precedent : { actif, etat: etatVoix };
+      });
+      niveauxCibleRef.current = etat.voix?.niveaux ?? { entree: 0, sortie: 0 };
       x.set(etat.curseur.x);
       y.set(etat.curseur.y);
       echelle.set(etat.curseur.echelle);
@@ -132,6 +158,37 @@ export default function PageAgentSuperposition() {
     return () => window.removeEventListener("mousemove", surDeplacement);
   }, []);
 
+  const lireNiveauxVoix = useCallback(() => {
+    const cible = niveauxCibleRef.current;
+    const affiche = niveauxAfficheRef.current;
+    affiche.entree += (cible.entree - affiche.entree) * LISSAGE_NIVEAUX;
+    affiche.sortie += (cible.sortie - affiche.sortie) * LISSAGE_NIVEAUX;
+    return { entree: affiche.entree, sortie: affiche.sortie };
+  }, []);
+
+  // Voix en direct : la session vit dans la fenêtre principale, ici seulement
+  // un miroir. L'onde n'est jamais dessinée en plein écran dans cette fenêtre
+  // (ce serait par dessus tout le PC) : seule la bulle du canal y apparaît,
+  // donc la voix n'est exposée comme active que tant que le canal l'est aussi.
+  // Le bouton voix des contrôles du canal relaie vers la fenêtre principale.
+  const valeurVoix = useMemo<ContexteVoixDirecteValeur>(
+    () => ({
+      etat: voix.etat,
+      actif: voix.actif && canal.actif,
+      erreur: null,
+      reduit: false,
+      reduire: () => {},
+      agrandir: () => {},
+      lireNiveaux: lireNiveauxVoix,
+      ouvrir: async () => {},
+      fermer: () => {},
+      fermerPourConversation: () => {},
+      basculer: (conversationId) => interactionsSuperposition.basculerVoix(conversationId),
+      annoncerReponse: () => {},
+    }),
+    [voix.etat, voix.actif, canal.actif, lireNiveauxVoix]
+  );
+
   const valeurCurseur: ValeurCurseurVirtuel = {
     x,
     y,
@@ -177,6 +234,7 @@ export default function PageAgentSuperposition() {
   return (
     <ContexteCurseurVirtuel.Provider value={valeurCurseur}>
       <ContexteCanalEnDirect.Provider value={valeurCanal}>
+       <ContexteVoixDirecte.Provider value={valeurVoix}>
         <AnimatePresence>
           {canal.actif && (
             <motion.div
@@ -190,10 +248,12 @@ export default function PageAgentSuperposition() {
               <CurseurVirtuelAgent />
               <BulleDialogueAgent />
               <BoutonJournalAgent />
+              <VoixDirecteSuperposition />
             </motion.div>
           )}
         </AnimatePresence>
         <CanalEnDirectFlottant />
+       </ContexteVoixDirecte.Provider>
       </ContexteCanalEnDirect.Provider>
     </ContexteCurseurVirtuel.Provider>
   );
