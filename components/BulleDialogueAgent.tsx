@@ -53,6 +53,7 @@ import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { COUCHE_AGENT_BULLE } from "@/lib/couchesAgent";
+import { BandeauReponseInterrompue } from "@/components/chat/BandeauReponseInterrompue";
 
 // Chargé à la demande : le rendu complet (code, formules, schémas) est
 // lourd et la bulle vit au niveau du layout racine, donc sur toutes les pages. Ce code
@@ -87,7 +88,11 @@ export function BulleDialogueAgent() {
   const actif = contexte?.actif ?? false;
   const reponse = actif && contexte?.reponseVisible ? contexte.derniereReponse : null;
   const info = actif && !reponse ? (contexte?.dernierTexte ?? null) : null;
-  const contenuPresent = !!(reponse || info);
+  // Interruption (02/10/2026, demande Bourama) : après un arrêt, la bulle affiche
+  // « Réponse interrompue » avec Continuer et Réessayer, comme le chat mais sans
+  // Modifier. Elle reste là tant que l'étudiant n'a pas choisi (ou envoyé autre chose).
+  const interrompue = actif && !!contexte?.interrompue;
+  const contenuPresent = !!(reponse || info || interrompue);
   const largeurMax = reponse ? LARGEUR_MAX_REPONSE : LARGEUR_MAX_INFO;
   const curseurVisible = curseur?.visible ?? false;
   const curseurX = curseur?.x;
@@ -317,8 +322,15 @@ export function BulleDialogueAgent() {
                 onRepondreQuestion={repondreQuestion}
                 questionDejaRepondue={questionDejaRepondue}
               />
-            ) : (
+            ) : info ? (
               <p className="whitespace-pre-wrap">{info}</p>
+            ) : null}
+            {interrompue && (
+              <BandeauReponseInterrompue
+                enAttente={false}
+                onContinuer={contexte.continuerApresArret}
+                onReessayer={contexte.reessayerApresArret}
+              />
             )}
           </div>
           {reponse && (
