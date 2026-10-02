@@ -7,14 +7,14 @@ import type { LucideIcon } from "lucide-react";
 /**
  * Une ligne du bouton Réglages : un titre avec son icône, qui déplie ses
  * choix juste en dessous. Ce n'est pas un bouton d'action, seulement un titre
- * qui s'ouvre. Une seule ligne est dépliée à la fois (géré par le parent,
- * BoutonReglages.tsx). Le dépliage glisse et s'estompe, jamais d'affichage
- * brut.
+ * qui s'ouvre, sans aucune valeur affichée (les réglages actuels se lisent
+ * dans la bulle au survol du bouton Réglages). Une seule ligne est dépliée à
+ * la fois (géré par le parent, BoutonReglages.tsx). Le dépliage glisse et
+ * s'estompe, jamais d'affichage brut.
  */
 export function LigneReglage({
   Icone,
   titre,
-  valeur,
   ouverte,
   grand,
   onSurvol,
@@ -23,9 +23,6 @@ export function LigneReglage({
 }: {
   Icone: LucideIcon;
   titre: string;
-  // Choix actuellement appliqué, affiché à droite du titre : on voit ce qui
-  // est réglé sans avoir à déplier la ligne.
-  valeur?: string;
   ouverte: boolean;
   // Taille tactile (mobile) plutôt que compacte (PC).
   grand: boolean;
@@ -52,7 +49,6 @@ export function LigneReglage({
       >
         <Icone size={grand ? 15 : 14} className="flex-shrink-0" />
         <span className="flex-1 truncate">{titre}</span>
-        {valeur && <span className="max-w-[45%] flex-shrink-0 truncate text-[11px] text-dj-texte-muet">{valeur}</span>}
         <ChevronRight
           size={grand ? 14 : 12}
           className={"flex-shrink-0 transition-transform duration-200 " + (ouverte ? "rotate-90" : "")}
