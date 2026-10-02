@@ -1279,7 +1279,7 @@ export async function uploaderImageChat(fichier: File) {
  */
 export async function uploaderDocumentChat(fichier: File) {
   const resultat = await appelerApiFichier("/api/uploads/document-chat", fichier);
-  return resultat as { texte: string; tronque: boolean; url: string | null; url_apercu: string | null };
+  return resultat as { texte: string; tronque: boolean; lisible: boolean; url: string | null; url_apercu: string | null };
 }
 
 /**

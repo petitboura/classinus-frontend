@@ -56,6 +56,11 @@ components/
                           pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
                           useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
                           de réglages partagées (reglagesReponse.ts) ;
+                          LigneApercuPieces.tsx (02/10/2026) : ligne unique défilable des pièces jointes,
+                          avant envoi (BarreDeSaisie.tsx) et après envoi (BulleMessage.tsx) ; carrés pour
+                          images et vidéos, pilules empilées par deux pour le reste ; FenetreTexteColle.tsx
+                          et FenetreMedia.tsx : fenêtres de lecture d'un texte collé et d'un audio ou d'une
+                          vidéo ; lib/texteColle.ts : détection du langage d'un texte collé ;
                           PleinEcranApercu.tsx (20/09/2026) : vrai plein écran de bord à bord du bouton
                           Agrandir des aperçus (BlocExpansible.tsx : widget, PDF, Office, texte), monté
                           dans <body> par un portail pour ne jamais être recadré par le message ;

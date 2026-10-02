@@ -7,9 +7,10 @@ import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { LecteurMedia } from "./LecteurMedia";
 import { CanvasDessin } from "./CanvasDessin";
 import { VisionneuseImage } from "./VisionneuseImage";
+import { LigneApercuPieces, type GenrePiece, type PieceApercu } from "./LigneApercuPieces";
+import { FenetreTexteColle } from "./FenetreTexteColle";
+import { FenetreMedia } from "./FenetreMedia";
 import dynamic from "next/dynamic";
-import { BlocCode } from "./BlocCode";
-import hljs from "@/lib/coloration";
 import katex from "katex";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "../Skeleton";
@@ -25,6 +26,7 @@ import { useModeActif } from "./barre/useModeActif";
 import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
 import type { LongueurReponse } from "./barre/reglagesReponse";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -52,66 +54,6 @@ export type LocalisationJointe = { latitude: number; longitude: number } | null;
 // extraites dans lib/outils.ts le 01/08 (Bourama : "est-ce que ça
 // varie en fonction de quel outil est ajouté ou enlevé" -- source
 // unique désormais, ne plus les redéfinir ici).
-
-// Détection de langage pour un collage de code (2026-07-25, demande de
-// Bourama : coller du code aujourd'hui atterrit comme texte brut, sans
-// aucun traitement). Testé manuellement le 25/07 : s'appuyer uniquement
-// sur `hljs.highlightAuto(...).relevance` pour décider "est-ce du code ?"
-// ne fonctionne PAS -- un énoncé de maths en français obtient un score
-// PLUS élevé (8) qu'un vrai extrait JavaScript (5), et hljs se trompe
-// aussi de langage sur des extraits courts (JS détecté "ada", Java
-// détecté "csharp"). Approche retenue à la place : des motifs de syntaxe
-// propres à chaque langage (accolades+mots-clés, pas de simple score de
-// probabilité), hljs.highlightAuto seulement en dernier recours si rien
-// de spécifique n'a matché mais que ça ressemble quand même à du code.
-const REGEX_LATEX = /\\(begin|end)\{|\\frac|\\int|\\sum|\\sqrt|\\alpha|\\beta|\$\$/;
-const PATTERNS_LANGAGE: [string, RegExp][] = [
-  ["python", /\bdef\s+\w+\s*\(.*\)\s*:/],
-  ["python", /^\s*import\s+\w+(\s+as\s+\w+)?\s*$/m],
-  ["javascript", /\bconsole\.log\s*\(/],
-  ["javascript", /=>\s*\{/],
-  ["javascript", /\b(const|let|var)\s+\w+\s*=/],
-  ["java", /\bpublic\s+static\s+void\s+main\b/],
-  ["java", /\bpublic\s+(static\s+)?class\b/],
-  ["cpp", /^\s*#include\s*</m],
-  ["php", /<\?php/],
-];
-// Signal générique "ressemble à du code" mais sans langage identifiable
-// directement -- hljs sert alors juste à deviner un nom, en dernier recours.
-const PATTERNS_CODE_GENERIQUE = [/;\s*$/m, /^\s*\}\s*;?\s*$/m];
-const SEUIL_RELEVANCE_CODE = 6;
-const NOMS_LANGAGE: Record<string, string> = {
-  python: "Python", javascript: "JavaScript", typescript: "TypeScript",
-  java: "Java", cpp: "C++", php: "PHP", latex: "LaTeX",
-};
-
-function libellePieceJointe(langageDetecte: string | null, texteColle: string): string {
-  if (langageDetecte === "latex") return "Formule collée, LaTeX";
-  if (langageDetecte) return `Code collé, ${NOMS_LANGAGE[langageDetecte] || langageDetecte}`;
-  return `Texte collé, ${texteColle.length.toLocaleString("fr-FR")} caractères`;
-}
-
-function detecterLangageCode(texte: string): string | null {
-  // Un extrait de code fait rarement une seule ligne -- évite de
-  // convertir "x = 5" ou une simple formule collée en pièce jointe.
-  if (texte.trim().split("\n").length < 3) return null;
-  if (REGEX_LATEX.test(texte)) return "latex";
-  for (const [langage, motif] of PATTERNS_LANGAGE) {
-    if (motif.test(texte)) return langage;
-  }
-  if (PATTERNS_CODE_GENERIQUE.some((p) => p.test(texte))) {
-    try {
-      const resultat = hljs.highlightAuto(texte);
-      if (resultat.language && resultat.relevance >= SEUIL_RELEVANCE_CODE) {
-        return resultat.language;
-      }
-    } catch {
-      // Détection auto peut échouer sur du texte inhabituel -- traité
-      // comme "pas du code" plutôt que de faire planter le collage.
-    }
-  }
-  return null;
-}
 
 const REGEX_URL = /(https?:\/\/[^\s]+)/g;
 
@@ -171,34 +113,6 @@ function rendreFormuleKatex(latex: string, bloc: boolean): string {
   }
 }
 
-// Types acceptés par le sélecteur de fichier -- élargi le 2026-07-20 pour
-// couvrir images (Gemini vision), documents PDF/Word/Excel (extraction
-// texte) ET vidéo (audio transcrit + frames analysées par Gemini), voir
-// api/uploads.py.
-const TYPES_FICHIERS_ACCEPTES =
-  "image/jpeg,image/png,image/webp," +
-  "application/pdf," +
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document," +
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet," +
-  "video/mp4,video/webm,video/quicktime," +
-  // Zip (26/09/2026, chantier "zip en conversation", demande Bourama) :
-  // dézipage démarré dès la sélection, voir ajouterFichiers ci-dessous et
-  // api/uploads.py:demarrer_zip_chat. Le MIME type seul ne suffit pas ici
-  // (bug signalé 27/09 : le sélecteur de fichier masquait les .zip) --
-  // selon l'OS/le navigateur, un .zip peut être rapporté comme
-  // application/zip, application/x-zip-compressed, ou même
-  // application/octet-stream (générique), donc invisible si on ne filtre
-  // que sur ces types précis. L'extension .zip est ajoutée en plus des
-  // types MIME : le navigateur accepte un fichier qui correspond à
-  // N'IMPORTE LEQUEL des critères listés, l'extension comble donc les cas
-  // où le MIME rapporté ne correspond à aucun des deux ci-dessus.
-  "application/zip,application/x-zip-compressed,.zip," +
-  // Upload d'un vrai fichier audio (2026-07-22, préparé par Bourama --
-  // distinct de la dictée micro juste en dessous, qui passe par le même
-  // endpoint /audio-chat mais un chemin de code différent, voir
-  // ChatIA.tsx:envoyerMessage).
-  "audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a,audio/aac";
-
 export function BarreDeSaisie({
   onEnvoyer,
   desactive,
@@ -219,7 +133,7 @@ export function BarreDeSaisie({
     longueur: LongueurReponse,
     fichiers: File[],
     localisation: LocalisationJointe,
-    texteColle: string | null,
+    textesColles: string[],
     rechercheForcee: boolean,
     sansEnseignant: boolean,
     // Zip(s) en cours/terminé(s) de dézipage (26/09/2026) : job_id(s)
@@ -286,8 +200,9 @@ export function BarreDeSaisie({
   // par message). Chaque entrée garde son propre aperçu (image only, même
   // logique qu'avant) et un id stable pour la clé React / le retrait
   // individuel.
-  const [fichiers, setFichiers] = useState<{ id: string; fichier: File; apercu: string | null; zipJobId?: string }[]>([]);
+  const [fichiers, setFichiers] = useState<{ id: string; fichier: File; apercu: string | null; urlMedia?: string; zipJobId?: string }[]>([]);
   const [imageAgrandieId, setImageAgrandieId] = useState<string | null>(null);
+  const [mediaOuvertId, setMediaOuvertId] = useState<string | null>(null);
   // Icône de recherche web (2026-07-23, demande de Bourama : "une icône
   // dans la barre de saisie mais peut s'activer automatiquement") --
   // forçage manuel EN PLUS de l'activation automatique déjà possible
@@ -522,15 +437,10 @@ export function BarreDeSaisie({
   // peut retirer/relire, comme un fichier joint mais sans upload : le
   // texte est déjà là côté client, pas besoin d'aller-retour serveur).
   const SEUIL_COLLAGE_LONG = 800;
-  const [texteColle, setTexteColle] = useState<string | null>(null);
-  const [texteColleOuvert, setTexteColleOuvert] = useState(false);
+  const [textesColles, setTextesColles] = useState<TexteColle[]>([]);
+  const [texteColleOuvertId, setTexteColleOuvertId] = useState<string | null>(null);
   // 18/08/2026, voir lib/useFermetureAnimee.ts -- une instance par
   // PanneauFlottant de ce fichier, chacun avec sa propre fermeture.
-  const { enSortie: texteColleEnSortie, demarrerFermeture: fermerTexteColleAnime } = useFermetureAnimee();
-  // Langage détecté si le collage est du code (2026-07-25) -- null pour
-  // un collage de texte normal (>800 caractères, comportement existant
-  // inchangé), une valeur hljs (ex. "python") sinon.
-  const [langageDetecte, setLangageDetecte] = useState<string | null>(null);
   // Plein écran de la saisie (2026-07-23, demande de Bourama : l'agrandissement
   // auto restait trop limité pour écrire un long message confortablement).
   const [pleinEcranSaisie, setPleinEcranSaisie] = useState(false);
@@ -643,6 +553,9 @@ export function BarreDeSaisie({
         id: crypto.randomUUID(),
         fichier: f,
         apercu: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+        // Audio et vidéo : URL locale créée une seule fois ici (et libérée au
+        // retrait), pour la vignette vidéo et la fenêtre de lecture.
+        urlMedia: f.type.startsWith("video/") || f.type.startsWith("audio/") ? URL.createObjectURL(f) : undefined,
       })),
     ]);
 
@@ -681,14 +594,19 @@ export function BarreDeSaisie({
     setFichiers((prec) => {
       const cible = prec.find((f) => f.id === id);
       if (cible?.apercu) URL.revokeObjectURL(cible.apercu);
+      if (cible?.urlMedia) URL.revokeObjectURL(cible.urlMedia);
       return prec.filter((f) => f.id !== id);
     });
     setImageAgrandieId((prec) => (prec === id ? null : prec));
+    setMediaOuvertId((prec) => (prec === id ? null : prec));
   }
 
   function viderFichiers() {
     setFichiers((prec) => {
-      prec.forEach((f) => f.apercu && URL.revokeObjectURL(f.apercu));
+      prec.forEach((f) => {
+        if (f.apercu) URL.revokeObjectURL(f.apercu);
+        if (f.urlMedia) URL.revokeObjectURL(f.urlMedia);
+      });
       return [];
     });
   }
@@ -1266,19 +1184,19 @@ export function BarreDeSaisie({
 
     if (texteColleBrut.length > SEUIL_COLLAGE_LONG || langage) {
       e.preventDefault();
-      setTexteColle(texteColleBrut);
-      setLangageDetecte(langage);
+      // Chaque collage s'ajoute aux précédents, jamais ne les remplace.
+      setTextesColles((prec) => [...prec, { id: crypto.randomUUID(), contenu: texteColleBrut, langage }]);
     }
   }
 
   function envoyer() {
-    if ((!texte.trim() && !texteColle) || desactive) return;
+    if ((!texte.trim() && textesColles.length === 0) || desactive) return;
     onEnvoyer(
       texte,
       longueur,
       fichiers.map((f) => f.fichier),
       localisation,
-      texteColle,
+      textesColles.map((t) => t.contenu),
       rechercheForcee,
       sansEnseignant,
       // Zip(s) dont le dézipage a démarré dès la sélection (voir
@@ -1290,8 +1208,7 @@ export function BarreDeSaisie({
     setTexte("");
     viderFichiers();
     setLocalisation(null);
-    setTexteColle(null);
-    setLangageDetecte(null);
+    setTextesColles([]);
     setRechercheForcee(false);
     setSansEnseignant(false);
     requestAnimationFrame(ajusterHauteurTexte);
@@ -1424,130 +1341,89 @@ export function BarreDeSaisie({
     return entrees;
   }
 
+  function genreDeFichier(f: File): GenrePiece {
+    if (f.type.startsWith("image/")) return "image";
+    if (f.type.startsWith("video/")) return "video";
+    if (f.type.startsWith("audio/")) return "audio";
+    if (f.type === "application/zip" || f.type === "application/x-zip-compressed" || f.name.toLowerCase().endsWith(".zip")) return "zip";
+    return "document";
+  }
+
+  const piecesApercu: PieceApercu[] = [
+    ...fichiers.map(({ id, fichier, apercu, urlMedia }) => ({
+      id,
+      nom: fichier.name,
+      genre: genreDeFichier(fichier),
+      url: apercu ?? urlMedia ?? null,
+    })),
+    ...(localisation ? [{ id: "position", nom: "Position jointe", genre: "position" as const }] : []),
+    ...textesColles.map((t) => ({
+      id: `texte:${t.id}`,
+      nom: "Texte collé",
+      genre: "texte" as const,
+      contenu: t.contenu,
+      langage: t.langage,
+    })),
+  ];
+
+  function ouvrirPiece(piece: PieceApercu) {
+    if (piece.genre === "image") setImageAgrandieId(piece.id);
+    else if (piece.genre === "texte") setTexteColleOuvertId(piece.id.slice("texte:".length));
+    else if (piece.genre === "video" || piece.genre === "audio") setMediaOuvertId(piece.id);
+    else {
+      // Le blob local est intrinsèquement sûr (fichier choisi par
+      // l'utilisateur, pas encore envoyé) : pas de vérification d'origine.
+      const f = fichiers.find((x) => x.id === piece.id);
+      if (f) ouvrirPosition({ url: URL.createObjectURL(f.fichier), titre: f.fichier.name, typeMime: f.fichier.type });
+    }
+  }
+
+  function retirerPiece(id: string) {
+    if (id === "position") setLocalisation(null);
+    else if (id.startsWith("texte:")) {
+      const idTexte = id.slice("texte:".length);
+      setTextesColles((prec) => prec.filter((t) => t.id !== idTexte));
+      setTexteColleOuvertId((prec) => (prec === idTexte ? null : prec));
+    } else retirerFichier(id);
+  }
+
+  const mediaOuvert = mediaOuvertId ? fichiers.find((f) => f.id === mediaOuvertId) : undefined;
+  const texteColleOuvert = texteColleOuvertId ? textesColles.find((t) => t.id === texteColleOuvertId) : undefined;
+
   return (
     <div className="w-full">
       {/* Mineur sans code enseignant : accès bloqué, le bandeau explique
           pourquoi (voir barre/BandeauAccesBloque.tsx). */}
       {modeActif.accesBloque && <BandeauAccesBloque />}
 
-      {/* Vignettes d'aperçu (fichiers joints / position jointe), avant envoi. */}
-      {(fichiers.length > 0 || localisation || texteColle) && (
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          {fichiers.map(({ id, fichier, apercu }) =>
-            apercu ? (
-              <div key={id} className="relative w-fit">
+      {/* Ligne défilable des pièces jointes avant envoi (fichiers, position,
+          texte collé), même composant que dans la bulle du message envoyé. */}
+      {piecesApercu.length > 0 && (
+        <div className="mb-2">
+          <LigneApercuPieces
+            pieces={piecesApercu}
+            onOuvrir={ouvrirPiece}
+            onRetirer={retirerPiece}
+            renduSurCarre={(piece) =>
+              // OCR ciblé formule (2026-07-26) : extrait le LaTeX de l'image et
+              // l'ouvre dans EditeurFormule pour relecture avant insertion.
+              // Cible toujours la première image du tableau (voir
+              // extraireFormuleDeImage), donc affiché seulement sur cette
+              // vignette pour ne pas laisser croire qu'il agit sur une image
+              // précise parmi plusieurs.
+              piece.genre === "image" && fichiers.find((f) => f.apercu)?.id === piece.id ? (
                 <button
-                  onClick={() => setImageAgrandieId(id)}
-                  aria-label="Agrandir l'image"
-                  className="block h-16 w-16 overflow-hidden rounded-xl border border-dj-bordure"
+                  onClick={extraireFormuleDeImage}
+                  disabled={extractionFormuleEnCours}
+                  aria-label="Extraire la formule de cette image"
+                  title="Extraire la formule"
+                  className="absolute bottom-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-dj-surface-haute text-dj-texte disabled:opacity-60"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- aperçu local (URL.createObjectURL) */}
-                  <img src={apercu} alt={fichier.name} className="h-full w-full object-cover" />
+                  <Sigma size={11} className={extractionFormuleEnCours ? "animate-pulse" : ""} />
                 </button>
-                <button
-                  onClick={() => retirerFichier(id)}
-                  aria-label="Retirer le fichier"
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-fond text-dj-texte-muet hover:text-dj-texte"
-                >
-                  <X size={12} />
-                </button>
-                {/* OCR ciblé formule (2026-07-26) -- extrait le LaTeX de
-                    l'image et l'ouvre dans EditeurFormule pour relecture
-                    avant insertion, plutôt que d'envoyer l'image telle
-                    quelle et espérer que Nucleos la lise correctement.
-                    Cible toujours la première image du tableau (voir
-                    extraireFormuleDeImage), donc affiché seulement sur
-                    cette vignette-là pour ne pas laisser croire qu'il agit
-                    sur une image précise parmi plusieurs. */}
-                {fichiers.find((f) => f.apercu)?.id === id && (
-                  <button
-                    onClick={extraireFormuleDeImage}
-                    disabled={extractionFormuleEnCours}
-                    aria-label="Extraire la formule de cette image"
-                    title="Extraire la formule"
-                    className="absolute -bottom-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-surface-haute text-dj-texte disabled:opacity-60"
-                  >
-                    <Sigma size={11} className={extractionFormuleEnCours ? "animate-pulse" : ""} />
-                  </button>
-                )}
-              </div>
-            ) : fichier.type.startsWith("video/") || fichier.type.startsWith("audio/") ? (
-              // Aperçu jouable avant envoi (2026-07-23, demande de Bourama :
-              // avant on ne voyait qu'un nom de fichier cliquable, aucun
-              // moyen d'écouter/regarder avant d'envoyer) -- même lecteur
-              // que celui utilisé pour un lien reçu, sur une URL locale
-              // (blob), pas encore uploadée.
-              <div key={id} className="relative w-full max-w-xs">
-                <LecteurMedia
-                  href={URL.createObjectURL(fichier)}
-                  type={fichier.type.startsWith("video/") ? "video" : "audio"}
-                />
-                <button
-                  onClick={() => retirerFichier(id)}
-                  aria-label="Retirer le fichier"
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-fond text-dj-texte-muet hover:text-dj-texte"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ) : (
-              // 04/09/2026, demande Bourama : "grosse aperçu" = l'iframe PDF
-              // automatique (17/08) remplacée par la petite bulle
-              // nom+icône d'origine -- le clic ouvre désormais le vrai
-              // visionneur de l'appli (VisionneurPositionGlobal, même
-              // composant que pour un fichier reçu/de bibliothèque),
-              // fonctionne pour PDF et tout autre document, plus jamais
-              // de nouvel onglet. Le blob local est intrinsèquement sûr
-              // (fichier choisi par l'utilisateur sur sa machine, pas
-              // encore envoyé) donc pas besoin de vérification d'origine
-              // ici, contrairement à FichierChip.tsx.
-              <div key={id} className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte-muet">
-                <button
-                  onClick={() =>
-                    ouvrirPosition({ url: URL.createObjectURL(fichier), titre: fichier.name, typeMime: fichier.type })
-                  }
-                  aria-label="Ouvrir le fichier"
-                  className="flex items-center gap-2 hover:text-dj-texte"
-                >
-                  <FileText size={14} />
-                  <span className="max-w-[180px] truncate">{fichier.name}</span>
-                </button>
-                <button onClick={() => retirerFichier(id)} aria-label="Retirer le fichier" className="hover:text-dj-texte">
-                  <X size={14} />
-                </button>
-              </div>
-            )
-          )}
-          {localisation && (
-            <div className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte-muet">
-              <MapPin size={14} />
-              <span>Position jointe</span>
-              <button onClick={() => setLocalisation(null)} aria-label="Retirer la position" className="hover:text-dj-texte">
-                <X size={14} />
-              </button>
-            </div>
-          )}
-          {texteColle && (
-            <button
-              onClick={() => setTexteColleOuvert(true)}
-              className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte-muet hover:text-dj-texte"
-            >
-              {langageDetecte ? <Code size={14} /> : <FileText size={14} />}
-              <span>{libellePieceJointe(langageDetecte, texteColle)}</span>
-              <span
-                role="button"
-                aria-label="Retirer le texte collé"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTexteColle(null);
-                  setLangageDetecte(null);
-                }}
-                className="hover:text-dj-texte"
-              >
-                <X size={14} />
-              </span>
-            </button>
-          )}
+              ) : null
+            }
+          />
         </div>
       )}
 
@@ -1679,7 +1555,10 @@ export function BarreDeSaisie({
             {/* Bouton "+" (01/10/2026, refonte de la barre de saisie) : un
                 seul bouton à gauche. Son menu contient Joindre un fichier,
                 Prendre une photo, Mode vocal, Canal en direct et
-                Application (voir barre/MenuPlus.tsx). */}
+                Application (voir barre/MenuPlus.tsx). Joindre un fichier
+                n'a aucun filtre de type dans le sélecteur : un format
+                refusé par le serveur s'affiche en erreur sur sa pièce
+                après l'envoi. */}
             <MenuPlus
               variante="bureau"
               entrees={entreesMenuPlus()}
@@ -1770,7 +1649,6 @@ export function BarreDeSaisie({
             <input
               ref={inputFichierRef}
               type="file"
-              accept={TYPES_FICHIERS_ACCEPTES}
               multiple
               className="hidden"
               onChange={(e) => {
@@ -1905,7 +1783,7 @@ export function BarreDeSaisie({
               >
                 <Square size={14} />
               </button>
-            ) : texte.trim() || texteColle ? (
+            ) : texte.trim() || textesColles.length > 0 ? (
               <button
                 onClick={envoyer}
                 disabled={desactive}
@@ -2064,7 +1942,7 @@ export function BarreDeSaisie({
           >
             <Square size={14} />
           </button>
-        ) : texte.trim() || texteColle ? (
+        ) : texte.trim() || textesColles.length > 0 ? (
           <button
             onClick={envoyer}
             disabled={desactive}
@@ -2256,54 +2134,21 @@ export function BarreDeSaisie({
         </div>
       )}
 
-      {texteColleOuvert && texteColle && (
-        <PanneauFlottant
-          onFerme={() => fermerTexteColleAnime(() => setTexteColleOuvert(false))}
-          large
-          enSortie={texteColleEnSortie}
-          entete={
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm text-dj-texte-muet">{libellePieceJointe(langageDetecte, texteColle)}</span>
-              <button
-                onClick={() => fermerTexteColleAnime(() => setTexteColleOuvert(false))}
-                aria-label="Fermer"
-                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
-              >
-                <X size={14} /> Fermer
-              </button>
-            </div>
-          }
-        >
-          {langageDetecte === "latex" ? (
-            <div
-              className="min-h-0 flex-1 overflow-auto rounded-xl border border-dj-bordure bg-dj-surface-haute p-6 text-dj-texte"
-              // Rendu direct en formule (fractions, intégrales, racines...),
-              // pas en texte source coloré -- demande Bourama (25/07) : "le
-              // latex, ça pourrait être direct, ça s'affiche en gros les
-              // fractions etc". KaTeX gère \begin{equation}...\end{equation}
-              // nativement, pas besoin de passer par remark-math/$ $ ici
-              // puisque tout le contenu collé EST du LaTeX (pas du markdown
-              // mélangé comme dans une réponse de l'IA).
-              dangerouslySetInnerHTML={{
-                __html: (() => {
-                  try {
-                    return katex.renderToString(texteColle, { displayMode: true, throwOnError: false });
-                  } catch {
-                    return texteColle.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
-                  }
-                })(),
-              }}
-            />
-          ) : langageDetecte ? (
-            <div className="min-h-0 flex-1 overflow-auto">
-              <BlocCode langage={langageDetecte} code={texteColle} />
-            </div>
-          ) : (
-            <div className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap text-sm leading-relaxed text-dj-texte">
-              {texteColle}
-            </div>
-          )}
-        </PanneauFlottant>
+      {texteColleOuvert && (
+        <FenetreTexteColle
+          texte={texteColleOuvert.contenu}
+          langage={texteColleOuvert.langage}
+          onFermer={() => setTexteColleOuvertId(null)}
+        />
+      )}
+
+      {mediaOuvert?.urlMedia && (
+        <FenetreMedia
+          href={mediaOuvert.urlMedia}
+          nom={mediaOuvert.fichier.name}
+          type={mediaOuvert.fichier.type.startsWith("video/") ? "video" : "audio"}
+          onFermer={() => setMediaOuvertId(null)}
+        />
       )}
 
       {imageAgrandieId && fichiers.find((f) => f.id === imageAgrandieId)?.apercu && (
@@ -2428,7 +2273,7 @@ export function BarreDeSaisie({
                 envoyer();
                 fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));
               }}
-              disabled={(!texte.trim() && !texteColle) || desactive}
+              disabled={(!texte.trim() && textesColles.length === 0) || desactive}
               aria-label="Envoyer"
               className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >
