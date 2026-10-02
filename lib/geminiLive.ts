@@ -15,6 +15,7 @@ type ReponseToken = {
   accueil: string;
   description_outil: string;
   relance_attente: string;
+  annonce_reponse: string;
   delai_relance_secondes: number;
   relances_max: number;
 };
@@ -35,7 +36,8 @@ export type SessionGeminiLive = {
   niveaux: () => NiveauxVoix;
   fermer: () => void;
   interrompre: () => void;
-  envoyerTexte: (texte: string) => void;
+  // Réponse écrite de Clovis à un message tapé dans le chat : la voix en dit l'essentiel.
+  annoncerReponse: (texte: string) => void;
 };
 
 const NOM_OUTIL_CLOVIS = "demander_a_clovis";
@@ -211,9 +213,18 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ realtimeInput: { activityEnd: {} } }));
   };
 
-  const envoyerTexte = (texte: string) => {
-    if (!texte.trim() || websocket.readyState !== WebSocket.OPEN) return;
-    websocket.send(JSON.stringify({ clientContent: { turns: [{ role: "user", parts: [{ text: texte.trim() }] }], turnComplete: true } }));
+  // Réponse écrite de Clovis à un message que l'étudiant a tapé dans le chat :
+  // la voix en dit l'essentiel, avec la consigne venue du serveur. Si elle parle
+  // déjà, l'annonce attend la fin de sa phrase au lieu de la couper.
+  let annonceEnAttente: string | null = null;
+  const envoyerAnnonce = (texte: string) => {
+    websocket.send(JSON.stringify({ realtimeInput: { text: `${token.annonce_reponse}\n\n${texte}` } }));
+  };
+  const annoncerReponse = (texte: string) => {
+    const propre = texte.trim();
+    if (ferme || !pret || !propre || !token.annonce_reponse?.trim() || websocket.readyState !== WebSocket.OPEN) return;
+    if (etatCourant === "reponse") { annonceEnAttente = propre; return; }
+    envoyerAnnonce(propre);
   };
 
   // Texte envoyé en temps réel (le canal accepte le texte dans realtimeInput,
@@ -309,7 +320,14 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
       }
       if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ toolResponse: { functionResponses } }));
     }
-    if (serveur?.turnComplete) etat("ecoute");
+    if (serveur?.turnComplete) {
+      etat("ecoute");
+      if (annonceEnAttente && websocket.readyState === WebSocket.OPEN) {
+        const enAttente = annonceEnAttente;
+        annonceEnAttente = null;
+        envoyerAnnonce(enAttente);
+      }
+    }
   };
 
   websocket.onerror = () => {
@@ -335,5 +353,5 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     websocket.send(JSON.stringify({ realtimeInput: { audio: { data: int16VersBase64(pcm), mimeType: "audio/pcm;rate=16000" } } }));
   };
   source.connect(processeur); processeur.connect(silence); silence.connect(contexteEntree.destination);
-  return { niveaux, fermer: nettoyer, interrompre, envoyerTexte };
+  return { niveaux, fermer: nettoyer, interrompre, annoncerReponse };
 }

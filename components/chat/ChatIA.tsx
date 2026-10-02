@@ -16,6 +16,7 @@ import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
 import { texteMessageAutomatique } from "@/lib/minuteurs";
 import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
@@ -628,7 +629,7 @@ export function ChatIA({
     // Voix en direct (02/10/2026) : pendant un tour demandé par la voix, on
     // garde le texte écrit de la réponse pour le lui renvoyer, sans rien
     // changer à l'affichage du chat ci-dessous.
-    if (voixEnCoursRef.current) {
+    if (voixEnCoursRef.current || tourEcritSuiviRef.current) {
       if (evenement.type === "reponse" && typeof evenement.texte === "string") texteTourVoixRef.current += evenement.texte;
       else if (evenement.type === "reponse_annulee") texteTourVoixRef.current = "";
     }
@@ -835,6 +836,10 @@ export function ChatIA({
   // de la réponse de Clovis pour ce tour (voir l'effet plus bas).
   const voixEnCoursRef = useRef<DemandeVoixEnAttente | null>(null);
   const texteTourVoixRef = useRef("");
+  // Tour déclenché par un message tapé (pas par la voix) : on garde aussi le
+  // texte de la réponse pour que la voix, si elle est active, en dise l'essentiel.
+  const tourEcritSuiviRef = useRef(false);
+  const voixDirecte = useContext(ContexteVoixDirecte);
   const ctxChatCanal = useContext(ContexteChat);
   const nbMessagesEnAttenteCanal = ctxChatCanal?.nbMessagesEnAttente ?? 0;
   // Canal en direct, suite (19/09/2026, decision Bourama : "dès que le
@@ -1181,6 +1186,11 @@ export function ChatIA({
       }
     }
 
+    if (!automatique && !voixEnCoursRef.current) {
+      texteTourVoixRef.current = "";
+      tourEcritSuiviRef.current = true;
+    }
+
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
@@ -1243,6 +1253,7 @@ export function ChatIA({
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
+      if (tourEcritSuiviRef.current) voixDirecte?.annoncerReponse(conversationId, texteTourVoixRef.current);
     } catch (e) {
       reinitialiserAffichageControle();
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1265,6 +1276,10 @@ export function ChatIA({
     } finally {
       controleurAbandonRef.current = null;
       setGenEnCours(false);
+      if (tourEcritSuiviRef.current) {
+        tourEcritSuiviRef.current = false;
+        texteTourVoixRef.current = "";
+      }
       // Correctif 12/09/2026 (voir appliquerEvenementOutil, cas
       // "raisonnement") : si le tout dernier événement de la génération
       // était un raisonnement mis en file (texte précédent encore en

@@ -41,6 +41,9 @@ export type ContexteVoixDirecteValeur = {
   // qui se ferme ne doit pas couper la voix d'une autre conversation).
   fermerPourConversation: (conversationId: string | null) => void;
   basculer: (conversationId: string | null) => void;
+  // Fait dire l'essentiel d'une réponse écrite par la voix, seulement si elle
+  // est active sur cette conversation. Sans voix active, ne fait rien.
+  annoncerReponse: (conversationId: string | null, texte: string) => void;
 };
 
 export const ContexteVoixDirecte = createContext<ContexteVoixDirecteValeur | null>(null);
@@ -135,12 +138,17 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
     [fermer, ouvrir]
   );
 
+  const annoncerReponse = useCallback((conversationId: string | null, texte: string) => {
+    if (!conversationId || conversationSessionRef.current !== conversationId) return;
+    sessionRef.current?.annoncerReponse(texte);
+  }, []);
+
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 
   const actif = etat !== "inactif" && etat !== "erreur";
 
   return useMemo(
-    () => ({ etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer }),
-    [etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer]
+    () => ({ etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse }),
+    [etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse]
   );
 }
