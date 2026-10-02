@@ -14,6 +14,9 @@ type ReponseToken = {
   consignes: string;
   accueil: string;
   description_outil: string;
+  relance_attente: string;
+  delai_relance_secondes: number;
+  relances_max: number;
 };
 type OptionsGeminiLive = {
   conversationId: string;
@@ -129,7 +132,14 @@ async function obtenirToken(): Promise<ReponseToken> {
 }
 
 export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<SessionGeminiLive> {
-  const etat = options.surEtat ?? (() => {});
+  const signalerEtat = options.surEtat ?? (() => {});
+  // On retient l'état courant : les nouvelles de patience ne partent jamais
+  // pendant que la voix parle déjà.
+  let etatCourant = "connexion";
+  const etat = (nouvelEtat: Parameters<typeof signalerEtat>[0]) => {
+    etatCourant = nouvelEtat;
+    signalerEtat(nouvelEtat);
+  };
   etat("connexion");
   const token = await obtenirToken();
   if (!token.model || !token.url) throw new Error("Impossible d initialiser le canal vocal.");
@@ -150,12 +160,15 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   silence.gain.value = 0;
   let ferme = false;
   let connecte = false;
+  const minuteursRelance = new Set<ReturnType<typeof setInterval>>();
   let pret = false;
   let erreurSignalee = false;
 
   const nettoyer = () => {
     if (ferme) return;
     ferme = true;
+    minuteursRelance.forEach((minuteur) => clearInterval(minuteur));
+    minuteursRelance.clear();
     processeur.disconnect(); source.disconnect(); silence.disconnect();
     entree.getTracks().forEach((track) => track.stop());
     lecteur.interrompre();
@@ -180,6 +193,33 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (!token.accueil.trim() || websocket.readyState !== WebSocket.OPEN) return;
     websocket.send(JSON.stringify({ realtimeInput: { text: token.accueil } }));
   };
+
+  // Pendant que Clovis travaille, la voix ne reste jamais muette : à intervalle
+  // régulier (réglages venus du serveur), on lui rappelle de donner un mot de
+  // patience, sauf si elle parle déjà. Renvoie la fonction qui arrête ces rappels.
+  const demarrerRelances = () => {
+    const delai = token.delai_relance_secondes * 1000;
+    if (!token.relance_attente?.trim() || !(delai > 0) || !(token.relances_max > 0)) return () => {};
+    let envoyees = 0;
+    const minuteur = setInterval(() => {
+      if (ferme || websocket.readyState !== WebSocket.OPEN) return;
+      if (envoyees >= token.relances_max) { clearInterval(minuteur); minuteursRelance.delete(minuteur); return; }
+      if (etatCourant === "reponse") return;
+      envoyees += 1;
+      websocket.send(JSON.stringify({ realtimeInput: { text: token.relance_attente } }));
+    }, delai);
+    minuteursRelance.add(minuteur);
+    return () => { clearInterval(minuteur); minuteursRelance.delete(minuteur); };
+  };
+
+  // Gemini 3.8 Live exécute les outils en mode asynchrone : la voix peut donc
+  // continuer à parler pendant que Clovis travaille. WHEN_IDLE fait annoncer le
+  // résultat dès qu'elle a fini sa phrase en cours, sans la couper.
+  const reponseOutil = (appel: { id: string; name: string }, contenu: Record<string, string>) => ({
+    id: appel.id,
+    name: appel.name,
+    response: { ...contenu, scheduling: "WHEN_IDLE" },
+  });
 
   websocket.onopen = () => {
     connecte = true;
@@ -216,19 +256,22 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
       const functionResponses = [];
       for (const appel of message.toolCall.functionCalls) {
         if (appel.name !== NOM_OUTIL_CLOVIS) {
-          functionResponses.push({ id: appel.id, name: appel.name, response: { error: "Outil inconnu." } });
+          functionResponses.push(reponseOutil(appel, { error: "Outil inconnu." }));
           continue;
         }
         const question = typeof appel.args?.question === "string" ? appel.args.question.trim() : "";
         if (!question) {
-          functionResponses.push({ id: appel.id, name: appel.name, response: { error: "La demande est vide." } });
+          functionResponses.push(reponseOutil(appel, { error: "La demande est vide." }));
           continue;
         }
+        const arreterRelances = demarrerRelances();
         try {
           const reponseClovis = options.surDemande ? await options.surDemande(question) : await demanderAClovisDirectement(question, options.conversationId);
-          functionResponses.push({ id: appel.id, name: appel.name, response: { result: reponseClovis || "Clovis n a pas renvoyé de réponse textuelle." } });
+          functionResponses.push(reponseOutil(appel, { result: reponseClovis || "Clovis n a pas renvoyé de réponse textuelle." }));
         } catch (e) {
-          functionResponses.push({ id: appel.id, name: appel.name, response: { error: e instanceof Error ? e.message : "Erreur lors de l appel à Clovis." } });
+          functionResponses.push(reponseOutil(appel, { error: e instanceof Error ? e.message : "Erreur lors de l appel à Clovis." }));
+        } finally {
+          arreterRelances();
         }
       }
       if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ toolResponse: { functionResponses } }));
