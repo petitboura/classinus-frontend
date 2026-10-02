@@ -10,7 +10,7 @@
 
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronRight, Clock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, Clock, MessageSquare, MoreVertical, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
@@ -200,6 +200,20 @@ type PropsLigne = {
   onSupprimee?: (fil: FilConversation) => void;
 };
 
+// Date courte d'un fil : Aujourd'hui, Hier, puis jour et mois (avec l'annee
+// seulement si ce n'est pas l'annee en cours). Chaine vide si la date est illisible.
+function libelleDateFil(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const debutJour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const maintenant = new Date();
+  const ecartJours = Math.round((debutJour(maintenant) - debutJour(d)) / 86400000);
+  if (ecartJours <= 0) return "Aujourd'hui";
+  if (ecartJours === 1) return "Hier";
+  const memeAnnee = d.getFullYear() === maintenant.getFullYear();
+  return d.toLocaleDateString("fr-FR", memeAnnee ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" });
+}
+
 type ModeLigne = "normal" | "renommer" | "confirmerSuppression";
 
 function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsLigne) {
@@ -339,10 +353,9 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             estActive ? "text-dj-accent-1-texte" : "text-dj-texte"
           }`}
         >
-          <span className="truncate">
-            {estActive ? "● " : ""}
-            {fil.titre}
-          </span>
+          <MessageSquare size={11} strokeWidth={2} className={`flex-shrink-0 ${estActive ? "" : "text-dj-texte-muet"}`} />
+          <span className="min-w-0 flex-1 truncate">{fil.titre}</span>
+          <span className="flex-shrink-0 pl-2 text-xs text-dj-texte-muet">{libelleDateFil(fil.derniere_activite)}</span>
         </button>
         <button
           ref={boutonMenuRef}
@@ -357,7 +370,7 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             menu ? "!opacity-100 text-dj-texte" : ""
           }`}
         >
-          <MoreHorizontal size={16} strokeWidth={2.25} />
+          <MoreVertical size={16} strokeWidth={2.25} />
         </button>
       </div>
       {menu && (
