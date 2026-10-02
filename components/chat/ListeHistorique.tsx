@@ -10,7 +10,7 @@
 
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronRight, Clock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Clock, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
@@ -54,9 +54,9 @@ export function ListeHistorique({
 
   const racineRef = useRef<HTMLDivElement>(null);
   const sentinelleRef = useRef<HTMLDivElement>(null);
-  // Les deux sections sont pliees a chaque ouverture de la liste.
+  // A chaque ouverture de la liste : Recents deplie, Epingles plie.
   const [epinglesOuverts, setEpinglesOuverts] = useState(false);
-  const [recentsOuverts, setRecentsOuverts] = useState(false);
+  const [recentsOuverts, setRecentsOuverts] = useState(true);
 
   // Epingles : dans l'ordre recu (le plus recemment epingle en premier).
   // Recents : toujours du plus recemment actif au plus ancien, meme apres
@@ -169,10 +169,10 @@ function SectionPliable({ Icone, titre, nombre, ouverte, onBasculer, grand, chil
           grand ? "min-h-10 text-sm" : "min-h-8 text-xs"
         }`}
       >
-        <ChevronRight size={14} className={`flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-90" : ""}`} />
         <Icone size={grand ? 16 : 14} className="flex-shrink-0" />
         <span className="uppercase tracking-wide">{titre}</span>
-        {nombre !== undefined && <span className="ml-auto text-xs font-normal opacity-70">{nombre}</span>}
+        {nombre !== undefined && <span className="text-xs font-normal opacity-70">{nombre}</span>}
+        <ChevronDown size={14} className={`ml-auto flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-180" : ""}`} />
       </button>
       {ouverte && <div className="animate-dj-fade-in-rapide">{children}</div>}
     </div>
