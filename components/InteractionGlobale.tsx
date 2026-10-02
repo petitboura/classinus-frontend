@@ -12,7 +12,6 @@ import { ContexteVoixDirecte, useFournirVoixDirecte } from "@/lib/contexteVoixDi
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
-import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
 
@@ -92,7 +91,6 @@ export function InteractionGlobale({ children }: { children: ReactNode }) {
                   <CurseurVirtuelAgent />
                   <BulleDialogueAgent />
                   <VoixDirecteSuperposition />
-                  {afficherCommandes && <BoutonJournalAgent />}
                   {afficherCommandes && <CanalEnDirectFlottant />}
                 </>,
                 document.body,

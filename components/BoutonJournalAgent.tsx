@@ -43,7 +43,10 @@ const COULEUR_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   erreur: "text-[var(--dj-erreur)]",
 };
 
-export function BoutonJournalAgent() {
+// Mode intégré (02/10/2026, demande Bourama) : le bouton est rangé dans le groupe
+// de boutons du canal (ControlesInteractionCanal) au lieu d'être un élément fixe
+// et déplaçable à part. Il n'est alors plus positionné ni glissé ici.
+export function BoutonJournalAgent({ integre = false }: { integre?: boolean }) {
   const contexte = useContext(ContexteCanalEnDirect);
   const pathname = usePathname();
   const [ouvert, setOuvert] = useState(false);
@@ -89,23 +92,27 @@ export function BoutonJournalAgent() {
   const surChat = estPageChat(pathname);
   // Masqué sur /chat sauf si le canal est déjà actif, même règle et même
   // décision (25/09/2026, Bourama) que CanalEnDirectFlottant.tsx.
-  if (surChat && !actif) return null;
+  if (!integre && surChat && !actif) return null;
 
   return (
     <div
       ref={(noeud) => {
         ref.current = noeud;
-        deplacement.ref(noeud);
+        if (!integre) deplacement.ref(noeud);
       }}
       data-agent-superposition="true"
-      className={`fixed bottom-4 right-4 z-agent-controles ${
-        surChat ? "" : "md:bottom-[calc(1.5rem+var(--dj-barre-onglets-web,0px))] md:right-20"
-      }`}
-      style={deplacement.style}
+      className={
+        integre
+          ? "relative"
+          : `fixed bottom-4 right-4 z-agent-controles ${
+              surChat ? "" : "md:bottom-[calc(1.5rem+var(--dj-barre-onglets-web,0px))] md:right-20"
+            }`
+      }
+      style={integre ? undefined : deplacement.style}
     >
       <button
         onClick={basculer}
-        {...deplacement.poignee}
+        {...(integre ? {} : deplacement.poignee)}
         aria-label="Journal des actions de Classinus"
         aria-expanded={ouvert}
         className="flex h-10 w-10 touch-none select-none items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet shadow-lg transition-colors hover:text-dj-texte"
