@@ -652,7 +652,7 @@ function CarteCode({
           {/* 25/09/2026, demande Bourama : "l'élève peut choisir lui-même
               son mode source et son mode pédagogique", coché par défaut.
               Décoché -> côté élève, le sélecteur disparaît (voir
-              BarreDeSaisie.tsx/SelecteurModeActif.tsx) ET sa demande
+              BarreDeSaisie.tsx/barre/BoutonReglages.tsx) ET sa demande
               explicite à Clovis de changer de mode est refusée (voir
               core/outils_changement_mode.py). Ne restreint jamais un
               changement de mode piloté par un skill attaché à ce code. */}
