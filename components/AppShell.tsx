@@ -29,6 +29,7 @@ import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
 import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
+import { ContexteVoixDirecte, useFournirVoixDirecte } from "@/lib/contexteVoixDirecte";
 import {
   ContexteCanalEnDirect,
   useFournirCanalEnDirect,
@@ -91,6 +92,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // layout racine pour survivre à tout changement de section -- voir
   // lib/contexteCanalEnDirect.tsx.
   const canalEnDirectValeur = useFournirCanalEnDirect();
+  // Voix en direct (02/10/2026) : une seule session pour toute l'appli, voir
+  // lib/contexteVoixDirecte.tsx.
+  const voixDirecteValeur = useFournirVoixDirecte({
+    chatPretPourVoix: contexteChatValeur.chatPretPourVoix,
+    deposerDemandeVoix: contexteChatValeur.deposerDemandeVoix,
+  });
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);
@@ -223,6 +230,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
     <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
     <ContexteCanalEnDirect.Provider value={canalEnDirectValeur}>
+    <ContexteVoixDirecte.Provider value={voixDirecteValeur}>
     <ContexteMinuteurs.Provider value={minuteursValeur}>
     <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
@@ -378,6 +386,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </ContexteFenetres.Provider>
     </ContexteStatutUtilisateur.Provider>
     </ContexteMinuteurs.Provider>
+    </ContexteVoixDirecte.Provider>
     </ContexteCanalEnDirect.Provider>
     </ContexteCurseurVirtuel.Provider>
     </ContexteDossiersCataloguePublic.Provider>

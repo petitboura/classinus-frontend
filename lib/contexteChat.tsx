@@ -159,6 +159,26 @@ type ContexteChatValeur = {
   nbMessagesEnAttente: number;
   deposerMessageEnAttente: (texte: string) => void;
   prendreMessageEnAttente: () => string | null;
+  // Voix en direct (02/10/2026, demande Bourama) : la voix est un
+  // interprète, elle ne doit pas travailler en cachette. Sa demande part
+  // comme un vrai message du chat (visible en direct dans la conversation)
+  // et la réponse écrite de Clovis revient à la voix, qui la résume. Un
+  // chat monté se déclare prêt avec enregistrerChatPourVoix ; sans chat
+  // prêt, la voix garde son ancien chemin direct vers le serveur.
+  // La demande n'est confiée qu'au chat qui affiche la MÊME conversation que
+  // la voix, pour ne jamais écrire dans une autre conversation.
+  chatPretPourVoix: (conversationId: string) => boolean;
+  enregistrerChatPourVoix: (conversationId: string | null) => () => void;
+  nbDemandesVoixEnAttente: number;
+  deposerDemandeVoix: (texte: string, conversationId: string) => Promise<string>;
+  prendreDemandeVoix: (conversationId: string | null) => DemandeVoixEnAttente | null;
+};
+
+export type DemandeVoixEnAttente = {
+  texte: string;
+  conversationId: string;
+  resoudre: (reponse: string) => void;
+  rejeter: (erreur: Error) => void;
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
@@ -198,6 +218,34 @@ export function useFournirContexteChat(): ContexteChatValeur {
     const texte = messagesEnAttenteRef.current.shift() ?? null;
     setNbMessagesEnAttente(messagesEnAttenteRef.current.length);
     return texte;
+  }, []);
+
+  // Voix en direct : file des demandes de la voix, même principe que la
+  // file des messages du canal (un ref atomique, le state ne sert qu'à
+  // réveiller l'effet du chat).
+  const demandesVoixRef = useRef<DemandeVoixEnAttente[]>([]);
+  const chatsPretsVoixRef = useRef<(string | null)[]>([]);
+  const [nbDemandesVoixEnAttente, setNbDemandesVoixEnAttente] = useState(0);
+  const chatPretPourVoix = useCallback((conversationId: string) => chatsPretsVoixRef.current.includes(conversationId), []);
+  const enregistrerChatPourVoix = useCallback((conversationId: string | null) => {
+    chatsPretsVoixRef.current.push(conversationId);
+    return () => {
+      const i = chatsPretsVoixRef.current.indexOf(conversationId);
+      if (i >= 0) chatsPretsVoixRef.current.splice(i, 1);
+    };
+  }, []);
+  const deposerDemandeVoix = useCallback((texte: string, conversationId: string) => {
+    return new Promise<string>((resoudre, rejeter) => {
+      demandesVoixRef.current.push({ texte, conversationId, resoudre, rejeter });
+      setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+    });
+  }, []);
+  const prendreDemandeVoix = useCallback((conversationId: string | null): DemandeVoixEnAttente | null => {
+    const i = demandesVoixRef.current.findIndex((d) => d.conversationId === conversationId);
+    if (i < 0) return null;
+    const [demande] = demandesVoixRef.current.splice(i, 1);
+    setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+    return demande;
   }, []);
 
   // Étape 1 -- état de la conversation, avant local à ChatFlottant.tsx.
@@ -364,6 +412,11 @@ export function useFournirContexteChat(): ContexteChatValeur {
       nbMessagesEnAttente,
       deposerMessageEnAttente,
       prendreMessageEnAttente,
+      chatPretPourVoix,
+      enregistrerChatPourVoix,
+      nbDemandesVoixEnAttente,
+      deposerDemandeVoix,
+      prendreDemandeVoix,
       chargement,
       setChargement,
       erreur,
@@ -402,6 +455,11 @@ export function useFournirContexteChat(): ContexteChatValeur {
       nbMessagesEnAttente,
       deposerMessageEnAttente,
       prendreMessageEnAttente,
+      chatPretPourVoix,
+      enregistrerChatPourVoix,
+      nbDemandesVoixEnAttente,
+      deposerDemandeVoix,
+      prendreDemandeVoix,
       chargement,
       erreur,
       agent,

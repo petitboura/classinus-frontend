@@ -27,7 +27,7 @@ import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
 import type { LongueurReponse } from "./barre/reglagesReponse";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
-import { useGeminiLive } from "@/lib/useGeminiLive";
+import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -347,10 +347,21 @@ export function BarreDeSaisie({
   const canalEnDirect = useContext(ContexteCanalEnDirect);
   // Mode vocal du menu des utilitaires : conversation vocale Gemini Live
   // liée à la conversation du chat affichée.
-  const geminiLive = useGeminiLive(conversationId ?? null);
+  // Depuis le 02/10/2026, la voix est une pièce partagée montée dans AppShell
+  // (lib/contexteVoixDirecte.tsx) : cette barre ne fait que la piloter.
+  const voixDirecte = useContext(ContexteVoixDirecte);
+  const geminiLive = {
+    etat: voixDirecte?.etat ?? "inactif",
+    erreur: voixDirecte?.erreur ?? null,
+    basculer: () => voixDirecte?.basculer(conversationId ?? null),
+  };
   useEffect(() => {
     if (geminiLive.erreur) alert(geminiLive.erreur);
   }, [geminiLive.erreur]);
+  // La voix reste liée à la conversation affichée : elle s'arrête quand on
+  // change de conversation ou quand le chat se ferme.
+  const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
+  useEffect(() => () => fermerVoixPourConversation?.(conversationId ?? null), [conversationId, fermerVoixPourConversation]);
 
   useEffect(() => {
     if (!menuAppliOuvert) return;

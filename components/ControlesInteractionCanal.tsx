@@ -22,7 +22,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
-import { useGeminiLive } from "@/lib/useGeminiLive";
+import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 
 const DUREE_ERREUR_MS = 6000;
 
@@ -37,7 +37,16 @@ export function ControlesInteractionCanal() {
   const modeInteraction = contexte?.modeInteraction ?? "texte";
   const moteurChoisi = contexte?.moteurDictee ?? "whisper";
   const conversationId = contexte?.actif ? contexte.conversationId : null;
-  const geminiLive = useGeminiLive(conversationId);
+  // Depuis le 02/10/2026, la voix est une pièce partagée (AppShell) : ce bouton
+  // et le Mode vocal du chat pilotent la même session, jamais deux voix.
+  const voixDirecte = useContext(ContexteVoixDirecte);
+  const geminiLive = {
+    actif: voixDirecte?.actif ?? false,
+    etat: voixDirecte?.etat ?? "inactif",
+    basculer: () => voixDirecte?.basculer(conversationId),
+  };
+  const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
+  useEffect(() => () => fermerVoixPourConversation?.(conversationId), [conversationId, fermerVoixPourConversation]);
 
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const [texteSaisi, setTexteSaisi] = useState("");
