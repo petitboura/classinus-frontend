@@ -19,6 +19,7 @@
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
+import { ChatIndisponiblePourVoix } from "./contexteChat";
 
 export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur";
 
@@ -105,10 +106,16 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
           }
         },
         surErreur: setErreur,
-        surDemande: (question) =>
-          dependancesRef.current.chatPretPourVoix(conversationId)
-            ? dependancesRef.current.deposerDemandeVoix(question, conversationId)
-            : demanderAClovisDirectement(question, conversationId),
+        surDemande: async (question) => {
+          if (!dependancesRef.current.chatPretPourVoix(conversationId)) return demanderAClovisDirectement(question, conversationId);
+          try {
+            return await dependancesRef.current.deposerDemandeVoix(question, conversationId);
+          } catch (e) {
+            // Le chat a disparu avant de prendre la demande : chemin direct.
+            if (e instanceof ChatIndisponiblePourVoix) return demanderAClovisDirectement(question, conversationId);
+            throw e;
+          }
+        },
       });
       sessionRef.current = session;
     } catch (e) {

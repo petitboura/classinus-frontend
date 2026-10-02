@@ -174,6 +174,21 @@ type ContexteChatValeur = {
   prendreDemandeVoix: (conversationId: string | null) => DemandeVoixEnAttente | null;
 };
 
+// Levée quand le chat qui devait recevoir une demande de la voix disparaît
+// avant de l'avoir prise (page quittée, popup fermé).
+export class ChatIndisponiblePourVoix extends Error {
+  constructor() {
+    super("Le chat n'est plus disponible pour la voix.");
+    this.name = "ChatIndisponiblePourVoix";
+  }
+}
+
+// Vrai quand l'écran de l'utilisateur affiche vraiment l'appli : onglet
+// visible sur le web, fenêtre ni réduite ni masquée sur PC (Electron).
+function ecranVisible(): boolean {
+  return typeof document === "undefined" || document.visibilityState === "visible";
+}
+
 export type DemandeVoixEnAttente = {
   texte: string;
   conversationId: string;
@@ -226,12 +241,27 @@ export function useFournirContexteChat(): ContexteChatValeur {
   const demandesVoixRef = useRef<DemandeVoixEnAttente[]>([]);
   const chatsPretsVoixRef = useRef<(string | null)[]>([]);
   const [nbDemandesVoixEnAttente, setNbDemandesVoixEnAttente] = useState(0);
-  const chatPretPourVoix = useCallback((conversationId: string) => chatsPretsVoixRef.current.includes(conversationId), []);
+  // Un chat n'est prêt pour la voix que s'il est monté sur cette conversation
+  // ET réellement à l'écran (onglet visible, fenêtre non réduite ni masquée).
+  // Sinon la voix prend le chemin direct et la réponse reste à la voix.
+  const chatPretPourVoix = useCallback(
+    (conversationId: string) => chatsPretsVoixRef.current.includes(conversationId) && ecranVisible(),
+    []
+  );
   const enregistrerChatPourVoix = useCallback((conversationId: string | null) => {
     chatsPretsVoixRef.current.push(conversationId);
     return () => {
       const i = chatsPretsVoixRef.current.indexOf(conversationId);
       if (i >= 0) chatsPretsVoixRef.current.splice(i, 1);
+      // Dernier chat de cette conversation parti : les demandes de la voix qui
+      // l'attendaient ne seront jamais prises. On les rend à la voix, qui
+      // reprend alors le chemin direct au lieu de rester bloquée.
+      if (!conversationId || chatsPretsVoixRef.current.includes(conversationId)) return;
+      const orphelines = demandesVoixRef.current.filter((d) => d.conversationId === conversationId);
+      if (orphelines.length === 0) return;
+      demandesVoixRef.current = demandesVoixRef.current.filter((d) => d.conversationId !== conversationId);
+      setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+      orphelines.forEach((d) => d.rejeter(new ChatIndisponiblePourVoix()));
     };
   }, []);
   const deposerDemandeVoix = useCallback((texte: string, conversationId: string) => {
