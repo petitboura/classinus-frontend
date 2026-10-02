@@ -24,6 +24,10 @@
 // activé (ReglageOpaciteBoutonCanal.tsx). Rien de tout cela ne s'applique sur
 // web et mobile : l'opacité y reste à 100 %.
 //
+// Regroupement (02/10/2026, demande Bourama) : le réglage d'opacité est rangé
+// avec les autres boutons dans le groupe de ControlesInteractionCanal (déplié
+// dès l'activation) ; il n'est plus à côté du bouton d'activation.
+//
 // Correctif (19/09/2026, decision Bourama : "on ne désactive rien de
 // son fonctionnement parce qu'il est dans le chat, [le canal] doit être
 // tellement indépendant que...") : plus AUCUNE condition liée à /chat
@@ -41,7 +45,7 @@
 // Le côté gauche suit le rail latéral sur ordinateur, voir
 // lib/useDecalageRailLateral.ts.
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Radio } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
@@ -125,21 +129,14 @@ export function CanalEnDirectFlottant() {
         >
           <Radio size={18} />
         </motion.button>
-        <AnimatePresence>
-          {actif && dansSuperposition && (
-            <motion.div
-              key="reglage-opacite"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.15 }}
-            >
-              <ReglageOpaciteBoutonCanal valeur={opaciteRepos} surChangement={changerOpaciteRepos} surOuverture={setReglageOuvert} />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
-      <ControlesInteractionCanal />
+      <ControlesInteractionCanal
+        reglageOpacite={
+          dansSuperposition ? (
+            <ReglageOpaciteBoutonCanal valeur={opaciteRepos} surChangement={changerOpaciteRepos} surOuverture={setReglageOuvert} />
+          ) : null
+        }
+      />
     </div>
   );
 }
