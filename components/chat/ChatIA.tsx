@@ -23,6 +23,7 @@ import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
+import { detecterLangageCode } from "@/lib/texteColle";
 
 // L'aperçu interne (VisionneurPositionGlobal) n'est plus monté ici depuis
 // le 20/09/2026 : il vit dans le layout racine (VisionneurGlobalRacine.tsx)
@@ -931,9 +932,18 @@ export function ChatIA({
       content: texte,
       created_at: new Date().toISOString(),
       automatique: automatique || undefined,
-      piecesJointes: fichiers.length
-        ? fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) }))
-        : null,
+      // Le texte collé reste visible dans le message après l'envoi, comme une
+      // pièce jointe de type "texte" (ligne défilable, ouverture en lecture
+      // seule), au lieu de disparaître une fois parti avec le message.
+      piecesJointes:
+        fichiers.length || texteColle
+          ? [
+              ...fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) })),
+              ...(texteColle
+                ? [{ nom: "Texte collé", type: "texte" as const, contenu: texteColle, langage: detecterLangageCode(texteColle) }]
+                : []),
+            ]
+          : null,
     };
     // Ajouté 15/09/2026 (demande Bourama) : avant, seul le texte final
     // (role/content) partait au backend -- tout résultat d'outil obtenu à
