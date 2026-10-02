@@ -1,10 +1,9 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, SlidersHorizontal, UserX, HardDrive, Radio } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, FileText, ArrowUpRight, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, SlidersHorizontal, UserX, Radio } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent, demarrerZipChat } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
-import { IconeNotion } from "@/components/icons/IconeNotion";
 import { LecteurMedia } from "./LecteurMedia";
 import { CanvasDessin } from "./CanvasDessin";
 import { VisionneuseImage } from "./VisionneuseImage";
@@ -378,6 +377,10 @@ export function BarreDeSaisie({
   // que les autres (outilAutorisePourAgent), juste un sous-ensemble de
   // outilsPourAgent au lieu d'un onglet parmi d'autres.
   const outilsUtilitairesPourAgent = outilsPourAgent.filter((o) => o.onglet === "utilitaires");
+  // Prendre une photo et Mode vocal vivent dans le menu du "+" (01/10/2026),
+  // la liste du bouton Utilitaires ne les répète pas.
+  const OUTILS_DU_MENU_PLUS = ["ui_photo", "ui_mode_vocal"];
+  const utilitairesBouton = outilsUtilitairesPourAgent.filter((o) => !OUTILS_DU_MENU_PLUS.includes(o.nom));
 
   // Interrupteur (13/08/2026, demande Bourama) -- désactive l'AFFICHAGE du
   // bouton "Applications" (menu complet, application seule, raccourci "dernier
@@ -413,97 +416,12 @@ export function BarreDeSaisie({
   const modeActif = useModeActif(conversationId, onAccesBloqueChange);
   // Menu du bouton "Utilitaires" (2026-08-01) -- multi-sélection cumulative
   // via estOutilActif/executerActionOutil déjà génériques, pas d'onglets :
-  // une seule liste plate (outilsUtilitairesPourAgent).
+  // une seule liste plate (utilitairesBouton).
   const [menuUtilitairesOuvert, setMenuUtilitairesOuvert] = useState(false);
   const menuUtilitairesRef = useRef<HTMLDivElement>(null);
   const menuUtilitairesMobileRef = useRef<HTMLDivElement>(null);
   const boutonUtilitairesRef = useRef<HTMLButtonElement>(null);
   const boutonUtilitairesMobileRef = useRef<HTMLButtonElement>(null);
-  // Survol de la ligne du "+" sur PC : déplie la rangée de raccourcis (voir
-  // barre/MenuPlus.tsx).
-  const [survolLigneBureau, setSurvolLigneBureau] = useState(false);
-
-  // Raccourcis de la rangée du "+" (01/10/2026, refonte de la barre de
-  // saisie ; première version des slots variables : 2026-07-28). La rangée
-  // contient jusqu'à 3 raccourcis d'utilitaires (localisation, formule,
-  // recherche, dessin) et 1 raccourci d'application :
-  // - plusieurs applis actives (appliButtonVisible) : la dernière appli
-  //   utilisée ;
-  // - une seule appli (appliSlotUnique) : cette appli, fixe.
-  //
-  // Historique {type, nom}[], le plus récent en tête, persisté dans
-  // localStorage (demande Bourama 01/08 : "ils doivent rester et continuer à
-  // varier plutôt que de reprendre à chaque fois que t'ouvres l'app").
-  // Global au navigateur, pas scindé par agent : un outil non autorisé pour
-  // l'agent courant est simplement ignoré à l'affichage. Il ne sert plus qu'à
-  // retrouver la dernière appli utilisée (appliRecente) et à amorcer les
-  // positions des utilitaires pour un utilisateur qui avait déjà un
-  // historique.
-  type RecentSlot = { type: "outil" | "appli"; nom: string };
-  const CLE_LS_RECENTS = "dj_barre_recents_v1";
-  const CLE_LS_SLOTS_OUTILS = "dj_barre_slots_outils_v1";
-  const NB_SLOTS_OUTILS_RECENTS = 3;
-  // Défaut (02/08, demande Bourama) : tant qu'aucun utilitaire n'a été
-  // utilisé, seul le clavier de formules (ui_formule) apparaît.
-  const OUTIL_SLOT_FIXE = "ui_formule";
-  const [recentsCombines, setRecentsCombines] = useState<RecentSlot[]>([]);
-  // Positions des raccourcis d'utilitaires, stables (01/10/2026) : un outil
-  // utilisé qui est déjà affiché garde sa place, un outil qui n'est pas
-  // affiché prend la place du dernier raccourci. Les positions ne bougent donc
-  // plus à chaque utilisation.
-  const [slotsOutils, setSlotsOutils] = useState<string[]>([OUTIL_SLOT_FIXE]);
-
-  useEffect(() => {
-    try {
-      const brut = window.localStorage.getItem(CLE_LS_RECENTS);
-      let historique: RecentSlot[] = [];
-      if (brut) {
-        const parsed = JSON.parse(brut);
-        if (Array.isArray(parsed)) {
-          historique = parsed;
-          setRecentsCombines(parsed);
-        }
-      }
-      const brutSlots = window.localStorage.getItem(CLE_LS_SLOTS_OUTILS);
-      if (brutSlots) {
-        const parsedSlots = JSON.parse(brutSlots);
-        if (Array.isArray(parsedSlots) && parsedSlots.every((n) => typeof n === "string")) {
-          setSlotsOutils(parsedSlots.slice(0, NB_SLOTS_OUTILS_RECENTS));
-          return;
-        }
-      }
-      // Pas encore de positions enregistrées : on part de l'historique
-      // existant (le plus récent en premier), sinon du défaut ci-dessus.
-      const issus = historique
-        .filter((r) => r.type === "outil")
-        .map((r) => r.nom)
-        .slice(0, NB_SLOTS_OUTILS_RECENTS);
-      if (issus.length > 0) setSlotsOutils(issus);
-    } catch {
-      // localStorage indisponible (navigation privée, quota dépassé...) :
-      // les raccourcis repartent de zéro pour cette session, ce n'est pas
-      // bloquant pour le reste de la barre.
-    }
-  }, []);
-
-  function enregistrerRecent(type: "outil" | "appli", nom: string) {
-    setRecentsCombines((prec) => {
-      const suivant = [{ type, nom }, ...prec.filter((r) => !(r.type === type && r.nom === nom))].slice(0, 10);
-      try {
-        window.localStorage.setItem(CLE_LS_RECENTS, JSON.stringify(suivant));
-      } catch {
-        // idem, non bloquant
-      }
-      return suivant;
-    });
-  }
-
-  // Raccourcis d'utilitaires réellement affichés pour CET agent.
-  const outilsRecents = slotsOutils
-    .filter((n) => outilsUtilitairesPourAgent.some((o) => o.nom === n))
-    .slice(0, NB_SLOTS_OUTILS_RECENTS);
-  const appliRecente =
-    recentsCombines.find((r) => r.type === "appli")?.nom ?? applisPourAgent[0]?.nom ?? null;
   const [menuAppliOuvert, setMenuAppliOuvert] = useState(false);
   const menuAppliRef = useRef<HTMLDivElement>(null);
   const menuAppliMobileRef = useRef<HTMLDivElement>(null);
@@ -523,30 +441,6 @@ export function BarreDeSaisie({
     document.addEventListener("mousedown", gererClicExterieur);
     return () => document.removeEventListener("mousedown", gererClicExterieur);
   }, [menuAppliOuvert]);
-
-  // Enregistre un utilitaire utilisé : historique, puis positions des
-  // raccourcis (voir slotsOutils plus haut).
-  function enregistrerUtilisationOutil(nom: string) {
-    enregistrerRecent("outil", nom);
-    setSlotsOutils((prec) => {
-      if (prec.includes(nom)) return prec;
-      // Seuls les raccourcis réellement affichés comptent pour savoir s'il
-      // reste une place libre ou s'il faut remplacer le dernier.
-      const affiches = prec.filter((n) => outilsUtilitairesPourAgent.some((o) => o.nom === n));
-      const base = affiches.length < NB_SLOTS_OUTILS_RECENTS ? affiches : affiches.slice(0, NB_SLOTS_OUTILS_RECENTS - 1);
-      const suivant = [...base, nom];
-      try {
-        window.localStorage.setItem(CLE_LS_SLOTS_OUTILS, JSON.stringify(suivant));
-      } catch {
-        // idem, non bloquant
-      }
-      return suivant;
-    });
-  }
-
-  function enregistrerUtilisationAppli(nom: string) {
-    enregistrerRecent("appli", nom);
-  }
 
   // Certaines entrées de OUTILS_DISPONIBLES (préfixe "ui_") ne sont pas des
   // outils backend forcés mais d'anciennes icônes autonomes de la barre --
@@ -593,7 +487,6 @@ export function BarreDeSaisie({
         inputPhotoRef.current?.click();
         break;
     }
-    enregistrerUtilisationOutil(nom);
   }
 
   function executerActionAppli(nom: string) {
@@ -608,7 +501,6 @@ export function BarreDeSaisie({
         cliquerGoogleDrive();
         break;
     }
-    enregistrerUtilisationAppli(nom);
   }
 
   useEffect(() => {
@@ -1470,14 +1362,14 @@ export function BarreDeSaisie({
     );
   }
 
-  // Entrées du menu "+" (01/10/2026), dans l'ordre voulu : Joindre un fichier,
-  // Canal en direct, Application. Dicter et Utilitaires ont leur bouton
-  // permanent à droite, Longueur / Mode pédagogique sont dans Réglages et
-  // Plein écran est collé en haut de la barre : aucun doublon ici.
-  // Application : la rangée de raccourcis affiche déjà l'application seule
-  // sur PC (règle de doublon, elle n'est donc pas répétée dans le menu), alors
-  // que sur mobile la rangée n'apparaît qu'à l'appui long : l'entrée y reste.
-  function entreesMenuPlus(mobile: boolean): EntreeMenuPlus[] {
+  // Entrées du menu "+" (01/10/2026), dans l'ordre : Joindre un fichier,
+  // Prendre une photo, Mode vocal, Canal en direct, Application. Dicter et
+  // Utilitaires ont leur bouton permanent à droite, Longueur / Mode
+  // pédagogique sont dans Réglages et Plein écran est collé au coin de la
+  // barre : aucun doublon ici. Photo et Mode vocal sont des entrées du
+  // registre des utilitaires (lib/outils.ts) : elles ne sont proposées que si
+  // l'agent les autorise, et ne figurent plus dans la liste d'Utilitaires.
+  function entreesMenuPlus(): EntreeMenuPlus[] {
     const entrees: EntreeMenuPlus[] = [
       {
         cle: "fichier",
@@ -1486,6 +1378,11 @@ export function BarreDeSaisie({
         onClick: () => inputFichierRef.current?.click(),
       },
     ];
+    for (const nom of OUTILS_DU_MENU_PLUS) {
+      const outil = outilsUtilitairesPourAgent.find((o) => o.nom === nom);
+      if (!outil) continue;
+      entrees.push({ cle: nom, Icone: outil.Icone, libelle: outil.label, onClick: () => executerActionOutil(nom) });
+    }
     // Guide/Démo retirés du chat (25/09/2026, demande Bourama). Canal en
     // direct (chantier L, 19/09/2026) : contexte nullable, la barre peut être
     // montée hors AppShell.
@@ -1500,6 +1397,8 @@ export function BarreDeSaisie({
         },
       });
     }
+    // Plusieurs applications : une entrée qui ouvre leur liste. Une seule :
+    // une entrée directe vers cette application.
     if (appliButtonVisible) {
       entrees.push({
         cle: "applications",
@@ -1508,65 +1407,21 @@ export function BarreDeSaisie({
         onClick: () => setMenuAppliOuvert(true),
       });
     }
-    if (appliSlotUnique && mobile) {
+    if (appliSlotUnique) {
       entrees.push({
         cle: "application",
         Icone: appliSlotUnique.Icone,
         libelle: appliSlotUnique.label,
         onClick: () => executerActionAppli(appliSlotUnique.nom),
+        // Mêmes protections que l'ancien bouton dédié : dépôts GitHub en
+        // cours de chargement, Google Drive en cours de connexion ou déjà
+        // connecté (aucun choix à faire dans ce cas).
+        desactive:
+          (appliSlotUnique.nom === "github" && githubEnCours) ||
+          (appliSlotUnique.nom === "google_drive" && (driveEnCours || !!driveConnecte)),
       });
     }
     return entrees;
-  }
-
-  // Application de la rangée de raccourcis : l'application seule, ou, avec
-  // plusieurs applications, la dernière utilisée.
-  const appliRaccourci =
-    appliSlotUnique ??
-    (appliButtonVisible && appliRecente ? (applisPourAgent.find((a) => a.nom === appliRecente) ?? null) : null);
-  const aRaccourcis = outilsRecents.length > 0 || !!appliRaccourci;
-
-  // Raccourcis d'utilitaires (jusqu'à 3, positions stables, voir slotsOutils).
-  function boutonsRaccourcisOutils(mobile: boolean) {
-    return outilsRecents.map((nom) => {
-      const entree = outilsDisponibles.find((o) => o.nom === nom);
-      if (!entree) return null;
-      const actif = estOutilActif(nom);
-      return (
-        <button
-          key={nom}
-          onClick={() => executerActionOutil(nom)}
-          disabled={nom === "ui_localisation" && localisationEnCours}
-          aria-label={entree.label}
-          title={entree.label}
-          className={
-            "animate-dj-fade-in-rapide transition-colors disabled:opacity-60 " +
-            (mobile ? "flex h-10 w-10 items-center justify-center rounded-cgpt-bouton " : "") +
-            (actif ? "text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
-          }
-        >
-          <entree.Icone size={18} />
-        </button>
-      );
-    });
-  }
-
-  // Raccourci d'application de la rangée mobile (appui long sur le "+").
-  // Les sélecteurs de dépôts et de pages s'ouvrent alors dans les feuilles
-  // du bas mobile plus bas dans ce fichier.
-  function boutonRaccourciApplicationMobile() {
-    if (!appliRaccourci) return null;
-    const Icone = appliRaccourci.Icone;
-    return (
-      <button
-        onClick={() => executerActionAppli(appliRaccourci.nom)}
-        aria-label={appliRaccourci.label}
-        title={appliRaccourci.label}
-        className="flex h-10 w-10 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:text-dj-texte"
-      >
-        <Icone size={18} />
-      </button>
-    );
   }
 
   return (
@@ -1715,6 +1570,18 @@ export function BarreDeSaisie({
         // ci-dessous (ligne ~2211), déjà pensée pour un espace étroit.
         className="relative hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3 focus-within:border-dj-bordure-forte md:block"
       >
+        {/* Plein écran (01/10/2026) : posé dehors, collé sur le coin haut droit de
+            la barre (il en dépasse à moitié), icône discrète. Ouvre la même
+            zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}
+        <button
+          type="button"
+          onClick={() => setPleinEcranSaisie(true)}
+          aria-label="Agrandir en plein écran"
+          title="Plein écran"
+          className="absolute -right-2 -top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet opacity-80 shadow-sm transition-all hover:text-dj-texte hover:opacity-100"
+        >
+          <ArrowUpRight size={14} strokeWidth={1.75} />
+        </button>
         {/* Aperçu formules (2026-07-27) -- affiché seulement si le
             brouillon contient au moins un "$", pour ne pas dupliquer
             inutilement un simple message texte sans maths. Placé
@@ -1747,7 +1614,7 @@ export function BarreDeSaisie({
           <div
             ref={calqueRef}
             aria-hidden
-            className="pointer-events-none absolute inset-0 max-h-64 overflow-hidden whitespace-pre-wrap break-words pr-7 text-[15px] leading-normal text-dj-texte"
+            className="pointer-events-none absolute inset-0 max-h-64 overflow-hidden whitespace-pre-wrap break-words text-[15px] leading-normal text-dj-texte"
           >
             {texte
               ? segmenterTexteAvecLiens(texte).map((s, i) =>
@@ -1784,20 +1651,8 @@ export function BarreDeSaisie({
             }}
             placeholder={transcriptionEnCours ? "Transcription en cours..." : "Pose ta question..."}
             rows={1}
-            className="relative max-h-64 w-full resize-none overflow-y-auto bg-transparent pr-7 text-[15px] leading-normal text-transparent caret-dj-texte outline-none placeholder:text-dj-texte-muet"
+            className="relative max-h-64 w-full resize-none overflow-y-auto bg-transparent text-[15px] leading-normal text-transparent caret-dj-texte outline-none placeholder:text-dj-texte-muet"
           />
-          {/* Plein écran (01/10/2026) : collé en permanence dans le coin
-              haut droit de la barre, icône petite et discrète. Ouvre la même
-              zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}
-          <button
-            type="button"
-            onClick={() => setPleinEcranSaisie(true)}
-            aria-label="Agrandir en plein écran"
-            title="Plein écran"
-            className="absolute right-0 top-0 z-10 flex h-6 w-6 items-center justify-center rounded-md text-dj-texte-muet opacity-60 transition-opacity hover:opacity-100"
-          >
-            <Maximize2 size={13} strokeWidth={1.75} />
-          </button>
         </div>
 
         {/* Éditeur maths/chimie fusionné (2026-07-27, demande Bourama :
@@ -1819,175 +1674,15 @@ export function BarreDeSaisie({
           />
         )}
 
-<div
-          className="mt-2 flex items-center justify-between gap-2"
-          onMouseEnter={() => setSurvolLigneBureau(true)}
-          onMouseLeave={() => setSurvolLigneBureau(false)}
-        >
+        <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             {/* Bouton "+" (01/10/2026, refonte de la barre de saisie) : un
-                seul bouton à gauche. Au clic, son menu (Joindre un fichier,
-                Canal en direct, Application). Au survol de la ligne du "+",
-                une rangée de raccourcis glisse à sa droite (voir
-                barre/MenuPlus.tsx). */}
+                seul bouton à gauche. Son menu contient Joindre un fichier,
+                Prendre une photo, Mode vocal, Canal en direct et
+                Application (voir barre/MenuPlus.tsx). */}
             <MenuPlus
               variante="bureau"
-              entrees={entreesMenuPlus(false)}
-              raccourcis={
-                aRaccourcis ? (
-                  <>
-                    {boutonsRaccourcisOutils(false)}
-            {/* Raccourci "dernière appli utilisée" (2026-08-01, bug
-                signalé par Bourama : appliRecente était calculé mais
-                jamais affiché nulle part). Ne s'affiche QUE quand
-                appliButtonVisible (plusieurs applis actives) : si une
-                seule appli, elle reste fixe via appliSlotUnique
-                ci-dessus et ne varie jamais, conforme à la règle de
-                Bourama ("apparaît et reste... et ne change pas").
-                Ici au contraire ça varie : dernière appli cliquée,
-                repli sur applisPourAgent[0] tant qu'aucune n'a encore
-                été cliquée (même dérivation que `appliRecente`). */}
-            {appliButtonVisible && appliRecente && (() => {
-              const appli = applisPourAgent.find((a) => a.nom === appliRecente);
-              if (!appli) return null;
-              const Icone = appli.Icone;
-              return (
-                <button
-                  onClick={() => executerActionAppli(appli.nom)}
-                  aria-label={appli.label}
-                  title={appli.label}
-                  className="relative rounded-cgpt-bouton p-1 text-dj-texte-muet transition-colors hover:text-dj-texte"
-                >
-                  <Icone size={18} />
-                </button>
-              );
-            })()}
-            {/* Raccourci "Appli" (2026-07-28, corrigé le 2026-07-30
-                pour dépendre du nombre RÉEL d'applis activées pour CET
-                agent -- flux 3) -- affiché seul (sans bouton dropdown)
-                uniquement si l'agent n'a exactement qu'une seule appli
-                activée. Cas GitHub traité à part pour conserver le
-                sélecteur de dépôts déjà en place -- les futures applis
-                passeront par executerActionAppli seul, sans dropdown
-                dédié, tant qu'elles n'en ont pas besoin. */}
-            {appliSlotUnique?.nom === "github" && (
-              <div className="relative" ref={selecteurRef}>
-                <button
-                  onClick={() => executerActionAppli("github")}
-                  disabled={githubEnCours}
-                  aria-label={githubConnecte ? "Choisir un dépôt GitHub" : "Connecter GitHub"}
-                  title={githubConnecte ? "Choisir un dépôt GitHub" : "Connecter GitHub"}
-                  className={
-                    githubConnecte
-                      ? "relative text-dj-texte transition-colors"
-                      : "relative text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
-                  }
-                >
-                  <Github size={18} />
-                  {githubConnecte && (
-                    <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                  )}
-                </button>
-
-                {selecteurOuvert && (
-                  <div className="absolute bottom-full left-0 z-30 mb-2 max-h-64 w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
-                    {depots === null && (
-                      <div className="space-y-1.5 px-3 py-2" aria-hidden>
-                        <Skeleton className="h-3 w-3/4 rounded" />
-                        <Skeleton className="h-3 w-1/2 rounded" style={{ animationDelay: "120ms" }} />
-                        <Skeleton className="h-3 w-2/3 rounded" style={{ animationDelay: "240ms" }} />
-                      </div>
-                    )}
-                    {depots?.length === 0 && (
-                      <p className="px-3 py-2 text-xs text-dj-texte-muet">Aucun dépôt trouvé.</p>
-                    )}
-                    {depots?.map((d) => (
-                      <button
-                        key={d.nom_complet}
-                        type="button"
-                        onClick={() => choisirDepot(d.nom_complet)}
-                        className="block w-full rounded-lg px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {d.nom_complet}
-                          {d.prive && (
-                            <span className="rounded bg-dj-surface px-1.5 py-0.5 text-[10px] text-dj-texte-muet">
-                              privé
-                            </span>
-                          )}
-                        </span>
-                        {d.description && (
-                          <span className="line-clamp-1 text-xs text-dj-texte-muet">{d.description}</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {/* Notion (01/08) -- même traitement à part que GitHub
-                ci-dessus, pour le cas où un agent n'a QUE Notion
-                d'activé (pas GitHub) : sans ce bloc dédié, appliSlotUnique
-                vaudrait "notion" mais rien ne le rendrait jamais, le
-                bouton Appli resterait invisible pour cet agent -- exactement
-                le bug diagnostiqué pour Nucleos. */}
-            {appliSlotUnique?.nom === "notion" && (
-              <div className="relative" ref={selecteurNotionRef}>
-                <button
-                  onClick={() => executerActionAppli("notion")}
-                  disabled={notionEnCours}
-                  aria-label={notionConnecte ? "Choisir une page Notion" : "Connecter Notion"}
-                  title={notionConnecte ? "Choisir une page Notion" : "Connecter Notion"}
-                  className={
-                    notionConnecte
-                      ? "relative text-dj-texte transition-colors"
-                      : "relative text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
-                  }
-                >
-                  <IconeNotion size={18} />
-                  {notionConnecte && (
-                    <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                  )}
-                </button>
-
-                {selecteurNotionOuvert && (
-                  <div className="absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
-                    {contenuSelecteurNotion("bg-dj-surface", "bg-dj-surface")}
-                  </div>
-                )}
-              </div>
-            )}
-            {/* Google Drive (01/09) -- même raison d'être que les blocs
-                GitHub/Notion ci-dessus : couvre le cas où un agent n'a QUE
-                Drive d'activé (github/notion étant désactivés côté
-                plateforme au 01/09), sans quoi appliSlotUnique vaudrait
-                "google_drive" mais rien ne le rendrait (bug Nucleos). Pas
-                de sélecteur ici (contrairement à GitHub/Notion) : les
-                outils Drive n'ont besoin d'aucune sélection préalable dans
-                le champ de texte, juste d'être connecté. */}
-            {appliSlotUnique?.nom === "google_drive" && (
-              <button
-                onClick={() => executerActionAppli("google_drive")}
-                disabled={driveEnCours || !!driveConnecte}
-                aria-label={driveConnecte ? "Google Drive connecté" : "Connecter Google Drive"}
-                title={driveConnecte ? "Google Drive connecté" : "Connecter Google Drive"}
-                className={
-                  driveConnecte
-                    ? "relative text-dj-texte transition-colors"
-                    : "relative text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
-                }
-              >
-                <HardDrive size={18} />
-                {driveConnecte && (
-                  <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-                )}
-              </button>
-            )}
-                  </>
-                ) : null
-              }
-              survolLigne={survolLigneBureau}
-              garderRangee={selecteurOuvert || selecteurNotionOuvert}
+              entrees={entreesMenuPlus()}
               enfantsAncres={
                 <>
                   {/* Liste des applications (plusieurs applis actives),
@@ -2019,13 +1714,12 @@ export function BarreDeSaisie({
                         ))}
                     </div>
                   )}
-                  {/* Sélecteur de pages Notion pour le cas plusieurs applis
-                      (01/08, ex. GitHub + Notion actifs) : cliquer "Notion"
-                      dans la liste ci-dessus déclenche cliquerNotion(), qui
-                      bascule selecteurNotionOuvert. Le panneau mobile
+                  {/* Sélecteur de pages Notion : ouvert par cliquerNotion()
+                      (via executerActionAppli), que Notion soit l'application
+                      seule ou l'une de plusieurs. Le panneau mobile
                       (md:hidden, plus bas dans le fichier) couvre le petit
                       écran. */}
-                  {appliButtonVisible && selecteurNotionOuvert && (
+                  {selecteurNotionOuvert && (
                     <div
                       ref={selecteurNotionRef}
                       className="absolute bottom-full left-0 z-30 mb-2 hidden w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl md:block"
@@ -2033,6 +1727,43 @@ export function BarreDeSaisie({
                       {contenuSelecteurNotion("bg-dj-surface", "bg-dj-surface")}
                     </div>
                   )}
+                  {/* Sélecteur de dépôts GitHub. */}
+                  <div ref={selecteurRef}>
+                  {selecteurOuvert && (
+                    <div className="absolute bottom-full left-0 z-30 mb-2 max-h-64 w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface-haute p-1 shadow-xl">
+                      {depots === null && (
+                        <div className="space-y-1.5 px-3 py-2" aria-hidden>
+                          <Skeleton className="h-3 w-3/4 rounded" />
+                          <Skeleton className="h-3 w-1/2 rounded" style={{ animationDelay: "120ms" }} />
+                          <Skeleton className="h-3 w-2/3 rounded" style={{ animationDelay: "240ms" }} />
+                        </div>
+                      )}
+                      {depots?.length === 0 && (
+                        <p className="px-3 py-2 text-xs text-dj-texte-muet">Aucun dépôt trouvé.</p>
+                      )}
+                      {depots?.map((d) => (
+                        <button
+                          key={d.nom_complet}
+                          type="button"
+                          onClick={() => choisirDepot(d.nom_complet)}
+                          className="block w-full rounded-lg px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            {d.nom_complet}
+                            {d.prive && (
+                              <span className="rounded bg-dj-surface px-1.5 py-0.5 text-[10px] text-dj-texte-muet">
+                                privé
+                              </span>
+                            )}
+                          </span>
+                          {d.description && (
+                            <span className="line-clamp-1 text-xs text-dj-texte-muet">{d.description}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  </div>
                 </>
               }
             />
@@ -2109,7 +1840,7 @@ export function BarreDeSaisie({
                 génériques, y compris pour les entrées "ui_" locales) --
                 juste pas d'onglets ici, une seule liste plate. Masqué si
                 l'agent n'a aucune entrée utilitaire autorisée. */}
-            {outilsUtilitairesPourAgent.length > 0 && (
+            {utilitairesBouton.length > 0 && (
             <div className="relative">
               <button
                 ref={boutonUtilitairesRef}
@@ -2118,7 +1849,7 @@ export function BarreDeSaisie({
                 title="Choisir un ou plusieurs utilitaires"
                 className={
                   "relative rounded-cgpt-bouton p-1 transition-colors " +
-                  (menuUtilitairesOuvert || outilsUtilitairesPourAgent.some((o) => estOutilActif(o.nom))
+                  (menuUtilitairesOuvert || utilitairesBouton.some((o) => estOutilActif(o.nom))
                     ? "bg-dj-accent-1/10 text-dj-accent-1-texte"
                     : "text-dj-texte-muet hover:text-dj-texte")
                 }
@@ -2128,13 +1859,13 @@ export function BarreDeSaisie({
               <div
                 ref={menuUtilitairesRef}
                 className={
-                  "absolute bottom-full left-0 z-20 mb-2 max-h-72 w-64 max-w-[calc(100vw-2rem)] origin-bottom-left overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
+                  "absolute bottom-full right-0 z-20 mb-2 max-h-72 w-64 max-w-[calc(100vw-2rem)] origin-bottom-right overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
                   (menuUtilitairesOuvert
                     ? "translate-y-0 scale-100 opacity-100"
                     : "pointer-events-none translate-y-1 scale-95 opacity-0")
                 }
               >
-                {[...outilsUtilitairesPourAgent]
+                {[...utilitairesBouton]
                   .sort((a, b) => a.label.localeCompare(b.label, "fr"))
                   .map(({ nom, label, Icone }) => {
                     const actif = estOutilActif(nom);
@@ -2142,6 +1873,7 @@ export function BarreDeSaisie({
                       <button
                         key={nom}
                         onClick={() => executerActionOutil(nom)}
+                        disabled={nom === "ui_localisation" && localisationEnCours}
                         className={
                           "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs transition-colors " +
                           (actif ? "bg-dj-accent-1/10 text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute")
@@ -2232,6 +1964,18 @@ export function BarreDeSaisie({
         </div>
       )}
       <div className="relative flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
+        {/* Plein écran (01/10/2026) : posé dehors, collé sur le coin haut droit de
+            la barre (il en dépasse à moitié), icône discrète. Ouvre la même
+            zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}
+        <button
+          type="button"
+          onClick={() => setPleinEcranSaisie(true)}
+          aria-label="Agrandir en plein écran"
+          title="Plein écran"
+          className="absolute -right-2 -top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet opacity-80 shadow-sm transition-all hover:text-dj-texte hover:opacity-100"
+        >
+          <ArrowUpRight size={14} strokeWidth={1.75} />
+        </button>
         <textarea
           ref={zoneTexteMobileRef}
           value={texte}
@@ -2258,18 +2002,8 @@ export function BarreDeSaisie({
           }}
           placeholder={transcriptionEnCours ? "Transcription en cours..." : "Pose ta question..."}
           rows={1}
-          className="max-h-32 min-h-8 w-full pr-8 resize-none overflow-y-auto bg-transparent px-1 py-1 text-base leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
+          className="max-h-32 min-h-8 w-full resize-none overflow-y-auto bg-transparent px-1 py-1 text-base leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
         />
-        {/* Plein écran (01/10/2026) : même bouton, même coin que sur PC. */}
-        <button
-          type="button"
-          onClick={() => setPleinEcranSaisie(true)}
-          aria-label="Agrandir en plein écran"
-          title="Plein écran"
-          className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-md text-dj-texte-muet opacity-60 transition-opacity hover:opacity-100"
-        >
-          <Maximize2 size={13} strokeWidth={1.75} />
-        </button>
 
 
         {/* Deuxième ligne (14/08, demande Bourama : forme carte en deux
@@ -2283,20 +2017,9 @@ export function BarreDeSaisie({
             cible tactile principale (44-48px) -- relevés à h-11 w-11
             (44px), sans changer leur position ni leur icône. */}
         <div className="flex items-center justify-between gap-1">
-<MenuPlus
-          variante="mobile"
-          entrees={entreesMenuPlus(true)}
-          raccourcis={
-            aRaccourcis ? (
-              <>
-                {boutonsRaccourcisOutils(true)}
-                {boutonRaccourciApplicationMobile()}
-              </>
-            ) : null
-          }
-        />
+          <MenuPlus variante="mobile" entrees={entreesMenuPlus()} />
 
-<div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
         <BoutonReglages
           variante="mobile"
           modelesDisponibles={modelesDisponibles}
@@ -2308,7 +2031,7 @@ export function BarreDeSaisie({
           pedagogie={pedagogie}
           modeActif={modeActif}
         />
-        {outilsUtilitairesPourAgent.length > 0 && (
+        {utilitairesBouton.length > 0 && (
           <button
             ref={boutonUtilitairesMobileRef}
             type="button"
@@ -2317,7 +2040,7 @@ export function BarreDeSaisie({
             title="Utilitaires"
             className={
               "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton transition-colors " +
-              (menuUtilitairesOuvert || outilsUtilitairesPourAgent.some((o) => estOutilActif(o.nom))
+              (menuUtilitairesOuvert || utilitairesBouton.some((o) => estOutilActif(o.nom))
                 ? "bg-dj-accent-1/10 text-dj-accent-1-texte"
                 : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte")
             }
@@ -2422,7 +2145,7 @@ export function BarreDeSaisie({
             </button>
           </div>
           <div className="overflow-y-auto p-1">
-            {[...outilsUtilitairesPourAgent]
+            {[...utilitairesBouton]
               .sort((a, b) => a.label.localeCompare(b.label, "fr"))
               .map(({ nom, label, Icone }) => {
                 const actif = estOutilActif(nom);
@@ -2430,6 +2153,7 @@ export function BarreDeSaisie({
                   <button
                     key={nom}
                     onClick={() => executerActionOutil(nom)}
+                    disabled={nom === "ui_localisation" && localisationEnCours}
                     className={
                       "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors " +
                       (actif ? "bg-dj-accent-1/10 text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute")

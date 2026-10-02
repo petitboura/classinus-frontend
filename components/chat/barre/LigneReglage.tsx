@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 /**
@@ -48,9 +48,9 @@ export function LigneReglage({
       >
         <Icone size={grand ? 16 : 14} className="flex-shrink-0" />
         <span className="flex-1">{titre}</span>
-        <ChevronDown
+        <ChevronRight
           size={grand ? 14 : 12}
-          className={"flex-shrink-0 transition-transform duration-200 " + (ouverte ? "rotate-180" : "")}
+          className={"flex-shrink-0 transition-transform duration-200 " + (ouverte ? "rotate-90" : "")}
         />
       </button>
       <div
