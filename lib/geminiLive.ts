@@ -20,14 +20,19 @@ type ReponseToken = {
 };
 type OptionsGeminiLive = {
   conversationId: string;
-  surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "erreur" | "ferme") => void;
+  surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur" | "ferme") => void;
   surErreur?: (message: string) => void;
-  // La voix est un interprète : elle transmet la demande à Clovis par cette
+  // La voix est un interprète : elle transmet la demande à Classinus par cette
   // fonction et reçoit en retour sa réponse écrite. Sans elle, chemin direct.
   surDemande?: (question: string) => Promise<string>;
 };
 
+// Niveaux sonores instantanés entre 0 et 1 : la voix de l'étudiant (micro) et
+// celle de Classinus (haut parleur). Lus à chaque image par l'onde à l'écran.
+export type NiveauxVoix = { entree: number; sortie: number };
+
 export type SessionGeminiLive = {
+  niveaux: () => NiveauxVoix;
   fermer: () => void;
   interrompre: () => void;
   envoyerTexte: (texte: string) => void;
@@ -49,7 +54,7 @@ function declarerOutilClovis(description: string) {
   };
 }
 
-// Chemin direct vers Clovis, sans passer par le chat affiché : utilisé seulement
+// Chemin direct vers Classinus, sans passer par le chat affiché : utilisé seulement
 // quand aucun chat n'est ouvert pour recevoir la demande.
 export async function demanderAClovisDirectement(question: string, conversationId: string): Promise<string> {
   let reponseClovis = "";
@@ -92,7 +97,7 @@ function convertirFloat32EnPcm16(input: Float32Array, sampleRate: number): Int16
   return sortie;
 }
 
-function creerLecteurAudio(contexte: AudioContext) {
+function creerLecteurAudio(contexte: AudioContext, sortie: AudioNode) {
   let prochainDebut = contexte.currentTime;
   const sources = new Set<AudioBufferSourceNode>();
   return {
@@ -103,7 +108,7 @@ function creerLecteurAudio(contexte: AudioContext) {
       for (let i = 0; i < pcm.length; i += 1) canal[i] = pcm[i] / 32768;
       const source = contexte.createBufferSource();
       source.buffer = buffer;
-      source.connect(contexte.destination);
+      source.connect(sortie);
       prochainDebut = Math.max(prochainDebut, contexte.currentTime);
       source.start(prochainDebut);
       prochainDebut += buffer.duration;
@@ -136,9 +141,13 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   // On retient l'état courant : les nouvelles de patience ne partent jamais
   // pendant que la voix parle déjà.
   let etatCourant = "connexion";
+  // Nombre de demandes en cours chez Classinus : tant qu'il y en a, la voix est
+  // en mode "travail" (l'onde respire) dès qu'elle ne parle plus.
+  let demandesEnCours = 0;
   const etat = (nouvelEtat: Parameters<typeof signalerEtat>[0]) => {
-    etatCourant = nouvelEtat;
-    signalerEtat(nouvelEtat);
+    const etatFinal = nouvelEtat === "ecoute" && demandesEnCours > 0 ? "travail" : nouvelEtat;
+    etatCourant = etatFinal;
+    signalerEtat(etatFinal);
   };
   etat("connexion");
   const token = await obtenirToken();
@@ -153,8 +162,28 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   // La connexion est ouverte seulement ici, après le micro et le son, pour que les écouteurs
   // (ouverture, messages, fermeture) soient posés avant toute annonce de Google.
   const websocket = new WebSocket(token.url + "?access_token=" + encodeURIComponent(token.token));
-  const lecteur = creerLecteurAudio(contexteSortie);
+  // Deux analyseurs pour mesurer le niveau sonore en direct : micro et haut parleur.
+  const analyseurSortie = contexteSortie.createAnalyser();
+  analyseurSortie.fftSize = 512;
+  analyseurSortie.connect(contexteSortie.destination);
+  const lecteur = creerLecteurAudio(contexteSortie, analyseurSortie);
   const source = contexteEntree.createMediaStreamSource(entree);
+  const analyseurEntree = contexteEntree.createAnalyser();
+  analyseurEntree.fftSize = 512;
+  source.connect(analyseurEntree);
+  const tamponEntree = new Uint8Array(analyseurEntree.fftSize);
+  const tamponSortie = new Uint8Array(analyseurSortie.fftSize);
+  const mesurerNiveau = (analyseur: AnalyserNode, tampon: Uint8Array<ArrayBuffer>): number => {
+    analyseur.getByteTimeDomainData(tampon);
+    let somme = 0;
+    for (let i = 0; i < tampon.length; i += 1) {
+      const v = (tampon[i] - 128) / 128;
+      somme += v * v;
+    }
+    return Math.min(1, Math.sqrt(somme / tampon.length) * 4);
+  };
+  const niveaux = (): NiveauxVoix =>
+    ferme ? { entree: 0, sortie: 0 } : { entree: mesurerNiveau(analyseurEntree, tamponEntree), sortie: mesurerNiveau(analyseurSortie, tamponSortie) };
   const processeur = contexteEntree.createScriptProcessor(4096, 1, 1);
   const silence = contexteEntree.createGain();
   silence.gain.value = 0;
@@ -169,7 +198,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     ferme = true;
     minuteursRelance.forEach((minuteur) => clearInterval(minuteur));
     minuteursRelance.clear();
-    processeur.disconnect(); source.disconnect(); silence.disconnect();
+    processeur.disconnect(); source.disconnect(); analyseurEntree.disconnect(); analyseurSortie.disconnect(); silence.disconnect();
     entree.getTracks().forEach((track) => track.stop());
     lecteur.interrompre();
     void contexteEntree.close(); void contexteSortie.close();
@@ -194,7 +223,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     websocket.send(JSON.stringify({ realtimeInput: { text: token.accueil } }));
   };
 
-  // Pendant que Clovis travaille, la voix ne reste jamais muette : à intervalle
+  // Pendant que Classinus travaille, la voix ne reste jamais muette : à intervalle
   // régulier (réglages venus du serveur), on lui rappelle de donner un mot de
   // patience, sauf si elle parle déjà. Renvoie la fonction qui arrête ces rappels.
   const demarrerRelances = () => {
@@ -213,7 +242,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   };
 
   // Gemini 3.8 Live exécute les outils en mode asynchrone : la voix peut donc
-  // continuer à parler pendant que Clovis travaille. WHEN_IDLE fait annoncer le
+  // continuer à parler pendant que Classinus travaille. WHEN_IDLE fait annoncer le
   // résultat dès qu'elle a fini sa phrase en cours, sans la couper.
   const reponseOutil = (appel: { id: string; name: string }, contenu: Record<string, string>) => ({
     id: appel.id,
@@ -265,13 +294,17 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
           continue;
         }
         const arreterRelances = demarrerRelances();
+        demandesEnCours += 1;
+        if (etatCourant !== "reponse") etat("travail");
         try {
           const reponseClovis = options.surDemande ? await options.surDemande(question) : await demanderAClovisDirectement(question, options.conversationId);
-          functionResponses.push(reponseOutil(appel, { result: reponseClovis || "Clovis n a pas renvoyé de réponse textuelle." }));
+          functionResponses.push(reponseOutil(appel, { result: reponseClovis || "Classinus n a pas renvoyé de réponse textuelle." }));
         } catch (e) {
-          functionResponses.push(reponseOutil(appel, { error: e instanceof Error ? e.message : "Erreur lors de l appel à Clovis." }));
+          functionResponses.push(reponseOutil(appel, { error: e instanceof Error ? e.message : "Erreur lors de l appel à Classinus." }));
         } finally {
           arreterRelances();
+          demandesEnCours = Math.max(0, demandesEnCours - 1);
+          if (demandesEnCours === 0 && etatCourant === "travail") etat("ecoute");
         }
       }
       if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ toolResponse: { functionResponses } }));
@@ -302,5 +335,5 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     websocket.send(JSON.stringify({ realtimeInput: { audio: { data: int16VersBase64(pcm), mimeType: "audio/pcm;rate=16000" } } }));
   };
   source.connect(processeur); processeur.connect(silence); silence.connect(contexteEntree.destination);
-  return { fermer: nettoyer, interrompre, envoyerTexte };
+  return { niveaux, fermer: nettoyer, interrompre, envoyerTexte };
 }
