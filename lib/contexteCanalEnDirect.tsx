@@ -25,6 +25,7 @@
 // chantier.
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { definirConversationCanal } from "./conversationPartagee";
 
 // "refuse" retiré (19/09/2026) : plus aucune confirmation ne peut
 // produire cet état, voir lib/canalAgentApplicatif.ts.
@@ -98,16 +99,10 @@ export type ValeurCanalEnDirect = {
   // genere ici comme avant, comportement inchange.
   activer: (conversationId?: string) => void;
   desactiver: () => void;
-  // Ajouté le 19/09/2026 (decision Bourama : le canal doit pouvoir
-  // déclencher lui même un vrai tour de Clovis, "comme si de rien
-  // n'était", sans jamais ouvrir le chat) : conversation dédiée à la
-  // session du canal, générée UNE FOIS à l'activation, réutilisée pour
-  // tous les messages envoyés tant que le canal reste actif -- jamais
-  // celle du chat normal (voir lib/canalAgentApplicatif.ts,
-  // envoyerTourCanalDirect). Distincte à dessein : le canal reste
-  // "quelque chose à part", pas mélangé à une conversation de chat en
-  // cours. Cette conversation reste consultable normalement plus tard
-  // depuis l'historique du chat, comme n'importe quelle autre.
+  // Conversation propre du canal, générée UNE FOIS à l'activation. Depuis le
+  // 02/10/2026 (décision Bourama), le canal suit le chat : tant qu'un chat est
+  // à l'écran, la conversation continuée est la sienne (voir
+  // lib/conversationPartagee.ts) ; celle-ci ne sert que s'il n'y a pas de chat.
   conversationId: string | null;
 
   modeInteraction: ModeInteraction;
@@ -159,8 +154,29 @@ export function useCanalEnDirect(): ValeurCanalEnDirect {
 // AppShell.tsx enregistre la vraie valeur dès que le Provider est monté.
 let canalGlobal: ValeurCanalEnDirect | null = null;
 
+// Ajouté le 30/09/2026 (demande Bourama : désactiver le canal doit vraiment
+// couper l'envoi de l'écran). Les modules hors React lisent l'état actif ici
+// et sont prévenus à chaque activation ou désactivation.
+let dernierEtatActifConnu = false;
+const ecouteursActivation = new Set<(actif: boolean) => void>();
+
 export function enregistrerCanalEnDirect(valeur: ValeurCanalEnDirect) {
   canalGlobal = valeur;
+  if (valeur.actif !== dernierEtatActifConnu) {
+    dernierEtatActifConnu = valeur.actif;
+    ecouteursActivation.forEach((ecouteur) => ecouteur(valeur.actif));
+  }
+}
+
+export function canalEnDirectEstActif(): boolean {
+  return canalGlobal?.actif ?? false;
+}
+
+export function ecouterActivationCanal(ecouteur: (actif: boolean) => void): () => void {
+  ecouteursActivation.add(ecouteur);
+  return () => {
+    ecouteursActivation.delete(ecouteur);
+  };
 }
 
 /**
@@ -186,6 +202,22 @@ export function mettreAJourJournalDepuisAgent(id: string, statut: StatutEntreeJo
 export function activerCanalDepuisAgent(conversationId?: string) {
   if (!canalGlobal || canalGlobal.actif) return;
   canalGlobal.activer(conversationId);
+}
+
+// Voix en direct (02/10/2026, demande Bourama) : quand la voix est allumée, ce
+// que Classinus dit dans sa bulle est lu à voix haute. La voix s'abonne ici ;
+// seuls les commentaires de Classinus et ses réponses sont transmis, jamais le
+// simple nom d'une action. Hors du contexte React, comme afficherTexteDepuisAgent.
+export type MessageBulle = { texte: string; type: "commentaire" | "reponse" };
+const ecouteursMessagesBulle = new Set<(message: MessageBulle) => void>();
+export function abonnerMessagesBulle(ecouteur: (message: MessageBulle) => void): () => void {
+  ecouteursMessagesBulle.add(ecouteur);
+  return () => {
+    ecouteursMessagesBulle.delete(ecouteur);
+  };
+}
+function signalerMessageBulle(message: MessageBulle) {
+  ecouteursMessagesBulle.forEach((ecouteur) => ecouteur(message));
 }
 
 export function afficherTexteDepuisAgent(texte: string, options?: OptionsAfficherTexte) {
@@ -298,9 +330,17 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     ecrirePreference(CLE_MOTEUR_DICTEE, moteur);
   }, []);
 
+  // Garde le module de conversation partagée au courant de la conversation propre
+  // du canal (null une fois désactivé), pour qu'il suive le chat quand il y en a un.
+  const conversationImposeeRef = useRef(false);
+  useEffect(() => {
+    definirConversationCanal(conversationId, conversationImposeeRef.current);
+  }, [conversationId]);
+
   const activer = useCallback((conversationId?: string) => {
     setActif(true);
-    // Nouvelle conversation dédiée à chaque activation (voir le
+    conversationImposeeRef.current = conversationId !== undefined;
+    // Nouvelle conversation propre à chaque activation (voir le
     // commentaire du type ValeurCanalEnDirect plus haut) -- jamais
     // réutilisée d'une activation à l'autre, cohérent avec la décision
     // "pas de persistance à travers un rechargement" déjà prise pour le
@@ -349,6 +389,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     // bulle disparaissait avant d'être lue). Un autre commentaire, lui, le
     // remplace normalement.
     if (!options?.commentaire && Date.now() < epingleJusqua.current) return;
+    if (options?.commentaire) signalerMessageBulle({ texte, type: "commentaire" });
     if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);
     // Une information remplace la réponse affichée (une seule bulle à la
     // fois) ; la réponse reste rouvrable via le curseur.
@@ -375,6 +416,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     (reponse: Omit<ReponseCanal, "id">) => {
       compteurReponse += 1;
       const complete: ReponseCanal = { ...reponse, id: compteurReponse };
+      signalerMessageBulle({ texte: complete.texte, type: "reponse" });
       derniereReponseRef.current = complete;
       setDerniereReponse(complete);
       if (minuteurEffacement.current) clearTimeout(minuteurEffacement.current);

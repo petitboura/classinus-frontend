@@ -7,6 +7,13 @@
 // - au dessus, quand le canal est actif, les boutons d'interaction du
 //   chantier M et N (ControlesInteractionCanal.tsx).
 //
+// Revirement (25/09/2026, decision Bourama) : sur /chat, ce bouton (et
+// BoutonJournalAgent) sont maintenant masqués par défaut -- SAUF si le
+// canal est déjà actif, auquel cas il reste affiché pour ne pas perdre
+// la main dessus pendant qu'il tourne. Le canal lui-même (son
+// fonctionnement une fois actif) n'est pas désactivé par /chat, seul
+// le POINT D'ENTRÉE (ce bouton) est masqué quand il est inactif ici.
+// Ça annule la décision du 19/09 ci-dessous, gardée en historique.
 // Bouton permanent (01/10/2026, demande Bourama) : dans la superposition
 // Electron, ce bouton est le seul élément affiché en permanence (les autres
 // n'apparaissent qu'à l'activation du canal), même fenêtre de Classinus
@@ -49,6 +56,7 @@ import {
 import { estDansFenetreSuperposition } from "@/lib/superpositionElectron";
 import { useDecalageRailLateral } from "@/lib/useDecalageRailLateral";
 import { useDeplacable } from "@/lib/useDeplacable";
+import { estPageChat } from "@/lib/routesApp";
 
 // Classes écrites en toutes lettres : Tailwind ne génère que les classes
 // qu'il trouve telles quelles dans le code, jamais celles assemblées par
@@ -85,14 +93,16 @@ export function CanalEnDirectFlottant() {
 
   if (!contexte) return null;
   const { actif, activer, desactiver } = contexte;
-  const surChat = pathname === "/chat";
+  const surChat = estPageChat(pathname);
+
+  if (surChat && !actif) return null;
 
   return (
     <div
       ref={deplacement.ref}
       data-agent-superposition="true"
       {...deplacement.poignee}
-      className={`fixed z-[65] flex touch-none flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
+      className={`fixed z-agent-controles flex touch-none flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
       style={{ left: `calc(${decalageRail}px + 1rem)`, ...deplacement.style }}
     >
       <div className="flex items-center gap-2">

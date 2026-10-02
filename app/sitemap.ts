@@ -87,6 +87,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${URL_BASE}/bibliotheque` },
     { url: `${URL_BASE}/comportements` },
     { url: `${URL_BASE}/etablissements` },
+    // Chantier SEO/AEO de Classinus (26/09/2026) : nouvelles pages
+    // publiques de présentation /decouvrir/... . Bibliothèque est la
+    // première section traitée, les prochaines rejoindront cette liste
+    // au fil des prochains chantiers.
+    { url: `${URL_BASE}/decouvrir` },
+    { url: `${URL_BASE}/decouvrir/accueil` },
+    { url: `${URL_BASE}/decouvrir/bibliotheque` },
+    { url: `${URL_BASE}/decouvrir/bibliotheque/perso` },
+    { url: `${URL_BASE}/decouvrir/bibliotheque/publique` },
+    { url: `${URL_BASE}/decouvrir/bibliotheque/telephone` },
+    { url: `${URL_BASE}/decouvrir/personnaliser` },
+    { url: `${URL_BASE}/decouvrir/personnaliser/mes-skills` },
+    { url: `${URL_BASE}/decouvrir/personnaliser/skills-publics` },
+    { url: `${URL_BASE}/decouvrir/personnaliser/memoire` },
+    { url: `${URL_BASE}/decouvrir/concentration` },
+    { url: `${URL_BASE}/decouvrir/concentration/session` },
+    { url: `${URL_BASE}/decouvrir/concentration/temps-ecran` },
     ...bibliotheque,
     ...skills,
     ...etablissements,

@@ -19,7 +19,10 @@ import {
   type EntreeReponseGroupee,
 } from "@/lib/questionsGroupees";
 import { VisionneuseImage } from "./VisionneuseImage";
-import { LecteurMedia } from "./LecteurMedia";
+import { LigneApercuPieces, type PieceApercu } from "./LigneApercuPieces";
+import { FenetreTexteColle } from "./FenetreTexteColle";
+import { FenetreMedia } from "./FenetreMedia";
+import { detecterLangageCode } from "@/lib/texteColle";
 import { RaisonnementBulle } from "./RaisonnementBulle";
 import { OutilResultatBulle, OutilEnCours } from "./OutilResultatBulle";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
@@ -133,9 +136,13 @@ export { texteBrut };
 // ne le traite pas comme un résultat web (estSiteWeb) et affiche plutôt
 // son repli "Aperçu non disponible" + téléchargement, qui reste dans
 // l'appli (voir ContenuNonPrevisualisable).
-function typeMimeDepuisNom(nom: string): string {
-  const ext = nom.split(".").pop()?.toLowerCase() ?? "";
-  return ext === "pdf" ? "application/pdf" : "application/octet-stream";
+// Le nom peut ne pas finir par .pdf (extension absente, nom coupé par un
+// séparateur du marqueur de pièce jointe) : l'adresse réelle du fichier,
+// qui garde toujours son extension, sert alors de second indice.
+function typeMimeDepuisNom(nom: string, adresse?: string): string {
+  const extNom = nom.split(".").pop()?.toLowerCase() ?? "";
+  const extAdresse = adresse?.split("?")[0].split("#")[0].split(".").pop()?.toLowerCase() ?? "";
+  return extNom === "pdf" || extAdresse === "pdf" ? "application/pdf" : "application/octet-stream";
 }
 
 // Nettoie le markdown avant lecture à voix haute (Web Speech API, voir
@@ -218,7 +225,7 @@ export interface MessageAffiche {
   // affiché avec un état "échec" plutôt que retiré silencieusement, pour
   // le cas où un fichier précis n'a pas pu être uploadé/lu alors que les
   // autres, eux, sont bien partis (voir ChatIA.tsx:envoyerMessage).
-  piecesJointes?: { nom: string; type: "image" | "document" | "video" | "audio"; previewUrl?: string; erreur?: string }[] | null;
+  piecesJointes?: { nom: string; type: "image" | "document" | "video" | "audio" | "zip" | "texte"; previewUrl?: string; erreur?: string; contenu?: string; langage?: string | null }[] | null;
   // Ajouté 2026-07-26 (demande Bourama) : true quand cette réponse précise
   // a été générée par un modèle de secours de qualité nettement réduite
   // (llama-3.1-8b-instant, tout dernier recours Groq avant Gemini -- voir
@@ -378,17 +385,22 @@ export type SegmentMessage =
 // éventuel + autres fichiers) était perdu -- sans conséquence tant qu'un
 // seul fichier par message était possible, mais aurait silencieusement
 // tronqué l'affichage dès qu'un deuxième bloc apparaissait.
-const MARQUEURS_PIECE_JOINTE: { motif: RegExp; type: "image" | "document" | "video" | "audio" }[] = [
+const MARQUEURS_PIECE_JOINTE: { motif: RegExp; type: "image" | "document" | "video" | "audio" | "zip" }[] = [
   { motif: /\[Image jointe : /, type: "image" },
   { motif: /\[Audio joint : /, type: "audio" },
   { motif: /\[Vidéo jointe : /, type: "video" },
   { motif: /\[Document joint : /, type: "document" },
+  // Zip (26/09/2026) : contrairement aux autres, ce bloc ne porte QUE le
+  // nom (pas de contenu extrait injecté ici, voir core/zip_chat.py et
+  // core/main.py:chat() -- le sommaire part directement dans le message
+  // envoyé au modèle côté serveur, pas via ce bloc texte visible).
+  { motif: /\[Archive jointe : /, type: "zip" },
 ];
 // Repère le début de CHAQUE bloc pièce jointe dans le texte (peu importe
 // le type), pour pouvoir découper le contenu en segments un par un.
-const DEBUT_BLOC_PIECE_JOINTE = /\n\n\[(?:Image jointe|Audio joint|Vidéo jointe|Document joint) : /g;
+const DEBUT_BLOC_PIECE_JOINTE = /\n\n\[(?:Image jointe|Audio joint|Vidéo jointe|Document joint|Archive jointe) : /g;
 
-function extraireUneBloc(bloc: string): { nom: string; type: "image" | "document" | "video" | "audio"; previewUrl?: string } | null {
+function extraireUneBloc(bloc: string): { nom: string; type: "image" | "document" | "video" | "audio" | "zip"; previewUrl?: string } | null {
   const correspondance = MARQUEURS_PIECE_JOINTE.find(({ motif }) => motif.test(bloc));
   if (!correspondance) return null;
   const { type } = correspondance;
@@ -402,8 +414,8 @@ function extraireUneBloc(bloc: string): { nom: string; type: "image" | "document
     const urlImage = /\[Image jointe : (.+?)\]/.exec(bloc)?.[1] ?? "";
     nom = urlImage.split("/").pop()?.split("?")[0] || "image";
   }
-  // Retire un éventuel " (tronqué)" laissé par le marqueur document.
-  nom = nom.replace(/\s*\(tronqué\)$/, "");
+  // Retire un éventuel " (tronqué)" ou " (illisible)" laissé par le marqueur document.
+  nom = nom.replace(/\s*\((?:tronqué|illisible)\)$/, "");
 
   // URL réelle du fichier : toujours en toute fin de bloc si présente
   // (image : c'est directement le contenu entre crochets ; les 3
@@ -426,12 +438,31 @@ export function nettoyerMessageHistorique(content: string): {
   // texte à ne pas réafficher en entier au rechargement, même bug que
   // celui corrigé plus haut pour audio/vidéo/image/document). Repli
   // simple : on le retire du texte affiché, sans reconstruire de puce.
-  const collageMotif = /\n\n\[Texte collé joint\]\n[\s\S]*$/;
-  content = content.replace(collageMotif, "");
+  // Les blocs de textes collés précèdent les blocs de fichiers dans le
+  // message envoyé (voir ChatIA.tsx), la zone des collages s'arrête donc au
+  // premier bloc de fichier ou à la fin du texte. Chaque bloc redevient une
+  // pièce jointe de type "texte", avec son contenu complet pour la fenêtre
+  // de lecture.
+  const MARQUEUR_COLLE = "\n\n[Texte collé joint]\n";
+  const textesColles: string[] = [];
+  const debutColle = content.indexOf(MARQUEUR_COLLE);
+  if (debutColle >= 0) {
+    const reste = content.slice(debutColle);
+    const finZone = reste.search(new RegExp(DEBUT_BLOC_PIECE_JOINTE.source));
+    const zone = finZone >= 0 ? reste.slice(0, finZone) : reste;
+    textesColles.push(...zone.split(MARQUEUR_COLLE).slice(1));
+    content = content.slice(0, debutColle) + (finZone >= 0 ? reste.slice(finZone) : "");
+  }
+  const pieceTexteColle: NonNullable<MessageAffiche["piecesJointes"]> = textesColles.map((contenu) => ({
+    nom: "Texte collé",
+    type: "texte",
+    contenu,
+    langage: detecterLangageCode(contenu),
+  }));
 
   const debuts = [...content.matchAll(DEBUT_BLOC_PIECE_JOINTE)].map((m) => m.index ?? -1).filter((i) => i >= 0);
   if (debuts.length === 0) {
-    return { texte: content, piecesJointes: null };
+    return { texte: content, piecesJointes: pieceTexteColle.length ? pieceTexteColle : null };
   }
 
   const texte = content.slice(0, debuts[0]);
@@ -443,6 +474,7 @@ export function nettoyerMessageHistorique(content: string): {
     if (piece) piecesJointes.push(piece);
   }
 
+  piecesJointes.push(...pieceTexteColle);
   return { texte, piecesJointes: piecesJointes.length ? piecesJointes : null };
 }
 
@@ -638,6 +670,8 @@ function BulleMessageInterne({
 }) {
   const [copie, setCopie] = useState(false);
   const [pieceJointeOuverteIndex, setPieceJointeOuverteIndex] = useState<number | null>(null);
+  const [texteColleOuvertIndex, setTexteColleOuvertIndex] = useState<number | null>(null);
+  const [mediaOuvertIndex, setMediaOuvertIndex] = useState<number | null>(null);
   const [enEdition, setEnEdition] = useState(false);
   // Voir le commentaire sur la prop declencherEdition plus haut : ce ref
   // garde la dernière valeur déjà traitée pour ignorer les re-rendus où
@@ -970,59 +1004,38 @@ function BulleMessageInterne({
         }
       >
         {message.piecesJointes && message.piecesJointes.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {message.piecesJointes.map((piece, index) =>
-              piece.erreur ? (
-                // Fichier qui a échoué à l'upload (17/08) : les autres
-                // pièces jointes/le message partent quand même, celle-ci
-                // affiche juste son erreur au lieu d'être retirée en
-                // silence.
-                <div
-                  key={index}
-                  className="flex w-fit items-center gap-2 rounded-xl border border-red-400/40 bg-red-400/10 px-3 py-2 text-xs text-red-400"
-                  title={piece.erreur}
-                >
-                  <FileText size={14} />
-                  <span className="max-w-[220px] truncate">{piece.nom} -- {piece.erreur}</span>
-                </div>
-              ) : piece.type === "image" && piece.previewUrl ? (
-                <button
-                  key={index}
-                  onClick={() => setPieceJointeOuverteIndex(index)}
-                  aria-label="Agrandir l'image"
-                  className="block max-h-48 overflow-hidden rounded-xl border border-dj-bordure"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- aperçu local (URL.createObjectURL), pas un asset à optimiser */}
-                  <img src={piece.previewUrl} alt={piece.nom} className="max-h-48 w-auto" />
-                </button>
-              ) : (piece.type === "video" || piece.type === "audio") && piece.previewUrl ? (
-                // Lecteur jouable directement dans le message envoyé
-                // (2026-07-23) -- avant, seul un nom de fichier cliquable qui
-                // ouvrait un nouvel onglet, aucun moyen d'écouter/regarder
-                // sans quitter le chat.
-                <div key={index} className="w-full max-w-xs">
-                  <LecteurMedia href={piece.previewUrl} type={piece.type} />
-                </div>
-              ) : (
-                // 04/09/2026, demande Bourama : window.open(_blank)
-                // faisait sortir de Classinus (surtout gênant sur mobile/
-                // appli native) -- remplacé par le même visionneur
-                // interne que pour un fichier reçu/de bibliothèque
-                // (VisionneurPositionGlobal), jamais de nouvel onglet.
-                <button
-                  key={index}
-                  onClick={() =>
-                    piece.previewUrl &&
-                    ouvrirPosition({ url: piece.previewUrl, titre: piece.nom, typeMime: typeMimeDepuisNom(piece.nom) })
-                  }
-                  aria-label="Ouvrir le fichier"
-                  className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-fond/40 px-3 py-2 text-xs text-dj-texte-muet hover:text-dj-texte"
-                >
-                  <FileText size={14} />
-                  <span className="max-w-[220px] truncate">{piece.nom}</span>
-                </button>
-              )
-            )}
+          // Même ligne défilable que dans la barre de saisie (voir
+          // LigneApercuPieces.tsx), sans croix de retrait. Un fichier qui a
+          // échoué à l'upload (17/08) s'affiche en erreur sans bloquer les
+          // autres pièces jointes ni le message.
+          <div className="mb-2">
+            <LigneApercuPieces
+              pieces={message.piecesJointes.map(
+                (piece, index): PieceApercu => ({
+                  id: String(index),
+                  nom: piece.nom,
+                  genre: piece.type,
+                  url: piece.previewUrl,
+                  erreur: piece.erreur,
+                  contenu: piece.contenu,
+                  langage: piece.langage,
+                })
+              )}
+              taille="envoye"
+              onOuvrir={(pieceOuverte) => {
+                const index = Number(pieceOuverte.id);
+                const piece = message.piecesJointes?.[index];
+                if (!piece) return;
+                if (piece.type === "image") setPieceJointeOuverteIndex(index);
+                else if (piece.type === "texte") setTexteColleOuvertIndex(index);
+                else if (piece.type === "video" || piece.type === "audio") setMediaOuvertIndex(index);
+                else if (piece.previewUrl) {
+                  // 04/09/2026, demande Bourama : jamais de nouvel onglet,
+                  // même visionneur interne que pour un fichier reçu.
+                  ouvrirPosition({ url: piece.previewUrl, titre: piece.nom, typeMime: typeMimeDepuisNom(piece.nom, piece.previewUrl) });
+                }
+              }}
+            />
           </div>
         )}
         {/* Repli du texte déjà affiché quand la cascade bascule sur un
@@ -1386,6 +1399,21 @@ function BulleMessageInterne({
         </div>
       )}
 
+      {texteColleOuvertIndex !== null && message.piecesJointes?.[texteColleOuvertIndex]?.contenu !== undefined && (
+        <FenetreTexteColle
+          texte={message.piecesJointes[texteColleOuvertIndex].contenu ?? ""}
+          langage={message.piecesJointes[texteColleOuvertIndex].langage ?? null}
+          onFermer={() => setTexteColleOuvertIndex(null)}
+        />
+      )}
+      {mediaOuvertIndex !== null && message.piecesJointes?.[mediaOuvertIndex]?.previewUrl && (
+        <FenetreMedia
+          href={message.piecesJointes[mediaOuvertIndex].previewUrl ?? ""}
+          nom={message.piecesJointes[mediaOuvertIndex].nom}
+          type={message.piecesJointes[mediaOuvertIndex].type === "video" ? "video" : "audio"}
+          onFermer={() => setMediaOuvertIndex(null)}
+        />
+      )}
       {pieceJointeOuverteIndex !== null && message.piecesJointes?.[pieceJointeOuverteIndex]?.previewUrl && (
         // Consolidé (audit 25/08/2026) dans VisionneuseImage.tsx -- corrige
         // au passage le bouton "Fermer" qui n'avait aucun onClick propre.

@@ -22,7 +22,7 @@ import { usePathname, useRouter } from "next/navigation";
 // vide, le comportement normal reprend (retour réel / l'appli se
 // minimise sur natif, comme n'importe quelle appli Android standard).
 
-type Calque = { id: string; fermer: () => void };
+type Calque = { id: string; fermer: () => void; chemin?: string };
 
 type ContexteRetourValeur = {
   empiler: (id: string, fermer: () => void) => void;
@@ -89,7 +89,10 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
   }, [pathname]);
 
   const empiler = useCallback((id: string, fermer: () => void) => {
-    pile.current = [...pile.current.filter((c) => c.id !== id), { id, fermer }];
+    pile.current = [
+      ...pile.current.filter((c) => c.id !== id),
+      { id, fermer, chemin: typeof window !== "undefined" ? window.location.pathname : undefined },
+    ];
     if (typeof window !== "undefined") {
       window.history.pushState({ clovisCalqueRetour: true }, "", window.location.href);
     }
@@ -100,8 +103,19 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
   }, []);
 
   const depiler = useCallback((id: string, consommer: boolean = true) => {
-    const existait = pile.current.some((c) => c.id === id);
+    const calque = pile.current.find((c) => c.id === id);
+    const existait = !!calque;
     pile.current = pile.current.filter((c) => c.id !== id);
+    // 27/09/2026, retour de test Bourama ("Ouvrir dans l'éditeur" depuis
+    // le chat : arrive dans l'éditeur puis revient au chat, seulement la
+    // première fois -- un calque ouvert dans le chat se fermait à cause de
+    // la navigation et son history.back() annulait celle-ci). Règle
+    // générale : si la page a changé depuis l'ouverture du calque, son
+    // entrée d'historique n'a plus rien à consommer, on n'appelle pas
+    // history.back(). Aucun changement quand on reste sur la même page.
+    if (calque?.chemin !== undefined && typeof window !== "undefined" && window.location.pathname !== calque.chemin) {
+      return;
+    }
     // Ne consomme une entrée d'historique que si ce calque en avait
     // vraiment une à consommer (existait dans la pile) -- une fermeture
     // déjà déclenchée par le handler popstate ci-dessous a déjà retiré

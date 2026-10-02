@@ -24,17 +24,21 @@ import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
+import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
 import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
+import { ContexteVoixDirecte, useFournirVoixDirecte } from "@/lib/contexteVoixDirecte";
 import {
   ContexteCanalEnDirect,
   useFournirCanalEnDirect,
   enregistrerCanalEnDirect,
 } from "@/lib/contexteCanalEnDirect";
 import { useEmetteurSuperposition, surElectron } from "@/lib/superpositionElectron";
+import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
+import { estPageChat } from "@/lib/routesApp";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -106,9 +110,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // vers la fenêtre de superposition Electron (ne fait rien ailleurs que
   // sur la plateforme "electron", voir lib/superpositionElectron.ts).
   useEmetteurSuperposition(curseurVirtuelValeur, canalEnDirectValeur);
+  // Voix en direct (02/10/2026) : une seule session pour toute l'appli, voir
+  // lib/contexteVoixDirecte.tsx.
+  const voixDirecteValeur = useFournirVoixDirecte({
+    chatPretPourVoix: contexteChatValeur.chatPretPourVoix,
+    deposerDemandeVoix: contexteChatValeur.deposerDemandeVoix,
+  });
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);
+  // 26/09/2026, demande Bourama : est_professeur ("Es-tu prof ?", voir
+  // BureauAccueil.tsx) lu UNE SEULE FOIS ici pour toute la session
+  // d'appli, plutôt que rappelé par chaque composant qui en a besoin --
+  // voir lib/contexteStatutUtilisateur.tsx. Ne prend pas `connecte` en
+  // argument (contrairement à useFournirMinuteurs juste au-dessus) :
+  // volontairement indépendant, voir le commentaire dans ce fichier.
+  const statutUtilisateurValeur = useFournirStatutUtilisateur();
   useEffect(() => {
     enregistrerCanalEnDirect(canalEnDirectValeur);
   }, [canalEnDirectValeur]);
@@ -232,7 +249,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
     <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
     <ContexteCanalEnDirect.Provider value={canalEnDirectValeur}>
+    <ContexteVoixDirecte.Provider value={voixDirecteValeur}>
     <ContexteMinuteurs.Provider value={minuteursValeur}>
+    <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
         <div className="flex h-dvh">
           {natif && <BarreOngletsNative />}
@@ -257,7 +276,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               meme condition que AppSidebar juste en dessous -- masque sur
               /chat, qui a deja son propre point d'entree du guide (menu
               "+" du chat, etape 5). */}
-          {pathname !== "/chat" && <GuideFlottant />}
+          {!estPageChat(pathname) && <GuideFlottant />}
           {/* 07/09/2026, décision Bourama (bug PC web signalé : profil et
               "..." affichés en double) : cette instance-ci d'AppSidebar
               (nav principale, hors chat) reste montée en permanence,
@@ -275,7 +294,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               masqué sur /chat plus haut (MenuHamburgerWeb.tsx) : sans
               perte de contenu, l'instance chat couvre déjà tout ce que
               celle-ci propose. */}
-          {pathname !== "/chat" && (
+          {!estPageChat(pathname) && (
             <AppSidebar
               connecte={connecte}
               onOuvrirCatalogue={() => setCatalogueOuvert(true)}
@@ -354,7 +373,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     // ChatIA.tsx) -- les deux s'additionnaient et
                     // poussaient la barre de saisie bien plus haut que
                     // nécessaire. /chat n'a plus cette barre à réserver.
-                    paddingBottom: pathname === "/chat" ? "0px" : "var(--dj-barre-onglets-web, 0px)",
+                    paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
                   }
             }
           >
@@ -376,6 +395,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               superposition : ils restent montés ici comme avant. */}
           {!surElectronClient && <CurseurVirtuelAgent />}
           {!surElectronClient && <BulleDialogueAgent />}
+          <VoixDirecteSuperposition />
           {!surElectronClient && <BoutonJournalAgent />}
           {/* Sur Electron (01/10/2026, demande Bourama), le bouton du canal
               n'est plus monté ici du tout : la superposition l'affiche en
@@ -394,7 +414,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
         </div>
       </ContexteFenetres.Provider>
+    </ContexteStatutUtilisateur.Provider>
     </ContexteMinuteurs.Provider>
+    </ContexteVoixDirecte.Provider>
     </ContexteCanalEnDirect.Provider>
     </ContexteCurseurVirtuel.Provider>
     </ContexteDossiersCataloguePublic.Provider>

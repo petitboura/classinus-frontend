@@ -1,6 +1,6 @@
-import { SectionPage } from "@/components/SectionPage";
-import { EspaceEtablissements } from "@/components/EspaceEtablissements";
-import { groupeBureau } from "@/lib/sectionsBureau";
+import { SectionPageBureau } from "@/components/SectionPageBureau";
+import { contenuSection, titreSection } from "@/lib/contenuSections";
+import { ROUTES_BUREAU } from "@/lib/routesBureau";
 
 // 19/09/2026, demande Bourama : ancien onglet "Établissements" de Bureau,
 // devenu une vraie page. Cet écran n'a pas de bouton "i" : sa phrase
@@ -9,9 +9,10 @@ import { groupeBureau } from "@/lib/sectionsBureau";
 // c'est la fiche d'un établissement (/etablissements/[id]) qui ramène
 // maintenant ici.
 export default function PageBureauEtablissements() {
+  const cle = ROUTES_BUREAU.etablissements;
   return (
-    <SectionPage title="Établissements" groupe={groupeBureau()}>
-      <EspaceEtablissements />
-    </SectionPage>
+    <SectionPageBureau title={titreSection(cle)}>
+      {contenuSection(cle)}
+    </SectionPageBureau>
   );
 }

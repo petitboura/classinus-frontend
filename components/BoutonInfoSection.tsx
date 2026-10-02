@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Info } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
@@ -29,8 +30,26 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 // lib/sectionsParametres.tsx), d'où /parametres/aide plutôt que
 // /parametres?vue=... comme du temps de l'ancien EspaceParametres.tsx à
 // état interne `vue` (supprimé).
-export function BoutonInfoSection({ rubriqueId, texteCourt }: { rubriqueId: string; texteCourt: React.ReactNode }) {
+export function BoutonInfoSection({
+  rubriqueId,
+  texteCourt,
+  hrefEnSavoirPlus,
+}: {
+  rubriqueId: string;
+  texteCourt: React.ReactNode;
+  /** Chantier SEO/AEO de Classinus (26/09/2026). Quand fourni (rubriques
+   * qui ont une page /decouvrir/... dédiée, voir lib/aideSections.tsx),
+   * remplace le lien par défaut vers /parametres/aide. */
+  hrefEnSavoirPlus?: string;
+}) {
   const [ouvert, setOuvert] = useState(false);
+  const pathname = usePathname();
+  // Chantier SEO/AEO de Classinus (26/09/2026, retour de Bourama) : le
+  // bouton retour d'une page /decouvrir/... doit ramener exactement à
+  // l'écran d'où on est parti, pas juste reculer d'un cran dans les
+  // pages /decouvrir déjà visitées. Chemin actuel transmis en
+  // ?depuis=..., lu et reporté de page en page dans tout l'arbre
+  // /decouvrir (voir lib/depuisDecouvrir.ts).
   // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
   // brut") : cette bulle n'avait qu'une animation d'entrée -- même
   // mécanisme que lib/useFermetureAnimee.ts.
@@ -68,7 +87,9 @@ export function BoutonInfoSection({ rubriqueId, texteCourt }: { rubriqueId: stri
           >
             <p className="text-xs leading-relaxed text-dj-texte-muet">{texteCourt}</p>
             <Link
-              href={`/parametres/aide?aide=${rubriqueId}`}
+              href={
+                hrefEnSavoirPlus ? `${hrefEnSavoirPlus}?depuis=${encodeURIComponent(pathname)}` : `/parametres/aide?aide=${rubriqueId}`
+              }
               onClick={fermer}
               className="mt-2 inline-block text-xs font-medium text-dj-accent-1-texte hover:underline"
             >

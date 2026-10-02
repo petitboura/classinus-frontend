@@ -113,4 +113,12 @@
          les permissions protegees. -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+    <!-- 02/10/2026 (Bourama, voix en direct) : acces au micro pour parler a Classinus
+         (Gemini Live, lib/geminiLive.ts). Capacitor affiche lui meme la demande
+         d'autorisation de l'etudiant la premiere fois. MODIFY_AUDIO_SETTINGS permet
+         d'utiliser le micro et le haut parleur ensemble. Le micro reste facultatif
+         pour ne pas exclure les appareils sans micro. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

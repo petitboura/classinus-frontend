@@ -1,6 +1,6 @@
-import { CalendarCheck, ClipboardList, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput } from "lucide-react";
+import { CalendarCheck, ClipboardList, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput, Terminal } from "lucide-react";
 import { ROUTES_BUREAU } from "./routesBureau";
-import { construireGroupe, type SectionDeGroupe } from "./groupeSections";
+import type { SectionDeGroupe } from "./groupeSections";
 
 // 19/09/2026, demande Bourama : Bureau fonctionne comme Personnaliser
 // Clovis (voir lib/routesBureau.ts et lib/groupeSections.tsx). Cette liste
@@ -48,6 +48,12 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
     Icone: MessageSquareWarning,
   },
   {
+    href: ROUTES_BUREAU.editeur,
+    label: "Éditeur de code",
+    description: "Écris, exécute et enregistre du code dans ta bibliothèque",
+    Icone: Terminal,
+  },
+  {
     href: ROUTES_BUREAU.configuration,
     label: "Configuration",
     description: "Procédures, règles, comportements et styles pour Classinus",
@@ -55,7 +61,15 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
   },
 ];
 
-// Valeur à passer au prop `groupe` de SectionPage sur chaque page fille.
-export function groupeBureau() {
-  return construireGroupe("Bureau", ROUTES_BUREAU.accueil, SECTIONS_BUREAU);
+// Sections que seul un prof voit. Source unique : lue par la page d'accueil
+// de Bureau, le menu des pages voisines et le menu au survol du rail.
+export const SECTIONS_BUREAU_PROF_UNIQUEMENT: ReadonlySet<string> = new Set<string>([
+  ROUTES_BUREAU.audit,
+  ROUTES_BUREAU.programme,
+  ROUTES_BUREAU.signalements,
+]);
+
+/** Les sections de Bureau visibles selon le statut (estProfesseur false = pas prof). */
+export function sectionsBureauVisibles(estProfesseur: boolean | null): SectionDeGroupe[] {
+  return estProfesseur === false ? SECTIONS_BUREAU.filter((s) => !SECTIONS_BUREAU_PROF_UNIQUEMENT.has(s.href)) : SECTIONS_BUREAU;
 }

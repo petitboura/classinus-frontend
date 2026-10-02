@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppWindow, Loader2 } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
+import { BoutonFilmerWidget, type EtatVideo } from "./BoutonFilmerWidget";
 import { useTheme } from "@/lib/useTheme";
+import {
+  demarrerEnregistrement,
+  enregistrementVideoPossible,
+  ErreurVideo,
+  telechargerVideo,
+  type EnregistrementEnCours,
+} from "@/lib/enregistrerVideo";
 
 // Bloc ```html ou ```widget du markdown -- le modèle peut générer un
 // mini-outil autonome (calculateur, formulaire, mini-jeu) en HTML/CSS/JS
@@ -82,7 +90,80 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
         });
       })();
     </script>
+    <script id="dj-info-widget">
+      // Réponse à la demande du bouton Filmer (voir WidgetSandbox plus bas) :
+      // le parent ne peut pas regarder dans cet iframe isolé, il pose donc la
+      // question par message. On dit (1) si le widget est interactif (bouton,
+      // champ, écouteur de clic ou de clavier), (2) la durée d'un tour des
+      // animations CSS quand on peut la lire. Rien d'autre n'est envoyé.
+      (function () {
+        var SELECTEUR = 'button, input, select, textarea, a[href], summary, [onclick], [role="button"], [contenteditable="true"]';
+        function decrire() {
+          var interactif = !!document.querySelector(SELECTEUR);
+          if (!interactif) {
+            var copie = document.documentElement.cloneNode(true);
+            var propre = copie.querySelector('#dj-info-widget');
+            if (propre) propre.remove();
+            var html = copie.outerHTML;
+            interactif =
+              /addEventListener\\s*\\(\\s*['"](click|dblclick|pointer|mouse|touch|key|input|change|submit|wheel)/i.test(html) ||
+              /\\son(click|input|change|key|mouse|pointer|touch|submit)[a-z]*\\s*=/i.test(html);
+          }
+          var cycle = null;
+          try {
+            var max = 0;
+            var liste = document.getAnimations ? document.getAnimations() : [];
+            for (var i = 0; i < liste.length; i++) {
+              var eff = liste[i].effect;
+              var t = eff && eff.getComputedTiming ? eff.getComputedTiming() : null;
+              if (!t) continue;
+              var d = typeof t.duration === 'number' ? t.duration : 0;
+              if (t.iterations !== Infinity && isFinite(t.endTime) && t.endTime > d) d = t.endTime;
+              if (d > max) max = d;
+            }
+            if (max > 0) cycle = max;
+          } catch (e) {}
+          return { interactif: interactif, cycleMs: cycle };
+        }
+        window.addEventListener('message', function (e) {
+          if (!e.data || e.data.type !== 'dj-widget-demande-info') return;
+          var r = decrire();
+          parent.postMessage({ type: 'dj-widget-info', interactif: r.interactif, cycleMs: r.cycleMs }, '*');
+        });
+      })();
+    </script>
     </body></html>`;
+}
+
+// Le parent ne peut pas lire l'iframe (document isolé, sans accès au parent),
+// on lui pose donc la question par message. Sans réponse en 700 ms (widget
+// cassé, script bloqué), on renvoie null et l'appelant traite le widget
+// comme interactif : arrêt manuel, le choix le plus sûr.
+function demanderInfosWidget(iframe: HTMLIFrameElement): Promise<{ interactif: boolean; cycleMs: number | null } | null> {
+  return new Promise((resolve) => {
+    const cible = iframe.contentWindow;
+    if (!cible) {
+      resolve(null);
+      return;
+    }
+    let termine = false;
+    const ecoute = (e: MessageEvent) => {
+      if (e.source !== cible) return;
+      const d = e.data as { type?: string; interactif?: unknown; cycleMs?: unknown } | null;
+      if (!d || d.type !== "dj-widget-info") return;
+      fin({ interactif: d.interactif !== false, cycleMs: typeof d.cycleMs === "number" ? d.cycleMs : null });
+    };
+    const delai = setTimeout(() => fin(null), 700);
+    function fin(valeur: { interactif: boolean; cycleMs: number | null } | null) {
+      if (termine) return;
+      termine = true;
+      window.removeEventListener("message", ecoute);
+      clearTimeout(delai);
+      resolve(valeur);
+    }
+    window.addEventListener("message", ecoute);
+    cible.postMessage({ type: "dj-widget-demande-info" }, "*");
+  });
 }
 
 // 23/09/2026, correctif Bourama ("le widget tremble tant que son propre
@@ -99,6 +180,95 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
 export function WidgetSandbox({ code }: { code: string }) {
   const { resolu } = useTheme();
   const [codeStable, setCodeStable] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Vidéo (30/09/2026, demande Bourama) : le bouton Filmer n'existe que sur
+  // ordinateur, dans les navigateurs capables de recadrer sur un élément.
+  // Tout l'état est ici et non dans le bouton, voir BoutonFilmerWidget.tsx.
+  const [videoPossible, setVideoPossible] = useState(false);
+  const [etatVideo, setEtatVideo] = useState<EtatVideo>("repos");
+  const [secondes, setSecondes] = useState(0);
+  const enregistrementRef = useRef<EnregistrementEnCours | null>(null);
+  const chronoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const arretAutoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retourRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setVideoPossible(enregistrementVideoPossible());
+  }, []);
+
+  function viderMinuteurs() {
+    if (chronoRef.current) clearInterval(chronoRef.current);
+    if (arretAutoRef.current) clearTimeout(arretAutoRef.current);
+    chronoRef.current = null;
+    arretAutoRef.current = null;
+  }
+
+  // Si le bloc disparaît en pleine prise de vue, on coupe proprement pour ne
+  // pas laisser le navigateur afficher "partage en cours".
+  useEffect(() => {
+    return () => {
+      viderMinuteurs();
+      if (retourRef.current) clearTimeout(retourRef.current);
+      enregistrementRef.current?.arreter();
+    };
+  }, []);
+
+  function signaler(etat: EtatVideo) {
+    setEtatVideo(etat);
+    if (retourRef.current) clearTimeout(retourRef.current);
+    retourRef.current = setTimeout(() => setEtatVideo("repos"), 2500);
+  }
+
+  async function basculerFilm() {
+    if (etatVideo === "enregistrement") {
+      enregistrementRef.current?.arreter();
+      return;
+    }
+    if (etatVideo === "preparation") return;
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    setEtatVideo("preparation");
+    const infos = await demanderInfosWidget(iframe);
+    // Animation seule (ni bouton ni champ) : un tour puis arrêt automatique.
+    // Durée du tour lue dans les animations CSS, sinon 10 s. Widget
+    // interactif, ou réponse absente : arrêt à la main, avec un plafond de
+    // 2 minutes pour éviter un enregistrement oublié.
+    const auto = infos !== null && !infos.interactif;
+    const dureeMs = auto ? Math.min(Math.max((infos?.cycleMs ?? 10000) + 300, 2000), 30000) : 120000;
+
+    let enregistrement: EnregistrementEnCours;
+    try {
+      enregistrement = await demarrerEnregistrement(iframe);
+    } catch (e) {
+      if (e instanceof ErreurVideo && e.type === "refuse") {
+        // La personne a annulé la fenêtre de permission : pas une erreur.
+        setEtatVideo("repos");
+        return;
+      }
+      console.error("[WidgetSandbox] enregistrement impossible :", e);
+      signaler(e instanceof ErreurVideo && e.type === "surface" ? "surface" : "echec");
+      return;
+    }
+
+    enregistrementRef.current = enregistrement;
+    setSecondes(0);
+    setEtatVideo("enregistrement");
+    chronoRef.current = setInterval(() => setSecondes((n) => n + 1), 1000);
+    arretAutoRef.current = setTimeout(() => enregistrement.arreter(), dureeMs);
+
+    const resultat = await enregistrement.fini;
+    viderMinuteurs();
+    enregistrementRef.current = null;
+    if (!resultat) {
+      signaler("echec");
+      return;
+    }
+    setEtatVideo("preparation");
+    const reussi = await telechargerVideo(auto ? "animation" : "widget", resultat);
+    signaler(reussi ? "ok" : "echec");
+  }
 
   useEffect(() => {
     setCodeStable(null);
@@ -114,6 +284,19 @@ export function WidgetSandbox({ code }: { code: string }) {
       texteACopier={code}
       contenuEnIframe
       chargement={codeStable === null}
+      actionsSupplementaires={
+        videoPossible
+          ? (avecTexte) => (
+              <BoutonFilmerWidget
+                etat={etatVideo}
+                secondes={secondes}
+                avecTexte={avecTexte}
+                desactive={codeStable === null}
+                surClic={basculerFilm}
+              />
+            )
+          : undefined
+      }
       enfant={
         codeStable === null ? (
           <div className="flex h-96 w-full items-center justify-center gap-2 rounded-lg border border-dj-bordure text-xs text-dj-texte-muet">
@@ -122,6 +305,7 @@ export function WidgetSandbox({ code }: { code: string }) {
           </div>
         ) : (
           <iframe
+            ref={iframeRef}
             sandbox="allow-scripts allow-forms allow-modals"
             srcDoc={construireDocumentWidget(codeStable, resolu)}
             className="h-96 w-full rounded-lg border border-dj-bordure"

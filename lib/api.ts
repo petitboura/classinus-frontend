@@ -1244,6 +1244,20 @@ export async function ajouterFichiersBibliothequePersonnelle(fichiers: File[]) {
 }
 
 /**
+ * Démarre le dézipage en tâche de fond d'une archive .zip jointe à un
+ * message de chat -- voir api/uploads.py:demarrer_zip_chat et
+ * core/zip_chat.py. Appelé DÈS la sélection du fichier (pas seulement à
+ * l'envoi, voir BarreDeSaisie.tsx:ajouterFichiers), pour donner de
+ * l'avance au dézipage pendant que l'étudiant finit son message.
+ * Renvoie un job_id à transmettre tel quel dans zips_en_attente du
+ * payload /api/chat.
+ */
+export async function demarrerZipChat(fichier: File) {
+  const resultat = await appelerApiFichier("/api/uploads/zip-chat/demarrer", fichier);
+  return resultat as { job_id: string };
+}
+
+/**
  * Upload d'une image jointe à un message de chat -- voir
  * components/chat/ChatIA.tsx:envoyerMessage côté appelant. Réutilise
  * appelerApiFichier (même mécanique FormData) sur le nouvel endpoint dédié
@@ -1265,7 +1279,7 @@ export async function uploaderImageChat(fichier: File) {
  */
 export async function uploaderDocumentChat(fichier: File) {
   const resultat = await appelerApiFichier("/api/uploads/document-chat", fichier);
-  return resultat as { texte: string; tronque: boolean; url: string | null; url_apercu: string | null };
+  return resultat as { texte: string; tronque: boolean; lisible: boolean; url: string | null; url_apercu: string | null };
 }
 
 /**
@@ -1648,7 +1662,7 @@ export type NotionPublique = {
   notion_parent_id: string | null;
   nom: string;
   ordre: number;
-  regle_comportement: string | null;
+  regle_comportement: RegleComportementNotion | null;
   consigne_llm: string | null;
 };
 
@@ -1922,6 +1936,12 @@ export async function enregistrerMonProfil(payload: {
   // étape 11 : conditionne l'affichage de bio/nom/photo à un visiteur
   // externe (voir api/profiles.py::obtenir_profil_public).
   profil_public?: boolean;
+  // 26/09/2026, voir api/profiles.py:MettreAJourProfilPayload.
+  est_professeur?: boolean;
+  // 27/09/2026, chantier "traduction erreurs execution", voir
+  // api/profiles.py:MettreAJourProfilPayload.
+  langue_cible_erreurs?: string;
+  traduction_auto_erreurs?: boolean;
 }) {
   return appelerApi("/api/profiles/me", {
     method: "PATCH",
@@ -1936,7 +1956,24 @@ export async function obtenirMonStatut() {
   return appelerApi("/api/profiles/moi/statut") as Promise<{
     est_createur: boolean;
     est_majeur: boolean | null;
+    // 26/09/2026, voir api/profiles.py:MonStatutReponse -- null =
+    // jamais répondu à la question posée une fois dans Bureau.
+    est_professeur: boolean | null;
+    // 27/09/2026, chantier "traduction erreurs execution", voir
+    // api/profiles.py:MonStatutReponse -- null = jamais répondu.
+    langue_cible_erreurs: string | null;
+    traduction_auto_erreurs: boolean | null;
   }>;
+}
+
+/** POST /api/traduire-message -- voir api/traduction_erreurs.py. Réservé
+ * aux comptes connectés (401 sinon, voir SortieExecutionCode.tsx qui
+ * affiche alors "connecte-toi pour traduire"). */
+export async function traduireMessage(texte: string, langueCible: string) {
+  return appelerApi("/api/traduire-message", {
+    method: "POST",
+    body: JSON.stringify({ texte, langue_cible: langueCible }),
+  }) as Promise<{ traduction: string | null }>;
 }
 
 /** DELETE /api/profiles/me -- voir api/profiles.py:supprimer_mon_compte
@@ -1991,6 +2028,11 @@ export type CodePartage = {
   dossiers: DossierLie[];
   texte_libre: string | null;
   actif: boolean;
+  // 25/09/2026, demande Bourama : "l'élève peut choisir lui-même son
+  // mode source et son mode pédagogique", coché par défaut. Décoché ->
+  // le sélecteur disparaît côté élève (voir barre/BoutonReglages.tsx,
+  // barre/useModeActif.ts et BarreDeSaisie.tsx).
+  eleve_choisit_mode: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -2000,6 +2042,7 @@ export type CodePartagePayload = {
   comportement_ids?: string[];
   dossier_ids?: string[];
   texte_libre?: string | null;
+  eleve_choisit_mode?: boolean;
 };
 
 export async function listerMesCodes() {
@@ -2034,6 +2077,9 @@ export type RattachementCode = {
   a_dossier: boolean;
   dossiers: DossierLie[];
   texte_libre: string | null;
+  // 25/09/2026, demande Bourama -- voir CodePartage ci-dessus, même
+  // réglage vu côté élève pour ce rattachement précis.
+  eleve_choisit_mode: boolean;
 };
 
 /** Ce que J'AI reçu en entrant des codes d'autres utilisateurs. */
@@ -2070,7 +2116,7 @@ export async function obtenirModeActif(conversationId: string) {
     verrouille: boolean;
     // true si un choix explicite existe déjà pour cette conversation
     // (y compris "Aucun mode"), false si rien n'a jamais été choisi
-    // (11/09/2026, ajout d'un vrai "Aucun mode" -- voir SelecteurModeActif.tsx).
+    // (11/09/2026, ajout d'un vrai "Aucun mode" -- voir barre/useModeActif.ts).
     choisi: boolean;
   }>;
 }

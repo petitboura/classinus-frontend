@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Copy, Check, Download, Maximize2, Minimize2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Copy, Check, Download, ExternalLink, Maximize2, Minimize2, Play, Square, X } from "lucide-react";
 import hljs from "@/lib/coloration";
 import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telechargerContenuLocal } from "@/lib/telecharger";
 import { BlocLarge } from "./BlocLarge";
+import { FormulaireValeursPrealables, SortieExecutionCode } from "./SortieExecutionCode";
+import { useExecutionPython } from "@/lib/useExecutionPython";
+import { ROUTES_BUREAU } from "@/lib/routesBureau";
 
 // Rendu des blocs ```lang ... ``` "code réel" du markdown (les langages
 // spéciaux -- mermaid/chart/carte/html -- sont interceptés un niveau plus
@@ -30,17 +34,86 @@ import { BlocLarge } from "./BlocLarge";
 // généré, il n'y a pas d'URL Supabase ici, juste le texte brut du bloc --
 // voir lib/telecharger.ts::telechargerContenuLocal pour le chemin de
 // téléchargement (natif Android via MediaStore, replis web/iOS).
-const EXTENSION_PAR_LANGAGE: Record<string, string> = {
+//
+// 26/09/2026, demande Bourama : le bouton Exécuter était en haut du bloc
+// alors que le résultat apparaît en bas, hors du champ visible sur un
+// bloc un peu long -- deux correctifs, repris du pattern déjà en place
+// dans BlocExpansible.tsx (aperçus de documents) :
+//   - Un clic sur Exécuter fait défiler jusqu'au résultat (resultatRef).
+//   - Les boutons d'action ont maintenant aussi une version rail sticky
+//     (icônes seules), qui "suit" tant qu'on scrolle dans le bloc de code
+//     + son résultat -- exactement le même mécanisme que BlocExpansible
+//     (rangée du haut visible -> rail masqué ; rangée du haut sortie du
+//     champ -> rail apparaît, révélé au survol desktop / tap mobile).
+export const EXTENSION_PAR_LANGAGE: Record<string, string> = {
   python: "py", javascript: "js", typescript: "ts", xml: "html", css: "css",
   bash: "sh", sql: "sql", java: "java", c: "c", cpp: "cpp", go: "go",
   rust: "rs", php: "php", ruby: "rb", yaml: "yml", markdown: "md", ini: "toml",
   json: "json",
 };
 
-export function BlocCode({ langage, code }: { langage: string; code: string }) {
+// Langages exécutables avec le bouton Exécuter (Python seulement pour l'instant).
+export const LANGAGES_PYTHON = new Set(["python", "py", "python3"]);
+
+export function BlocCode({ langage, code, conversationId }: { langage: string; code: string; conversationId?: string }) {
+  const router = useRouter();
+  // 27/09/2026, retour de test Bourama : au premier clic sur "Ouvrir dans
+  // l'éditeur", rien ne se passait visiblement (la page de l'éditeur, avec
+  // CodeMirror, n'était pas encore chargée) ; les clics suivants marchaient
+  // car la route était alors en cache. On la précharge dès l'affichage du
+  // bloc pour que le premier clic soit aussi immédiat que les suivants.
+  useEffect(() => {
+    router.prefetch(ROUTES_BUREAU.editeur);
+  }, [router]);
+  const executable = LANGAGES_PYTHON.has((langage || "").toLowerCase());
+  const execution = useExecutionPython(code);
   const [copie, setCopie] = useState(false);
   const [pleinEcran, setPleinEcran] = useState(false);
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
+
+  // Rangée du haut (boutons avec texte) visible ou non -- pilote le rail
+  // sticky ci-dessous. N'existe que hors plein écran (l'en-tête du plein
+  // écran est déjà fixe dans PleinEcranApercu, voir plus bas).
+  const topRowRef = useRef<HTMLDivElement | null>(null);
+  const [hautVisible, setHautVisible] = useState(true);
+
+  useEffect(() => {
+    const cible = topRowRef.current;
+    if (!cible) return;
+    const observateur = new IntersectionObserver(([entree]) => setHautVisible(entree.isIntersecting), {
+      threshold: 0,
+    });
+    observateur.observe(cible);
+    return () => observateur.disconnect();
+  }, [pleinEcran]);
+
+  // Sur mobile il n'y a pas de :hover -- un tap dans la zone du code/
+  // résultat bascule la visibilité du rail, qui se recache tout seul
+  // après un délai (même logique que BlocExpansible.tsx).
+  const [railActifTactile, setRailActifTactile] = useState(false);
+  const delaiRailRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function basculerRailTactile() {
+    if (hautVisible) return;
+    setRailActifTactile((v) => {
+      const prochain = !v;
+      if (delaiRailRef.current) clearTimeout(delaiRailRef.current);
+      if (prochain) {
+        delaiRailRef.current = setTimeout(() => setRailActifTactile(false), 3000);
+      }
+      return prochain;
+    });
+  }
+
+  useEffect(() => {
+    return () => {
+      if (delaiRailRef.current) clearTimeout(delaiRailRef.current);
+    };
+  }, []);
+
+  // Zone du résultat -- cible du défilement automatique déclenché par
+  // lancerExecution() ci-dessous.
+  const resultatRef = useRef<HTMLDivElement | null>(null);
 
   const html = useMemo(() => {
     try {
@@ -70,12 +143,47 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
     telechargerContenuLocal(`code.${extension}`, code, "text/plain;charset=utf-8");
   }
 
+  // 27/09/2026, chantier "éditeur de code du Bureau", pont chat ->
+  // éditeur (voir components/bureau/EditeurCode.tsx) : dépose le code et
+  // son langage dans sessionStorage (l'éditeur les lit sans les supprimer, valides
+  // 30 s grâce à l'horodatage), avec la conversation d'origine si connue,
+  // pour que le bouton "Vers le chat" de l'éditeur sache y revenir.
+  // Indépendant de tout enregistrement -- pas de bouton "enregistrer"
+  // séparé ici, c'est celui déjà dans l'éditeur qui s'en charge une fois
+  // le code ouvert là-bas (demande explicite de Bourama, 26/09).
+  function ouvrirDansEditeur() {
+    try {
+      window.sessionStorage.setItem(
+        "classinus:editeur:payload",
+        JSON.stringify({ code, langage, origineConversationId: conversationId, horodatage: Date.now() })
+      );
+    } catch {
+      // sessionStorage indisponible (navigation privée stricte, quota) :
+      // l'éditeur s'ouvrira simplement vide plutôt que préempli, pas
+      // bloquant pour autant.
+    }
+    router.push(ROUTES_BUREAU.editeur);
+  }
+
   // Bouton Agrandir/Rétrécir partagé entre vue inline et plein écran
-  // (boutonsActions, plus bas) -- seule la fermeture (Rétrécir depuis le
+  // (BoutonsActions, plus bas) -- seule la fermeture (Rétrécir depuis le
   // plein écran) doit passer par l'animation, pas l'ouverture.
   function basculerPleinEcran() {
     if (pleinEcran) demarrerFermeture(() => setPleinEcran(false));
     else setPleinEcran(true);
+  }
+
+  // 26/09/2026 : lance l'exécution ET fait défiler jusqu'au résultat.
+  // Double requestAnimationFrame pour laisser React monter/mettre à jour
+  // le contenu de resultatRef avant de calculer sa position (un seul rAF
+  // arrive parfois avant la peinture du nouvel état).
+  function lancerExecution() {
+    execution.executer();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        resultatRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    });
   }
 
   const blocPre = (
@@ -87,35 +195,68 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
     </pre>
   );
 
-  const boutonClasse =
-    "flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-dj-texte-muet transition-colors hover:text-dj-texte";
-
-  const boutonsActions = (
-    <>
-      <button onClick={copier} aria-label="Copier le code" className={boutonClasse}>
-        {copie ? (
-          <>
-            <Check size={12} /> Copié
-          </>
-        ) : (
-          <>
-            <Copy size={12} /> Copier
-          </>
+  // Barre d'actions -- réutilisée telle quelle en haut du bloc (avecTexte),
+  // dans le rail sticky (icônes seules) et dans l'en-tête plein écran.
+  // Même pattern que BoutonsActions dans BlocExpansible.tsx.
+  function BoutonsActions({ avecTexte }: { avecTexte: boolean }) {
+    const classe = avecTexte
+      ? "flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+      : "flex h-8 w-8 items-center justify-center rounded-lg border border-dj-bordure bg-dj-surface-haute text-dj-texte-muet hover:text-dj-texte";
+    const classeExecuter = avecTexte
+      ? "flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-dj-accent-1-texte transition-colors hover:opacity-80"
+      : "flex h-8 w-8 items-center justify-center rounded-lg border border-dj-bordure bg-dj-surface-haute text-dj-accent-1-texte hover:opacity-80";
+    return (
+      <>
+        {executable && (
+          <button
+            onClick={execution.enCours ? execution.arreter : lancerExecution}
+            aria-label={execution.enCours ? "Arrêter l'exécution" : "Exécuter le code"}
+            className={classeExecuter}
+          >
+            {execution.enCours ? <Square size={avecTexte ? 12 : 14} /> : <Play size={avecTexte ? 12 : 14} />}
+            {avecTexte && (execution.enCours ? "Arrêter" : "Exécuter")}
+          </button>
         )}
-      </button>
-      <button onClick={telecharger} aria-label="Télécharger le code" className={boutonClasse}>
-        <Download size={12} /> Télécharger
-      </button>
-      <button
-        onClick={basculerPleinEcran}
-        aria-label={pleinEcran ? "Rétrécir" : "Agrandir"}
-        className={boutonClasse}
-      >
-        {pleinEcran ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-        {pleinEcran ? "Rétrécir" : "Agrandir"}
-      </button>
-    </>
-  );
+        <button onClick={copier} aria-label="Copier le code" className={classe}>
+          {copie ? <Check size={avecTexte ? 12 : 14} /> : <Copy size={avecTexte ? 12 : 14} />}
+          {avecTexte && (copie ? "Copié" : "Copier")}
+        </button>
+        <button onClick={telecharger} aria-label="Télécharger le code" className={classe}>
+          <Download size={avecTexte ? 12 : 14} />
+          {avecTexte && "Télécharger"}
+        </button>
+        <button onClick={ouvrirDansEditeur} aria-label="Ouvrir dans l'éditeur" className={classe}>
+          <ExternalLink size={avecTexte ? 12 : 14} />
+          {avecTexte && "Éditeur"}
+        </button>
+        <button onClick={basculerPleinEcran} aria-label={pleinEcran ? "Rétrécir" : "Agrandir"} className={classe}>
+          {pleinEcran ? <Minimize2 size={avecTexte ? 12 : 14} /> : <Maximize2 size={avecTexte ? 12 : 14} />}
+          {avecTexte && (pleinEcran ? "Rétrécir" : "Agrandir")}
+        </button>
+      </>
+    );
+  }
+
+  const sortieExecution = executable ? (
+    execution.invitesPrealables ? (
+      <FormulaireValeursPrealables
+        invites={execution.invitesPrealables}
+        onValider={execution.lancerAvecValeursPrealables}
+        onAnnuler={execution.annulerValeursPrealables}
+      />
+    ) : (
+      <SortieExecutionCode
+        etat={execution.etat}
+        lignes={execution.lignes}
+        images={execution.images}
+        erreur={execution.erreur}
+        inviteSaisie={execution.inviteSaisie}
+        enCours={execution.enCours}
+        onRepondreSaisie={execution.repondreSaisie}
+        onEffacer={execution.effacer}
+      />
+    )
+  ) : null;
 
   if (pleinEcran) {
     return (
@@ -129,7 +270,7 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
               {langage || "texte"}
             </span>
             <div className="flex shrink-0 items-center gap-2">
-              {boutonsActions}
+              <BoutonsActions avecTexte />
               <button
                 onClick={() => demarrerFermeture(() => setPleinEcran(false))}
                 aria-label="Fermer"
@@ -141,20 +282,58 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
           </div>
         }
       >
-        <div className="min-h-0 flex-1 overflow-auto">{blocPre}</div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          {blocPre}
+          <div ref={resultatRef}>{sortieExecution}</div>
+        </div>
       </PleinEcranApercu>
     );
   }
 
+  // Rail sticky (icônes seules) -- mutuellement exclusif avec la rangée
+  // du haut, invisible par défaut, révélé au survol (desktop) ou au tap
+  // (mobile, railActifTactile). Ne se démonte jamais (juste opacity).
+  const railVisible = !hautVisible && railActifTactile;
+  const classeRail = `flex flex-col gap-1.5 transition-opacity duration-200 ${
+    hautVisible
+      ? "opacity-0 pointer-events-none"
+      : railVisible
+        ? "opacity-100 pointer-events-auto"
+        : "opacity-0 pointer-events-none group-hover/rail:opacity-100 group-hover/rail:pointer-events-auto"
+  }`;
+
   return (
-    <BlocLarge className="dj-bloc-code group/code relative my-3 animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
-      <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
+    <BlocLarge className="dj-bloc-code group/code relative my-3 animate-dj-fade-in rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
+      <div ref={topRowRef} className="flex items-center justify-between overflow-hidden rounded-t-xl border-b border-dj-bordure px-3 py-1.5">
         <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
           {langage || "texte"}
         </span>
-        <div className="flex items-center gap-2">{boutonsActions}</div>
+        <div className="flex items-center gap-2">
+          <BoutonsActions avecTexte />
+        </div>
       </div>
-      {blocPre}
+
+      {/* 26/09/2026 -- overflow-hidden ICI (pas sur BlocLarge au-dessus) :
+          Bourama a remonté que le rail sticky ne bougeait jamais, restait
+          planté en haut. Cause : tout ancêtre avec un overflow différent
+          de visible (même overflow-hidden, même sans jamais scroller
+          lui-même) désactive position:sticky pour ses descendants -- ils
+          se calent sur CET ancêtre-là plutôt que sur le vrai scroll de la
+          page. L'ancien overflow-hidden était sur BlocLarge, juste
+          au-dessus, ancêtre direct du rail -- déplacé ici, sur un wrapper
+          qui ne contient plus que blocPre+résultat (pas le rail), pour
+          garder les coins arrondis en bas sans casser le sticky. */}
+      <div className="group/rail relative" onClick={basculerRailTactile}>
+        <div className="pointer-events-none absolute inset-0 z-10 flex justify-end">
+          <div className={`sticky top-2 mr-1 self-start ${classeRail}`} onClick={(e) => e.stopPropagation()}>
+            <BoutonsActions avecTexte={false} />
+          </div>
+        </div>
+        <div className="overflow-hidden rounded-b-xl">
+          {blocPre}
+          <div ref={resultatRef}>{sortieExecution}</div>
+        </div>
+      </div>
     </BlocLarge>
   );
 }

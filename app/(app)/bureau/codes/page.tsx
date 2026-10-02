@@ -1,16 +1,15 @@
-import { SectionPage } from "@/components/SectionPage";
-import { MesCodes } from "@/components/MesCodes";
-import { DefinirInfoSection } from "@/components/DefinirInfoSection";
-import { groupeBureau } from "@/lib/sectionsBureau";
+import { SectionPageBureau } from "@/components/SectionPageBureau";
+import { contenuSection, titreSection } from "@/lib/contenuSections";
+import { ROUTES_BUREAU } from "@/lib/routesBureau";
 
 // 19/09/2026, demande Bourama : ancien onglet "Mes codes" de Bureau,
 // devenu une vraie page. sansEnTete : le titre et le bouton "i" sont
 // portés par cette page, pas répétés dans la carte.
 export default function PageBureauCodes() {
+  const cle = ROUTES_BUREAU.codes;
   return (
-    <SectionPage title="Mes codes" groupe={groupeBureau()}>
-      <DefinirInfoSection id="mes-codes" />
-      <MesCodes sansEnTete />
-    </SectionPage>
+    <SectionPageBureau title={titreSection(cle)}>
+      {contenuSection(cle)}
+    </SectionPageBureau>
   );
 }

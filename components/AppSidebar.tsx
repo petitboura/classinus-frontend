@@ -7,6 +7,8 @@ import { PAGES_FILLES_BUREAU } from "@/lib/routesBureau";
 import { PAGES_FILLES_CONCENTRATION } from "@/lib/routesConcentration";
 import { usePathname, useRouter } from "next/navigation";
 import { useFenetres } from "@/lib/contexteFenetres";
+import { MenuGroupe } from "@/components/MenuGroupeRail";
+import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LogOut,
@@ -25,8 +27,8 @@ import {
   MessageSquarePlus,
   History,
   PanelLeft,
+  Maximize2,
   Settings,
-  Wand2,
   Hourglass,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +39,10 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
+import { ListeHistorique } from "@/components/chat/ListeHistorique";
+import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
+import { ROUTES_APP } from "@/lib/routesApp";
 
 // Nav principale de l'app (refonte "Mon espace = l'app", 15/08/2026,
 // demande Bourama : "faut changer l'affichage même de mon espace, son
@@ -82,6 +87,7 @@ type FilConversation = {
   conversation_id: string | null;
   titre: string;
   derniere_activite: string;
+  epingle?: boolean;
 };
 
 export type OngletId =
@@ -111,7 +117,7 @@ export const ONGLETS: {
   { id: "comportements", href: "/comportements", label: "Mes skills", Icone: ScrollText },
   // Ajouté le 19/09/2026 (ancien onglet "Public" de Mes skills, devenu sa
   // propre page /skills-publics, voir lib/sectionsPersonnaliser.tsx) --
-  // membre du groupe "Personnaliser Classinus" (ongletIds plus bas), pas
+  // membre du groupe "Personnaliser Classinus" (lib/groupesRail.ts), pas
   // un bouton direct du rail (même traitement que "comportements"/"memoire").
   { id: "skills-publics", href: "/skills-publics", label: "Skills publics", Icone: Download },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library, routesFilles: PAGES_FILLES_BIBLIOTHEQUE },
@@ -129,30 +135,18 @@ export const ONGLETS: {
   { id: "controle-session", href: "/controle-session", label: "Concentration", Icone: Hourglass, routesFilles: PAGES_FILLES_CONCENTRATION },
 ];
 
-// Regroupement du rail par similarité d'usage (refonte sidebar,
-// 22/08/2026, demande Bourama : "chaque section n'a pas forcément un
-// bouton dédié, c'est peut-être un bouton qui ouvre une liste de cette
-// catégorie", même esprit que la page Paramètres). Bureau, Bibliothèque
-// et Notes restent en accès direct (usage quotidien). Mes skills et Ma
-// mémoire sont regroupés sous "Personnaliser Classinus" (les façons de
-// configurer ce que Classinus sait/fait). "Utiliser Classinus dans Claude" est
-// un guide de configuration ponctuel, il descend dans le menu "Plus"
-// plutôt que d'occuper un bouton du rail.
-type Groupe = { id: string; href: string; label: string; Icone: typeof Briefcase; ongletIds: OngletId[] };
-const GROUPES: Groupe[] = [
-  { id: "personnaliser", href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2, ongletIds: ["comportements", "skills-publics", "memoire"] },
-];
-
 // Rotation des mouvements pour les icônes de nav (Accueil + les 7
 // onglets) -- volontairement variés pour ne pas retomber sur un effet
 // uniforme. Même assignation utilisée en desktop et mobile (calculée par
 // index) pour que chaque section garde toujours le même mouvement.
 const MOUVEMENT_NAV = "group-hover:translate-x-0.5";
 
-function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.ReactNode }) {
+function LibelleRail({ ouverte, children, titre = false }: { ouverte: boolean; children: React.ReactNode; titre?: boolean }) {
   return (
     <span
-      className={`overflow-hidden whitespace-nowrap text-sm transition-[max-width,opacity] duration-300 ease-out ${
+      className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
+        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm"
+      } ${
         ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
       }`}
     >
@@ -330,145 +324,12 @@ function MenuProfil({
   );
 }
 
-// Bouton de groupe (refonte sidebar, 22/08/2026, demande Bourama) :
-// remplace un bloc de 2-3 boutons de rail dédiés par UN SEUL bouton qui
-// ouvre un petit popup listant les sections du groupe, même principe que
-// MenuProfil juste au-dessus. Contrôlé depuis AppSidebar (via `ouvert` /
-// `onBasculer` / `onFermer`) pour que le conteneur du rail sache quand
-// passer en overflow-visible, exactement comme pour "Historique" et
-// "Plus".
-function MenuGroupe({
-  groupe,
-  mobile = false,
-  ouverte,
-  LibelleRail,
-  pathname,
-  contexteChat,
-  ouvrirFenetre,
-  naviguerVersSection,
-  ouvert,
-  onOuvrir,
-  onFermer,
-  onBasculer,
-  onNaviguer,
-}: {
-  groupe: Groupe;
-  mobile?: boolean;
-  ouverte: boolean;
-  LibelleRail: React.ComponentType<{ ouverte: boolean; children: React.ReactNode }>;
-  pathname: string;
-  contexteChat: boolean;
-  ouvrirFenetre: (id: OngletId) => void;
-  // 03/09/2026, demande Bourama : requis quand mobile=true, voir onClick
-  // des sous-sections plus bas -- naviguer vraiment au lieu d'ouvrir la
-  // fenêtre flottante (ne fonctionne pas sur mobile). Renommée le
-  // 07/09/2026 (ex-fermerChatEtNaviguer) : depuis que /chat est une
-  // vraie route (étape 5, "chat plein écran = vraie section"), il n'y a
-  // plus de calque de chat à fermer avant de naviguer, plus juste une
-  // navigation normale.
-  naviguerVersSection: (href: string) => void;
-  ouvert: boolean;
-  onOuvrir: () => void;
-  onFermer: () => void;
-  onBasculer: () => void;
-  onNaviguer?: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const membres = ONGLETS.filter((o) => groupe.ongletIds.includes(o.id));
-  const actif = membres.some((o) => pathname === o.href) || pathname === groupe.href;
-
-  useEffect(() => {
-    if (!ouvert) return;
-    function onClicExterieur(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onFermer();
-    }
-    document.addEventListener("mousedown", onClicExterieur);
-    return () => document.removeEventListener("mousedown", onClicExterieur);
-  }, [ouvert, onFermer]);
-
-  return (
-    <div
-      ref={ref}
-      className={`relative w-full ${mobile ? "" : "mt-2"}`}
-      onMouseEnter={() => !mobile && onOuvrir()}
-      onMouseLeave={() => !mobile && onFermer()}
-    >
-      {/* Le bouton principal est un vrai lien (22/08/2026, demande
-          Bourama : "les pages c'était quand tu clique sur la section ou
-          la sous-section, le popup reste au survol"). En navigation
-          normale, cliquer navigue vraiment vers la page du groupe. En
-          chat plein écran, il n'y a pas de fenêtre flottante "groupe"
-          à ouvrir : le clic bascule juste le popup, comme avant. */}
-      <Link
-        href={groupe.href}
-        aria-current={actif ? "page" : undefined}
-        onClick={(e) => {
-          if (contexteChat) {
-            e.preventDefault();
-            onBasculer();
-          } else {
-            onFermer();
-            onNaviguer?.();
-          }
-        }}
-        className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
-          actif ? "text-dj-accent-1-texte" : ouvert ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-        } ${mobile ? "px-2 py-2" : ""}`}
-      >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <groupe.Icone size={18} className={`transition-transform duration-200 ${MOUVEMENT_NAV}`} />
-        </span>
-        {mobile ? <span className="text-sm">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
-      </Link>
-
-      {ouvert && (
-        <div
-          className={`absolute z-50 w-56 animate-dj-fade-in-rapide overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
-            mobile ? "left-2 top-full mt-1" : "left-0 top-11"
-          }`}
-        >
-          {membres.map((o) => {
-            const estActif = pathname === o.href;
-            return (
-              <Link
-                key={o.href}
-                href={o.href}
-                aria-current={estActif ? "page" : undefined}
-                onClick={(e) => {
-                  onFermer();
-                  onNaviguer?.();
-                  // Fenêtre flottante réservée au desktop (mobile=false) --
-                  // sur mobile (tiroir plein écran chat), fermer le chat et
-                  // naviguer vraiment, même mécanique que rendreLienOnglet.
-                  if (contexteChat) {
-                    e.preventDefault();
-                    if (mobile) {
-                      naviguerVersSection(o.href);
-                    } else {
-                      ouvrirFenetre(o.id);
-                    }
-                  }
-                }}
-                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                  estActif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-                }`}
-              >
-                <o.Icone size={16} className="flex-shrink-0" />
-                {o.label}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function AppSidebar({
   connecte,
   onOuvrirCatalogue,
   contexteChat = false,
   historique = [],
+  onConversationSupprimee,
   conversationActiveId = null,
   aDesMessages = false,
   onNouvelleConversation,
@@ -506,6 +367,8 @@ export function AppSidebar({
   aDesMessages?: boolean;
   onNouvelleConversation?: () => void;
   onSelectionnerConversation?: (fil: FilConversation) => void;
+  // Appelee apres la suppression definitive d'une conversation de l'historique.
+  onConversationSupprimee?: (fil: FilConversation) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -534,20 +397,26 @@ export function AppSidebar({
     router.push(href);
   }
   const [ouverte, setOuverte] = useState(false);
+  // Rail sur ordinateur (chat et reste de l'app) : il se deplie au survol du
+  // bouton du haut, par-dessus la page (la page ne bouge pas). Etat separe de
+  // `ouverte`, qui ne sert que pour le tiroir mobile du chat.
+  const [survolRail, setSurvolRail] = useState(false);
+  const railOuvert = survolRail;
   // Fondu de fermeture du tiroir mobile (30/08/2026, audit "aucune
   // transition" -- même mécanisme que le chat lui-même et les popups de
   // sections, voir useFermetureAnimee.ts). `ouverte` reste vrai pendant
   // tout le fondu (180ms) -- ne concerne QUE les fermetures déclenchées
   // depuis l'intérieur du tiroir mobile lui-même (fond noir, hamburger,
-  // liens, "Plus", profil) ; le rail desktop (même state `ouverte`, voir
-  // plus bas "Replier"/md:w-14) continue de se refermer directement, pas
-  // concerné par ce fondu.
+  // liens, "Plus", profil) ; le rail desktop a son propre état (survolRail,
+  // dépliage au survol), pas concerné par ce fondu.
   const { enSortie: tiroirEnSortie, demarrerFermeture: fermerTiroirMobile } = useFermetureAnimee();
   const [actionsDeplie, setActionsDeplie] = useState(false);
   const [groupeOuvertId, setGroupeOuvertId] = useState<string | null>(null);
   const [avisDeplie, setAvisDeplie] = useState(false);
   const [copie, setCopie] = useState(false);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
+  // Historique en plein ecran (01/10/2026), ouvert depuis le popup Historique.
+  const [historiquePleinEcran, setHistoriquePleinEcran] = useState(false);
   // Popup du menu profil (24/08/2026, correctif demande Bourama : voir
   // commentaire dans MenuProfil plus haut). Remonté ici pour piloter le
   // overflow-visible du rail, comme actionsDeplie/historiqueDeplie/groupeOuvertId.
@@ -562,6 +431,13 @@ export function AppSidebar({
   // tant qu'une mise à jour n'a pas été installée.
   const { misAJourDisponible } = useMiseAJourDisponible();
   const asideRef = useRef<HTMLDivElement>(null);
+  // Vrai tant que la souris est sur le rail : permet de replier le rail une
+  // fois les menus ouverts fermes, si la souris est deja partie.
+  const sourisSurRail = useRef(false);
+  const aUnMenuOuvert = actionsDeplie || historiqueDeplie || Boolean(groupeOuvertId) || profilDeplie;
+  useEffect(() => {
+    if (survolRail && !aUnMenuOuvert && !sourisSurRail.current) setSurvolRail(false);
+  }, [survolRail, aUnMenuOuvert]);
   const actionsRef = useRef<HTMLDivElement>(null);
 
   // 31/08/2026, demande Bourama : le bouton retour (natif + web mobile)
@@ -569,9 +445,8 @@ export function AppSidebar({
   // l'appli -- voir lib/contexteRetour.tsx. Le tiroir mobile n'est
   // enregistré que pour l'instance concernée (contexteChat=true,
   // masquerChromeMobile=false) : dans l'autre instance (nav principale),
-  // `ouverte` pilote uniquement la largeur du rail desktop, pas un
-  // panneau à fermer au retour -- voir le commentaire sur
-  // tiroirEnSortie plus haut.
+  // il n'y a aucun tiroir mobile, donc rien à fermer au retour. Le rail
+  // desktop se déplie au survol (survolRail), sans état d'historique.
   // 03/09/2026, correctif Bourama ("même bug que le hamburger Plus, mais
   // dans le hamburger du chat plein écran") : même trou que
   // MenuHamburgerWeb.tsx/MenuHamburgerNatif.tsx (voir commit du
@@ -754,10 +629,10 @@ export function AppSidebar({
           // la barre du bas.
           if (contexteChat && onglet.id) {
             e.preventDefault();
-            if (mobile) {
-              naviguerVersSection(onglet.href);
+            if (!mobile && onglet.id === "claude") {
+              ouvrirFenetre("claude");
             } else {
-              ouvrirFenetre(onglet.id);
+              naviguerVersSection(onglet.href);
             }
           }
         }}
@@ -768,7 +643,7 @@ export function AppSidebar({
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
           <onglet.Icone size={18} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
-        {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={ouverte}>{onglet.label}</LibelleRail>}
+        {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
       </Link>
     );
   }
@@ -776,24 +651,26 @@ export function AppSidebar({
   // Accès direct sur le rail : Bureau, Bibliothèque, Concentration (usage
   // quotidien). Mes skills, Ma mémoire et Plugins vivent sous le groupe
   // "Personnaliser Classinus" ; Mon programme et Audits sous "Scolarité"
-  // (voir GROUPES plus haut). "Utiliser Classinus dans Claude" vit dans le
+  // (voir lib/groupesRail.ts). "Utiliser Classinus dans Claude" vit dans le
   // menu "Plus". En contexte chat plein écran, Bureau et Concentration
   // descendent aussi dans "Plus" (place prise par Nouvelle conversation +
   // Historique, élargi le 22/08/2026, demande Bourama) : même traitement
   // pour Concentration (30/08/2026, audit navigation, étape 2) que pour
   // Bureau, ajouté ce jour-là au rail desktop.
-  const idsDirects: OngletId[] = contexteChat
-    ? ["bibliotheque"]
-    : ["bureau", "bibliotheque", "controle-session"];
-  const idsPlusFlat: OngletId[] = contexteChat ? ["bureau", "controle-session", "claude"] : ["claude"];
-  const ongletsDirects = ONGLETS.filter((o) => idsDirects.includes(o.id));
+  // Bureau, Bibliothèque, Concentration et Personnaliser Classinus ne sont
+  // plus des liens simples : ce sont des groupes (MenuGroupeRail.tsx) qui
+  // montrent leurs sous-sections au survol. Dans le chat, Bureau est dans
+  // le rail comme les autres ; Concentration reste dans "Plus", avec sa
+  // liste sur le côté.
+  const idsPlusFlat: OngletId[] = ["claude"];
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
-  const navComplete = [{ href: "/", label: "Accueil", Icone: Home }, ...ongletsDirects];
+  const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
+  const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
 
   // 30/08/2026, demande Bourama : le tiroir mobile du chat (plus bas,
   // ouverte && !masquerChromeMobile) doit reprendre les mêmes 4 boutons
   // que la barre d'onglets mobile -- Bibliothèque, Concentration,
-  // Bureau, Personnaliser Classinus (celui-ci via GROUPES, déjà rendu plus
+  // Bureau, Personnaliser Classinus (celui-ci via GROUPE_PERSONNALISER, déjà rendu plus
   // bas, pas repris ici) -- sans Accueil (rejoint le "Plus" unifié) ni
   // Chat (on y est déjà). Mobile uniquement : ne touche pas
   // navComplete/idsDirects ci-dessus, qui restent la version desktop
@@ -884,22 +761,38 @@ export function AppSidebar({
       )}
 
       <div
-        ref={asideRef}
+        // Cette boite garde la largeur du rail replie (la page ne bouge pas),
+        // le rail deplie passe par-dessus.
         data-rail-lateral
+        className="relative hidden w-14 flex-shrink-0 md:block"
+      >
+      <div
+        ref={asideRef}
         data-agent-zone="Barre latérale"
-        className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
+        onMouseEnter={() => {
+          sourisSurRail.current = true;
+        }}
+        onMouseLeave={() => {
+          sourisSurRail.current = false;
+          if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
+        }}
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
+          railOuvert ? "shadow-xl" : ""
+        } ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
-        } ${ouverte ? "md:w-72" : "md:w-14"}`}
+        } ${railOuvert ? "md:w-72" : "md:w-14"}`}
       >
         <button
-          onClick={() => setOuverte((v) => !v)}
-          aria-label={ouverte ? "Replier le panneau" : "Déplier le panneau"}
+          onClick={() => setSurvolRail(true)}
+          onMouseEnter={() => setSurvolRail(true)}
+          onFocus={() => setSurvolRail(true)}
+          aria-label={railOuvert ? "Replier le panneau" : "Déplier le panneau"}
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             <PanelLeft size={18} className="transition-transform duration-200 group-hover:scale-95" />
           </span>
-          <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
+          <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
@@ -914,7 +807,7 @@ export function AppSidebar({
                 <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
                   <MessageSquarePlus size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
                 </span>
-                <LibelleRail ouverte={ouverte}>Nouvelle conversation</LibelleRail>
+                <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
               </button>
             )}
 
@@ -929,26 +822,30 @@ export function AppSidebar({
                   <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
                     <History size={18} className="transition-transform duration-300 group-hover:rotate-45" />
                   </span>
-                  <LibelleRail ouverte={ouverte}>Historique</LibelleRail>
+                  <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
                 </button>
                 {historiqueDeplie && (
-                  <div className="absolute left-1 top-11 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
-                    {historique.map((fil) => {
-                      const estActive = fil.conversation_id === conversationActiveId;
-                      return (
-                        <button
-                          key={fil.conversation_id ?? "legacy"}
-                          onClick={() => !estActive && onSelectionnerConversation?.(fil)}
-                          disabled={estActive}
-                          className={`block w-full truncate rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                            estActive ? "text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute"
-                          }`}
-                        >
-                          {estActive ? "● " : ""}
-                          {fil.titre}
-                        </button>
-                      );
-                    })}
+                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                    <div className="flex items-center justify-between px-3 pb-0.5 pt-2">
+                      <span className="text-xs font-medium uppercase tracking-wide text-dj-texte-muet">Historique</span>
+                      <button
+                        onClick={() => {
+                          setHistoriqueDeplie(false);
+                          setHistoriquePleinEcran(true);
+                        }}
+                        title="Plein écran"
+                        aria-label="Afficher l'historique en plein écran"
+                        className="group flex h-7 w-7 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                      >
+                        <Maximize2 size={15} className="transition-transform duration-200 group-hover:scale-110" />
+                      </button>
+                    </div>
+                    <ListeHistorique
+                      conversationActiveId={conversationActiveId}
+                      onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+                      onSupprimee={onConversationSupprimee}
+                      className="max-h-72 p-1"
+                    />
                   </div>
                 )}
               </div>
@@ -960,11 +857,11 @@ export function AppSidebar({
 
         {navComplete.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV }))}
 
-        {GROUPES.map((g) => (
+        {groupesDuRail.map((g) => (
           <MenuGroupe
             key={g.id}
             groupe={g}
-            ouverte={ouverte}
+            ouverte={railOuvert}
             LibelleRail={LibelleRail}
             pathname={pathname}
             contexteChat={contexteChat}
@@ -973,17 +870,17 @@ export function AppSidebar({
             ouvert={groupeOuvertId === g.id}
             onOuvrir={() => setGroupeOuvertId(g.id)}
             onFermer={() => setGroupeOuvertId((v) => (v === g.id ? null : v))}
-            onBasculer={() => setGroupeOuvertId((v) => (v === g.id ? null : g.id))}
+            onNaviguer={() => marquerGroupeSansHistorique()}
           />
         ))}
 
-        {ouverte && (
+        {railOuvert && (
           <div className="mt-auto flex justify-center pt-2">
             <BoutonInstaller />
           </div>
         )}
 
-        <div ref={actionsRef} className={`relative rounded-xl ${ouverte ? "mt-2" : "mt-auto"}`}>
+        <div ref={actionsRef} className={`relative rounded-xl ${railOuvert ? "mt-2" : "mt-auto"}`}>
           <button
             onClick={basculerActions}
             title="Plus"
@@ -994,7 +891,7 @@ export function AppSidebar({
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
               <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
             </span>
-            <LibelleRail ouverte={ouverte}>Plus</LibelleRail>
+            <LibelleRail ouverte={railOuvert}>Plus</LibelleRail>
           </button>
           {actionsDeplie && (
             <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
@@ -1020,7 +917,8 @@ export function AppSidebar({
                           setActionsDeplie(false);
                           if (contexteChat) {
                             e.preventDefault();
-                            ouvrirFenetre(o.id);
+                            if (o.id === "claude") ouvrirFenetre("claude");
+                            else naviguerVersSection(o.href);
                           }
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
@@ -1032,6 +930,22 @@ export function AppSidebar({
                       </Link>
                     );
                   })}
+                {contexteChat && (
+                  <MenuGroupe
+                    variante="plus"
+                    groupe={GROUPE_CONCENTRATION}
+                    ouverte={railOuvert}
+                    LibelleRail={LibelleRail}
+                    pathname={pathname}
+                    contexteChat={contexteChat}
+                    ouvrirFenetre={ouvrirFenetre}
+                    naviguerVersSection={naviguerVersSection}
+                    ouvert={groupeOuvertId === "controle-session"}
+                    onOuvrir={() => setGroupeOuvertId("controle-session")}
+                    onFermer={() => setGroupeOuvertId((v) => (v === "controle-session" ? null : v))}
+                    onNaviguer={() => marquerGroupeSansHistorique()}
+                  />
+                )}
 
                 <button
                   onClick={partager}
@@ -1105,7 +1019,7 @@ export function AppSidebar({
           <MenuProfil
             avatarUrl={avatarUrl}
             nomAffiche={nomAffiche}
-            ouverte={ouverte}
+            ouverte={railOuvert}
             LibelleRail={LibelleRail}
             menuOuvert={profilDeplie}
             onBasculerMenu={() => setProfilDeplie((v) => !v)}
@@ -1140,10 +1054,21 @@ export function AppSidebar({
                 <UserRound size={13} className="text-dj-texte-muet" />
               </span>
             </span>
-            <LibelleRail ouverte={ouverte}>Se connecter</LibelleRail>
+            <LibelleRail ouverte={railOuvert}>Se connecter</LibelleRail>
           </button>
         )}
       </div>
+      </div>
+
+      {contexteChat && (
+        <HistoriquePleinEcran
+          ouvert={historiquePleinEcran}
+          onFermer={() => setHistoriquePleinEcran(false)}
+          conversationActiveId={conversationActiveId}
+          onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+          onSupprimee={onConversationSupprimee}
+        />
+      )}
 
       {/* Panneau plein écran mobile, même logique que desktop -- masqué
           dans l'appli native, remplacé par BarreOngletsNative.tsx.
@@ -1201,23 +1126,13 @@ export function AppSidebar({
                       Historique
                     </button>
                     {historiqueDeplie && (
-                      <div className="dj-scroll-isole absolute left-1 top-11 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
-                        {historique.map((fil) => {
-                          const estActive = fil.conversation_id === conversationActiveId;
-                          return (
-                            <button
-                              key={fil.conversation_id ?? "legacy"}
-                              onClick={() => !estActive && onSelectionnerConversation?.(fil)}
-                              disabled={estActive}
-                              className={`block w-full truncate rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                                estActive ? "text-dj-accent-1-texte" : "text-dj-texte hover:bg-dj-surface-haute"
-                              }`}
-                            >
-                              {estActive ? "● " : ""}
-                              {fil.titre}
-                            </button>
-                          );
-                        })}
+                      <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                        <ListeHistorique
+                          conversationActiveId={conversationActiveId}
+                          onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+                          onSupprimee={onConversationSupprimee}
+                          className="max-h-72 p-1"
+                        />
                       </div>
                     )}
                   </div>
@@ -1229,12 +1144,12 @@ export function AppSidebar({
 
             {ongletsMobileDirects.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV, mobile: true }))}
 
-            {GROUPES.map((g) =>
+            {[GROUPE_PERSONNALISER].map((g) =>
               contexteChat ? (
                 <MenuGroupe
                   key={g.id}
                   groupe={g}
-                  mobile
+                  variante="mobile"
                   ouverte
                   LibelleRail={LibelleRail}
                   pathname={pathname}
@@ -1244,7 +1159,6 @@ export function AppSidebar({
                   ouvert={groupeOuvertId === g.id}
                   onOuvrir={() => setGroupeOuvertId(g.id)}
                   onFermer={() => setGroupeOuvertId((v) => (v === g.id ? null : v))}
-                  onBasculer={() => setGroupeOuvertId((v) => (v === g.id ? null : g.id))}
                   onNaviguer={() => {
                     // 03/09/2026, même correctif que rendreLienOnglet plus
                     // haut : ce callback est toujours suivi d'une vraie
@@ -1264,7 +1178,7 @@ export function AppSidebar({
                   onglet: { href: g.href, label: g.label, Icone: g.Icone },
                   mouvement: MOUVEMENT_NAV,
                   mobile: true,
-                  actifSupplementaire: g.ongletIds.some((id) => pathname === ONGLETS.find((o) => o.id === id)?.href),
+                  actifSupplementaire: g.sections.some((sec) => pathname === sec.href),
                 })
               )
             )}

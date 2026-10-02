@@ -1,17 +1,16 @@
-import { SectionPage } from "@/components/SectionPage";
-import { ProgrammeAvecCatalogue } from "@/components/ProgrammeAvecCatalogue";
-import { DefinirInfoSection } from "@/components/DefinirInfoSection";
-import { groupeBureau } from "@/lib/sectionsBureau";
+import { SectionPageBureau } from "@/components/SectionPageBureau";
+import { contenuSection, titreSection } from "@/lib/contenuSections";
+import { ROUTES_BUREAU } from "@/lib/routesBureau";
 
 // 19/09/2026, demande Bourama : ancien onglet "Programme" de Bureau,
 // devenu une vraie page.
 // 22/09/2026, demande Bourama : ajout de l'onglet "Catalogue public"
 // (partager/récupérer un Programme entier), voir ProgrammeAvecCatalogue.tsx.
 export default function PageBureauProgramme() {
+  const cle = ROUTES_BUREAU.programme;
   return (
-    <SectionPage title="Programme" groupe={groupeBureau()}>
-      <DefinirInfoSection id="programme-notions" />
-      <ProgrammeAvecCatalogue />
-    </SectionPage>
+    <SectionPageBureau title={titreSection(cle)}>
+      {contenuSection(cle)}
+    </SectionPageBureau>
   );
 }

@@ -74,7 +74,13 @@ function TitreSection({ title, infoRubriqueId, className, retour }: { title: str
     <div className={`flex items-center gap-1.5 ${className ?? ""}`}>
       {retour && <BoutonRetour href={retour} padding="p-1" className="-ml-1" />}
       <h1 className="font-display text-xl font-bold text-dj-texte">{title}</h1>
-      {rubrique && <BoutonInfoSection rubriqueId={rubrique.id} texteCourt={rubrique.texteCourt} />}
+      {rubrique && (
+        <BoutonInfoSection
+          rubriqueId={rubrique.id}
+          texteCourt={rubrique.texteCourt}
+          hrefEnSavoirPlus={rubrique.lienDecouvrir}
+        />
+      )}
     </div>
   );
 }

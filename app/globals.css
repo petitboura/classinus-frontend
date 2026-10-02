@@ -410,6 +410,25 @@ select:focus-visible {
    reçoit cette classe une seule fois, à sa première apparition -- les
    mots déjà affichés restent du texte brut et ne sont jamais
    ré-animés. */
+/* Editeur de code piloté par l'IA (28/09/2026) : lignes montrées ou écrites
+   par Classinus, surlignées un court instant puis estompées. Classe posée
+   par CodeMirror, donc en CSS brut ici et non en utilitaire Tailwind. */
+@keyframes dj-ligne-agent {
+  0%,
+  70% {
+    background-color: var(--dj-accent-1-conteneur);
+    box-shadow: inset 3px 0 0 var(--dj-accent-1);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 3px 0 0 transparent;
+  }
+}
+
+.cm-ligne-agent {
+  animation: dj-ligne-agent 2.6s ease-out forwards;
+}
+
 @keyframes dj-mot-fade {
   from {
     opacity: 0;

@@ -17,11 +17,13 @@
 // sinon envoyé comme un message normal du chat.
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, Mic, PenLine, Square } from "lucide-react";
+import { ArrowUp, AudioLines, Mic, PenLine, Square } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
+import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
+import { conversationActive } from "@/lib/conversationPartagee";
 
 const DUREE_ERREUR_MS = 6000;
 
@@ -35,6 +37,17 @@ export function ControlesInteractionCanal() {
   const actif = contexte?.actif ?? false;
   const modeInteraction = contexte?.modeInteraction ?? "texte";
   const moteurChoisi = contexte?.moteurDictee ?? "whisper";
+  const conversationId = contexte?.actif ? contexte.conversationId : null;
+  // Depuis le 02/10/2026, la voix est une pièce partagée (AppShell) : ce bouton
+  // et le Mode vocal du chat pilotent la même session, jamais deux voix.
+  const voixDirecte = useContext(ContexteVoixDirecte);
+  const geminiLive = {
+    actif: voixDirecte?.actif ?? false,
+    etat: voixDirecte?.etat ?? "inactif",
+    basculer: () => voixDirecte?.basculer(conversationActive() ?? conversationId),
+  };
+  const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
+  useEffect(() => () => fermerVoixPourConversation?.(conversationId), [conversationId, fermerVoixPourConversation]);
 
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const [texteSaisi, setTexteSaisi] = useState("");
@@ -201,6 +214,17 @@ export function ControlesInteractionCanal() {
           </AnimatePresence>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={geminiLive.basculer}
+              disabled={geminiLive.etat === "connexion"}
+              aria-pressed={geminiLive.actif}
+              aria-label={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
+              title={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
+              className={`${classeBouton(geminiLive.actif, geminiLive.actif)} ${geminiLive.etat === "reponse" ? "animate-pulse" : ""}`}
+            >
+              <AudioLines size={18} />
+            </button>
+
             <button
               onClick={basculerDictee}
               disabled={dictee.transcriptionEnCours}

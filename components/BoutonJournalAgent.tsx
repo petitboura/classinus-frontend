@@ -13,14 +13,23 @@
 // action n'a encore eu lieu (journal vide affiché comme tel), pour
 // rester repérable une fois qu'il y a quelque chose à voir.
 //
+// Sur ordinateur, la bulle "Ouvrir le chat" (ChatFlottant.tsx) occupe déjà
+// le coin bas droit : le journal se range sur la même ligne, juste à sa
+// gauche, centré verticalement sur elle. Au-dessus de la bulle, la colonne
+// est prise par le bouton "Ajouter" et son menu (EspaceBibliotheque.tsx,
+// BibliothequePublique.tsx). Sur /chat la bulle n'existe pas, le journal
+// garde le coin d'origine.
+//
 // Fermeture au clic extérieur et à Echap, même convention que les
 // autres panneaux/modales de l'app.
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ListChecks, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ContexteCanalEnDirect, type StatutEntreeJournal } from "@/lib/contexteCanalEnDirect";
 import { useDeplacable } from "@/lib/useDeplacable";
+import { estPageChat } from "@/lib/routesApp";
 
 const LABEL_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "En cours...",
@@ -36,6 +45,7 @@ const COULEUR_PAR_STATUT: Record<StatutEntreeJournal, string> = {
 
 export function BoutonJournalAgent() {
   const contexte = useContext(ContexteCanalEnDirect);
+  const pathname = usePathname();
   const [ouvert, setOuvert] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   // Déplaçable (20/09/2026, demande Bourama) : le bouton se glisse où l'on
@@ -75,7 +85,11 @@ export function BoutonJournalAgent() {
   }, [ouvert]);
 
   if (!contexte) return null;
-  const { journal } = contexte;
+  const { journal, actif } = contexte;
+  const surChat = estPageChat(pathname);
+  // Masqué sur /chat sauf si le canal est déjà actif, même règle et même
+  // décision (25/09/2026, Bourama) que CanalEnDirectFlottant.tsx.
+  if (surChat && !actif) return null;
 
   return (
     <div
@@ -84,7 +98,9 @@ export function BoutonJournalAgent() {
         deplacement.ref(noeud);
       }}
       data-agent-superposition="true"
-      className="fixed bottom-4 right-4 z-[65]"
+      className={`fixed bottom-4 right-4 z-agent-controles ${
+        surChat ? "" : "md:bottom-[calc(1.5rem+var(--dj-barre-onglets-web,0px))] md:right-20"
+      }`}
       style={deplacement.style}
     >
       <button

@@ -27,7 +27,7 @@ export const clesRequetes = {
   etablissements: ["etablissements"] as const,
   etablissementsMesRattachements: ["etablissements", "mes-rattachements"] as const,
   correctionsProf: (onglet: string) => ["corrections-prof", onglet] as const,
-  memoire: ["memoire"] as const,
+  memoire: ["memoire-eleve"] as const,
   adminSignalements: ["admin-signalements"] as const,
   auditCorrections: ["audit-corrections"] as const,
   auditComplet: (codeId: string) => ["audit-complet", codeId] as const,

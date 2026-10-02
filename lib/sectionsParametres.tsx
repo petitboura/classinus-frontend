@@ -17,7 +17,7 @@ export const SECTIONS_PARAMETRES: SectionDeGroupe[] = [
   {
     href: ROUTES_PARAMETRES.preferences,
     label: "Préférences",
-    description: "Thème, relances proactives et démarrage avec Windows",
+    description: "Thème, relances proactives, réglage prof/pas prof et démarrage avec Windows",
     Icone: SlidersHorizontal,
   },
   {

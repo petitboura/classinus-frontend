@@ -36,7 +36,7 @@ import { Skeleton } from "@/components/Skeleton";
 // coexistent.
 const LIMITE_MESSAGES_INVITE = 5;
 const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
-const SOUS_TITRE_ACCUEIL_CLOVIS = "Ton compagnon d'études, à tes côtés.";
+const SOUS_TITRE_ACCUEIL_CLOVIS = "Le coin des étudiants.";
 
 export function ChatSection() {
   const [connecte, setConnecte] = useState(false);
@@ -94,12 +94,42 @@ export function ChatSection() {
     return () => observateur.disconnect();
   }, []);
 
+  // 27/09/2026, chantier "éditeur de code du Bureau", pont retour éditeur
+  // -> chat (useOuvrirConversationPleinEcran, lib/contexteChat.tsx) :
+  // même mécanisme et même esprit que l'effet équivalent de
+  // ChatFlottant.tsx pour la popup mini (Activité récente) --
+  // demandeOuvrirConversation n'était consommée que là jusqu'ici, jamais
+  // par la vraie page /chat. selectionnerConversation a besoin d'agent
+  // (agent.id) : si la demande arrive avant que l'agent soit chargé,
+  // l'effet se redéclenche dès qu'il arrive (dépendance ci-dessous).
+  // Consommée une seule fois (setDemandeOuvrirConversation(null)).
+  const demandeOuvrirConversation = ctxChat?.demandeOuvrirConversation ?? null;
+  useEffect(() => {
+    if (demandeOuvrirConversation === null || !agent) return;
+    selectionnerConversation({
+      conversation_id: demandeOuvrirConversation.conversationId,
+      titre: "",
+      derniere_activite: "",
+    });
+    ctxChat?.setDemandeOuvrirConversation(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selectionnerConversation recréée à chaque rendu (pas dans useCallback) ; seuls demandeOuvrirConversation et agent doivent déclencher ce passage.
+  }, [demandeOuvrirConversation, agent]);
+
   const { fenetres, fermerToutes } = useFenetres();
   function fermerFenetresAuClic() {
     if (fenetres.length > 0) fermerToutes();
   }
 
+  // 27/09/2026 : le brouillon venu de l'éditeur (texteInitialConversation)
+  // ne doit pas réapparaître dans une conversation ouverte plus tard --
+  // vidé en quittant la page et à chaque nouvelle conversation.
+  useEffect(() => {
+    return () => ctxChat?.setTexteInitialConversation(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function nouvelleConversation() {
+    ctxChat?.setTexteInitialConversation(null);
     setCle(crypto.randomUUID());
     setMessagesInitiaux([]);
     setNbMessages(0);
@@ -159,14 +189,6 @@ export function ChatSection() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div
-        onMouseDownCapture={fermerFenetresAuClic}
-        className="hidden flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5 md:flex"
-      >
-        <Logo taille={20} />
-        <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
-      </div>
-
       <div className="flex min-h-0 flex-1">
         <AppSidebar
           connecte={connecte}
@@ -177,6 +199,12 @@ export function ChatSection() {
           historique={historique}
           onNouvelleConversation={nouvelleConversation}
           onSelectionnerConversation={selectionnerConversation}
+          // Si on supprime la conversation ouverte, on repart sur une
+          // nouvelle conversation vide (sinon ses messages resteraient
+          // affiches alors qu'ils n'existent plus).
+          onConversationSupprimee={(fil) => {
+            if (fil.conversation_id === cle) nouvelleConversation();
+          }}
         />
 
         <div
@@ -250,6 +278,7 @@ export function ChatSection() {
               onNouvelleConversationDemarree={ajouterConversationHistorique}
               pleinEcran
               natif={natif}
+              raccourcis
             />
           )}
         </div>

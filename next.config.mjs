@@ -27,9 +27,23 @@ if (process.env.CAPACITOR_BUILD === "true") {
   process.env.NEXT_PUBLIC_API_URL =
     "https://clovis-backend-staging.up.railway.app";
 }
+// 30/09/2026, demande Bourama : le chat a pris l'adresse "/" (voir
+// lib/routesApp.ts). L'ancienne adresse /chat redirige vers "/" pour ne
+// pas casser un lien ou un marque-page existant. Ignoré (et donc non
+// déclaré) dans l'export statique Capacitor, où les redirections next.config
+// ne s'appliquent pas et où personne n'arrive par un ancien lien web.
+const redirectionsWeb =
+  process.env.CAPACITOR_BUILD === "true"
+    ? {}
+    : {
+        async redirects() {
+          return [{ source: "/chat", destination: "/", permanent: true }];
+        },
+      };
 
 const nextConfig = {
   ...(process.env.CAPACITOR_BUILD === "true" ? { output: "export" } : {}),
+  ...redirectionsWeb,
   images: {
     // image_vitrine_url (agents.image_vitrine_url, voir PIVOT_SOCIAL.md)
     // est hébergée sur Supabase Storage — next/image refuse par défaut

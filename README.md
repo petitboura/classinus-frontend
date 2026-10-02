@@ -34,7 +34,14 @@ components/
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
                           components/mobile/ à la place
   AppSidebar.tsx          sidebar desktop (Bureau/Bibliothèque/Notes en direct, groupes
-                          "Personnaliser Clovis" et "Scolarité")
+                          "Personnaliser Clovis" et "Scolarité") ; repliée par défaut, elle se
+                          déplie au survol du bouton "Classinus" par-dessus la page, sans la décaler
+  voix/                   voix en direct (Gemini Live) : OndeVoix (onde dessinée, trois aspects selon l'état)
+                          et VoixDirecteSuperposition (onde plein écran dans le chat, bulle réduite,
+                          bulle qui suit le curseur de Classinus quand le canal en direct est actif).
+                          Aucun texte d'état à l'écran. Session unique partagée : lib/contexteVoixDirecte.tsx,
+                          montée dans AppShell ; réglages (modèle, consignes, relances) côté serveur
+                          dans core/gemini_live_config.py.
   mobile/
     BarreOngletsNative.tsx  vraie barre d'onglets système (plugin Capgo, pas une barre CSS/React) :
                              Bibliothèque, Contrôle de session, Chat (au milieu), Notes, Personnaliser
@@ -49,6 +56,17 @@ components/
                           pour la route /chat (chantier en cours "chat plein écran = vraie section" --
                           ChatFlottant.tsx gère encore l'ancien overlay fixed en parallèle tant que le
                           chantier n'est pas terminé) ;
+                          chat/barre/ (01/10/2026) : morceaux de la barre de saisie, le bouton "+" et son
+                          menu (MenuPlus.tsx), le bouton "Réglages" avec ses lignes
+                          dépliables et sa bulle des réglages actuels au survol (BoutonReglages.tsx, LigneReglage.tsx), les données du mode
+                          pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
+                          useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
+                          de réglages partagées (reglagesReponse.ts) ;
+                          LigneApercuPieces.tsx (02/10/2026) : ligne unique défilable des pièces jointes,
+                          avant envoi (BarreDeSaisie.tsx) et après envoi (BulleMessage.tsx) ; carrés pour
+                          images et vidéos, pilules empilées par deux pour le reste ; FenetreTexteColle.tsx
+                          et FenetreMedia.tsx : fenêtres de lecture d'un texte collé et d'un audio ou d'une
+                          vidéo ; lib/texteColle.ts : détection du langage d'un texte collé ;
                           PleinEcranApercu.tsx (20/09/2026) : vrai plein écran de bord à bord du bouton
                           Agrandir des aperçus (BlocExpansible.tsx : widget, PDF, Office, texte), monté
                           dans <body> par un portail pour ne jamais être recadré par le message ;
@@ -60,6 +78,17 @@ components/
                           par ChatIA.tsx), CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
                           LanceurMinuteur.tsx (bouton horloge : lancer, retrouver les masqués),
                           AnneauMinuteur.tsx
+    AnimationLecteur.tsx  bloc ```animation du markdown (29/09/2026) : animation qui se regarde comme une
+                          vidéo (lecture, pause, barre de progression, barre d'espace), en 2D (SVG) ou en 3D
+                          (Three.js r128 chargé depuis cdnjs, jsdelivr en secours), pour n'importe quel sujet,
+                          dans une iframe isolée comme le widget (WidgetSandbox.tsx, inchangé) ; branché dans
+                          composantsMarkdownRiches.tsx et RenduMarkdownAutonome.tsx
+    animation/           le lecteur lui même : construireDocumentAnimation.ts (page de l'iframe, thème,
+                          barre de lecture) et runtimeAnimation.ts (code exécuté dans l'iframe). Le modèle
+                          n'écrit que le contenu : une ou plusieurs parties (animer), chacune étant une fonction de sa
+                          progression p (0 à 1), rejouée dans l'ordre à chaque image ; titres cliquables et
+                          légende facultatifs. Pause et retour en arrière sont donc exacts. Textes dans lib/textesAnimation.ts. Consignes données au modèle
+                          dans clovis-backend, core/profils_agents.py (INSTRUCTIONS_FORMATS_AFFICHAGE)
   icones/, icons/        icônes du produit
 
 lib/

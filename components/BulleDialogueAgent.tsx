@@ -52,6 +52,7 @@ import { useCallback, useContext, useEffect, useRef, useState, type PointerEvent
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
+import { COUCHE_AGENT_BULLE } from "@/lib/couchesAgent";
 
 // Chargé à la demande : le rendu complet (code, formules, schémas) est
 // lourd et la bulle vit dans AppShell, donc sur toutes les pages. Ce code
@@ -282,7 +283,7 @@ export function BulleDialogueAgent() {
             left: gauche,
             // Au dessus des popups de l'application (z-index jusqu'à 999),
             // juste sous le curseur de Clovis (10000).
-            zIndex: 9990,
+            zIndex: COUCHE_AGENT_BULLE,
             pointerEvents: "none",
             maxWidth: tailleAppliquee
               ? `calc(100vw - ${MARGE_BORD * 2}px)`

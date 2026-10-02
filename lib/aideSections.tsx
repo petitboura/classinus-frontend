@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ROUTES_DECOUVRIR } from "./routesDecouvrir";
 
 // Créé le 01/09/2026, correctif (Bourama : "les descriptions de section,
 // c'est pas la norme mobile, trouve où ça doit aller").
@@ -29,6 +30,13 @@ export type RubriqueAide = {
   titre: string;
   texteCourt: React.ReactNode;
   texteComplet: React.ReactNode;
+  /** Chantier SEO/AEO de Classinus (26/09/2026). Quand une page publique
+   * de présentation /decouvrir/... existe pour cette rubrique, le lien
+   * "En savoir plus" de la bulle (BoutonInfoSection.tsx) pointe vers
+   * elle plutôt que vers /parametres/aide -- ce champ n'est renseigné
+   * que pour ces rubriques là, les autres gardent le comportement
+   * d'avant sans rien changer. */
+  lienDecouvrir?: string;
 };
 
 export const RUBRIQUES_AIDE: RubriqueAide[] = [
@@ -76,6 +84,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Coupe les sonneries et notifications, et active Ne pas déranger pendant la durée choisie.",
     texteComplet:
       "Coupe les sonneries et notifications, et active Ne pas déranger le temps de ta session de travail. L'activation se fait dans les réglages système (Accessibilité), en dehors de l'app.",
+    lienDecouvrir: ROUTES_DECOUVRIR.concentration.session,
   },
   {
     // Partie 5 (06/09/2026, chantier "confiance pédagogique") : côté
@@ -111,6 +120,13 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Si quelqu'un t'a donné un code, entre-le ici pour recevoir tout ce qu'il partage : comportement, bibliothèque, ou texte, selon ce que la personne y a mis.",
   },
   {
+    id: "editeur-code",
+    titre: "Éditeur de code",
+    texteCourt: "Écris et exécute du code, ouvre ou enregistre-le dans ta bibliothèque.",
+    texteComplet:
+      "Écris du code dans n'importe quel langage. Le bouton Exécuter (Python uniquement pour l'instant) lance le code directement dans le navigateur, comme dans le chat. Ouvrir et Enregistrer utilisent ta bibliothèque personnelle comme espace de fichiers : choisis un fichier existant à ouvrir, ou enregistre le code affiché sous un nom, avec ou sans dossier. Quand le canal en direct est actif, Classinus voit ton code : il peut te répondre, te montrer des lignes, te conseiller et écrire directement dans l'éditeur, en plein écran comme en petit. Tu peux annuler ce qu'il écrit avec Ctrl+Z (Cmd+Z sur Mac).",
+  },
+  {
     id: "ecrire-matiere",
     titre: "Écrire une matière",
     texteCourt: "Choisis une matière et écris ce que Classinus doit savoir ou comment il doit répondre.",
@@ -139,6 +155,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Temps passé aujourd'hui dans chaque app, et les 7 derniers jours.",
     texteComplet:
       "Affiche le temps passé aujourd'hui dans chaque app installée, avec un historique sur les 7 derniers jours. Nécessite l'app mobile Classinus (Android uniquement pour l'instant).",
+    lienDecouvrir: ROUTES_DECOUVRIR.concentration.tempsEcran,
   },
   {
     id: "mes-codes",
@@ -182,6 +199,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
     texteComplet:
       "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.perso,
   },
   {
     id: "bibliotheque-publique",
@@ -218,6 +236,20 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
         .
       </>
     ),
+    lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.publique,
+  },
+  {
+    // Ajoutée le 26/09/2026, chantier SEO/AEO (demande Bourama) : cet
+    // onglet n'avait jusqu'ici aucune bulle d'info, contrairement à
+    // Perso et Publique. Texte repris de la description validée le
+    // 25/09/2026 pour /decouvrir/bibliotheque/telephone.
+    id: "bibliotheque-telephone",
+    titre: "Dossiers du téléphone",
+    texteCourt:
+      "Désigne des dossiers de ton téléphone, sans copier tes PDF ni documents. Classinus les explore et les réorganise pour toi.",
+    texteComplet:
+      "Disponible uniquement sur l'appli mobile. Si tu le décides, plus besoin d'ajouter tes PDF ou documents un par un : Classinus peut fouiller directement dans les dossiers de ton téléphone que tu lui désignes, et même les réorganiser en sous dossiers.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.telephone,
   },
   {
     id: "mes-skills",
@@ -226,6 +258,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
     texteComplet:
       "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
+    lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.mesSkills,
   },
   {
     id: "skills-publics",
@@ -234,6 +267,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Des comportements publiés par d'autres étudiants. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi.",
     texteComplet:
       "Des comportements publiés par d'autres étudiants. Clique sur l'un d'eux pour voir son contenu complet avant de l'activer. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi. Si c'est toi qui l'as publié, tu peux le retirer du catalogue à tout moment.",
+    lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
   },
   {
     id: "connecter-claude",
@@ -247,9 +281,10 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     id: "memoire",
     titre: "Ma mémoire",
     texteCourt:
-      "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
+      "Ce que Classinus retient de toi pour personnaliser vos échanges, classé en quatre catégories : identité, scolarité, apprentissage et préférences. Ça se construit tout seul au fil de tes conversations. Tu peux tout consulter ici et oublier une catégorie. Les Paramètres te permettent aussi d'oublier une catégorie ou de tout effacer d'un coup.",
     texteComplet:
-      "Résumé de ce que Classinus retient de tes conversations passées, pour personnaliser vos échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger ou l'effacer toi-même ici.",
+      "Ce que Classinus retient de toi pour personnaliser vos échanges, classé en quatre catégories : identité, scolarité, apprentissage et préférences. Ça se construit tout seul au fil de tes conversations. Tu peux tout consulter ici et oublier une catégorie. Les Paramètres te permettent aussi d'oublier une catégorie ou de tout effacer d'un coup.",
+    lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.memoire,
   },
 ];
 

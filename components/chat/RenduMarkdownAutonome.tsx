@@ -29,6 +29,7 @@ import { QCMInteractif } from "./QCMInteractif";
 import { QuestionInteractive } from "./QuestionInteractive";
 import { FicheRevision } from "./FicheRevision";
 import { WidgetSandbox } from "./WidgetSandbox";
+import { AnimationLecteur } from "./AnimationLecteur";
 import { ImageMessage } from "./ImageMessage";
 import { TableauMessage } from "./TableauMessage";
 import { FichierChip, extensionFichier } from "./FichierChip";
@@ -84,11 +85,13 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
           return <QuestionInteractive code={code} onReponse={onRepondreQuestion} dejaRepondu={questionDejaRepondue} />;
         case "fiche":
           return <FicheRevision code={code} />;
+        case "animation":
+          return <AnimationLecteur code={code} />;
         case "widget":
         case "html":
           return <WidgetSandbox code={code} />;
         default:
-          return <BlocCode langage={langage} code={code} />;
+          return <BlocCode langage={langage} code={code} conversationId={conversationId} />;
       }
     },
     code({ children }: { children?: ReactNode }) {

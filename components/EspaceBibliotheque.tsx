@@ -167,10 +167,14 @@ export function EspaceBibliotheque({
 
   // Description fixe remplacée par le bouton "i" du titre de page,
   // différente selon l'onglet ouvert (voir lib/aideSections.tsx,
-  // rubriques "bibliotheque-perso" / "bibliotheque-publique") --
-  // correctif 02/09/2026, suite audit Bourama. Pas de rubrique pour
-  // "dossiers" : cet onglet n'avait pas de description fixe à l'origine.
-  useInfoSection(vue === "publique" ? "bibliotheque-publique" : vue === "perso" ? "bibliotheque-perso" : null);
+  // rubriques "bibliotheque-perso" / "bibliotheque-publique" /
+  // "bibliotheque-telephone") -- correctif 02/09/2026, suite audit
+  // Bourama. Rubrique "bibliotheque-telephone" ajoutée le 26/09/2026,
+  // chantier SEO/AEO (demande Bourama) : cet onglet n'avait jusqu'ici
+  // aucune bulle d'info du tout.
+  useInfoSection(
+    vue === "publique" ? "bibliotheque-publique" : vue === "perso" ? "bibliotheque-perso" : "bibliotheque-telephone",
+  );
   const [sousOnglet, setSousOnglet] = useState<SousOngletBiblio>("tous");
   // 02/09/2026, demande Bourama : origine = nouvel onglet principal de la
   // vue Perso, "tous/documents/images/..." (SOUS_ONGLETS) passe dans un

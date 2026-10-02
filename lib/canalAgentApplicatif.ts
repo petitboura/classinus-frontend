@@ -79,6 +79,8 @@ import { scannerElementsInteractifs, decrireElement } from "./scanElementsIntera
 import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { estDansFenetreSuperposition, surElectron, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
+import { traiterDemandeEditeur } from "./canalEditeurAgent";
+import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -91,14 +93,17 @@ import {
   afficherReponseDepuisAgent,
   afficherTexteDepuisAgent,
   activerCanalDepuisAgent,
+  canalEnDirectEstActif,
+  ecouterActivationCanal,
   type ImageCanal,
   type SourceCanal,
-  obtenirConversationIdCanal,
 } from "./contexteCanalEnDirect";
+import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 
 let socket: WebSocket | null = null;
 let tentativeReconnexion: ReturnType<typeof setTimeout> | null = null;
@@ -182,25 +187,17 @@ function texteCourt(texte: string): string {
 
 const AGENT_ID_CANAL = "clovis";
 
-// Historique local de la conversation dédiée au canal (voir
-// lib/contexteCanalEnDirect.tsx, conversationId) -- chat() côté backend
-// ne recharge jamais l'historique depuis la base lui même, il se fie
-// entièrement à ce que le frontend lui passe à chaque appel (voir
-// core/main.py:chat(), `if historique is None: historique = []`). Donc
-// c'est ici, et seulement ici, que la mémoire d'une session du canal
-// vit d'un message au suivant. Réinitialisé dès que conversationId
-// change (nouvelle activation, voir la comparaison plus bas) -- jamais
-// mélangé avec une session précédente du canal ni avec le chat normal.
-let historiqueCanalDirect: { role: "user" | "assistant"; content: string }[] = [];
-let conversationIdCanalConnu: string | null = null;
+// Le serveur ne recharge jamais l'historique depuis la base (voir
+// core/main.py:chat()) : l'historique et le dernier message d'une conversation
+// vivent dans lib/conversationPartagee.ts, commun au chat, au canal et à la voix.
 
 /**
  * Déclenche un VRAI tour de Clovis (19/09/2026, décision Bourama : "il
  * doit pouvoir lui même via le chat écrire et s'envoyer un message... et
  * faire comme si de rien n'était") -- même route HTTP (/api/chat), même
  * pipeline, même sauvegarde en base (core/persistance_echanges.py) que
- * le chat normal, sur la conversation dédiée au canal
- * (lib/contexteCanalEnDirect.tsx), avec canal_en_direct=true pour que
+ * le chat normal, sur la conversation partagée (celle du chat affiché, sinon
+ * celle du canal, voir lib/conversationPartagee.ts), avec canal_en_direct=true pour que
  * les outils de clic soient forcés (voir core/main.py:chat()).
  *
  * Jamais de composant de chat monté ni ouvert pour ça : appelerApiStream
@@ -210,18 +207,18 @@ let conversationIdCanalConnu: string | null = null;
  * autre canal (WebSocket canal_agent_applicatif, indépendant de cet
  * appel HTTP), voir traiterTexteClovis plus haut dans ce fichier.
  *
- * Renvoie false si aucune conversation de canal n'existe encore (canal
+ * Renvoie false si aucune conversation n'existe encore (canal
  * jamais activé cette session) ou si l'appel échoue -- l'appelant garde
  * alors le message plutôt que de le perdre (voir envoyerViaRepli).
  */
 async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
-  const conversationId = obtenirConversationIdCanal();
+  // Conversation partagée : celle du chat quand il y en a un, sinon celle du
+  // canal. L'état (historique, dernier message) est celui de cette conversation.
+  const conversationId = conversationActive();
   if (!conversationId) return false;
-
-  if (conversationId !== conversationIdCanalConnu) {
-    conversationIdCanalConnu = conversationId;
-    historiqueCanalDirect = [];
-  }
+  const etat = lireEtatConversation(conversationId);
+  let idUser: IdMessage | null = null;
+  let idAssistant: IdMessage | null = null;
 
   const idJournal = pousserJournalDepuisAgent(`Toi : ${texteCourt(texte)}`, "en_cours");
   let reponseAccumulee = "";
@@ -239,11 +236,13 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
       {
         message: texte,
         agent_id: AGENT_ID_CANAL,
-        historique: historiqueCanalDirect,
+        historique: etat.historique,
         conversation_id: conversationId,
+        parent_id: etat.dernierMessageId,
         longueur_reponse: "moyenne",
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
+        etat_editeur: obtenirLectureEditeurPourChat(),
       },
       (evenement) => {
         if (evenement?.type === "reponse" && typeof evenement.texte === "string") {
@@ -257,15 +256,14 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
           }
         } else if (evenement?.type === "images" && Array.isArray(evenement.images) && evenement.images.length > 0) {
           images = evenement.images as ImageCanal[];
+        } else if (evenement?.type === "meta") {
+          idUser = evenement.message_id_user ?? idUser;
+          idAssistant = evenement.message_id_assistant ?? idAssistant;
         }
       }
     );
 
-    historiqueCanalDirect = [
-      ...historiqueCanalDirect,
-      { role: "user", content: texte },
-      { role: "assistant", content: reponseAccumulee },
-    ];
+    ajouterTourDirect(conversationId, texte, reponseAccumulee, idUser, idAssistant);
 
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
     // Filet de sécurité : si Clovis n'a rien dit via dire_a_l_etudiant
@@ -280,6 +278,15 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
 }
 
 function envoyerViaRepli(texte: string) {
+  // Chat à l'écran : le message continue la conversation DANS le chat (il s'y
+  // affiche en direct, la réponse finale aussi, la bulle ne garde que les
+  // commentaires et le journal). Sans chat à l'écran : tour direct, réponse
+  // finale dans la bulle.
+  if (messagePasseParLeChat() && repliMessageEtudiant) {
+    pousserJournalDepuisAgent(`Ton message dans le chat : ${texteCourt(texte)}`, "succes");
+    repliMessageEtudiant(texte);
+    return;
+  }
   // Priorité (19/09/2026, décision Bourama) : un vrai tour indépendant
   // sur la conversation du canal, sans jamais ouvrir le chat -- le repli
   // vers le chat (components/PontMessageCanalVersChat.tsx) ne reste que
@@ -352,7 +359,13 @@ let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
-  socket.send(JSON.stringify({ etat_actions: scannerElementsInteractifs() }));
+  // Canal en direct désactivé : rien de l'écran ne part (30/09/2026).
+  if (!canalEnDirectEstActif()) return;
+  // Le WebSocket conserve la présence de l'éditeur pour les actions
+  // interactives, mais le chat HTTP transmet aussi l'état exact du tour.
+  // Cette synchronisation reste utile comme cache, sans être une condition
+  // nécessaire pour que le modèle voie l'éditeur.
+  socket.send(JSON.stringify({ etat_actions: scannerElementsInteractifs(), etat_editeur: obtenirEtatEditeurPourCanal() }));
 }
 
 /**
@@ -665,6 +678,7 @@ function traiterMessage(message: unknown) {
     selecteur_generique?: string;
     description?: string;
     montrer_action_id?: string;
+    editeur?: unknown;
     pointer_ecran?: { x: number; y: number };
     lire_page?: boolean;
     longueur_max?: number;
@@ -679,13 +693,25 @@ function traiterMessage(message: unknown) {
     // qu'un accuse negatif.
     envoyerViaRepli(m.message_etudiant_renvoye);
   } else if (m.texte_clovis !== undefined) {
-    traiterTexteClovis(m.texte_clovis, m.duree_secondes);
+    // Canal désactivé : aucune bulle, rien ne s'affiche.
+    if (canalEnDirectEstActif()) traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
   } else if (m.id && m.pointer_ecran) {
     void traiterPointageEcran(m.id, m.pointer_ecran);
+  } else if (
+    m.id &&
+    !canalEnDirectEstActif() &&
+    (m.lire_page === true || m.editeur !== undefined || m.action_id || m.selecteur_generique || m.montrer_action_id)
+  ) {
+    // Canal désactivé (30/09/2026, demande Bourama : c'est fini, plus aucune
+    // réponse) : lecture de page, éditeur, clic, écriture et pointage sont
+    // tous ignorés, rien ne s'exécute ni ne se lit.
+    envoyerReponse(m.id, { ignore: true });
   } else if (m.id && m.lire_page === true) {
     traiterDemandeLecturePage(m.id, m.longueur_max);
+  } else if (m.id && m.editeur !== undefined) {
+    traiterDemandeEditeur(m.id, m.editeur, envoyerReponse);
   } else if (m.id && m.action_systeme && m.via_renderer === true && surElectron()) {
     // Le serveur choisit ce relais OU la connexion native historique, jamais
     // les deux : un clic/clavier ne doit surtout pas être exécuté deux fois.
@@ -770,7 +796,7 @@ async function ouvrirCanal() {
       // attendre un changement (chantier D), sinon le backend n'a rien
       // tant qu'aucune action ne se (dé)monte apres l'ouverture.
       envoyerEtatActionsMaintenant();
-      demarrerObservationDom();
+      if (canalEnDirectEstActif()) demarrerObservationDom();
     };
 
     ws.onmessage = (evenement) => {
@@ -861,6 +887,29 @@ function fermerCanal() {
 export function initialiserCanalAgentApplicatif() {
   if (dejaInitialise || typeof window === "undefined" || estDansFenetreSuperposition()) return;
   dejaInitialise = true;
+
+  // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
+  // l'état sans attendre un autre changement de l'écran.
+  ecouterEtatEditeur(envoyerEtatActions);
+
+  // Activation du canal : l'écran est envoyé et suivi. Désactivation : le
+  // suivi s'arrête et le serveur reçoit une liste vide, pour qu'il n'en
+  // garde plus rien en mémoire.
+  ecouterActivationCanal((actif) => {
+    if (actif) {
+      envoyerEtatActionsMaintenant();
+      if (socket && socket.readyState === WebSocket.OPEN) demarrerObservationDom();
+      return;
+    }
+    if (debounceEtatActions) {
+      clearTimeout(debounceEtatActions);
+      debounceEtatActions = null;
+    }
+    arreterObservationDom();
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ etat_actions: [] }));
+    }
+  });
 
   document.addEventListener("visibilitychange", () => {
     if (peutMaintenirCanal()) {

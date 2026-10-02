@@ -11,11 +11,13 @@ import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 import { ContexteChat, type EtatChat, type FilConversation } from "@/lib/contexteChat";
+import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useFenetreDeplacable, POIGNEES_REDIMENSIONNEMENT } from "@/lib/useFenetreDeplacable";
 import { TAILLE_MIN } from "@/lib/contexteFenetres";
 import { texteAccueilSelonHeure } from "@/lib/salutations";
 import { Skeleton } from "@/components/Skeleton";
+import { ROUTES_APP, estPageChat } from "@/lib/routesApp";
 
 // Chat flottant global (refonte "Mon espace = l'app", 15/08/2026, demande
 // Bourama : "il faut un bouton pour ouvrir le chat en plein écran"). Avant
@@ -35,14 +37,14 @@ import { Skeleton } from "@/components/Skeleton";
 // l'app) est retiré -- plus aucun déclencheur ne le pose (bulle, barres
 // d'onglets, palette de commandes, préremplissage automatique naviguent
 // tous vers la vraie route /chat désormais -- pour le bouton Maximize2
-// du mini, via un vrai <Link href="/chat"> plus bas, voir
+// du mini, via un vrai <Link href={ROUTES_APP.chat}> plus bas, voir
 // fermerMiniAvantNavigation ; pour le reste, voir
 // lib/contexteChat.tsx::useOuvrirChatAvecTexte). Le mode
 // plein écran vit maintenant uniquement dans ChatSection.tsx (/chat).
 
 const LIMITE_MESSAGES_INVITE = 5;
 const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
-const SOUS_TITRE_ACCUEIL_CLOVIS = "Ton compagnon d'études, à tes côtés.";
+const SOUS_TITRE_ACCUEIL_CLOVIS = "Le coin des étudiants.";
 
 // 07/09/2026, demande Bourama : le popup mini (desktop) doit être
 // déplaçable/redimensionnable comme les fenêtres de section (voir
@@ -363,7 +365,7 @@ export function ChatFlottant({
   // dans le bouton" -- un onClick + router.push() n'est pas un vrai
   // lien, pas de preview d'URL au survol contrairement aux autres
   // boutons de section de l'app, potentiel de bug pour rien) : la
-  // navigation elle-même passe désormais par un vrai <Link href="/chat">
+  // navigation elle-même passe désormais par un vrai <Link href={ROUTES_APP.chat}>
   // (voir plus bas) -- cette fonction ne gère plus QUE l'effet de bord
   // (fermer le mini avec le même fondu que fermerChatEtNaviguer, et
   // marquerMiniSansHistorique pour que le démontage du calque "mini" ne
@@ -420,7 +422,7 @@ export function ChatFlottant({
   // Voir le commentaire plus haut (déclaration de `pathname`) : la page
   // /chat a déjà sa propre interface de chat, donc ni la bulle fermée ni
   // le popup mini ne doivent s'afficher par-dessus elle.
-  if (pathname === "/chat") return null;
+  if (estPageChat(pathname)) return null;
 
   // Bulle fermée : affichée sur desktop uniquement, seul endroit où
   // elle sert encore, faute d'un onglet "Chat" dédié là-bas. Masquée en
@@ -555,23 +557,22 @@ export function ChatFlottant({
               {historiqueOuvert && (
                 <div
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="dj-scroll-isole absolute right-0 top-9 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg"
+                  className="absolute right-0 top-9 z-10 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-lg"
                 >
-                  {historique.map((fil) => (
-                    <button
-                      key={fil.conversation_id ?? "legacy"}
-                      onClick={() => selectionnerConversation(fil)}
-                      className="block w-full truncate rounded-xl px-2.5 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                    >
-                      {fil.titre}
-                    </button>
-                  ))}
+                  <ListeHistorique
+                    conversationActiveId={cle}
+                    onSelectionner={selectionnerConversation}
+                    onSupprimee={(fil) => {
+                      if (fil.conversation_id === cle) nouvelleConversation();
+                    }}
+                    className="max-h-72 p-1"
+                  />
                 </div>
               )}
             </div>
           )}
           <Link
-            href="/chat"
+            href={ROUTES_APP.chat}
             onClick={fermerMiniAvantNavigation}
             onPointerDown={(e) => e.stopPropagation()}
             title="Plein écran"

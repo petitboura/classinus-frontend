@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, BookOpen, Download, Upload, Activity, Trash2, Pencil } from "lucide-react";
+import { Search, BookOpen, Download, Upload, Activity, Trash2, Pencil, ChevronDown, ChevronRight } from "lucide-react";
 import {
   rechercherProgrammesCataloguePublic,
   obtenirProgrammeCataloguePublic,
@@ -13,9 +13,12 @@ import {
   analytiqueCatalogueEnLot,
   type ProgrammePublic,
   type ProgrammePublicDetail,
+  type NotionPublique,
+  type RegleComportementNotion,
   type CodePartage,
   type CompteursCatalogue,
 } from "@/lib/api";
+import { COULEURS_MATIERE, LIBELLES_REGLE } from "@/components/ProgrammeNotions";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { Skeleton } from "./Skeleton";
@@ -38,6 +41,187 @@ import { SelectPersonnalise, type OptionMenu } from "./SelectPersonnalise";
  * du 22/09 : aucun lien gardé avec le code source après ça, ni après
  * une copie vers l'espace d'un autre prof.
  */
+type NoeudNotionPublique = NotionPublique & { enfants: NoeudNotionPublique[] };
+
+/** Même logique que construireArbre() dans ProgrammeNotions.tsx, sur le
+ * type NotionPublique (pas de champ statut côté catalogue public). */
+function construireArbrePublic(notions: NotionPublique[]): NoeudNotionPublique[] {
+  const parId = new Map<string, NoeudNotionPublique>();
+  notions.forEach((n) => parId.set(n.id, { ...n, enfants: [] }));
+  const racines: NoeudNotionPublique[] = [];
+  parId.forEach((n) => {
+    const parent = n.notion_parent_id ? parId.get(n.notion_parent_id) : undefined;
+    if (parent) parent.enfants.push(n);
+    else racines.push(n);
+  });
+  const trier = (liste: NoeudNotionPublique[]) => {
+    liste.sort((a, b) => a.ordre - b.ordre);
+    liste.forEach((n) => trier(n.enfants));
+  };
+  trier(racines);
+  return racines;
+}
+
+/** Même aplatissement que aplatirSousChapitre() dans ProgrammeNotions.tsx :
+ * sous un chapitre, tout le reste (Partie/Notion/plus profond) affiché à
+ * plat, avec le fil des ancêtres intermédiaires au-dessus du nom. */
+type LigneAplatiePublique = { noeud: NoeudNotionPublique; chemin: string[] };
+
+function aplatirSousChapitrePublic(noeud: NoeudNotionPublique, chemin: string[] = []): LigneAplatiePublique[] {
+  const resultat: LigneAplatiePublique[] = [];
+  for (const enfant of noeud.enfants) {
+    resultat.push({ noeud: enfant, chemin });
+    resultat.push(...aplatirSousChapitrePublic(enfant, [...chemin, enfant.nom]));
+  }
+  return resultat;
+}
+
+/** Pastille de règle de comportement -- lecture seule, mêmes libellés que
+ * le Programme normal (LIBELLES_REGLE, importé de ProgrammeNotions.tsx). */
+function BadgeRegleApercu({ regle }: { regle: RegleComportementNotion }) {
+  return (
+    <span className="flex-shrink-0 rounded-full border border-dj-bordure bg-dj-surface-haute px-2 py-0.5 text-[10px] font-semibold text-dj-texte-muet">
+      {LIBELLES_REGLE[regle]}
+    </span>
+  );
+}
+
+/** Consigne IA affichée directement à la place de la notion concernée --
+ * dans le Programme normal elle n'apparaît que dans le panneau d'édition,
+ * mais l'aperçu du catalogue public est en lecture seule, il n'y a pas de
+ * panneau à ouvrir : elle doit donc être visible en ligne. */
+function ConsigneApercu({ texte }: { texte: string }) {
+  return <p className="rounded-md bg-dj-surface-haute px-2 py-1 text-[11px] italic text-dj-texte-muet">{texte}</p>;
+}
+
+/** En-tête de groupe (Matière ou Chapitre) -- même structure visuelle que
+ * EnteteGroupe dans ProgrammeNotions.tsx (bandeau/liseré coloré, chevron
+ * de dépliage, nom), sans les boutons d'édition/ajout puisque l'aperçu
+ * est en lecture seule. */
+function EnteteGroupeApercu({
+  noeud,
+  ouvert,
+  onToggle,
+  style,
+}: {
+  noeud: NoeudNotionPublique;
+  ouvert: boolean;
+  onToggle: () => void;
+  style: React.CSSProperties;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      style={style}
+      className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left transition-colors"
+    >
+      <span className="flex-shrink-0" aria-hidden>
+        {noeud.enfants.length > 0 ? (
+          ouvert ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+        ) : (
+          <span className="inline-block w-3.5" />
+        )}
+      </span>
+      <span className="min-w-0 flex-1 truncate font-medium">{noeud.nom}</span>
+      {noeud.regle_comportement && <BadgeRegleApercu regle={noeud.regle_comportement} />}
+    </button>
+  );
+}
+
+/** Ligne à plat (Partie/Notion/plus profond) -- même fil d'ancêtres en
+ * petit au-dessus du nom que LigneAplatie dans ProgrammeNotions.tsx, sans
+ * pastille de statut (absente côté catalogue public) ; règle et consigne
+ * affichées à la place de la notion quand elles existent. */
+function LigneApercu({ item }: { item: LigneAplatiePublique }) {
+  const { noeud, chemin } = item;
+  return (
+    <div className="flex flex-col gap-1 rounded-lg px-2.5 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          {chemin.length > 0 && <div className="truncate text-[11px] text-dj-texte-muet">{chemin.join(" › ")}</div>}
+          <div className="truncate text-sm text-dj-texte">{noeud.nom}</div>
+        </div>
+        {noeud.regle_comportement && <BadgeRegleApercu regle={noeud.regle_comportement} />}
+      </div>
+      {noeud.consigne_llm && <ConsigneApercu texte={noeud.consigne_llm} />}
+    </div>
+  );
+}
+
+function GroupeChapitreApercu({
+  noeud,
+  ouverts,
+  onToggle,
+}: {
+  noeud: NoeudNotionPublique;
+  ouverts: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  const ouvert = ouverts.has(noeud.id);
+  const lignes = aplatirSousChapitrePublic(noeud);
+  return (
+    <div className="ml-1">
+      <EnteteGroupeApercu
+        noeud={noeud}
+        ouvert={ouvert}
+        onToggle={() => onToggle(noeud.id)}
+        style={{ color: "var(--dj-texte)", borderLeft: "2px solid var(--dj-bordure)" }}
+      />
+      {noeud.consigne_llm && (
+        <div className="ml-3 mt-0.5">
+          <ConsigneApercu texte={noeud.consigne_llm} />
+        </div>
+      )}
+      {ouvert && (
+        <div className="ml-3 flex flex-col gap-0.5 border-l border-dj-bordure pl-2">
+          {lignes.length === 0 && <p className="px-2.5 py-1.5 text-xs text-dj-texte-muet">Aucun élément.</p>}
+          {lignes.map((item) => (
+            <LigneApercu key={item.noeud.id} item={item} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GroupeMatiereApercu({
+  noeud,
+  index,
+  ouverts,
+  onToggle,
+}: {
+  noeud: NoeudNotionPublique;
+  index: number;
+  ouverts: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  const ouvert = ouverts.has(noeud.id);
+  const couleur = COULEURS_MATIERE[index % COULEURS_MATIERE.length];
+  return (
+    <div>
+      <EnteteGroupeApercu
+        noeud={noeud}
+        ouvert={ouvert}
+        onToggle={() => onToggle(noeud.id)}
+        style={{ background: couleur.conteneur, color: couleur.texte }}
+      />
+      {noeud.consigne_llm && (
+        <div className="mt-0.5">
+          <ConsigneApercu texte={noeud.consigne_llm} />
+        </div>
+      )}
+      {ouvert && (
+        <div className="mt-1 flex flex-col gap-2">
+          {noeud.enfants.map((enfant) => (
+            <GroupeChapitreApercu key={enfant.id} noeud={enfant} ouverts={ouverts} onToggle={onToggle} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[] | undefined }) {
   const [liste, setListe] = useState<ProgrammePublic[] | undefined>(undefined);
   const [recherche, setRecherche] = useState("");
@@ -53,6 +237,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
   const [erreurPublication, setErreurPublication] = useState<string | null>(null);
 
   const [apercu, setApercu] = useState<ProgrammePublicDetail | null>(null);
+  const [ouvertsApercu, setOuvertsApercu] = useState<Set<string>>(new Set());
   const [entreeEnEdition, setEntreeEnEdition] = useState<ProgrammePublic | null>(null);
   const [formNom, setFormNom] = useState("");
   const [formDescription, setFormDescription] = useState("");
@@ -137,9 +322,19 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
     try {
       const detail = await obtenirProgrammeCataloguePublic(p.id);
       setApercu(detail);
+      setOuvertsApercu(new Set());
     } catch (e) {
       setErreur(messageErreur(e));
     }
+  }
+
+  function basculerOuvertApercu(id: string) {
+    setOuvertsApercu((prec) => {
+      const copie = new Set(prec);
+      if (copie.has(id)) copie.delete(id);
+      else copie.add(id);
+      return copie;
+    });
   }
 
   function ouvrirEdition(p: ProgrammePublic) {
@@ -382,13 +577,21 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
               {apercu.inclut_regles_consignes ? "Inclut les règles et consignes IA" : "Sans règles ni consignes IA"} ·{" "}
               {apercu.etoiles_count} étoile(s)
             </p>
-            <ul className="max-h-64 overflow-y-auto rounded-lg border border-dj-bordure bg-dj-surface-haute p-2 text-xs text-dj-texte">
-              {apercu.notions.map((n) => (
-                <li key={n.id} className="py-0.5">
-                  {n.nom}
-                </li>
-              ))}
-            </ul>
+            <div className="flex max-h-64 flex-col gap-2 overflow-y-auto rounded-lg border border-dj-bordure bg-dj-surface-haute p-2">
+              {apercu.notions.length === 0 ? (
+                <p className="px-2 py-1.5 text-xs text-dj-texte-muet">Aucune notion.</p>
+              ) : (
+                construireArbrePublic(apercu.notions).map((noeud, index) => (
+                  <GroupeMatiereApercu
+                    key={noeud.id}
+                    noeud={noeud}
+                    index={index}
+                    ouverts={ouvertsApercu}
+                    onToggle={basculerOuvertApercu}
+                  />
+                ))
+              )}
+            </div>
             <button
               onClick={() => ouvrirCopie(apercu)}
               className="flex items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2"

@@ -10,6 +10,7 @@ import { messageErreur } from "@/lib/erreurs";
 // plus bas dans ce fichier.
 import { useCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
+import { ROUTES_APP } from "@/lib/routesApp";
 
 // "plein_ecran" retiré du type le 07/09/2026 (chantier "chat plein écran
 // = vraie section", étape 5) : /chat est désormais une route comme les
@@ -42,7 +43,33 @@ export type FilConversation = {
   conversation_id: string | null;
   titre: string;
   derniere_activite: string;
+  // Historique epingle (01/10/2026). Absent ou false = fil normal.
+  epingle?: boolean;
 };
+
+// Reponse de GET /api/historique/{agent}/fils (une page de l'historique).
+type PageFilsApi = {
+  epingles: { conversation_id: string | null; cle: string; titre: string; derniere_activite: string; epingle: boolean }[];
+  fils: { conversation_id: string | null; cle: string; titre: string; derniere_activite: string; epingle: boolean }[];
+  suivant: { avant_activite: string; avant_cle: string } | null;
+};
+type CurseurHistorique = { avant_activite: string; avant_cle: string };
+
+// Nombre de conversations chargees par page de l'historique.
+const TAILLE_PAGE_HISTORIQUE = 20;
+
+function cleFil(fil: { conversation_id: string | null }): string {
+  return fil.conversation_id ?? "legacy";
+}
+
+function versFilConversation(f: PageFilsApi["fils"][number]): FilConversation {
+  return {
+    conversation_id: f.conversation_id,
+    titre: f.titre,
+    derniere_activite: f.derniere_activite,
+    epingle: f.epingle,
+  };
+}
 
 type ContexteChatValeur = {
   etat: EtatChat;
@@ -66,6 +93,16 @@ type ContexteChatValeur = {
   setOutilsActifsAgent: (v: { outils: string[]; actions_locales: string[] } | null) => void;
   historique: FilConversation[];
   setHistorique: (v: FilConversation[]) => void;
+  // Historique par pages (01/10/2026) : `historique` ne contient que les
+  // pages deja chargees (plus les epingles). chargerPlusHistorique ajoute la
+  // page suivante, appelee par le defilement de la liste (ListeHistorique.tsx).
+  historiqueAPlus: boolean;
+  chargementPlusHistorique: boolean;
+  erreurPlusHistorique: boolean;
+  chargerPlusHistorique: () => Promise<void>;
+  epinglerFil: (fil: FilConversation, epingle: boolean) => Promise<void>;
+  renommerFil: (fil: FilConversation, titre: string) => Promise<void>;
+  supprimerFil: (fil: FilConversation) => Promise<void>;
   texteInitialConversation: string | null;
   setTexteInitialConversation: (v: string | null) => void;
   // Fondu de fermeture (18/08/2026, demande Bourama : "le popup disparaît
@@ -122,6 +159,43 @@ type ContexteChatValeur = {
   nbMessagesEnAttente: number;
   deposerMessageEnAttente: (texte: string) => void;
   prendreMessageEnAttente: () => string | null;
+  // Voix en direct (02/10/2026, demande Bourama) : la voix est un
+  // interprète, elle ne doit pas travailler en cachette. Sa demande part
+  // comme un vrai message du chat (visible en direct dans la conversation)
+  // et la réponse écrite de Clovis revient à la voix, qui la résume. Un
+  // chat monté se déclare prêt avec enregistrerChatPourVoix ; sans chat
+  // prêt, la voix garde son ancien chemin direct vers le serveur.
+  // La demande n'est confiée qu'au chat qui affiche la MÊME conversation que
+  // la voix, pour ne jamais écrire dans une autre conversation.
+  chatPretPourVoix: (conversationId: string) => boolean;
+  // Un chat est-il à l'écran, et sur quelle conversation (null = pas encore créée).
+  etatChatAffiche: () => { visible: boolean; conversationId: string | null };
+  enregistrerChatPourVoix: (conversationId: string | null) => () => void;
+  nbDemandesVoixEnAttente: number;
+  deposerDemandeVoix: (texte: string, conversationId: string) => Promise<string>;
+  prendreDemandeVoix: (conversationId: string | null) => DemandeVoixEnAttente | null;
+};
+
+// Levée quand le chat qui devait recevoir une demande de la voix disparaît
+// avant de l'avoir prise (page quittée, popup fermé).
+export class ChatIndisponiblePourVoix extends Error {
+  constructor() {
+    super("Le chat n'est plus disponible pour la voix.");
+    this.name = "ChatIndisponiblePourVoix";
+  }
+}
+
+// Vrai quand l'écran de l'utilisateur affiche vraiment l'appli : onglet
+// visible (onglet ou fenêtre ni réduit ni masqué).
+function ecranVisible(): boolean {
+  return typeof document === "undefined" || document.visibilityState === "visible";
+}
+
+export type DemandeVoixEnAttente = {
+  texte: string;
+  conversationId: string;
+  resoudre: (reponse: string) => void;
+  rejeter: (erreur: Error) => void;
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
@@ -163,6 +237,53 @@ export function useFournirContexteChat(): ContexteChatValeur {
     return texte;
   }, []);
 
+  // Voix en direct : file des demandes de la voix, même principe que la
+  // file des messages du canal (un ref atomique, le state ne sert qu'à
+  // réveiller l'effet du chat).
+  const demandesVoixRef = useRef<DemandeVoixEnAttente[]>([]);
+  const chatsPretsVoixRef = useRef<(string | null)[]>([]);
+  const [nbDemandesVoixEnAttente, setNbDemandesVoixEnAttente] = useState(0);
+  // Un chat n'est prêt pour la voix que s'il est monté sur cette conversation
+  // ET réellement à l'écran (onglet visible, fenêtre non réduite ni masquée).
+  // Sinon la voix prend le chemin direct et la réponse reste à la voix.
+  const chatPretPourVoix = useCallback(
+    (conversationId: string) => chatsPretsVoixRef.current.includes(conversationId) && ecranVisible(),
+    []
+  );
+  const etatChatAffiche = useCallback(() => {
+    const ids = chatsPretsVoixRef.current;
+    return { visible: ids.length > 0 && ecranVisible(), conversationId: ids.find((id) => id) ?? null };
+  }, []);
+  const enregistrerChatPourVoix = useCallback((conversationId: string | null) => {
+    chatsPretsVoixRef.current.push(conversationId);
+    return () => {
+      const i = chatsPretsVoixRef.current.indexOf(conversationId);
+      if (i >= 0) chatsPretsVoixRef.current.splice(i, 1);
+      // Dernier chat de cette conversation parti : les demandes de la voix qui
+      // l'attendaient ne seront jamais prises. On les rend à la voix, qui
+      // reprend alors le chemin direct au lieu de rester bloquée.
+      if (!conversationId || chatsPretsVoixRef.current.includes(conversationId)) return;
+      const orphelines = demandesVoixRef.current.filter((d) => d.conversationId === conversationId);
+      if (orphelines.length === 0) return;
+      demandesVoixRef.current = demandesVoixRef.current.filter((d) => d.conversationId !== conversationId);
+      setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+      orphelines.forEach((d) => d.rejeter(new ChatIndisponiblePourVoix()));
+    };
+  }, []);
+  const deposerDemandeVoix = useCallback((texte: string, conversationId: string) => {
+    return new Promise<string>((resoudre, rejeter) => {
+      demandesVoixRef.current.push({ texte, conversationId, resoudre, rejeter });
+      setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+    });
+  }, []);
+  const prendreDemandeVoix = useCallback((conversationId: string | null): DemandeVoixEnAttente | null => {
+    const i = demandesVoixRef.current.findIndex((d) => d.conversationId === conversationId);
+    if (i < 0) return null;
+    const [demande] = demandesVoixRef.current.splice(i, 1);
+    setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
+    return demande;
+  }, []);
+
   // Étape 1 -- état de la conversation, avant local à ChatFlottant.tsx.
   const [chargement, setChargement] = useState<"chargement" | "pret" | "erreur">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -176,6 +297,12 @@ export function useFournirContexteChat(): ContexteChatValeur {
     actions_locales: string[];
   } | null>(null);
   const [historique, setHistorique] = useState<FilConversation[]>([]);
+  const [curseurHistorique, setCurseurHistorique] = useState<CurseurHistorique | null>(null);
+  const [chargementPlusHistorique, setChargementPlusHistorique] = useState(false);
+  const [erreurPlusHistorique, setErreurPlusHistorique] = useState(false);
+  // Garde-fou contre deux chargements simultanes (le defilement peut
+  // declencher plusieurs fois la meme page avant la reponse).
+  const chargementPlusEnCours = useRef(false);
   const [texteInitialConversation, setTexteInitialConversation] = useState<string | null>(null);
 
   // Étape 2 (07/09/2026, chantier "chat plein écran = vraie section") :
@@ -195,15 +322,17 @@ export function useFournirContexteChat(): ContexteChatValeur {
         const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
         const [outils, fils] = await Promise.all([
           lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] })),
-          appelerApi(`/api/historique/${AGENT_INVITE_ID}/conversations`).catch((e) => {
+          appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`).catch((e) => {
             console.error("Erreur chargement historique conversations:", e);
-            return [] as FilConversation[];
+            return { epingles: [], fils: [], suivant: null } as PageFilsApi;
           }),
         ]);
         if (!annule) {
           setAgent(detail);
           setOutilsActifsAgent(outils);
-          setHistorique(fils as FilConversation[]);
+          const premierePage = fils as PageFilsApi;
+          setHistorique([...premierePage.epingles, ...premierePage.fils].map(versFilConversation));
+          setCurseurHistorique(premierePage.suivant);
           setChargement("pret");
         }
       } catch (e) {
@@ -216,6 +345,76 @@ export function useFournirContexteChat(): ContexteChatValeur {
     return () => {
       annule = true;
     };
+  }, []);
+
+  const chargerPlusHistorique = useCallback(async () => {
+    if (!curseurHistorique || chargementPlusEnCours.current) return;
+    chargementPlusEnCours.current = true;
+    setChargementPlusHistorique(true);
+    setErreurPlusHistorique(false);
+    try {
+      const params = new URLSearchParams({
+        limite: String(TAILLE_PAGE_HISTORIQUE),
+        avant_activite: curseurHistorique.avant_activite,
+        avant_cle: curseurHistorique.avant_cle,
+      });
+      const page: PageFilsApi = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?${params.toString()}`);
+      setHistorique((precedent) => {
+        // Un fil deja present (cree localement, ou desepingle entre deux
+        // pages) ne doit jamais apparaitre deux fois.
+        const deja = new Set(precedent.map(cleFil));
+        return [...precedent, ...page.fils.map(versFilConversation).filter((f) => !deja.has(cleFil(f)))];
+      });
+      setCurseurHistorique(page.suivant);
+    } catch (e) {
+      console.error("Erreur chargement de la suite de l'historique:", e);
+      setErreurPlusHistorique(true);
+    } finally {
+      chargementPlusEnCours.current = false;
+      setChargementPlusHistorique(false);
+    }
+  }, [curseurHistorique]);
+
+  // Epingler / desepingler : la liste n'est mise a jour qu'apres la reponse
+  // du serveur, pour qu'un refus s'affiche sur la ligne concernee (l'erreur
+  // est relancee) au lieu de faire sauter la ligne puis la remettre.
+  const epinglerFil = useCallback(
+    async (fil: FilConversation, epingle: boolean) => {
+      await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ epingle }),
+      });
+      setHistorique((precedent) => {
+        const cible = precedent.find((f) => cleFil(f) === cleFil(fil));
+        if (!cible) return precedent;
+        const autres = precedent.filter((f) => cleFil(f) !== cleFil(fil));
+        // Un fil qu'on vient d'epingler passe en tete des epingles.
+        if (epingle) return [{ ...cible, epingle: true }, ...autres];
+        // Desepingle plus ancien que tout ce qui est deja charge, alors
+        // qu'il reste des pages : il reapparaitra en faisant defiler, a sa
+        // vraie place (sinon il serait charge en double).
+        if (curseurHistorique) {
+          const dates = autres.filter((f) => !f.epingle).map((f) => Date.parse(f.derniere_activite));
+          if (dates.length > 0 && Date.parse(cible.derniere_activite) < Math.min(...dates)) return autres;
+        }
+        return [...autres, { ...cible, epingle: false }];
+      });
+    },
+    [curseurHistorique]
+  );
+
+  const renommerFil = useCallback(async (fil: FilConversation, titre: string) => {
+    const modifie: { titre: string } = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ titre }),
+    });
+    setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre: modifie.titre } : f)));
+  }, []);
+
+  // Suppression definitive cote serveur, puis retrait de la liste.
+  const supprimerFil = useCallback(async (fil: FilConversation) => {
+    await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, { method: "DELETE" });
+    setHistorique((precedent) => precedent.filter((f) => cleFil(f) !== cleFil(fil)));
   }, []);
 
   const fermerAvecFondu = useCallback(() => {
@@ -249,6 +448,12 @@ export function useFournirContexteChat(): ContexteChatValeur {
       nbMessagesEnAttente,
       deposerMessageEnAttente,
       prendreMessageEnAttente,
+      chatPretPourVoix,
+      etatChatAffiche,
+      enregistrerChatPourVoix,
+      nbDemandesVoixEnAttente,
+      deposerDemandeVoix,
+      prendreDemandeVoix,
       chargement,
       setChargement,
       erreur,
@@ -267,6 +472,13 @@ export function useFournirContexteChat(): ContexteChatValeur {
       setOutilsActifsAgent,
       historique,
       setHistorique,
+      historiqueAPlus: curseurHistorique !== null,
+      chargementPlusHistorique,
+      erreurPlusHistorique,
+      chargerPlusHistorique,
+      epinglerFil,
+      renommerFil,
+      supprimerFil,
       texteInitialConversation,
       setTexteInitialConversation,
     }),
@@ -280,6 +492,12 @@ export function useFournirContexteChat(): ContexteChatValeur {
       nbMessagesEnAttente,
       deposerMessageEnAttente,
       prendreMessageEnAttente,
+      chatPretPourVoix,
+      etatChatAffiche,
+      enregistrerChatPourVoix,
+      nbDemandesVoixEnAttente,
+      deposerDemandeVoix,
+      prendreDemandeVoix,
       chargement,
       erreur,
       agent,
@@ -289,6 +507,13 @@ export function useFournirContexteChat(): ContexteChatValeur {
       chargementFilConversation,
       outilsActifsAgent,
       historique,
+      curseurHistorique,
+      chargementPlusHistorique,
+      erreurPlusHistorique,
+      chargerPlusHistorique,
+      epinglerFil,
+      renommerFil,
+      supprimerFil,
       texteInitialConversation,
     ]
   );
@@ -312,7 +537,7 @@ export function useOuvrirChatAvecTexte() {
   return (texte: string) => {
     ctx?.setDemandePrefill(texte);
     ctx?.fermerAvecFondu();
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 
@@ -348,7 +573,7 @@ export function useOuvrirGuide() {
     }
     ctx?.setDemandeGuide({ conversationId, texte: "Lance le guide de découverte de Classinus." });
     ctx?.fermerAvecFondu();
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 
@@ -378,7 +603,7 @@ export function useOuvrirDemo() {
     }
     ctx?.setDemandeGuide({ conversationId, texte: "Lance la démo de Classinus." });
     ctx?.fermerAvecFondu();
-    router.push("/chat");
+    router.push(ROUTES_APP.chat);
   };
 }
 
@@ -460,6 +685,47 @@ export function useOuvrirConversation() {
   return (conversationId: string | null) => {
     ctx?.setDemandeOuvrirConversation({ conversationId });
     ctx?.setEtat("mini");
+  };
+}
+
+// 27/09/2026, chantier "éditeur de code du Bureau", pont retour éditeur
+// -> chat (voir components/bureau/EditeurCode.tsx) : équivalents plein
+// écran (route /chat) des deux hooks ci-dessus/de nouvelleConversation()
+// -- ceux du dessus ouvrent la popup mini (Activité récente), pas
+// utilisables ici puisque l'éditeur est une vraie page à part, pas montée
+// sous ChatFlottant.tsx. Consommés par l'effet ajouté dans
+// ChatSection.tsx (même esprit que celui de ChatFlottant.tsx un peu plus
+// haut dans ce fichier pour demandeOuvrirConversation).
+export function useOuvrirConversationPleinEcran() {
+  const ctx = useContext(ContexteChat);
+  const router = useRouter();
+  // 27/09/2026, demande Bourama : depuis l'éditeur, le code doit arriver
+  // comme BROUILLON dans la conversation d'origine (pas envoyé) --
+  // texteInitial optionnel, lu par la barre de saisie au montage (voir
+  // ChatSection.tsx, qui le vide en quittant la page).
+  return (conversationId: string | null, texteInitial?: string) => {
+    ctx?.setTexteInitialConversation(texteInitial ?? null);
+    ctx?.setDemandeOuvrirConversation({ conversationId });
+    router.push(ROUTES_APP.chat);
+  };
+}
+
+// 27/09/2026, demande Bourama (retour de test du chantier "pont
+// éditeur -> chat") : "Vers le chat" n'emmenait jamais le code, seule la
+// navigation avait lieu. `texteInitial` optionnel dépose le texte dans
+// texteInitialConversation (même champ lu par ChatIA via demandePrefill/
+// ChatFlottant.tsx, voir plus haut) avant la navigation -- ce hook fait
+// déjà lui-même la réinitialisation de conversation, pas besoin de
+// passer par demandePrefill + son effet (ChatFlottant uniquement).
+export function useNouvelleConversationPleinEcran() {
+  const ctx = useContext(ContexteChat);
+  const router = useRouter();
+  return (texteInitial?: string) => {
+    ctx?.setCle(crypto.randomUUID());
+    ctx?.setMessagesInitiaux([]);
+    ctx?.setNbMessages(0);
+    ctx?.setTexteInitialConversation(texteInitial ?? null);
+    router.push(ROUTES_APP.chat);
   };
 }
 
