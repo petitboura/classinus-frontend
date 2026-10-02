@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { ArrowDown, Feather, ListOrdered, Loader2, Plus, Scale, ToggleLeft, ToggleRight, UserCog } from "lucide-react";
 import type { Comportement, CategorieConfiguration } from "@/lib/api";
 import { lireProcedure, lireComportement } from "@/lib/formatsConfiguration";
@@ -17,7 +17,32 @@ type PropsElement = {
   c: Comportement;
   onOuvrir: (c: Comportement) => void;
   onToggleActif: (c: Comportement, e: MouseEvent) => void;
+  // Menu des trois points propre à l'élément, construit par le parent.
+  menu?: ReactNode;
 };
+
+// La carte entière s'ouvre au clic, mais elle contient d'autres boutons
+// (bascule, menu) : un vrai bouton ne peut pas en contenir d'autres.
+function ZoneCliquable({ onClick, title, className, children }: { onClick: () => void; title: string; className: string; children: ReactNode }) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      title={title}
+      className={`cursor-pointer ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 function Bascule({ c, onToggleActif }: { c: Comportement; onToggleActif: PropsElement["onToggleActif"] }) {
   return (
@@ -37,11 +62,11 @@ const CARTE =
   "group flex w-full flex-col gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute";
 
 // Procédure : une carte avec le nombre d'étapes et les premières étapes numérotées.
-export function CarteProcedure({ c, onOuvrir, onToggleActif }: PropsElement) {
+export function CarteProcedure({ c, onOuvrir, onToggleActif, menu }: PropsElement) {
   const etapes = lireProcedure(c.texte).filter(Boolean);
   const apercu = etapes.slice(0, 3);
   return (
-    <button onClick={() => onOuvrir(c)} title={texteConfiguration("action.ouvrir")} className={`${CARTE} ${c.actif ? "" : "opacity-50"}`}>
+    <ZoneCliquable onClick={() => onOuvrir(c)} title={texteConfiguration("action.ouvrir")} className={`${CARTE} ${c.actif ? "" : "opacity-50"}`}>
       <div className="flex items-center gap-2">
         <ListOrdered size={15} className="flex-shrink-0 text-dj-texte-muet" />
         <div className="min-w-0 flex-1">
@@ -53,6 +78,7 @@ export function CarteProcedure({ c, onOuvrir, onToggleActif }: PropsElement) {
           {texteNombreEtapes(etapes.length)}
         </span>
         <Bascule c={c} onToggleActif={onToggleActif} />
+        {menu}
       </div>
       <ol className="flex flex-col gap-1.5">
         {apercu.map((e, i) => (
@@ -63,14 +89,14 @@ export function CarteProcedure({ c, onOuvrir, onToggleActif }: PropsElement) {
         ))}
         {etapes.length > apercu.length && <li className="pl-6 text-[11px] text-dj-texte-muet">{texteAutresEtapes(etapes.length - apercu.length)}</li>}
       </ol>
-    </button>
+    </ZoneCliquable>
   );
 }
 
 // Règle : une simple ligne de liste, le texte de la règle lui même, sans carte.
-export function LigneRegle({ c, onOuvrir, onToggleActif }: PropsElement) {
+export function LigneRegle({ c, onOuvrir, onToggleActif, menu }: PropsElement) {
   return (
-    <button
+    <ZoneCliquable
       onClick={() => onOuvrir(c)}
       title={texteConfiguration("action.ouvrir")}
       className={`flex w-full items-center gap-3 px-1 py-2.5 text-left transition-colors hover:bg-dj-surface-haute ${c.actif ? "" : "opacity-50"}`}
@@ -78,15 +104,16 @@ export function LigneRegle({ c, onOuvrir, onToggleActif }: PropsElement) {
       <Scale size={14} className="flex-shrink-0 text-dj-texte-muet" />
       <span className="min-w-0 flex-1 text-sm text-dj-texte">{c.texte}</span>
       <Bascule c={c} onToggleActif={onToggleActif} />
-    </button>
+        {menu}
+    </ZoneCliquable>
   );
 }
 
 // Comportement : une carte avec les deux lignes "dans tel cas" puis "comporte toi ainsi".
-export function CarteComportement({ c, onOuvrir, onToggleActif }: PropsElement) {
+export function CarteComportement({ c, onOuvrir, onToggleActif, menu }: PropsElement) {
   const { cas, reaction } = lireComportement(c.texte);
   return (
-    <button onClick={() => onOuvrir(c)} title={texteConfiguration("action.ouvrir")} className={`${CARTE} ${c.actif ? "" : "opacity-50"}`}>
+    <ZoneCliquable onClick={() => onOuvrir(c)} title={texteConfiguration("action.ouvrir")} className={`${CARTE} ${c.actif ? "" : "opacity-50"}`}>
       <div className="flex items-center gap-2">
         <UserCog size={15} className="flex-shrink-0 text-dj-texte-muet" />
         <div className="min-w-0 flex-1">
@@ -95,6 +122,7 @@ export function CarteComportement({ c, onOuvrir, onToggleActif }: PropsElement) 
           </BulleSurvol>
         </div>
         <Bascule c={c} onToggleActif={onToggleActif} />
+        {menu}
       </div>
       {cas && (
         <div className="flex flex-col gap-0.5">
@@ -107,14 +135,14 @@ export function CarteComportement({ c, onOuvrir, onToggleActif }: PropsElement) 
         <span className="text-[11px] font-semibold uppercase tracking-wide text-dj-texte-muet">{texteConfiguration("comportement.reaction.libelle")}</span>
         <span className="line-clamp-3 text-sm text-dj-texte">{reaction}</span>
       </div>
-    </button>
+    </ZoneCliquable>
   );
 }
 
 // Style : une carte avec un extrait entre guillemets, en police de lecture.
-export function CarteStyle({ c, onOuvrir, onToggleActif }: PropsElement) {
+export function CarteStyle({ c, onOuvrir, onToggleActif, menu }: PropsElement) {
   return (
-    <button onClick={() => onOuvrir(c)} title={texteConfiguration("action.ouvrir")} className={`${CARTE} ${c.actif ? "" : "opacity-50"}`}>
+    <ZoneCliquable onClick={() => onOuvrir(c)} title={texteConfiguration("action.ouvrir")} className={`${CARTE} ${c.actif ? "" : "opacity-50"}`}>
       <div className="flex items-center gap-2">
         <Feather size={15} className="flex-shrink-0 text-dj-texte-muet" />
         <div className="min-w-0 flex-1">
@@ -123,11 +151,12 @@ export function CarteStyle({ c, onOuvrir, onToggleActif }: PropsElement) {
           </BulleSurvol>
         </div>
         <Bascule c={c} onToggleActif={onToggleActif} />
+        {menu}
       </div>
       <blockquote className="line-clamp-4 border-l-2 border-dj-bordure-forte pl-3 font-lecture text-sm italic text-dj-texte-muet">
         « {c.texte} »
       </blockquote>
-    </button>
+    </ZoneCliquable>
   );
 }
 
