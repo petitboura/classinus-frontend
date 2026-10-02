@@ -99,6 +99,7 @@ import {
   type ImageCanal,
   type SourceCanal,
 } from "./contexteCanalEnDirect";
+import { mettreAJourSourceTache } from "./tacheCanal";
 import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
@@ -212,7 +213,16 @@ const AGENT_ID_CANAL = "clovis";
  * jamais activé cette session) ou si l'appel échoue -- l'appelant garde
  * alors le message plutôt que de le perdre (voir envoyerViaRepli).
  */
+// Même consigne que le bouton Continuer du chat (ChatIA.tsx, continuerApresInterruption).
+const CONSIGNE_CONTINUER_APRES_ARRET = "Continue exactement où tu t'es arrêté, sans tout reprendre depuis le début.";
+
 async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
+  const controleur = new AbortController();
+  mettreAJourSourceTache("tour_direct", {
+    enCours: true,
+    interrompue: false,
+    arreter: () => controleur.abort(),
+  });
   // Conversation partagée : celle du chat quand il y en a un, sinon celle du
   // canal. L'état (historique, dernier message) est celui de cette conversation.
   const conversationId = conversationActive();
@@ -261,9 +271,11 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
           idUser = evenement.message_id_user ?? idUser;
           idAssistant = evenement.message_id_assistant ?? idAssistant;
         }
-      }
+      },
+      controleur.signal
     );
 
+    mettreAJourSourceTache("tour_direct", { enCours: false, interrompue: false });
     ajouterTourDirect(conversationId, texte, reponseAccumulee, idUser, idAssistant);
 
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
@@ -273,6 +285,28 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
     if (reponseAccumulee.trim()) afficherReponseDepuisAgent({ texte: reponseAccumulee.trim(), sources, images });
     return true;
   } catch (e) {
+    // Arrêt demandé par l'étudiant (bouton arrêter du canal) : le texte déjà
+    // reçu reste affiché dans la bulle, et jamais de repli vers le chat (le
+    // message n'a pas échoué, il a été coupé). Continuer relance avec ce qui a
+    // déjà été écrit dans l'historique ; Réessayer repose la même question.
+    if (controleur.signal.aborted) {
+      if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "interrompu");
+      const texteRecu = reponseAccumulee.trim();
+      if (texteRecu) afficherReponseDepuisAgent({ texte: texteRecu, sources, images });
+      mettreAJourSourceTache("tour_direct", {
+        enCours: false,
+        interrompue: true,
+        continuer: () => {
+          ajouterTourDirect(conversationId, texte, reponseAccumulee, idUser, idAssistant);
+          void envoyerTourCanalDirect(CONSIGNE_CONTINUER_APRES_ARRET);
+        },
+        reessayer: () => {
+          void envoyerTourCanalDirect(texte);
+        },
+      });
+      return true;
+    }
+    mettreAJourSourceTache("tour_direct", { enCours: false, interrompue: false });
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     return false;
   }

@@ -11,6 +11,7 @@ import { PopupFeedback } from "./PopupFeedback";
 import { StatutOutil, EtatStatut } from "./StatutOutil";
 import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
+import { mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
@@ -1554,6 +1555,32 @@ export function ChatIA({
     // lui-même (voir plus haut, même filet que pour repriseDisponible).
     envoyerMessage("Continue exactement où tu t'es arrêté, sans tout reprendre depuis le début.", "moyenne", []);
   }
+
+  // Canal en direct (02/10/2026, demande Bourama : bouton arrêter) : tant que ce
+  // chat est monté, sa génération est visible du canal (lib/tacheCanal.ts), qui
+  // peut l'arrêter, la continuer ou la relancer comme le fait ce bandeau. La ref
+  // garde les versions à jour des fonctions sans réenregistrer à chaque rendu.
+  const actionsTacheCanalRef = useRef({
+    arreter: () => {},
+    continuer: () => {},
+    reessayer: () => {},
+  });
+  actionsTacheCanalRef.current = {
+    arreter: arreterGeneration,
+    continuer: continuerApresInterruption,
+    reessayer: () => regenererDepuis(messages.length - 1),
+  };
+  const derniereReponseInterrompue = !genEnCours && messages.length > 1 && messages[messages.length - 1]?.interrompue === true;
+  useEffect(() => {
+    mettreAJourSourceTache("chat", {
+      enCours: genEnCours,
+      interrompue: derniereReponseInterrompue,
+      arreter: () => actionsTacheCanalRef.current.arreter(),
+      continuer: () => actionsTacheCanalRef.current.continuer(),
+      reessayer: () => actionsTacheCanalRef.current.reessayer(),
+    });
+  }, [genEnCours, derniereReponseInterrompue]);
+  useEffect(() => () => retirerSourceTache("chat"), []);
 
   // Bouton "Modifier" du bandeau (choix Bourama, 20/09/2026, parmi les
   // deux lectures possibles) : reprend le message UTILISATEUR précédent

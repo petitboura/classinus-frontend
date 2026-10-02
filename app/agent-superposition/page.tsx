@@ -56,7 +56,16 @@ import {
 
 type CanalAffichage = Pick<
   ValeurCanalEnDirect,
-  "actif" | "modeInteraction" | "moteurDictee" | "dernierTexte" | "reponseVisible" | "derniereReponse" | "conversationId" | "journal"
+  | "actif"
+  | "modeInteraction"
+  | "moteurDictee"
+  | "dernierTexte"
+  | "reponseVisible"
+  | "derniereReponse"
+  | "conversationId"
+  | "journal"
+  | "tacheEnCours"
+  | "interrompue"
 >;
 
 type VoixAffichage = { actif: boolean; etat: EtatVoixDirecte };
@@ -76,6 +85,8 @@ const ETAT_CANAL_INITIAL: CanalAffichage = {
   derniereReponse: null,
   conversationId: null,
   journal: [],
+  tacheEnCours: false,
+  interrompue: false,
 };
 
 export default function PageAgentSuperposition() {
@@ -125,6 +136,8 @@ export default function PageAgentSuperposition() {
         derniereReponse: etat.canal.derniereReponse,
         conversationId: etat.canal.conversationId,
         journal: etat.canal.journal,
+        tacheEnCours: etat.canal.tacheEnCours ?? false,
+        interrompue: etat.canal.interrompue ?? false,
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,6 +242,11 @@ export default function PageAgentSuperposition() {
     journal: canal.journal,
     ajouterEntreeJournal: () => "",
     mettreAJourEntreeJournal: () => {},
+    tacheEnCours: canal.tacheEnCours,
+    interrompue: canal.interrompue,
+    arreterTache: interactionsSuperposition.arreterTache,
+    continuerApresArret: interactionsSuperposition.continuerApresArret,
+    reessayerApresArret: interactionsSuperposition.reessayerApresArret,
   };
 
   return (

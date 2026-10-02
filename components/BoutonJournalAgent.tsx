@@ -35,12 +35,14 @@ const LABEL_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "En cours...",
   succes: "Réussi",
   erreur: "Échec",
+  interrompu: "Interrompu",
 };
 
 const COULEUR_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "text-dj-texte-muet",
   succes: "text-dj-accent-1-texte",
   erreur: "text-[var(--dj-erreur)]",
+  interrompu: "text-dj-texte-muet",
 };
 
 // Mode intégré (02/10/2026, demande Bourama) : le bouton est rangé dans le groupe

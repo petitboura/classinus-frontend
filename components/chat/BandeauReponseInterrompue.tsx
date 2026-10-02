@@ -23,7 +23,9 @@ export function BandeauReponseInterrompue({
   onReessayer,
 }: {
   enAttente: boolean;
-  onModifier: () => void;
+  // Absent dans la bulle du canal en direct (décision Bourama, 02/10/2026) : pas
+  // de bouton Modifier, il n'y a pas de fil de messages à rouvrir.
+  onModifier?: () => void;
   onContinuer: () => void;
   onReessayer: () => void;
 }) {
@@ -33,14 +35,16 @@ export function BandeauReponseInterrompue({
         <AlertCircle size={16} className="shrink-0 text-dj-accent-2" />
         Réponse interrompue
       </span>
-      <button
-        onClick={onModifier}
-        disabled={enAttente}
-        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface disabled:opacity-50"
-      >
-        <Pencil size={13} />
-        Modifier
-      </button>
+      {onModifier && (
+        <button
+          onClick={onModifier}
+          disabled={enAttente}
+          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface disabled:opacity-50"
+        >
+          <Pencil size={13} />
+          Modifier
+        </button>
+      )}
       <button
         onClick={onContinuer}
         disabled={enAttente}
