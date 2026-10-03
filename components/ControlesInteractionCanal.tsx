@@ -303,31 +303,32 @@ export function ControlesInteractionCanal() {
 
                   <BoutonJournalAgent integre />
 
-                  {/* Arrêter la tâche en cours, comme le bouton d'arrêt du chat : le
-                      texte déjà écrit reste, la bulle propose ensuite Continuer ou
-                      Réessayer (voir lib/tacheCanal.ts). N'apparaît que pendant une tâche. */}
-                  <AnimatePresence>
-                    {contexte.tacheEnCours && (
-                      <motion.button
-                        key="arreter-tache"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.15 }}
-                        onClick={contexte.arreterTache}
-                        aria-label="Arrêter la tâche en cours"
-                        title="Arrêter la tâche en cours"
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] shadow-lg transition-colors hover:bg-dj-accent-2"
-                      >
-                        <Square size={14} />
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <div className="flex items-center gap-2">
+                {/* Arrêter la tâche en cours, comme le bouton d'arrêt du chat : le
+                    texte déjà écrit reste, la bulle propose ensuite Continuer ou
+                    Réessayer (voir lib/tacheCanal.ts). N'apparaît que pendant une tâche et reste visible même quand le groupe est replié
+                    (demande Bourama, 02/10/2026). */}
+                <AnimatePresence>
+                  {contexte.tacheEnCours && (
+                    <motion.button
+                      key="arreter-tache"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={contexte.arreterTache}
+                      aria-label="Arrêter la tâche en cours"
+                      title="Arrêter la tâche en cours"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] shadow-lg transition-colors hover:bg-dj-accent-2"
+                    >
+                      <Square size={14} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               <button
                 onClick={() => setGroupeOuvert((v) => !v)}
                 aria-expanded={groupeOuvert}

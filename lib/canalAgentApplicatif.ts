@@ -215,16 +215,18 @@ const AGENT_ID_CANAL = "clovis";
 const CONSIGNE_CONTINUER_APRES_ARRET = "Continue exactement où tu t'es arrêté, sans tout reprendre depuis le début.";
 
 async function envoyerTourCanalDirect(texte: string, options?: { automatique?: boolean }): Promise<boolean> {
+  // Conversation partagée : celle du chat quand il y en a un, sinon celle du
+  // canal. L'état (historique, dernier message) est celui de cette conversation.
+  // Vérifiée AVANT de déclarer la tâche en cours : sans conversation, rien ne part
+  // et le bouton arrêter ne doit pas rester affiché.
+  const conversationId = conversationActive();
+  if (!conversationId) return false;
   const controleur = new AbortController();
   mettreAJourSourceTache("tour_direct", {
     enCours: true,
     interrompue: false,
     arreter: () => controleur.abort(),
   });
-  // Conversation partagée : celle du chat quand il y en a un, sinon celle du
-  // canal. L'état (historique, dernier message) est celui de cette conversation.
-  const conversationId = conversationActive();
-  if (!conversationId) return false;
   const etat = lireEtatConversation(conversationId);
   let idUser: IdMessage | null = null;
   let idAssistant: IdMessage | null = null;
