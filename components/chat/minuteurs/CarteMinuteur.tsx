@@ -42,7 +42,7 @@ export function CarteMinuteur({
   const etat = enCours ? null : minuteur.statut === "termine" ? t.termine : t.arrete;
 
   return (
-    <div className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 shadow-sm">
+    <div className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 shadow-lg">
       <div className="flex items-center gap-3">
         <AnneauMinuteur secondesRestantes={restant} dureeSecondes={minuteur.duree_secondes} statut={minuteur.statut} />
 

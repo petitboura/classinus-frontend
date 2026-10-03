@@ -210,7 +210,7 @@ const AGENT_ID_CANAL = "clovis";
  * jamais activé cette session) ou si l'appel échoue -- l'appelant garde
  * alors le message plutôt que de le perdre (voir envoyerViaRepli).
  */
-async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
+async function envoyerTourCanalDirect(texte: string, options?: { automatique?: boolean }): Promise<boolean> {
   // Conversation partagée : celle du chat quand il y en a un, sinon celle du
   // canal. L'état (historique, dernier message) est celui de cette conversation.
   const conversationId = conversationActive();
@@ -218,8 +218,15 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
   const etat = lireEtatConversation(conversationId);
   let idUser: IdMessage | null = null;
   let idAssistant: IdMessage | null = null;
+  // Message envoyé par l'appli et non par l'étudiant (fin d'un minuteur, 03/10/2026) :
+  // enregistré comme tel, jamais affiché comme une bulle de l'étudiant, et le journal
+  // ne montre pas le texte interne destiné au modèle.
+  const automatique = options?.automatique === true;
 
-  const idJournal = pousserJournalDepuisAgent(`Toi : ${texteCourt(texte)}`, "en_cours");
+  const idJournal = pousserJournalDepuisAgent(
+    automatique ? "Un minuteur vient de se terminer" : `Toi : ${texteCourt(texte)}`,
+    "en_cours"
+  );
   let reponseAccumulee = "";
   // Sources et images trouvées par les outils pendant ce tour, pour que la
   // réponse s'affiche comme dans le chat (pastilles de citation [[n]],
@@ -242,6 +249,7 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
         etat_editeur: obtenirLectureEditeurPourChat(),
+        ...(automatique ? { message_automatique: true } : {}),
       },
       (evenement) => {
         if (evenement?.type === "reponse" && typeof evenement.texte === "string") {
@@ -274,6 +282,17 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     return false;
   }
+}
+
+/**
+ * Fin d'un minuteur alors qu'aucun chat n'est à l'écran (03/10/2026, demande
+ * Bourama) : le canal en direct et sa bulle prennent le relais. Même tour que
+ * le chat aurait lancé, mais sans passer par lui : la suite prévue est faite
+ * et dite dans la bulle (et à voix haute si la voix est allumée). Renvoie false
+ * si le tour n'a pas pu partir, pour que l'appelant garde la fin en file.
+ */
+export function envoyerMessageAutomatiqueCanal(texte: string): Promise<boolean> {
+  return envoyerTourCanalDirect(texte, { automatique: true });
 }
 
 function envoyerViaRepli(texte: string) {

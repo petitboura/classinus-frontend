@@ -141,13 +141,13 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Regroupe les notifications classiques, les rappels programmés à une heure précise, et les événements ajoutés au calendrier du téléphone. Nécessite l'app mobile Classinus.",
   },
   {
-    // Minuteurs du chat (20/09/2026, demande Bourama) : bouton horloge en
-    // haut à droite du chat.
+    // Minuteurs (20/09/2026, demande Bourama) : bouton horloge en haut à
+    // droite, à côté de la cloche, sur tous les écrans (03/10/2026).
     id: "minuteurs",
     titre: "Minuteurs",
     texteCourt: "Lance un minuteur qui ne bloque rien. Classinus peut aussi en lancer un de lui même et agir quand il se termine.",
     texteComplet:
-      "Dans le chat, le bouton horloge en haut à droite te permet de lancer un minuteur : une durée rapide ou celle que tu choisis. Classinus peut aussi en lancer un de lui même quand c'est utile, par exemple pour une révision chronométrée, et il agit quand le minuteur se termine, par exemple en te proposant un quiz. Un minuteur ne bloque jamais rien : tu peux continuer à discuter, changer de page, ajouter ou retirer 5 minutes, ou l'arrêter. Pour qu'il ne gêne pas, tu peux le réduire en petite pastille ou le masquer, puis le retrouver avec le bouton horloge. Le bouton Voir la suite prévue montre ce que Classinus fera à la fin. Si l'app est fermée quand le minuteur se termine, tu reçois une notification.",
+      "Le bouton horloge, en haut à droite à côté de la cloche des notifications, est présent sur tous les écrans. Il te permet de lancer un minuteur : une durée rapide ou celle que tu choisis, en secondes, minutes ou heures, sans limite. Tu peux aussi écrire ce que Classinus doit faire à la fin, par exemple te poser 5 questions sur un chapitre ; si tu ne l'écris pas, Classinus décide selon la conversation. Classinus peut aussi lancer un minuteur de lui même quand c'est utile, par exemple pour une révision chronométrée. Un minuteur ne bloque jamais rien : tu peux continuer à discuter, changer de page, ajouter ou retirer 5 minutes, ou l'arrêter. Pour qu'il ne gêne pas, tu peux le réduire en petite pastille ou le masquer, puis le retrouver avec le bouton horloge. Le bouton Voir la suite prévue montre ce que Classinus fera à la fin. Quand le minuteur se termine, Classinus te répond dans le chat si tu y es. Si tu es ailleurs et que le canal en direct est activé, c'est le canal et sa bulle qui prennent le relais. Sinon, tu reçois une notification.",
   },
   {
     id: "temps-ecran",
