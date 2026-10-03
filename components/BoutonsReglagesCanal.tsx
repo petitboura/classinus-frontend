@@ -17,6 +17,7 @@ import { BoutonReglages } from "@/components/chat/barre/BoutonReglages";
 import { useReglagesPedagogiques } from "@/components/chat/barre/useReglagesPedagogiques";
 import { useModeActif } from "@/components/chat/barre/useModeActif";
 import { ContexteChat } from "@/lib/contexteChat";
+import { conversationActive } from "@/lib/conversationPartagee";
 import { useOutilsRegistre } from "@/lib/outils";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
 import { definirLongueurProchainMessage, definirModeleProchainMessage } from "@/lib/reglagesProchainMessage";
@@ -27,8 +28,13 @@ const CLASSE_ROND =
 export function BoutonReglagesCanal({ conversationId }: { conversationId: string | null }) {
   const ctxChat = useContext(ContexteChat);
   const reglages = useReglagesProchainMessage();
-  const pedagogie = useReglagesPedagogiques(conversationId ?? undefined);
-  const modeActif = useModeActif(conversationId ?? undefined);
+  // Les messages du canal partent sur la conversation active (celle du chat quand il est à
+  // l'écran, voir lib/conversationPartagee.ts), pas sur l'identifiant propre du canal. Les
+  // réglages enregistrés côté serveur doivent viser cette même conversation. L'identifiant
+  // du canal ne sert que de repli quand aucune conversation active n'existe.
+  const conversationVisee = conversationActive() ?? conversationId;
+  const pedagogie = useReglagesPedagogiques(conversationVisee ?? undefined);
+  const modeActif = useModeActif(conversationVisee ?? undefined);
   return (
     <div className={CLASSE_ROND}>
       <BoutonReglages
