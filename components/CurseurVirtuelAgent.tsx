@@ -16,30 +16,28 @@
 // Le curseur reste glissable : onTap ne se déclenche que pour un vrai
 // clic, jamais à la fin d'un glissement.
 //
-// Ajout du 16/09/2026 (demande Bourama) : l'icône change selon la forme
-// du curseur, comme un vrai curseur de souris (flèche par défaut, main
-// au dessus d'un élément cliquable, main qui attrape pour un élément
-// saisi).
+// 16/09/2026 (demande Bourama) : l'icône suivait la forme du curseur (flèche,
+// main au dessus d'un élément cliquable, main qui attrape). Remplacé le
+// 02/10/2026, voir ICONE_CURSEUR plus bas : toujours une flèche.
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Grab, MousePointer2, Pointer } from "lucide-react";
+import { MousePointer2 } from "lucide-react";
 import { useContext } from "react";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
-import { ContexteCurseurVirtuel, type FormeCurseur } from "@/lib/contexteCurseurVirtuel";
+import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { COUCHE_AGENT_CURSEUR } from "@/lib/couchesAgent";
 
-const ICONE_PAR_FORME: Record<FormeCurseur, typeof MousePointer2> = {
-  defaut: MousePointer2,
-  main: Pointer,
-  attrape: Grab,
-};
+// 02/10/2026, demande Bourama : le curseur reste toujours une flèche de souris,
+// jamais une main (ni pointeur ni main qui attrape). La forme continue d'exister
+// dans le contexte (lib/contexteCurseurVirtuel.tsx) mais n'change plus l'icône.
+const ICONE_CURSEUR = MousePointer2;
 
 export function CurseurVirtuelAgent() {
   const contexte = useContext(ContexteCurseurVirtuel);
   const canal = useContext(ContexteCanalEnDirect);
   if (!contexte) return null;
-  const { x, y, echelle, visible, forme, enAction } = contexte;
-  const Icone = ICONE_PAR_FORME[forme];
+  const { x, y, echelle, visible, enAction } = contexte;
+  const Icone = ICONE_CURSEUR;
 
   return (
     <AnimatePresence>
@@ -85,7 +83,7 @@ export function CurseurVirtuelAgent() {
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
-              key={forme}
+              key="fleche"
               initial={{ opacity: 0, scale: 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.7 }}
