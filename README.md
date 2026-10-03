@@ -74,9 +74,11 @@ components/
                           aperçus md et code) qui s'élargissent des deux côtés de la colonne de texte sans
                           bouger le texte ; toute nouvelle zone de chat doit porter data-zone-chat (voir
                           ChatIA.tsx) et tout futur bloc large s'envelopper dans BlocLarge
-    minuteurs/           minuteurs du chat (20/09/2026) : DockMinuteurs.tsx (zone en haut du chat, montée
-                          par ChatIA.tsx), CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
-                          LanceurMinuteur.tsx (bouton horloge : lancer, retrouver les masqués),
+    minuteurs/           minuteurs (20/09/2026) : DockMinuteurs.tsx (cartes et pastilles en position fixe
+                          sous la cloche, montée UNE fois dans AppShell.tsx pour tous les écrans, 03/10/2026),
+                          CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
+                          LanceurMinuteur.tsx (bouton horloge à gauche de la cloche : durée libre sans plafond
+                          en secondes/minutes/heures, suite facultative, retrouver les masqués),
                           AnneauMinuteur.tsx
     AnimationLecteur.tsx  bloc ```animation du markdown (29/09/2026) : animation qui se regarde comme une
                           vidéo (lecture, pause, barre de progression, barre d'espace), en 2D (SVG) ou en 3D
@@ -104,8 +106,9 @@ lib/
   useDeplacable.ts        éléments flottants déplaçables au doigt ou à la souris (20/09/2026) : décalage par
                           rapport à l'emplacement d'origine, bornes à l'écran, clic ignoré après un glissement ;
                           utilisé par CanalEnDirectFlottant.tsx (canal + dictée + écriture) et BoutonJournalAgent.tsx
-  contexteMinuteurs.tsx   minuteurs du chat (20/09/2026) : liste, actions de l'étudiant, prise en charge
-                          de la fin (message automatique invisible envoyé à Clovis par le chat ouvert) ;
+  contexteMinuteurs.tsx   minuteurs (20/09/2026) : liste, actions de l'étudiant, prise en charge de la fin
+                          (message automatique invisible : par le chat à l'écran, sinon par le canal en
+                          direct et sa bulle s'il est actif, 03/10/2026) ;
                           minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par
                           langue), useMaintenantMs.ts (horloge locale des affichages)
   canalTempsReel.ts      client du canal temps réel avec le backend (exploration de dossier mobile...)

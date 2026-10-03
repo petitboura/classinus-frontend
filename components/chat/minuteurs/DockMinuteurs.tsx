@@ -3,6 +3,7 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
+import { conversationActive } from "@/lib/conversationPartagee";
 import { useMaintenantMs } from "@/lib/useMaintenantMs";
 import { CarteMinuteur } from "./CarteMinuteur";
 import { LanceurMinuteur } from "./LanceurMinuteur";
@@ -33,12 +34,17 @@ function ecrireModes(modes: Record<string, ModeAffichage>) {
   }
 }
 
-// Zone des minuteurs en haut du chat (20/09/2026, demande Bourama) : cartes
-// complètes, pastilles des minuteurs réduits, et le bouton horloge (lancer
-// un minuteur, retrouver les masqués). Ne prend aucune place quand il n'y a
-// aucun minuteur à montrer, et ne bloque jamais rien : l'étudiant continue
-// à discuter pendant que le temps défile.
-export function DockMinuteurs({ conversationId }: { conversationId: string }) {
+// Zone des minuteurs (20/09/2026, demande Bourama) : cartes complètes,
+// pastilles des minuteurs réduits, et le bouton horloge (lancer un minuteur,
+// retrouver les masqués). Ne prend aucune place quand il n'y a aucun minuteur
+// à montrer, et ne bloque jamais rien : l'étudiant continue à discuter
+// pendant que le temps défile.
+//
+// 03/10/2026, demande Bourama : monté UNE seule fois dans AppShell, en
+// position fixe sous la cloche des notifications, pour que les minuteurs et
+// l'icône horloge soient visibles sur tous les écrans (avant : seulement dans
+// le chat, une copie par chat). Les zones vides laissent passer les clics.
+export function DockMinuteurs() {
   const ctx = useContext(ContexteMinuteurs);
   const [modes, setModes] = useState<Record<string, ModeAffichage>>({});
 
@@ -68,7 +74,7 @@ export function DockMinuteurs({ conversationId }: { conversationId: string }) {
 
   return (
     <>
-      <div className="flex-none space-y-2 px-4 pr-[4.5rem] pt-2 empty:hidden">
+      <div className="pointer-events-none fixed right-2 top-[calc(2.75rem+var(--safe-top,0px))] z-40 flex w-[min(22rem,calc(100vw-1rem))] flex-col items-end gap-2 empty:hidden">
         <AnimatePresence initial={false}>
           {ctx.erreur && (
             <motion.p
@@ -78,7 +84,7 @@ export function DockMinuteurs({ conversationId }: { conversationId: string }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.15 }}
-              className="rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-[var(--dj-erreur)]"
+              className="pointer-events-auto w-full rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-[var(--dj-erreur)]"
             >
               {ctx.erreur}
             </motion.p>
@@ -92,7 +98,7 @@ export function DockMinuteurs({ conversationId }: { conversationId: string }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.18 }}
-              className="flex flex-wrap gap-1.5"
+              className="pointer-events-auto flex flex-wrap justify-end gap-1.5"
             >
               {pastilles.map((m) => (
                 <PastilleMinuteur key={m.id} minuteur={m} maintenantMs={maintenantMs} onAgrandir={() => changerMode(m.id, "carte")} />
@@ -108,6 +114,7 @@ export function DockMinuteurs({ conversationId }: { conversationId: string }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
+              className="pointer-events-auto w-full"
             >
               <CarteMinuteur
                 minuteur={m}
@@ -125,7 +132,13 @@ export function DockMinuteurs({ conversationId }: { conversationId: string }) {
       <LanceurMinuteur
         masques={masques}
         maintenantMs={maintenantMs}
-        onLancer={(dureeSecondes) => void ctx.lancer(dureeSecondes, { conversationId })}
+        onLancer={(dureeSecondes, actionFin) =>
+          void ctx.lancer(dureeSecondes, {
+            // La conversation qu'on continue en ce moment (chat affiché, sinon celle du canal), connue au moment du clic.
+            conversationId: conversationActive() ?? undefined,
+            actionFin: actionFin ?? undefined,
+          })
+        }
         onAfficher={(id) => changerMode(id, "carte")}
       />
     </>
