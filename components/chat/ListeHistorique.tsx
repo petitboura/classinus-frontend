@@ -31,7 +31,7 @@ function majuscule(texte: string): string {
   return texte.charAt(0).toUpperCase() + texte.slice(1);
 }
 
-// Groupe de date d'un fil : jours recents, puis semaines (jusqu'a 4 Sem),
+// Groupe de date d'un fil : jours recents, puis semaines (jusqu'a 5 Sem, soit 31 jours),
 // puis Mois dernier, puis un groupe par mois (annee affichee seulement
 // pour les annees passees).
 function groupeDeDate(iso: string, maintenant: Date): { cle: string; libelle: string } {
@@ -42,7 +42,7 @@ function groupeDeDate(iso: string, maintenant: Date): { cle: string; libelle: st
   if (ecart === 0) return { cle: "aujourdhui", libelle: "Aujourd'hui" };
   if (ecart === 1) return { cle: "hier", libelle: "Hier" };
   if (ecart === 2) return { cle: "avant-hier", libelle: "Avant-hier" };
-  if (ecart <= 28) {
+  if (ecart <= 31) {
     const semaines = Math.ceil(ecart / 7);
     return { cle: `sem-${semaines}`, libelle: `Il y a ${semaines} Sem` };
   }
