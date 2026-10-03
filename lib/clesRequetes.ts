@@ -21,6 +21,9 @@ export const clesRequetes = {
   // séparée par catégorie, jamais mélangée au cache de "Mes skills"
   // (comportements(agentId) ci-dessus, qui ne renvoie déjà plus les
   // entrées catégorisées côté serveur, voir api/comportements_etudiants.py).
+  // Préfixe commun aux 4 listes : permet de toutes les relire d'un coup quand
+  // l'IA crée ou modifie un élément depuis le chat (03/10/2026).
+  configurationSkillsTous: (agentId: string) => ["configuration-skills", agentId] as const,
   configurationSkills: (agentId: string, categorie: string) => ["configuration-skills", agentId, categorie] as const,
   codes: ["codes"] as const,
   programmeNotions: (codeId: string) => ["programme-notions", "notions", codeId] as const,

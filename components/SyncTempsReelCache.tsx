@@ -54,6 +54,9 @@ export function SyncTempsReelCache({ connecte }: { connecte: boolean }) {
   useEffect(() => {
     return ecouterDonneesModifiees("comportements", () => {
       queryClient.invalidateQueries({ queryKey: clesRequetes.comportements("clovis") });
+      // 03/10/2026, demande Bourama : l'IA crée aussi les éléments de
+      // Configuration depuis le chat, leurs 4 listes se relisent de même.
+      queryClient.invalidateQueries({ queryKey: clesRequetes.configurationSkillsTous("clovis") });
     });
   }, [queryClient]);
 
