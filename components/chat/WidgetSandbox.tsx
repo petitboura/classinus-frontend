@@ -5,6 +5,8 @@ import { AppWindow, Loader2 } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { BoutonFilmerWidget, type EtatVideo } from "./BoutonFilmerWidget";
 import { useTheme } from "@/lib/useTheme";
+import { useHauteurWidget } from "@/lib/useHauteurWidget";
+import { SCRIPT_HAUTEUR_WIDGET } from "@/lib/scriptHauteurWidget";
 import {
   demarrerEnregistrement,
   enregistrementVideoPossible,
@@ -132,6 +134,7 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
         });
       })();
     </script>
+    <script id="dj-hauteur-widget">${SCRIPT_HAUTEUR_WIDGET}</script>
     </body></html>`;
 }
 
@@ -192,6 +195,15 @@ export function WidgetSandbox({ code }: { code: string }) {
   const chronoRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const arretAutoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retourRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hauteur du cadre : suit le contenu du widget (voir lib/useHauteurWidget.ts).
+  // Elle reste figée pendant la préparation et l'enregistrement d'un film, car
+  // la vidéo est recadrée sur le cadre et une taille qui bouge l'abîmerait.
+  const hauteur = useHauteurWidget(
+    iframeRef,
+    codeStable === null ? "" : `${resolu}|${codeStable}`,
+    etatVideo === "preparation" || etatVideo === "enregistrement",
+  );
 
   useEffect(() => {
     setVideoPossible(enregistrementVideoPossible());
@@ -308,7 +320,8 @@ export function WidgetSandbox({ code }: { code: string }) {
             ref={iframeRef}
             sandbox="allow-scripts allow-forms allow-modals"
             srcDoc={construireDocumentWidget(codeStable, resolu)}
-            className="h-96 w-full rounded-lg border border-dj-bordure"
+            style={{ height: hauteur }}
+            className="w-full rounded-lg border border-dj-bordure transition-[height] duration-200 ease-out motion-reduce:transition-none"
             title="Widget interactif"
           />
         )

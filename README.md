@@ -89,7 +89,7 @@ components/
     AnimationLecteur.tsx  bloc ```animation du markdown (29/09/2026) : animation qui se regarde comme une
                           vidéo (lecture, pause, barre de progression, barre d'espace), en 2D (SVG) ou en 3D
                           (Three.js r128 chargé depuis cdnjs, jsdelivr en secours), pour n'importe quel sujet,
-                          dans une iframe isolée comme le widget (WidgetSandbox.tsx, inchangé) ; branché dans
+                          dans une iframe isolée comme le widget (WidgetSandbox.tsx) ; branché dans
                           composantsMarkdownRiches.tsx et RenduMarkdownAutonome.tsx
     animation/           le lecteur lui même : construireDocumentAnimation.ts (page de l'iframe, thème,
                           barre de lecture) et runtimeAnimation.ts (code exécuté dans l'iframe). Le modèle
@@ -123,6 +123,12 @@ lib/
                           (VisionneurPositionGlobal) qui demande ensuite d'ouvrir le site ; appliquée à tous les
                           clics par components/GardienLiensSortants.tsx (layout racine). data-lien-libre sur un
                           lien = garde son comportement natif. Seul ouvrirSiteExterieur quitte réellement l'appli
+  useHauteurWidget.ts     hauteur du cadre d'un widget interactif (03/10/2026) : suit la hauteur du contenu entre
+                          120 et 1200 px, repart de 384 px (l'ancienne hauteur fixe) ; garde contre un widget
+                          qui dépend de la hauteur de la fenêtre (retour à 384 px après 5 agrandissements de
+                          suite), ignorée en plein écran, figée pendant un enregistrement du bouton Filmer ;
+                          scriptHauteurWidget.ts : le script posé dans le widget qui mesure son contenu (bas
+                          de l'élément le plus bas, éléments en position fixe ignorés)
   usePluginNatif.ts       hook d'accès générique aux plugins Capacitor
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
