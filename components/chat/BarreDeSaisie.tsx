@@ -25,6 +25,12 @@ import { BandeauAccesBloque } from "./barre/BandeauAccesBloque";
 import { useModeActif } from "./barre/useModeActif";
 import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
 import type { LongueurReponse } from "./barre/reglagesReponse";
+import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
+import {
+  definirLongueurProchainMessage,
+  definirSansEnseignantProchainMessage,
+  lireReglagesProchainMessage,
+} from "@/lib/reglagesProchainMessage";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
@@ -195,7 +201,12 @@ export function BarreDeSaisie({
   onAccesBloqueChange?: (bloque: boolean) => void;
 }) {
   const [texte, setTexte] = useState(() => texteInitial ?? "");
-  const [longueur, setLongueur] = useState<LongueurReponse>("moyenne");
+  // Longueur et « Sans enseignant » vivent dans lib/reglagesProchainMessage.ts (03/10/2026,
+  // demande Bourama) : le canal en direct les modifie aussi, ils doivent rester communs.
+  const { longueur, sansEnseignant } = useReglagesProchainMessage();
+  const setLongueur = definirLongueurProchainMessage;
+  const setSansEnseignant = (valeur: boolean | ((v: boolean) => boolean)) =>
+    definirSansEnseignantProchainMessage(typeof valeur === "function" ? valeur(lireReglagesProchainMessage().sansEnseignant) : valeur);
   // Devenu un TABLEAU le 17/08 (demande Bourama : "permet l'upload de
   // plusieurs fichiers dans le chat" -- avant, un seul fichier possible
   // par message). Chaque entrée garde son propre aperçu (image only, même
@@ -218,7 +229,6 @@ export function BarreDeSaisie({
   // core/contenu_dynamique_matiere.py côté backend), puis se désactive
   // -- pas un mode permanent. Uniquement affiché si
   // boutonSansEnseignant (Classinus).
-  const [sansEnseignant, setSansEnseignant] = useState(false);
   // Bouton "Outils" (2026-07-25, étendu à la MULTI-sélection le 26/07 --
   // voir core/mcp_tools.py:lister_tous_les_outils). AUCUN outil n'est
   // envoyé au modèle par défaut, sur aucun agent : il faut en
