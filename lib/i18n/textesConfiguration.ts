@@ -66,6 +66,15 @@ const FR = {
   "action.activer": "Activer",
   "action.desactiver": "Désactiver (ne sera plus proposé à l'IA)",
   "action.ouvrir": "Ouvrir et modifier",
+  "menu.aria": "Actions pour cet élément",
+  "action.lierCode": "Lier à un code",
+  "action.partager": "Partager",
+  "action.telecharger": "Télécharger",
+  "action.publier": "Publier",
+  "confirm.supprimer": "Supprimer cet élément ? Cette action est définitive.",
+  "retour.publie": "Publié dans le catalogue public",
+  "retour.publication": "Publication en cours…",
+  "retour.nomFichierDefaut": "configuration",
   "ariaCategorie": "Catégorie de configuration",
 } as const;
 

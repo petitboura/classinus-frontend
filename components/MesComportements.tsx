@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { Plus, ScrollText, Link2, ToggleLeft, ToggleRight, Download, Sparkles } from "lucide-react";
@@ -16,6 +16,8 @@ import { Skeleton } from "./Skeleton";
 import { OngletsSegment } from "./OngletsSegment";
 import { useInfoSection } from "./SectionPage";
 import { BulleSurvol } from "./BulleSurvol";
+import { ZoneCliquable } from "./ZoneCliquable";
+import { MenuElementConfiguration } from "@/components/bureau/configuration/MenuElementConfiguration";
 
 // Section "Mes comportements" (06/08/2026, demande Bourama : "on peut en
 // mettre plusieurs hein, pas juste un") : PLUSIEURS instructions perso
@@ -94,13 +96,15 @@ export function ChipComportement({
   c,
   onOuvrir,
   onToggleActif,
+  menu,
 }: {
   c: Comportement;
   onOuvrir: (c: Comportement) => void;
   onToggleActif: (c: Comportement, e: MouseEvent) => void;
+  menu?: ReactNode;
 }) {
   return (
-    <button
+    <ZoneCliquable
       onClick={() => onOuvrir(c)}
       title="Ouvrir et modifier"
       className={`group flex max-w-[280px] flex-col gap-1 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute ${
@@ -118,7 +122,7 @@ export function ChipComportement({
             bulle ne doit pas lui voler ce clic -- seul le survol la révèle
             ici (le clic reste géré par le bouton parent). */}
         <div className="min-w-0 flex-1">
-          <BulleSurvol texte={c.description || "(pas de description)"} className="truncate text-sm text-dj-texte" revelerAuClic={false}>
+          <BulleSurvol texte={c.description || "(pas de description)"} className="block truncate text-sm text-dj-texte" revelerAuClic={false}>
             {c.nom || c.description}
           </BulleSurvol>
         </div>
@@ -131,6 +135,7 @@ export function ChipComportement({
         >
           {c.actif ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
         </span>
+        {menu}
       </div>
       {/* Badge de rattachement (lien_libelle) sur sa propre ligne, sous le
           nom -- CORRECTIF 22/08/2026 (Bourama : "le texte des sources
@@ -144,7 +149,7 @@ export function ChipComportement({
           <span className="min-w-0 truncate">{c.lien_libelle}</span>
         </span>
       )}
-    </button>
+    </ZoneCliquable>
   );
 }
 
@@ -412,7 +417,22 @@ export function MesComportements({
       {liste.length > 0 && (
         <div key={filtreOrigine} className="flex animate-dj-fade-in-rapide flex-wrap gap-2">
           {liste.filter((c) => correspondFiltre(c, filtreOrigine)).map((c) => (
-            <ChipComportement key={c.id} c={c} onOuvrir={ouvrirEdition} onToggleActif={toggleActif} />
+            <ChipComportement
+              key={c.id}
+              c={c}
+              onOuvrir={ouvrirEdition}
+              onToggleActif={toggleActif}
+              menu={
+                <MenuElementConfiguration
+                  agentId={agentId}
+                  c={c}
+                  avecActionsSkill
+                  onSupprime={(id) =>
+                    queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(agentId), (prec) => (prec || []).filter((x) => x.id !== id))
+                  }
+                />
+              }
+            />
           ))}
         </div>
       )}
