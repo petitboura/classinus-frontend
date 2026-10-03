@@ -247,6 +247,14 @@ const DUREE_FERMETURE_MS = 200;
 // fermeture, pour que tout composant sous ContexteChat.Provider (chat
 // lui-même, tiroir mobile, popups de sections) ferme le chat exactement
 // de la même façon.
+// Lecture du détail public de l'agent et de la liste de ses outils : même
+// séquence au montage et après un changement de session (voir plus bas).
+async function lireAgentEtOutils() {
+  const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
+  const outils = await lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] }));
+  return { detail, outils };
+}
+
 export function useFournirContexteChat(): ContexteChatValeur {
   const [etat, setEtat] = useState<EtatChat>("fermee");
   const [enFermeture, setEnFermeture] = useState(false);
@@ -358,8 +366,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
     let annule = false;
     (async () => {
       try {
-        const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
-        const outils = await lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] }));
+        const { detail, outils } = await lireAgentEtOutils();
         if (!annule) {
           setAgent(detail);
           setOutilsActifsAgent(outils);
@@ -426,6 +433,88 @@ export function useFournirContexteChat(): ContexteChatValeur {
           : null,
     });
   }, [historique, curseurHistorique]);
+
+  // Changement de session (connexion, déconnexion, changement de compte).
+  // Ce fournisseur vit au niveau du layout racine : il n'est plus remonté
+  // à neuf quand on passe par /connexion, donc les chargements de montage
+  // ci-dessus (faits une seule fois, souvent en visiteur) ne se
+  // reproduisent plus tout seuls. Sans ce relais, après une connexion sans
+  // rechargement de page l'historique resterait vide et la liste d'outils
+  // serait celle d'un visiteur ; après une déconnexion, l'historique et la
+  // conversation de l'ancien compte resteraient visibles. Seul un vrai
+  // changement d'identifiant déclenche ce relais (un simple rafraîchissement
+  // de jeton ou un retour sur l'onglet ne change pas l'identifiant).
+  useEffect(() => {
+    let annule = false;
+    let uidCourant: string | null | undefined;
+
+    const surChangementSession = async (uid: string | null) => {
+      if (annule) return;
+      // Première lecture : déjà couverte par les chargements de montage.
+      if (uidCourant === undefined) {
+        uidCourant = uid;
+        return;
+      }
+      if (uid === uidCourant) return;
+      uidCourant = uid;
+
+      // Tout ce qui appartenait à l'ancien compte est retiré tout de suite.
+      uidHistoriqueRef.current = uid;
+      historiqueSynchroniseRef.current = false;
+      chargementPlusEnCours.current = false;
+      setHistorique([]);
+      setCurseurHistorique(null);
+      setChargementPlusHistorique(false);
+      setErreurPlusHistorique(false);
+      setCle(crypto.randomUUID());
+      setMessagesInitiaux([]);
+      setNbMessages(0);
+      setChargementFilConversation(false);
+      setTexteInitialConversation(null);
+
+      // Détail de l'agent (public) et outils (qui dépendent de la personne).
+      try {
+        const { detail, outils } = await lireAgentEtOutils();
+        if (annule || uidCourant !== uid) return;
+        setAgent(detail);
+        setOutilsActifsAgent(outils);
+        setErreur(null);
+        setChargement("pret");
+      } catch (e) {
+        if (annule || uidCourant !== uid) return;
+        setErreur(messageErreur(e));
+        setChargement("erreur");
+      }
+
+      if (!uid) return;
+      const cache = lireCacheHistorique(uid);
+      if (cache && !historiqueSynchroniseRef.current) {
+        setHistorique(cache.fils);
+        setCurseurHistorique(cache.suivant);
+      }
+      try {
+        const page: PageFilsApi = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`);
+        if (annule || uidCourant !== uid) return;
+        historiqueSynchroniseRef.current = true;
+        setHistorique([...page.epingles, ...page.fils].map(versFilConversation));
+        setCurseurHistorique(page.suivant);
+      } catch (e) {
+        console.error("Erreur chargement historique conversations:", e);
+      }
+    };
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => surChangementSession(data.session?.user.id ?? null))
+      .catch(() => {});
+    const { data: abonnement } = supabase.auth.onAuthStateChange((_evenement, session) => {
+      void surChangementSession(session?.user.id ?? null);
+    });
+    return () => {
+      annule = true;
+      abonnement.subscription.unsubscribe();
+    };
+  }, []);
 
   const chargerPlusHistorique = useCallback(async () => {
     if (!curseurHistorique || chargementPlusEnCours.current) return;
