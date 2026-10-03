@@ -233,12 +233,12 @@ function SectionPliable({ Icone, titre, nombre, ouverte, onBasculer, grand, chil
       <button
         onClick={onBasculer}
         aria-expanded={ouverte}
-        className={`group flex w-full items-center gap-2 rounded-lg px-2.5 text-left font-medium text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-          grand ? "min-h-10 text-sm" : "min-h-8 text-xs"
+        className={`group flex w-full items-center gap-2 rounded-lg px-2.5 text-left text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+          grand ? "min-h-10" : "min-h-8"
         }`}
       >
         {Icone && <Icone size={grand ? 16 : 14} className="flex-shrink-0" />}
-        <span className="uppercase tracking-wide">{titre}</span>
+        <span>{titre}</span>
         {nombre !== undefined && <span className="text-xs font-normal opacity-70">{nombre}</span>}
         <ChevronRight size={14} className={`ml-auto flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-90" : ""}`} />
       </button>
