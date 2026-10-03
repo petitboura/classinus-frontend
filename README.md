@@ -85,7 +85,8 @@ components/
                           tableau, sans puce repliée, sans carte, sans ligne de titre ni bouton Fermer ; les
                           boutons (Filmer, Copier, Agrandir) sont dans une fine rangée au dessus, révélée au
                           survol sur ordinateur et toujours visible sur écran tactile, hors du widget pour ne
-                          jamais apparaître dans la vidéo de Filmer ; les autres contenus (code, PDF, Office,
+                          jamais apparaître dans la vidéo de Filmer, puis dans un rail d'icônes collé en haut
+                          du bloc (au survol) quand cette rangée sort de l'écran ; les autres contenus (code, PDF, Office,
                           texte) gardent la puce repliée
     minuteurs/           minuteurs (20/09/2026) : DockMinuteurs.tsx (cartes et pastilles en position fixe
                           sous la cloche, montée UNE fois dans AppShell.tsx pour tous les écrans, 03/10/2026),

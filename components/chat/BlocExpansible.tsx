@@ -19,7 +19,8 @@ import { GardeApercu } from "./GardeApercu";
 //
 // Exception : avec l'option direct (widget interactif, animation), pas de
 // puce repliée ni de carte, le contenu est affiché tout de suite dans le fil
-// avec une fine rangée de boutons au survol (voir plus bas). Tout ce qui suit
+// avec une fine rangée de boutons au survol, puis un rail d'icônes quand elle
+// sort de l'écran (voir plus bas). Tout ce qui suit
 // décrit le déroulement des autres contenus (code, PDF, Office, texte).
 //
 // Double représentation des actions, demande explicite de Bourama :
@@ -93,9 +94,10 @@ export function BlocExpansible({
   // puce repliée, sans carte autour, sans ligne de titre ni bouton Fermer.
   // Les boutons (actions supplémentaires, Copier, Agrandir) tiennent dans une
   // fine rangée au dessus du contenu, révélée au survol sur ordinateur et
-  // toujours visible sur écran tactile. Cette rangée est HORS du contenu : le
-  // bouton Filmer recadre la vidéo sur le widget, un bouton posé dessus serait
-  // filmé. Le plein écran garde son propre bouton Fermer, c'est sa sortie.
+  // toujours visible sur écran tactile, puis dans un rail d'icônes collé en haut
+  // du bloc quand cette rangée sort de l'écran. La rangée est HORS du contenu :
+  // le bouton Filmer recadre la vidéo sur le widget, un bouton posé dessus
+  // serait filmé. Le plein écran garde son propre bouton Fermer, c'est sa sortie.
   direct?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(!!direct);
@@ -373,24 +375,48 @@ export function BlocExpansible({
   }
 
   if (direct) {
-    // Sur ordinateur la rangée est invisible tant que la souris n'est pas sur
-    // le bloc (ou qu'un bouton a le focus clavier). Elle garde sa place pour
-    // que rien ne bouge à l'apparition des boutons. Sur écran tactile, pas de
-    // survol possible : elle reste visible.
+    // Deux mécanismes de boutons, comme pour les autres blocs :
+    //   1. la rangée du haut, hors du contenu : invisible tant que la souris
+    //      n'est pas sur le bloc (ou qu'un bouton a le focus clavier), mais
+    //      elle garde sa place pour que rien ne bouge à l'apparition des
+    //      boutons. Sur écran tactile, pas de survol possible : elle reste
+    //      visible ;
+    //   2. le rail d'icônes collé en haut du bloc, qui prend le relais quand la
+    //      rangée du haut est sortie de l'écran (hautVisible=false) : au survol
+    //      sur ordinateur, toujours visible sur écran tactile (un tap dans
+    //      l'iframe ne remonte pas, il n'y aurait sinon aucun moyen de le
+    //      faire apparaître).
+    // Le rail est posé sur le contenu : il peut apparaître dans la vidéo de
+    // Filmer si on fait défiler la page en filmant. La rangée du haut, elle,
+    // n'y apparaît jamais.
     const classeRangeeDirecte =
-      "mb-1 flex h-8 items-center justify-end gap-1.5 transition-opacity duration-200 " +
+      "flex shrink-0 items-center justify-end gap-1.5 transition-opacity duration-200 " +
       "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:pointer-events-none " +
       "[@media(hover:hover)]:group-hover/direct:opacity-100 [@media(hover:hover)]:group-hover/direct:pointer-events-auto " +
       "[@media(hover:hover)]:focus-within:opacity-100 [@media(hover:hover)]:focus-within:pointer-events-auto";
+    const classeRailDirect = `flex flex-col gap-1.5 transition-opacity duration-200 ${
+      hautVisible
+        ? "opacity-0 pointer-events-none"
+        : "opacity-100 pointer-events-auto [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:group-hover/rail:opacity-100 [@media(hover:hover)]:group-hover/rail:pointer-events-auto [@media(hover:hover)]:focus-within:opacity-100 [@media(hover:hover)]:focus-within:pointer-events-auto"
+    }`;
     return (
       <>
         <div className="group/direct my-2 max-w-full animate-dj-fade-in">
-          <div className={classeRangeeDirecte}>
-            <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
+          <div ref={topRowRef} className="mb-1 h-8">
+            <div className={`h-full ${classeRangeeDirecte}`}>
+              <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
+            </div>
           </div>
-          <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
-            {enfant}
-          </GardeApercu>
+          <div className="group/rail relative">
+            <div className="pointer-events-none absolute inset-0 z-10 flex justify-end">
+              <div className={`sticky top-2 mr-2 self-start ${classeRailDirect}`}>
+                <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
+              </div>
+            </div>
+            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+              {enfant}
+            </GardeApercu>
+          </div>
         </div>
         {modaleTelechargement}
       </>
