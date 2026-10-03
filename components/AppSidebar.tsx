@@ -27,7 +27,7 @@ import {
   MessageSquarePlus,
   History,
   PanelLeft,
-  Maximize2,
+  ArrowUpRight,
   Settings,
   Hourglass,
 } from "lucide-react";
@@ -826,20 +826,20 @@ export function AppSidebar({
                 </button>
                 {historiqueDeplie && (
                   <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
-                    <div className="flex items-center justify-between px-3 pb-0.5 pt-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-dj-texte-muet">Historique</span>
-                      <button
-                        onClick={() => {
-                          setHistoriqueDeplie(false);
-                          setHistoriquePleinEcran(true);
-                        }}
-                        title="Plein écran"
-                        aria-label="Afficher l'historique en plein écran"
-                        className="group flex h-7 w-7 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                      >
-                        <Maximize2 size={15} className="transition-transform duration-200 group-hover:scale-110" />
-                      </button>
-                    </div>
+                    {/* Plein écran : même style que celui de la barre de saisie, posé
+                        dehors, collé juste au-dessus du coin haut droit du panneau. */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistoriqueDeplie(false);
+                        setHistoriquePleinEcran(true);
+                      }}
+                      title="Plein écran"
+                      aria-label="Afficher l'historique en plein écran"
+                      className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
+                    >
+                      <ArrowUpRight size={12} strokeWidth={1.75} />
+                    </button>
                     <ListeHistorique
                       conversationActiveId={conversationActiveId}
                       onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
@@ -1127,6 +1127,20 @@ export function AppSidebar({
                     </button>
                     {historiqueDeplie && (
                       <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                        {/* Plein écran : même bouton que sur ordinateur, posé dehors,
+                            collé juste au-dessus du coin haut droit du panneau. */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHistoriqueDeplie(false);
+                            setHistoriquePleinEcran(true);
+                          }}
+                          title="Plein écran"
+                          aria-label="Afficher l'historique en plein écran"
+                          className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
+                        >
+                          <ArrowUpRight size={12} strokeWidth={1.75} />
+                        </button>
                         <ListeHistorique
                           conversationActiveId={conversationActiveId}
                           onSelectionner={(fil) => onSelectionnerConversation?.(fil)}

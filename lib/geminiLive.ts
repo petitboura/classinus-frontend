@@ -20,10 +20,13 @@ type ReponseToken = {
   annonce_bulle: string;
   delai_relance_secondes: number;
   relances_max: number;
+  description_outil_silence: string;
+  description_outil_reveil: string;
+  proactivite: boolean;
 };
 type OptionsGeminiLive = {
   conversationId: string;
-  surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur" | "ferme") => void;
+  surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur" | "ferme") => void;
   surErreur?: (message: string) => void;
   // La voix est un interprète : elle transmet la demande à Classinus par cette
   // fonction et reçoit en retour sa réponse écrite. Sans elle, chemin direct.
@@ -45,6 +48,14 @@ export type SessionGeminiLive = {
 };
 
 const NOM_OUTIL_CLOVIS = "demander_a_clovis";
+// Silence décidé par la voix elle même : elle appelle ces deux outils, le navigateur
+// applique sa décision (il jette tout son qui arrive tant que le silence dure).
+const NOM_OUTIL_SILENCE = "se_taire";
+const NOM_OUTIL_REVEIL = "reprendre_la_parole";
+
+function declarerOutilSansParametre(name: string, description: string) {
+  return { name, description };
+}
 
 function declarerOutilClovis(description: string) {
   return {
@@ -157,11 +168,15 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   // On retient l'état courant : les nouvelles de patience ne partent jamais
   // pendant que la voix parle déjà.
   let etatCourant = "connexion";
+  // Vrai tant que l'étudiant a demandé à la voix de se taire : elle continue d'entendre
+  // (c'est elle qui décide quand reparler) mais rien de ce qu'elle dit n'est joué.
+  let silencieux = false;
   // Nombre de demandes en cours chez Classinus : tant qu'il y en a, la voix est
   // en mode "travail" (l'onde respire) dès qu'elle ne parle plus.
   let demandesEnCours = 0;
   const etat = (nouvelEtat: Parameters<typeof signalerEtat>[0]) => {
-    const etatFinal = nouvelEtat === "ecoute" && demandesEnCours > 0 ? "travail" : nouvelEtat;
+    const horsSilence = nouvelEtat === "ferme" || nouvelEtat === "erreur" || nouvelEtat === "connexion" || nouvelEtat === "connecte";
+    const etatFinal = silencieux && !horsSilence ? "silence" : nouvelEtat === "ecoute" && demandesEnCours > 0 ? "travail" : nouvelEtat;
     etatCourant = etatFinal;
     signalerEtat(etatFinal);
   };
@@ -169,6 +184,8 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   const token = await obtenirToken();
   if (!token.model || !token.url) throw new Error("Impossible d initialiser le canal vocal.");
   const outilClovis = declarerOutilClovis(token.description_outil);
+  const outilSilence = declarerOutilSansParametre(NOM_OUTIL_SILENCE, token.description_outil_silence);
+  const outilReveil = declarerOutilSansParametre(NOM_OUTIL_REVEIL, token.description_outil_reveil);
 
   const entree = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const contexteEntree = new AudioContext();
@@ -243,7 +260,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (dernieresAnnonces.length > 6) dernieresAnnonces.shift();
   };
   const lireProchaineAnnonce = () => {
-    if (ferme || !pret || annonceEnCours || etatCourant === "reponse" || websocket.readyState !== WebSocket.OPEN) return;
+    if (ferme || !pret || silencieux || annonceEnCours || etatCourant === "reponse" || websocket.readyState !== WebSocket.OPEN) return;
     const prochaine = annoncesEnAttente.shift();
     if (!prochaine) return;
     annonceEnCours = true;
@@ -251,7 +268,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   };
   const ajouterAnnonce = (consigne: string | undefined, texte: string) => {
     const propre = texte.trim();
-    if (ferme || !pret || !propre || !consigne?.trim() || websocket.readyState !== WebSocket.OPEN) return;
+    if (ferme || !pret || silencieux || !propre || !consigne?.trim() || websocket.readyState !== WebSocket.OPEN) return;
     if (dejaDit(propre) || annoncesEnAttente.some((a) => a.texte === propre)) return;
     retenirAnnonce(propre);
     annoncesEnAttente.push({ consigne, texte: propre });
@@ -280,7 +297,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     const minuteur = setInterval(() => {
       if (ferme || websocket.readyState !== WebSocket.OPEN) return;
       if (envoyees >= token.relances_max) { clearInterval(minuteur); minuteursRelance.delete(minuteur); return; }
-      if (etatCourant === "reponse") return;
+      if (etatCourant === "reponse" || silencieux) return;
       envoyees += 1;
       websocket.send(JSON.stringify({ realtimeInput: { text: token.relance_attente } }));
     }, delai);
@@ -306,7 +323,10 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
         inputAudioTranscription: {},
         outputAudioTranscription: {},
         systemInstruction: { parts: [{ text: token.consignes }] },
-        tools: [{ functionDeclarations: [outilClovis] }],
+        tools: [{ functionDeclarations: [outilClovis, outilSilence, outilReveil] }],
+        // Écoute sélective : la voix choisit de ne pas répondre à ce qui ne lui est pas adressé.
+        // Réglable côté serveur (GEMINI_LIVE_PROACTIVITE) si le modèle vocal ne l'accepte pas.
+        ...(token.proactivite ? { proactivity: { proactiveAudio: true } } : {}),
       },
     }));
     etat("connecte");
@@ -325,12 +345,36 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     const serveur = message.serverContent;
     if (serveur?.modelTurn?.parts) {
       for (const part of serveur.modelTurn.parts) {
+        if (silencieux) continue;
         if (part.inlineData?.data) { lecteur.jouer(base64VersInt16(part.inlineData.data)); etat("reponse"); }
       }
     }
     if (message.toolCall?.functionCalls) {
       const functionResponses = [];
       for (const appel of message.toolCall.functionCalls) {
+        // Silence demandé par l'étudiant, décidé par la voix : plus un son, plus d'annonce
+        // en attente. SILENT : le résultat est noté sans qu'elle réponde « d'accord ».
+        if (appel.name === NOM_OUTIL_SILENCE) {
+          silencieux = true;
+          lecteur.interrompre();
+          annoncesEnAttente.length = 0;
+          annonceEnCours = false;
+          etat("ecoute");
+          functionResponses.push({ id: appel.id, name: appel.name, response: { result: "Silence en cours.", scheduling: "SILENT" } });
+          continue;
+        }
+        // L'étudiant s'adresse de nouveau à la voix : elle peut parler et traiter sa demande.
+        if (appel.name === NOM_OUTIL_REVEIL) {
+          silencieux = false;
+          etat("ecoute");
+          functionResponses.push(reponseOutil(appel, { result: "Tu peux parler de nouveau." }));
+          continue;
+        }
+        // Pendant le silence, aucune demande n'est envoyée à Classinus.
+        if (silencieux && appel.name === NOM_OUTIL_CLOVIS) {
+          functionResponses.push({ id: appel.id, name: appel.name, response: { result: "Silence demandé : ne rien dire.", scheduling: "SILENT" } });
+          continue;
+        }
         if (appel.name !== NOM_OUTIL_CLOVIS) {
           functionResponses.push(reponseOutil(appel, { error: "Outil inconnu." }));
           continue;
@@ -355,6 +399,14 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
         }
       }
       if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ toolResponse: { functionResponses } }));
+    }
+    // L'étudiant a pris la parole pendant que la voix parlait : Gemini arrête sa
+    // génération et le signale ici. Le son déjà reçu (envoyé en avance, plus vite
+    // que la lecture) doit être coupé tout de suite, sinon la voix finit sa phrase
+    // puis répond seulement après.
+    if (serveur?.interrupted) {
+      lecteur.interrompre();
+      etat("ecoute");
     }
     if (serveur?.turnComplete) {
       etat("ecoute");

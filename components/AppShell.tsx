@@ -22,6 +22,7 @@ import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
+import { DockMinuteurs } from "@/components/chat/minuteurs/DockMinuteurs";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
@@ -253,6 +254,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               dans cette appli, voir commentaire dans
               BoutonNotifications.tsx. */}
           <BoutonNotifications connecte={connecte} />
+          {/* 03/10/2026, demande Bourama : minuteurs (cartes, pastilles) et
+              bouton horloge sur tous les écrans, à gauche de la cloche. Une
+              seule copie ici, plus une par chat. Réservé aux comptes connectés
+              (un minuteur est enregistré sur le compte). */}
+          {connecte && <DockMinuteurs />}
           <SyncTempsReelCache connecte={connecte} />
           {/* Guide de decouverte, etape 4 (16/09/2026, demande Bourama) :
               meme condition que AppSidebar juste en dessous -- masque sur
