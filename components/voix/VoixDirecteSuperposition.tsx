@@ -15,7 +15,7 @@
 
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Minimize2, X } from "lucide-react";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { OndeVoix } from "@/components/voix/OndeVoix";
 import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
@@ -25,7 +25,15 @@ import { COUCHE_AGENT_BULLE, COUCHE_VOIX_PLEIN_ECRAN } from "@/lib/couchesAgent"
 
 const TAILLE_BULLE = 56;
 const MARGE_BORD = 8;
-const ECART_CURSEUR = 60;
+// Distance entre la pointe du curseur et le centre de la bulle de voix du canal. La
+// bulle (rayon 28) reste ainsi juste derrière la flèche, sans la recouvrir de face.
+const DISTANCE_DERRIERE_CURSEUR = 40;
+// Déplacement minimal du curseur (en pixels) avant de considérer qu'il change de
+// direction : évite que les micro mouvements fassent tourner la bulle pour rien.
+const SEUIL_DIRECTION = 8;
+// Direction avant le premier déplacement : la bulle est en haut à gauche, comme
+// avant, ce qui correspond à un curseur qui descend vers la droite.
+const ANGLE_DEPART = Math.PI / 4;
 const POSITION_REPLI_Y = 72;
 
 // Même zone basse que les boutons du canal en direct : barre d'onglets web et
@@ -59,11 +67,53 @@ export function VoixDirecteSuperposition() {
   const zero = useMotionValue(0);
   const curseurX = curseur?.x ?? zero;
   const curseurY = curseur?.y ?? zero;
-  const cibleX = useTransform(curseurX, (v) =>
-    typeof window === "undefined" ? 0 : limiter(v - ECART_CURSEUR, MARGE_BORD, window.innerWidth - TAILLE_BULLE - MARGE_BORD)
+  // Correctif (03/10/2026, demande Bourama) : la bulle ne se place plus à un endroit
+  // fixe au dessus du curseur, ce qui la mettait devant quand le curseur montait.
+  // Elle suit le curseur : elle reste du côté d'où il vient et tourne autour de lui
+  // quand il change de direction. Le curseur est toujours dessiné au dessus d'elle
+  // (couche COUCHE_AGENT_CURSEUR, voir lib/couchesAgent.ts).
+  const angleCible = useMotionValue(ANGLE_DEPART);
+  useEffect(() => {
+    if (!curseur) return;
+    // Point de départ du dernier mouvement mesuré : mis à jour seulement quand le
+    // curseur a parcouru SEUIL_DIRECTION, pour que de petits pas successifs finissent
+    // par compter au lieu d'être ignorés un à un.
+    let ancre: { x: number; y: number } | null = null;
+    const mesurer = () => {
+      const x = curseur.x.get();
+      const y = curseur.y.get();
+      if (!ancre) {
+        ancre = { x, y };
+        return;
+      }
+      const dx = x - ancre.x;
+      const dy = y - ancre.y;
+      if (Math.hypot(dx, dy) < SEUIL_DIRECTION) return;
+      ancre = { x, y };
+      // Dépliage de l'angle : la bulle prend toujours le chemin le plus court au lieu
+      // de refaire presque un tour complet quand l'angle passe de 179° à -179°.
+      const courant = angleCible.get();
+      const delta = Math.atan2(dy, dx) - courant;
+      angleCible.set(courant + ((((delta + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI);
+    };
+    const arreterX = curseur.x.on("change", mesurer);
+    const arreterY = curseur.y.on("change", mesurer);
+    return () => {
+      arreterX();
+      arreterY();
+    };
+  }, [curseur, angleCible]);
+  const angle = useSpring(angleCible, { stiffness: 90, damping: 16, mass: 0.8 });
+
+  const cibleX = useTransform([curseurX, angle], ([x, a]: number[]) =>
+    typeof window === "undefined"
+      ? 0
+      : limiter(x - Math.cos(a) * DISTANCE_DERRIERE_CURSEUR - TAILLE_BULLE / 2, MARGE_BORD, window.innerWidth - TAILLE_BULLE - MARGE_BORD)
   );
-  const cibleY = useTransform(curseurY, (v) =>
-    typeof window === "undefined" ? 0 : limiter(v - ECART_CURSEUR, MARGE_BORD, window.innerHeight - TAILLE_BULLE - MARGE_BORD)
+  const cibleY = useTransform([curseurY, angle], ([y, a]: number[]) =>
+    typeof window === "undefined"
+      ? 0
+      : limiter(y - Math.sin(a) * DISTANCE_DERRIERE_CURSEUR - TAILLE_BULLE / 2, MARGE_BORD, window.innerHeight - TAILLE_BULLE - MARGE_BORD)
   );
   const suivreX = useSpring(cibleX, { stiffness: 320, damping: 32, mass: 0.6 });
   const suivreY = useSpring(cibleY, { stiffness: 320, damping: 32, mass: 0.6 });
