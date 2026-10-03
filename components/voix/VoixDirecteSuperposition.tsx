@@ -1,7 +1,7 @@
 "use client";
 
 // Créé le 02/10/2026, Bourama : affichage de la voix en direct. Monté une
-// seule fois dans AppShell, il pose l'onde (components/voix/OndeVoix.tsx) par
+// seule fois dans InteractionGlobale, il pose l'onde (components/voix/OndeVoix.tsx) par
 // dessus tout, jamais comme un but final :
 // - dans le chat : onde en plein écran, avec en haut à droite un bouton pour
 //   la réduire en bulle sur le côté (le chat reste visible derrière) et un

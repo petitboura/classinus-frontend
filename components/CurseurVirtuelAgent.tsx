@@ -4,7 +4,7 @@
 // plan-agent-applicatif-clovis.md), chantier B. Rendu visuel du curseur
 // virtuel de Classinus (état et trajectoire dans lib/contexteCurseurVirtuel.tsx,
 // même séparation que ChatFlottant pour ContexteChat). Monté une seule
-// fois dans AppShell, à côté de ChatFlottant.
+// fois au niveau du layout racine (InteractionGlobale.tsx), dans un portail.
 //
 // Purement décoratif : ce composant ne fait qu'afficher une position et
 // une forme calculées ailleurs, il ne déclenche jamais lui même de clic

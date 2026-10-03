@@ -347,7 +347,7 @@ export function BarreDeSaisie({
   const canalEnDirect = useContext(ContexteCanalEnDirect);
   // Mode vocal du menu des utilitaires : conversation vocale Gemini Live
   // liée à la conversation du chat affichée.
-  // Depuis le 02/10/2026, la voix est une pièce partagée montée dans AppShell
+  // Depuis le 02/10/2026, la voix est une pièce partagée montée dans InteractionGlobale
   // (lib/contexteVoixDirecte.tsx) : cette barre ne fait que la piloter.
   const voixDirecte = useContext(ContexteVoixDirecte);
   const geminiLive = {

@@ -230,7 +230,7 @@ export type DemandeVoixEnAttente = {
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
-// dans ChatFlottant.tsx lui-même. Remonté ici dans AppShell.tsx pour
+// dans ChatFlottant.tsx lui-même. Remonté ici, au niveau du layout racine (InteractionGlobale.tsx), pour
 // pouvoir être piloté depuis d'autres écrans (ex: bouton "Ouvrir le
 // chat" sur l'écran d'accueil, 16/08/2026) -- ChatFlottant devient un
 // composant contrôlé (etat + setEtat reçus en props).
@@ -242,7 +242,7 @@ export const ContexteChat = createContext<ContexteChatValeur | null>(null);
 const DUREE_FERMETURE_MS = 200;
 
 // Fournisseur de la valeur de contexte, monté une seule fois dans
-// AppShell.tsx (même esprit que useFournirFenetres dans
+// InteractionGlobale.tsx (même esprit que useFournirFenetres dans
 // contexteFenetres.tsx) -- centralise l'état ET le mécanisme de fondu de
 // fermeture, pour que tout composant sous ContexteChat.Provider (chat
 // lui-même, tiroir mobile, popups de sections) ferme le chat exactement
@@ -356,7 +356,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
   // ce chargement initial (détail agent + outils + historique) vivait
   // avant dans ChatFlottant.tsx, monté une seule fois au niveau du
   // layout. Déplacé ici, dans le fournisseur de contexte lui-même
-  // (également monté une seule fois dans AppShell.tsx), pour qu'il ne
+  // (également monté une seule fois dans InteractionGlobale.tsx), pour qu'il ne
   // se déclenche qu'UNE FOIS quel que soit le nombre de composants qui
   // liront ce contexte ensuite (ChatFlottant.tsx aujourd'hui, la future
   // route /chat demain) -- sans ce déplacement, une future page /chat
@@ -622,7 +622,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
 
   // 07/09/2026, même correctif préventif que useFournirContexteRetour
   // (lib/contexteRetour.tsx) : cet objet était recréé à chaque re-rendu
-  // d'AppShell.tsx (qui fournit ce contexte), même quand rien ici n'avait
+  // d'InteractionGlobale.tsx (qui fournit ce contexte), même quand rien ici n'avait
   // réellement changé -- les fonctions setState/fermerAvecFondu sont déjà
   // stables, seules les valeurs d'état ci-dessous changent vraiment.
   // Mémoiser évite que du code dépendant de l'identité de cet objet (dans
@@ -846,7 +846,7 @@ export function useOuvrirDecouverteCanal() {
     // ne fait que programmer les setState (actif, conversationId) --
     // envoyerMessageEtudiant lit conversationId via obtenirConversationIdCanal
     // (lib/canalAgentApplicatif.ts), qui lit le pont canalGlobal, lui-même
-    // mis à jour par l'effet enregistrerCanalEnDirect de AppShell.tsx
+    // mis à jour par l'effet enregistrerCanalEnDirect de InteractionGlobale.tsx
     // (déclenché par ce même setState). Un appel synchrone ici lirait
     // encore l'ancienne valeur (null) et échouerait silencieusement. Le
     // report d'un tick (après le prochain rendu + effets passifs de
