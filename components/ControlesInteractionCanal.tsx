@@ -38,7 +38,7 @@ export function ControlesInteractionCanal() {
   const modeInteraction = contexte?.modeInteraction ?? "texte";
   const moteurChoisi = contexte?.moteurDictee ?? "whisper";
   const conversationId = contexte?.actif ? contexte.conversationId : null;
-  // Depuis le 02/10/2026, la voix est une pièce partagée (AppShell) : ce bouton
+  // Depuis le 02/10/2026, la voix est une pièce partagée (InteractionGlobale) : ce bouton
   // et le Mode vocal du chat pilotent la même session, jamais deux voix.
   const voixDirecte = useContext(ContexteVoixDirecte);
   const geminiLive = {

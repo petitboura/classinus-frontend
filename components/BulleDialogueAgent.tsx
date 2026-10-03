@@ -55,7 +55,7 @@ import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { COUCHE_AGENT_BULLE } from "@/lib/couchesAgent";
 
 // Chargé à la demande : le rendu complet (code, formules, schémas) est
-// lourd et la bulle vit dans AppShell, donc sur toutes les pages. Ce code
+// lourd et la bulle vit au niveau du layout racine, donc sur toutes les pages. Ce code
 // n'est téléchargé qu'à la toute première apparition d'une réponse.
 const RenduMarkdownAutonome = dynamic(
   () => import("@/components/chat/RenduMarkdownAutonome").then((m) => m.RenduMarkdownAutonome),

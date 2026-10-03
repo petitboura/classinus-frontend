@@ -1,7 +1,7 @@
 "use client";
 
 // Créé le 02/10/2026, Bourama : voix en direct (Gemini Live). Pièce partagée,
-// montée une seule fois dans AppShell, comme le canal en direct. Avant, la
+// montée une seule fois au niveau du layout racine (InteractionGlobale.tsx), comme le canal en direct. Avant, la
 // voix vivait dans la barre de saisie du chat et ne pouvait servir qu'à elle.
 // Ici, une seule session de voix existe pour toute l'appli : le chat s'en sert
 // aujourd'hui, le canal en direct pourra s'en servir demain sans en créer une
@@ -51,7 +51,7 @@ export type ContexteVoixDirecteValeur = {
 export const ContexteVoixDirecte = createContext<ContexteVoixDirecteValeur | null>(null);
 
 // Ce dont la voix a besoin du chat. Passé en argument (et non lu par
-// useContext) parce que ce hook tourne dans AppShell, au dessus des Providers
+// useContext) parce que ce hook tourne dans InteractionGlobale, au dessus des Providers
 // qu'il alimente.
 type DependancesVoix = {
   chatPretPourVoix: (conversationId: string) => boolean;

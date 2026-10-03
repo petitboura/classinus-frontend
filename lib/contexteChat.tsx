@@ -230,7 +230,7 @@ export type DemandeVoixEnAttente = {
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
-// dans ChatFlottant.tsx lui-même. Remonté ici dans AppShell.tsx pour
+// dans ChatFlottant.tsx lui-même. Remonté ici, au niveau du layout racine (InteractionGlobale.tsx), pour
 // pouvoir être piloté depuis d'autres écrans (ex: bouton "Ouvrir le
 // chat" sur l'écran d'accueil, 16/08/2026) -- ChatFlottant devient un
 // composant contrôlé (etat + setEtat reçus en props).
@@ -242,11 +242,19 @@ export const ContexteChat = createContext<ContexteChatValeur | null>(null);
 const DUREE_FERMETURE_MS = 200;
 
 // Fournisseur de la valeur de contexte, monté une seule fois dans
-// AppShell.tsx (même esprit que useFournirFenetres dans
+// InteractionGlobale.tsx (même esprit que useFournirFenetres dans
 // contexteFenetres.tsx) -- centralise l'état ET le mécanisme de fondu de
 // fermeture, pour que tout composant sous ContexteChat.Provider (chat
 // lui-même, tiroir mobile, popups de sections) ferme le chat exactement
 // de la même façon.
+// Lecture du détail public de l'agent et de la liste de ses outils : même
+// séquence au montage et après un changement de session (voir plus bas).
+async function lireAgentEtOutils() {
+  const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
+  const outils = await lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] }));
+  return { detail, outils };
+}
+
 export function useFournirContexteChat(): ContexteChatValeur {
   const [etat, setEtat] = useState<EtatChat>("fermee");
   const [enFermeture, setEnFermeture] = useState(false);
@@ -348,7 +356,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
   // ce chargement initial (détail agent + outils + historique) vivait
   // avant dans ChatFlottant.tsx, monté une seule fois au niveau du
   // layout. Déplacé ici, dans le fournisseur de contexte lui-même
-  // (également monté une seule fois dans AppShell.tsx), pour qu'il ne
+  // (également monté une seule fois dans InteractionGlobale.tsx), pour qu'il ne
   // se déclenche qu'UNE FOIS quel que soit le nombre de composants qui
   // liront ce contexte ensuite (ChatFlottant.tsx aujourd'hui, la future
   // route /chat demain) -- sans ce déplacement, une future page /chat
@@ -358,8 +366,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
     let annule = false;
     (async () => {
       try {
-        const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
-        const outils = await lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] }));
+        const { detail, outils } = await lireAgentEtOutils();
         if (!annule) {
           setAgent(detail);
           setOutilsActifsAgent(outils);
@@ -426,6 +433,88 @@ export function useFournirContexteChat(): ContexteChatValeur {
           : null,
     });
   }, [historique, curseurHistorique]);
+
+  // Changement de session (connexion, déconnexion, changement de compte).
+  // Ce fournisseur vit au niveau du layout racine : il n'est plus remonté
+  // à neuf quand on passe par /connexion, donc les chargements de montage
+  // ci-dessus (faits une seule fois, souvent en visiteur) ne se
+  // reproduisent plus tout seuls. Sans ce relais, après une connexion sans
+  // rechargement de page l'historique resterait vide et la liste d'outils
+  // serait celle d'un visiteur ; après une déconnexion, l'historique et la
+  // conversation de l'ancien compte resteraient visibles. Seul un vrai
+  // changement d'identifiant déclenche ce relais (un simple rafraîchissement
+  // de jeton ou un retour sur l'onglet ne change pas l'identifiant).
+  useEffect(() => {
+    let annule = false;
+    let uidCourant: string | null | undefined;
+
+    const surChangementSession = async (uid: string | null) => {
+      if (annule) return;
+      // Première lecture : déjà couverte par les chargements de montage.
+      if (uidCourant === undefined) {
+        uidCourant = uid;
+        return;
+      }
+      if (uid === uidCourant) return;
+      uidCourant = uid;
+
+      // Tout ce qui appartenait à l'ancien compte est retiré tout de suite.
+      uidHistoriqueRef.current = uid;
+      historiqueSynchroniseRef.current = false;
+      chargementPlusEnCours.current = false;
+      setHistorique([]);
+      setCurseurHistorique(null);
+      setChargementPlusHistorique(false);
+      setErreurPlusHistorique(false);
+      setCle(crypto.randomUUID());
+      setMessagesInitiaux([]);
+      setNbMessages(0);
+      setChargementFilConversation(false);
+      setTexteInitialConversation(null);
+
+      // Détail de l'agent (public) et outils (qui dépendent de la personne).
+      try {
+        const { detail, outils } = await lireAgentEtOutils();
+        if (annule || uidCourant !== uid) return;
+        setAgent(detail);
+        setOutilsActifsAgent(outils);
+        setErreur(null);
+        setChargement("pret");
+      } catch (e) {
+        if (annule || uidCourant !== uid) return;
+        setErreur(messageErreur(e));
+        setChargement("erreur");
+      }
+
+      if (!uid) return;
+      const cache = lireCacheHistorique(uid);
+      if (cache && !historiqueSynchroniseRef.current) {
+        setHistorique(cache.fils);
+        setCurseurHistorique(cache.suivant);
+      }
+      try {
+        const page: PageFilsApi = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`);
+        if (annule || uidCourant !== uid) return;
+        historiqueSynchroniseRef.current = true;
+        setHistorique([...page.epingles, ...page.fils].map(versFilConversation));
+        setCurseurHistorique(page.suivant);
+      } catch (e) {
+        console.error("Erreur chargement historique conversations:", e);
+      }
+    };
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => surChangementSession(data.session?.user.id ?? null))
+      .catch(() => {});
+    const { data: abonnement } = supabase.auth.onAuthStateChange((_evenement, session) => {
+      void surChangementSession(session?.user.id ?? null);
+    });
+    return () => {
+      annule = true;
+      abonnement.subscription.unsubscribe();
+    };
+  }, []);
 
   const chargerPlusHistorique = useCallback(async () => {
     if (!curseurHistorique || chargementPlusEnCours.current) return;
@@ -533,7 +622,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
 
   // 07/09/2026, même correctif préventif que useFournirContexteRetour
   // (lib/contexteRetour.tsx) : cet objet était recréé à chaque re-rendu
-  // d'AppShell.tsx (qui fournit ce contexte), même quand rien ici n'avait
+  // d'InteractionGlobale.tsx (qui fournit ce contexte), même quand rien ici n'avait
   // réellement changé -- les fonctions setState/fermerAvecFondu sont déjà
   // stables, seules les valeurs d'état ci-dessous changent vraiment.
   // Mémoiser évite que du code dépendant de l'identité de cet objet (dans
@@ -757,7 +846,7 @@ export function useOuvrirDecouverteCanal() {
     // ne fait que programmer les setState (actif, conversationId) --
     // envoyerMessageEtudiant lit conversationId via obtenirConversationIdCanal
     // (lib/canalAgentApplicatif.ts), qui lit le pont canalGlobal, lui-même
-    // mis à jour par l'effet enregistrerCanalEnDirect de AppShell.tsx
+    // mis à jour par l'effet enregistrerCanalEnDirect de InteractionGlobale.tsx
     // (déclenché par ce même setState). Un appel synchrone ici lirait
     // encore l'ancienne valeur (null) et échouerait silencieusement. Le
     // report d'un tick (après le prochain rendu + effets passifs de

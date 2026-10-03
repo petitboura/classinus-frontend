@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { lireMonProfil, mettreAJourMonProfil } from "@/lib/api";
@@ -10,10 +10,10 @@ import { FenetresSections } from "@/components/chat/FenetresSections";
 import { GuideFlottant } from "@/components/GuideFlottant";
 import { CatalogueClovis } from "@/components/CatalogueClovis";
 import { PaletteCommandes } from "@/components/PaletteCommandes";
-import { ContexteChat, useFournirContexteChat } from "@/lib/contexteChat";
+import { ContexteChat } from "@/lib/contexteChat";
 import { ContexteCatalogue } from "@/lib/contexteCatalogue";
 import { ContexteFenetres, useFournirFenetres } from "@/lib/contexteFenetres";
-import { ContexteRetour, useFournirContexteRetour } from "@/lib/contexteRetour";
+import { ContexteRetour } from "@/lib/contexteRetour";
 import { ContexteDossiersCataloguePublic, useFournirDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { BarreOngletsNative } from "@/components/mobile/BarreOngletsNative";
 import { BarreOngletsWeb } from "@/components/mobile/BarreOngletsWeb";
@@ -23,20 +23,7 @@ import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { DockMinuteurs } from "@/components/chat/minuteurs/DockMinuteurs";
-import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
-import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
-import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
-import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
-import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
-import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
-import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
-import { ContexteVoixDirecte, useFournirVoixDirecte } from "@/lib/contexteVoixDirecte";
-import {
-  ContexteCanalEnDirect,
-  useFournirCanalEnDirect,
-  enregistrerCanalEnDirect,
-} from "@/lib/contexteCanalEnDirect";
 import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { estPageChat } from "@/lib/routesApp";
 
@@ -69,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // fermeture (enFermeture/fermerAvecFondu, avant local à ChatFlottant.tsx)
   // viennent maintenant tous de ce même fournisseur -- voir
   // lib/contexteChat.tsx.
-  const contexteChatValeur = useFournirContexteChat();
+  const contexteChatValeur = useContext(ContexteChat)!;
   const { etat: etatChat, setEtat: setEtatChat } = contexteChatValeur;
   // Ref pont entre ChatFlottant (propriétaire de nouvelleConversation) et
   // PaletteCommandes (composant frère, 22/08/2026, chantier "grandes
@@ -81,7 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // 31/08/2026, demande Bourama : le bouton retour (natif ET web mobile)
   // doit fermer ce qui est ouvert par-dessus l'appli au lieu de fermer
   // l'appli elle-même -- voir lib/contexteRetour.tsx pour le mécanisme.
-  const contexteRetourValeur = useFournirContexteRetour();
+  const contexteRetourValeur = useContext(ContexteRetour)!;
   // 09/09/2026, demande Bourama : les dossiers de la bibliothèque
   // publique (+ ceux déjà attachés) doivent être chargés dès l'ouverture
   // de l'app, en arrière-plan, pour que BibliothequePublique.tsx les
@@ -89,17 +76,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // lib/contexteDossiersCataloguePublic.tsx. Déclenché juste en dessous,
   // dès que la session est confirmée.
   const dossiersCataloguePublicValeur = useFournirDossiersCataloguePublic();
-  const curseurVirtuelValeur = useFournirCurseurVirtuel();
-  // Chantier I (canal en direct) : store global, monté ici au niveau du
-  // layout racine pour survivre à tout changement de section -- voir
-  // lib/contexteCanalEnDirect.tsx.
-  const canalEnDirectValeur = useFournirCanalEnDirect();
-  // Voix en direct (02/10/2026) : une seule session pour toute l'appli, voir
-  // lib/contexteVoixDirecte.tsx.
-  const voixDirecteValeur = useFournirVoixDirecte({
-    chatPretPourVoix: contexteChatValeur.chatPretPourVoix,
-    deposerDemandeVoix: contexteChatValeur.deposerDemandeVoix,
-  });
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);
@@ -110,9 +86,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // argument (contrairement à useFournirMinuteurs juste au-dessus) :
   // volontairement indépendant, voir le commentaire dans ce fichier.
   const statutUtilisateurValeur = useFournirStatutUtilisateur();
-  useEffect(() => {
-    enregistrerCanalEnDirect(canalEnDirectValeur);
-  }, [canalEnDirectValeur]);
   // Ajouté le 21/09/2026 (connexion Google) : un compte cree via "Continuer
   // avec Google" n'a jamais rempli le formulaire d'inscription (qui est ce
   // qui donne d'habitude nom_affiche, voir app/inscription/page.tsx), donc
@@ -136,29 +109,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
     })();
   }, [connecte]);
-  // Chantier F : même principe, pour que lib/canalAgentApplicatif.ts
-  // puisse déplacer le curseur virtuel avant un clic générique.
-  useEffect(() => {
-    enregistrerDeplacementCurseur(curseurVirtuelValeur.deplacerVers);
-  }, [curseurVirtuelValeur.deplacerVers]);
-  // Correctif (19/09/2026, decision Bourama : "c'est la souris du LLM
-  // donc il doit toujours être visible dès les premières réponses") :
-  // le curseur virtuel apparaît dès que le canal en direct s'active,
-  // pas seulement au moment d'un premier clic -- et disparaît quand le
-  // canal se désactive. afficher/masquer plutôt que deplacerVers : pas
-  // de trajectoire à jouer ici, juste une apparition/disparition.
-  const canalActif = canalEnDirectValeur.actif;
-  const { afficher: afficherCurseur, masquer: masquerCurseur } = curseurVirtuelValeur;
-  useEffect(() => {
-    if (canalActif) afficherCurseur();
-    else masquerCurseur();
-  }, [canalActif, afficherCurseur, masquerCurseur]);
   // Le catalogue "Pourquoi Classinus ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
-  // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui
-  // lit le contexte via useContext -- AppShell est le composant qui
-  // FOURNIT ce contexte à ses enfants, il n'est pas lui-même sous son
-  // propre Provider et ne peut donc pas le consommer ainsi).
+  // Le contexte de retour est partagé au niveau du layout racine.
   useEffect(() => {
     if (!catalogueOuvert) return;
     const id = "catalogue-clovis";
@@ -226,13 +179,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ContexteRetour.Provider value={contexteRetourValeur}>
-    <ContexteChat.Provider value={contexteChatValeur}>
     <ContexteCatalogue.Provider value={{ ouvrir: () => setCatalogueOuvert(true) }}>
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
-    <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
-    <ContexteCanalEnDirect.Provider value={canalEnDirectValeur}>
-    <ContexteVoixDirecte.Provider value={voixDirecteValeur}>
     <ContexteMinuteurs.Provider value={minuteursValeur}>
     <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
@@ -376,12 +324,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             natif={natif}
           />
           <FenetresSections />
-          <CurseurVirtuelAgent />
-          <BulleDialogueAgent />
-          <VoixDirecteSuperposition />
-          <BoutonJournalAgent />
-          <CanalEnDirectFlottant />
-          <PontMessageCanalVersChat />
           <PaletteCommandes
             connecte={connecte}
             etatChat={etatChat}
@@ -394,12 +336,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </ContexteFenetres.Provider>
     </ContexteStatutUtilisateur.Provider>
     </ContexteMinuteurs.Provider>
-    </ContexteVoixDirecte.Provider>
-    </ContexteCanalEnDirect.Provider>
-    </ContexteCurseurVirtuel.Provider>
     </ContexteDossiersCataloguePublic.Provider>
     </ContexteCatalogue.Provider>
-    </ContexteChat.Provider>
-    </ContexteRetour.Provider>
   );
 }

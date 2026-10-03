@@ -30,6 +30,12 @@ app/
   layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG
 
 components/
+  InteractionGlobale.tsx  couche montée une seule fois au niveau du layout racine : fournisseurs du chat,
+                          du retour, du curseur, du canal en direct et de la voix, plus les éléments
+                          flottants du canal (curseur, bulle, journal, bouton, superposition vocale) rendus
+                          dans un portail. Ils restent donc en place en passant de l'app aux pages
+                          Découvrir. À chaque changement de compte, la voix et le canal sont coupés et
+                          le contexte du chat recharge son historique et ses outils.
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
                           components/mobile/ à la place
@@ -40,7 +46,7 @@ components/
                           et VoixDirecteSuperposition (onde plein écran dans le chat, bulle réduite,
                           bulle qui suit le curseur de Classinus quand le canal en direct est actif).
                           Aucun texte d'état à l'écran. Session unique partagée : lib/contexteVoixDirecte.tsx,
-                          montée dans AppShell ; réglages (modèle, consignes, relances) côté serveur
+                          montée dans InteractionGlobale ; réglages (modèle, consignes, relances) côté serveur
                           dans core/gemini_live_config.py.
   mobile/
     BarreOngletsNative.tsx  vraie barre d'onglets système (plugin Capgo, pas une barre CSS/React) :
