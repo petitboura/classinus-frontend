@@ -151,6 +151,7 @@ function estMessageActionSysteme(valeur: unknown): valeur is MessageActionSystem
 type NotifierWeb = (evenement: string, donnees: Record<string, unknown>) => void;
 let notifierWeb: NotifierWeb | null = null;
 let clicEnCours = false;
+const DELAI_ENTRE_TOUCHES_MS = 4;
 
 function decrireActionSysteme(type: string, parametres: Record<string, unknown>): string {
   switch (type) {
@@ -282,6 +283,10 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         const texte = String(parametres.texte ?? "");
         if (!texte) return { erreur: "texte vide" };
         await restaurerFocusSousSuperposition();
+        // Par defaut la bibliotheque attend 300 ms entre deux touches (un texte
+        // de 100 lettres prenait 30 secondes). Delai court, assez pour que les
+        // applications ne perdent aucune lettre.
+        keyboard.config.autoDelayMs = DELAI_ENTRE_TOUCHES_MS;
         await keyboard.type(texte);
         return { ok: true };
       }

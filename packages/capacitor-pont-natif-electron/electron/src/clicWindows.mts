@@ -4,26 +4,14 @@ import { existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
+import { blocCompilationUnique } from "./compilationUnique.mjs";
 
 export type ResultatClicAccessible =
   | { statut: "effectue"; action: string }
   | { statut: "indisponible"; raison: string; diagnostic?: string }
   | { statut: "incertain"; raison: string };
 
-export function construireScriptClic(x: number, y: number, pidClassinus: number, marqueur: string): string {
-  if (![x, y, pidClassinus].every(Number.isSafeInteger)) throw new Error("Coordonnées de clic invalides.");
-  const chemin = marqueur.replaceAll("'", "''");
-  return `
-$ErrorActionPreference = 'Stop'
-try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
-function Sortir($statut, $detail) {
-  @{statut=$statut; action=$detail; raison=$detail} | ConvertTo-Json -Compress
-}
-try {
-  Add-Type -AssemblyName UIAutomationClient
-  Add-Type -AssemblyName UIAutomationTypes
-  Add-Type -AssemblyName WindowsBase
-  Add-Type -TypeDefinition @'
+const CODE_CLIC = `
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
@@ -64,7 +52,22 @@ public static class CibleClic {
     if(SendMessageTimeout(h,0x00F5,IntPtr.Zero,IntPtr.Zero,2,2000,out resultat)==IntPtr.Zero) throw new Exception("Le bouton Windows n'a pas confirmé le clic.");
   }
 }
-'@
+`;
+
+export function construireScriptClic(x: number, y: number, pidClassinus: number, marqueur: string): string {
+  if (![x, y, pidClassinus].every(Number.isSafeInteger)) throw new Error("Coordonnées de clic invalides.");
+  const chemin = marqueur.replaceAll("'", "''");
+  return `
+$ErrorActionPreference = 'Stop'
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
+function Sortir($statut, $detail) {
+  @{statut=$statut; action=$detail; raison=$detail} | ConvertTo-Json -Compress
+}
+try {
+  Add-Type -AssemblyName UIAutomationClient
+  Add-Type -AssemblyName UIAutomationTypes
+  Add-Type -AssemblyName WindowsBase
+  ${blocCompilationUnique("CibleClic", CODE_CLIC)}
   try { [void][CibleClic]::SetProcessDpiAwarenessContext([IntPtr](-4)) } catch { [void][CibleClic]::SetProcessDPIAware() }
   $h = [CibleClic]::Trouver(${x}, ${y}, ${pidClassinus})
   if ($h -eq [IntPtr]::Zero) { Sortir 'indisponible' 'Aucune fenêtre à cet endroit'; return }

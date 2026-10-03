@@ -23,6 +23,7 @@ import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
+import { blocCompilationUnique } from "./compilationUnique.mjs";
 
 export interface LimitesLectureEcran {
   nbMaxElements: number;
@@ -303,9 +304,7 @@ $handleSuperposition = [IntPtr]([long]${handleSuperposition})
 try {
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
-  Add-Type -TypeDefinition @'
-${CODE_CSHARP}
-'@
+  ${blocCompilationUnique("LectureFenetres", CODE_CSHARP)}
   # Sans cela, Windows peut renvoyer des coordonnees mises a l'echelle
   # (ecran regle a 125 % ou 150 %) qui ne correspondent plus a celles de la
   # souris : les clics tomberaient a cote.
