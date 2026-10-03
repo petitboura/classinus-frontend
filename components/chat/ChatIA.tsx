@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { appelerApiStream, uploaderImageChat, uploaderDocumentChat, uploaderVideoChat, transcrireAudioChat, signalerPedagogique } from "@/lib/api";
+import { appelerApiStream, signalerPedagogique } from "@/lib/api";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
 import { BulleMessage, MessageAffiche, SegmentMessage, VersionAlternative } from "./BulleMessage";
 import type { OutilEnCours } from "./OutilResultatBulle";
@@ -12,6 +12,7 @@ import { StatutOutil, EtatStatut } from "./StatutOutil";
 import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
+import { traiterFichiersJoints, typeDeFichier } from "@/lib/preparerPiecesJointes";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
@@ -966,17 +967,6 @@ export function ChatIA({
     // fois par appareil, jamais si déjà répondu avant".
     if (!automatique) proposerNotificationsPushUneFois(activerNotificationsPush);
 
-    const typeDeFichier = (f: File): "image" | "document" | "video" | "audio" | "zip" =>
-      f.type.startsWith("image/")
-        ? "image"
-        : f.type.startsWith("video/")
-        ? "video"
-        : f.type.startsWith("audio/")
-        ? "audio"
-        : f.type === "application/zip" || f.type === "application/x-zip-compressed" || f.name.toLowerCase().endsWith(".zip")
-        ? "zip"
-        : "document";
-
     const messageUtilisateur: MessageAffiche = {
       id: null,
       role: "user",
@@ -1088,65 +1078,9 @@ export function ChatIA({
     let texteEnrichi = texte + textesColles.map((contenu) => `\n\n[Texte collé joint]\n${contenu}`).join("");
 
     if (fichiers.length) {
-      const resultats = await Promise.allSettled(
-        fichiers.map(async (fichier) => {
-          const type = typeDeFichier(fichier);
-          if (type === "image") {
-            const url = await uploaderImageChat(fichier);
-            // Le lien réel doit aussi être en TEXTE dans le message, pas
-            // seulement envoyé à part pour l'analyse visuelle (image_url) --
-            // sinon l'IA "voit" l'image via la vision mais n'a jamais son
-            // adresse réelle en mémoire, et invente un lien si on la lui
-            // redemande plus tard (repéré en test réel, 2026-07-23).
-            return { imageUrl: url, texteBloc: `\n\n[Image jointe : ${url}]` };
-          }
-          if (type === "audio") {
-            const { texte: texteAudio, url: urlAudio } = await transcrireAudioChat(fichier);
-            const lienAudio = urlAudio ? `\n[Lien réel du fichier : ${urlAudio}]` : "";
-            return { texteBloc: `\n\n[Audio joint : ${fichier.name} -- transcription]\n${texteAudio}${lienAudio}` };
-          }
-          if (type === "zip") {
-            // Rien à uploader ici : le dézipage a déjà démarré dès la
-            // sélection (voir BarreDeSaisie.tsx:ajouterFichiers), et le
-            // job_id correspondant part directement dans zipsEnAttente
-            // (voir plus bas, payload /api/chat) -- core/main.py:chat()
-            // termine lui-même le travail restant et injecte le sommaire
-            // côté serveur (voir core/zip_chat.py). Seul un repère textuel
-            // léger est ajouté ici, pour que le chip pièce jointe survive
-            // au rechargement de la page (voir BulleMessage.tsx,
-            // MARQUEURS_PIECE_JOINTE) -- volontairement AUCUN contenu de
-            // fichier n'est injecté dans le message visible.
-            return { texteBloc: `\n\n[Archive jointe : ${fichier.name}]` };
-          }
-          if (type === "video") {
-            const { transcript, frames_base64, url: urlVideo } = await uploaderVideoChat(fichier);
-            const lienVideo = urlVideo ? `\n[Lien réel du fichier : ${urlVideo}]` : "";
-            const texteBloc = transcript
-              ? `\n\n[Vidéo jointe : ${fichier.name} -- transcription audio]\n${transcript}${lienVideo}`
-              : `\n\n[Vidéo jointe : ${fichier.name} -- pas de son exploitable, images seules]${lienVideo}`;
-            return { texteBloc, imagesBase64: frames_base64.length ? frames_base64 : undefined };
-          }
-          const { texte: texteDocument, tronque, lisible, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
-          const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";
-          // Aperçu PDF (25/07) : lien séparé, volontairement en .pdf --
-          // FichierChip.tsx détecte l'extension et affiche automatiquement
-          // le visualiseur PDF intégré pour ce lien, sans aucun changement
-          // nécessaire dans FichierChip.tsx lui-même (voir core/conversion_pdf.py).
-          const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
-          // Fichier accepté mais dont le contenu n'a pas pu être lu (binaire
-          // inconnu, ancien format sans conversion) : le serveur le garde, et
-          // le modèle est prévenu pour l'expliquer à l'étudiant au lieu de
-          // croire qu'il a lu quelque chose.
-          if (!lisible) {
-            return {
-              texteBloc: `\n\n[Document joint : ${fichier.name} (illisible)]\nLe contenu de ce fichier n'a pas pu être lu, seul son nom est connu.${lienDocument}`,
-            };
-          }
-          return {
-            texteBloc: `\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`,
-          };
-        })
-      );
+      // Envoi et préparation de chaque fichier : lib/preparerPiecesJointes.ts (partagé
+      // avec le canal en direct). Les commentaires détaillés sont restés là bas.
+      const resultats = await traiterFichiersJoints(fichiers);
 
       const echecs: { nom: string; typeFichier: "image" | "document" | "video" | "audio" | "zip"; detail: string }[] = [];
       resultats.forEach((resultat, index) => {

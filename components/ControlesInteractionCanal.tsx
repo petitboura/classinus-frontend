@@ -17,10 +17,15 @@
 // sinon envoyé comme un message normal du chat.
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, ArrowUpRight, AudioLines, ChevronDown, ChevronUp, Mic, Minimize2, PenLine, Square } from "lucide-react";
+import { ArrowUp, ArrowUpRight, AudioLines, Camera, ChevronDown, ChevronUp, Mic, Minimize2, PenLine, Pin, Square } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { PleinEcranApercu } from "@/components/chat/PleinEcranApercu";
+import { LigneApercuPieces } from "@/components/chat/LigneApercuPieces";
+import { MenuPlus, type EntreeMenuPlus } from "@/components/chat/barre/MenuPlus";
+import { traiterFichiersJoints } from "@/lib/preparerPiecesJointes";
+import { useFichiersJointsCanal } from "@/lib/useFichiersJointsCanal";
+import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
@@ -59,6 +64,12 @@ export function ControlesInteractionCanal() {
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const [groupeOuvert, setGroupeOuvert] = useState(true);
   const [pleinEcran, setPleinEcran] = useState(false);
+  // Pièces jointes du « + » (03/10/2026, demande Bourama) : aperçu avant l'envoi,
+  // dans une ligne défilable à gauche et à droite, comme dans la barre de saisie du chat.
+  const piecesJointes = useFichiersJointsCanal();
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  const inputFichierRef = useRef<HTMLInputElement>(null);
+  const inputPhotoRef = useRef<HTMLInputElement>(null);
   const { enSortie: pleinEcranEnSortie, demarrerFermeture: fermerPleinEcranAnime } = useFermetureAnimee();
   const [texteSaisi, setTexteSaisi] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -91,6 +102,8 @@ export function ControlesInteractionCanal() {
     setPanneauOuvert(false);
     setPleinEcran(false);
     setErreur(null);
+    piecesJointes.vider();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- vider est stable (useCallback sans dépendance).
   }, [actif, annuler]);
 
   useEffect(() => {
@@ -136,18 +149,61 @@ export function ControlesInteractionCanal() {
     setPanneauOuvert((v) => !v);
   }
 
-  function envoyerTexte() {
+  // Envoi du message écrit, avec ses pièces jointes. Les fichiers sont d'abord préparés
+  // comme dans le chat (lib/preparerPiecesJointes.ts) : leur contenu ou leur lien est
+  // ajouté au texte, car le canal transporte le message sous forme de texte. Si un
+  // fichier échoue, rien ne part et tout reste en place, pour retirer le fichier fautif
+  // et réessayer sans rien perdre. Retourne vrai si le message est parti.
+  async function envoyerTexte(): Promise<boolean> {
+    if (envoiEnCours) return false;
     const propre = texteSaisi.trim();
-    if (!propre) return;
-    envoyerMessageEtudiant(propre);
+    if (!propre && piecesJointes.fichiers.length === 0) return false;
+    let texteFinal = propre;
+    if (piecesJointes.fichiers.length > 0) {
+      setEnvoiEnCours(true);
+      setErreur(null);
+      try {
+        const resultats = await traiterFichiersJoints(piecesJointes.fichiers);
+        const echecs: string[] = [];
+        resultats.forEach((resultat, index) => {
+          if (resultat.status === "fulfilled") texteFinal += resultat.value.texteBloc;
+          else echecs.push(`${piecesJointes.fichiers[index].name} (${messageErreur(resultat.reason) || "erreur inconnue"})`);
+        });
+        if (echecs.length > 0) {
+          setErreur(`Ces fichiers n'ont pas pu être envoyés : ${echecs.join(", ")}. Retire-les ou réessaie.`);
+          return false;
+        }
+      } finally {
+        setEnvoiEnCours(false);
+      }
+    }
+    envoyerMessageEtudiant(texteFinal.trim());
     setTexteSaisi("");
+    piecesJointes.vider();
     setPanneauOuvert(false);
+    return true;
   }
+
+  function ajouterFichiersJoints(nouveaux: File[]) {
+    if (nouveaux.length === 0) return;
+    const refuses = piecesJointes.ajouter(nouveaux);
+    if (refuses > 0) setErreur("Les archives zip ne sont pas encore prises en charge dans le canal.");
+    else setErreur(null);
+    // Les aperçus s'affichent dans la zone d'écriture : on l'ouvre si elle est fermée.
+    if (nouveaux.length > refuses) setPanneauOuvert(true);
+  }
+
+  // Entrées du « + » (même menu et mêmes libellés que la barre de saisie du chat, sans
+  // les entrées qui n'ont pas de sens ici : mode vocal et canal sont déjà des boutons du groupe).
+  const entreesMenuPlus: EntreeMenuPlus[] = [
+    { cle: "fichier", Icone: Pin, libelle: "Joindre un fichier", onClick: () => inputFichierRef.current?.click() },
+    { cle: "photo", Icone: Camera, libelle: "Prendre une photo", onClick: () => inputPhotoRef.current?.click() },
+  ];
 
   function surToucheChamp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      envoyerTexte();
+      void envoyerTexte();
     } else if (e.key === "Escape") {
       setPanneauOuvert(false);
     }
@@ -206,7 +262,7 @@ export function ControlesInteractionCanal() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 8 }}
                   transition={{ duration: 0.15 }}
-                  className="relative flex w-[min(18rem,calc(100vw-2rem))] items-end gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-xl"
+                  className="relative flex w-[min(18rem,calc(100vw-2rem))] flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-xl"
                 >
                   {/* Plein écran : même flèche que sur la barre de saisie du chat,
                       posée au dessus du coin haut droit de la zone d'écriture. */}
@@ -219,24 +275,33 @@ export function ControlesInteractionCanal() {
                   >
                     <ArrowUpRight size={12} strokeWidth={1.75} />
                   </button>
-                  <textarea
-                    ref={champRef}
-                    value={texteSaisi}
-                    onChange={(e) => setTexteSaisi(e.target.value)}
-                    onKeyDown={surToucheChamp}
-                    rows={1}
-                    placeholder="Dis quelque chose à Classinus..."
-                    aria-label="Message pour Classinus pendant qu'il travaille"
-                    className="min-h-[2.5rem] max-h-40 flex-1 resize-none overflow-y-auto bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
-                  />
-                  <button
-                    onClick={envoyerTexte}
-                    disabled={!texteSaisi.trim()}
-                    aria-label="Envoyer le message"
-                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-[#1A0D02] transition-opacity disabled:opacity-40"
-                  >
-                    <ArrowUp size={16} />
-                  </button>
+                  {/* Ligne défilable des pièces jointes avant l'envoi : même composant que dans
+                      la barre de saisie du chat. */}
+                  {piecesJointes.pieces.length > 0 && (
+                    <LigneApercuPieces pieces={piecesJointes.pieces} onOuvrir={() => {}} onRetirer={piecesJointes.retirer} />
+                  )}
+                  <div className="flex items-end gap-2">
+                    <textarea
+                      ref={champRef}
+                      value={texteSaisi}
+                      onChange={(e) => setTexteSaisi(e.target.value)}
+                      onKeyDown={surToucheChamp}
+                      rows={1}
+                      placeholder="Dis quelque chose à Classinus..."
+                      aria-label="Message pour Classinus pendant qu'il travaille"
+                      className="min-h-[2.5rem] max-h-40 flex-1 resize-none overflow-y-auto bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
+                    />
+                    <button
+                      onClick={() => void envoyerTexte()}
+                      disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0)}
+                      aria-label="Envoyer le message"
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-[#1A0D02] transition-opacity disabled:opacity-40 ${
+                        envoiEnCours ? "animate-pulse" : ""
+                      }`}
+                    >
+                      <ArrowUp size={16} />
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -251,6 +316,8 @@ export function ControlesInteractionCanal() {
                   transition={{ duration: 0.15 }}
                   className="flex max-w-[min(20rem,calc(100vw-2rem))] flex-wrap items-center gap-2"
                 >
+                  <MenuPlus variante="bureau" entrees={entreesMenuPlus} />
+
                   <button
                     onClick={geminiLive.basculer}
                     disabled={geminiLive.etat === "connexion"}
@@ -353,6 +420,29 @@ export function ControlesInteractionCanal() {
         )}
       </AnimatePresence>
 
+      <input
+        ref={inputFichierRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          ajouterFichiersJoints(Array.from(e.target.files ?? []));
+          // Sans ça, rejoindre le même fichier juste après l'avoir retiré ne redéclenche pas onChange.
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={inputPhotoRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          ajouterFichiersJoints(Array.from(e.target.files ?? []));
+          e.target.value = "";
+        }}
+      />
+
       {pleinEcran && (
         <PleinEcranApercu
           titre="Écris ton message"
@@ -371,6 +461,11 @@ export function ControlesInteractionCanal() {
             </div>
           }
         >
+          {piecesJointes.pieces.length > 0 && (
+            <div className="pb-3">
+              <LigneApercuPieces pieces={piecesJointes.pieces} onOuvrir={() => {}} onRetirer={piecesJointes.retirer} />
+            </div>
+          )}
           <div className="relative min-h-0 flex-1 overflow-hidden">
             <textarea
               autoFocus
@@ -379,8 +474,7 @@ export function ControlesInteractionCanal() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  envoyerTexte();
-                  fermerPleinEcran();
+                  void envoyerTexte().then((parti) => parti && fermerPleinEcran());
                 }
               }}
               placeholder="Dis quelque chose à Classinus..."
@@ -388,13 +482,16 @@ export function ControlesInteractionCanal() {
               className="h-full w-full resize-none overflow-y-auto bg-transparent text-base leading-relaxed text-dj-texte outline-none placeholder:text-dj-texte-muet"
             />
           </div>
+          {/* Le plein écran recouvre le groupe : l'erreur d'envoi doit s'afficher ici aussi. */}
+          {erreur && (
+            <p role="alert" className="pt-3 text-xs text-[var(--dj-erreur)]">
+              {erreur}
+            </p>
+          )}
           <div className="flex justify-end pt-4">
             <button
-              onClick={() => {
-                envoyerTexte();
-                fermerPleinEcran();
-              }}
-              disabled={!texteSaisi.trim()}
+              onClick={() => void envoyerTexte().then((parti) => parti && fermerPleinEcran())}
+              disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0)}
               aria-label="Envoyer le message"
               className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >
