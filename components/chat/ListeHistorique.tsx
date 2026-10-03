@@ -10,7 +10,7 @@
 
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronRight, Clock, MessageSquare, MoreVertical, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, MessageSquare, MoreVertical, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
@@ -23,6 +23,48 @@ const HAUTEUR_MENU_PX = 140;
 
 function cleFil(fil: FilConversation): string {
   return fil.conversation_id ?? "legacy";
+}
+
+type GroupeDate = { cle: string; libelle: string; fils: FilConversation[] };
+
+function majuscule(texte: string): string {
+  return texte.charAt(0).toUpperCase() + texte.slice(1);
+}
+
+// Groupe de date d'un fil : jours recents, puis semaines (jusqu'a 4 Sem),
+// puis Mois dernier, puis un groupe par mois (annee affichee seulement
+// pour les annees passees).
+function groupeDeDate(iso: string, maintenant: Date): { cle: string; libelle: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { cle: "inconnu", libelle: "Plus ancien" };
+  const debutJour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const ecart = Math.max(0, Math.round((debutJour(maintenant) - debutJour(d)) / 86400000));
+  if (ecart === 0) return { cle: "aujourdhui", libelle: "Aujourd'hui" };
+  if (ecart === 1) return { cle: "hier", libelle: "Hier" };
+  if (ecart === 2) return { cle: "avant-hier", libelle: "Avant-hier" };
+  if (ecart <= 28) {
+    const semaines = Math.ceil(ecart / 7);
+    return { cle: `sem-${semaines}`, libelle: `Il y a ${semaines} Sem` };
+  }
+  const moisEcoules = (maintenant.getFullYear() - d.getFullYear()) * 12 + (maintenant.getMonth() - d.getMonth());
+  if (moisEcoules === 1) return { cle: "mois-dernier", libelle: "Mois dernier" };
+  const nomMois = majuscule(d.toLocaleDateString("fr-FR", { month: "long" }));
+  const libelle = d.getFullYear() === maintenant.getFullYear() ? nomMois : `${nomMois} ${d.getFullYear()}`;
+  return { cle: `mois-${d.getFullYear()}-${d.getMonth()}`, libelle };
+}
+
+// Regroupe des fils deja tries du plus recent au plus ancien ; l'ordre des
+// groupes suit donc celui des fils, et un groupe vide n'existe jamais.
+function regrouperParDate(fils: FilConversation[]): GroupeDate[] {
+  const maintenant = new Date();
+  const groupes: GroupeDate[] = [];
+  for (const fil of fils) {
+    const { cle, libelle } = groupeDeDate(fil.derniere_activite, maintenant);
+    const dernier = groupes[groupes.length - 1];
+    if (dernier && dernier.cle === cle) dernier.fils.push(fil);
+    else groupes.push({ cle, libelle, fils: [fil] });
+  }
+  return groupes;
 }
 
 type PropsListe = {
@@ -54,9 +96,10 @@ export function ListeHistorique({
 
   const racineRef = useRef<HTMLDivElement>(null);
   const sentinelleRef = useRef<HTMLDivElement>(null);
-  // A chaque ouverture de la liste : Recents deplie, Epingles plie.
+  // A chaque ouverture de la liste : Epingles plie, tous les groupes de
+  // dates deplies (on ne retient que ceux que la personne a replies).
   const [epinglesOuverts, setEpinglesOuverts] = useState(false);
-  const [recentsOuverts, setRecentsOuverts] = useState(true);
+  const [groupesFermes, setGroupesFermes] = useState<Set<string>>(() => new Set());
 
   // Epingles : dans l'ordre recu (le plus recemment epingle en premier).
   // Recents : toujours du plus recemment actif au plus ancien, meme apres
@@ -66,13 +109,26 @@ export function ListeHistorique({
     .filter((f) => !f.epingle)
     .sort((a, b) => Date.parse(b.derniere_activite) - Date.parse(a.derniere_activite));
 
+  const groupes = regrouperParDate(recents);
+  // Rien a charger tant que tous les groupes de dates sont replies (la
+  // liste est alors courte et le bas toujours visible : on chargerait tout).
+  const chargementAutorise = groupes.length === 0 || groupes.some((g) => !groupesFermes.has(g.cle));
+
+  function basculerGroupe(cle: string) {
+    setGroupesFermes((avant) => {
+      const apres = new Set(avant);
+      if (apres.has(cle)) apres.delete(cle);
+      else apres.add(cle);
+      return apres;
+    });
+  }
+
   // Charge la page suivante quand le bas de la liste approche (defilement
-  // progressif). La liste elle-meme est le conteneur observe. Rien a
-  // charger tant que la section Recents est pliee (sentinelle absente).
+  // progressif). La liste elle-meme est le conteneur observe.
   useEffect(() => {
     const racine = racineRef.current;
     const sentinelle = sentinelleRef.current;
-    if (!racine || !sentinelle || !recentsOuverts || !aPlus || erreurPlus || !chargerPlus) return;
+    if (!racine || !sentinelle || !chargementAutorise || !aPlus || erreurPlus || !chargerPlus) return;
     const observateur = new IntersectionObserver(
       (entrees) => {
         if (entrees.some((e) => e.isIntersecting)) void chargerPlus();
@@ -83,7 +139,7 @@ export function ListeHistorique({
     return () => observateur.disconnect();
     // historique.length : apres chaque page recue la sentinelle est
     // observee a nouveau (elle est deja visible si la liste reste courte).
-  }, [recentsOuverts, aPlus, erreurPlus, chargerPlus, historique.length]);
+  }, [chargementAutorise, aPlus, erreurPlus, chargerPlus, historique.length]);
 
   const grand = variante === "pleinEcran";
 
@@ -121,34 +177,37 @@ export function ListeHistorique({
         </SectionPliable>
       )}
 
-      <SectionPliable
-        Icone={Clock}
-        titre="Récents"
-        ouverte={recentsOuverts}
-        onBasculer={() => setRecentsOuverts((v) => !v)}
-        grand={grand}
-      >
-        {rendreLignes(recents)}
-        {aPlus && (
-          <div ref={sentinelleRef} className="py-1">
-            {chargementPlus && <SqueletteLignes grand={grand} />}
-            {erreurPlus && (
-              <button
-                onClick={() => void chargerPlus?.()}
-                className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-              >
-                Impossible de charger la suite. Réessayer
-              </button>
-            )}
-          </div>
-        )}
-      </SectionPliable>
+      {groupes.map((g) => (
+        <SectionPliable
+          key={g.cle}
+          titre={g.libelle}
+          ouverte={!groupesFermes.has(g.cle)}
+          onBasculer={() => basculerGroupe(g.cle)}
+          grand={grand}
+        >
+          {rendreLignes(g.fils)}
+        </SectionPliable>
+      ))}
+
+      {aPlus && (
+        <div ref={sentinelleRef} className="py-1">
+          {chargementPlus && <SqueletteLignes grand={grand} />}
+          {erreurPlus && (
+            <button
+              onClick={() => void chargerPlus?.()}
+              className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              Impossible de charger la suite. Réessayer
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 type PropsSection = {
-  Icone: typeof Pin;
+  Icone?: typeof Pin;
   titre: string;
   nombre?: number;
   ouverte: boolean;
@@ -157,7 +216,7 @@ type PropsSection = {
   children: React.ReactNode;
 };
 
-// Section repliable de la liste (Epingles, Recents). Le contenu n'est
+// Section repliable de la liste (Epingles, groupes de dates). Le contenu n'est
 // monte que quand la section est ouverte : une section pliee ne coute rien.
 function SectionPliable({ Icone, titre, nombre, ouverte, onBasculer, grand, children }: PropsSection) {
   return (
@@ -169,7 +228,7 @@ function SectionPliable({ Icone, titre, nombre, ouverte, onBasculer, grand, chil
           grand ? "min-h-10 text-sm" : "min-h-8 text-xs"
         }`}
       >
-        <Icone size={grand ? 16 : 14} className="flex-shrink-0" />
+        {Icone && <Icone size={grand ? 16 : 14} className="flex-shrink-0" />}
         <span className="uppercase tracking-wide">{titre}</span>
         {nombre !== undefined && <span className="text-xs font-normal opacity-70">{nombre}</span>}
         <ChevronRight size={14} className={`ml-auto flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-90" : ""}`} />
