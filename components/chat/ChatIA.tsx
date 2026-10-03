@@ -865,6 +865,13 @@ export function ChatIA({
   // libre, comme la file du canal.
   const enregistrerChatPourVoix = ctxChatCanal?.enregistrerChatPourVoix;
   useEffect(() => enregistrerChatPourVoix?.(conversationId), [enregistrerChatPourVoix, conversationId]);
+  // La voix reste liée à la conversation affichée : elle s'arrête quand on
+  // change de conversation ou quand le chat se ferme. Ici et non dans la barre
+  // de saisie, qui est remontée au premier message (écran d'accueil puis
+  // conversation) : la voix lancée depuis l'accueil se coupait alors dès
+  // l'envoi de la première demande et fermait son plein écran.
+  const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
+  useEffect(() => () => fermerVoixPourConversation?.(conversationId), [conversationId, fermerVoixPourConversation]);
   // Recopie la conversation pour que le canal et la voix la poursuivent à
   // l'identique quand ce chat est masqué ou fermé (tours directs).
   useEffect(() => {

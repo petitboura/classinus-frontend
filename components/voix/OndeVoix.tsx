@@ -34,6 +34,8 @@ function aspectCible(etat: EtatVoixDirecte, entree: number, sortie: number, t: n
       return { amplitude: 0.18 + sortie * 1.0, remplissage: 1, epaisseur: 2.5, vitesse: 1.6 };
     case "travail":
       return { amplitude: 0.05 + 0.04 * Math.sin(t * 1.6), remplissage: 0, epaisseur: 2, vitesse: 0.5 };
+    case "silence":
+      return { amplitude: 0.02, remplissage: 0, epaisseur: 1.5, vitesse: 0.25 };
     default:
       return { amplitude: 0.04, remplissage: 0, epaisseur: 2, vitesse: 0.4 };
   }

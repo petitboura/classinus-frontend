@@ -23,7 +23,7 @@ import { abonnerMessagesBulle } from "./contexteCanalEnDirect";
 import { ChatIndisponiblePourVoix } from "./contexteChat";
 import { conversationActive, conversationPourVoix } from "./conversationPartagee";
 
-export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur";
+export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur";
 
 export type ContexteVoixDirecteValeur = {
   etat: EtatVoixDirecte;

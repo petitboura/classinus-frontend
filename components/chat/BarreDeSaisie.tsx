@@ -358,10 +358,10 @@ export function BarreDeSaisie({
   useEffect(() => {
     if (geminiLive.erreur) alert(geminiLive.erreur);
   }, [geminiLive.erreur]);
-  // La voix reste liée à la conversation affichée : elle s'arrête quand on
-  // change de conversation ou quand le chat se ferme.
-  const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
-  useEffect(() => () => fermerVoixPourConversation?.(conversationId ?? null), [conversationId, fermerVoixPourConversation]);
+  // La fermeture de la voix à la fin de la conversation n'est PAS ici : cette
+  // barre est remontée au premier message (écran d'accueil puis conversation),
+  // ce qui coupait la voix et fermait son plein écran. Elle vit dans ChatIA.tsx,
+  // qui reste monté tant que la conversation est la même.
 
   useEffect(() => {
     if (!menuAppliOuvert) return;
