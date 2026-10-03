@@ -17,6 +17,11 @@ import { GardeApercu } from "./GardeApercu";
 // mêmes 4 actions partout (Copier optionnel selon le contenu, Télécharger
 // optionnel, Agrandir/Rétrécir, Fermer).
 //
+// Exception : avec l'option direct (widget interactif, animation), pas de
+// puce repliée ni de carte, le contenu est affiché tout de suite dans le fil
+// avec une fine rangée de boutons au survol (voir plus bas). Tout ce qui suit
+// décrit le déroulement des autres contenus (code, PDF, Office, texte).
+//
 // Double représentation des actions, demande explicite de Bourama :
 //   - En haut du contenu déroulé : boutons AVEC texte (Copier/Télécharger/
 //     Agrandir), en bas : bouton Fermer AVEC texte -- lisibles à l'arrivée
@@ -42,6 +47,7 @@ export function BlocExpansible({
   contenuEnIframe,
   actionsSupplementaires,
   elargissable,
+  direct,
 }: {
   titre: string;
   icone: LucideIcon;
@@ -82,8 +88,17 @@ export function BlocExpansible({
   // markdown et au code : un PDF, un widget ou un aperçu Office ont une
   // taille propre qu'il ne faut pas laisser piloter la largeur de la carte.
   elargissable?: boolean;
+  // Affichage direct (widget interactif et animation) : le contenu est visible
+  // tout de suite dans le fil, à la largeur du texte comme un tableau, sans
+  // puce repliée, sans carte autour, sans ligne de titre ni bouton Fermer.
+  // Les boutons (actions supplémentaires, Copier, Agrandir) tiennent dans une
+  // fine rangée au dessus du contenu, révélée au survol sur ordinateur et
+  // toujours visible sur écran tactile. Cette rangée est HORS du contenu : le
+  // bouton Filmer recadre la vidéo sur le widget, un bouton posé dessus serait
+  // filmé. Le plein écran garde son propre bouton Fermer, c'est sa sortie.
+  direct?: boolean;
 }) {
-  const [ouvert, setOuvert] = useState(false);
+  const [ouvert, setOuvert] = useState(!!direct);
   const [pleinEcran, setPleinEcran] = useState(false);
   const [copie, setCopie] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
@@ -161,7 +176,8 @@ export function BlocExpansible({
 
   function fermer() {
     setPleinEcran(false);
-    setOuvert(false);
+    // En affichage direct il n'y a rien à replier : on sort seulement du plein écran.
+    if (!direct) setOuvert(false);
   }
 
   // Barre d'actions -- réutilisée telle quelle en haut du déroulé, dans
@@ -352,6 +368,31 @@ export function BlocExpansible({
               téléchargement doit rester au dessus de lui. */}
           {modaleTelechargement}
         </PleinEcranApercu>
+      </>
+    );
+  }
+
+  if (direct) {
+    // Sur ordinateur la rangée est invisible tant que la souris n'est pas sur
+    // le bloc (ou qu'un bouton a le focus clavier). Elle garde sa place pour
+    // que rien ne bouge à l'apparition des boutons. Sur écran tactile, pas de
+    // survol possible : elle reste visible.
+    const classeRangeeDirecte =
+      "mb-1 flex h-8 items-center justify-end gap-1.5 transition-opacity duration-200 " +
+      "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:pointer-events-none " +
+      "[@media(hover:hover)]:group-hover/direct:opacity-100 [@media(hover:hover)]:group-hover/direct:pointer-events-auto " +
+      "[@media(hover:hover)]:focus-within:opacity-100 [@media(hover:hover)]:focus-within:pointer-events-auto";
+    return (
+      <>
+        <div className="group/direct my-2 max-w-full animate-dj-fade-in">
+          <div className={classeRangeeDirecte}>
+            <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
+          </div>
+          <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+            {enfant}
+          </GardeApercu>
+        </div>
+        {modaleTelechargement}
       </>
     );
   }

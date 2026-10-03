@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AppWindow, Loader2 } from "lucide-react";
+import { AppWindow } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { BoutonFilmerWidget, type EtatVideo } from "./BoutonFilmerWidget";
+import { Skeleton } from "@/components/Skeleton";
 import { useTheme } from "@/lib/useTheme";
-import { useHauteurWidget } from "@/lib/useHauteurWidget";
+import { useProcheEcran } from "@/lib/useProcheEcran";
+import { HAUTEUR_INITIALE_WIDGET_PX, useHauteurWidget } from "@/lib/useHauteurWidget";
 import { SCRIPT_HAUTEUR_WIDGET } from "@/lib/scriptHauteurWidget";
 import {
   demarrerEnregistrement,
@@ -179,11 +181,22 @@ function demanderInfosWidget(iframe: HTMLIFrameElement): Promise<{ interactif: b
 // caractère, donc l'iframe rechargeait à chaque caractère. Même principe
 // que les autres blocs riches : on attend 500ms sans changement de
 // `code` avant de considérer le widget comme prêt à afficher, avec un
-// simple indicateur de chargement entre-temps.
+// squelette entre-temps.
+//
+// Affichage direct (demande Bourama, 04/10/2026) : le widget est visible tout
+// de suite dans le fil, à la largeur du texte comme un tableau, sans puce
+// repliée ni carte autour (option direct de BlocExpansible).
 export function WidgetSandbox({ code }: { code: string }) {
   const { resolu } = useTheme();
   const [codeStable, setCodeStable] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Le widget ne démarre que lorsqu'il approche de l'écran (voir
+  // lib/useProcheEcran.ts) : dix widgets dans une longue conversation ne se
+  // lancent pas tous d'un coup. En attendant, c'est le squelette qui est
+  // observé, il a la même hauteur de départ que le widget.
+  const [zoneSqueletteEl, setZoneSqueletteEl] = useState<HTMLDivElement | null>(null);
+  const procheEcran = useProcheEcran(zoneSqueletteEl);
 
   // Vidéo (30/09/2026, demande Bourama) : le bouton Filmer n'existe que sur
   // ordinateur, dans les navigateurs capables de recadrer sur un élément.
@@ -284,9 +297,10 @@ export function WidgetSandbox({ code }: { code: string }) {
 
   useEffect(() => {
     setCodeStable(null);
+    if (!procheEcran) return;
     const delai = setTimeout(() => setCodeStable(code), 500);
     return () => clearTimeout(delai);
-  }, [code]);
+  }, [code, procheEcran]);
 
   return (
     <BlocExpansible
@@ -295,7 +309,7 @@ export function WidgetSandbox({ code }: { code: string }) {
       sousTitre="HTML"
       texteACopier={code}
       contenuEnIframe
-      chargement={codeStable === null}
+      direct
       actionsSupplementaires={
         videoPossible
           ? (avecTexte) => (
@@ -311,9 +325,17 @@ export function WidgetSandbox({ code }: { code: string }) {
       }
       enfant={
         codeStable === null ? (
-          <div className="flex h-96 w-full items-center justify-center gap-2 rounded-lg border border-dj-bordure text-xs text-dj-texte-muet">
-            <Loader2 size={16} className="animate-spin" />
-            Préparation du widget...
+          <div
+            ref={setZoneSqueletteEl}
+            style={{ height: HAUTEUR_INITIALE_WIDGET_PX }}
+            className="flex w-full flex-col gap-3 rounded-lg border border-dj-bordure p-4"
+          >
+            <Skeleton className="h-4 w-1/3 rounded" />
+            <Skeleton className="min-h-0 flex-1 rounded-xl" />
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-24 rounded-full" />
+              <Skeleton className="h-8 w-28 rounded-full" />
+            </div>
           </div>
         ) : (
           <iframe

@@ -74,12 +74,19 @@ components/
                           et FenetreMedia.tsx : fenêtres de lecture d'un texte collé et d'un audio ou d'une
                           vidéo ; lib/texteColle.ts : détection du langage d'un texte collé ;
                           PleinEcranApercu.tsx (20/09/2026) : vrai plein écran de bord à bord du bouton
-                          Agrandir des aperçus (BlocExpansible.tsx : widget, PDF, Office, texte), monté
+                          Agrandir des aperçus (BlocExpansible.tsx : widget, animation, PDF, Office, texte), monté
                           dans <body> par un portail pour ne jamais être recadré par le message ;
                           BlocLarge.tsx (20/09/2026) : règle des blocs larges (tableaux, blocs de code,
                           aperçus md et code) qui s'élargissent des deux côtés de la colonne de texte sans
                           bouger le texte ; toute nouvelle zone de chat doit porter data-zone-chat (voir
-                          ChatIA.tsx) et tout futur bloc large s'envelopper dans BlocLarge
+                          ChatIA.tsx) et tout futur bloc large s'envelopper dans BlocLarge ;
+                          BlocExpansible.tsx, option direct (04/10/2026) : le widget interactif et
+                          l'animation s'affichent tout de suite dans le fil, à la largeur du texte comme un
+                          tableau, sans puce repliée, sans carte, sans ligne de titre ni bouton Fermer ; les
+                          boutons (Filmer, Copier, Agrandir) sont dans une fine rangée au dessus, révélée au
+                          survol sur ordinateur et toujours visible sur écran tactile, hors du widget pour ne
+                          jamais apparaître dans la vidéo de Filmer ; les autres contenus (code, PDF, Office,
+                          texte) gardent la puce repliée
     minuteurs/           minuteurs (20/09/2026) : DockMinuteurs.tsx (cartes et pastilles en position fixe
                           sous la cloche, montée UNE fois dans AppShell.tsx pour tous les écrans, 03/10/2026),
                           CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),
@@ -89,8 +96,9 @@ components/
     AnimationLecteur.tsx  bloc ```animation du markdown (29/09/2026) : animation qui se regarde comme une
                           vidéo (lecture, pause, barre de progression, barre d'espace), en 2D (SVG) ou en 3D
                           (Three.js r128 chargé depuis cdnjs, jsdelivr en secours), pour n'importe quel sujet,
-                          dans une iframe isolée comme le widget (WidgetSandbox.tsx) ; branché dans
-                          composantsMarkdownRiches.tsx et RenduMarkdownAutonome.tsx
+                          dans une iframe isolée comme le widget (WidgetSandbox.tsx), affichée directement
+                          dans le fil (04/10/2026) et lancée seulement quand elle approche de l'écran ;
+                          branché dans composantsMarkdownRiches.tsx et RenduMarkdownAutonome.tsx
     animation/           le lecteur lui même : construireDocumentAnimation.ts (page de l'iframe, thème,
                           barre de lecture) et runtimeAnimation.ts (code exécuté dans l'iframe). Le modèle
                           n'écrit que le contenu : une ou plusieurs parties (animer), chacune étant une fonction de sa
@@ -129,6 +137,9 @@ lib/
                           suite), ignorée en plein écran, figée pendant un enregistrement du bouton Filmer ;
                           scriptHauteurWidget.ts : le script posé dans le widget qui mesure son contenu (bas
                           de l'élément le plus bas, éléments en position fixe ignorés)
+  useProcheEcran.ts       devient vrai quand un élément approche de l'écran (04/10/2026), puis le reste ;
+                          sert au widget interactif et à l'animation, qui ne démarrent qu'à ce moment
+                          pour qu'une longue conversation n'en lance pas dix d'un coup
   usePluginNatif.ts       hook d'accès générique aux plugins Capacitor
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)

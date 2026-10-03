@@ -5,6 +5,7 @@ import { Clapperboard } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { Skeleton } from "@/components/Skeleton";
 import { useTheme } from "@/lib/useTheme";
+import { useProcheEcran } from "@/lib/useProcheEcran";
 import { textesAnimation } from "@/lib/textesAnimation";
 import { construireDocumentAnimation } from "./animation/construireDocumentAnimation";
 
@@ -17,9 +18,14 @@ import { construireDocumentAnimation } from "./animation/construireDocumentAnima
 // contenu. Le widget interactif existant (WidgetSandbox.tsx) reste
 // disponible et n'est pas modifié.
 //
-// Même déroulement que les autres aperçus : chip replié, déroulé dans le
-// fil, vrai plein écran (BlocExpansible force l'iframe à remplir tout
-// l'espace en plein écran, voir contenuEnIframe).
+// Affichage direct dans le fil, sans puce repliée ni carte autour, à la
+// largeur du texte comme un tableau (voir l'option direct de
+// BlocExpansible), avec un vrai plein écran (BlocExpansible force l'iframe
+// à remplir tout l'espace en plein écran, voir contenuEnIframe).
+//
+// L'animation ne démarre que lorsqu'elle approche de l'écran (voir
+// lib/useProcheEcran.ts), pour qu'une longue conversation avec plusieurs
+// animations ne les lance pas toutes d'un coup.
 //
 // Même attente que WidgetSandbox : changer `srcDoc` recharge tout
 // l'iframe, or `code` grandit à chaque caractère tant que le message est
@@ -28,9 +34,9 @@ const HAUTEUR_FIL = "h-[28rem]";
 
 // Même forme que le lecteur final (zone d'image, légende, barre de
 // lecture, titres) pour éviter un saut visuel à l'arrivée.
-function SqueletteAnimation() {
+function SqueletteAnimation({ surMontage }: { surMontage: (el: HTMLDivElement | null) => void }) {
   return (
-    <div className={`flex ${HAUTEUR_FIL} w-full flex-col gap-2 rounded-lg border border-dj-bordure p-2.5`}>
+    <div ref={surMontage} className={`flex ${HAUTEUR_FIL} w-full flex-col gap-2 rounded-lg border border-dj-bordure p-2.5`}>
       <Skeleton className="min-h-0 flex-1 rounded-xl" />
       <Skeleton className="h-3.5 w-3/4 rounded" />
       <div className="flex items-center gap-2">
@@ -51,12 +57,15 @@ export function AnimationLecteur({ code }: { code: string }) {
   const { resolu } = useTheme();
   const textes = textesAnimation();
   const [codeStable, setCodeStable] = useState<string | null>(null);
+  const [zoneSqueletteEl, setZoneSqueletteEl] = useState<HTMLDivElement | null>(null);
+  const procheEcran = useProcheEcran(zoneSqueletteEl);
 
   useEffect(() => {
     setCodeStable(null);
+    if (!procheEcran) return;
     const delai = setTimeout(() => setCodeStable(code), 500);
     return () => clearTimeout(delai);
-  }, [code]);
+  }, [code, procheEcran]);
 
   const document_ = useMemo(
     () => (codeStable === null ? null : construireDocumentAnimation(codeStable, resolu, textes)),
@@ -70,10 +79,10 @@ export function AnimationLecteur({ code }: { code: string }) {
       sousTitre={textes.sousTitre}
       texteACopier={code}
       contenuEnIframe
-      chargement={document_ === null}
+      direct
       enfant={
         document_ === null ? (
-          <SqueletteAnimation />
+          <SqueletteAnimation surMontage={setZoneSqueletteEl} />
         ) : (
           <iframe
             sandbox="allow-scripts"
