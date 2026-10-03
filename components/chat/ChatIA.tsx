@@ -13,6 +13,8 @@ import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
 import { traiterFichiersJoints, typeDeFichier } from "@/lib/preparerPiecesJointes";
+import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
+import { definirModeleProchainMessage, lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
@@ -145,7 +147,17 @@ export function ChatIA({
   // vraie page du chat (ChatSection.tsx), jamais pour la popup mini.
   raccourcis?: boolean;
 }) {
-  const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
+  // Modèle choisi : lib/reglagesProchainMessage.ts (03/10/2026, demande Bourama), commun à la
+  // barre de saisie et au canal en direct. La préférence par défaut du créateur
+  // (modeleChoisi) n'est appliquée qu'une fois, tant que rien n'a été choisi.
+  const { modeleId: modeleStocke } = useReglagesProchainMessage();
+  const modeleInitialAppliqueRef = useRef(false);
+  if (!modeleInitialAppliqueRef.current) {
+    modeleInitialAppliqueRef.current = true;
+    if (modeleStocke === null && modeleChoisi !== null) definirModeleProchainMessage(modeleChoisi);
+  }
+  const modeleSelectionne = modeleStocke;
+  const setModeleSelectionne = definirModeleProchainMessage;
   // 01/10/2026 : vrai tant que le curseur est dans le champ de saisie (écran
   // vide, voir le commentaire de l'écran de démarrage plus bas).
   const [saisieActive, setSaisieActive] = useState(false);
@@ -856,7 +868,12 @@ export function ChatIA({
     if (!ctxChatCanal || nbMessagesEnAttenteCanal === 0) return;
     if (genEnCours || affichageEnCours || accesBloqueMineur) return;
     const texte = ctxChatCanal.prendreMessageEnAttente();
-    if (texte) void envoyerMessage(texte, "moyenne", []);
+    if (texte) {
+      // Réglages du prochain message communs avec le canal (03/10/2026, demande Bourama).
+      const reglages = lireReglagesProchainMessage();
+      void envoyerMessage(texte, reglages.longueur, [], null, [], false, reglages.sansEnseignant);
+      consommerReglagesUniquesProchainMessage();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbMessagesEnAttenteCanal, genEnCours, affichageEnCours, accesBloqueMineur]);
 

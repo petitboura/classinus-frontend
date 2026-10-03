@@ -25,6 +25,9 @@ import { LigneApercuPieces } from "@/components/chat/LigneApercuPieces";
 import { MenuPlus, type EntreeMenuPlus } from "@/components/chat/barre/MenuPlus";
 import { traiterFichiersJoints } from "@/lib/preparerPiecesJointes";
 import { useFichiersJointsCanal } from "@/lib/useFichiersJointsCanal";
+import { BoutonReglagesCanal, BoutonUtilitairesCanal } from "@/components/BoutonsReglagesCanal";
+import { CanvasDessin } from "@/components/chat/CanvasDessin";
+import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
 import { messageErreur } from "@/lib/erreurs";
 import { estDansFenetreSuperposition } from "@/lib/superpositionElectron";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
@@ -69,6 +72,14 @@ export function ControlesInteractionCanal({ reglageOpacite = null }: { reglageOp
   // dans une ligne défilable à gauche et à droite, comme dans la barre de saisie du chat.
   const piecesJointes = useFichiersJointsCanal();
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  // Utilitaires du canal (03/10/2026, demande Bourama) : dessin, éditeur de maths live et
+  // position, comme dans la barre de saisie du chat. Le dessin rejoint les pièces jointes,
+  // l'éditeur de maths et la position s'ajoutent au texte du message.
+  const [dessinOuvert, setDessinOuvert] = useState(false);
+  const [mathsOuvert, setMathsOuvert] = useState(false);
+  const [positionEnCours, setPositionEnCours] = useState(false);
+  const { enSortie: dessinEnSortie, demarrerFermeture: fermerDessinAnime } = useFermetureAnimee();
+  const { enSortie: mathsEnSortie, demarrerFermeture: fermerMathsAnime } = useFermetureAnimee();
   const inputFichierRef = useRef<HTMLInputElement>(null);
   const inputPhotoRef = useRef<HTMLInputElement>(null);
   const { enSortie: pleinEcranEnSortie, demarrerFermeture: fermerPleinEcranAnime } = useFermetureAnimee();
@@ -102,6 +113,8 @@ export function ControlesInteractionCanal({ reglageOpacite = null }: { reglageOp
     annuler();
     setPanneauOuvert(false);
     setPleinEcran(false);
+    setDessinOuvert(false);
+    setMathsOuvert(false);
     setErreur(null);
     piecesJointes.vider();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- vider est stable (useCallback sans dépendance).
@@ -200,6 +213,41 @@ export function ControlesInteractionCanal({ reglageOpacite = null }: { reglageOp
     { cle: "fichier", Icone: Pin, libelle: "Joindre un fichier", onClick: () => inputFichierRef.current?.click() },
     { cle: "photo", Icone: Camera, libelle: "Prendre une photo", onClick: () => inputPhotoRef.current?.click() },
   ];
+  function ajouterAuTexte(ajout: string) {
+    setTexteSaisi((prec) => (prec.trim() ? `${prec} ${ajout}` : ajout));
+    setPanneauOuvert(true);
+  }
+
+  // Même demande d'autorisation que le bouton « Joindre ma position » du chat. La position
+  // part dans le texte du message, car le canal transporte ses messages sous forme de texte.
+  function joindrePosition() {
+    if (!navigator.geolocation) {
+      setErreur("Géolocalisation non disponible sur cet appareil.");
+      return;
+    }
+    setPositionEnCours(true);
+    setErreur(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        ajouterAuTexte(`[Position jointe : latitude ${position.coords.latitude}, longitude ${position.coords.longitude}]`);
+        setPositionEnCours(false);
+      },
+      () => {
+        setErreur("Position refusée ou indisponible.");
+        setPositionEnCours(false);
+      }
+    );
+  }
+
+  // Utilitaires que le canal sait exécuter. « Insérer une formule » (suivi en direct dans le
+  // champ de la barre de saisie) et « Forcer une recherche web » n'y sont pas : le second ne
+  // semble branché sur aucune requête dans le chat non plus (à vérifier côté ChatIA.tsx).
+  const actionsUtilitaires = {
+    ui_dessin: { executer: () => setDessinOuvert(true) },
+    ui_editeur_maths: { executer: () => setMathsOuvert(true) },
+    ui_localisation: { executer: joindrePosition, occupe: positionEnCours },
+  };
+
   // La fenêtre de superposition PC n'a pas de session connectée : l'envoi de fichiers
   // y viendra avec un relais vers la fenêtre principale, pour l'instant le « + » est absent.
   const peutJoindre = !estDansFenetreSuperposition();
@@ -321,6 +369,8 @@ export function ControlesInteractionCanal({ reglageOpacite = null }: { reglageOp
                   className="flex max-w-[min(20rem,calc(100vw-2rem))] flex-wrap items-center gap-2"
                 >
                   {peutJoindre && <MenuPlus variante="bureau" entrees={entreesMenuPlus} />}
+                  {peutJoindre && <BoutonUtilitairesCanal actions={actionsUtilitaires} />}
+                  {peutJoindre && <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />}
 
                   <button
                     onClick={geminiLive.basculer}
@@ -450,6 +500,28 @@ export function ControlesInteractionCanal({ reglageOpacite = null }: { reglageOp
             }}
           />
         </>
+      )}
+
+      {dessinOuvert && (
+        <CanvasDessin
+          enSortie={dessinEnSortie}
+          onFermer={() => fermerDessinAnime(() => setDessinOuvert(false))}
+          onValider={(fichier) => {
+            ajouterFichiersJoints([fichier]);
+            fermerDessinAnime(() => setDessinOuvert(false));
+          }}
+        />
+      )}
+
+      {mathsOuvert && (
+        <EditeurMathsRiche
+          enSortie={mathsEnSortie}
+          onFermer={() => fermerMathsAnime(() => setMathsOuvert(false))}
+          onInserer={(texteSerialise) => {
+            ajouterAuTexte(texteSerialise);
+            fermerMathsAnime(() => setMathsOuvert(false));
+          }}
+        />
       )}
 
       {pleinEcran && (

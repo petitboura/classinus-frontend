@@ -100,6 +100,7 @@ import {
   type SourceCanal,
 } from "./contexteCanalEnDirect";
 import { mettreAJourSourceTache } from "./tacheCanal";
+import { consommerReglagesUniquesProchainMessage, lireReglagesProchainMessage } from "./reglagesProchainMessage";
 import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
@@ -223,6 +224,8 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
   // et le bouton arrêter ne doit pas rester affiché.
   const conversationId = conversationActive();
   if (!conversationId) return false;
+  const reglages = lireReglagesProchainMessage();
+  consommerReglagesUniquesProchainMessage();
   const controleur = new AbortController();
   mettreAJourSourceTache("tour_direct", {
     enCours: true,
@@ -252,7 +255,12 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
         historique: etat.historique,
         conversation_id: conversationId,
         parent_id: etat.dernierMessageId,
-        longueur_reponse: "moyenne",
+        // Réglages du prochain message, communs avec la barre de saisie du chat
+        // (lib/reglagesProchainMessage.ts, 03/10/2026, demande Bourama). Lus au moment de
+        // l'envoi : ce que l'étudiant a choisi dans les Réglages du canal ou du chat.
+        longueur_reponse: reglages.longueur,
+        sans_enseignant: reglages.sansEnseignant,
+        modele: reglages.modeleId,
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
         etat_editeur: obtenirLectureEditeurPourChat(),

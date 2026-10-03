@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { diffuserChangementReglageConversation, ecouterChangementsReglageConversation } from "@/lib/diffusionReglagesConversation";
 import {
   listerMesRattachementsCodes,
   obtenirModeActif,
@@ -103,6 +104,17 @@ export function useModeActif(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
+  // Choix fait ailleurs (ex. Réglages du canal en direct) : même conversation, même mode.
+  useEffect(() => {
+    if (!conversationId) return;
+    return ecouterChangementsReglageConversation((c) => {
+      if (c.conversationId !== conversationId || c.type !== "mode_actif") return;
+      setModeActifId(c.valeur);
+      setChoisi(true);
+      if (c.verrouille) setVerrouille(true);
+    });
+  }, [conversationId]);
+
   async function choisir(rattachementId: string | null) {
     if (!conversationId || verrouille) return;
     // "déjà cet état" doit aussi couvrir "Aucun mode" explicitement choisi
@@ -118,6 +130,7 @@ export function useModeActif(
     try {
       await definirModeActif(conversationId, rattachementId);
       if (mineur) setVerrouille(true);
+      diffuserChangementReglageConversation({ conversationId, type: "mode_actif", valeur: rattachementId, verrouille: mineur });
     } catch {
       setModeActifId(precedent); // échec silencieux, reprend l'affichage précédent
       setChoisi(precedentChoisi);
