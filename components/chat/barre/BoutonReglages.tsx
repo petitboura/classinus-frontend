@@ -77,6 +77,7 @@ function Choix({
  */
 export function BoutonReglages({
   variante,
+  ancrage = "droite",
   modelesDisponibles,
   modeleSelectionne,
   onModeleChange,
@@ -87,6 +88,10 @@ export function BoutonReglages({
   modeActif,
 }: {
   variante: "bureau" | "mobile";
+  // Côté d'ancrage du panneau et de l'info-bulle (variante bureau). "droite" : le panneau
+  // s'étend vers la gauche, cas de la barre de saisie. "gauche" : il s'étend vers la
+  // droite, cas du canal en direct posé à gauche de l'écran.
+  ancrage?: "droite" | "gauche";
   modelesDisponibles: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleSelectionne: string | null;
   onModeleChange?: (modeleId: string | null) => void;
@@ -227,7 +232,8 @@ export function BoutonReglages({
           id={idBulle}
           role="tooltip"
           className={
-            "pointer-events-none absolute bottom-full right-0 z-40 mb-2 w-max max-w-[18rem] origin-bottom-right rounded-cgpt-bouton border border-dj-bordure bg-dj-surface p-2 text-[11px] shadow-xl transition-all duration-150 ease-cgpt-doux " +
+            "pointer-events-none absolute bottom-full z-40 mb-2 w-max max-w-[18rem] rounded-cgpt-bouton border border-dj-bordure bg-dj-surface p-2 text-[11px] shadow-xl transition-all duration-150 ease-cgpt-doux " +
+            (ancrage === "gauche" ? "left-0 origin-bottom-left " : "right-0 origin-bottom-right ") +
             (survolBouton && !ouvert ? "visible translate-y-0 opacity-100" : "invisible translate-y-1 opacity-0")
           }
         >
@@ -248,7 +254,8 @@ export function BoutonReglages({
           "z-40 border border-dj-bordure bg-dj-surface shadow-lg transition-all duration-150 ease-cgpt-doux " +
           (mobile
             ? "fixed bottom-[calc(6rem+var(--safe-bottom))] right-4 flex max-h-[45vh] w-64 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl shadow-xl "
-            : "dj-scroll-isole absolute bottom-full right-0 mb-2 max-h-[min(60vh,22rem)] w-56 origin-bottom-right overflow-y-auto rounded-cgpt-carte p-1 ") +
+            : "dj-scroll-isole absolute bottom-full mb-2 max-h-[min(60vh,22rem)] w-56 overflow-y-auto rounded-cgpt-carte p-1 " +
+              (ancrage === "gauche" ? "left-0 origin-bottom-left " : "right-0 origin-bottom-right ")) +
           (ouvert ? "visible translate-y-0 scale-100 opacity-100" : "invisible translate-y-1 scale-95 opacity-0")
         }
       >

@@ -35,14 +35,19 @@ const LABEL_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "En cours...",
   succes: "Réussi",
   erreur: "Échec",
+  interrompu: "Interrompu",
 };
 
 const COULEUR_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "text-dj-texte-muet",
   succes: "text-dj-accent-1-texte",
   erreur: "text-[var(--dj-erreur)]",
+  interrompu: "text-dj-texte-muet",
 };
 
+// Remis à sa place (03/10/2026, demande Bourama) : bouton fixe en bas à droite et
+// déplaçable, affiché par ControlesInteractionCanal seulement quand le canal est
+// actif et que le groupe de boutons est déplié.
 export function BoutonJournalAgent() {
   const contexte = useContext(ContexteCanalEnDirect);
   const pathname = usePathname();

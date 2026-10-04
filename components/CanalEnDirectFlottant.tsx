@@ -3,7 +3,8 @@
 // Créé le 19/09/2026, Bourama : chantier "canal en direct" (voir
 // plan-canal-agent-applicatif-v1.md), chantier L. Groupe flottant en bas
 // à gauche (emplacement choisi par Bourama le 19/09/2026) :
-// - en bas, le bouton d'activation du canal (ce fichier) ;
+// - en bas, le bouton d'activation du canal (ce fichier), que
+//   ControlesInteractionCanal range sur sa ligne du bas avec le chevron et le « + » ;
 // - au dessus, quand le canal est actif, les boutons d'interaction du
 //   chantier M et N (ControlesInteractionCanal.tsx).
 //
@@ -68,27 +69,30 @@ export function CanalEnDirectFlottant() {
       ref={deplacement.ref}
       data-agent-superposition="true"
       {...deplacement.poignee}
-      className={`fixed z-agent-controles flex touch-none flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
+      className={`fixed z-agent-controles flex touch-none items-end ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
       style={{ left: `calc(${decalageRail}px + 1rem)`, ...deplacement.style }}
     >
-      <motion.button
-        key="activation"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.15 }}
-        onClick={() => (actif ? desactiver() : activer())}
-        aria-pressed={actif}
-        aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
-        title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
-        className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
-          actif
-            ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
-            : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-        }`}
-      >
-        <Radio size={18} />
-      </motion.button>
-      <ControlesInteractionCanal />
+      <ControlesInteractionCanal
+        boutonActivation={
+          <motion.button
+            key="activation"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => (actif ? desactiver() : activer())}
+            aria-pressed={actif}
+            aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
+            title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
+            className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
+              actif
+                ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
+                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+            }`}
+          >
+            <Radio size={18} />
+          </motion.button>
+        }
+      />
     </div>
   );
 }

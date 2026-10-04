@@ -24,12 +24,20 @@
 // zéro à chaque ouverture de l'app, cohérent avec le reste du
 // chantier.
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { definirConversationCanal } from "./conversationPartagee";
+import {
+  abonnerEtatTacheCanal,
+  arreterTacheCanal,
+  continuerTacheInterrompue,
+  etatTacheCanalRepos,
+  lireEtatTacheCanal,
+  reessayerTacheInterrompue,
+} from "./tacheCanal";
 
 // "refuse" retiré (19/09/2026) : plus aucune confirmation ne peut
 // produire cet état, voir lib/canalAgentApplicatif.ts.
-export type StatutEntreeJournal = "en_cours" | "succes" | "erreur";
+export type StatutEntreeJournal = "en_cours" | "succes" | "erreur" | "interrompu";
 
 export type EntreeJournalCanal = {
   id: string;
@@ -136,6 +144,15 @@ export type ValeurCanalEnDirect = {
   // même.
   ajouterEntreeJournal: (description: string, statut?: StatutEntreeJournal) => string;
   mettreAJourEntreeJournal: (id: string, statut: StatutEntreeJournal) => void;
+
+  // Tâche en cours (02/10/2026, demande Bourama : bouton arrêter) : voir
+  // lib/tacheCanal.ts. Arrêter coupe la tâche comme le fait le chat ; une fois
+  // interrompue, la bulle propose Continuer ou Réessayer.
+  tacheEnCours: boolean;
+  interrompue: boolean;
+  arreterTache: () => void;
+  continuerApresArret: () => void;
+  reessayerApresArret: () => void;
 };
 
 export const ContexteCanalEnDirect = createContext<ValeurCanalEnDirect | null>(null);
@@ -461,6 +478,8 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     return id;
   }, []);
 
+  const etatTache = useSyncExternalStore(abonnerEtatTacheCanal, lireEtatTacheCanal, etatTacheCanalRepos);
+
   const mettreAJourEntreeJournal = useCallback((id: string, statut: StatutEntreeJournal) => {
     journalRef.current = journalRef.current.map((e) => (e.id === id ? { ...e, statut } : e));
     setJournal(journalRef.current);
@@ -487,5 +506,10 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     journal,
     ajouterEntreeJournal,
     mettreAJourEntreeJournal,
+    tacheEnCours: etatTache.enCours,
+    interrompue: etatTache.interrompue,
+    arreterTache: arreterTacheCanal,
+    continuerApresArret: continuerTacheInterrompue,
+    reessayerApresArret: reessayerTacheInterrompue,
   };
 }
