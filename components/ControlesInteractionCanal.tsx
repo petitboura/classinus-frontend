@@ -51,7 +51,8 @@ const LABEL_MOTEUR: Record<MoteurDictee, string> = {
 //   puis la ligne de la dictée (bouton et choix du moteur), puis celle de Arrêter la tâche
 //   (pendant une tâche) et Réglages.
 // Le groupe est déplié dès l'activation. Écrire et Arrêter la tâche restent visibles groupe
-// replié. Le journal est un bouton fixe et déplaçable, affiché canal actif et groupe déplié.
+// replié. Le journal est un bouton fixe et déplaçable, affiché canal actif et groupe déplié ;
+// le menu du « + » s'ouvre sur le côté pour ne pas recouvrir Utilitaires.
 export function ControlesInteractionCanal({
   boutonActivation = null,
 }: {
@@ -512,7 +513,7 @@ export function ControlesInteractionCanal({
             {actif && groupeOuvert && (
               <ApparitionBoutonCanal key="plus">
                 <div className="flex h-10 w-10 items-center justify-center">
-                  <MenuPlus variante="bureau" entrees={entreesMenuPlus} />
+                  <MenuPlus variante="bureau" entrees={entreesMenuPlus} ouverture="droite" />
                 </div>
               </ApparitionBoutonCanal>
             )}
@@ -530,6 +531,9 @@ export function ControlesInteractionCanal({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
+                // Les événements d'un portail remontent dans l'arbre React : sans cet arrêt, glisser
+                // le journal glisserait aussi le groupe de boutons, qui est son parent React.
+                onPointerDown={(e) => e.stopPropagation()}
               >
                 <BoutonJournalAgent />
               </motion.div>
