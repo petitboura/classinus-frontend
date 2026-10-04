@@ -41,7 +41,12 @@ components/
                           components/mobile/ à la place
   AppSidebar.tsx          sidebar desktop (Bureau/Bibliothèque/Notes en direct, groupes
                           "Personnaliser Clovis" et "Scolarité") ; repliée par défaut, elle se
-                          déplie au survol du bouton "Classinus" par-dessus la page, sans la décaler
+                          déplie au survol du bouton "Classinus" par-dessus la page, sans la décaler.
+                          Sur téléphone, le tiroir du chat montre les quatre groupes (Bibliothèque,
+                          Concentration, Bureau, Personnaliser) avec leurs sous-sections ; le rail
+                          ordinateur et le tiroir ne montent que leurs propres boutons de groupe
+                          (lib/useEstDesktop.ts), pour qu'un menu masqué ne ferme jamais celui qui
+                          est visible
   voix/                   voix en direct (Gemini Live) : OndeVoix (onde dessinée, trois aspects selon l'état)
                           et VoixDirecteSuperposition (onde plein écran dans le chat, bulle réduite,
                           bulle qui suit le curseur de Classinus quand le canal en direct est actif).
@@ -220,6 +225,8 @@ Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses d
 `lib/sectionsConcentration.tsx` et `lib/routesConcentration.ts`. Personnaliser Clovis :
 `lib/sectionsPersonnaliser.tsx` et `lib/routesPersonnaliser.ts` (`/comportements` et `/memoire` gardent
 leurs adresses historiques hors de `/personnaliser`, seul `/skills-publics` est nouveau).
+Dans le chat, chaque groupe devient un bouton qui déplie la liste de ses pages
+(`components/MenuGroupeRail.tsx`) : au survol sur PC, au toucher dans le tiroir mobile.
 Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
 et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
 les écrans ne les répètent pas dans leur carte.

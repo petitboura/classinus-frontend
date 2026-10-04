@@ -40,6 +40,7 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
+import { useEstDesktop } from "@/lib/useEstDesktop";
 import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
@@ -381,6 +382,10 @@ export function AppSidebar({
   // Seulement en contexteChat=true (l'autre instance, hors chat, garde
   // sa vraie navigation classique par route).
   const { ouvrir: ouvrirFenetre } = useFenetres();
+  // Le rail ordinateur et le tiroir mobile sont tous deux montes dans le DOM,
+  // l'un masque par CSS. Chacun a ses propres boutons de groupe, qui ecoutent
+  // les appuis sur le document : seul celui qui est visible doit etre monte.
+  const estDesktop = useEstDesktop();
   // 03/09/2026, demande Bourama, audit "clic sur une section ne fait
   // rien en plein écran mobile web/natif" : la fenêtre flottante
   // (ouvrirFenetre ci-dessus) ne fonctionne que sur desktop. Sur mobile
@@ -668,17 +673,13 @@ export function AppSidebar({
   const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
   const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
 
-  // 30/08/2026, demande Bourama : le tiroir mobile du chat (plus bas,
-  // ouverte && !masquerChromeMobile) doit reprendre les mêmes 4 boutons
-  // que la barre d'onglets mobile -- Bibliothèque, Concentration,
-  // Bureau, Personnaliser Classinus (celui-ci via GROUPE_PERSONNALISER, déjà rendu plus
-  // bas, pas repris ici) -- sans Accueil (rejoint le "Plus" unifié) ni
-  // Chat (on y est déjà). Mobile uniquement : ne touche pas
-  // navComplete/idsDirects ci-dessus, qui restent la version desktop
-  // inchangée (rendue ligne ~700).
-  const ongletsMobileDirects = (["bibliotheque", "controle-session", "bureau"] as OngletId[])
-    .map((id) => ONGLETS.find((o) => o.id === id))
-    .filter((o): o is (typeof ONGLETS)[number] => Boolean(o));
+  // Tiroir mobile du chat : les quatre groupes de la barre d'onglets mobile,
+  // dans l'ordre Bibliothèque, Concentration, Bureau, Personnaliser Classinus,
+  // chacun avec ses sous-sections (MenuGroupe, variante mobile). Sans Accueil
+  // (rejoint le "Plus" unifié) ni Chat (on y est déjà). Mobile uniquement :
+  // ne touche pas navComplete/groupesDuRail ci-dessus, qui restent la version
+  // ordinateur.
+  const groupesTiroirMobile = [GROUPE_BIBLIOTHEQUE, GROUPE_CONCENTRATION, GROUPE_BUREAU, GROUPE_PERSONNALISER];
 
   // Navigation depuis le "Plus" unifié du tiroir mobile (BlocsMenuPlus
   // + SECTIONS_BASE, voir plus bas) : "Connecter Claude" a un vrai id
@@ -858,7 +859,7 @@ export function AppSidebar({
 
         {navComplete.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV }))}
 
-        {groupesDuRail.map((g) => (
+        {estDesktop && groupesDuRail.map((g) => (
           <MenuGroupe
             key={g.id}
             groupe={g}
@@ -931,7 +932,7 @@ export function AppSidebar({
                       </Link>
                     );
                   })}
-                {contexteChat && (
+                {estDesktop && contexteChat && (
                   <MenuGroupe
                     variante="plus"
                     groupe={GROUPE_CONCENTRATION}
@@ -1165,9 +1166,7 @@ export function AppSidebar({
               </>
             )}
 
-            {ongletsMobileDirects.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV, mobile: true }))}
-
-            {[GROUPE_PERSONNALISER].map((g) =>
+            {groupesTiroirMobile.map((g) =>
               contexteChat ? (
                 <MenuGroupe
                   key={g.id}
@@ -1216,7 +1215,7 @@ export function AppSidebar({
               Concentration, Claude, Partager, Avis, Pourquoi Classinus),
               divergent de celui du menu principal mobile (SECTIONS_BASE,
               voir EspacePlus.tsx). Bureau et Concentration ont rejoint
-              les boutons directs juste au dessus (ongletsMobileDirects) ;
+              les groupes juste au dessus (groupesTiroirMobile) ;
               pour le reste, ce bloc réutilise BlocsMenuPlus tel quel
               (même composant que MenuHamburgerNatif.tsx/
               MenuHamburgerWeb.tsx), pour ne plus jamais avoir deux

@@ -94,7 +94,13 @@ export function MenuGroupe({
   useEffect(() => {
     if (!ouvert) return;
     function onClicExterieur(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onFermer();
+      if (!ref.current) return;
+      // Instance masquee (display:none sur un parent, par exemple le rail
+      // ordinateur sur un telephone) : tout appui est "exterieur" pour elle.
+      // Sans cette garde elle fermait le groupe sur le mousedown, avant que
+      // le clic n'arrive sur la sous-section de l'instance visible.
+      if (ref.current.getClientRects().length === 0) return;
+      if (!ref.current.contains(e.target as Node)) onFermer();
     }
     document.addEventListener("mousedown", onClicExterieur);
     return () => document.removeEventListener("mousedown", onClicExterieur);
