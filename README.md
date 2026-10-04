@@ -87,7 +87,9 @@ components/
                           survol sur ordinateur et toujours visible sur écran tactile, hors du widget pour ne
                           jamais apparaître dans la vidéo de Filmer, puis dans un rail d'icônes collé en haut
                           du bloc (au survol) quand cette rangée sort de l'écran ; les autres contenus (code, PDF, Office,
-                          texte) gardent la puce repliée ; le widget et l'animation ne font qu'un avec le chat : ni
+                          texte) gardent la puce repliée ; le widget suit le thème de l'utilisateur sans rechargement
+                          (état conservé), l'animation se recrée avec les nouvelles couleurs et reprend à la même
+                          seconde, en lecture ou en pause ; le widget et l'animation ne font qu'un avec le chat : ni
                           contour ni coins arrondis sur l'iframe, document au fond transparent et sans marge, et
                           la hauteur du widget suit son contenu (plafond de sécurité à 6000 px) sans défilement
                           dans le widget lui même
@@ -144,6 +146,10 @@ lib/
                           suite), ignorée en plein écran, figée pendant un enregistrement du bouton Filmer ;
                           scriptHauteurWidget.ts : le script posé dans le widget qui mesure son contenu (bas
                           de l'élément le plus bas, éléments en position fixe ignorés)
+  paletteIframe.ts        palette de l'interface pour les contenus en iframe isolée (widget et animation, une
+                          seule source) : variables CSS --dj-*, objet THEME du widget, script qui applique un
+                          changement de thème sans recharger le widget (04/10/2026) ; le modèle n'écrit plus
+                          aucune couleur, fond ni police, la consigne est dans le backend (profils_agents.py)
   useProcheEcran.ts       devient vrai quand un élément approche de l'écran (04/10/2026), puis le reste ;
                           sert au widget interactif et à l'animation, qui ne démarrent qu'à ce moment
                           pour qu'une longue conversation n'en lance pas dix d'un coup

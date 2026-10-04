@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Clapperboard } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { Skeleton } from "@/components/Skeleton";
 import { useTheme } from "@/lib/useTheme";
 import { useProcheEcran } from "@/lib/useProcheEcran";
+import type { ThemeIframe } from "@/lib/paletteIframe";
 import { textesAnimation } from "@/lib/textesAnimation";
 import { construireDocumentAnimation } from "./animation/construireDocumentAnimation";
 
@@ -70,9 +71,55 @@ export function AnimationLecteur({ code }: { code: string }) {
     return () => clearTimeout(delai);
   }, [code, procheEcran]);
 
+  // Changement de thème : la scène est construite une fois avec les couleurs du
+  // thème (les couleurs C sont lues par le code du modèle à la création), elle
+  // doit donc être recréée. Pour que l'utilisateur ne perde pas sa place, on
+  // demande d'abord à l'animation où elle en est (temps, lecture ou pause), puis
+  // on la recharge avec le nouveau thème en lui redonnant cet état.
+  const [themeDoc, setThemeDoc] = useState<ThemeIframe>(resolu);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const repriseRef = useRef<{ t: number; joue: boolean } | null>(null);
+
+  useEffect(() => {
+    repriseRef.current = null;
+  }, [code]);
+
+  useEffect(() => {
+    if (resolu === themeDoc) return;
+    const cadre = iframeRef.current;
+    if (!cadre?.contentWindow) {
+      setThemeDoc(resolu);
+      return;
+    }
+    let fini = false;
+    function terminer(reprise: { t: number; joue: boolean } | null) {
+      if (fini) return;
+      fini = true;
+      window.removeEventListener("message", surMessage);
+      clearTimeout(delai);
+      repriseRef.current = reprise;
+      setThemeDoc(resolu);
+    }
+    function surMessage(e: MessageEvent) {
+      if (e.source !== cadre?.contentWindow) return;
+      const d = e.data as { type?: unknown; t?: unknown; joue?: unknown } | null;
+      if (!d || d.type !== "dj-anim-etat" || typeof d.t !== "number" || !Number.isFinite(d.t)) return;
+      terminer({ t: d.t, joue: d.joue === true });
+    }
+    window.addEventListener("message", surMessage);
+    // Pas de réponse (animation pas encore démarrée) : on recharge sans reprise.
+    const delai = setTimeout(() => terminer(null), 250);
+    cadre.contentWindow.postMessage({ type: "dj-anim-demande-etat" }, "*");
+    return () => {
+      fini = true;
+      window.removeEventListener("message", surMessage);
+      clearTimeout(delai);
+    };
+  }, [resolu, themeDoc]);
+
   const document_ = useMemo(
-    () => (codeStable === null ? null : construireDocumentAnimation(codeStable, resolu, textes)),
-    [codeStable, resolu, textes],
+    () => (codeStable === null ? null : construireDocumentAnimation(codeStable, themeDoc, textes, repriseRef.current)),
+    [codeStable, themeDoc, textes],
   );
 
   return (
@@ -88,6 +135,7 @@ export function AnimationLecteur({ code }: { code: string }) {
           <SqueletteAnimation surMontage={setZoneSqueletteEl} />
         ) : (
           <iframe
+            ref={iframeRef}
             sandbox="allow-scripts"
             srcDoc={document_}
             className={`block ${HAUTEUR_FIL} w-full`}
