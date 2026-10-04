@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, Link2, Share2, Sparkles, Trash2, Upload, X } from "lucide-react";
-import { lireSkillComportement, publierComportement, supprimerComportement, type Comportement } from "@/lib/api";
+import { Download, Link2, Share2, Sparkles, Trash2, Upload, Users, X } from "lucide-react";
+import {
+  definirPorteeComportement,
+  lireSkillComportement,
+  publierComportement,
+  supprimerComportement,
+  type Comportement,
+  type PorteeElement,
+} from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { texteConfiguration } from "@/lib/i18n/textesConfiguration";
 import { telechargerTexte, nomFichierDepuis } from "@/lib/telechargerTexte";
@@ -30,16 +37,58 @@ export function MenuElementConfiguration({
   agentId,
   c,
   onSupprime,
+  onMaj,
   avecActionsSkill = false,
 }: {
   agentId: string;
   c: Comportement;
   onSupprime: (id: string) => void;
+  /** 04/10/2026 : remplace l'élément dans la liste de l'écran après un
+   * changement de destinataire ou de liens. Absent : seul ce menu est à jour. */
+  onMaj?: (c: Comportement) => void;
   avecActionsSkill?: boolean;
 }) {
   const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   const [codesOuvert, setCodesOuvert] = useState(false);
   const { enSortie: codesEnSortie, demarrerFermeture: fermerCodes } = useFermetureAnimee();
+  // 04/10/2026, demande Bourama : le choix du destinataire n'existe que pour
+  // un élément lié à un code. Sans lien, l'élément s'applique à moi, point.
+  const [lie, setLie] = useState(c.lie_a_code ?? false);
+  const [portee, setPortee] = useState<PorteeElement>(c.portee ?? "deux");
+  const [porteeOuverte, setPorteeOuverte] = useState(false);
+  const [porteeEnCours, setPorteeEnCours] = useState(false);
+  const [erreurPortee, setErreurPortee] = useState<string | null>(null);
+  const { enSortie: porteeEnSortie, demarrerFermeture: fermerPortee } = useFermetureAnimee();
+
+  useEffect(() => {
+    setLie(c.lie_a_code ?? false);
+    setPortee(c.portee ?? "deux");
+  }, [c.lie_a_code, c.portee]);
+
+  function surLiensChange(nombreCodes: number) {
+    const estLie = nombreCodes > 0;
+    // Premier lien : l'élément repart sur "moi et les destinataires" (le
+    // serveur fait la même remise à zéro), jamais sur un ancien choix.
+    const nouvellePortee: PorteeElement = estLie && !lie ? "deux" : portee;
+    setLie(estLie);
+    setPortee(nouvellePortee);
+    onMaj?.({ ...c, lie_a_code: estLie, portee: nouvellePortee });
+  }
+
+  async function choisirPortee(nouvelle: PorteeElement) {
+    if (porteeEnCours || nouvelle === portee) return;
+    setPorteeEnCours(true);
+    setErreurPortee(null);
+    try {
+      const maj = await definirPorteeComportement(agentId, c.id, nouvelle);
+      setPortee(maj.portee ?? nouvelle);
+      onMaj?.({ ...c, ...maj, lie_a_code: true });
+    } catch (e) {
+      setErreurPortee(messageErreur(e));
+    } finally {
+      setPorteeEnCours(false);
+    }
+  }
   const [retour, setRetour] = useState<{ texte: string; erreur: boolean } | null>(null);
   const [actionEnCours, setActionEnCours] = useState(false);
   const {
@@ -90,6 +139,19 @@ export function MenuElementConfiguration({
 
   const actions = [
     { cle: "code", label: texteConfiguration("action.lierCode"), icone: <Link2 size={14} />, onClick: () => setCodesOuvert(true) },
+    ...(lie
+      ? [
+          {
+            cle: "destinataire",
+            label: texteConfiguration("action.destinataire"),
+            icone: <Users size={14} />,
+            onClick: () => {
+              setErreurPortee(null);
+              setPorteeOuverte(true);
+            },
+          },
+        ]
+      : []),
     {
       cle: "ia",
       label: texteConfiguration("action.ia"),
@@ -118,7 +180,72 @@ export function MenuElementConfiguration({
 
   return (
     <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="flex flex-shrink-0 items-center">
+      {lie && portee === "destinataires" && (
+        <span
+          title={texteConfiguration("destinataire.badge")}
+          aria-label={texteConfiguration("destinataire.badge")}
+          className="mr-0.5 flex flex-shrink-0 animate-dj-fade-in-rapide items-center rounded-full bg-dj-accent-1/10 p-1.5 text-dj-accent-1"
+        >
+          <Users size={13} />
+        </span>
+      )}
       <MenuActionsCarte actions={actions} ariaLabel={texteConfiguration("menu.aria")} contraste portail />
+
+      {(porteeOuverte || porteeEnSortie) &&
+        createPortal(
+          <PanneauFlottant
+            enSortie={porteeEnSortie}
+            onFerme={() => fermerPortee(() => setPorteeOuverte(false))}
+            entete={
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-sm font-medium text-dj-texte">
+                  <Users size={16} className="text-dj-texte-muet" />
+                  {texteConfiguration("destinataire.titre")}
+                </span>
+                <button
+                  onClick={() => fermerPortee(() => setPorteeOuverte(false))}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
+                >
+                  <X size={14} /> {texteConfiguration("action.fermer")}
+                </button>
+              </div>
+            }
+          >
+            <div role="radiogroup" aria-label={texteConfiguration("destinataire.titre")} className="flex flex-col gap-2">
+              {(["deux", "destinataires"] as const).map((valeur) => {
+                const choisi = portee === valeur;
+                return (
+                  <button
+                    key={valeur}
+                    type="button"
+                    role="radio"
+                    aria-checked={choisi}
+                    disabled={porteeEnCours}
+                    onClick={() => void choisirPortee(valeur)}
+                    className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-default disabled:opacity-60 ${
+                      choisi ? "border-dj-accent-1 bg-dj-accent-1/10" : "border-dj-bordure hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
+                        choisi ? "border-dj-accent-1" : "border-dj-bordure-forte"
+                      }`}
+                    >
+                      <span className={`h-2 w-2 rounded-full bg-dj-accent-1 transition-transform duration-150 ${choisi ? "scale-100" : "scale-0"}`} />
+                    </span>
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-sm text-dj-texte">{texteConfiguration(`destinataire.${valeur}`)}</span>
+                      <span className="text-xs text-dj-texte-muet">{texteConfiguration(`destinataire.${valeur}Detail`)}</span>
+                    </span>
+                  </button>
+                );
+              })}
+              {erreurPortee && <p className="text-xs text-[var(--dj-erreur)]">{erreurPortee}</p>}
+            </div>
+          </PanneauFlottant>,
+          document.body
+        )}
 
       {(codesOuvert || codesEnSortie) &&
         createPortal(
@@ -140,7 +267,7 @@ export function MenuElementConfiguration({
               </div>
             }
           >
-            <SelecteurCodesPartage type="comportement" id={c.id} />
+            <SelecteurCodesPartage type="comportement" id={c.id} onLiensChange={surLiensChange} />
           </PanneauFlottant>,
           document.body
         )}

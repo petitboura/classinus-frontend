@@ -173,6 +173,12 @@ export function MesCodes({ sansEnTete = false }: { sansEnTete?: boolean } = {}) 
       queryClient.setQueryData<CodePartage[]>(clesRequetes.codes, (prec) =>
         (prec || []).map((c) => (c.id === codeId ? maj : c))
       );
+      // 04/10/2026 : lier ou délier un élément change son choix de
+      // destinataire possible, les listes d'éléments doivent le relire.
+      if (patch.comportement_ids !== undefined) {
+        void queryClient.invalidateQueries({ queryKey: ["comportements"] });
+        void queryClient.invalidateQueries({ queryKey: ["configuration-skills"] });
+      }
     } catch (e) {
       setErreur(messageErreur(e));
     }

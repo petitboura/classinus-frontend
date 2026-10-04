@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { listerMesCodes, modifierCode, type CodePartage } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { CaseACocher } from "./CaseACocher";
@@ -19,7 +20,19 @@ import { Skeleton } from "./Skeleton";
  * `comportements`/`dossiers` y sont déjà résolus (id + nom), donc pas de
  * requête supplémentaire par code ici, juste listerMesCodes() une fois.
  */
-export function SelecteurCodesPartage({ type, id }: { type: "comportement" | "dossier"; id: string }) {
+export function SelecteurCodesPartage({
+  type,
+  id,
+  onLiensChange,
+}: {
+  type: "comportement" | "dossier";
+  id: string;
+  /** 04/10/2026 : nombre de codes auxquels cet élément est lié après chaque
+   * changement, pour que le menu de l'élément sache s'il doit proposer le
+   * choix du destinataire. Absent : rien ne change pour les autres écrans. */
+  onLiensChange?: (nombreCodes: number) => void;
+}) {
+  const queryClient = useQueryClient();
   const [codes, setCodes] = useState<CodePartage[] | undefined>(undefined);
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -47,7 +60,14 @@ export function SelecteurCodesPartage({ type, id }: { type: "comportement" | "do
     const patch = type === "comportement" ? { comportement_ids: nouveaux } : { dossier_ids: nouveaux };
     try {
       const maj = await modifierCode(c.id, patch);
-      setCodes((prec) => (prec || []).map((x) => (x.id === maj.id ? maj : x)));
+      const suivants = (codes || []).map((x) => (x.id === maj.id ? maj : x));
+      setCodes(suivants);
+      if (type === "comportement") {
+        // 04/10/2026 : les listes d'éléments relisent leur état "lié à un code".
+        void queryClient.invalidateQueries({ queryKey: ["comportements"] });
+        void queryClient.invalidateQueries({ queryKey: ["configuration-skills"] });
+      }
+      onLiensChange?.(suivants.filter((x) => (type === "comportement" ? x.comportements : x.dossiers).some((l) => l.id === id)).length);
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {

@@ -97,7 +97,14 @@ export function ConfigurationCategorie({
   const creer = () => setPanneau({ type: "creation" });
   const retirerDuCache = (id: string) => queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).filter((x) => x.id !== id));
   const props = { onOuvrir: ouvrir, onToggleActif: toggleActif };
-  const menuPour = (c: Comportement) => <MenuElementConfiguration agentId={agentId} c={c} onSupprime={retirerDuCache} />;
+  const menuPour = (c: Comportement) => (
+    <MenuElementConfiguration
+      agentId={agentId}
+      c={c}
+      onSupprime={retirerDuCache}
+      onMaj={(maj) => queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).map((x) => (x.id === maj.id ? maj : x)))}
+    />
+  );
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">

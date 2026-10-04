@@ -427,6 +427,11 @@ export function MesComportements({
                   agentId={agentId}
                   c={c}
                   avecActionsSkill
+                  onMaj={(maj) =>
+                    queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(agentId), (prec) =>
+                      (prec || []).map((x) => (x.id === maj.id ? maj : x))
+                    )
+                  }
                   onSupprime={(id) =>
                     queryClient.setQueryData<Comportement[]>(clesRequetes.comportements(agentId), (prec) => (prec || []).filter((x) => x.id !== id))
                   }
