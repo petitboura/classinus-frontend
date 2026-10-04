@@ -36,12 +36,17 @@ export function PleinEcranApercu({
   entete,
   onFerme,
   enSortie = false,
+  capturerSouris = false,
   children,
 }: {
   titre: string;
   entete: ReactNode;
   onFerme: () => void;
   enSortie?: boolean;
+  // Dans la fenêtre de superposition PC (transparente et traversée par les clics),
+  // seuls les éléments marqués data-agent-superposition reçoivent la souris :
+  // sans ce marquage, un plein écran ouvert depuis le canal serait traversé.
+  capturerSouris?: boolean;
   children: ReactNode;
 }) {
   // document n'existe pas pendant le rendu serveur : le portail n'est
@@ -68,6 +73,7 @@ export function PleinEcranApercu({
       role="dialog"
       aria-modal="true"
       aria-label={titre}
+      data-agent-superposition={capturerSouris ? "true" : undefined}
       // Un clic dans le plein écran ne doit rien déclencher dans le
       // message d'origine (l'arbre React traverse le portail).
       onClick={(e) => e.stopPropagation()}

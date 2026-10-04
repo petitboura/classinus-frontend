@@ -9,9 +9,10 @@
 // JAMAIS monter AppShell (auth, vraie connexion WebSocket, nav...), voir
 // le plan, point 2.
 //
-// Reutilise tel quel (aucune modification) les 4 composants du canal en
-// direct : CurseurVirtuelAgent, BulleDialogueAgent, BoutonJournalAgent,
-// CanalEnDirectFlottant (qui monte lui meme ControlesInteractionCanal).
+// Reutilise tel quel (aucune modification) les 3 composants du canal en
+// direct : CurseurVirtuelAgent, BulleDialogueAgent, CanalEnDirectFlottant (qui
+// monte lui meme ControlesInteractionCanal, et dans son groupe de boutons le
+// BoutonJournalAgent).
 // Pour cela, cette page fournit ses PROPRES valeurs de
 // ContexteCurseurVirtuel/ContexteCanalEnDirect -- pas les vraies
 // (useFournirCurseurVirtuel/useFournirCanalEnDirect, reservees a la
@@ -38,7 +39,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
-import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { MarquesEcranAgent } from "@/components/MarquesEcranAgent";
 import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
@@ -56,7 +56,16 @@ import {
 
 type CanalAffichage = Pick<
   ValeurCanalEnDirect,
-  "actif" | "modeInteraction" | "moteurDictee" | "dernierTexte" | "reponseVisible" | "derniereReponse" | "conversationId" | "journal"
+  | "actif"
+  | "modeInteraction"
+  | "moteurDictee"
+  | "dernierTexte"
+  | "reponseVisible"
+  | "derniereReponse"
+  | "conversationId"
+  | "journal"
+  | "tacheEnCours"
+  | "interrompue"
 >;
 
 type VoixAffichage = { actif: boolean; etat: EtatVoixDirecte };
@@ -76,6 +85,8 @@ const ETAT_CANAL_INITIAL: CanalAffichage = {
   derniereReponse: null,
   conversationId: null,
   journal: [],
+  tacheEnCours: false,
+  interrompue: false,
 };
 
 export default function PageAgentSuperposition() {
@@ -125,6 +136,8 @@ export default function PageAgentSuperposition() {
         derniereReponse: etat.canal.derniereReponse,
         conversationId: etat.canal.conversationId,
         journal: etat.canal.journal,
+        tacheEnCours: etat.canal.tacheEnCours ?? false,
+        interrompue: etat.canal.interrompue ?? false,
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,6 +242,11 @@ export default function PageAgentSuperposition() {
     journal: canal.journal,
     ajouterEntreeJournal: () => "",
     mettreAJourEntreeJournal: () => {},
+    tacheEnCours: canal.tacheEnCours,
+    interrompue: canal.interrompue,
+    arreterTache: interactionsSuperposition.arreterTache,
+    continuerApresArret: interactionsSuperposition.continuerApresArret,
+    reessayerApresArret: interactionsSuperposition.reessayerApresArret,
   };
 
   return (
@@ -247,7 +265,6 @@ export default function PageAgentSuperposition() {
               <MarquesEcranAgent marques={marques} />
               <CurseurVirtuelAgent />
               <BulleDialogueAgent />
-              <BoutonJournalAgent />
               <VoixDirecteSuperposition />
             </motion.div>
           )}

@@ -56,6 +56,9 @@ export interface EtatSuperposition {
     derniereReponse: ValeurCanalEnDirect["derniereReponse"];
     conversationId: string | null;
     journal: ValeurCanalEnDirect["journal"];
+    // Tâche en cours et interruption (02/10/2026, bouton arrêter), voir lib/tacheCanal.ts.
+    tacheEnCours?: boolean;
+    interrompue?: boolean;
   };
 }
 
@@ -75,6 +78,9 @@ interface ActionSuperposition {
     | "choisirMoteurDictee"
     | "envoyerMessageEtudiant"
     | "basculerVoix"
+    | "arreterTache"
+    | "continuerApresArret"
+    | "reessayerApresArret"
     | "deposerCurseur";
   args: unknown[];
 }
@@ -205,6 +211,8 @@ export function useEmetteurSuperposition(
           derniereReponse: canal.derniereReponse,
           conversationId: canal.conversationId,
           journal: canal.journal,
+          tacheEnCours: canal.tacheEnCours,
+          interrompue: canal.interrompue,
         },
       });
     };
@@ -254,6 +262,8 @@ export function useEmetteurSuperposition(
     canal.derniereReponse,
     canal.conversationId,
     canal.journal,
+    canal.tacheEnCours,
+    canal.interrompue,
   ]);
 
   // Niveaux sonores de la voix : tant que la bulle de voix est affichée dans
@@ -321,6 +331,18 @@ export function useEmetteurSuperposition(
           // Même appel que le bouton du canal sur le site : la conversation
           // partagée (celle du chat affiché) prime sur celle de la superposition.
           refValeurs.current.voix?.basculer(conversationActive() ?? ((action.args[0] as string | null | undefined) ?? null));
+          break;
+        case "arreterTache":
+        case "continuerApresArret":
+        case "reessayerApresArret":
+          // Import dynamique, même raison que envoyerMessageEtudiant ci-dessous :
+          // la tâche vit dans la fenêtre principale, la superposition ne fait que
+          // relayer le clic.
+          void import("@/lib/tacheCanal").then((m) => {
+            if (action.fonction === "arreterTache") m.arreterTacheCanal();
+            else if (action.fonction === "continuerApresArret") m.continuerTacheInterrompue();
+            else m.reessayerTacheInterrompue();
+          });
           break;
         case "envoyerMessageEtudiant":
           // Import dynamique : évite un cycle statique avec
@@ -437,4 +459,7 @@ export const interactionsSuperposition = {
   choisirModeInteraction: (mode: "voix" | "texte") => relayerInteraction("choisirModeInteraction", mode),
   choisirMoteurDictee: (moteur: "whisper" | "navigateur") => relayerInteraction("choisirMoteurDictee", moteur),
   basculerVoix: (conversationId: string | null) => relayerInteraction("basculerVoix", conversationId),
+  arreterTache: () => relayerInteraction("arreterTache"),
+  continuerApresArret: () => relayerInteraction("continuerApresArret"),
+  reessayerApresArret: () => relayerInteraction("reessayerApresArret"),
 };

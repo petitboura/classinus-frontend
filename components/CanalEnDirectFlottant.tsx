@@ -3,7 +3,8 @@
 // Créé le 19/09/2026, Bourama : chantier "canal en direct" (voir
 // plan-canal-agent-applicatif-v1.md), chantier L. Groupe flottant en bas
 // à gauche (emplacement choisi par Bourama le 19/09/2026) :
-// - en bas, le bouton d'activation du canal (ce fichier) ;
+// - en bas, le bouton d'activation du canal (ce fichier), que
+//   ControlesInteractionCanal range sur sa ligne du bas avec le chevron et le « + » ;
 // - au dessus, quand le canal est actif, les boutons d'interaction du
 //   chantier M et N (ControlesInteractionCanal.tsx).
 //
@@ -24,6 +25,10 @@
 // activé (ReglageOpaciteBoutonCanal.tsx). Rien de tout cela ne s'applique sur
 // web et mobile : l'opacité y reste à 100 %.
 //
+// Regroupement (02/10/2026, demande Bourama) : le réglage d'opacité est rangé
+// avec les autres boutons dans le groupe de ControlesInteractionCanal (déplié
+// dès l'activation) ; il n'est plus à côté du bouton d'activation.
+//
 // Correctif (19/09/2026, decision Bourama : "on ne désactive rien de
 // son fonctionnement parce qu'il est dans le chat, [le canal] doit être
 // tellement indépendant que...") : plus AUCUNE condition liée à /chat
@@ -41,7 +46,7 @@
 // Le côté gauche suit le rail latéral sur ordinateur, voir
 // lib/useDecalageRailLateral.ts.
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Radio } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
@@ -102,44 +107,37 @@ export function CanalEnDirectFlottant() {
       ref={deplacement.ref}
       data-agent-superposition="true"
       {...deplacement.poignee}
-      className={`fixed z-agent-controles flex touch-none flex-col-reverse items-start gap-2 ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
+      className={`fixed z-agent-controles flex touch-none items-end ${surChat ? CLASSE_BAS_CHAT : CLASSE_BAS_NORMAL}`}
       style={{ left: `calc(${decalageRail}px + 1rem)`, ...deplacement.style }}
     >
-      <div className="flex items-center gap-2">
-        <motion.button
-          key="activation"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: dansSuperposition && (reglageOuvert || (!actif && !survol)) ? opaciteRepos : 1, scale: 1 }}
-          transition={{ duration: 0.15 }}
-          onMouseEnter={() => setSurvol(true)}
-          onMouseLeave={() => setSurvol(false)}
-          onClick={() => (actif ? desactiver() : activer())}
-          aria-pressed={actif}
-          aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
-          title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
-          className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
-            actif
-              ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
-              : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-          }`}
-        >
-          <Radio size={18} />
-        </motion.button>
-        <AnimatePresence>
-          {actif && dansSuperposition && (
-            <motion.div
-              key="reglage-opacite"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.15 }}
-            >
-              <ReglageOpaciteBoutonCanal valeur={opaciteRepos} surChangement={changerOpaciteRepos} surOuverture={setReglageOuvert} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      <ControlesInteractionCanal />
+      <ControlesInteractionCanal
+        boutonActivation={
+          <motion.button
+            key="activation"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: dansSuperposition && (reglageOuvert || (!actif && !survol)) ? opaciteRepos : 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            onMouseEnter={() => setSurvol(true)}
+            onMouseLeave={() => setSurvol(false)}
+            onClick={() => (actif ? desactiver() : activer())}
+            aria-pressed={actif}
+            aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
+            title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
+            className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
+              actif
+                ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
+                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+            }`}
+          >
+            <Radio size={18} />
+          </motion.button>
+        }
+        reglageOpacite={
+          dansSuperposition ? (
+            <ReglageOpaciteBoutonCanal valeur={opaciteRepos} surChangement={changerOpaciteRepos} surOuverture={setReglageOuvert} />
+          ) : null
+        }
+      />
     </div>
   );
 }

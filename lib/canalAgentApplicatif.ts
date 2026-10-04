@@ -99,6 +99,8 @@ import {
   type ImageCanal,
   type SourceCanal,
 } from "./contexteCanalEnDirect";
+import { mettreAJourSourceTache } from "./tacheCanal";
+import { consommerReglagesUniquesProchainMessage, lireReglagesProchainMessage } from "./reglagesProchainMessage";
 import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
@@ -212,11 +214,24 @@ const AGENT_ID_CANAL = "clovis";
  * jamais activé cette session) ou si l'appel échoue -- l'appelant garde
  * alors le message plutôt que de le perdre (voir envoyerViaRepli).
  */
+// Même consigne que le bouton Continuer du chat (ChatIA.tsx, continuerApresInterruption).
+const CONSIGNE_CONTINUER_APRES_ARRET = "Continue exactement où tu t'es arrêté, sans tout reprendre depuis le début.";
+
 async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
   // Conversation partagée : celle du chat quand il y en a un, sinon celle du
   // canal. L'état (historique, dernier message) est celui de cette conversation.
+  // Vérifiée AVANT de déclarer la tâche en cours : sans conversation, rien ne part
+  // et le bouton arrêter ne doit pas rester affiché.
   const conversationId = conversationActive();
   if (!conversationId) return false;
+  const reglages = lireReglagesProchainMessage();
+  consommerReglagesUniquesProchainMessage();
+  const controleur = new AbortController();
+  mettreAJourSourceTache("tour_direct", {
+    enCours: true,
+    interrompue: false,
+    arreter: () => controleur.abort(),
+  });
   const etat = lireEtatConversation(conversationId);
   let idUser: IdMessage | null = null;
   let idAssistant: IdMessage | null = null;
@@ -240,7 +255,12 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
         historique: etat.historique,
         conversation_id: conversationId,
         parent_id: etat.dernierMessageId,
-        longueur_reponse: "moyenne",
+        // Réglages du prochain message, communs avec la barre de saisie du chat
+        // (lib/reglagesProchainMessage.ts, 03/10/2026, demande Bourama). Lus au moment de
+        // l'envoi : ce que l'étudiant a choisi dans les Réglages du canal ou du chat.
+        longueur_reponse: reglages.longueur,
+        sans_enseignant: reglages.sansEnseignant,
+        modele: reglages.modeleId,
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
         etat_editeur: obtenirLectureEditeurPourChat(),
@@ -261,9 +281,11 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
           idUser = evenement.message_id_user ?? idUser;
           idAssistant = evenement.message_id_assistant ?? idAssistant;
         }
-      }
+      },
+      controleur.signal
     );
 
+    mettreAJourSourceTache("tour_direct", { enCours: false, interrompue: false });
     ajouterTourDirect(conversationId, texte, reponseAccumulee, idUser, idAssistant);
 
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
@@ -273,6 +295,28 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
     if (reponseAccumulee.trim()) afficherReponseDepuisAgent({ texte: reponseAccumulee.trim(), sources, images });
     return true;
   } catch (e) {
+    // Arrêt demandé par l'étudiant (bouton arrêter du canal) : le texte déjà
+    // reçu reste affiché dans la bulle, et jamais de repli vers le chat (le
+    // message n'a pas échoué, il a été coupé). Continuer relance avec ce qui a
+    // déjà été écrit dans l'historique ; Réessayer repose la même question.
+    if (controleur.signal.aborted) {
+      if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "interrompu");
+      const texteRecu = reponseAccumulee.trim();
+      if (texteRecu) afficherReponseDepuisAgent({ texte: texteRecu, sources, images });
+      mettreAJourSourceTache("tour_direct", {
+        enCours: false,
+        interrompue: true,
+        continuer: () => {
+          ajouterTourDirect(conversationId, texte, reponseAccumulee, idUser, idAssistant);
+          void envoyerTourCanalDirect(CONSIGNE_CONTINUER_APRES_ARRET);
+        },
+        reessayer: () => {
+          void envoyerTourCanalDirect(texte);
+        },
+      });
+      return true;
+    }
+    mettreAJourSourceTache("tour_direct", { enCours: false, interrompue: false });
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     return false;
   }

@@ -7,6 +7,7 @@ import {
   obtenirModeSource,
   definirModeSource,
 } from "@/lib/api";
+import { diffuserChangementReglageConversation, ecouterChangementsReglageConversation } from "@/lib/diffusionReglagesConversation";
 
 // Mode pédagogique (Socratique, Professeur, Tuteur, Examinateur) et mode
 // ressources (Recherche, Sur pièces) d'une conversation. Deux réglages
@@ -57,6 +58,16 @@ export function useReglagesPedagogiques(conversationId?: string) {
     };
   }, [conversationId]);
 
+  // Choix fait ailleurs (ex. Réglages du canal en direct) : même conversation, même valeur.
+  useEffect(() => {
+    if (!conversationId) return;
+    return ecouterChangementsReglageConversation((c) => {
+      if (c.conversationId !== conversationId) return;
+      if (c.type === "persona") setPersona(c.valeur);
+      else if (c.type === "mode_source") setModeSource(c.valeur);
+    });
+  }, [conversationId]);
+
   // Mise à jour optimiste immédiate, retour à la valeur précédente en
   // silence si l'appel réseau échoue.
   async function choisirPersona(id: string | null) {
@@ -65,6 +76,7 @@ export function useReglagesPedagogiques(conversationId?: string) {
     setPersona(id);
     try {
       await definirPersonaPedagogique(conversationId, id);
+      diffuserChangementReglageConversation({ conversationId, type: "persona", valeur: id });
     } catch {
       setPersona(precedent);
     }
@@ -76,6 +88,7 @@ export function useReglagesPedagogiques(conversationId?: string) {
     setModeSource(id);
     try {
       await definirModeSource(conversationId, id);
+      diffuserChangementReglageConversation({ conversationId, type: "mode_source", valeur: id });
     } catch {
       setModeSource(precedent);
     }

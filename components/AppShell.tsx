@@ -25,7 +25,6 @@ import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
-import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
 import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
@@ -390,7 +389,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             natif={natif}
           />
           <FenetresSections />
-          {/* Correctif (28/09/2026) : sur Electron, ces trois là vivent
+          {/* Correctif (28/09/2026) : sur Electron, ces deux là vivent
               uniquement dans la fenêtre de superposition (voir le state
               surElectronClient plus haut) : les monter ici en plus les
               aurait affichés en double. Sur web/mobile, pas de fenêtre de
@@ -398,7 +397,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {!surElectronClient && <CurseurVirtuelAgent />}
           {!surElectronClient && <BulleDialogueAgent />}
           <VoixDirecteSuperposition />
-          {!surElectronClient && <BoutonJournalAgent />}
           {/* Sur Electron (01/10/2026, demande Bourama), le bouton du canal
               n'est plus monté ici du tout : la superposition l'affiche en
               permanence, fenêtre fermée comprise, et c'est le seul
