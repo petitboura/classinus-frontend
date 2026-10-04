@@ -266,6 +266,8 @@ async function envoyerTourCanalDirect(texte: string, options?: { automatique?: b
         longueur_reponse: reglages.longueur,
         sans_enseignant: reglages.sansEnseignant,
         modele: reglages.modeleId,
+        // Reglage Effort (04/10/2026), meme valeur que dans la barre de saisie du chat.
+        effort_reflexion: reglages.effort,
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
         etat_editeur: obtenirLectureEditeurPourChat(),

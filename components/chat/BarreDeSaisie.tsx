@@ -27,6 +27,7 @@ import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
 import type { LongueurReponse } from "./barre/reglagesReponse";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
 import {
+  definirEffortProchainMessage,
   definirLongueurProchainMessage,
   definirSansEnseignantProchainMessage,
   lireReglagesProchainMessage,
@@ -203,8 +204,10 @@ export function BarreDeSaisie({
   const [texte, setTexte] = useState(() => texteInitial ?? "");
   // Longueur et « Sans enseignant » vivent dans lib/reglagesProchainMessage.ts (03/10/2026,
   // demande Bourama) : le canal en direct les modifie aussi, ils doivent rester communs.
-  const { longueur, sansEnseignant } = useReglagesProchainMessage();
+  const { longueur, effort, sansEnseignant } = useReglagesProchainMessage();
   const setLongueur = definirLongueurProchainMessage;
+  // Effort de réflexion de DeepSeek (04/10/2026) : lu à l'envoi par ChatIA.tsx, pas via onEnvoyer.
+  const setEffort = definirEffortProchainMessage;
   const setSansEnseignant = (valeur: boolean | ((v: boolean) => boolean)) =>
     definirSansEnseignantProchainMessage(typeof valeur === "function" ? valeur(lireReglagesProchainMessage().sansEnseignant) : valeur);
   // Devenu un TABLEAU le 17/08 (demande Bourama : "permet l'upload de
@@ -1741,6 +1744,8 @@ export function BarreDeSaisie({
               onModeleChange={onModeleChange}
               longueur={longueur}
               onLongueurChange={setLongueur}
+              effort={effort}
+              onEffortChange={setEffort}
               eleveChoisitMode={modeActif.eleveChoisitMode}
               pedagogie={pedagogie}
               modeActif={modeActif}
@@ -1940,6 +1945,8 @@ export function BarreDeSaisie({
           onModeleChange={onModeleChange}
           longueur={longueur}
           onLongueurChange={setLongueur}
+          effort={effort}
+          onEffortChange={setEffort}
           eleveChoisitMode={modeActif.eleveChoisitMode}
           pedagogie={pedagogie}
           modeActif={modeActif}

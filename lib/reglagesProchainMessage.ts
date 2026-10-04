@@ -9,6 +9,8 @@
 //
 // - longueur : "courte" | "moyenne" | "longue", durable (reste d'un message à l'autre).
 // - modeleId : modèle premium choisi, null = choix automatique de l'agent. Durable.
+// - effort : effort de réflexion de DeepSeek (04/10/2026), "none" | "low" | "high" | "max", durable.
+//   Même défaut que le backend (DEEPSEEK_REASONING_EFFORT = "low").
 // - sansEnseignant : ne vaut que pour le prochain message, remis à faux à l'envoi.
 //
 // Le mode pédagogique, les modes ressources et le code enseignant ne sont pas ici :
@@ -16,22 +18,23 @@
 // components/chat/barre/useReglagesPedagogiques.ts), donc déjà communs au chat et au
 // canal qui partagent la même conversation.
 
-import type { LongueurReponse } from "@/components/chat/barre/reglagesReponse";
+import type { EffortReflexion, LongueurReponse } from "@/components/chat/barre/reglagesReponse";
 
 export type ReglagesProchainMessage = {
   longueur: LongueurReponse;
   modeleId: string | null;
+  effort: EffortReflexion;
   sansEnseignant: boolean;
 };
 
-const PAR_DEFAUT: ReglagesProchainMessage = { longueur: "moyenne", modeleId: null, sansEnseignant: false };
+const PAR_DEFAUT: ReglagesProchainMessage = { longueur: "moyenne", modeleId: null, effort: "low", sansEnseignant: false };
 
 let etat: ReglagesProchainMessage = PAR_DEFAUT;
 const ecouteurs = new Set<() => void>();
 
 function changer(partiel: Partial<ReglagesProchainMessage>) {
   const suivant = { ...etat, ...partiel };
-  if (suivant.longueur === etat.longueur && suivant.modeleId === etat.modeleId && suivant.sansEnseignant === etat.sansEnseignant) return;
+  if (suivant.longueur === etat.longueur && suivant.modeleId === etat.modeleId && suivant.effort === etat.effort && suivant.sansEnseignant === etat.sansEnseignant) return;
   // Nouvel objet seulement quand quelque chose change : useSyncExternalStore compare par référence.
   etat = suivant;
   ecouteurs.forEach((ecouteur) => ecouteur());
@@ -58,6 +61,10 @@ export function definirLongueurProchainMessage(longueur: LongueurReponse) {
 
 export function definirModeleProchainMessage(modeleId: string | null) {
   changer({ modeleId });
+}
+
+export function definirEffortProchainMessage(effort: EffortReflexion) {
+  changer({ effort });
 }
 
 export function definirSansEnseignantProchainMessage(sansEnseignant: boolean) {

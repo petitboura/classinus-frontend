@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Check, ChevronDown, Lock, X, Sparkles, AlignLeft, GraduationCap, BookOpen, KeyRound } from "lucide-react";
+import { Check, ChevronDown, Lock, X, Sparkles, AlignLeft, GraduationCap, BookOpen, KeyRound, Gauge } from "lucide-react";
 import { LigneReglage } from "./LigneReglage";
 import {
   type LongueurReponse,
+  type EffortReflexion,
   NIVEAUX_LONGUEUR,
   LABELS_LONGUEUR,
+  NIVEAUX_EFFORT,
+  LABELS_EFFORT,
   PERSONAS,
   MODES_SOURCE,
   ORDRE_DISTRIBUTEURS_AFFICHAGE,
@@ -15,7 +18,7 @@ import {
 import type { EtatModeActif } from "./useModeActif";
 import type { EtatReglagesPedagogiques } from "./useReglagesPedagogiques";
 
-type LigneId = "modele" | "longueur" | "persona" | "source" | "code";
+type LigneId = "modele" | "longueur" | "effort" | "persona" | "source" | "code";
 
 // Un choix d'une ligne dépliée : le choix actuel est marqué d'une coche et de
 // la couleur d'accent.
@@ -58,7 +61,7 @@ function Choix({
 /**
  * Bouton "Réglages" de la barre de saisie (01/10/2026, refonte de la barre) :
  * un seul bouton qui regroupe tous les réglages de réponse. Au clic il ouvre
- * une liste de lignes (Modèle, Longueur de réponse, Mode pédagogique, Modes
+ * une liste de lignes (Modèle, Longueur de réponse, Effort, Mode pédagogique, Modes
  * ressources, Code enseignant), chacune avec son icône. Une ligne déplie ses
  * choix juste en dessous, avec le choix actuel marqué. Une seule ligne est
  * dépliée à la fois : en ouvrir une replie l'autre.
@@ -83,6 +86,8 @@ export function BoutonReglages({
   onModeleChange,
   longueur,
   onLongueurChange,
+  effort,
+  onEffortChange,
   eleveChoisitMode,
   pedagogie,
   modeActif,
@@ -97,6 +102,9 @@ export function BoutonReglages({
   onModeleChange?: (modeleId: string | null) => void;
   longueur: LongueurReponse;
   onLongueurChange: (valeur: LongueurReponse) => void;
+  // Effort de réflexion de DeepSeek (04/10/2026), voir lib/reglagesProchainMessage.ts.
+  effort: EffortReflexion;
+  onEffortChange: (valeur: EffortReflexion) => void;
   // Faux quand l'enseignant a décoché "l'élève peut choisir son mode".
   eleveChoisitMode: boolean;
   pedagogie: EtatReglagesPedagogiques;
@@ -122,6 +130,7 @@ export function BoutonReglages({
   // Choix actuel de chaque ligne, lu dans la bulle au survol du bouton.
   const valeurModele = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "Auto";
   const valeurLongueur = LABELS_LONGUEUR[longueur];
+  const valeurEffort = LABELS_EFFORT[effort];
   const valeurPersona = PERSONAS.find((p) => p.id === pedagogie.persona)?.label ?? "Aucun mode";
   const valeurSource = MODES_SOURCE.find((m) => m.id === pedagogie.modeSource)?.label ?? "Aucun";
   const codeActif = modeActif.rattachements.find((r) => r.rattachement_id === modeActif.modeActifId);
@@ -129,6 +138,7 @@ export function BoutonReglages({
   const resume: { titre: string; valeur: string }[] = [];
   if (afficherModele) resume.push({ titre: "Modèle", valeur: valeurModele });
   resume.push({ titre: "Longueur de réponse", valeur: valeurLongueur });
+  resume.push({ titre: "Effort", valeur: valeurEffort });
   if (afficherPersona) resume.push({ titre: "Mode pédagogique", valeur: valeurPersona });
   resume.push({ titre: "Modes ressources", valeur: valeurSource });
   if (afficherCode) resume.push({ titre: "Code enseignant", valeur: valeurCode });
@@ -324,6 +334,22 @@ export function BoutonReglages({
                 }}
               >
                 {LABELS_LONGUEUR[valeur]}
+              </Choix>
+            ))}
+          </LigneReglage>
+
+          <LigneReglage Icone={Gauge} titre="Effort" {...ligneProps("effort")}>
+            {NIVEAUX_EFFORT.map((valeur) => (
+              <Choix
+                grand={mobile}
+                key={valeur}
+                actif={effort === valeur}
+                onClick={() => {
+                  onEffortChange(valeur);
+                  fermer();
+                }}
+              >
+                {LABELS_EFFORT[valeur]}
               </Choix>
             ))}
           </LigneReglage>

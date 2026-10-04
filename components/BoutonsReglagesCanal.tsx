@@ -20,7 +20,7 @@ import { ContexteChat } from "@/lib/contexteChat";
 import { conversationActive } from "@/lib/conversationPartagee";
 import { useOutilsRegistre } from "@/lib/outils";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
-import { definirLongueurProchainMessage, definirModeleProchainMessage } from "@/lib/reglagesProchainMessage";
+import { definirEffortProchainMessage, definirLongueurProchainMessage, definirModeleProchainMessage } from "@/lib/reglagesProchainMessage";
 
 const CLASSE_ROND =
   "flex h-10 w-10 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet shadow-lg";
@@ -45,6 +45,8 @@ export function BoutonReglagesCanal({ conversationId }: { conversationId: string
         onModeleChange={definirModeleProchainMessage}
         longueur={reglages.longueur}
         onLongueurChange={definirLongueurProchainMessage}
+        effort={reglages.effort}
+        onEffortChange={definirEffortProchainMessage}
         eleveChoisitMode={modeActif.eleveChoisitMode}
         pedagogie={pedagogie}
         modeActif={modeActif}

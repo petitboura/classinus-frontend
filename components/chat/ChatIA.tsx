@@ -1215,6 +1215,9 @@ export function ChatIA({
           // change le defaut, voir modeleSelectionne plus haut. Revalide
           // cote backend avant d'etre honore (api/chat.py:_resoudre_modele_force).
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : effort de reflexion de DeepSeek, lu au
+          // moment de l'envoi. Revalide cote backend (none, low, high, max).
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -1321,6 +1324,8 @@ export function ChatIA({
           canal_en_direct: canalEnDirectActif,
           message_automatique: messageUtilisateur.automatique === true,
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -1419,6 +1424,8 @@ export function ChatIA({
           natif,
           canal_en_direct: canalEnDirectActif,
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
