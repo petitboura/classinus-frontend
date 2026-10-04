@@ -20,10 +20,10 @@ export type EffortReflexion = "none" | "low" | "high" | "max";
 export const NIVEAUX_EFFORT: EffortReflexion[] = ["none", "low", "high", "max"];
 
 export const LABELS_EFFORT: Record<EffortReflexion, string> = {
-  none: "None",
-  low: "Low",
-  high: "High",
-  max: "Max",
+  none: "Aucun",
+  low: "Faible",
+  high: "Élevé",
+  max: "Maximum",
 };
 
 // Regroupement du sélecteur de modèle premium par distributeur (02/08/2026,
