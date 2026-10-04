@@ -37,7 +37,7 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
     : { fond: "#1A1714", texte: "#F5F0E6", champBg: "#221E18", bordure: "rgba(245,240,230,0.14)", accent: "#E3B341", degrade: "linear-gradient(135deg,#F0C766 0%,#D9A438 55%,#8A6A1F 100%)" };
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
     <style>
-      html,body{margin:0;padding:12px;background:${t.fond};color:${t.texte};
+      html,body{margin:0;padding:0;background:transparent;color:${t.texte};
         font-family:'Work Sans',system-ui,sans-serif;}
       *{box-sizing:border-box;}
       /* Style par défaut pour tout champ/bouton généré sans CSS propre --
@@ -185,7 +185,10 @@ function demanderInfosWidget(iframe: HTMLIFrameElement): Promise<{ interactif: b
 //
 // Affichage direct (demande Bourama, 04/10/2026) : le widget est visible tout
 // de suite dans le fil, à la largeur du texte comme un tableau, sans puce
-// repliée ni carte autour (option direct de BlocExpansible).
+// repliée ni carte autour (option direct de BlocExpansible). Il ne fait qu'un
+// avec le chat : ni contour ni coins arrondis sur l'iframe, document au fond
+// transparent et sans marge (on voit le fond du chat), et la hauteur suit le
+// contenu sans plafond, donc pas de défilement dans le widget lui même.
 export function WidgetSandbox({ code }: { code: string }) {
   const { resolu } = useTheme();
   const [codeStable, setCodeStable] = useState<string | null>(null);
@@ -328,7 +331,7 @@ export function WidgetSandbox({ code }: { code: string }) {
           <div
             ref={setZoneSqueletteEl}
             style={{ height: HAUTEUR_INITIALE_WIDGET_PX }}
-            className="flex w-full flex-col gap-3 rounded-lg border border-dj-bordure p-4"
+            className="flex w-full flex-col gap-3"
           >
             <Skeleton className="h-4 w-1/3 rounded" />
             <Skeleton className="min-h-0 flex-1 rounded-xl" />
@@ -343,7 +346,7 @@ export function WidgetSandbox({ code }: { code: string }) {
             sandbox="allow-scripts allow-forms allow-modals"
             srcDoc={construireDocumentWidget(codeStable, resolu)}
             style={{ height: hauteur }}
-            className="w-full rounded-lg border border-dj-bordure transition-[height] duration-200 ease-out motion-reduce:transition-none"
+            className="block w-full transition-[height] duration-200 ease-out motion-reduce:transition-none"
             title="Widget interactif"
           />
         )

@@ -87,7 +87,10 @@ components/
                           survol sur ordinateur et toujours visible sur écran tactile, hors du widget pour ne
                           jamais apparaître dans la vidéo de Filmer, puis dans un rail d'icônes collé en haut
                           du bloc (au survol) quand cette rangée sort de l'écran ; les autres contenus (code, PDF, Office,
-                          texte) gardent la puce repliée
+                          texte) gardent la puce repliée ; le widget et l'animation ne font qu'un avec le chat : ni
+                          contour ni coins arrondis sur l'iframe, document au fond transparent et sans marge, et
+                          la hauteur du widget suit son contenu (plafond de sécurité à 6000 px) sans défilement
+                          dans le widget lui même
     minuteurs/           minuteurs (20/09/2026) : DockMinuteurs.tsx (cartes et pastilles en position fixe
                           sous la cloche, montée UNE fois dans AppShell.tsx pour tous les écrans, 03/10/2026),
                           CarteMinuteur.tsx, PastilleMinuteur.tsx (version réduite),

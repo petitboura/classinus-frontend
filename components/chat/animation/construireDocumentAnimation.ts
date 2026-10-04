@@ -94,10 +94,10 @@ export function construireDocumentAnimation(
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-html,body{margin:0;height:100%;background:${p.fond};color:${p.texte};font-family:'Work Sans',system-ui,sans-serif;}
+html,body{margin:0;height:100%;background:transparent;color:${p.texte};font-family:'Work Sans',system-ui,sans-serif;}
 *{box-sizing:border-box;}
 body{-webkit-tap-highlight-color:transparent;}
-#an-cadre{display:flex;flex-direction:column;height:100%;padding:10px;gap:8px;}
+#an-cadre{display:flex;flex-direction:column;height:100%;padding:0;gap:8px;}
 #an-zone{position:relative;flex:1;min-height:0;border:1px solid ${p.bordure};border-radius:12px;overflow:hidden;background:${p.surface};cursor:pointer;}
 #an-zone svg{display:block;width:100%;height:100%;font-family:inherit;}
 #an-squelette{position:absolute;inset:0;background-image:linear-gradient(100deg,transparent 30%,${p.bordure} 50%,transparent 70%);background-size:250% 100%;animation:an-balayage 1.4s linear infinite;transition:opacity .3s ease;}

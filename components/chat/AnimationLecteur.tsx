@@ -23,6 +23,9 @@ import { construireDocumentAnimation } from "./animation/construireDocumentAnima
 // BlocExpansible), avec un vrai plein écran (BlocExpansible force l'iframe
 // à remplir tout l'espace en plein écran, voir contenuEnIframe).
 //
+// Elle ne fait qu'un avec le chat : ni contour ni coins arrondis sur l'iframe,
+// document au fond transparent et sans marge (on voit le fond du chat).
+//
 // L'animation ne démarre que lorsqu'elle approche de l'écran (voir
 // lib/useProcheEcran.ts), pour qu'une longue conversation avec plusieurs
 // animations ne les lance pas toutes d'un coup.
@@ -36,7 +39,7 @@ const HAUTEUR_FIL = "h-[28rem]";
 // lecture, titres) pour éviter un saut visuel à l'arrivée.
 function SqueletteAnimation({ surMontage }: { surMontage: (el: HTMLDivElement | null) => void }) {
   return (
-    <div ref={surMontage} className={`flex ${HAUTEUR_FIL} w-full flex-col gap-2 rounded-lg border border-dj-bordure p-2.5`}>
+    <div ref={surMontage} className={`flex ${HAUTEUR_FIL} w-full flex-col gap-2`}>
       <Skeleton className="min-h-0 flex-1 rounded-xl" />
       <Skeleton className="h-3.5 w-3/4 rounded" />
       <div className="flex items-center gap-2">
@@ -87,7 +90,7 @@ export function AnimationLecteur({ code }: { code: string }) {
           <iframe
             sandbox="allow-scripts"
             srcDoc={document_}
-            className={`${HAUTEUR_FIL} w-full rounded-lg border border-dj-bordure`}
+            className={`block ${HAUTEUR_FIL} w-full`}
             title={textes.iframeTitre}
             // Un tap ou un clic sur "ouvrir" vient d'avoir lieu : la barre
             // d'espace doit tout de suite agir sur l'animation, sans clic

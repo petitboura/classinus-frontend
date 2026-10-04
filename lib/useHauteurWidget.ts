@@ -7,7 +7,9 @@ import { TYPE_MESSAGE_HAUTEUR_WIDGET } from "@/lib/scriptHauteurWidget";
 //
 // Le cadre part de HAUTEUR_INITIALE_WIDGET_PX, qui est l'ancienne hauteur
 // fixe (h-96), puis suit la hauteur que le widget annonce, entre un minimum et
-// un maximum. Au delà du maximum, le widget défile à l'intérieur de son cadre.
+// un maximum de sécurité très haut (04/10/2026 : le widget ne fait qu'un avec
+// le chat, il ne doit pas défiler dans lui même, l'ancien plafond de 1200 px
+// le faisait défiler dès qu'il était un peu long).
 //
 // Trois protections, chacune pour un cas précis :
 //
@@ -25,7 +27,7 @@ import { TYPE_MESSAGE_HAUTEUR_WIDGET } from "@/lib/scriptHauteurWidget";
 
 export const HAUTEUR_INITIALE_WIDGET_PX = 384;
 export const HAUTEUR_MIN_WIDGET_PX = 120;
-export const HAUTEUR_MAX_WIDGET_PX = 1200;
+export const HAUTEUR_MAX_WIDGET_PX = 6000;
 const NB_CROISSANCES_SUSPECTES_WIDGET = 5;
 const DELAI_CROISSANCE_SUSPECTE_MS = 700;
 
