@@ -125,6 +125,12 @@ function couleursTabbar(resolu: "clair" | "sombre") {
   return { dynamic: false, background: c.fond, tint: c.accent, inactiveTint: c.muet };
 }
 
+// Taille et position de la capsule, en dp. Le plugin utilise 64 de hauteur et
+// 10 de décollage du bas par défaut, jugé trop grand et trop haut. La page
+// réserve automatiquement hauteur plus décollage (variable CSS posée par le
+// plugin), donc modifier ces deux valeurs suffit.
+const STYLE_TABBAR = { shape: "floating", height: 56, bottomGap: 4 } as const;
+
 function definitionOnglets() {
   return ONGLETS_NATIFS.map((o) => ({ id: o.id, title: o.titre, icon: { svg: o.icone } }));
 }
@@ -234,6 +240,7 @@ export function BarreOngletsNative() {
       await NativeNavigation.setTabbar({
         hidden: cachee,
         selectedId,
+        style: STYLE_TABBAR,
         labelVisibilityMode: "labeled",
         icons: true,
         colors: couleursTabbar(resolu),
