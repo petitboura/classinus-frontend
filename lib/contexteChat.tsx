@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { useCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { ROUTES_APP } from "@/lib/routesApp";
+import { useConversationEnCoursMemorisee } from "@/lib/conversationEnCoursMemorisee";
 
 // "plein_ecran" retiré du type le 07/09/2026 (chantier "chat plein écran
 // = vraie section", étape 5) : /chat est désormais une route comme les
@@ -351,6 +352,25 @@ export function useFournirContexteChat(): ContexteChatValeur {
   const uidHistoriqueRef = useRef<string | null>(null);
   const historiqueSynchroniseRef = useRef(false);
   const [texteInitialConversation, setTexteInitialConversation] = useState<string | null>(null);
+
+  // 04/10/2026 : la conversation affichée est retenue pour la durée de
+  // l'onglet et rechargée après un rafraîchissement de page (voir
+  // lib/conversationEnCoursMemorisee.ts).
+  useConversationEnCoursMemorisee({
+    agentId: agent?.id ?? null,
+    chargement,
+    cle,
+    nbMessages,
+    demandeEnCours:
+      demandeOuvrirConversation !== null ||
+      demandeGuide !== null ||
+      demandePrefill !== null ||
+      texteInitialConversation !== null,
+    setCle,
+    setMessagesInitiaux,
+    setNbMessages,
+    setChargementFilConversation,
+  });
 
   // Étape 2 (07/09/2026, chantier "chat plein écran = vraie section") :
   // ce chargement initial (détail agent + outils + historique) vivait
