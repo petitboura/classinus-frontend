@@ -35,6 +35,7 @@ import {
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
+import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -1558,7 +1559,7 @@ export function BarreDeSaisie({
               if (calqueRef.current) calqueRef.current.scrollTop = e.currentTarget.scrollTop;
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (entreeDoitEnvoyer(e)) {
                 e.preventDefault();
                 envoyer();
               }
@@ -1903,7 +1904,7 @@ export function BarreDeSaisie({
           }}
           onPaste={gererCollage}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (entreeDoitEnvoyer(e)) {
               e.preventDefault();
               envoyer();
             }
@@ -2299,7 +2300,7 @@ export function BarreDeSaisie({
                 if (calquePleinEcranRef.current) calquePleinEcranRef.current.scrollTop = e.currentTarget.scrollTop;
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (entreeDoitEnvoyer(e)) {
                   e.preventDefault();
                   envoyer();
                   fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));

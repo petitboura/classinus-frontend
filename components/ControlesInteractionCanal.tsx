@@ -37,6 +37,7 @@ import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { conversationActive } from "@/lib/conversationPartagee";
+import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 
 const DUREE_ERREUR_MS = 6000;
 
@@ -262,7 +263,7 @@ export function ControlesInteractionCanal({
   };
 
   function surToucheChamp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (entreeDoitEnvoyer(e)) {
       e.preventDefault();
       void envoyerTexte();
     } else if (e.key === "Escape") {
@@ -616,7 +617,7 @@ export function ControlesInteractionCanal({
               value={texteSaisi}
               onChange={(e) => setTexteSaisi(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (entreeDoitEnvoyer(e)) {
                   e.preventDefault();
                   void envoyerTexte().then((parti) => parti && fermerPleinEcran());
                 }
