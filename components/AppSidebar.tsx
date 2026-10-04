@@ -10,6 +10,7 @@ import { useFenetres } from "@/lib/contexteFenetres";
 import { MenuGroupe } from "@/components/MenuGroupeRail";
 import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
 import {
   LogOut,
   UserRound,
@@ -1102,6 +1103,14 @@ export function AppSidebar({
           }
         >
           <div className="mt-[calc(2rem+var(--safe-top))]">
+            {/* Identité en tête du panneau : même logo que le reste de l'appli,
+                suivi du nom, avec le même séparateur que le rail desktop. Le
+                pt-2 garde le logo sous le bouton hamburger flottant. */}
+            <div className="flex items-center gap-2 px-2 pt-2">
+              <Logo taille={28} />
+              <span className="text-base font-semibold text-dj-texte">Classinus</span>
+            </div>
+            <div className="my-2 h-px w-full bg-dj-bordure" />
             {contexteChat && (
               <>
                 {aDesMessages && (

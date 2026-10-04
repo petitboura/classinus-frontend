@@ -125,8 +125,32 @@ function couleursTabbar(resolu: "clair" | "sombre") {
   return { dynamic: false, background: c.fond, tint: c.accent, inactiveTint: c.muet };
 }
 
+// Taille et position de la capsule, en dp. Le plugin utilise 64 de hauteur et
+// 10 de décollage du bas par défaut, jugé trop grand et trop haut. La page
+// réserve automatiquement hauteur plus décollage (variable CSS posée par le
+// plugin), donc modifier ces deux valeurs suffit.
+const STYLE_TABBAR = { shape: "floating", height: 56, bottomGap: 4 } as const;
+
 function definitionOnglets() {
   return ONGLETS_NATIFS.map((o) => ({ id: o.id, title: o.titre, icon: { svg: o.icone } }));
+}
+
+// Tous les appels au plugin passent par cette file, l'un après l'autre.
+// Le plugin applique simplement le dernier appel reçu : sans ordre garanti,
+// un appel parti plus tôt mais terminé plus tard écrase l'état voulu. C'était
+// le cas au lancement de l'appli, qui arrive directement sur le chat : le
+// montage appelait configure() puis setTabbar({ hidden: false }), pendant que
+// l'effet de route appelait déjà setTabbar({ hidden: true }). Le second
+// arrivait avant la fin de configure(), puis le premier le réaffichait, et
+// rien ne le recachait ensuite puisque la route ne changeait plus. La barre
+// restait visible sur le chat et l'espace qu'elle réserve poussait la barre
+// de saisie vers le haut. Un seul état à la fois, appliqué dans l'ordre.
+let filePlugin: Promise<void> = Promise.resolve();
+
+function enfilerAppelPlugin(tache: () => Promise<void>) {
+  filePlugin = filePlugin.then(tache).catch((e) => {
+    console.error("BarreOngletsNative : appel au plugin en échec", e);
+  });
 }
 
 export function BarreOngletsNative() {
@@ -153,25 +177,21 @@ export function BarreOngletsNative() {
   const resoluRef = useRef(resolu);
   resoluRef.current = resolu;
 
+  // Montage unique : configuration du plugin et écoute des taps sur les
+  // onglets. L'affichage de la barre n'est PAS décidé ici, seulement dans
+  // l'effet de route ci-dessous, qui connaît la page réellement affichée.
   useEffect(() => {
     let annule = false;
     let nettoyerEcoute: (() => void) | undefined;
 
-    import("@capacitor/core").then(async ({ Capacitor }) => {
+    enfilerAppelPlugin(async () => {
+      const { Capacitor } = await import("@capacitor/core");
       if (annule || !Capacitor.isNativePlatform()) return;
 
       try {
         const { NativeNavigation } = await import("@capgo/capacitor-native-navigation");
 
         await NativeNavigation.configure({ contentInsetMode: "css", colors: couleursTabbar(resoluRef.current) });
-        await NativeNavigation.setTabbar({
-          hidden: false,
-          selectedId: "bibliotheque",
-          labelVisibilityMode: "labeled",
-          icons: true,
-          colors: couleursTabbar(resoluRef.current),
-          tabs: definitionOnglets(),
-        });
 
         const abonnement = await NativeNavigation.addListener("tabSelect", ({ id }: { id: string }) => {
           const { router } = gestionnaireRef.current;
@@ -179,17 +199,15 @@ export function BarreOngletsNative() {
           if (!onglet) return;
           router.push(onglet.route);
         });
+        if (annule) {
+          abonnement.remove();
+          return;
+        }
         nettoyerEcoute = () => abonnement.remove();
       } catch (e) {
-        // Correctif (31/08/2026, Bourama : "l'appli deborde du haut") :
-        // avant, une erreur ici (ex. plugin pas encore synchronise cote
-        // Android, voir android/capacitor.settings.gradle) disparaissait
-        // silencieusement -- configure()/setTabbar() echouaient, aucune
-        // des deux CSS var (--cap-native-navigation-top/bottom) n'etait
-        // jamais posee, et rien ne le signalait. AppShell.tsx a maintenant
-        // un repli sur --safe-top/--safe-bottom pour ce cas (voir son
-        // commentaire), mais ce console.error reste necessaire pour
-        // qu'un echec futur soit visible au lieu de redevenir invisible.
+        // Une erreur ici (ex. plugin pas encore synchronisé côté Android)
+        // doit rester visible dans la console : sans elle, configure() échoue
+        // en silence et plus aucune variable CSS d'espace n'est posée.
         console.error("BarreOngletsNative : echec de configuration de la barre native", e);
       }
     });
@@ -201,30 +219,28 @@ export function BarreOngletsNative() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- montage unique volontaire, voir gestionnaireRef ci-dessus
   }, []);
 
-  // Synchronise l'onglet visuellement actif avec la route affichee (ex :
-  // ouvrir Bibliotheque depuis "Personnaliser Classinus" doit aussi mettre a
-  // jour la barre), ET masque/affiche la barre pendant le chat plein
-  // ecran. Etape 3 (07/09/2026, chantier "chat plein ecran = vraie
-  // section") : /chat est desormais une route comme les autres, donc ce
-  // masquage se decide sur le chemin actif (pathname === "/chat") au
-  // lieu de l'ancien etat "plein_ecran" de ContexteChat -- meme
-  // comportement visuel qu'avant (barre cachee pendant le chat plein
-  // ecran), juste une source differente. Un seul effet pour les deux
-  // (actif + hidden) -- dans les deux cas on rappelle setTabbar avec le
-  // meme tableau complet (tabs, couleurs, selectedId), voir le
-  // commentaire d'en-tete sur l'absence de "selectTab" et de
-  // "hide"/"show" dedies. Depend aussi de `resolu` (26/08/2026, correctif
-  // couleurs) : bascule clair/sombre doit recolorer la barre native en
-  // direct.
+  // Source unique de l'état de la barre : onglet actif, couleurs du thème et
+  // visibilité (cachée sur le chat). Tourne aussi au premier rendu, donc la
+  // barre naît directement dans le bon état, sur le chat comme ailleurs. Quand
+  // elle est cachée, le plugin remet lui même à 0 la variable CSS d'espace
+  // du bas qu'il pose sur la page, au même instant : rien d'autre à
+  // synchroniser côté mise en page. Un seul appel setTabbar avec le tableau
+  // complet, car le plugin n'a ni selectTab ni hide/show séparés. Dépend aussi
+  // de `resolu` pour recolorer la barre en direct au changement de thème.
   useEffect(() => {
-    import("@capacitor/core").then(async ({ Capacitor }) => {
+    const actif = ONGLETS_NATIFS.find((o) => correspondARoute(pathname, o.route));
+    if (actif) dernierOngletRef.current = actif.id;
+    const cachee = estPageChat(pathname);
+    const selectedId = dernierOngletRef.current;
+
+    enfilerAppelPlugin(async () => {
+      const { Capacitor } = await import("@capacitor/core");
       if (!Capacitor.isNativePlatform()) return;
       const { NativeNavigation } = await import("@capgo/capacitor-native-navigation");
-      const actif = ONGLETS_NATIFS.find((o) => correspondARoute(pathname, o.route));
-      if (actif) dernierOngletRef.current = actif.id;
       await NativeNavigation.setTabbar({
-        hidden: estPageChat(pathname),
-        selectedId: dernierOngletRef.current,
+        hidden: cachee,
+        selectedId,
+        style: STYLE_TABBAR,
         labelVisibilityMode: "labeled",
         icons: true,
         colors: couleursTabbar(resolu),
