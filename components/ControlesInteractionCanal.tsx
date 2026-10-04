@@ -18,7 +18,9 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, ArrowUpRight, AudioLines, Camera, ChevronDown, ChevronUp, Mic, Minimize2, PenLine, Pin, Square } from "lucide-react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { ApparitionBoutonCanal } from "@/components/ApparitionBoutonCanal";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
 import { PleinEcranApercu } from "@/components/chat/PleinEcranApercu";
 import { LigneApercuPieces } from "@/components/chat/LigneApercuPieces";
@@ -43,11 +45,18 @@ const LABEL_MOTEUR: Record<MoteurDictee, string> = {
   whisper: "Whisper",
 };
 
-// Regroupement (02/10/2026, demande Bourama) : une fois le canal actif, un seul
-// bouton (chevron) déplie ou replie tous les autres (voix, dictée et son moteur,
-// journal). Le groupe est déplié dès l'activation. Le bouton "Écrire un message"
-// sort du groupe : il reste toujours visible.
-export function ControlesInteractionCanal() {
+// Disposition (03/10/2026, demande Bourama), de bas en haut, en trois colonnes alignées :
+//   ligne 1 : activation du canal (boutonActivation), chevron qui déplie ou replie, « + » ;
+//   ligne 2 : Écrire, Mode vocal, Utilitaires ;
+//   puis la ligne de la dictée (bouton et choix du moteur), puis celle de Arrêter la tâche
+//   (pendant une tâche) et Réglages.
+// Le groupe est déplié dès l'activation. Écrire et Arrêter la tâche restent visibles groupe
+// replié. Le journal est un bouton fixe et déplaçable, affiché canal actif et groupe déplié.
+export function ControlesInteractionCanal({
+  boutonActivation = null,
+}: {
+  boutonActivation?: ReactNode;
+}) {
   const contexte = useContext(ContexteCanalEnDirect);
   const actif = contexte?.actif ?? false;
   const modeInteraction = contexte?.modeInteraction ?? "texte";
@@ -66,6 +75,10 @@ export function ControlesInteractionCanal() {
 
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const [groupeOuvert, setGroupeOuvert] = useState(true);
+  // Le journal passe par un portail : posé en dehors du groupe, il garde sa position fixe
+  // même quand le groupe est déplacé.
+  const [monte, setMonte] = useState(false);
+  useEffect(() => setMonte(true), []);
   const [pleinEcran, setPleinEcran] = useState(false);
   // Pièces jointes du « + » (03/10/2026, demande Bourama) : aperçu avant l'envoi,
   // dans une ligne défilable à gauche et à droite, comme dans la barre de saisie du chat.
@@ -274,187 +287,178 @@ export function ControlesInteractionCanal() {
 
   return (
     <>
-      <AnimatePresence>
-        {actif && (
-          <motion.div
-            key="controles"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.18 }}
-            className="flex flex-col items-start gap-2"
-          >
-            <AnimatePresence>
-              {erreur && (
-                <motion.p
-                  key="erreur"
-                  role="alert"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="max-w-[min(18rem,calc(100vw-2rem))] rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-[var(--dj-erreur)] shadow-lg"
-                >
-                  {erreur}
-                </motion.p>
-              )}
-            </AnimatePresence>
+      <div className="flex flex-col items-start gap-2">
+        <AnimatePresence>
+          {actif && erreur && (
+            <motion.p
+              key="erreur"
+              role="alert"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="max-w-[min(18rem,calc(100vw-2rem))] rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-[var(--dj-erreur)] shadow-lg"
+            >
+              {erreur}
+            </motion.p>
+          )}
+        </AnimatePresence>
 
-            <AnimatePresence>
-              {panneauOuvert && (
-                <motion.div
-                  key="panneau"
-                  data-pas-deplacement="true"
-                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                  transition={{ duration: 0.15 }}
-                  className="relative flex w-[min(18rem,calc(100vw-2rem))] flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-xl"
-                >
-                  {/* Plein écran : même flèche que sur la barre de saisie du chat,
-                      posée au dessus du coin haut droit de la zone d'écriture. */}
-                  <button
-                    type="button"
-                    onClick={() => setPleinEcran(true)}
-                    aria-label="Agrandir en plein écran"
-                    title="Plein écran"
-                    className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
-                  >
-                    <ArrowUpRight size={12} strokeWidth={1.75} />
-                  </button>
-                  {/* Ligne défilable des pièces jointes avant l'envoi : même composant que dans
-                      la barre de saisie du chat. */}
-                  {piecesJointes.pieces.length > 0 && (
-                    <LigneApercuPieces pieces={piecesJointes.pieces} onOuvrir={() => {}} onRetirer={piecesJointes.retirer} />
-                  )}
-                  <div className="flex items-end gap-2">
-                    <textarea
-                      ref={champRef}
-                      value={texteSaisi}
-                      onChange={(e) => setTexteSaisi(e.target.value)}
-                      onKeyDown={surToucheChamp}
-                      rows={1}
-                      placeholder="Dis quelque chose à Classinus..."
-                      aria-label="Message pour Classinus pendant qu'il travaille"
-                      className="min-h-[2.5rem] max-h-40 flex-1 resize-none overflow-y-auto bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
-                    />
-                    <button
-                      onClick={() => void envoyerTexte()}
-                      disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0)}
-                      aria-label="Envoyer le message"
-                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-[#1A0D02] transition-opacity disabled:opacity-40 ${
-                        envoiEnCours ? "animate-pulse" : ""
-                      }`}
-                    >
-                      <ArrowUp size={16} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence initial={false}>
-              {groupeOuvert && (
-                <motion.div
-                  key="groupe"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex max-w-[min(20rem,calc(100vw-2rem))] flex-wrap items-center gap-2"
-                >
-                  <MenuPlus variante="bureau" entrees={entreesMenuPlus} />
-                  <BoutonUtilitairesCanal actions={actionsUtilitaires} />
-                  <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
-
-                  <button
-                    onClick={geminiLive.basculer}
-                    disabled={geminiLive.etat === "connexion"}
-                    aria-pressed={geminiLive.actif}
-                    aria-label={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
-                    title={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
-                    className={`${classeBouton(geminiLive.actif, geminiLive.actif)} ${geminiLive.etat === "reponse" ? "animate-pulse" : ""}`}
-                  >
-                    <AudioLines size={18} />
-                  </button>
-
-                  <button
-                    onClick={basculerDictee}
-                    disabled={dictee.transcriptionEnCours}
-                    aria-pressed={dictee.enEcoute}
-                    aria-label={
-                      dictee.enEcoute ? "Arrêter la dictée" : dictee.transcriptionEnCours ? "Transcription en cours" : "Dicter un message"
-                    }
-                    title={dictee.enEcoute ? "Arrêter la dictée" : "Dicter un message"}
-                    className={`${classeBouton(modeInteraction === "voix", dictee.enEcoute)} ${
-                      dictee.enEcoute || dictee.transcriptionEnCours ? "animate-pulse" : ""
-                    }`}
-                  >
-                    {dictee.enEcoute ? <Square size={16} /> : <Mic size={18} />}
-                  </button>
-
-                  {dictee.navigateurDisponible && (
-                    <div
-                      role="radiogroup"
-                      aria-label="Moteur de dictée"
-                      className="flex overflow-hidden rounded-full border border-dj-bordure bg-dj-surface text-[11px] shadow-lg"
-                    >
-                      {(Object.keys(LABEL_MOTEUR) as MoteurDictee[]).map((moteur) => (
-                        <button
-                          key={moteur}
-                          role="radio"
-                          aria-checked={dictee.moteurUtilise === moteur}
-                          onClick={() => choisirMoteur(moteur)}
-                          className={`px-2.5 py-1.5 transition-colors ${
-                            dictee.moteurUtilise === moteur
-                              ? "bg-dj-accent-1 text-[#1A0D02]"
-                              : "text-dj-texte-muet hover:text-dj-texte"
-                          }`}
-                        >
-                          {LABEL_MOTEUR[moteur]}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <BoutonJournalAgent integre />
-
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="flex items-center gap-2">
-                {/* Arrêter la tâche en cours, comme le bouton d'arrêt du chat : le
-                    texte déjà écrit reste, la bulle propose ensuite Continuer ou
-                    Réessayer (voir lib/tacheCanal.ts). N'apparaît que pendant une tâche et reste visible même quand le groupe est replié
-                    (demande Bourama, 02/10/2026). */}
-                <AnimatePresence>
-                  {contexte.tacheEnCours && (
-                    <motion.button
-                      key="arreter-tache"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={contexte.arreterTache}
-                      aria-label="Arrêter la tâche en cours"
-                      title="Arrêter la tâche en cours"
-                      className="flex h-10 w-10 items-center justify-center rounded-full border border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] shadow-lg transition-colors hover:bg-dj-accent-2"
-                    >
-                      <Square size={14} />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
+        <AnimatePresence>
+          {actif && panneauOuvert && (
+            <motion.div
+              key="panneau"
+              data-pas-deplacement="true"
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="relative flex w-[min(18rem,calc(100vw-2rem))] flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-xl"
+            >
+              {/* Plein écran : même flèche que sur la barre de saisie du chat,
+                  posée au dessus du coin haut droit de la zone d'écriture. */}
               <button
-                onClick={() => setGroupeOuvert((v) => !v)}
-                aria-expanded={groupeOuvert}
-                aria-label={groupeOuvert ? "Replier les boutons du canal" : "Déplier les boutons du canal"}
-                title={groupeOuvert ? "Replier les boutons du canal" : "Déplier les boutons du canal"}
-                className={classeBouton(false, false)}
+                type="button"
+                onClick={() => setPleinEcran(true)}
+                aria-label="Agrandir en plein écran"
+                title="Plein écran"
+                className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
               >
-                {groupeOuvert ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                <ArrowUpRight size={12} strokeWidth={1.75} />
+              </button>
+              {/* Ligne défilable des pièces jointes avant l'envoi : même composant que dans
+                  la barre de saisie du chat. */}
+              {piecesJointes.pieces.length > 0 && (
+                <LigneApercuPieces pieces={piecesJointes.pieces} onOuvrir={() => {}} onRetirer={piecesJointes.retirer} />
+              )}
+              <div className="flex items-end gap-2">
+                <textarea
+                  ref={champRef}
+                  value={texteSaisi}
+                  onChange={(e) => setTexteSaisi(e.target.value)}
+                  onKeyDown={surToucheChamp}
+                  rows={1}
+                  placeholder="Dis quelque chose à Classinus..."
+                  aria-label="Message pour Classinus pendant qu'il travaille"
+                  className="min-h-[2.5rem] max-h-40 flex-1 resize-none overflow-y-auto bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
+                />
+                <button
+                  onClick={() => void envoyerTexte()}
+                  disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0)}
+                  aria-label="Envoyer le message"
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-[#1A0D02] transition-opacity disabled:opacity-40 ${
+                    envoiEnCours ? "animate-pulse" : ""
+                  }`}
+                >
+                  <ArrowUp size={16} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {actif && (contexte.tacheEnCours || groupeOuvert) && (
+            <motion.div
+              key="ligne-reglages"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center gap-2"
+            >
+              <AnimatePresence initial={false}>
+                {/* Arrêter la tâche en cours, comme le bouton d'arrêt du chat : le texte déjà
+                    écrit reste, la bulle propose ensuite Continuer ou Réessayer (voir
+                    lib/tacheCanal.ts). N'apparaît que pendant une tâche et reste visible même
+                    quand le groupe est replié. */}
+                {contexte.tacheEnCours && (
+                  <motion.button
+                    key="arreter-tache"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={contexte.arreterTache}
+                    aria-label="Arrêter la tâche en cours"
+                    title="Arrêter la tâche en cours"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] shadow-lg transition-colors hover:bg-dj-accent-2"
+                  >
+                    <Square size={14} />
+                  </motion.button>
+                )}
+                {groupeOuvert && (
+                  <ApparitionBoutonCanal key="reglages">
+                    <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
+                  </ApparitionBoutonCanal>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {actif && groupeOuvert && (
+            <motion.div
+              key="ligne-dictee"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center gap-2"
+            >
+              <button
+                onClick={basculerDictee}
+                disabled={dictee.transcriptionEnCours}
+                aria-pressed={dictee.enEcoute}
+                aria-label={
+                  dictee.enEcoute ? "Arrêter la dictée" : dictee.transcriptionEnCours ? "Transcription en cours" : "Dicter un message"
+                }
+                title={dictee.enEcoute ? "Arrêter la dictée" : "Dicter un message"}
+                className={`${classeBouton(modeInteraction === "voix", dictee.enEcoute)} ${
+                  dictee.enEcoute || dictee.transcriptionEnCours ? "animate-pulse" : ""
+                }`}
+              >
+                {dictee.enEcoute ? <Square size={16} /> : <Mic size={18} />}
               </button>
 
+              {dictee.navigateurDisponible && (
+                <div
+                  role="radiogroup"
+                  aria-label="Moteur de dictée"
+                  className="flex overflow-hidden rounded-full border border-dj-bordure bg-dj-surface text-[11px] shadow-lg"
+                >
+                  {(Object.keys(LABEL_MOTEUR) as MoteurDictee[]).map((moteur) => (
+                    <button
+                      key={moteur}
+                      role="radio"
+                      aria-checked={dictee.moteurUtilise === moteur}
+                      onClick={() => choisirMoteur(moteur)}
+                      className={`px-2.5 py-1.5 transition-colors ${
+                        dictee.moteurUtilise === moteur
+                          ? "bg-dj-accent-1 text-[#1A0D02]"
+                          : "text-dj-texte-muet hover:text-dj-texte"
+                      }`}
+                    >
+                      {LABEL_MOTEUR[moteur]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {actif && (
+            <motion.div
+              key="ligne-ecrire"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center gap-2"
+            >
               <button
                 onClick={basculerPanneau}
                 aria-pressed={panneauOuvert}
@@ -464,10 +468,75 @@ export function ControlesInteractionCanal() {
               >
                 <PenLine size={18} />
               </button>
-            </div>
-          </motion.div>
+              <AnimatePresence initial={false}>
+                {groupeOuvert && (
+                  <ApparitionBoutonCanal key="mode-vocal">
+                    <button
+                      onClick={geminiLive.basculer}
+                      disabled={geminiLive.etat === "connexion"}
+                      aria-pressed={geminiLive.actif}
+                      aria-label={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
+                      title={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
+                      className={`${classeBouton(geminiLive.actif, geminiLive.actif)} ${geminiLive.etat === "reponse" ? "animate-pulse" : ""}`}
+                    >
+                      <AudioLines size={18} />
+                    </button>
+                  </ApparitionBoutonCanal>
+                )}
+                {groupeOuvert && (
+                  <ApparitionBoutonCanal key="utilitaires">
+                    <BoutonUtilitairesCanal actions={actionsUtilitaires} />
+                  </ApparitionBoutonCanal>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex items-center gap-2">
+          {boutonActivation}
+          <AnimatePresence initial={false}>
+            {actif && (
+              <ApparitionBoutonCanal key="chevron">
+                <button
+                  onClick={() => setGroupeOuvert((v) => !v)}
+                  aria-expanded={groupeOuvert}
+                  aria-label={groupeOuvert ? "Replier les boutons du canal" : "Déplier les boutons du canal"}
+                  title={groupeOuvert ? "Replier les boutons du canal" : "Déplier les boutons du canal"}
+                  className={classeBouton(false, false)}
+                >
+                  {groupeOuvert ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                </button>
+              </ApparitionBoutonCanal>
+            )}
+            {actif && groupeOuvert && (
+              <ApparitionBoutonCanal key="plus">
+                <div className="flex h-10 w-10 items-center justify-center">
+                  <MenuPlus variante="bureau" entrees={entreesMenuPlus} />
+                </div>
+              </ApparitionBoutonCanal>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {monte &&
+        createPortal(
+          <AnimatePresence>
+            {actif && groupeOuvert && (
+              <motion.div
+                key="journal"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <BoutonJournalAgent />
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
 
       <input
         ref={inputFichierRef}
