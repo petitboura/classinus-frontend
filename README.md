@@ -111,7 +111,7 @@ components/
     animation/           le lecteur lui même : construireDocumentAnimation.ts (page de l'iframe, thème,
                           barre de lecture) et runtimeAnimation.ts (code exécuté dans l'iframe). Le modèle
                           n'écrit que le contenu : une ou plusieurs parties (animer), chacune étant une fonction de sa
-                          progression p (0 à 1), rejouée dans l'ordre à chaque image ; titres cliquables et
+                          progression p (0 à 1), rejouée dans l'ordre à chaque image (animer peut être écrit après installer ou à l'intérieur) ; titres cliquables et
                           légende facultatifs. Pause et retour en arrière sont donc exacts. Textes dans lib/textesAnimation.ts. Consignes données au modèle
                           dans clovis-backend, core/profils_agents.py (INSTRUCTIONS_FORMATS_AFFICHAGE)
   icones/, icons/        icônes du produit
