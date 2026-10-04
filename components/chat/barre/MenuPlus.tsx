@@ -25,9 +25,13 @@ export function MenuPlus({
   variante,
   entrees,
   enfantsAncres,
+  ouverture = "haut",
 }: {
   variante: "bureau" | "mobile";
   entrees: EntreeMenuPlus[];
+  // Où s'ouvre le menu. "haut" : au dessus du bouton, cas de la barre de saisie. "droite" :
+  // à côté du bouton, pour ne pas recouvrir ce qui est posé au dessus (canal en direct).
+  ouverture?: "haut" | "droite";
   // Panneaux flottants ancrés sur le "+" (ex. la liste des applications sur
   // PC), rendus dans le même repère que le menu.
   enfantsAncres?: ReactNode;
@@ -79,8 +83,11 @@ export function MenuPlus({
         role="menu"
         aria-hidden={!menuOuvert}
         className={
-          "absolute bottom-full left-0 z-30 mb-2 w-56 max-w-[calc(100vw-2rem)] origin-bottom-left rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl transition-all duration-150 ease-cgpt-doux " +
-          (menuOuvert ? "visible translate-y-0 scale-100 opacity-100" : "invisible translate-y-1 scale-95 opacity-0")
+          "absolute z-30 w-56 max-w-[calc(100vw-2rem)] rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl transition-all duration-150 ease-cgpt-doux " +
+          (ouverture === "droite" ? "bottom-0 left-full ml-2 origin-bottom-left " : "bottom-full left-0 mb-2 origin-bottom-left ") +
+          (menuOuvert
+            ? "visible translate-x-0 translate-y-0 scale-100 opacity-100"
+            : (ouverture === "droite" ? "invisible -translate-x-1 scale-95 opacity-0" : "invisible translate-y-1 scale-95 opacity-0"))
         }
       >
         {entrees.map(({ cle, Icone, libelle, onClick, desactive }) => (
