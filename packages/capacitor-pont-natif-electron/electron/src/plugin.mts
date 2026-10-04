@@ -156,28 +156,28 @@ const DELAI_ENTRE_TOUCHES_MS = 4;
 function decrireActionSysteme(type: string, parametres: Record<string, unknown>): string {
   switch (type) {
     case "pointer_ecran":
-      return "Clovis pointe à l'écran";
+      return "Classinus pointe à l'écran";
     case "marquer_ecran":
-      return "Clovis marque un endroit de l'écran";
+      return "Classinus marque un endroit de l'écran";
     case "cliquer_ecran":
-      return "Clovis clique à l'écran";
+      return "Classinus clique à l'écran";
     case "taper_clavier":
-      return "Clovis a écrit du texte";
+      return "Classinus a écrit du texte";
     case "appuyer_touches": {
       // Annonce du raccourci dans le journal de l'etudiant, avant l'execution.
       const analyse = analyserTouches(parametres.touches);
       return analyse.ok
-        ? `Clovis utilise le raccourci ${analyse.combinaisons.map(libelleCombinaison).join(", ")}`
-        : "Clovis utilise le clavier";
+        ? `Classinus utilise le raccourci ${analyse.combinaisons.map(libelleCombinaison).join(", ")}`
+        : "Classinus utilise le clavier";
     }
     case "ouvrir_application": {
       const nom = String(parametres.nom ?? "").trim();
-      return nom ? `Clovis a ouvert ${nom}` : "Clovis a ouvert une application";
+      return nom ? `Classinus a ouvert ${nom}` : "Classinus a ouvert une application";
     }
     case "lire_ecran":
-      return "Clovis a regardé l'écran";
+      return "Classinus regarde l'écran";
     default:
-      return "Clovis a agi sur l'ordinateur";
+      return "Classinus agit sur l'ordinateur";
   }
 }
 
@@ -199,12 +199,30 @@ async function executerAvecJournal(id: string, type: string, parametres: Record<
     // Une erreur du miroir ne doit pas empêcher l'exécution ni sa réponse.
     try { notifierWeb?.("actionSysteme", donnees); } catch (e) { console.warn("PontNatif : journal indisponible", e); }
   };
+  // Lecture automatique (le serveur lit l'écran avant un tour ou après une action,
+  // sans que Classinus l'ait décidé) : rien à afficher, ni journal ni bulle.
+  if (type === "lire_ecran" && parametres.automatique === true) {
+    return executerActionSysteme(type, parametres);
+  }
   notifier({ id, phase: "debut", description: decrireActionSysteme(type, parametres) });
   const resultat = await executerActionSysteme(type, parametres);
   const enErreur =
     typeof resultat === "object" && resultat !== null && typeof (resultat as { erreur?: unknown }).erreur === "string";
-  notifier({ id, phase: "fin", statut: enErreur ? "erreur" : "succes" });
+  const descriptionFin = type === "lire_ecran" ? descriptionFinLecture(resultat, enErreur) : undefined;
+  notifier({ id, phase: "fin", statut: enErreur ? "erreur" : "succes", ...(descriptionFin ? { description: descriptionFin } : {}) });
   return resultat;
+}
+
+// Ce que Classinus a réellement pu lire, dit au passé une fois la lecture finie.
+function descriptionFinLecture(resultat: unknown, enErreur: boolean): string {
+  if (enErreur || typeof resultat !== "object" || resultat === null) return "Classinus n'a pas pu lire l'écran";
+  const lecture = resultat as { fenetre_classinus?: unknown; mode?: unknown; elements?: unknown; texte_long_ignore?: unknown };
+  if (lecture.fenetre_classinus === true) return "Classinus n'a vu aucune autre fenêtre que la sienne";
+  if (lecture.mode !== "uia" || !Array.isArray(lecture.elements) || lecture.elements.length === 0) {
+    return "Classinus n'a lu que le titre de la fenêtre";
+  }
+  if (lecture.texte_long_ignore === true) return "Classinus a lu l'écran (sans le texte long)";
+  return "Classinus a lu l'écran";
 }
 
 function fenetreSuperposition(): BrowserWindow | undefined {

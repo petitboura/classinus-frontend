@@ -677,7 +677,7 @@ async function traiterPointageEcran(id: string, point: { x: number; y: number })
     envoyerReponse(id, { erreur: "Coordonnées de pointage invalides." });
     return;
   }
-  const idJournal = pousserJournalDepuisAgent("Clovis pointe à l'écran", "en_cours");
+  const idJournal = pousserJournalDepuisAgent("Classinus pointe à l'écran", "en_cours");
   try {
     await deplacerCurseurDepuisAgent(point, { cliquer: false, forme: "main", repere: "ecran" });
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");

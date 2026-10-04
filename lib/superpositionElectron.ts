@@ -405,7 +405,7 @@ function useJournalActionsSysteme() {
         afficherTexteDepuisAgent(evenement.description);
       } else if (evenement.phase === "fin") {
         const idJournal = idsJournal.get(evenement.id);
-        if (idJournal) mettreAJourJournalDepuisAgent(idJournal, evenement.statut ?? "succes");
+        if (idJournal) mettreAJourJournalDepuisAgent(idJournal, evenement.statut ?? "succes", evenement.description);
         idsJournal.delete(evenement.id);
       }
     }).then((poignee) => {
