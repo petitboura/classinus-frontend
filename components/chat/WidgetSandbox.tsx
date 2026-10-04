@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { AppWindow, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { AppWindow } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { BoutonFilmerWidget, type EtatVideo } from "./BoutonFilmerWidget";
+import { Skeleton } from "@/components/Skeleton";
 import { useTheme } from "@/lib/useTheme";
+import { useProcheEcran } from "@/lib/useProcheEcran";
+import { PALETTES, TYPE_MESSAGE_THEME_WIDGET, scriptThemeWidget, variablesCss, type ThemeIframe } from "@/lib/paletteIframe";
+import { HAUTEUR_INITIALE_WIDGET_PX, useHauteurWidget } from "@/lib/useHauteurWidget";
+import { SCRIPT_HAUTEUR_WIDGET } from "@/lib/scriptHauteurWidget";
 import {
   demarrerEnregistrement,
   enregistrementVideoPossible,
@@ -21,51 +26,73 @@ import {
 // déroulé dans le fil, avec un vrai plein écran (pas de division
 // d'écran) pour voir le widget en grand.
 //
-// CORRECTIF (17/08, v2) -- paramètre `theme` ajouté : ce document tourne
-// dans un <iframe srcDoc>, un DOCUMENT SÉPARÉ qui n'hérite d'AUCUNE
-// variable CSS de la page parente (contrairement au reste de l'app). Les
-// couleurs doivent donc être résolues et injectées en dur ICI, au moment
-// de la génération du HTML -- impossible de leur faire suivre var(--dj-...)
-// comme ailleurs.
-export function construireDocumentWidget(code: string, theme: "clair" | "sombre"): string {
-  const t = theme === "clair"
-    ? { fond: "#FFFFFF", texte: "#1C1A16", champBg: "#F5F5F2", bordure: "rgba(28,26,22,0.14)", accent: "#B8860B", degrade: "linear-gradient(135deg,#E3B341 0%,#B8860B 55%,#6B5416 100%)" }
-    : { fond: "#1A1714", texte: "#F5F0E6", champBg: "#221E18", bordure: "rgba(245,240,230,0.14)", accent: "#E3B341", degrade: "linear-gradient(135deg,#F0C766 0%,#D9A438 55%,#8A6A1F 100%)" };
+// Thème (17/08, v2, puis refait le 04/10/2026) : ce document tourne dans un
+// <iframe srcDoc>, un DOCUMENT SÉPARÉ qui n'hérite d'AUCUNE variable CSS de la
+// page parente. Les couleurs sont donc résolues ici (lib/paletteIframe.ts, la
+// même palette que l'animation) et injectées dans le document sous forme de
+// variables --dj-* et d'un objet THEME. Le modèle n'écrit jamais de couleur, de
+// fond ni de police : il utilise ces variables, et un changement de thème est
+// poussé dans le widget par message sans le recharger.
+export function construireDocumentWidget(code: string, theme: ThemeIframe): string {
+  const p = PALETTES[theme];
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
     <style>
-      html,body{margin:0;padding:12px;background:${t.fond};color:${t.texte};
+      /* Le thème arrive sous forme de variables (--dj-fond, --dj-surface,
+         --dj-texte, --dj-muet, --dj-bordure, --dj-accent, --dj-degrade,
+         --dj-sur-accent, --dj-a à --dj-d) : le modèle n'écrit ni couleur ni
+         fond ni police, et un changement de thème les met à jour sans
+         recharger le widget (voir scriptThemeWidget). */
+      :root{${variablesCss(p)}}
+      html,body{margin:0;padding:0;background:transparent;color:var(--dj-texte);
         font-family:'Work Sans',system-ui,sans-serif;}
       *{box-sizing:border-box;}
-      /* Style par défaut pour tout champ/bouton généré sans CSS propre --
-         sans ça, un input/button hérite du blanc par défaut du
-         navigateur, qui jure avec le reste de l'interface (repéré par
-         Bourama sur un widget "solveur d'équations" avec des champs
-         blancs au milieu d'une carte sombre). Le modèle peut toujours
-         écraser ces règles avec son propre <style>, ceci n'est qu'un
-         filet de sécurité. */
+      /* Jamais de barre de défilement visible sur le document du widget : il
+         ne fait qu'un avec le chat, et un dépassement de 1 ou 2 px (arrondi,
+         bordure, animation de hauteur) afficherait sinon une barre blanche à
+         droite. Le défilement à la molette, au doigt et au clavier reste
+         possible (utile en plein écran). !important : le CSS écrit par le
+         modèle ne doit pas pouvoir la remettre. */
+      html,body{scrollbar-width:none !important;-ms-overflow-style:none !important;}
+      html::-webkit-scrollbar,body::-webkit-scrollbar{display:none !important;width:0 !important;height:0 !important;}
+      /* Styles par défaut : un widget écrit sans aucun CSS doit déjà être
+         correct dans les deux thèmes. Le modèle peut toujours les écraser avec
+         son propre <style>, mais il n'a plus besoin d'écrire de couleur. */
+      h1,h2,h3,h4,h5,h6{color:var(--dj-texte);margin:0 0 .5em;font-weight:600;line-height:1.25;}
+      p{margin:0 0 .75em;line-height:1.5;}
+      small,.dj-muet{color:var(--dj-muet);}
+      hr{border:0;border-top:1px solid var(--dj-bordure);}
+      pre,code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.9em;}
+      pre{background:var(--dj-surface);border:1px solid var(--dj-bordure);border-radius:8px;padding:10px 12px;overflow-x:auto;}
+      .dj-carte{background:var(--dj-surface);border:1px solid var(--dj-bordure);border-radius:12px;padding:16px;}
       input, select, textarea{
-        background:${t.champBg};color:${t.texte};border:1px solid ${t.bordure};
+        background:var(--dj-surface);color:var(--dj-texte);border:1px solid var(--dj-bordure);
         border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;
       }
       input:focus, select:focus, textarea:focus{
-        outline:none;border-color:${t.accent};
+        outline:none;border-color:var(--dj-accent);
       }
+      /* Curseur, case à cocher, bouton radio, barre de progression : à la
+         couleur d'accent, et un curseur sans cadre (sans ça il hérite du
+         champ texte ci-dessus et apparaît comme une pilule blanche). */
+      input[type=range]{padding:0;border:none;background:transparent;}
+      input[type=range],input[type=checkbox],input[type=radio],progress{accent-color:var(--dj-accent);}
       button{
-        background:${t.degrade};
-        color:#1A0D02;border:none;border-radius:8px;padding:7px 14px;
+        background:var(--dj-degrade);
+        color:var(--dj-sur-accent);border:none;border-radius:8px;padding:7px 14px;
         font:inherit;font-size:14px;font-weight:600;cursor:pointer;
       }
       button:hover{filter:brightness(1.08);}
       button:active{filter:brightness(0.95);}
       table{border-collapse:collapse;}
-      td,th{border:1px solid ${t.bordure};padding:4px 8px;}
-      a{color:${t.accent};}
+      td,th{border:1px solid var(--dj-bordure);padding:4px 8px;}
+      a{color:var(--dj-accent);}
       #dj-erreur-widget{
         display:none;margin-bottom:10px;padding:8px 10px;border-radius:8px;
         background:rgba(220,60,50,0.15);border:1px solid rgba(220,60,50,0.4);
-        color:${t.texte};font-size:12px;font-family:monospace;white-space:pre-wrap;
+        color:var(--dj-texte);font-size:12px;font-family:monospace;white-space:pre-wrap;
       }
     </style>
+    <script>${scriptThemeWidget(p)}</script>
     </head><body>
     <div id="dj-erreur-widget"></div>
     ${code}
@@ -132,6 +159,7 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
         });
       })();
     </script>
+    <script id="dj-hauteur-widget">${SCRIPT_HAUTEUR_WIDGET}</script>
     </body></html>`;
 }
 
@@ -176,11 +204,44 @@ function demanderInfosWidget(iframe: HTMLIFrameElement): Promise<{ interactif: b
 // caractère, donc l'iframe rechargeait à chaque caractère. Même principe
 // que les autres blocs riches : on attend 500ms sans changement de
 // `code` avant de considérer le widget comme prêt à afficher, avec un
-// simple indicateur de chargement entre-temps.
+// squelette entre-temps.
+//
+// Affichage direct (demande Bourama, 04/10/2026) : le widget est visible tout
+// de suite dans le fil, à la largeur du texte comme un tableau, sans puce
+// repliée ni carte autour (option direct de BlocExpansible). Il ne fait qu'un
+// avec le chat : ni contour ni coins arrondis sur l'iframe, document au fond
+// transparent et sans marge (on voit le fond du chat), et la hauteur suit le
+// contenu sans plafond, donc pas de défilement dans le widget lui même.
 export function WidgetSandbox({ code }: { code: string }) {
   const { resolu } = useTheme();
   const [codeStable, setCodeStable] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Le widget ne démarre que lorsqu'il approche de l'écran (voir
+  // lib/useProcheEcran.ts) : dix widgets dans une longue conversation ne se
+  // lancent pas tous d'un coup. En attendant, c'est le squelette qui est
+  // observé, il a la même hauteur de départ que le widget.
+  const [zoneSqueletteEl, setZoneSqueletteEl] = useState<HTMLDivElement | null>(null);
+  const procheEcran = useProcheEcran(zoneSqueletteEl);
+
+  // Thème : le document est construit avec le thème du moment, puis tout
+  // changement de thème est envoyé au widget par message, SANS recharger
+  // l'iframe (un rechargement ferait perdre son état : partie en cours, valeurs
+  // des curseurs). resoluRef garde le thème courant pour le srcDoc et pour
+  // l'envoi au chargement (retour du plein écran, par exemple, où l'iframe est
+  // recréée avec le srcDoc d'origine).
+  const resoluRef = useRef<ThemeIframe>(resolu);
+  resoluRef.current = resolu;
+  const srcDoc = useMemo(
+    () => (codeStable === null ? undefined : construireDocumentWidget(codeStable, resoluRef.current)),
+    [codeStable],
+  );
+  const envoyerTheme = useCallback((cadre: HTMLIFrameElement | null) => {
+    cadre?.contentWindow?.postMessage({ type: TYPE_MESSAGE_THEME_WIDGET, palette: PALETTES[resoluRef.current] }, "*");
+  }, []);
+  useEffect(() => {
+    envoyerTheme(iframeRef.current);
+  }, [resolu, envoyerTheme]);
 
   // Vidéo (30/09/2026, demande Bourama) : le bouton Filmer n'existe que sur
   // ordinateur, dans les navigateurs capables de recadrer sur un élément.
@@ -192,6 +253,15 @@ export function WidgetSandbox({ code }: { code: string }) {
   const chronoRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const arretAutoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retourRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hauteur du cadre : suit le contenu du widget (voir lib/useHauteurWidget.ts).
+  // Elle reste figée pendant la préparation et l'enregistrement d'un film, car
+  // la vidéo est recadrée sur le cadre et une taille qui bouge l'abîmerait.
+  const hauteur = useHauteurWidget(
+    iframeRef,
+    codeStable === null ? "" : codeStable,
+    etatVideo === "preparation" || etatVideo === "enregistrement",
+  );
 
   useEffect(() => {
     setVideoPossible(enregistrementVideoPossible());
@@ -272,9 +342,10 @@ export function WidgetSandbox({ code }: { code: string }) {
 
   useEffect(() => {
     setCodeStable(null);
+    if (!procheEcran) return;
     const delai = setTimeout(() => setCodeStable(code), 500);
     return () => clearTimeout(delai);
-  }, [code]);
+  }, [code, procheEcran]);
 
   return (
     <BlocExpansible
@@ -283,7 +354,7 @@ export function WidgetSandbox({ code }: { code: string }) {
       sousTitre="HTML"
       texteACopier={code}
       contenuEnIframe
-      chargement={codeStable === null}
+      direct
       actionsSupplementaires={
         videoPossible
           ? (avecTexte) => (
@@ -299,16 +370,26 @@ export function WidgetSandbox({ code }: { code: string }) {
       }
       enfant={
         codeStable === null ? (
-          <div className="flex h-96 w-full items-center justify-center gap-2 rounded-lg border border-dj-bordure text-xs text-dj-texte-muet">
-            <Loader2 size={16} className="animate-spin" />
-            Préparation du widget...
+          <div
+            ref={setZoneSqueletteEl}
+            style={{ height: HAUTEUR_INITIALE_WIDGET_PX }}
+            className="flex w-full flex-col gap-3"
+          >
+            <Skeleton className="h-4 w-1/3 rounded" />
+            <Skeleton className="min-h-0 flex-1 rounded-xl" />
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-24 rounded-full" />
+              <Skeleton className="h-8 w-28 rounded-full" />
+            </div>
           </div>
         ) : (
           <iframe
             ref={iframeRef}
             sandbox="allow-scripts allow-forms allow-modals"
-            srcDoc={construireDocumentWidget(codeStable, resolu)}
-            className="h-96 w-full rounded-lg border border-dj-bordure"
+            srcDoc={srcDoc}
+            onLoad={(e) => envoyerTheme(e.currentTarget)}
+            style={{ height: hauteur }}
+            className="block w-full transition-[height] duration-200 ease-out motion-reduce:transition-none"
             title="Widget interactif"
           />
         )

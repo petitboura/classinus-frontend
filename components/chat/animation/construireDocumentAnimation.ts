@@ -1,5 +1,6 @@
 import type { TextesAnimation } from "@/lib/textesAnimation";
 import { RUNTIME_ANIMATION } from "./runtimeAnimation";
+import { PALETTES } from "@/lib/paletteIframe";
 
 // Document HTML complet du lecteur d'animation guidée, injecté dans une
 // <iframe srcDoc> (29/09/2026, demande Bourama). Comme pour les widgets
@@ -14,51 +15,8 @@ import { RUNTIME_ANIMATION } from "./runtimeAnimation";
 // modèle en donne : titres cliquables et légende) est écrit une fois pour
 // toutes ici et dans runtimeAnimation.ts : le modèle n'écrit que le
 // contenu de l'animation.
-type Palette = {
-  fond: string;
-  surface: string;
-  texte: string;
-  muet: string;
-  bordure: string;
-  accent: string;
-  degrade: string;
-  surAccent: string;
-  a: string;
-  b: string;
-  c: string;
-  d: string;
-};
-
-const PALETTES: Record<"clair" | "sombre", Palette> = {
-  clair: {
-    fond: "#FFFFFF",
-    surface: "#F5F5F2",
-    texte: "#1C1A16",
-    muet: "rgba(28,26,22,0.6)",
-    bordure: "rgba(28,26,22,0.14)",
-    accent: "#B8860B",
-    degrade: "linear-gradient(135deg,#E3B341 0%,#B8860B 55%,#6B5416 100%)",
-    surAccent: "#1A0D02",
-    a: "#0F8F7F",
-    b: "#7A5FD0",
-    c: "#D4552F",
-    d: "#3E9B4F",
-  },
-  sombre: {
-    fond: "#1A1714",
-    surface: "#221E18",
-    texte: "#F5F0E6",
-    muet: "rgba(245,240,230,0.62)",
-    bordure: "rgba(245,240,230,0.14)",
-    accent: "#E3B341",
-    degrade: "linear-gradient(135deg,#F0C766 0%,#D9A438 55%,#8A6A1F 100%)",
-    surAccent: "#1A0D02",
-    a: "#3CC8B4",
-    b: "#A995F0",
-    c: "#F0805E",
-    d: "#6FCB7C",
-  },
-};
+// La palette (PALETTES) est partagée avec le widget interactif : voir
+// lib/paletteIframe.ts, une seule source pour les deux.
 
 // Three.js r128, la même version que celle vérifiée dans un widget réel
 // le 29/09/2026 (test de Bourama). Deuxième source en secours si la
@@ -81,6 +39,8 @@ export function construireDocumentAnimation(
   code: string,
   theme: "clair" | "sombre",
   textes: TextesAnimation,
+  // Temps et état de lecture à retrouver après un changement de thème.
+  reprise?: { t: number; joue: boolean } | null,
 ): string {
   const p = PALETTES[theme];
   const conf = neutraliserScript(
@@ -88,16 +48,19 @@ export function construireDocumentAnimation(
       textes,
       palette: { fond: p.fond, fond2: p.surface, surface: p.surface, texte: p.texte, muet: p.muet, bordure: p.bordure, accent: p.accent, a: p.a, b: p.b, c: p.c, d: p.d },
       sourcesTroisD: SOURCES_TROIS_D,
+      reprise: reprise ?? null,
     }),
   );
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-html,body{margin:0;height:100%;background:${p.fond};color:${p.texte};font-family:'Work Sans',system-ui,sans-serif;}
+html,body{margin:0;height:100%;background:transparent;color:${p.texte};font-family:'Work Sans',system-ui,sans-serif;}
 *{box-sizing:border-box;}
+html,body{scrollbar-width:none !important;-ms-overflow-style:none !important;}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none !important;width:0 !important;height:0 !important;}
 body{-webkit-tap-highlight-color:transparent;}
-#an-cadre{display:flex;flex-direction:column;height:100%;padding:10px;gap:8px;}
+#an-cadre{display:flex;flex-direction:column;height:100%;padding:0;gap:8px;}
 #an-zone{position:relative;flex:1;min-height:0;border:1px solid ${p.bordure};border-radius:12px;overflow:hidden;background:${p.surface};cursor:pointer;}
 #an-zone svg{display:block;width:100%;height:100%;font-family:inherit;}
 #an-squelette{position:absolute;inset:0;background-image:linear-gradient(100deg,transparent 30%,${p.bordure} 50%,transparent 70%);background-size:250% 100%;animation:an-balayage 1.4s linear infinite;transition:opacity .3s ease;}

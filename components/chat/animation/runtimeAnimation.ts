@@ -428,7 +428,21 @@ export const RUNTIME_ANIMATION = String.raw`
     }
     majBoutons();
     rendre();
+    // Reprise après un changement de thème : la page recharge l'animation avec
+    // les nouvelles couleurs et lui donne le temps et l'état de lecture où elle
+    // en était (voir AnimationLecteur.tsx).
+    if (CONF.reprise) {
+      etat.t = Math.min(Math.max(Number(CONF.reprise.t) || 0, 0), etat.duree);
+      rendre();
+      if (CONF.reprise.joue && etat.t < etat.duree) { jouer(); }
+    }
   }
+
+  // La page demande où en est l'animation juste avant de la recharger.
+  window.addEventListener('message', function (e) {
+    if (e.source !== parent || !e.data || e.data.type !== 'dj-anim-demande-etat') { return; }
+    parent.postMessage({ type: 'dj-anim-etat', t: etat.t, joue: etat.joue }, '*');
+  });
 
   window.__animDemarrer = function () {
     var zone = $('an-zone');
