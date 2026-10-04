@@ -36,9 +36,10 @@ export function BoutonReglagesCanal({ conversationId }: { conversationId: string
   const pedagogie = useReglagesPedagogiques(conversationVisee ?? undefined);
   const modeActif = useModeActif(conversationVisee ?? undefined);
   return (
-    <div className={CLASSE_ROND}>
+    <div className="flex h-10 items-center">
       <BoutonReglages
         variante="bureau"
+        ancrage="gauche"
         modelesDisponibles={ctxChat?.agent?.modeles_disponibles ?? []}
         modeleSelectionne={reglages.modeleId}
         onModeleChange={definirModeleProchainMessage}
