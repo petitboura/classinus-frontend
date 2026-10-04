@@ -40,6 +40,14 @@ export function construireDocumentWidget(code: string, theme: "clair" | "sombre"
       html,body{margin:0;padding:0;background:transparent;color:${t.texte};
         font-family:'Work Sans',system-ui,sans-serif;}
       *{box-sizing:border-box;}
+      /* Jamais de barre de défilement visible sur le document du widget : il
+         ne fait qu'un avec le chat, et un dépassement de 1 ou 2 px (arrondi,
+         bordure, animation de hauteur) afficherait sinon une barre blanche à
+         droite. Le défilement à la molette, au doigt et au clavier reste
+         possible (utile en plein écran). !important : le CSS écrit par le
+         modèle ne doit pas pouvoir la remettre. */
+      html,body{scrollbar-width:none !important;-ms-overflow-style:none !important;}
+      html::-webkit-scrollbar,body::-webkit-scrollbar{display:none !important;width:0 !important;height:0 !important;}
       /* Style par défaut pour tout champ/bouton généré sans CSS propre --
          sans ça, un input/button hérite du blanc par défaut du
          navigateur, qui jure avec le reste de l'interface (repéré par

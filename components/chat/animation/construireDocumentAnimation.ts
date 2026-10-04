@@ -96,6 +96,8 @@ export function construireDocumentAnimation(
 <style>
 html,body{margin:0;height:100%;background:transparent;color:${p.texte};font-family:'Work Sans',system-ui,sans-serif;}
 *{box-sizing:border-box;}
+html,body{scrollbar-width:none !important;-ms-overflow-style:none !important;}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none !important;width:0 !important;height:0 !important;}
 body{-webkit-tap-highlight-color:transparent;}
 #an-cadre{display:flex;flex-direction:column;height:100%;padding:0;gap:8px;}
 #an-zone{position:relative;flex:1;min-height:0;border:1px solid ${p.bordure};border-radius:12px;overflow:hidden;background:${p.surface};cursor:pointer;}
