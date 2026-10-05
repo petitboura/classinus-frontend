@@ -29,6 +29,16 @@ cd ../capacitor-pont-natif-electron && npm install && npm run build
 Produit `electron/dist/plugin.mjs`. A refaire a chaque modification de
 `electron/src/plugin.mts`.
 
+## Bureau et barre des taches (04/10/2026)
+
+Le meme outil `lire_ecran` lit aussi le bureau et la barre du bas, via son parametre
+`zone` ("fenetre" par defaut, "barre_des_taches", "bureau"). Le script retrouve ces
+fenetres de l'explorateur de Windows par leur classe (Shell_TrayWnd, Progman, WorkerW) et les
+lit comme n'importe quelle fenetre : memes elements, memes coordonnees. Le bureau est lu tout
+seul quand l'etudiant le regarde (bureau au premier plan, ou aucune fenetre ouverte et celle de
+Classinus pas affichee). Non verifie sur un vrai Windows au moment de l'ecriture : a controler
+au premier essai (icones du bureau sous Progman ou WorkerW selon la version de Windows).
+
 ## Lot V : lecture de la fenetre au premier plan (UI Automation)
 
 Le cas `lire_ecran` ne prend plus de capture d'image (decision Bourama du

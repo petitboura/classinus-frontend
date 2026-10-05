@@ -1,5 +1,7 @@
 import { defineConfig } from '@capawesome/capacitor-electron/config';
 
+import { lancementDepuisSession } from './lancementSession';
+
 export default defineConfig({
   hooks: {
     onWindowCreated: (window) => {
@@ -10,7 +12,17 @@ export default defineConfig({
   window: {
     width: 1200,
     height: 800,
+    // Lancé par Windows à l'ouverture de session (voir demarrage.ts) : ni
+    // fenêtre ni écran d'ouverture, seul le bouton du canal en direct
+    // apparaît (superposition). Lancé à la main : comportement habituel.
+    showOnLaunch: !lancementDepuisSession(),
   },
+  // Plus aucun écran d'ouverture Electron (05/10/2026, décision de Bourama) :
+  // il pouvait s'afficher avant la vraie fenêtre et se mélanger avec la
+  // superposition. Ne JAMAIS le remettre, même si la branche est réalignée
+  // avec main : garder splashScreen désactivé et ne pas recréer
+  // electron/assets/splash.html (le runtime l'afficherait tout seul).
+  splashScreen: { enabled: false },
   // Correctif (29/09/2026, demande Bourama) : la politique de securite par
   // defaut du runtime (script-src 'self', sans 'unsafe-inline') bloque
   // silencieusement TOUT script en ligne, y compris ceux que Next.js insere
@@ -40,16 +52,6 @@ export default defineConfig({
       "form-action 'self'",
     ].join('; '),
   },
-  // A splash screen is shown automatically while the app boots when a splash
-  // file exists (`assets/splash.html` or `assets/splash.png`). Uncomment to
-  // customize it:
-  // splashScreen: {
-  //   path: 'assets/splash.html',
-  //   width: 400,
-  //   height: 300,
-  //   backgroundColor: '#ffffff',
-  //   minimumDurationMs: 0,
-  // },
   // Per-plugin config overrides. Merged over the `plugins` section of the
   // Capacitor config (this section wins per key) — the Electron equivalent of
   // Android string resources / iOS Info.plist plugin settings. Being

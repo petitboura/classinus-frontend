@@ -143,7 +143,7 @@ export type ValeurCanalEnDirect = {
   // l'action terminée), sans que l'appelant ait à générer l'id lui
   // même.
   ajouterEntreeJournal: (description: string, statut?: StatutEntreeJournal) => string;
-  mettreAJourEntreeJournal: (id: string, statut: StatutEntreeJournal) => void;
+  mettreAJourEntreeJournal: (id: string, statut: StatutEntreeJournal, description?: string) => void;
 
   // Tâche en cours (02/10/2026, demande Bourama : bouton arrêter) : voir
   // lib/tacheCanal.ts. Arrêter coupe la tâche comme le fait le chat ; une fois
@@ -206,8 +206,8 @@ export function pousserJournalDepuisAgent(description: string, statut?: StatutEn
   return canalGlobal.ajouterEntreeJournal(description, statut);
 }
 
-export function mettreAJourJournalDepuisAgent(id: string, statut: StatutEntreeJournal) {
-  canalGlobal?.mettreAJourEntreeJournal(id, statut);
+export function mettreAJourJournalDepuisAgent(id: string, statut: StatutEntreeJournal, description?: string) {
+  canalGlobal?.mettreAJourEntreeJournal(id, statut, description);
 }
 
 /**
@@ -490,8 +490,8 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
 
   const etatTache = useSyncExternalStore(abonnerEtatTacheCanal, lireEtatTacheCanal, etatTacheCanalRepos);
 
-  const mettreAJourEntreeJournal = useCallback((id: string, statut: StatutEntreeJournal) => {
-    journalRef.current = journalRef.current.map((e) => (e.id === id ? { ...e, statut } : e));
+  const mettreAJourEntreeJournal = useCallback((id: string, statut: StatutEntreeJournal, description?: string) => {
+    journalRef.current = journalRef.current.map((e) => (e.id === id ? { ...e, statut, ...(description ? { description } : {}) } : e));
     setJournal(journalRef.current);
   }, []);
 

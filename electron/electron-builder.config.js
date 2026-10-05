@@ -12,7 +12,7 @@ module.exports = {
     'generated/**/*',
     // `assets` is also the electron-builder `buildResources` directory, whose
     // contents are NOT packaged by default. Include it explicitly so the
-    // splash screen (and any other runtime assets) ship in the app.
+    // runtime assets ship in the app (plus d'écran d'ouverture Electron).
     'assets/**/*',
     'package.json',
     // Platform runtime + plugins, prepared by `capacitor-electron vendor`.

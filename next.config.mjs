@@ -19,11 +19,6 @@
 // par la doc Capacitor -- problemes de cookies/auth rapportes par la
 // communaute, et incertitude sur l'acceptation Play Store d'une app qui
 // se contente de charger un site distant).
-// 30/09/2026, demande Bourama : le chat a pris l'adresse "/" (voir
-// lib/routesApp.ts). L'ancienne adresse /chat redirige vers "/" pour ne
-// pas casser un lien ou un marque-page existant. Ignoré (et donc non
-// déclaré) dans l'export statique Capacitor, où les redirections next.config
-// ne s'appliquent pas et où personne n'arrive par un ancien lien web.
 // Test canal en direct PC : les builds Capacitor/Electron de cette branche
 // parlent au backend de test Railway (environnement staging), pas a la
 // production. Adresse en dur volontairement, a retirer avant toute fusion.
@@ -32,7 +27,11 @@ if (process.env.CAPACITOR_BUILD === "true") {
   process.env.NEXT_PUBLIC_API_URL =
     "https://clovis-backend-staging.up.railway.app";
 }
-
+// 30/09/2026, demande Bourama : le chat a pris l'adresse "/" (voir
+// lib/routesApp.ts). L'ancienne adresse /chat redirige vers "/" pour ne
+// pas casser un lien ou un marque-page existant. Ignoré (et donc non
+// déclaré) dans l'export statique Capacitor, où les redirections next.config
+// ne s'appliquent pas et où personne n'arrive par un ancien lien web.
 const redirectionsWeb =
   process.env.CAPACITOR_BUILD === "true"
     ? {}

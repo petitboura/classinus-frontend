@@ -6,12 +6,17 @@ Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
 Implementation Electron du plugin Capacitor `SuperpositionAgent` : pont IPC
 entre la fenetre principale (vraie connexion WebSocket, DOM de la page
 Clovis) et la fenetre de superposition systeme (sans bordure, transparente,
-toujours au dessus, voir `electron/main.ts`). Trois methodes : `pousserEtat`
+toujours au dessus, voir `electron/main.ts`). Methodes principales : `pousserEtat`
 (fenetre principale -> superposition, avec conversion des coordonnees du
 curseur de "locales a la page" vers "absolues a l'ecran"), `envoyerInteraction`
 (superposition -> fenetre principale) et `definirCapturerSouris` (la
 superposition active/desactive elle meme son passe-clic selon ce qu'il y a
-sous le curseur). Voir les commentaires de `electron/src/plugin.mts` pour le
+sous le curseur). Depuis le 01/10/2026 (bouton permanent du canal, voir le Lot W du plan), la
+superposition reste affichee en permanence des que la fenetre principale a
+pousse son premier etat (`pousserEtat` avec `retirer: true` la retire), et le
+plugin expose deux methodes de plus pour le demarrage automatique avec
+Windows : `lireDemarrageAutomatique` et `definirDemarrageAutomatique`.
+Voir les commentaires de `electron/src/plugin.mts` pour le
 detail, et `lib/superpositionElectron.ts` (racine du depot) pour la forme
 exacte de l'etat/des interactions transportes.
 

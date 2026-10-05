@@ -219,8 +219,22 @@ export class ChatIndisponiblePourVoix extends Error {
 
 // Vrai quand l'écran de l'utilisateur affiche vraiment l'appli : onglet
 // visible (onglet ou fenêtre ni réduit ni masqué).
+//
+// Sur l'appli PC (04/10/2026, demande Bourama : la réponse ne s'affichait nulle
+// part quand il parlait à Classinus depuis une autre application) : la fenêtre
+// de Classinus peut rester "visible" pour le navigateur alors qu'elle est
+// cachée derrière une autre application. Elle doit aussi avoir le focus, sinon
+// le message ne passe pas par le chat (que personne ne regarde) et la réponse
+// s'affiche dans la bulle.
+function surAppliPC(): boolean {
+  const capacitor = (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
+  return capacitor?.getPlatform?.() === "electron";
+}
+
 function ecranVisible(): boolean {
-  return typeof document === "undefined" || document.visibilityState === "visible";
+  if (typeof document === "undefined") return true;
+  if (document.visibilityState !== "visible") return false;
+  return !surAppliPC() || document.hasFocus();
 }
 
 export type DemandeVoixEnAttente = {

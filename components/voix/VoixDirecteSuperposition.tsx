@@ -9,7 +9,9 @@
 //   téléphone réduit l'onde au lieu de quitter l'appli ;
 // - canal en direct activé : une petite bulle, la même onde en miniature, qui
 //   suit le curseur de Classinus, jamais le pointeur de l'étudiant. Elle ne
-//   capture aucun clic pour ne jamais gêner les actions de Classinus.
+//   capture aucun clic pour ne jamais gêner les actions de Classinus. Sur
+//   Electron, elle est dessinée dans la fenêtre de superposition (là où vit
+//   le curseur), voir app/agent-superposition/page.tsx.
 // Aucun texte n'indique l'état (décision de Bourama) : seule l'onde change.
 // Les boutons n'ont que des icônes, avec un libellé pour les lecteurs d'écran.
 
@@ -22,6 +24,7 @@ import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { COUCHE_AGENT_BULLE, COUCHE_VOIX_PLEIN_ECRAN } from "@/lib/couchesAgent";
+import { estDansFenetreSuperposition, surElectron } from "@/lib/superpositionElectron";
 
 const TAILLE_BULLE = 56;
 const MARGE_BORD = 8;
@@ -57,7 +60,11 @@ export function VoixDirecteSuperposition() {
   const reduit = voix?.reduit ?? false;
   const pleinEcran = actif && !modeCanal && !reduit;
   const bulleChat = actif && !modeCanal && reduit;
-  const bulleCanal = actif && modeCanal;
+  // Sur Electron, le curseur et sa bulle de dialogue vivent dans la fenêtre de
+  // superposition : la bulle de voix du canal y est dessinée aussi, et nulle
+  // part ailleurs (la fenêtre principale ne la montre pas, sinon doublon).
+  const bulleCanalIci = !surElectron() || estDansFenetreSuperposition();
+  const bulleCanal = actif && modeCanal && bulleCanalIci;
 
   // Le retour du téléphone réduit l'onde au lieu de quitter l'appli.
   useFermetureAuRetour(pleinEcran, () => voix?.reduire());

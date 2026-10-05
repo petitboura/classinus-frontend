@@ -97,7 +97,7 @@ export function deplacerCurseurDepuisAgent(
   options?: OptionsDeplacement
 ): Promise<void> {
   if (!deplacementGlobal) {
-    if (options?.repere === "ecran") return Promise.reject(new Error("Le curseur de Clovis n'est pas prêt."));
+    if (options?.repere === "ecran") return Promise.reject(new Error("Le curseur de Classinus n'est pas prêt."));
     return Promise.resolve();
   }
   return deplacementGlobal(cible, options);

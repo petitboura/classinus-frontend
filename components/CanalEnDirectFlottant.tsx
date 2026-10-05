@@ -15,6 +15,19 @@
 // fonctionnement une fois actif) n'est pas désactivé par /chat, seul
 // le POINT D'ENTRÉE (ce bouton) est masqué quand il est inactif ici.
 // Ça annule la décision du 19/09 ci-dessous, gardée en historique.
+// Bouton permanent (01/10/2026, demande Bourama) : dans la superposition
+// Electron, ce bouton est le seul élément affiché en permanence (les autres
+// n'apparaissent qu'à l'activation du canal), même fenêtre de Classinus
+// fermée. Au repos (canal inactif, souris ailleurs) son opacité est celle
+// choisie par l'étudiant, jamais en dessous du minimum de
+// lib/opaciteBoutonCanal.ts ; elle revient à 100 % au survol et dès que le
+// canal est actif. Le réglage se fait depuis le bouton, une fois le canal
+// activé (ReglageOpaciteBoutonCanal.tsx). Rien de tout cela ne s'applique sur
+// web et mobile : l'opacité y reste à 100 %.
+//
+// Regroupement (02/10/2026, demande Bourama) : le réglage d'opacité est rangé
+// avec les autres boutons dans le groupe de ControlesInteractionCanal (déplié
+// dès l'activation) ; il n'est plus à côté du bouton d'activation.
 //
 // Correctif (19/09/2026, decision Bourama : "on ne désactive rien de
 // son fonctionnement parce qu'il est dans le chat, [le canal] doit être
@@ -36,9 +49,16 @@
 import { motion } from "framer-motion";
 import { Radio } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ControlesInteractionCanal } from "@/components/ControlesInteractionCanal";
+import { ReglageOpaciteBoutonCanal } from "@/components/ReglageOpaciteBoutonCanal";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import {
+  OPACITE_REPOS_DEFAUT,
+  ecrireOpaciteRepos,
+  lireOpaciteRepos,
+} from "@/lib/opaciteBoutonCanal";
+import { estDansFenetreSuperposition } from "@/lib/superpositionElectron";
 import { useDecalageRailLateral } from "@/lib/useDecalageRailLateral";
 import { useDeplacable } from "@/lib/useDeplacable";
 import { estPageChat } from "@/lib/routesApp";
@@ -57,6 +77,24 @@ export function CanalEnDirectFlottant() {
   // Déplaçable (20/09/2026, demande Bourama) : le groupe entier (bouton du
   // canal, dictée, écriture) se déplace ensemble, voir lib/useDeplacable.ts.
   const deplacement = useDeplacable<HTMLDivElement>();
+
+  // Opacité au repos : uniquement dans la superposition Electron. Lue après
+  // le premier rendu (pas pendant), pour que la page statique et le premier
+  // rendu côté client restent identiques.
+  const [dansSuperposition, setDansSuperposition] = useState(false);
+  const [opaciteRepos, setOpaciteRepos] = useState(OPACITE_REPOS_DEFAUT);
+  const [survol, setSurvol] = useState(false);
+  const [reglageOuvert, setReglageOuvert] = useState(false);
+  useEffect(() => {
+    if (!estDansFenetreSuperposition()) return;
+    setDansSuperposition(true);
+    setOpaciteRepos(lireOpaciteRepos());
+  }, []);
+
+  function changerOpaciteRepos(valeur: number) {
+    setOpaciteRepos(valeur);
+    ecrireOpaciteRepos(valeur);
+  }
 
   if (!contexte) return null;
   const { actif, activer, desactiver } = contexte;
@@ -77,8 +115,10 @@ export function CanalEnDirectFlottant() {
           <motion.button
             key="activation"
             initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: dansSuperposition && (reglageOuvert || (!actif && !survol)) ? opaciteRepos : 1, scale: 1 }}
             transition={{ duration: 0.15 }}
+            onMouseEnter={() => setSurvol(true)}
+            onMouseLeave={() => setSurvol(false)}
             onClick={() => (actif ? desactiver() : activer())}
             aria-pressed={actif}
             aria-label={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
@@ -91,6 +131,11 @@ export function CanalEnDirectFlottant() {
           >
             <Radio size={18} />
           </motion.button>
+        }
+        reglageOpacite={
+          dansSuperposition ? (
+            <ReglageOpaciteBoutonCanal valeur={opaciteRepos} surChangement={changerOpaciteRepos} surOuverture={setReglageOuvert} />
+          ) : null
         }
       />
     </div>

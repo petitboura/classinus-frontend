@@ -26,7 +26,6 @@ import { DockMinuteurs } from "@/components/chat/minuteurs/DockMinuteurs";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
 import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { estPageChat } from "@/lib/routesApp";
-import { surElectron } from "@/lib/superpositionElectron";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -50,18 +49,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Capacitor.isNativePlatform() n'a pas répondu -- évite un flash du
   // hamburger web au tout premier rendu dans l'appli native.
   const [natif, setNatif] = useState(false);
-  // Correctif (28/09/2026, demande Bourama) : sur Electron, le curseur, la
-  // bulle et le journal du canal en direct ne se montent JAMAIS ici (voir
-  // plus bas), c'est la fenêtre de superposition (app/agent-superposition/page.tsx,
-  // voir electron/main.ts) qui les affiche, fusionnés en une seule
-  // instance, par dessus l'appli ET par dessus le reste du bureau, et
-  // seulement quand le canal est actif (voir
-  // packages/capacitor-superposition-electron/electron/src/plugin.mts).
-  // Les monter aussi ici les aurait dupliqués. Même détection différée
-  // que `natif` juste au dessus (Capacitor.getPlatform() n'est connu que
-  // côté client, un state initial à false évite un décalage
-  // serveur/navigateur à l'hydratation).
-  const [surElectronClient, setSurElectronClient] = useState(false);
   // Remonté ici depuis ChatFlottant.tsx (16/08/2026) pour pouvoir être
   // ouvert depuis d'autres écrans -- voir lib/contexteChat.tsx et le
   // bouton "Ouvrir le chat" de l'écran d'accueil.
@@ -178,7 +165,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     import("@capacitor/core").then(({ Capacitor }) => {
       const estNatif = Capacitor.isNativePlatform();
       if (!annule) setNatif(estNatif);
-      if (!annule) setSurElectronClient(surElectron());
       // Chantier "web mobile façon appli" (28/08/2026) : attribut lu par
       // --dj-barre-onglets-web dans app/globals.css, pour que cette
       // variable CSS (marge réservée par la nouvelle barre du bas web)

@@ -78,9 +78,9 @@ import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
+import { estDansFenetreSuperposition, surElectron, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
 import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
-import { estDansFenetreSuperposition, surElectron, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
 import {
   estMasqueParAutreElement,
   estVisibleEtActif,
@@ -531,13 +531,25 @@ function attendre(ms: number): Promise<void> {
 const DELAI_FRAPPE_MIN_MS = 18;
 const DELAI_FRAPPE_MAX_MS = 42;
 
+// Durée totale maximale d'une frappe visible (02/10/2026, demande Bourama :
+// la frappe de Clovis était très lente sur les longs textes). Au delà de ce
+// que permettent les délais par lettre, plusieurs lettres apparaissent à
+// chaque étape : la frappe reste visible, mais ne dépasse jamais cette durée.
+const DUREE_MAX_FRAPPE_MS = 1500;
+const DELAI_FRAPPE_MOYEN_MS = (DELAI_FRAPPE_MIN_MS + DELAI_FRAPPE_MAX_MS) / 2;
+
 async function simulerFrappeVisible(element: HTMLInputElement | HTMLTextAreaElement, texte: string) {
   definirValeurNative(element, "");
+  const caracteres = Array.from(texte);
+  const etapesMax = Math.max(1, Math.floor(DUREE_MAX_FRAPPE_MS / DELAI_FRAPPE_MOYEN_MS));
+  const lettresParEtape = Math.max(1, Math.ceil(caracteres.length / etapesMax));
   let accumule = "";
-  for (const caractere of texte) {
-    accumule += caractere;
+  for (let i = 0; i < caracteres.length; i += lettresParEtape) {
+    accumule += caracteres.slice(i, i + lettresParEtape).join("");
     definirValeurNative(element, accumule);
-    await attendre(DELAI_FRAPPE_MIN_MS + Math.random() * (DELAI_FRAPPE_MAX_MS - DELAI_FRAPPE_MIN_MS));
+    if (i + lettresParEtape < caracteres.length) {
+      await attendre(DELAI_FRAPPE_MIN_MS + Math.random() * (DELAI_FRAPPE_MAX_MS - DELAI_FRAPPE_MIN_MS));
+    }
   }
   element.dispatchEvent(new Event("change", { bubbles: true }));
 }
@@ -686,7 +698,7 @@ async function traiterPointageEcran(id: string, point: { x: number; y: number })
     envoyerReponse(id, { erreur: "Coordonnées de pointage invalides." });
     return;
   }
-  const idJournal = pousserJournalDepuisAgent("Clovis pointe à l'écran", "en_cours");
+  const idJournal = pousserJournalDepuisAgent("Classinus pointe à l'écran", "en_cours");
   try {
     await deplacerCurseurDepuisAgent(point, { cliquer: false, forme: "main", repere: "ecran" });
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
@@ -779,11 +791,22 @@ function traiterMessage(message: unknown) {
   } else if (
     m.id &&
     !canalEnDirectEstActif() &&
-    (m.lire_page === true || m.editeur !== undefined || m.action_id || m.selecteur_generique || m.montrer_action_id || m.pointer_ecran)
+    (
+      m.lire_page === true ||
+      m.editeur !== undefined ||
+      m.action_id ||
+      m.selecteur_generique ||
+      m.montrer_action_id ||
+      m.pointer_ecran ||
+      m.action_systeme
+    )
   ) {
     // Canal désactivé (30/09/2026, demande Bourama : c'est fini, plus aucune
     // réponse) : lecture de page, éditeur, clic, écriture et pointage sont
-    // tous ignorés, rien ne s'exécute ni ne se lit.
+    // tous ignorés, rien ne s'exécute ni ne se lit. 02/10/2026, demande
+    // Bourama : même règle pour les actions sur le PC (pointage, clic,
+    // clavier, ouverture d'application, lecture de l'écran), relayées par
+    // le renderer principal Electron.
     envoyerReponse(m.id, { ignore: true });
   } else if (m.id && m.pointer_ecran) {
     void traiterPointageEcran(m.id, m.pointer_ecran);

@@ -14,11 +14,24 @@ import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
+import { useEmetteurSuperposition, surElectron } from "@/lib/superpositionElectron";
 
 // Une seule session, sous le layout racine : ouvrir /decouvrir ne démonte
 // plus le canal, la voix ou leurs contextes. La navigation propre à
 // l'application reste dans AppShell.
+//
+// Exception : la fenêtre de superposition Electron (app/agent-superposition,
+// canal en direct sur PC) ne monte JAMAIS ces vraies sessions. Elle fournit
+// elle-même un miroir d'état alimenté par la fenêtre principale (voir
+// app/agent-superposition/page.tsx) : y monter aussi les vraies valeurs ferait
+// émettre à la superposition un état vide vers elle-même.
 export function InteractionGlobale({ children }: { children: ReactNode }) {
+  const segments = useSelectedLayoutSegments();
+  if (segments[0] === "agent-superposition") return <>{children}</>;
+  return <InteractionGlobaleSession>{children}</InteractionGlobaleSession>;
+}
+
+function InteractionGlobaleSession({ children }: { children: ReactNode }) {
   const segments = useSelectedLayoutSegments();
   const retour = useFournirContexteRetour();
   const chat = useFournirContexteChat();
@@ -29,8 +42,19 @@ export function InteractionGlobale({ children }: { children: ReactNode }) {
     deposerDemandeVoix: chat.deposerDemandeVoix,
   });
   const [monte, setMonte] = useState(false);
+  // Sur Electron (canal en direct sur PC, 28/09/2026), le curseur, la bulle et le
+  // bouton du canal ne se montent JAMAIS ici : c'est la fenetre de superposition
+  // (app/agent-superposition/page.tsx, voir electron/main.ts) qui les affiche, en
+  // une seule instance, par dessus l'appli ET le reste du bureau, seulement quand
+  // le canal est actif. Les monter aussi ici les aurait dupliques. Detection
+  // differee (la plateforme n'est connue que cote client, un state initial a false
+  // evite un decalage serveur/navigateur a l'hydratation).
+  const [surElectronClient, setSurElectronClient] = useState(false);
 
-  useEffect(() => { setMonte(true); }, []);
+  useEffect(() => {
+    setMonte(true);
+    setSurElectronClient(surElectron());
+  }, []);
   useEffect(() => { enregistrerCanalEnDirect(canal); }, [canal]);
   useEffect(() => {
     enregistrerDeplacementCurseur(curseur.deplacerVers);
@@ -40,6 +64,10 @@ export function InteractionGlobale({ children }: { children: ReactNode }) {
     if (canal.actif) afficher();
     else masquer();
   }, [canal.actif, afficher, masquer]);
+  // Lot R (27/09/2026, voir plan-canal-en-direct-pc.md) : pousse l'etat du curseur,
+  // du canal et de la voix vers la fenetre de superposition Electron (ne fait rien
+  // ailleurs que sur la plateforme "electron", voir lib/superpositionElectron.ts).
+  useEmetteurSuperposition(curseur, canal, voix);
 
   // Changement de compte (déconnexion sans rechargement de page, connexion,
   // changement d'utilisateur) : la session de voix et le canal en cours
@@ -88,10 +116,10 @@ export function InteractionGlobale({ children }: { children: ReactNode }) {
               <PontMessageCanalVersChat />
               {monte && createPortal(
                 <>
-                  <CurseurVirtuelAgent />
-                  <BulleDialogueAgent />
+                  {!surElectronClient && <CurseurVirtuelAgent />}
+                  {!surElectronClient && <BulleDialogueAgent />}
                   <VoixDirecteSuperposition />
-                  {afficherCommandes && <CanalEnDirectFlottant />}
+                  {!surElectronClient && afficherCommandes && <CanalEnDirectFlottant />}
                 </>,
                 document.body,
               )}

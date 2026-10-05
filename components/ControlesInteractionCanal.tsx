@@ -31,6 +31,7 @@ import { BoutonReglagesCanal, BoutonUtilitairesCanal } from "@/components/Bouton
 import { CanvasDessin } from "@/components/chat/CanvasDessin";
 import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
 import { messageErreur } from "@/lib/erreurs";
+import { estDansFenetreSuperposition } from "@/lib/superpositionElectron";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
@@ -55,8 +56,10 @@ const LABEL_MOTEUR: Record<MoteurDictee, string> = {
 // replié. Le journal est un bouton fixe et déplaçable, affiché canal actif et groupe déplié ;
 // le menu du « + » s'ouvre sur le côté pour ne pas recouvrir Utilitaires.
 export function ControlesInteractionCanal({
+  reglageOpacite = null,
   boutonActivation = null,
 }: {
+  reglageOpacite?: ReactNode;
   boutonActivation?: ReactNode;
 }) {
   const contexte = useContext(ContexteCanalEnDirect);
@@ -262,6 +265,10 @@ export function ControlesInteractionCanal({
     ui_localisation: { executer: joindrePosition, occupe: positionEnCours },
   };
 
+  // La fenêtre de superposition PC n'a pas de session connectée : l'envoi de fichiers
+  // y viendra avec un relais vers la fenêtre principale, pour l'instant le « + » est absent.
+  const peutJoindre = !estDansFenetreSuperposition();
+
   function surToucheChamp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (entreeDoitEnvoyer(e)) {
       e.preventDefault();
@@ -389,11 +396,12 @@ export function ControlesInteractionCanal({
                     <Square size={14} />
                   </motion.button>
                 )}
-                {groupeOuvert && (
+                {groupeOuvert && peutJoindre && (
                   <ApparitionBoutonCanal key="reglages">
                     <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
                   </ApparitionBoutonCanal>
                 )}
+                {groupeOuvert && reglageOpacite && <ApparitionBoutonCanal key="opacite">{reglageOpacite}</ApparitionBoutonCanal>}
               </AnimatePresence>
             </motion.div>
           )}
@@ -485,7 +493,7 @@ export function ControlesInteractionCanal({
                     </button>
                   </ApparitionBoutonCanal>
                 )}
-                {groupeOuvert && (
+                {groupeOuvert && peutJoindre && (
                   <ApparitionBoutonCanal key="utilitaires">
                     <BoutonUtilitairesCanal actions={actionsUtilitaires} />
                   </ApparitionBoutonCanal>
@@ -511,7 +519,7 @@ export function ControlesInteractionCanal({
                 </button>
               </ApparitionBoutonCanal>
             )}
-            {actif && groupeOuvert && (
+            {actif && groupeOuvert && peutJoindre && (
               <ApparitionBoutonCanal key="plus">
                 <div className="flex h-10 w-10 items-center justify-center">
                   <MenuPlus variante="bureau" entrees={entreesMenuPlus} ouverture="droite" />
@@ -543,28 +551,32 @@ export function ControlesInteractionCanal({
           document.body,
         )}
 
-      <input
-        ref={inputFichierRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          ajouterFichiersJoints(Array.from(e.target.files ?? []));
-          // Sans ça, rejoindre le même fichier juste après l'avoir retiré ne redéclenche pas onChange.
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={inputPhotoRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          ajouterFichiersJoints(Array.from(e.target.files ?? []));
-          e.target.value = "";
-        }}
-      />
+      {peutJoindre && (
+        <>
+          <input
+            ref={inputFichierRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              ajouterFichiersJoints(Array.from(e.target.files ?? []));
+              // Sans ça, rejoindre le même fichier juste après l'avoir retiré ne redéclenche pas onChange.
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={inputPhotoRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              ajouterFichiersJoints(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
+          />
+        </>
+      )}
 
       {dessinOuvert && (
         <CanvasDessin
@@ -593,6 +605,7 @@ export function ControlesInteractionCanal({
           titre="Écris ton message"
           onFerme={fermerPleinEcran}
           enSortie={pleinEcranEnSortie}
+          capturerSouris
           entete={
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm text-dj-texte-muet">Écris ton message</span>

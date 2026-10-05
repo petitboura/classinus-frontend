@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { createCapacitorElectronApp } from '@capawesome/capacitor-electron';
 
 import config from './capacitor.electron.config';
+import { installerArrierePlan } from './arrierePlan';
+import { initialiserDemarrageAutomatique } from './demarrage';
 
 const capacitorApp = createCapacitorElectronApp(config);
 
@@ -173,16 +175,15 @@ capacitorApp.whenReady.then(() => {
   });
   superposition.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-  // Correctif (28/09/2026, demande Bourama) : ne JAMAIS afficher cette
-  // fenetre par defaut, meme une fois prete. Le curseur/la bulle/le
-  // journal ne doivent apparaitre que lorsque le canal en direct est
-  // actif : c'est desormais SuperpositionAgentImpl.pousserEtat (voir
-  // packages/capacitor-superposition-electron/electron/src/plugin.mts)
-  // qui appelle show()/hide() sur cette fenetre selon etat.canal.actif,
-  // a chaque instantane recu de la fenetre principale (lib/superpositionElectron.ts).
-  // Avant ce correctif, showInactive() ici rendait la fenetre visible
-  // dès le lancement de l'appli, quel que soit l'etat du canal, c'est
-  // ce qui produisait l'ecran fige que Bourama a signale.
+  // Visibilite (01/10/2026, demande Bourama) : la superposition n'est plus
+  // cachee tant que le canal est inactif. Elle reste affichee en permanence,
+  // fenetre principale fermee comprise, mais seul le bouton d'activation du
+  // canal y est dessine tant que le canal est inactif (voir
+  // app/agent-superposition/page.tsx). Elle n'est jamais montree ici : le
+  // plugin SuperpositionAgent (packages/capacitor-superposition-electron/
+  // electron/src/plugin.mts) l'affiche des que la fenetre principale a envoye
+  // son premier etat, sans voler le focus, pour que le bouton ne soit jamais
+  // visible avant d'etre capable d'agir.
 
   // Assomption a verifier par Bourama (impossible a tester dans ce bac a
   // sable, pas de build Next complet possible ici -- police Google
@@ -194,4 +195,11 @@ capacitorApp.whenReady.then(() => {
   const urlSuperposition = `${origine}/agent-superposition.html`;
   brancherDiagnosticSuperposition(superposition, urlSuperposition);
   void superposition.loadURL(urlSuperposition);
+
+  // Arriere-plan (01/10/2026, demande Bourama) : fermer la fenetre principale
+  // la cache au lieu de l'arreter, le canal en direct et le bouton
+  // permanent continuent. Voir arrierePlan.ts.
+  const principale = capacitorApp.getMainWindow();
+  if (principale) installerArrierePlan(principale);
+  initialiserDemarrageAutomatique();
 });

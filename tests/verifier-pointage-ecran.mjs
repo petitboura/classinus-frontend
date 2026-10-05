@@ -21,6 +21,7 @@ try {
   await build({ entryPoints: [join(racine, 'packages/capacitor-superposition-electron/electron/src/plugin.mts')], outfile: natif, bundle: true, format: 'esm', platform: 'node',
     define: {'process.platform': '"win32"'}, plugins: [substitutions({
       'electron': `const t=globalThis.testPointage;
+        export const app={isPackaged:false,getLoginItemSettings:()=>({openAtLogin:false}),setLoginItemSettings:()=>{}};
         export const BrowserWindow={getAllWindows:()=>[
           {getTitle:()=>"Classinus",isDestroyed:()=>false,getContentBounds:()=>t.bornes,webContents:{getZoomFactor:()=>t.zoom}},
           {getTitle:()=>"classinus-superposition-agent",isDestroyed:()=>false,showInactive:()=>{},hide:()=>{},getContentBounds:()=>t.origine,webContents:{getZoomFactor:()=>t.zoomSuperposition}}

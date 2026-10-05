@@ -39,7 +39,7 @@
 // applicatif (lib/superpositionElectron.ts), pas ici -- ce plugin n'a pas
 // a etre retouche si ces formes evoluent.
 
-import { BrowserWindow, screen } from "electron";
+import { app, BrowserWindow, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 
@@ -130,7 +130,7 @@ export async function marquerEcran(p: {
     throw new Error("Position ou taille de la marque invalide.");
   }
   const fenetre = trouverFenetreSuperposition();
-  if (!fenetre || fenetre.isDestroyed() || !notifierEtat || !dernierEtat) throw new Error("La superposition de Clovis n'est pas prête.");
+  if (!fenetre || fenetre.isDestroyed() || !notifierEtat || !dernierEtat) throw new Error("La superposition de Classinus n'est pas prête.");
   if (!(dernierEtat.canal as { actif?: boolean } | undefined)?.actif) throw new Error("Le canal en direct n'est pas actif.");
   const enDip = (pt: PointEcranLocal) => process.platform === "win32" || process.platform === "linux"
     ? screen.screenToDipPoint({ x: Math.round(pt.x), y: Math.round(pt.y) }) : pt;
@@ -205,7 +205,7 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
   const fenetre = trouverFenetreSuperposition();
   const etat = dernierEtat;
   const notifier = notifierEtat;
-  if (!fenetre || fenetre.isDestroyed() || !etat?.curseur || !notifier) throw new Error("La superposition de Clovis n'est pas prête.");
+  if (!fenetre || fenetre.isDestroyed() || !etat?.curseur || !notifier) throw new Error("La superposition de Classinus n'est pas prête.");
   if (!(etat.canal as { actif?: boolean } | undefined)?.actif) throw new Error("Le canal en direct n'est pas actif.");
   if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) throw new Error("Coordonnées de pointage invalides.");
   if (pointageEnCours) throw new Error("Un pointage est déjà en cours.");
@@ -260,27 +260,75 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
 }
 
 
-// Correctif (28/09/2026, demande Bourama) : la fenetre de superposition
-// ne doit etre visible que lorsque le canal en direct est actif, ni au
-// lancement, ni en permanence. pousserEtat est le seul signal recu a
-// chaque changement pertinent cote fenetre principale (voir
-// useEmetteurSuperposition dans lib/superpositionElectron.ts, qui pousse
-// canal.actif a chaque changement), donc c'est ici qu'on decide de
-// montrer/cacher, plutot que dans electron/main.ts qui ne connait pas cet
-// etat. Variable de module (pas de champ sur la classe : Capacitor peut
-// recreer l'instance du plugin, ce module reste, lui, charge une seule
-// fois par processus) pour n'appeler show()/hide() qu'au VRAI changement
-// et ne pas voler le focus a chaque instantane (le curseur bouge en
-// continu pendant une trajectoire, voir useEmetteurSuperposition).
-let dernierCanalActif = false;
+// Visibilite (01/10/2026, demande Bourama, remplace le correctif du 28/09/2026
+// qui cachait la superposition tant que le canal etait inactif) : le bouton
+// d'activation du canal doit etre disponible a tout moment, fenetre principale
+// fermee comprise. La superposition reste donc affichee en permanence ; tant
+// que le canal est inactif, sa page (app/agent-superposition/page.tsx) ne
+// dessine que ce bouton.
+//
+// Elle n'est montree qu'une fois la fenetre principale capable d'agir : le
+// premier pousserEtat prouve que sa page est montee et qu'elle ecoute les
+// interactions, donc que le bouton ne sera jamais visible sans effet.
+// showInactive pour ne pas voler le focus. Variable de module (pas de champ
+// sur la classe : Capacitor peut recreer l'instance du plugin) pour n'appeler
+// show()/hide() qu'au VRAI changement.
+let superpositionAffichee = false;
+let affichageVoulu = false;
+let minuteurEssaiAffichage: ReturnType<typeof setTimeout> | null = null;
 
-function synchroniserVisibiliteSuperposition(actif: boolean) {
-  if (actif === dernierCanalActif) return;
-  dernierCanalActif = actif;
+// electron/main.ts cree la superposition juste apres le chargement de la
+// fenetre principale : le premier etat peut arriver avant qu'elle existe, et
+// sans nouvel etat le bouton ne s'afficherait jamais. On reessaie donc a
+// court intervalle (10 secondes au plus par demande, le prochain etat en
+// relance une).
+const DELAI_ESSAI_AFFICHAGE_MS = 250;
+const NB_MAX_ESSAIS_AFFICHAGE = 40;
+
+function essayerAffichageSuperposition(essai: number) {
+  if (!affichageVoulu || superpositionAffichee) return;
   const superposition = trouverFenetreSuperposition();
-  if (!superposition || superposition.isDestroyed()) return;
-  if (actif) superposition.showInactive();
-  else superposition.hide();
+  if (superposition && !superposition.isDestroyed()) {
+    superpositionAffichee = true;
+    superposition.showInactive();
+    return;
+  }
+  if (essai >= NB_MAX_ESSAIS_AFFICHAGE || minuteurEssaiAffichage) return;
+  minuteurEssaiAffichage = setTimeout(() => {
+    minuteurEssaiAffichage = null;
+    essayerAffichageSuperposition(essai + 1);
+  }, DELAI_ESSAI_AFFICHAGE_MS);
+}
+
+function afficherSuperpositionPermanente() {
+  affichageVoulu = true;
+  essayerAffichageSuperposition(0);
+}
+
+// La fenetre principale n'est plus en mesure d'agir (page quittee, session
+// fermee) : un bouton qui ne ferait rien ne doit pas rester a l'ecran.
+function retirerSuperposition() {
+  affichageVoulu = false;
+  if (minuteurEssaiAffichage) {
+    clearTimeout(minuteurEssaiAffichage);
+    minuteurEssaiAffichage = null;
+  }
+  if (!superpositionAffichee) return;
+  superpositionAffichee = false;
+  const superposition = trouverFenetreSuperposition();
+  if (superposition && !superposition.isDestroyed()) superposition.hide();
+}
+
+// Demarrage automatique avec Windows (01/10/2026, demande Bourama), reglage
+// des Parametres. L'argument est le meme que dans electron/lancementSession.ts
+// (deux projets compiles separement, voir le commentaire sur le titre de la
+// fenetre de superposition plus haut). Pas disponible hors de l'appli installee
+// ni hors Windows : enregistrer l'executable Electron nu en developpement ou
+// un systeme sans cette notion n'aurait aucun sens.
+const ARGUMENT_LANCEMENT_SESSION = "--lancement-session";
+
+function demarrageAutomatiqueDisponible(): boolean {
+  return app.isPackaged && process.platform === "win32";
 }
 
 class SuperpositionAgentImpl extends ElectronPlugin {
@@ -296,7 +344,7 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     const principale = trouverFenetrePrincipale();
     const superposition = trouverFenetreSuperposition();
     if (!principale || principale.isDestroyed() || !superposition || superposition.isDestroyed()) {
-      throw new Error("La superposition de Clovis n'est pas prête.");
+      throw new Error("La superposition de Classinus n'est pas prête.");
     }
     if (![p.depart.x, p.depart.y, p.cible.x, p.cible.y].every(Number.isFinite)) {
       throw new Error("Coordonnées de pointage invalides.");
@@ -320,10 +368,11 @@ class SuperpositionAgentImpl extends ElectronPlugin {
   async pousserEtat(etat: EtatPousse): Promise<void> {
     notifierEtat = e => this.context.notifyListeners("etat", e);
     notifierInteraction = action => this.context.notifyListeners("interaction", action);
-    const canal = etat.canal as { actif?: unknown } | undefined;
-    if (canal && typeof canal.actif === "boolean") {
-      synchroniserVisibiliteSuperposition(canal.actif);
+    if (etat.retirer === true) {
+      retirerSuperposition();
+      return;
     }
+    afficherSuperpositionPermanente();
 
     const principale = trouverFenetrePrincipale();
     if (!principale || !etat.curseur) {
@@ -376,6 +425,18 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     this.context.notifyListeners("interaction", action);
   }
 
+  async lireDemarrageAutomatique(): Promise<{ disponible: boolean; actif: boolean }> {
+    if (!demarrageAutomatiqueDisponible()) return { disponible: false, actif: false };
+    return { disponible: true, actif: app.getLoginItemSettings({ args: [ARGUMENT_LANCEMENT_SESSION] }).openAtLogin };
+  }
+
+  async definirDemarrageAutomatique(parametres: { actif: boolean }): Promise<void> {
+    if (!demarrageAutomatiqueDisponible()) {
+      throw new Error("Le démarrage automatique n'est disponible que dans l'application installée sous Windows.");
+    }
+    app.setLoginItemSettings({ openAtLogin: parametres.actif === true, args: [ARGUMENT_LANCEMENT_SESSION] });
+  }
+
   async definirCapturerSouris(parametres: { capturer: boolean }): Promise<void> {
     const superposition = trouverFenetreSuperposition();
     if (!superposition) return;
@@ -391,6 +452,6 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "definirCapturerSouris"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "definirCapturerSouris", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
   SuperpositionAgentImpl
 );

@@ -23,6 +23,7 @@ import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
+import { blocCompilationUnique } from "./compilationUnique.mjs";
 
 export interface LimitesLectureEcran {
   nbMaxElements: number;
@@ -53,6 +54,17 @@ const MARGE_DEMARRAGE_MS = 8000;
 
 // Taille maximale de la sortie du script, en octets.
 const TAILLE_MAX_SORTIE_OCTETS = 4 * 1024 * 1024;
+
+// Ce que lire_ecran doit lire (04/10/2026, demande Bourama : Classinus doit aussi voir le
+// bureau et la barre du bas, avec le MEME outil). "fenetre" : la fenetre au premier plan
+// (comportement d'origine). Le bureau est lu aussi tout seul quand c'est lui que
+// l'etudiant regarde (rien d'ouvert, ou bureau au premier plan).
+export type ZoneLecture = "fenetre" | "barre_des_taches" | "bureau";
+
+export function zoneDepuisParametres(parametres: Record<string, unknown>): ZoneLecture {
+  const zone = parametres.zone;
+  return zone === "barre_des_taches" || zone === "bureau" ? zone : "fenetre";
+}
 
 export interface ElementLu {
   type: string;
@@ -90,6 +102,8 @@ export interface LectureFenetre {
   // planter Windows et a ete abandonnee : les elements sont la, mais leur
   // texte long n'est pas lu.
   texte_long_ignore?: boolean;
+  // Ce qui a vraiment ete lu : la fenetre, la barre des taches ou le bureau.
+  zone_lue?: ZoneLecture;
 }
 
 // Echec de la lecture : plantage = le processus PowerShell s'est arrete
@@ -273,7 +287,8 @@ public static class LectureFenetres {
 `;
 
 // Exportee pour pouvoir verifier la syntaxe du script hors de Windows.
-export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true): string {
+export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true, zone: ZoneLecture = "fenetre"): string {
+  if (zone !== "fenetre" && zone !== "barre_des_taches" && zone !== "bureau") throw new Error("Zone de lecture invalide");
   if (!/^\d+$/.test(handleSuperposition)) throw new Error("Handle de superposition invalide");
   const nbMaxNoeuds = limites.nbMaxElements * FACTEUR_NOEUDS_PARCOURUS;
   // Les seules valeurs inserees dans le script sont des entiers deja
@@ -299,13 +314,17 @@ $nbMaxNoeuds = ${nbMaxNoeuds}
 $pidClassinus = ${pidClassinus}
 $lireTexteLong = ${lireTexteLong ? "$true" : "$false"}
 $handleSuperposition = [IntPtr]([long]${handleSuperposition})
+$zoneDemandee = '${zone}'
 
 try {
-  Add-Type -AssemblyName UIAutomationClient
-  Add-Type -AssemblyName UIAutomationTypes
-  Add-Type -TypeDefinition @'
-${CODE_CSHARP}
-'@
+  # Rendre le focus a une fenetre (activerFenetre) n'utilise pas UI Automation : ne pas
+  # charger ses bibliotheques (04/10/2026, demande Bourama : lecture lente). Ce cas est
+  # lance avant chaque clic souris et chaque frappe au clavier.
+  if (-not ${activerFenetre ? "$true" : "$false"}) {
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
+  }
+  ${blocCompilationUnique("LectureFenetres", CODE_CSHARP)}
   # Sans cela, Windows peut renvoyer des coordonnees mises a l'echelle
   # (ecran regle a 125 % ou 150 %) qui ne correspondent plus a celles de la
   # souris : les clics tomberaient a cote.
@@ -323,7 +342,11 @@ ${CODE_CSHARP}
     elements = $script:elements
     coupe = $false
     mode = 'titre_seul'
+    zone_lue = 'fenetre'
   }
+  $zoneLue = 'fenetre'
+  if ($zoneDemandee -eq 'bureau' -or $zoneDemandee -eq 'barre_des_taches') { $zoneLue = $zoneDemandee }
+  $bureauAuto = $false
 
   $fg = [LectureFenetres]::GetForegroundWindow()
   # Une demande dans Classinus ou dans sa barre flottante lui donne le focus.
@@ -331,8 +354,18 @@ ${CODE_CSHARP}
   # externe dans l'ordre Z, sans activer ni masquer de fenêtre pour une lecture.
   if (($handleSuperposition -ne [IntPtr]::Zero -and $fg -eq $handleSuperposition) -or
       [LectureFenetres]::Pid($fg) -eq $pidClassinus) {
+    $externeTrouvee = $false
+    $classinusAffichee = $false
     foreach ($h in [LectureFenetres]::Ouvertes()) {
-      if ($h -ne $handleSuperposition -and [LectureFenetres]::Pid($h) -ne $pidClassinus) { $fg = $h; break }
+      if ($h -eq $handleSuperposition) { continue }
+      if ([LectureFenetres]::Pid($h) -ne $pidClassinus) { $fg = $h; $externeTrouvee = $true; break }
+      $classinusAffichee = $true
+    }
+    # Aucune fenetre externe ET la fenetre de Classinus n'est pas affichee : l'etudiant regarde
+    # le bureau (tout est reduit). Si la fenetre de Classinus est affichee, rien ne change.
+    if (-not $externeTrouvee -and -not $classinusAffichee -and $zoneLue -eq 'fenetre' -and -not ${activerFenetre ? "$true" : "$false"}) {
+      $zoneLue = 'bureau'
+      $bureauAuto = $true
     }
   }
   if ($fg -eq [IntPtr]::Zero) {
@@ -349,8 +382,25 @@ ${CODE_CSHARP}
   }
 
   $pidFg = [LectureFenetres]::Pid($fg)
+  $fgEstClassinus = ($pidFg -eq $pidClassinus)
   $resultat.titre_fenetre_active = [LectureFenetres]::Titre($fg)
-  try { $resultat.application = (Get-Process -Id $pidFg).ProcessName } catch { }
+  # Le bureau lui-meme est la fenetre au premier plan (clic sur le bureau) : le lire comme tel.
+  # Les fenetres du bureau n'ont pas de titre (ou "Program Manager") : la classe n'est
+  # demandee que dans ce cas, pour ne rien ajouter a une lecture normale.
+  if ($zoneLue -eq 'fenetre' -and -not $fgEstClassinus -and ([string]::IsNullOrEmpty($resultat.titre_fenetre_active) -or $resultat.titre_fenetre_active -eq 'Program Manager')) {
+    $classeFg = ''
+    try { $classeFg = [System.Windows.Automation.AutomationElement]::FromHandle($fg).Current.ClassName } catch { }
+    if ($classeFg -eq 'Progman' -or $classeFg -eq 'WorkerW' -or $classeFg -eq 'SHELLDLL_DefView') {
+      $zoneLue = 'bureau'
+      $bureauAuto = $true
+    }
+  }
+  if ($bureauAuto -or ($zoneLue -ne 'fenetre' -and $fgEstClassinus)) { $resultat.titre_fenetre_active = $null }
+  # Process.GetProcessById plutot que Get-Process : la commande Get-Process est lente a
+  # chaque lancement de PowerShell.
+  if ($resultat.titre_fenetre_active) {
+    try { $resultat.application = [System.Diagnostics.Process]::GetProcessById([int]$pidFg).ProcessName } catch { }
+  }
 
   $titres = New-Object System.Collections.Generic.List[string]
   foreach ($h in [LectureFenetres]::Ouvertes()) {
@@ -362,7 +412,7 @@ ${CODE_CSHARP}
   }
   $resultat.fenetres_ouvertes = $titres.ToArray()
 
-  if ($pidFg -eq $pidClassinus) {
+  if ($fgEstClassinus -and $zoneLue -eq 'fenetre') {
     $resultat.fenetre_classinus = $true
     Sortir $resultat
     exit 0
@@ -525,10 +575,36 @@ ${CODE_CSHARP}
     }
   }
 
+  # Barre des taches et bureau : fenetres de l'explorateur de Windows, retrouvees par leur
+  # classe parmi les fenetres de premier niveau, puis lues comme n'importe quelle fenetre
+  # (meme parcours, memes types d'elements, memes coordonnees utilisables avec cliquer_ecran).
+  function LireZoneWindows($zone) {
+    if ($zone -eq 'barre_des_taches') {
+      $classes = @('Shell_TrayWnd', 'Shell_SecondaryTrayWnd')
+      $script:zoneCourante = 'barre des tâches'
+    } else {
+      $classes = @('Progman', 'WorkerW')
+      $script:zoneCourante = 'bureau'
+    }
+    try {
+      foreach ($classe in $classes) {
+        if ($script:coupe) { break }
+        $condition = New-Object System.Windows.Automation.PropertyCondition($AE::ClassNameProperty, $classe)
+        $trouves = $AE::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, $condition)
+        foreach ($racineZone in $trouves) {
+          if ($script:coupe) { break }
+          Visiter ($racineZone.GetUpdatedCache($cr)) 0 ''
+        }
+      }
+    } catch { } finally { $script:zoneCourante = $null }
+  }
+
   # Menus et listes ouverts par la fenetre : lus en premier, car ils sont au-dessus et ce sont
   # eux que l'etudiant voit apres un clic sur un bouton de menu.
   $menuOuvert = $false
-  foreach ($annexe in [LectureFenetres]::Annexes($fg, [uint32]$pidFg, [uint32]$pidClassinus, $handleSuperposition)) {
+  $annexes = @()
+  if ($zoneLue -eq 'fenetre') { $annexes = [LectureFenetres]::Annexes($fg, [uint32]$pidFg, [uint32]$pidClassinus, $handleSuperposition) }
+  foreach ($annexe in $annexes) {
     if ($script:coupe) { break }
     $avantAnnexe = $script:elements.Count
     try {
@@ -546,9 +622,14 @@ ${CODE_CSHARP}
   }
   $resultat.menu_ouvert = $menuOuvert
 
-  $racine = $AE::FromHandle($fg).GetUpdatedCache($cr)
-  Visiter $racine 0 ''
+  if ($zoneLue -eq 'fenetre') {
+    $racine = $AE::FromHandle($fg).GetUpdatedCache($cr)
+    Visiter $racine 0 ''
+  } else {
+    LireZoneWindows $zoneLue
+  }
 
+  $resultat.zone_lue = $zoneLue
   $resultat.coupe = $script:coupe
   if ($script:elements.Count -gt 0) { $resultat.mode = 'uia' }
   Sortir $resultat
@@ -585,7 +666,8 @@ function lireUneFois(
   }
 
   const limites = limitesDepuisParametres(parametres);
-  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong);
+  const zone = zoneDepuisParametres(parametres);
+  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong, zone);
 
   // Le script est ecrit dans un fichier temporaire plutot que passe en -EncodedCommand :
   // le script encode approche la limite de 32 767 caracteres d'une ligne de commande
@@ -675,6 +757,7 @@ function lireUneFois(
           menu_ouvert: r.menu_ouvert === true,
           coupe: r.coupe === true,
           mode: r.mode === "uia" ? "uia" : "titre_seul",
+          zone_lue: r.zone_lue === "bureau" || r.zone_lue === "barre_des_taches" ? r.zone_lue : "fenetre",
         });
       }
     );
