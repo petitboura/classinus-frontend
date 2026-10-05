@@ -10,8 +10,6 @@ import "katex/dist/katex.min.css";
 import "mathlive/fonts.css";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ReveilBackend } from "@/components/ReveilBackend";
-import { SplashOuverture } from "@/components/SplashOuverture";
-import { SplashPret } from "@/components/SplashPret";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
@@ -173,33 +171,10 @@ export default function RacineLayout({
         <script src="/dj-anti-flash-theme.js" />
       </head>
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
-        {/* Écran d'ouverture (25/08, demande Bourama) -- voir
-            SplashOuverture.tsx pour le pourquoi du composant serveur.
-            Le script qui suit fait disparaître #clovis-splash une fois
-            SA CHORÉGRAPHIE COMPLÈTE terminée (~3,9s : tracé + "prend
-            vie") ET que l'app signale qu'elle est prête (événement
-            "clovis:pret", déclenché par SplashPret.tsx plus bas une fois
-            React monté) -- les deux conditions, pas juste la première
-            arrivée, sinon l'animation serait coupée en plein milieu sur
-            un hydratation rapide (28/08, Bourama : "ça doit se montrer
-            obligatoirement"). Filet de sécurité à 6s si le signal
-            "prêt" tarde trop (connexion lente) -- ne doit jamais
-            bloquer indéfiniment l'accès à l'appli (standards-dev #9).
-            L'attente de 3,9s est ignorée pour prefers-reduced-motion :
-            les animations CSS y sont déjà quasi instantanées (règle
-            globale dans globals.css), forcer l'attente reviendrait à
-            imposer un écran figé inutile à ces personnes. Doit rester
-            APRÈS le <div id="clovis-splash"> dans le HTML pour le
-            trouver dans le DOM au moment où il s'exécute.
-
-            Correctif (29/09/2026) : même raison qu'au dessus, en fichier
-            externe (public/dj-splash-retrait.js). C'est précisément ce
-            script (le filet de sécurité à 6s compris) qui, bloqué en
-            ligne par la politique de sécurité Electron, laissait l'écran
-            d'ouverture figé pour toujours en production Electron : plus
-            rien n'appelait jamais partir(). */}
-        <SplashOuverture />
-        <script src="/dj-splash-retrait.js" />
+        {/* Pas d'écran d'ouverture animé sur cette branche (05/10/2026,
+            décision de Bourama) : il bloquait la fenêtre de superposition
+            Electron. Ne JAMAIS le remettre, même si un jour la branche est
+            réalignée avec main : garder cette suppression. */}
         <ServiceWorkerRegistration />
         <ReveilBackend />
         <FournisseurRequetes>
@@ -209,7 +184,6 @@ export default function RacineLayout({
         <PopupExplorationDossier />
         <GardienLiensSortants />
         <VisionneurGlobalRacine />
-        <SplashPret />
       </body>
     </html>
   );
