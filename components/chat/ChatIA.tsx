@@ -1152,7 +1152,10 @@ export function ChatIA({
       }
     }
 
-    if (!automatique && !voixEnCoursRef.current) {
+    // Les messages automatiques (fin d'un minuteur) sont suivis eux aussi :
+    // sans ça, la réponse de Classinus s'écrivait dans le chat mais la voix
+    // ne la lisait jamais. Voix éteinte, annoncerReponse ne fait rien.
+    if (!voixEnCoursRef.current) {
       texteTourVoixRef.current = "";
       tourEcritSuiviRef.current = true;
     }
