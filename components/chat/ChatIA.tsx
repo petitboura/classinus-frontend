@@ -29,6 +29,12 @@ import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
 import { detecterLangageCode } from "@/lib/texteColle";
 
+// Lecture à voix haute par paragraphes pendant que la réponse s'écrit : un
+// paragraphe n'est confié à la voix qu'une fois qu'au moins ce nombre de
+// caractères attend d'être lu, pour éviter une suite de tout petits morceaux
+// (titres, phrases d'une ligne) qui hacheraient la voix.
+const CARACTERES_MIN_PARAGRAPHE_VOIX = 200;
+
 // L'aperçu interne (VisionneurPositionGlobal) n'est plus monté ici depuis
 // le 20/09/2026 : il vit dans le layout racine (VisionneurGlobalRacine.tsx)
 // pour marcher sur toutes les pages.
@@ -639,13 +645,39 @@ export function ChatIA({
   // Partagé entre l'envoi normal (envoyerMessage) et la reprise après
   // confirmation (repriseApresConfirmation) -- même flux d'événements SSE
   // dans les deux cas (voir core/main.py:chat(), docstring).
+  // Voix en direct : la voix n'attend plus la fin de la réponse écrite pour
+  // commencer à lire. Dès qu'un saut de paragraphe est reçu (jamais à
+  // l'intérieur d'un bloc de code ouvert) et qu'assez de texte attend, ce qui
+  // est déjà écrit part vers la voix ; le reste suit au fil de l'écriture, et
+  // ce qui manque encore à la fin part à la fin du tour (voir envoyerMessage).
+  function libererParagraphesVoix() {
+    const texte = texteTourVoixRef.current;
+    const debut = positionVoixRef.current;
+    let fin = -1;
+    let saut = texte.indexOf("\n\n", debut);
+    while (saut !== -1) {
+      const blocsOuverts = (texte.slice(0, saut).match(/```/g) || []).length % 2 === 1;
+      if (!blocsOuverts) fin = saut;
+      saut = texte.indexOf("\n\n", saut + 2);
+    }
+    if (fin === -1 || fin - debut < CARACTERES_MIN_PARAGRAPHE_VOIX) return;
+    voixDirecte?.annoncerReponse(conversationId, texte.slice(debut, fin));
+    positionVoixRef.current = fin + 2;
+  }
+
   function traiterEvenement(evenement: any) {
     // Voix en direct (02/10/2026) : pendant un tour demandé par la voix, on
     // garde le texte écrit de la réponse pour le lui renvoyer, sans rien
     // changer à l'affichage du chat ci-dessous.
     if (voixEnCoursRef.current || tourEcritSuiviRef.current) {
       if (evenement.type === "reponse" && typeof evenement.texte === "string") texteTourVoixRef.current += evenement.texte;
-      else if (evenement.type === "reponse_annulee") texteTourVoixRef.current = "";
+      else if (evenement.type === "reponse_annulee") {
+        texteTourVoixRef.current = "";
+        positionVoixRef.current = 0;
+      }
+    }
+    if (tourEcritSuiviRef.current && evenement.type === "reponse" && typeof evenement.texte === "string" && evenement.texte.includes("\n")) {
+      libererParagraphesVoix();
     }
     if (evenement.type === "reponse") {
       // Le texte de la réponse arrive : la phase "outils" est terminée,
@@ -853,6 +885,9 @@ export function ChatIA({
   // Tour déclenché par un message tapé (pas par la voix) : on garde aussi le
   // texte de la réponse pour que la voix, si elle est active, en dise l'essentiel.
   const tourEcritSuiviRef = useRef(false);
+  // Nombre de caractères de texteTourVoixRef déjà confiés à la voix pendant
+  // que la réponse s'écrit (voir libererParagraphesVoix).
+  const positionVoixRef = useRef(0);
   const voixDirecte = useContext(ContexteVoixDirecte);
   const ctxChatCanal = useContext(ContexteChat);
   const nbMessagesEnAttenteCanal = ctxChatCanal?.nbMessagesEnAttente ?? 0;
@@ -1157,6 +1192,7 @@ export function ChatIA({
     // ne la lisait jamais. Voix éteinte, annoncerReponse ne fait rien.
     if (!voixEnCoursRef.current) {
       texteTourVoixRef.current = "";
+      positionVoixRef.current = 0;
       tourEcritSuiviRef.current = true;
     }
 
@@ -1225,7 +1261,7 @@ export function ChatIA({
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
-      if (tourEcritSuiviRef.current) voixDirecte?.annoncerReponse(conversationId, texteTourVoixRef.current);
+      if (tourEcritSuiviRef.current) voixDirecte?.annoncerReponse(conversationId, texteTourVoixRef.current.slice(positionVoixRef.current));
     } catch (e) {
       reinitialiserAffichageControle();
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1251,6 +1287,7 @@ export function ChatIA({
       if (tourEcritSuiviRef.current) {
         tourEcritSuiviRef.current = false;
         texteTourVoixRef.current = "";
+        positionVoixRef.current = 0;
       }
       // Correctif 12/09/2026 (voir appliquerEvenementOutil, cas
       // "raisonnement") : si le tout dernier événement de la génération
