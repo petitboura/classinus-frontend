@@ -24,15 +24,15 @@ fun creerCanauxNotifications(context: Context) {
 
     val canalStandard = NotificationChannel(
         CANAL_RAPPELS,
-        "Rappels Clovis",
+        "Rappels Classinus",
         NotificationManager.IMPORTANCE_HIGH
     ).apply {
-        description = "Rappels et notifications programmés par Clovis."
+        description = "Rappels et notifications programmés par Classinus."
     }
 
     val canalUrgent = NotificationChannel(
         CANAL_RAPPELS_URGENTS,
-        "Rappels prioritaires Clovis",
+        "Rappels prioritaires Classinus",
         NotificationManager.IMPORTANCE_HIGH
     ).apply {
         description = "Rappels importants (type alarme), affichage plein écran si autorisé."
@@ -40,10 +40,10 @@ fun creerCanauxNotifications(context: Context) {
 
     val canalTelechargements = NotificationChannel(
         CANAL_TELECHARGEMENTS,
-        "Téléchargements Clovis",
+        "Téléchargements Classinus",
         NotificationManager.IMPORTANCE_DEFAULT
     ).apply {
-        description = "Confirmation de fin de téléchargement pour les fichiers générés dans Clovis."
+        description = "Confirmation de fin de téléchargement pour les fichiers générés dans Classinus."
     }
 
     gestionnaire.createNotificationChannel(canalStandard)
