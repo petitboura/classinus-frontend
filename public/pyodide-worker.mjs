@@ -137,6 +137,17 @@ self.onmessage = async (evenement) => {
     return;
   }
 
+  // Préchargement (demandé dès l'ouverture de l'appli, voir prechargerPython
+  // dans lib/executionPython.ts) : lance seulement le chargement de Pyodide
+  // pour qu'il soit déjà prêt au premier clic sur Exécuter. Une exécution
+  // qui arrive pendant ce chargement attend la même promesse, Pyodide n'est
+  // donc jamais chargé deux fois. En cas d'échec (connexion absente),
+  // promessePyodide est remise à zéro et l'exécution réessaiera elle-même.
+  if (donnees.type === "precharger") {
+    chargerPyodide().catch(() => {});
+    return;
+  }
+
   const { id, code, interactif, entreesPrealables, argv } = donnees;
   const envoyer = (type, extra) => self.postMessage({ id, type, ...extra });
 

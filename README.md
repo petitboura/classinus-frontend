@@ -140,6 +140,11 @@ lib/
                           minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par
                           langue), useMaintenantMs.ts (horloge locale des affichages)
   canalTempsReel.ts      client du canal temps réel avec le backend (exploration de dossier mobile...)
+  executionPython.ts      bouton Exécuter des blocs de code : Python (Pyodide) tourne dans un Worker
+                          (public/pyodide-worker.mjs) sur l'appareil de l'étudiant. prechargerPython() démarre
+                          le chargement de Pyodide dès l'ouverture de l'appli (AppShell.tsx, au repos du
+                          navigateur) et après toute coupure du worker, pour que l'exécution soit instantanée ;
+                          useExecutionPython.ts gère l'état d'un bloc (sortie, input(), sys.argv)
   liensSortants.ts        règle unique des liens qui veulent sortir de l'appli (20/09/2026) : un fichier se
                           télécharge vraiment (lib/telecharger.ts), tout autre lien passe par l'aperçu interne
                           (VisionneurPositionGlobal) qui demande ensuite d'ouvrir le site ; appliquée à tous les
