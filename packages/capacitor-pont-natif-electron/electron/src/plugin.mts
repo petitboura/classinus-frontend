@@ -269,7 +269,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
           return { erreur: "coordonnees x/y invalides" };
         }
-        if (clicEnCours) return { erreur: "Un clic de Clovis est déjà en cours." };
+        if (clicEnCours) return { erreur: "Un clic de Classinus est déjà en cours." };
         clicEnCours = true;
         try {
           return await cliquerEcran({ x, y }, {

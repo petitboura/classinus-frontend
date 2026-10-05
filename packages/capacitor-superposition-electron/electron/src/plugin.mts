@@ -130,7 +130,7 @@ export async function marquerEcran(p: {
     throw new Error("Position ou taille de la marque invalide.");
   }
   const fenetre = trouverFenetreSuperposition();
-  if (!fenetre || fenetre.isDestroyed() || !notifierEtat || !dernierEtat) throw new Error("La superposition de Clovis n'est pas prête.");
+  if (!fenetre || fenetre.isDestroyed() || !notifierEtat || !dernierEtat) throw new Error("La superposition de Classinus n'est pas prête.");
   if (!(dernierEtat.canal as { actif?: boolean } | undefined)?.actif) throw new Error("Le canal en direct n'est pas actif.");
   const enDip = (pt: PointEcranLocal) => process.platform === "win32" || process.platform === "linux"
     ? screen.screenToDipPoint({ x: Math.round(pt.x), y: Math.round(pt.y) }) : pt;
@@ -205,7 +205,7 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
   const fenetre = trouverFenetreSuperposition();
   const etat = dernierEtat;
   const notifier = notifierEtat;
-  if (!fenetre || fenetre.isDestroyed() || !etat?.curseur || !notifier) throw new Error("La superposition de Clovis n'est pas prête.");
+  if (!fenetre || fenetre.isDestroyed() || !etat?.curseur || !notifier) throw new Error("La superposition de Classinus n'est pas prête.");
   if (!(etat.canal as { actif?: boolean } | undefined)?.actif) throw new Error("Le canal en direct n'est pas actif.");
   if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) throw new Error("Coordonnées de pointage invalides.");
   if (pointageEnCours) throw new Error("Un pointage est déjà en cours.");
@@ -344,7 +344,7 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     const principale = trouverFenetrePrincipale();
     const superposition = trouverFenetreSuperposition();
     if (!principale || principale.isDestroyed() || !superposition || superposition.isDestroyed()) {
-      throw new Error("La superposition de Clovis n'est pas prête.");
+      throw new Error("La superposition de Classinus n'est pas prête.");
     }
     if (![p.depart.x, p.depart.y, p.cible.x, p.cible.y].every(Number.isFinite)) {
       throw new Error("Coordonnées de pointage invalides.");

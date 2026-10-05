@@ -1997,7 +1997,7 @@ export async function exporterMesDonnees() {
   const url = URL.createObjectURL(blob);
   const lien = document.createElement("a");
   lien.href = url;
-  lien.download = `clovis_mes_donnees_${donnees.user_id ?? "export"}.json`;
+  lien.download = `classinus_mes_donnees_${donnees.user_id ?? "export"}.json`;
   document.body.appendChild(lien);
   lien.click();
   lien.remove();
