@@ -19,7 +19,7 @@
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
-import { abonnerMessagesBulle } from "./contexteCanalEnDirect";
+import { abonnerMessagesBulle, canalEnDirectEstActif } from "./contexteCanalEnDirect";
 import { ChatIndisponiblePourVoix } from "./contexteChat";
 import { conversationActive, conversationPourVoix } from "./conversationPartagee";
 
@@ -111,6 +111,17 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
           }
         },
         surErreur: setErreur,
+        // La voix décide du plein écran ou du mini, le navigateur applique. Tant que le canal
+        // en direct est actif, l'onde reste en bulle (le canal impose la bulle).
+        surAffichage: (mode) => {
+          if (mode === "plein_ecran") {
+            if (canalEnDirectEstActif()) return "Impossible : le canal en direct est actif, l'onde reste en petite bulle.";
+            setReduit(false);
+            return "L'onde est maintenant en plein écran.";
+          }
+          setReduit(true);
+          return "L'onde est maintenant réduite en petite bulle.";
+        },
         surDemande: async (question) => {
           // Tant que le canal est actif, la voix suit la conversation partagée
           // (celle du chat affiché) ; sinon elle garde celle où elle a été ouverte.

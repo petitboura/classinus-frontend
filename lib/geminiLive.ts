@@ -22,6 +22,8 @@ type ReponseToken = {
   relances_max: number;
   description_outil_silence: string;
   description_outil_reveil: string;
+  description_outil_plein_ecran: string;
+  description_outil_mini: string;
   annonce_reprise: string;
   delai_reprise_ms: number;
   seuil_voix_micro: number;
@@ -31,6 +33,10 @@ type OptionsGeminiLive = {
   conversationId: string;
   surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur" | "ferme") => void;
   surErreur?: (message: string) => void;
+  // Affichage de l'onde décidé par la voix (outils passer_en_plein_ecran et passer_en_mini) :
+  // le navigateur applique et renvoie la phrase que la voix doit connaître (fait, ou impossible).
+  // Rien n'est envoyé à Classinus.
+  surAffichage?: (mode: "plein_ecran" | "mini") => string;
   // La voix est un interprète : elle transmet la demande à Classinus par cette
   // fonction et reçoit en retour sa réponse écrite. Sans elle, chemin direct.
   surDemande?: (question: string) => Promise<string>;
@@ -55,6 +61,10 @@ const NOM_OUTIL_CLOVIS = "demander_a_clovis";
 // applique sa décision (il jette tout son qui arrive tant que le silence dure).
 const NOM_OUTIL_SILENCE = "se_taire";
 const NOM_OUTIL_REVEIL = "reprendre_la_parole";
+// Affichage de l'onde décidé par la voix elle même, appliqué par le navigateur (même famille
+// que le silence : aucun aller-retour vers Classinus).
+const NOM_OUTIL_PLEIN_ECRAN = "passer_en_plein_ecran";
+const NOM_OUTIL_MINI = "passer_en_mini";
 
 function declarerOutilSansParametre(name: string, description: string) {
   return { name, description };
@@ -215,6 +225,8 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   const outilClovis = declarerOutilClovis(token.description_outil);
   const outilSilence = declarerOutilSansParametre(NOM_OUTIL_SILENCE, token.description_outil_silence);
   const outilReveil = declarerOutilSansParametre(NOM_OUTIL_REVEIL, token.description_outil_reveil);
+  const outilPleinEcran = declarerOutilSansParametre(NOM_OUTIL_PLEIN_ECRAN, token.description_outil_plein_ecran);
+  const outilMini = declarerOutilSansParametre(NOM_OUTIL_MINI, token.description_outil_mini);
 
   const entree = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const contexteEntree = new AudioContext();
@@ -441,7 +453,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
         inputAudioTranscription: {},
         outputAudioTranscription: {},
         systemInstruction: { parts: [{ text: token.consignes }] },
-        tools: [{ functionDeclarations: [outilClovis, outilSilence, outilReveil] }],
+        tools: [{ functionDeclarations: [outilClovis, outilSilence, outilReveil, outilPleinEcran, outilMini] }],
         // Écoute sélective : la voix choisit de ne pas répondre à ce qui ne lui est pas adressé.
         // Réglable côté serveur (GEMINI_LIVE_PROACTIVITE) si le modèle vocal ne l'accepte pas.
         ...(token.proactivite ? { proactivity: { proactiveAudio: true } } : {}),
@@ -511,6 +523,17 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
             functionResponses.push({ id: appel.id, name: appel.name, response: { result: "La lecture reprend.", scheduling: "SILENT" } });
           } else {
             functionResponses.push(reponseOutil(appel, { result: "Tu peux parler de nouveau." }));
+          }
+          continue;
+        }
+        // Affichage de l'onde : la voix a décidé, le navigateur applique. Sans demande envoyée à
+        // Classinus, et sans effet sur le silence en cours.
+        if (appel.name === NOM_OUTIL_PLEIN_ECRAN || appel.name === NOM_OUTIL_MINI) {
+          const mode = appel.name === NOM_OUTIL_PLEIN_ECRAN ? "plein_ecran" : "mini";
+          if (!options.surAffichage) {
+            functionResponses.push(reponseOutil(appel, { error: "Changer l'affichage n'est pas possible ici." }));
+          } else {
+            functionResponses.push(reponseOutil(appel, { result: options.surAffichage(mode) }));
           }
           continue;
         }
