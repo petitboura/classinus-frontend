@@ -69,7 +69,7 @@ class ClovisFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        val titre = message.data["title"] ?: "Clovis"
+        val titre = message.data["title"] ?: "Classinus"
         val corps = message.data["body"] ?: ""
         val prioritaire = message.data["prioritaire"] == "true"
         NotificationsNatives.afficherRappel(applicationContext, titre, corps, prioritaire)

@@ -44,7 +44,7 @@ class AlerteRappelActivity : ComponentActivity() {
         (getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager)
             ?.requestDismissKeyguard(this, null)
 
-        val titre = intent.getStringExtra(EXTRA_TITRE_ALERTE) ?: "Clovis"
+        val titre = intent.getStringExtra(EXTRA_TITRE_ALERTE) ?: "Classinus"
         val corps = intent.getStringExtra(EXTRA_CORPS_ALERTE) ?: ""
 
         setContent {

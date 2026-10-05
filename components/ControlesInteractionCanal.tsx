@@ -477,8 +477,8 @@ export function ControlesInteractionCanal({
                       onClick={geminiLive.basculer}
                       disabled={geminiLive.etat === "connexion"}
                       aria-pressed={geminiLive.actif}
-                      aria-label={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
-                      title={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Clovis"}
+                      aria-label={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Classinus"}
+                      title={geminiLive.actif ? "Arrêter la conversation vocale Gemini" : "Parler en temps réel avec Classinus"}
                       className={`${classeBouton(geminiLive.actif, geminiLive.actif)} ${geminiLive.etat === "reponse" ? "animate-pulse" : ""}`}
                     >
                       <AudioLines size={18} />
