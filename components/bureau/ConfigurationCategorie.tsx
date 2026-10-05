@@ -16,6 +16,7 @@ import { texteConfiguration } from "@/lib/i18n/textesConfiguration";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { EditeurConfiguration } from "@/components/bureau/configuration/EditeurConfiguration";
+import { MenuElementConfiguration } from "@/components/bureau/configuration/MenuElementConfiguration";
 import {
   CarteProcedure,
   LigneRegle,
@@ -94,7 +95,16 @@ export function ConfigurationCategorie({
 
   const ouvrir = (c: Comportement) => setPanneau({ type: "edition", c });
   const creer = () => setPanneau({ type: "creation" });
+  const retirerDuCache = (id: string) => queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).filter((x) => x.id !== id));
   const props = { onOuvrir: ouvrir, onToggleActif: toggleActif };
+  const menuPour = (c: Comportement) => (
+    <MenuElementConfiguration
+      agentId={agentId}
+      c={c}
+      onSupprime={retirerDuCache}
+      onMaj={(maj) => queryClient.setQueryData<Comportement[]>(cle, (prec) => (prec || []).map((x) => (x.id === maj.id ? maj : x)))}
+    />
+  );
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
@@ -114,7 +124,7 @@ export function ConfigurationCategorie({
       {categorie === "procedure" && (
         <div className="grid gap-3 sm:grid-cols-2">
           {liste.map((c) => (
-            <CarteProcedure key={c.id} c={c} {...props} />
+            <CarteProcedure key={c.id} c={c} {...props} menu={menuPour(c)} />
           ))}
           <AjoutProcedure onClick={creer} />
         </div>
@@ -122,21 +132,21 @@ export function ConfigurationCategorie({
       {categorie === "regle" && liste.length > 0 && (
         <div className="flex flex-col divide-y divide-dj-bordure">
           {liste.map((c) => (
-            <LigneRegle key={c.id} c={c} {...props} />
+            <LigneRegle key={c.id} c={c} {...props} menu={menuPour(c)} />
           ))}
         </div>
       )}
       {categorie === "comportement" && liste.length > 0 && (
         <div className="flex flex-col gap-3">
           {liste.map((c) => (
-            <CarteComportement key={c.id} c={c} {...props} />
+            <CarteComportement key={c.id} c={c} {...props} menu={menuPour(c)} />
           ))}
         </div>
       )}
       {categorie === "style" && liste.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">
           {liste.map((c) => (
-            <CarteStyle key={c.id} c={c} {...props} />
+            <CarteStyle key={c.id} c={c} {...props} menu={menuPour(c)} />
           ))}
         </div>
       )}

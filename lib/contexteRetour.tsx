@@ -199,9 +199,9 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
   // 07/09/2026, correctif Bourama ("le bouton plein écran du chat mini
   // ne fait rien, ça revient en arrière") : avant, cet objet était
   // recréé (littéral `{ empiler, depiler, remonterAuSommet }`) à chaque
-  // nouveau rendu d'AppShell.tsx (qui fournit ce contexte), même si
+  // nouveau rendu d'InteractionGlobale.tsx (qui fournit ce contexte), même si
   // empiler/depiler/remonterAuSommet eux-mêmes ne changent jamais
-  // (useCallback à deps vides ci-dessus). Un nouveau rendu d'AppShell se
+  // (useCallback à deps vides ci-dessus). Un nouveau rendu d'InteractionGlobale se
   // produit notamment à chaque changement de page (usePathname), ce qui
   // arrive AVANT que le fondu de fermeture du popup mini (200ms) soit
   // terminé quand on navigue via son bouton "Plein écran". Comme

@@ -1,7 +1,7 @@
 "use client";
 
 // Créé le 02/10/2026, Bourama : voix en direct (Gemini Live). Pièce partagée,
-// montée une seule fois dans AppShell, comme le canal en direct. Avant, la
+// montée une seule fois au niveau du layout racine (InteractionGlobale.tsx), comme le canal en direct. Avant, la
 // voix vivait dans la barre de saisie du chat et ne pouvait servir qu'à elle.
 // Ici, une seule session de voix existe pour toute l'appli : le chat s'en sert
 // aujourd'hui, le canal en direct pourra s'en servir demain sans en créer une
@@ -19,11 +19,11 @@
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
-import { abonnerMessagesBulle } from "./contexteCanalEnDirect";
+import { abonnerMessagesBulle, canalEnDirectEstActif } from "./contexteCanalEnDirect";
 import { ChatIndisponiblePourVoix } from "./contexteChat";
 import { conversationActive, conversationPourVoix } from "./conversationPartagee";
 
-export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur";
+export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur";
 
 export type ContexteVoixDirecteValeur = {
   etat: EtatVoixDirecte;
@@ -51,7 +51,7 @@ export type ContexteVoixDirecteValeur = {
 export const ContexteVoixDirecte = createContext<ContexteVoixDirecteValeur | null>(null);
 
 // Ce dont la voix a besoin du chat. Passé en argument (et non lu par
-// useContext) parce que ce hook tourne dans AppShell, au dessus des Providers
+// useContext) parce que ce hook tourne dans InteractionGlobale, au dessus des Providers
 // qu'il alimente.
 type DependancesVoix = {
   chatPretPourVoix: (conversationId: string) => boolean;
@@ -111,6 +111,17 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
           }
         },
         surErreur: setErreur,
+        // La voix décide du plein écran ou du mini, le navigateur applique. Tant que le canal
+        // en direct est actif, l'onde reste en bulle (le canal impose la bulle).
+        surAffichage: (mode) => {
+          if (mode === "plein_ecran") {
+            if (canalEnDirectEstActif()) return "Impossible : le canal en direct est actif, l'onde reste en petite bulle.";
+            setReduit(false);
+            return "L'onde est maintenant en plein écran.";
+          }
+          setReduit(true);
+          return "L'onde est maintenant réduite en petite bulle.";
+        },
         surDemande: async (question) => {
           // Tant que le canal est actif, la voix suit la conversation partagée
           // (celle du chat affiché) ; sinon elle garde celle où elle a été ouverte.

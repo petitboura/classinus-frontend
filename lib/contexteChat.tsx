@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import type { MessageAffiche } from "@/components/chat/BulleMessage";
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+import { supabase } from "@/lib/supabase";
 // Chantier "demo + guide visuel" (20/09/2026) : le Guide visuel et la
 // Demo tournent tous deux sur le canal en direct, voir useOuvrirDecouverteCanal
 // plus bas dans ce fichier.
 import { useCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { ROUTES_APP } from "@/lib/routesApp";
+import { useConversationEnCoursMemorisee } from "@/lib/conversationEnCoursMemorisee";
 
 // "plein_ecran" retiré du type le 07/09/2026 (chantier "chat plein écran
 // = vraie section", étape 5) : /chat est désormais une route comme les
@@ -62,6 +64,32 @@ function cleFil(fil: { conversation_id: string | null }): string {
   return fil.conversation_id ?? "legacy";
 }
 
+// Cache local de la premiere page de l'historique : la liste s'affiche
+// instantanement a l'ouverture de l'appli, puis le serveur la remet a jour
+// en arriere-plan. Range par utilisateur (jamais montre a un autre compte).
+const CLE_CACHE_HISTORIQUE = "classinus.historique.v1";
+
+type CacheHistorique = { uid: string; fils: FilConversation[]; suivant: CurseurHistorique | null };
+
+function lireCacheHistorique(uid: string): CacheHistorique | null {
+  try {
+    const brut = window.localStorage.getItem(CLE_CACHE_HISTORIQUE);
+    if (!brut) return null;
+    const cache = JSON.parse(brut) as CacheHistorique;
+    return cache.uid === uid && Array.isArray(cache.fils) ? cache : null;
+  } catch {
+    return null;
+  }
+}
+
+function ecrireCacheHistorique(cache: CacheHistorique) {
+  try {
+    window.localStorage.setItem(CLE_CACHE_HISTORIQUE, JSON.stringify(cache));
+  } catch {
+    // Stockage plein ou indisponible : le cache est facultatif.
+  }
+}
+
 function versFilConversation(f: PageFilsApi["fils"][number]): FilConversation {
   return {
     conversation_id: f.conversation_id,
@@ -100,9 +128,13 @@ type ContexteChatValeur = {
   chargementPlusHistorique: boolean;
   erreurPlusHistorique: boolean;
   chargerPlusHistorique: () => Promise<void>;
-  epinglerFil: (fil: FilConversation, epingle: boolean) => Promise<void>;
-  renommerFil: (fil: FilConversation, titre: string) => Promise<void>;
-  supprimerFil: (fil: FilConversation) => Promise<void>;
+  // Epingler / renommer / supprimer : la liste change TOUT DE SUITE, le
+  // serveur suit en arriere-plan ; si le serveur refuse, la liste revient
+  // en arriere et erreurActionHistorique affiche pourquoi.
+  epinglerFil: (fil: FilConversation, epingle: boolean) => void;
+  renommerFil: (fil: FilConversation, titre: string) => void;
+  supprimerFil: (fil: FilConversation) => void;
+  erreurActionHistorique: string | null;
   texteInitialConversation: string | null;
   setTexteInitialConversation: (v: string | null) => void;
   // Fondu de fermeture (18/08/2026, demande Bourama : "le popup disparaît
@@ -213,7 +245,7 @@ export type DemandeVoixEnAttente = {
 };
 
 // L'état du chat flottant (fermee/mini/plein_ecran) vivait auparavant
-// dans ChatFlottant.tsx lui-même. Remonté ici dans AppShell.tsx pour
+// dans ChatFlottant.tsx lui-même. Remonté ici, au niveau du layout racine (InteractionGlobale.tsx), pour
 // pouvoir être piloté depuis d'autres écrans (ex: bouton "Ouvrir le
 // chat" sur l'écran d'accueil, 16/08/2026) -- ChatFlottant devient un
 // composant contrôlé (etat + setEtat reçus en props).
@@ -225,11 +257,19 @@ export const ContexteChat = createContext<ContexteChatValeur | null>(null);
 const DUREE_FERMETURE_MS = 200;
 
 // Fournisseur de la valeur de contexte, monté une seule fois dans
-// AppShell.tsx (même esprit que useFournirFenetres dans
+// InteractionGlobale.tsx (même esprit que useFournirFenetres dans
 // contexteFenetres.tsx) -- centralise l'état ET le mécanisme de fondu de
 // fermeture, pour que tout composant sous ContexteChat.Provider (chat
 // lui-même, tiroir mobile, popups de sections) ferme le chat exactement
 // de la même façon.
+// Lecture du détail public de l'agent et de la liste de ses outils : même
+// séquence au montage et après un changement de session (voir plus bas).
+async function lireAgentEtOutils() {
+  const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
+  const outils = await lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] }));
+  return { detail, outils };
+}
+
 export function useFournirContexteChat(): ContexteChatValeur {
   const [etat, setEtat] = useState<EtatChat>("fermee");
   const [enFermeture, setEnFermeture] = useState(false);
@@ -317,13 +357,40 @@ export function useFournirContexteChat(): ContexteChatValeur {
   // Garde-fou contre deux chargements simultanes (le defilement peut
   // declencher plusieurs fois la meme page avant la reponse).
   const chargementPlusEnCours = useRef(false);
+  const [erreurActionHistorique, setErreurActionHistorique] = useState<string | null>(null);
+  const minuteurErreurRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Copie a jour de la liste, pour memoriser l'ordre avant une action
+  // (annulation si le serveur refuse) sans dependre d'un rendu.
+  const historiqueRef = useRef<FilConversation[]>([]);
+  historiqueRef.current = historique;
+  const uidHistoriqueRef = useRef<string | null>(null);
+  const historiqueSynchroniseRef = useRef(false);
   const [texteInitialConversation, setTexteInitialConversation] = useState<string | null>(null);
+
+  // 04/10/2026 : la conversation affichée est retenue pour la durée de
+  // l'onglet et rechargée après un rafraîchissement de page (voir
+  // lib/conversationEnCoursMemorisee.ts).
+  useConversationEnCoursMemorisee({
+    agentId: agent?.id ?? null,
+    chargement,
+    cle,
+    nbMessages,
+    demandeEnCours:
+      demandeOuvrirConversation !== null ||
+      demandeGuide !== null ||
+      demandePrefill !== null ||
+      texteInitialConversation !== null,
+    setCle,
+    setMessagesInitiaux,
+    setNbMessages,
+    setChargementFilConversation,
+  });
 
   // Étape 2 (07/09/2026, chantier "chat plein écran = vraie section") :
   // ce chargement initial (détail agent + outils + historique) vivait
   // avant dans ChatFlottant.tsx, monté une seule fois au niveau du
   // layout. Déplacé ici, dans le fournisseur de contexte lui-même
-  // (également monté une seule fois dans AppShell.tsx), pour qu'il ne
+  // (également monté une seule fois dans InteractionGlobale.tsx), pour qu'il ne
   // se déclenche qu'UNE FOIS quel que soit le nombre de composants qui
   // liront ce contexte ensuite (ChatFlottant.tsx aujourd'hui, la future
   // route /chat demain) -- sans ce déplacement, une future page /chat
@@ -333,20 +400,10 @@ export function useFournirContexteChat(): ContexteChatValeur {
     let annule = false;
     (async () => {
       try {
-        const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
-        const [outils, fils] = await Promise.all([
-          lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] })),
-          appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`).catch((e) => {
-            console.error("Erreur chargement historique conversations:", e);
-            return { epingles: [], fils: [], suivant: null } as PageFilsApi;
-          }),
-        ]);
+        const { detail, outils } = await lireAgentEtOutils();
         if (!annule) {
           setAgent(detail);
           setOutilsActifsAgent(outils);
-          const premierePage = fils as PageFilsApi;
-          setHistorique([...premierePage.epingles, ...premierePage.fils].map(versFilConversation));
-          setCurseurHistorique(premierePage.suivant);
           setChargement("pret");
         }
       } catch (e) {
@@ -358,6 +415,138 @@ export function useFournirContexteChat(): ContexteChatValeur {
     })();
     return () => {
       annule = true;
+    };
+  }, []);
+
+  // Historique charge a part, en parallele du reste (avant, il attendait
+  // le detail de l'agent puis les outils : liste lente a apparaitre).
+  // 1) le cache local s'affiche tout de suite ; 2) la premiere page du
+  // serveur le remplace des qu'elle arrive.
+  useEffect(() => {
+    let annule = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const uid = data.session?.user.id ?? null;
+      if (annule || !uid) return;
+      uidHistoriqueRef.current = uid;
+      const cache = lireCacheHistorique(uid);
+      if (cache && !historiqueSynchroniseRef.current) {
+        setHistorique(cache.fils);
+        setCurseurHistorique(cache.suivant);
+      }
+      try {
+        const page: PageFilsApi = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`);
+        if (annule) return;
+        historiqueSynchroniseRef.current = true;
+        setHistorique([...page.epingles, ...page.fils].map(versFilConversation));
+        setCurseurHistorique(page.suivant);
+      } catch (e) {
+        console.error("Erreur chargement historique conversations:", e);
+      }
+    })();
+    return () => {
+      annule = true;
+    };
+  }, []);
+
+  // Garde le cache a jour : epingles + 20 plus recents.
+  useEffect(() => {
+    const uid = uidHistoriqueRef.current;
+    if (!uid || !historiqueSynchroniseRef.current) return;
+    const recents = historique
+      .filter((f) => !f.epingle)
+      .sort((a, b) => Date.parse(b.derniere_activite) - Date.parse(a.derniere_activite))
+      .slice(0, TAILLE_PAGE_HISTORIQUE);
+    ecrireCacheHistorique({
+      uid,
+      fils: [...historique.filter((f) => f.epingle), ...recents],
+      // Le curseur du cache designe la fin des 20 recents gardes.
+      suivant:
+        recents.length > 0 && (curseurHistorique !== null || historique.filter((f) => !f.epingle).length > recents.length)
+          ? { avant_activite: recents[recents.length - 1].derniere_activite, avant_cle: cleFil(recents[recents.length - 1]) }
+          : null,
+    });
+  }, [historique, curseurHistorique]);
+
+  // Changement de session (connexion, déconnexion, changement de compte).
+  // Ce fournisseur vit au niveau du layout racine : il n'est plus remonté
+  // à neuf quand on passe par /connexion, donc les chargements de montage
+  // ci-dessus (faits une seule fois, souvent en visiteur) ne se
+  // reproduisent plus tout seuls. Sans ce relais, après une connexion sans
+  // rechargement de page l'historique resterait vide et la liste d'outils
+  // serait celle d'un visiteur ; après une déconnexion, l'historique et la
+  // conversation de l'ancien compte resteraient visibles. Seul un vrai
+  // changement d'identifiant déclenche ce relais (un simple rafraîchissement
+  // de jeton ou un retour sur l'onglet ne change pas l'identifiant).
+  useEffect(() => {
+    let annule = false;
+    let uidCourant: string | null | undefined;
+
+    const surChangementSession = async (uid: string | null) => {
+      if (annule) return;
+      // Première lecture : déjà couverte par les chargements de montage.
+      if (uidCourant === undefined) {
+        uidCourant = uid;
+        return;
+      }
+      if (uid === uidCourant) return;
+      uidCourant = uid;
+
+      // Tout ce qui appartenait à l'ancien compte est retiré tout de suite.
+      uidHistoriqueRef.current = uid;
+      historiqueSynchroniseRef.current = false;
+      chargementPlusEnCours.current = false;
+      setHistorique([]);
+      setCurseurHistorique(null);
+      setChargementPlusHistorique(false);
+      setErreurPlusHistorique(false);
+      setCle(crypto.randomUUID());
+      setMessagesInitiaux([]);
+      setNbMessages(0);
+      setChargementFilConversation(false);
+      setTexteInitialConversation(null);
+
+      // Détail de l'agent (public) et outils (qui dépendent de la personne).
+      try {
+        const { detail, outils } = await lireAgentEtOutils();
+        if (annule || uidCourant !== uid) return;
+        setAgent(detail);
+        setOutilsActifsAgent(outils);
+        setErreur(null);
+        setChargement("pret");
+      } catch (e) {
+        if (annule || uidCourant !== uid) return;
+        setErreur(messageErreur(e));
+        setChargement("erreur");
+      }
+
+      if (!uid) return;
+      const cache = lireCacheHistorique(uid);
+      if (cache && !historiqueSynchroniseRef.current) {
+        setHistorique(cache.fils);
+        setCurseurHistorique(cache.suivant);
+      }
+      try {
+        const page: PageFilsApi = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils?limite=${TAILLE_PAGE_HISTORIQUE}`);
+        if (annule || uidCourant !== uid) return;
+        historiqueSynchroniseRef.current = true;
+        setHistorique([...page.epingles, ...page.fils].map(versFilConversation));
+        setCurseurHistorique(page.suivant);
+      } catch (e) {
+        console.error("Erreur chargement historique conversations:", e);
+      }
+    };
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => surChangementSession(data.session?.user.id ?? null))
+      .catch(() => {});
+    const { data: abonnement } = supabase.auth.onAuthStateChange((_evenement, session) => {
+      void surChangementSession(session?.user.id ?? null);
+    });
+    return () => {
+      annule = true;
+      abonnement.subscription.unsubscribe();
     };
   }, []);
 
@@ -389,46 +578,72 @@ export function useFournirContexteChat(): ContexteChatValeur {
     }
   }, [curseurHistorique]);
 
-  // Epingler / desepingler : la liste n'est mise a jour qu'apres la reponse
-  // du serveur, pour qu'un refus s'affiche sur la ligne concernee (l'erreur
-  // est relancee) au lieu de faire sauter la ligne puis la remettre.
+  function signalerErreurAction(e: unknown) {
+    setErreurActionHistorique(messageErreur(e));
+    if (minuteurErreurRef.current) clearTimeout(minuteurErreurRef.current);
+    minuteurErreurRef.current = setTimeout(() => setErreurActionHistorique(null), 6000);
+  }
+
+  // Remet un fil a sa place d'avant une action refusee par le serveur.
+  function restaurerFil(original: FilConversation, indexOriginal: number) {
+    setHistorique((precedent) => {
+      const sansLui = precedent.filter((f) => cleFil(f) !== cleFil(original));
+      sansLui.splice(Math.min(indexOriginal, sansLui.length), 0, original);
+      return sansLui;
+    });
+  }
+
   const epinglerFil = useCallback(
-    async (fil: FilConversation, epingle: boolean) => {
-      await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ epingle }),
-      });
+    (fil: FilConversation, epingle: boolean) => {
+      const index = historiqueRef.current.findIndex((f) => cleFil(f) === cleFil(fil));
+      const original = index >= 0 ? historiqueRef.current[index] : null;
+      if (!original) return;
       setHistorique((precedent) => {
-        const cible = precedent.find((f) => cleFil(f) === cleFil(fil));
-        if (!cible) return precedent;
         const autres = precedent.filter((f) => cleFil(f) !== cleFil(fil));
         // Un fil qu'on vient d'epingler passe en tete des epingles.
-        if (epingle) return [{ ...cible, epingle: true }, ...autres];
+        if (epingle) return [{ ...original, epingle: true }, ...autres];
         // Desepingle plus ancien que tout ce qui est deja charge, alors
         // qu'il reste des pages : il reapparaitra en faisant defiler, a sa
         // vraie place (sinon il serait charge en double).
         if (curseurHistorique) {
           const dates = autres.filter((f) => !f.epingle).map((f) => Date.parse(f.derniere_activite));
-          if (dates.length > 0 && Date.parse(cible.derniere_activite) < Math.min(...dates)) return autres;
+          if (dates.length > 0 && Date.parse(original.derniere_activite) < Math.min(...dates)) return autres;
         }
-        return [...autres, { ...cible, epingle: false }];
+        return [...autres, { ...original, epingle: false }];
+      });
+      appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ epingle }),
+      }).catch((e) => {
+        restaurerFil(original, index);
+        signalerErreurAction(e);
       });
     },
     [curseurHistorique]
   );
 
-  const renommerFil = useCallback(async (fil: FilConversation, titre: string) => {
-    const modifie: { titre: string } = await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
+  const renommerFil = useCallback((fil: FilConversation, titre: string) => {
+    const ancienTitre = historiqueRef.current.find((f) => cleFil(f) === cleFil(fil))?.titre ?? fil.titre;
+    setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre } : f)));
+    appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, {
       method: "PATCH",
       body: JSON.stringify({ titre }),
+    }).catch((e) => {
+      setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre: ancienTitre } : f)));
+      signalerErreurAction(e);
     });
-    setHistorique((precedent) => precedent.map((f) => (cleFil(f) === cleFil(fil) ? { ...f, titre: modifie.titre } : f)));
   }, []);
 
-  // Suppression definitive cote serveur, puis retrait de la liste.
-  const supprimerFil = useCallback(async (fil: FilConversation) => {
-    await appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, { method: "DELETE" });
+  // Le fil disparait tout de suite ; la suppression definitive se fait
+  // cote serveur en arriere-plan (et revient si elle echoue).
+  const supprimerFil = useCallback((fil: FilConversation) => {
+    const index = historiqueRef.current.findIndex((f) => cleFil(f) === cleFil(fil));
+    const original = index >= 0 ? historiqueRef.current[index] : null;
     setHistorique((precedent) => precedent.filter((f) => cleFil(f) !== cleFil(fil)));
+    appelerApi(`/api/historique/${AGENT_INVITE_ID}/fils/${cleFil(fil)}`, { method: "DELETE" }).catch((e) => {
+      if (original) restaurerFil(original, index);
+      signalerErreurAction(e);
+    });
   }, []);
 
   const fermerAvecFondu = useCallback(() => {
@@ -441,7 +656,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
 
   // 07/09/2026, même correctif préventif que useFournirContexteRetour
   // (lib/contexteRetour.tsx) : cet objet était recréé à chaque re-rendu
-  // d'AppShell.tsx (qui fournit ce contexte), même quand rien ici n'avait
+  // d'InteractionGlobale.tsx (qui fournit ce contexte), même quand rien ici n'avait
   // réellement changé -- les fonctions setState/fermerAvecFondu sont déjà
   // stables, seules les valeurs d'état ci-dessous changent vraiment.
   // Mémoiser évite que du code dépendant de l'identité de cet objet (dans
@@ -493,6 +708,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       epinglerFil,
       renommerFil,
       supprimerFil,
+      erreurActionHistorique,
       texteInitialConversation,
       setTexteInitialConversation,
     }),
@@ -528,6 +744,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       epinglerFil,
       renommerFil,
       supprimerFil,
+      erreurActionHistorique,
       texteInitialConversation,
     ]
   );
@@ -663,7 +880,7 @@ export function useOuvrirDecouverteCanal() {
     // ne fait que programmer les setState (actif, conversationId) --
     // envoyerMessageEtudiant lit conversationId via obtenirConversationIdCanal
     // (lib/canalAgentApplicatif.ts), qui lit le pont canalGlobal, lui-même
-    // mis à jour par l'effet enregistrerCanalEnDirect de AppShell.tsx
+    // mis à jour par l'effet enregistrerCanalEnDirect de InteractionGlobale.tsx
     // (déclenché par ce même setState). Un appel synchrone ici lirait
     // encore l'ancienne valeur (null) et échouerait silencieusement. Le
     // report d'un tick (après le prochain rendu + effets passifs de

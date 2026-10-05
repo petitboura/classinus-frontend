@@ -12,6 +12,20 @@ export const LABELS_LONGUEUR: Record<LongueurReponse, string> = {
   longue: "Longue",
 };
 
+// Effort de réflexion (04/10/2026, demande Bourama) : mêmes valeurs que
+// EFFORTS_REFLEXION_DEEPSEEK côté backend (core/fournisseurs_llm.py). Ne
+// concerne que DeepSeek. "none" coupe la réflexion, donc plus rien à afficher.
+export type EffortReflexion = "none" | "low" | "high" | "max";
+
+export const NIVEAUX_EFFORT: EffortReflexion[] = ["none", "low", "high", "max"];
+
+export const LABELS_EFFORT: Record<EffortReflexion, string> = {
+  none: "Aucun",
+  low: "Faible",
+  high: "Élevé",
+  max: "Maximum",
+};
+
 // Regroupement du sélecteur de modèle premium par distributeur (02/08/2026,
 // voir ModelesPremiumAgent.tsx côté dashboard pour le même mapping). Ordre
 // volontairement identique à la hiérarchie backend

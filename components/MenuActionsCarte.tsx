@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { MoreVertical } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import type { ActionSelection } from "./BarreActionsSelection";
@@ -21,14 +22,26 @@ import type { ActionSelection } from "./BarreActionsSelection";
 export function MenuActionsCarte({
   actions,
   ariaLabel = "Actions",
+  contraste = false,
+  portail = false,
 }: {
   actions: ActionSelection[];
   ariaLabel?: string;
+  /** 02/10/2026, demande Bourama (panneau "quasi invisible") : bordure dorée
+   * et ombre marquée, pour un menu posé sur une carte de même couleur que lui.
+   * Absent : rendu inchangé pour les autres écrans. */
+  contraste?: boolean;
+  /** 02/10/2026 : rend le menu dans document.body, en position fixe. Une carte
+   * désactivée est à demi transparente, ce qui crée une couche qui passerait
+   * sous les cartes suivantes. Absent : rendu inchangé. */
+  portail?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [ouvrirVersHaut, setOuvrirVersHaut] = useState(false);
   const [alignerAGauche, setAlignerAGauche] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [positionFixe, setPositionFixe] = useState<CSSProperties>({});
   // Hauteur estimée du menu (nombre d'actions * hauteur d'une ligne),
   // utilisée pour savoir s'il reste assez de place en dessous du bouton.
   const hauteurMenuEstimee = actions.length * 36 + 16;
@@ -48,19 +61,42 @@ export function MenuActionsCarte({
   useEffect(() => {
     function surClicExterieur(e: MouseEvent) {
       if (!ouvertRef.current) return;
-      if (ref.current && !ref.current.contains(e.target as Node)) fermer();
+      const cible = e.target as Node;
+      if (ref.current && !ref.current.contains(cible) && !(menuRef.current && menuRef.current.contains(cible))) fermer();
     }
     document.addEventListener("mousedown", surClicExterieur);
     return () => document.removeEventListener("mousedown", surClicExterieur);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fermer recrée une fonction stable via demarrerFermeture (useCallback), l'état ouvert est lu via ouvertRef
   }, []);
 
+  useEffect(() => {
+    if (!portail || !ouvert) return;
+    // Le menu est en position fixe : il ne suit pas la page qui défile.
+    const surDeplacement = () => fermer();
+    window.addEventListener("scroll", surDeplacement, true);
+    window.addEventListener("resize", surDeplacement);
+    return () => {
+      window.removeEventListener("scroll", surDeplacement, true);
+      window.removeEventListener("resize", surDeplacement);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fermer est stable via demarrerFermeture
+  }, [portail, ouvert]);
+
   function ouvrirMenu() {
     if (ref.current) {
       const rect = ref.current.getBoundingClientRect();
       const placeEnDessous = window.innerHeight - rect.bottom;
       const placeAuDessus = rect.top;
-      setOuvrirVersHaut(placeEnDessous < hauteurMenuEstimee && placeAuDessus > placeEnDessous);
+      const versHaut = placeEnDessous < hauteurMenuEstimee && placeAuDessus > placeEnDessous;
+      const aGauche = rect.right - LARGEUR_MENU_MAX < 0;
+      if (portail) {
+        setPositionFixe({
+          position: "fixed",
+          ...(versHaut ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+          ...(aGauche ? { left: Math.max(8, rect.left) } : { right: Math.max(8, window.innerWidth - rect.right) }),
+        });
+      }
+      setOuvrirVersHaut(versHaut);
       // Par défaut le menu s'aligne sur le bord droit du bouton (s'étend
       // vers la gauche) -- sûr tant que le bouton est proche du bord
       // droit de l'écran (cas normal, "..." toujours en fin de ligne).
@@ -70,6 +106,39 @@ export function MenuActionsCarte({
     }
     setOuvert(true);
   }
+
+  const panneau = () => (
+    <div
+          ref={menuRef}
+          role={portail ? "menu" : undefined}
+          style={portail ? positionFixe : undefined}
+          className={`${portail ? "z-[130]" : "absolute z-20"} max-w-[min(16rem,85vw)] min-w-[10rem] overflow-hidden rounded-lg border p-1 ${
+            contraste
+              ? "border-dj-bordure-forte bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+              : "border-dj-bordure bg-dj-surface-haute shadow-lg"
+          } ${portail ? "" : `${alignerAGauche ? "left-0" : "right-0"} ${ouvrirVersHaut ? "bottom-full mb-1" : "top-full mt-1"}`} ${
+            enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
+          }`}
+        >
+          {actions.map((a) => (
+            <button
+              key={a.cle}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                a.onClick();
+                fermer();
+              }}
+              className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors ${contraste ? "hover:bg-dj-surface-haute" : "hover:bg-dj-surface"} ${
+                a.destructif ? "text-[var(--dj-erreur)]" : "text-dj-texte"
+              }`}
+            >
+              <span className="flex-shrink-0">{a.icone}</span>
+              <span className="min-w-0 flex-1 truncate">{a.label}</span>
+            </button>
+          ))}
+        </div>
+  );
 
   if (actions.length === 0) return null;
 
@@ -87,33 +156,9 @@ export function MenuActionsCarte({
         <MoreVertical size={16} />
       </button>
 
-      {(ouvert || enSortie) && (
-        <div
-          className={`absolute z-20 max-w-[min(16rem,85vw)] min-w-[10rem] overflow-hidden rounded-lg border border-dj-bordure bg-dj-surface-haute p-1 shadow-lg ${
-            alignerAGauche ? "left-0" : "right-0"
-          } ${ouvrirVersHaut ? "bottom-full mb-1" : "top-full mt-1"} ${
-            enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
-          }`}
-        >
-          {actions.map((a) => (
-            <button
-              key={a.cle}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                a.onClick();
-                fermer();
-              }}
-              className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-dj-surface ${
-                a.destructif ? "text-[var(--dj-erreur)]" : "text-dj-texte"
-              }`}
-            >
-              <span className="flex-shrink-0">{a.icone}</span>
-              <span className="min-w-0 flex-1 truncate">{a.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {(ouvert || enSortie) && portail && typeof document !== "undefined"
+        ? createPortal(panneau(), document.body)
+        : (ouvert || enSortie) && panneau()}
     </div>
   );
 }

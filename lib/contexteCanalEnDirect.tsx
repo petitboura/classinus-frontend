@@ -3,7 +3,7 @@
 // Créé le 19/09/2026, Bourama : chantier "canal en direct" (voir
 // plan-canal-agent-applicatif-v1.md), chantier I. État global du canal
 // en direct de l'agent applicatif -- monté une seule fois au niveau
-// du layout racine (voir AppShell.tsx), au dessus du router, jamais
+// du layout racine (voir InteractionGlobale.tsx), au dessus du router, jamais
 // démonté en changeant de section. Même séparation état/rendu que le
 // reste du chantier agent applicatif (ContexteCurseurVirtuel) :
 // l'état vit ici, le rendu de la bulle de dialogue (chantier J) et du
@@ -160,7 +160,7 @@ export const ContexteCanalEnDirect = createContext<ValeurCanalEnDirect | null>(n
 export function useCanalEnDirect(): ValeurCanalEnDirect {
   const contexte = useContext(ContexteCanalEnDirect);
   if (!contexte) {
-    throw new Error("useCanalEnDirect doit être utilisé sous AppShell (ContexteCanalEnDirect.Provider)");
+    throw new Error("useCanalEnDirect doit être utilisé sous InteractionGlobale (ContexteCanalEnDirect.Provider)");
   }
   return contexte;
 }
@@ -168,7 +168,7 @@ export function useCanalEnDirect(): ValeurCanalEnDirect {
 // Pont vers les modules hors React (lib/canalAgentApplicatif.ts et,
 // chantier P) -- même principe que
 // enregistrerDeplacementCurseur dans lib/contexteCurseurVirtuel.tsx.
-// AppShell.tsx enregistre la vraie valeur dès que le Provider est monté.
+// InteractionGlobale.tsx enregistre la vraie valeur dès que le Provider est monté.
 let canalGlobal: ValeurCanalEnDirect | null = null;
 
 // Ajouté le 30/09/2026 (demande Bourama : désactiver le canal doit vraiment

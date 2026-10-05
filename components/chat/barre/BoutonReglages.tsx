@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Check, ChevronDown, Lock, X, Sparkles, AlignLeft, GraduationCap, BookOpen, KeyRound } from "lucide-react";
-import { LigneReglage } from "./LigneReglage";
+import { Check, ChevronDown, Lock, X, Sparkles, AlignLeft, GraduationCap, BookOpen, KeyRound, Gauge } from "lucide-react";
+import { LigneReglage, LARGEUR_VOLET_REM } from "./LigneReglage";
 import {
   type LongueurReponse,
+  type EffortReflexion,
   NIVEAUX_LONGUEUR,
   LABELS_LONGUEUR,
+  NIVEAUX_EFFORT,
+  LABELS_EFFORT,
   PERSONAS,
   MODES_SOURCE,
   ORDRE_DISTRIBUTEURS_AFFICHAGE,
@@ -15,7 +18,7 @@ import {
 import type { EtatModeActif } from "./useModeActif";
 import type { EtatReglagesPedagogiques } from "./useReglagesPedagogiques";
 
-type LigneId = "modele" | "longueur" | "persona" | "source" | "code";
+type LigneId = "modele" | "longueur" | "effort" | "persona" | "source" | "code";
 
 // Un choix d'une ligne dépliée : le choix actuel est marqué d'une coche et de
 // la couleur d'accent.
@@ -58,14 +61,16 @@ function Choix({
 /**
  * Bouton "Réglages" de la barre de saisie (01/10/2026, refonte de la barre) :
  * un seul bouton qui regroupe tous les réglages de réponse. Au clic il ouvre
- * une liste de lignes (Modèle, Longueur de réponse, Mode pédagogique, Modes
- * ressources, Code enseignant), chacune avec son icône. Une ligne déplie ses
- * choix juste en dessous, avec le choix actuel marqué. Une seule ligne est
- * dépliée à la fois : en ouvrir une replie l'autre.
+ * une liste de lignes (Modèle, Longueur de réponse, Effort, Mode pédagogique, Modes
+ * ressources, Code enseignant), chacune avec son icône. Les choix d'une ligne
+ * montrent le choix actuel marqué. Une seule ligne est ouverte à la fois : en
+ * ouvrir une referme l'autre. Sur PC les choix s'affichent dans un volet à part,
+ * collé au panneau, à droite ou à gauche selon la place à l'écran ; sur mobile
+ * ils se déplient juste sous la ligne, dans le même panneau.
  *
  * Sur PC, survoler le bouton fait apparaître une bulle aux couleurs de l'app
  * qui liste les réglages actuels sans avoir à ouvrir le panneau (les lignes
- * du panneau, elles, n'affichent aucune valeur). Sur PC une ligne se déplie
+ * du panneau, elles, n'affichent aucune valeur). Sur PC une ligne s'ouvre
  * au survol ET au clic. Sur mobile, au simple
  * appui. Le raccourci clavier "/" (champ vide, PC) ouvre directement le
  * bouton, sans déplier de ligne.
@@ -83,6 +88,8 @@ export function BoutonReglages({
   onModeleChange,
   longueur,
   onLongueurChange,
+  effort,
+  onEffortChange,
   eleveChoisitMode,
   pedagogie,
   modeActif,
@@ -97,6 +104,9 @@ export function BoutonReglages({
   onModeleChange?: (modeleId: string | null) => void;
   longueur: LongueurReponse;
   onLongueurChange: (valeur: LongueurReponse) => void;
+  // Effort de réflexion de DeepSeek (04/10/2026), voir lib/reglagesProchainMessage.ts.
+  effort: EffortReflexion;
+  onEffortChange: (valeur: EffortReflexion) => void;
   // Faux quand l'enseignant a décoché "l'élève peut choisir son mode".
   eleveChoisitMode: boolean;
   pedagogie: EtatReglagesPedagogiques;
@@ -106,6 +116,9 @@ export function BoutonReglages({
   const idBulle = useId();
   const [ouvert, setOuvert] = useState(false);
   const [ligneOuverte, setLigneOuverte] = useState<LigneId | null>(null);
+  // Côté où s'ouvre le volet des choix sur PC : à droite du panneau s'il y a la
+  // place, sinon à gauche. Mesuré à chaque ouverture d'une ligne.
+  const [coteVolet, setCoteVolet] = useState<"droite" | "gauche">("droite");
   // Bulle des réglages actuels, visible au survol souris du bouton (PC) tant
   // que le panneau est fermé.
   const [survolBouton, setSurvolBouton] = useState(false);
@@ -122,6 +135,7 @@ export function BoutonReglages({
   // Choix actuel de chaque ligne, lu dans la bulle au survol du bouton.
   const valeurModele = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "Auto";
   const valeurLongueur = LABELS_LONGUEUR[longueur];
+  const valeurEffort = LABELS_EFFORT[effort];
   const valeurPersona = PERSONAS.find((p) => p.id === pedagogie.persona)?.label ?? "Aucun mode";
   const valeurSource = MODES_SOURCE.find((m) => m.id === pedagogie.modeSource)?.label ?? "Aucun";
   const codeActif = modeActif.rattachements.find((r) => r.rattachement_id === modeActif.modeActifId);
@@ -129,6 +143,7 @@ export function BoutonReglages({
   const resume: { titre: string; valeur: string }[] = [];
   if (afficherModele) resume.push({ titre: "Modèle", valeur: valeurModele });
   resume.push({ titre: "Longueur de réponse", valeur: valeurLongueur });
+  resume.push({ titre: "Effort", valeur: valeurEffort });
   if (afficherPersona) resume.push({ titre: "Mode pédagogique", valeur: valeurPersona });
   resume.push({ titre: "Modes ressources", valeur: valeurSource });
   if (afficherCode) resume.push({ titre: "Code enseignant", valeur: valeurCode });
@@ -183,7 +198,23 @@ export function BoutonReglages({
     setOuvert(false);
   }
 
+  // Choisit le côté du volet des choix (PC) selon la place restante de chaque
+  // côté du panneau : la droite d'abord, puis la gauche, sinon le côté le plus large.
+  function mesurerCoteVolet() {
+    const panneau = panneauRef.current;
+    if (mobile || !panneau) return;
+    const rect = panneau.getBoundingClientRect();
+    const remEnPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const besoin = LARGEUR_VOLET_REM * remEnPx + 16;
+    const placeDroite = window.innerWidth - rect.right;
+    const placeGauche = rect.left;
+    if (placeDroite >= besoin) setCoteVolet("droite");
+    else if (placeGauche >= besoin) setCoteVolet("gauche");
+    else setCoteVolet(placeDroite >= placeGauche ? "droite" : "gauche");
+  }
+
   function survoler(id: LigneId) {
+    mesurerCoteVolet();
     setLigneOuverte(id);
     ouverteParSurvolRef.current = id;
   }
@@ -193,12 +224,15 @@ export function BoutonReglages({
       ouverteParSurvolRef.current = null;
       return;
     }
+    mesurerCoteVolet();
     setLigneOuverte((precedente) => (precedente === id ? null : id));
   }
 
   const ligneProps = (id: LigneId) => ({
     ouverte: ligneOuverte === id,
     grand: mobile,
+    lateral: !mobile,
+    cote: coteVolet,
     onSurvol: () => survoler(id),
     onBasculer: () => basculerLigne(id),
   });
@@ -254,7 +288,7 @@ export function BoutonReglages({
           "z-40 border border-dj-bordure bg-dj-surface shadow-lg transition-all duration-150 ease-cgpt-doux " +
           (mobile
             ? "fixed bottom-[calc(6rem+var(--safe-bottom))] right-4 flex max-h-[45vh] w-64 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl shadow-xl "
-            : "dj-scroll-isole absolute bottom-full mb-2 max-h-[min(60vh,22rem)] w-56 overflow-y-auto rounded-cgpt-carte p-1 " +
+            : "absolute bottom-full mb-2 w-56 rounded-cgpt-carte p-1 " +
               (ancrage === "gauche" ? "left-0 origin-bottom-left " : "right-0 origin-bottom-right ")) +
           (ouvert ? "visible translate-y-0 scale-100 opacity-100" : "invisible translate-y-1 scale-95 opacity-0")
         }
@@ -324,6 +358,22 @@ export function BoutonReglages({
                 }}
               >
                 {LABELS_LONGUEUR[valeur]}
+              </Choix>
+            ))}
+          </LigneReglage>
+
+          <LigneReglage Icone={Gauge} titre="Effort" {...ligneProps("effort")}>
+            {NIVEAUX_EFFORT.map((valeur) => (
+              <Choix
+                grand={mobile}
+                key={valeur}
+                actif={effort === valeur}
+                onClick={() => {
+                  onEffortChange(valeur);
+                  fermer();
+                }}
+              >
+                {LABELS_EFFORT[valeur]}
               </Choix>
             ))}
           </LigneReglage>

@@ -10,6 +10,7 @@ import { useFenetres } from "@/lib/contexteFenetres";
 import { MenuGroupe } from "@/components/MenuGroupeRail";
 import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Logo } from "@/components/Logo";
 import {
   LogOut,
   UserRound,
@@ -27,7 +28,7 @@ import {
   MessageSquarePlus,
   History,
   PanelLeft,
-  Maximize2,
+  ArrowUpRight,
   Settings,
   Hourglass,
 } from "lucide-react";
@@ -39,6 +40,7 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
+import { useEstDesktop } from "@/lib/useEstDesktop";
 import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
@@ -380,6 +382,10 @@ export function AppSidebar({
   // Seulement en contexteChat=true (l'autre instance, hors chat, garde
   // sa vraie navigation classique par route).
   const { ouvrir: ouvrirFenetre } = useFenetres();
+  // Le rail ordinateur et le tiroir mobile sont tous deux montes dans le DOM,
+  // l'un masque par CSS. Chacun a ses propres boutons de groupe, qui ecoutent
+  // les appuis sur le document : seul celui qui est visible doit etre monte.
+  const estDesktop = useEstDesktop();
   // 03/09/2026, demande Bourama, audit "clic sur une section ne fait
   // rien en plein écran mobile web/natif" : la fenêtre flottante
   // (ouvrirFenetre ci-dessus) ne fonctionne que sur desktop. Sur mobile
@@ -667,17 +673,13 @@ export function AppSidebar({
   const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
   const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
 
-  // 30/08/2026, demande Bourama : le tiroir mobile du chat (plus bas,
-  // ouverte && !masquerChromeMobile) doit reprendre les mêmes 4 boutons
-  // que la barre d'onglets mobile -- Bibliothèque, Concentration,
-  // Bureau, Personnaliser Classinus (celui-ci via GROUPE_PERSONNALISER, déjà rendu plus
-  // bas, pas repris ici) -- sans Accueil (rejoint le "Plus" unifié) ni
-  // Chat (on y est déjà). Mobile uniquement : ne touche pas
-  // navComplete/idsDirects ci-dessus, qui restent la version desktop
-  // inchangée (rendue ligne ~700).
-  const ongletsMobileDirects = (["bibliotheque", "controle-session", "bureau"] as OngletId[])
-    .map((id) => ONGLETS.find((o) => o.id === id))
-    .filter((o): o is (typeof ONGLETS)[number] => Boolean(o));
+  // Tiroir mobile du chat : les quatre groupes de la barre d'onglets mobile,
+  // dans l'ordre Bibliothèque, Concentration, Bureau, Personnaliser Classinus,
+  // chacun avec ses sous-sections (MenuGroupe, variante mobile). Sans Accueil
+  // (rejoint le "Plus" unifié) ni Chat (on y est déjà). Mobile uniquement :
+  // ne touche pas navComplete/groupesDuRail ci-dessus, qui restent la version
+  // ordinateur.
+  const groupesTiroirMobile = [GROUPE_BIBLIOTHEQUE, GROUPE_CONCENTRATION, GROUPE_BUREAU, GROUPE_PERSONNALISER];
 
   // Navigation depuis le "Plus" unifié du tiroir mobile (BlocsMenuPlus
   // + SECTIONS_BASE, voir plus bas) : "Connecter Claude" a un vrai id
@@ -826,20 +828,20 @@ export function AppSidebar({
                 </button>
                 {historiqueDeplie && (
                   <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
-                    <div className="flex items-center justify-between px-3 pb-0.5 pt-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-dj-texte-muet">Historique</span>
-                      <button
-                        onClick={() => {
-                          setHistoriqueDeplie(false);
-                          setHistoriquePleinEcran(true);
-                        }}
-                        title="Plein écran"
-                        aria-label="Afficher l'historique en plein écran"
-                        className="group flex h-7 w-7 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                      >
-                        <Maximize2 size={15} className="transition-transform duration-200 group-hover:scale-110" />
-                      </button>
-                    </div>
+                    {/* Plein écran : même style que celui de la barre de saisie, posé
+                        dehors, collé juste au-dessus du coin haut droit du panneau. */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistoriqueDeplie(false);
+                        setHistoriquePleinEcran(true);
+                      }}
+                      title="Plein écran"
+                      aria-label="Afficher l'historique en plein écran"
+                      className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
+                    >
+                      <ArrowUpRight size={12} strokeWidth={1.75} />
+                    </button>
                     <ListeHistorique
                       conversationActiveId={conversationActiveId}
                       onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
@@ -857,7 +859,7 @@ export function AppSidebar({
 
         {navComplete.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV }))}
 
-        {groupesDuRail.map((g) => (
+        {estDesktop && groupesDuRail.map((g) => (
           <MenuGroupe
             key={g.id}
             groupe={g}
@@ -930,7 +932,7 @@ export function AppSidebar({
                       </Link>
                     );
                   })}
-                {contexteChat && (
+                {estDesktop && contexteChat && (
                   <MenuGroupe
                     variante="plus"
                     groupe={GROUPE_CONCENTRATION}
@@ -1102,6 +1104,14 @@ export function AppSidebar({
           }
         >
           <div className="mt-[calc(2rem+var(--safe-top))]">
+            {/* Identité en tête du panneau : même logo que le reste de l'appli,
+                suivi du nom, avec le même séparateur que le rail desktop. Le
+                pt-2 garde le logo sous le bouton hamburger flottant. */}
+            <div className="flex items-center gap-2 px-2 pt-2">
+              <Logo taille={28} />
+              <span className="text-base font-semibold text-dj-texte">Classinus</span>
+            </div>
+            <div className="my-2 h-px w-full bg-dj-bordure" />
             {contexteChat && (
               <>
                 {aDesMessages && (
@@ -1127,6 +1137,20 @@ export function AppSidebar({
                     </button>
                     {historiqueDeplie && (
                       <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                        {/* Plein écran : même bouton que sur ordinateur, posé dehors,
+                            collé juste au-dessus du coin haut droit du panneau. */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHistoriqueDeplie(false);
+                            setHistoriquePleinEcran(true);
+                          }}
+                          title="Plein écran"
+                          aria-label="Afficher l'historique en plein écran"
+                          className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
+                        >
+                          <ArrowUpRight size={12} strokeWidth={1.75} />
+                        </button>
                         <ListeHistorique
                           conversationActiveId={conversationActiveId}
                           onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
@@ -1142,9 +1166,7 @@ export function AppSidebar({
               </>
             )}
 
-            {ongletsMobileDirects.map((o) => rendreLienOnglet({ onglet: o, mouvement: MOUVEMENT_NAV, mobile: true }))}
-
-            {[GROUPE_PERSONNALISER].map((g) =>
+            {groupesTiroirMobile.map((g) =>
               contexteChat ? (
                 <MenuGroupe
                   key={g.id}
@@ -1193,7 +1215,7 @@ export function AppSidebar({
               Concentration, Claude, Partager, Avis, Pourquoi Classinus),
               divergent de celui du menu principal mobile (SECTIONS_BASE,
               voir EspacePlus.tsx). Bureau et Concentration ont rejoint
-              les boutons directs juste au dessus (ongletsMobileDirects) ;
+              les groupes juste au dessus (groupesTiroirMobile) ;
               pour le reste, ce bloc réutilise BlocsMenuPlus tel quel
               (même composant que MenuHamburgerNatif.tsx/
               MenuHamburgerWeb.tsx), pour ne plus jamais avoir deux

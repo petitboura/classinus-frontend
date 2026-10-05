@@ -27,6 +27,7 @@ import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
 import type { LongueurReponse } from "./barre/reglagesReponse";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
 import {
+  definirEffortProchainMessage,
   definirLongueurProchainMessage,
   definirSansEnseignantProchainMessage,
   lireReglagesProchainMessage,
@@ -34,6 +35,7 @@ import {
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
+import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -203,8 +205,10 @@ export function BarreDeSaisie({
   const [texte, setTexte] = useState(() => texteInitial ?? "");
   // Longueur et « Sans enseignant » vivent dans lib/reglagesProchainMessage.ts (03/10/2026,
   // demande Bourama) : le canal en direct les modifie aussi, ils doivent rester communs.
-  const { longueur, sansEnseignant } = useReglagesProchainMessage();
+  const { longueur, effort, sansEnseignant } = useReglagesProchainMessage();
   const setLongueur = definirLongueurProchainMessage;
+  // Effort de réflexion de DeepSeek (04/10/2026) : lu à l'envoi par ChatIA.tsx, pas via onEnvoyer.
+  const setEffort = definirEffortProchainMessage;
   const setSansEnseignant = (valeur: boolean | ((v: boolean) => boolean)) =>
     definirSansEnseignantProchainMessage(typeof valeur === "function" ? valeur(lireReglagesProchainMessage().sansEnseignant) : valeur);
   // Devenu un TABLEAU le 17/08 (demande Bourama : "permet l'upload de
@@ -357,7 +361,7 @@ export function BarreDeSaisie({
   const canalEnDirect = useContext(ContexteCanalEnDirect);
   // Mode vocal du menu des utilitaires : conversation vocale Gemini Live
   // liée à la conversation du chat affichée.
-  // Depuis le 02/10/2026, la voix est une pièce partagée montée dans AppShell
+  // Depuis le 02/10/2026, la voix est une pièce partagée montée dans InteractionGlobale
   // (lib/contexteVoixDirecte.tsx) : cette barre ne fait que la piloter.
   const voixDirecte = useContext(ContexteVoixDirecte);
   const geminiLive = {
@@ -1555,7 +1559,7 @@ export function BarreDeSaisie({
               if (calqueRef.current) calqueRef.current.scrollTop = e.currentTarget.scrollTop;
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (entreeDoitEnvoyer(e)) {
                 e.preventDefault();
                 envoyer();
               }
@@ -1741,6 +1745,8 @@ export function BarreDeSaisie({
               onModeleChange={onModeleChange}
               longueur={longueur}
               onLongueurChange={setLongueur}
+              effort={effort}
+              onEffortChange={setEffort}
               eleveChoisitMode={modeActif.eleveChoisitMode}
               pedagogie={pedagogie}
               modeActif={modeActif}
@@ -1898,7 +1904,7 @@ export function BarreDeSaisie({
           }}
           onPaste={gererCollage}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (entreeDoitEnvoyer(e)) {
               e.preventDefault();
               envoyer();
             }
@@ -1940,6 +1946,8 @@ export function BarreDeSaisie({
           onModeleChange={onModeleChange}
           longueur={longueur}
           onLongueurChange={setLongueur}
+          effort={effort}
+          onEffortChange={setEffort}
           eleveChoisitMode={modeActif.eleveChoisitMode}
           pedagogie={pedagogie}
           modeActif={modeActif}
@@ -2292,7 +2300,7 @@ export function BarreDeSaisie({
                 if (calquePleinEcranRef.current) calquePleinEcranRef.current.scrollTop = e.currentTarget.scrollTop;
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (entreeDoitEnvoyer(e)) {
                   e.preventDefault();
                   envoyer();
                   fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));

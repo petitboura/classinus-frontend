@@ -38,6 +38,7 @@ import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { conversationActive } from "@/lib/conversationPartagee";
+import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 
 const DUREE_ERREUR_MS = 6000;
 
@@ -66,7 +67,7 @@ export function ControlesInteractionCanal({
   const modeInteraction = contexte?.modeInteraction ?? "texte";
   const moteurChoisi = contexte?.moteurDictee ?? "whisper";
   const conversationId = contexte?.actif ? contexte.conversationId : null;
-  // Depuis le 02/10/2026, la voix est une pièce partagée (AppShell) : ce bouton
+  // Depuis le 02/10/2026, la voix est une pièce partagée (InteractionGlobale) : ce bouton
   // et le Mode vocal du chat pilotent la même session, jamais deux voix.
   const voixDirecte = useContext(ContexteVoixDirecte);
   const geminiLive = {
@@ -269,7 +270,7 @@ export function ControlesInteractionCanal({
   const peutJoindre = !estDansFenetreSuperposition();
 
   function surToucheChamp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (entreeDoitEnvoyer(e)) {
       e.preventDefault();
       void envoyerTexte();
     } else if (e.key === "Escape") {
@@ -629,7 +630,7 @@ export function ControlesInteractionCanal({
               value={texteSaisi}
               onChange={(e) => setTexteSaisi(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (entreeDoitEnvoyer(e)) {
                   e.preventDefault();
                   void envoyerTexte().then((parti) => parti && fermerPleinEcran());
                 }

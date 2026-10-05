@@ -20,11 +20,23 @@ type ReponseToken = {
   annonce_bulle: string;
   delai_relance_secondes: number;
   relances_max: number;
+  description_outil_silence: string;
+  description_outil_reveil: string;
+  description_outil_plein_ecran: string;
+  description_outil_mini: string;
+  annonce_reprise: string;
+  delai_reprise_ms: number;
+  seuil_voix_micro: number;
+  proactivite: boolean;
 };
 type OptionsGeminiLive = {
   conversationId: string;
-  surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur" | "ferme") => void;
+  surEtat?: (etat: "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur" | "ferme") => void;
   surErreur?: (message: string) => void;
+  // Affichage de l'onde décidé par la voix (outils passer_en_plein_ecran et passer_en_mini) :
+  // le navigateur applique et renvoie la phrase que la voix doit connaître (fait, ou impossible).
+  // Rien n'est envoyé à Classinus.
+  surAffichage?: (mode: "plein_ecran" | "mini") => string;
   // La voix est un interprète : elle transmet la demande à Classinus par cette
   // fonction et reçoit en retour sa réponse écrite. Sans elle, chemin direct.
   surDemande?: (question: string) => Promise<string>;
@@ -45,6 +57,18 @@ export type SessionGeminiLive = {
 };
 
 const NOM_OUTIL_CLOVIS = "demander_a_clovis";
+// Silence décidé par la voix elle même : elle appelle ces deux outils, le navigateur
+// applique sa décision (il jette tout son qui arrive tant que le silence dure).
+const NOM_OUTIL_SILENCE = "se_taire";
+const NOM_OUTIL_REVEIL = "reprendre_la_parole";
+// Affichage de l'onde décidé par la voix elle même, appliqué par le navigateur (même famille
+// que le silence : aucun aller-retour vers Classinus).
+const NOM_OUTIL_PLEIN_ECRAN = "passer_en_plein_ecran";
+const NOM_OUTIL_MINI = "passer_en_mini";
+
+function declarerOutilSansParametre(name: string, description: string) {
+  return { name, description };
+}
 
 function declarerOutilClovis(description: string) {
   return {
@@ -113,9 +137,12 @@ function convertirFloat32EnPcm16(input: Float32Array, sampleRate: number): Int16
   return sortie;
 }
 
-function creerLecteurAudio(contexte: AudioContext, sortie: AudioNode) {
-  let prochainDebut = contexte.currentTime;
+function creerLecteurAudio(contexte: AudioContext, sortie: AudioNode, surVide?: () => void) {
   const sources = new Set<AudioBufferSourceNode>();
+  let prochainDebut = contexte.currentTime;
+  // Suivi de la lecture en cours : début et durée de chaque morceau de son reçu, pour
+  // savoir, quand la voix est coupée, jusqu'où elle a vraiment été dite.
+  let morceaux: { debut: number; duree: number }[] = [];
   return {
     jouer(pcm: Int16Array) {
       if (!pcm.length) return;
@@ -127,14 +154,37 @@ function creerLecteurAudio(contexte: AudioContext, sortie: AudioNode) {
       source.connect(sortie);
       prochainDebut = Math.max(prochainDebut, contexte.currentTime);
       source.start(prochainDebut);
+      morceaux.push({ debut: prochainDebut, duree: buffer.duration });
       prochainDebut += buffer.duration;
       sources.add(source);
-      source.onended = () => sources.delete(source);
+      source.onended = () => {
+        sources.delete(source);
+        if (sources.size === 0) surVide?.();
+      };
     },
     interrompre() {
       for (const source of sources) { try { source.stop(); } catch {} }
       sources.clear();
       prochainDebut = contexte.currentTime;
+      morceaux = [];
+    },
+    enCours() {
+      return sources.size > 0;
+    },
+    // Repart de zéro pour une nouvelle lecture (le son déjà en file n'est pas coupé).
+    reinitialiserSuivi() {
+      morceaux = [];
+    },
+    // Durée de son reçue et durée réellement jouée depuis le début du suivi.
+    progression() {
+      const maintenant = contexte.currentTime;
+      let recue = 0;
+      let jouee = 0;
+      for (const morceau of morceaux) {
+        recue += morceau.duree;
+        jouee += Math.min(Math.max(maintenant - morceau.debut, 0), morceau.duree);
+      }
+      return { recue, jouee };
     },
   };
 }
@@ -157,11 +207,15 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   // On retient l'état courant : les nouvelles de patience ne partent jamais
   // pendant que la voix parle déjà.
   let etatCourant = "connexion";
+  // Vrai tant que l'étudiant a demandé à la voix de se taire : elle continue d'entendre
+  // (c'est elle qui décide quand reparler) mais rien de ce qu'elle dit n'est joué.
+  let silencieux = false;
   // Nombre de demandes en cours chez Classinus : tant qu'il y en a, la voix est
   // en mode "travail" (l'onde respire) dès qu'elle ne parle plus.
   let demandesEnCours = 0;
   const etat = (nouvelEtat: Parameters<typeof signalerEtat>[0]) => {
-    const etatFinal = nouvelEtat === "ecoute" && demandesEnCours > 0 ? "travail" : nouvelEtat;
+    const horsSilence = nouvelEtat === "ferme" || nouvelEtat === "erreur" || nouvelEtat === "connexion" || nouvelEtat === "connecte";
+    const etatFinal = silencieux && !horsSilence ? "silence" : nouvelEtat === "ecoute" && demandesEnCours > 0 ? "travail" : nouvelEtat;
     etatCourant = etatFinal;
     signalerEtat(etatFinal);
   };
@@ -169,6 +223,10 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   const token = await obtenirToken();
   if (!token.model || !token.url) throw new Error("Impossible d initialiser le canal vocal.");
   const outilClovis = declarerOutilClovis(token.description_outil);
+  const outilSilence = declarerOutilSansParametre(NOM_OUTIL_SILENCE, token.description_outil_silence);
+  const outilReveil = declarerOutilSansParametre(NOM_OUTIL_REVEIL, token.description_outil_reveil);
+  const outilPleinEcran = declarerOutilSansParametre(NOM_OUTIL_PLEIN_ECRAN, token.description_outil_plein_ecran);
+  const outilMini = declarerOutilSansParametre(NOM_OUTIL_MINI, token.description_outil_mini);
 
   const entree = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const contexteEntree = new AudioContext();
@@ -182,7 +240,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   const analyseurSortie = contexteSortie.createAnalyser();
   analyseurSortie.fftSize = 512;
   analyseurSortie.connect(contexteSortie.destination);
-  const lecteur = creerLecteurAudio(contexteSortie, analyseurSortie);
+  const lecteur = creerLecteurAudio(contexteSortie, analyseurSortie, () => verifierFinLecture());
   const source = contexteEntree.createMediaStreamSource(entree);
   const analyseurEntree = contexteEntree.createAnalyser();
   analyseurEntree.fftSize = 512;
@@ -223,6 +281,10 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   };
 
   const interrompre = () => {
+    // Arrêt demandé à la main : la lecture est abandonnée, rien ne la reprendra.
+    lecture = null;
+    reprise = null;
+    annonceEnCours = false;
     lecteur.interrompre();
     if (websocket.readyState === WebSocket.OPEN) websocket.send(JSON.stringify({ realtimeInput: { activityEnd: {} } }));
   };
@@ -234,6 +296,78 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
   // le suivant attend son tour au lieu de couper la phrase en cours.
   const annoncesEnAttente: { consigne: string; texte: string }[] = [];
   let annonceEnCours = false;
+  // Reprise d'une lecture coupée. `lecture` est le texte que la voix est en train de lire
+  // (réponse de Classinus, message de la bulle ou reprise elle même) avec ce qu'elle en a
+  // dit d'après sa transcription. `reprise` est la suite du texte à lire quand l'étudiant
+  // a coupé la voix sans lui parler. Les réglages viennent du serveur : un délai à 0 ou
+  // une consigne vide coupent la reprise automatique.
+  type Lecture = { source: string; transcription: string; sonRecu: boolean; generationTerminee: boolean };
+  let lecture: Lecture | null = null;
+  let reprise: string | null = null;
+  let derniereParoleEtudiant = 0;
+  const delaiReprise = Number.isFinite(token.delai_reprise_ms) ? Math.max(0, token.delai_reprise_ms) : 0;
+  const seuilVoixMicro = Number.isFinite(token.seuil_voix_micro) ? token.seuil_voix_micro : 1;
+  const repriseActive = delaiReprise > 0 && Boolean(token.annonce_reprise?.trim());
+  const etudiantParleRecemment = () => repriseActive && Date.now() - derniereParoleEtudiant < delaiReprise;
+  const demarrerLecture = (source: string) => {
+    lecteur.reinitialiserSuivi();
+    lecture = { source, transcription: "", sonRecu: false, generationTerminee: false };
+  };
+  // La lecture est finie quand Gemini a tout envoyé et que tout le son a été joué.
+  const verifierFinLecture = () => {
+    if (lecture?.generationTerminee && !lecteur.enCours()) lecture = null;
+  };
+  // Mots sans ponctuation ni accents, pour retrouver dans le texte d'origine l'endroit
+  // où la voix s'est arrêtée (elle ne dit pas toujours exactement le texte écrit).
+  const normaliserMot = (mot: string) =>
+    mot.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[\s.,;:!?'"«»()\[\]{}…\-–—*_#`~<>/\\|]/g, "");
+  // Suite du texte à lire à partir de l'endroit où la voix a été coupée. Sans transcription
+  // exploitable, on reprend plutôt trop tôt que de perdre un bout du texte.
+  const calculerSuite = (l: Lecture): string => {
+    const mots = l.source.split(/\s+/).filter(Boolean).map((original) => ({ original, norme: normaliserMot(original) })).filter((mot) => mot.norme);
+    if (!mots.length) return "";
+    const { recue, jouee } = lecteur.progression();
+    const fraction = recue > 0 ? Math.min(1, jouee / recue) : 0;
+    const dits = l.transcription.split(/\s+/).filter(Boolean).map(normaliserMot).filter(Boolean);
+    let coupure: number;
+    if (dits.length) coupure = Math.round(dits.length * fraction);
+    else if (l.generationTerminee) coupure = Math.round(mots.length * fraction);
+    else coupure = 0;
+    if (coupure <= 0) return mots.map((mot) => mot.original).join(" ");
+    let debut = Math.min(coupure, mots.length);
+    if (dits.length) {
+      // On cherche dans le texte d'origine les derniers mots dits, au plus près de l'endroit estimé.
+      const taille = Math.min(3, coupure);
+      const fin = dits.slice(coupure - taille, coupure);
+      let meilleure = -1;
+      for (let i = 0; i + taille <= mots.length; i += 1) {
+        if (fin.every((mot, k) => mots[i + k].norme === mot) && (meilleure < 0 || Math.abs(i + taille - coupure) < Math.abs(meilleure + taille - coupure))) meilleure = i;
+      }
+      if (meilleure >= 0) debut = meilleure + taille;
+    }
+    return mots.slice(debut).map((mot) => mot.original).join(" ");
+  };
+  // La voix est coupée en pleine lecture : on retient ce qu'il reste à dire, puis on arrête le son.
+  const suspendreLecture = () => {
+    const encours = lecture;
+    lecture = null;
+    annonceEnCours = false;
+    if (repriseActive && encours && (lecteur.enCours() || !encours.generationTerminee)) {
+      const suite = calculerSuite(encours).trim();
+      reprise = suite || null;
+    }
+    lecteur.interrompre();
+  };
+  // Envoie la suite d'une lecture coupée. Renvoie vrai si une reprise est partie.
+  const reprendreLecture = (): boolean => {
+    const suite = reprise;
+    if (!suite || !repriseActive || ferme || !pret || silencieux || websocket.readyState !== WebSocket.OPEN) return false;
+    reprise = null;
+    demarrerLecture(suite);
+    annonceEnCours = true;
+    websocket.send(JSON.stringify({ realtimeInput: { text: `${token.annonce_reprise}\n\n${suite}` } }));
+    return true;
+  };
   // Un même texte n'est jamais lu deux fois de suite (ex. la même réponse
   // affichée à la fois dans le chat et dans la bulle).
   const dernieresAnnonces: string[] = [];
@@ -243,15 +377,16 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     if (dernieresAnnonces.length > 6) dernieresAnnonces.shift();
   };
   const lireProchaineAnnonce = () => {
-    if (ferme || !pret || annonceEnCours || etatCourant === "reponse" || websocket.readyState !== WebSocket.OPEN) return;
+    if (ferme || !pret || silencieux || annonceEnCours || etatCourant === "reponse" || reprise !== null || etudiantParleRecemment() || websocket.readyState !== WebSocket.OPEN) return;
     const prochaine = annoncesEnAttente.shift();
     if (!prochaine) return;
     annonceEnCours = true;
+    demarrerLecture(prochaine.texte);
     websocket.send(JSON.stringify({ realtimeInput: { text: `${prochaine.consigne}\n\n${prochaine.texte}` } }));
   };
   const ajouterAnnonce = (consigne: string | undefined, texte: string) => {
     const propre = texte.trim();
-    if (ferme || !pret || !propre || !consigne?.trim() || websocket.readyState !== WebSocket.OPEN) return;
+    if (ferme || !pret || silencieux || !propre || !consigne?.trim() || websocket.readyState !== WebSocket.OPEN) return;
     if (dejaDit(propre) || annoncesEnAttente.some((a) => a.texte === propre)) return;
     retenirAnnonce(propre);
     annoncesEnAttente.push({ consigne, texte: propre });
@@ -280,7 +415,7 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     const minuteur = setInterval(() => {
       if (ferme || websocket.readyState !== WebSocket.OPEN) return;
       if (envoyees >= token.relances_max) { clearInterval(minuteur); minuteursRelance.delete(minuteur); return; }
-      if (etatCourant === "reponse") return;
+      if (etatCourant === "reponse" || silencieux) return;
       envoyees += 1;
       websocket.send(JSON.stringify({ realtimeInput: { text: token.relance_attente } }));
     }, delai);
@@ -297,6 +432,18 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     response: { ...contenu, scheduling: "WHEN_IDLE" },
   });
 
+  // Toutes les quarts de seconde : on regarde si l'étudiant parle encore, et dès qu'il s'est tu
+  // sans rien demander à la voix, la lecture coupée reprend là où elle s'était arrêtée.
+  // Les annonces mises en attente pendant qu'il parlait partent aussi à ce moment là.
+  const surveillance = setInterval(() => {
+    if (ferme || !pret || websocket.readyState !== WebSocket.OPEN) return;
+    // Quand la voix se tait, le micro ne capte plus sa voix : son niveau dit si l'étudiant parle.
+    if (!lecteur.enCours() && mesurerNiveau(analyseurEntree, tamponEntree) > seuilVoixMicro) derniereParoleEtudiant = Date.now();
+    if (reprise !== null && !silencieux && etatCourant !== "reponse" && demandesEnCours === 0 && lecture === null && !annonceEnCours && !etudiantParleRecemment()) reprendreLecture();
+    else lireProchaineAnnonce();
+  }, 250);
+  minuteursRelance.add(surveillance);
+
   websocket.onopen = () => {
     connecte = true;
     websocket.send(JSON.stringify({
@@ -306,7 +453,10 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
         inputAudioTranscription: {},
         outputAudioTranscription: {},
         systemInstruction: { parts: [{ text: token.consignes }] },
-        tools: [{ functionDeclarations: [outilClovis] }],
+        tools: [{ functionDeclarations: [outilClovis, outilSilence, outilReveil, outilPleinEcran, outilMini] }],
+        // Écoute sélective : la voix choisit de ne pas répondre à ce qui ne lui est pas adressé.
+        // Réglable côté serveur (GEMINI_LIVE_PROACTIVITE) si le modèle vocal ne l'accepte pas.
+        ...(token.proactivite ? { proactivity: { proactiveAudio: true } } : {}),
       },
     }));
     etat("connecte");
@@ -325,12 +475,73 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     const serveur = message.serverContent;
     if (serveur?.modelTurn?.parts) {
       for (const part of serveur.modelTurn.parts) {
-        if (part.inlineData?.data) { lecteur.jouer(base64VersInt16(part.inlineData.data)); etat("reponse"); }
+        if (silencieux) continue;
+        if (part.inlineData?.data) {
+          if (lecture) lecture.sonRecu = true;
+          lecteur.jouer(base64VersInt16(part.inlineData.data));
+          etat("reponse");
+        }
+      }
+    }
+    // Ce que la voix est en train de dire, en texte : sert à retrouver où elle s'arrête si on la coupe.
+    const texteVoix = serveur?.outputTranscription?.text;
+    if (lecture && typeof texteVoix === "string") lecture.transcription += texteVoix;
+    // L'étudiant parle : si la voix lit encore (même quand Gemini a déjà tout envoyé), on la coupe
+    // en retenant la suite. Quand il aura fini, la reprise se décidera selon ce qu'il a dit.
+    const texteEtudiant = serveur?.inputTranscription?.text;
+    if (typeof texteEtudiant === "string" && texteEtudiant.trim().length >= 2) {
+      derniereParoleEtudiant = Date.now();
+      if (lecture && lecteur.enCours()) {
+        suspendreLecture();
+        etat("ecoute");
       }
     }
     if (message.toolCall?.functionCalls) {
       const functionResponses = [];
       for (const appel of message.toolCall.functionCalls) {
+        // Silence demandé par l'étudiant, décidé par la voix : plus un son, plus d'annonce
+        // en attente. SILENT : le résultat est noté sans qu'elle réponde « d'accord ».
+        if (appel.name === NOM_OUTIL_SILENCE) {
+          silencieux = true;
+          // « C'est bon » ou « stop » : la lecture en cours est abandonnée pour de bon.
+          lecture = null;
+          reprise = null;
+          lecteur.interrompre();
+          annoncesEnAttente.length = 0;
+          annonceEnCours = false;
+          etat("ecoute");
+          functionResponses.push({ id: appel.id, name: appel.name, response: { result: "Silence en cours.", scheduling: "SILENT" } });
+          continue;
+        }
+        // L'étudiant s'adresse de nouveau à la voix : elle peut parler et traiter sa demande.
+        if (appel.name === NOM_OUTIL_REVEIL) {
+          silencieux = false;
+          etat("ecoute");
+          // « Continue » : la lecture coupée reprend là où elle s'était arrêtée, sans autre parole.
+          const lectureDejaEnCours = lecture !== null;
+          if (reprendreLecture() || lectureDejaEnCours) {
+            functionResponses.push({ id: appel.id, name: appel.name, response: { result: "La lecture reprend.", scheduling: "SILENT" } });
+          } else {
+            functionResponses.push(reponseOutil(appel, { result: "Tu peux parler de nouveau." }));
+          }
+          continue;
+        }
+        // Affichage de l'onde : la voix a décidé, le navigateur applique. Sans demande envoyée à
+        // Classinus, et sans effet sur le silence en cours.
+        if (appel.name === NOM_OUTIL_PLEIN_ECRAN || appel.name === NOM_OUTIL_MINI) {
+          const mode = appel.name === NOM_OUTIL_PLEIN_ECRAN ? "plein_ecran" : "mini";
+          if (!options.surAffichage) {
+            functionResponses.push(reponseOutil(appel, { error: "Changer l'affichage n'est pas possible ici." }));
+          } else {
+            functionResponses.push(reponseOutil(appel, { result: options.surAffichage(mode) }));
+          }
+          continue;
+        }
+        // Pendant le silence, aucune demande n'est envoyée à Classinus.
+        if (silencieux && appel.name === NOM_OUTIL_CLOVIS) {
+          functionResponses.push({ id: appel.id, name: appel.name, response: { result: "Silence demandé : ne rien dire.", scheduling: "SILENT" } });
+          continue;
+        }
         if (appel.name !== NOM_OUTIL_CLOVIS) {
           functionResponses.push(reponseOutil(appel, { error: "Outil inconnu." }));
           continue;
@@ -340,11 +551,14 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
           functionResponses.push(reponseOutil(appel, { error: "La demande est vide." }));
           continue;
         }
+        // Nouvelle demande de l'étudiant : elle passe avant la lecture qui avait été coupée.
+        reprise = null;
         const arreterRelances = demarrerRelances();
         demandesEnCours += 1;
         if (etatCourant !== "reponse") etat("travail");
         try {
           const reponseClovis = options.surDemande ? await options.surDemande(question) : await demanderAClovisDirectement(question, options.conversationId);
+          if (reponseClovis) demarrerLecture(reponseClovis);
           functionResponses.push(reponseOutil(appel, { result: reponseClovis || "Classinus n a pas renvoyé de réponse textuelle." }));
         } catch (e) {
           functionResponses.push(reponseOutil(appel, { error: e instanceof Error ? e.message : "Erreur lors de l appel à Classinus." }));
@@ -361,12 +575,15 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
     // que la lecture) doit être coupé tout de suite, sinon la voix finit sa phrase
     // puis répond seulement après.
     if (serveur?.interrupted) {
-      lecteur.interrompre();
+      derniereParoleEtudiant = Date.now();
+      suspendreLecture();
       etat("ecoute");
     }
     if (serveur?.turnComplete) {
       etat("ecoute");
       annonceEnCours = false;
+      if (lecture?.sonRecu) lecture.generationTerminee = true;
+      verifierFinLecture();
       lireProchaineAnnonce();
     }
   };

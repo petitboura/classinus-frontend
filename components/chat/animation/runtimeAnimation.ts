@@ -7,6 +7,7 @@
 // progression p (0 à 1). À chaque image, le lecteur remet d'abord tout
 // dans l'état posé par installer(), puis applique dans l'ordre les
 // parties déjà passées (p vaut 1) et la partie en cours (p courant).
+// Les parties peuvent être déclarées après installer() ou à l'intérieur (04/10/2026).
 // Les parties à venir ne sont pas appelées. La pause, le retour en
 // arrière, le saut de partie et la barre de progression sont ainsi
 // exacts, sans aucun état mémorisé par le modèle.
@@ -412,6 +413,11 @@ export const RUNTIME_ANIMATION = String.raw`
     suivant();
   }
 
+  function sansScene() {
+    if ($('an-erreur').style.display !== 'block') { echec(T.aucuneScene); }
+    else { document.body.classList.add('echec'); $('an-squelette').classList.add('fini'); }
+  }
+
   function lancer() {
     try {
       if (etat.installeur) { etat.installeur(etat.S); }
@@ -419,6 +425,11 @@ export const RUNTIME_ANIMATION = String.raw`
       echec(e && e.message ? e.message : String(e));
       return;
     }
+    // Le modèle peut appeler animer à l'intérieur de installer : le nombre de parties
+    // n'est donc connu qu'après son exécution.
+    if (!etat.parties.length) { sansScene(); return; }
+    etat.duree = debutPartie(etat.parties.length);
+    construireControles();
     etat.restaurer = (etat.mode === '3d') ? instantane3d(etat.S) : instantane2d(etat.S.racine);
     etat.pret = true;
     $('an-squelette').classList.add('fini');
@@ -428,17 +439,25 @@ export const RUNTIME_ANIMATION = String.raw`
     }
     majBoutons();
     rendre();
+    // Reprise après un changement de thème : la page recharge l'animation avec
+    // les nouvelles couleurs et lui donne le temps et l'état de lecture où elle
+    // en était (voir AnimationLecteur.tsx).
+    if (CONF.reprise) {
+      etat.t = Math.min(Math.max(Number(CONF.reprise.t) || 0, 0), etat.duree);
+      rendre();
+      if (CONF.reprise.joue && etat.t < etat.duree) { jouer(); }
+    }
   }
+
+  // La page demande où en est l'animation juste avant de la recharger.
+  window.addEventListener('message', function (e) {
+    if (e.source !== parent || !e.data || e.data.type !== 'dj-anim-demande-etat') { return; }
+    parent.postMessage({ type: 'dj-anim-etat', t: etat.t, joue: etat.joue }, '*');
+  });
 
   window.__animDemarrer = function () {
     var zone = $('an-zone');
-    if (!etat.parties.length) {
-      if ($('an-erreur').style.display !== 'block') { echec(T.aucuneScene); }
-      else { document.body.classList.add('echec'); $('an-squelette').classList.add('fini'); }
-      return;
-    }
-    etat.duree = debutPartie(etat.parties.length);
-    construireControles();
+    if (!etat.parties.length && !etat.installeur) { sansScene(); return; }
     if (etat.mode === '3d') {
       charger(CONF.sourcesTroisD, function () {
         try { etat.S = creer3d(zone, window.THREE); } catch (e) { echec(T.erreurTroisDIndisponible); return; }

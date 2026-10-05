@@ -24,7 +24,6 @@ import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
 import { texteMessageAutomatique } from "@/lib/minuteurs";
-import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
@@ -915,9 +914,11 @@ export function ChatIA({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbDemandesVoix, genEnCours, affichageEnCours, accesBloqueMineur]);
 
-  // Minuteurs du chat (20/09/2026, demande Bourama). Tant que ce chat est
-  // ouvert, il peut recevoir la fin d'un minuteur (sans lui, le serveur
-  // envoie une notification à la place, voir core/minuteurs.py). Quand un
+  // Minuteurs (20/09/2026, demande Bourama). Tant que ce chat est monté, il
+  // peut recevoir la fin d'un minuteur. Depuis le 03/10/2026, s'il n'est pas à
+  // l'écran et que le canal en direct est actif, c'est le canal et sa bulle qui
+  // prennent le relais (voir lib/contexteMinuteurs.tsx) ; sans chat ni canal,
+  // le serveur envoie une notification (voir core/minuteurs.py). Quand un
   // minuteur se termine, on envoie à Clovis un message AUTOMATIQUE, jamais
   // affiché comme une bulle de l'étudiant, qui lui rappelle ce qu'il avait
   // prévu de faire : sa réponse apparaît ensuite normalement dans la
@@ -1214,6 +1215,9 @@ export function ChatIA({
           // change le defaut, voir modeleSelectionne plus haut. Revalide
           // cote backend avant d'etre honore (api/chat.py:_resoudre_modele_force).
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : effort de reflexion de DeepSeek, lu au
+          // moment de l'envoi. Revalide cote backend (none, low, high, max).
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -1320,6 +1324,8 @@ export function ChatIA({
           canal_en_direct: canalEnDirectActif,
           message_automatique: messageUtilisateur.automatique === true,
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -1418,6 +1424,8 @@ export function ChatIA({
           natif,
           canal_en_direct: canalEnDirectActif,
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -1620,10 +1628,6 @@ export function ChatIA({
   if (messages.length === 0) {
     return (
       <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0">
-        {/* Minuteurs (20/09/2026) : visibles aussi sur l'écran d'accueil, par exemple un minuteur lancé dans une conversation précédente. */}
-        <div className="absolute inset-x-0 top-0">
-          <DockMinuteurs conversationId={conversationId} />
-        </div>
         {/* 01/10/2026, demande Bourama (raccourcis, voir RaccourcisChat.tsx).
             Le centrage vertical passe de justify-center à trois espaceurs
             dont la croissance s'anime : sur PC rien ne change (titre + barre
@@ -1727,13 +1731,9 @@ export function ChatIA({
     // largeur disponible, et la colonne de texte (48rem au plus) est
     // recréée par le remplissage latéral de la zone de défilement, avec le
     // même résultat visuel qu'avant pour le texte. L'espace libre de chaque
-    // côté sert aux tableaux et blocs de code plus larges que le texte. Le
-    // dock des minuteurs et la barre de saisie gardent, eux, leur propre
-    // colonne de 48rem centrée.
+    // côté sert aux tableaux et blocs de code plus larges que le texte. La
+    // barre de saisie garde, elle, sa propre colonne de 48rem centrée.
     <div className="relative flex h-full w-full flex-col">
-      <div className="mx-auto w-full max-w-3xl flex-none">
-        <DockMinuteurs conversationId={conversationId} />
-      </div>
       <div
         ref={conteneurMessagesRef}
         data-zone-chat

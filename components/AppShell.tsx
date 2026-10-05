@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { lireMonProfil, mettreAJourMonProfil } from "@/lib/api";
@@ -10,10 +10,10 @@ import { FenetresSections } from "@/components/chat/FenetresSections";
 import { GuideFlottant } from "@/components/GuideFlottant";
 import { CatalogueClovis } from "@/components/CatalogueClovis";
 import { PaletteCommandes } from "@/components/PaletteCommandes";
-import { ContexteChat, useFournirContexteChat } from "@/lib/contexteChat";
+import { ContexteChat } from "@/lib/contexteChat";
 import { ContexteCatalogue } from "@/lib/contexteCatalogue";
 import { ContexteFenetres, useFournirFenetres } from "@/lib/contexteFenetres";
-import { ContexteRetour, useFournirContexteRetour } from "@/lib/contexteRetour";
+import { ContexteRetour } from "@/lib/contexteRetour";
 import { ContexteDossiersCataloguePublic, useFournirDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { BarreOngletsNative } from "@/components/mobile/BarreOngletsNative";
 import { BarreOngletsWeb } from "@/components/mobile/BarreOngletsWeb";
@@ -22,20 +22,8 @@ import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
-import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
-import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
-import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
-import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
-import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
-import { ContexteCurseurVirtuel, enregistrerDeplacementCurseur, useFournirCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
+import { DockMinuteurs } from "@/components/chat/minuteurs/DockMinuteurs";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
-import { ContexteVoixDirecte, useFournirVoixDirecte } from "@/lib/contexteVoixDirecte";
-import {
-  ContexteCanalEnDirect,
-  useFournirCanalEnDirect,
-  enregistrerCanalEnDirect,
-} from "@/lib/contexteCanalEnDirect";
-import { useEmetteurSuperposition, surElectron } from "@/lib/superpositionElectron";
 import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { estPageChat } from "@/lib/routesApp";
 
@@ -61,18 +49,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Capacitor.isNativePlatform() n'a pas répondu -- évite un flash du
   // hamburger web au tout premier rendu dans l'appli native.
   const [natif, setNatif] = useState(false);
-  // Correctif (28/09/2026, demande Bourama) : sur Electron, le curseur, la
-  // bulle et le journal du canal en direct ne se montent JAMAIS ici (voir
-  // plus bas), c'est la fenêtre de superposition (app/agent-superposition/page.tsx,
-  // voir electron/main.ts) qui les affiche, fusionnés en une seule
-  // instance, par dessus l'appli ET par dessus le reste du bureau, et
-  // seulement quand le canal est actif (voir
-  // packages/capacitor-superposition-electron/electron/src/plugin.mts).
-  // Les monter aussi ici les aurait dupliqués. Même détection différée
-  // que `natif` juste au dessus (Capacitor.getPlatform() n'est connu que
-  // côté client, un state initial à false évite un décalage
-  // serveur/navigateur à l'hydratation).
-  const [surElectronClient, setSurElectronClient] = useState(false);
   // Remonté ici depuis ChatFlottant.tsx (16/08/2026) pour pouvoir être
   // ouvert depuis d'autres écrans -- voir lib/contexteChat.tsx et le
   // bouton "Ouvrir le chat" de l'écran d'accueil.
@@ -80,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // fermeture (enFermeture/fermerAvecFondu, avant local à ChatFlottant.tsx)
   // viennent maintenant tous de ce même fournisseur -- voir
   // lib/contexteChat.tsx.
-  const contexteChatValeur = useFournirContexteChat();
+  const contexteChatValeur = useContext(ContexteChat)!;
   const { etat: etatChat, setEtat: setEtatChat } = contexteChatValeur;
   // Ref pont entre ChatFlottant (propriétaire de nouvelleConversation) et
   // PaletteCommandes (composant frère, 22/08/2026, chantier "grandes
@@ -92,7 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // 31/08/2026, demande Bourama : le bouton retour (natif ET web mobile)
   // doit fermer ce qui est ouvert par-dessus l'appli au lieu de fermer
   // l'appli elle-même -- voir lib/contexteRetour.tsx pour le mécanisme.
-  const contexteRetourValeur = useFournirContexteRetour();
+  const contexteRetourValeur = useContext(ContexteRetour)!;
   // 09/09/2026, demande Bourama : les dossiers de la bibliothèque
   // publique (+ ceux déjà attachés) doivent être chargés dès l'ouverture
   // de l'app, en arrière-plan, pour que BibliothequePublique.tsx les
@@ -100,23 +76,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // lib/contexteDossiersCataloguePublic.tsx. Déclenché juste en dessous,
   // dès que la session est confirmée.
   const dossiersCataloguePublicValeur = useFournirDossiersCataloguePublic();
-  const curseurVirtuelValeur = useFournirCurseurVirtuel();
-  // Chantier I (canal en direct) : store global, monté ici au niveau du
-  // layout racine pour survivre à tout changement de section -- voir
-  // lib/contexteCanalEnDirect.tsx.
-  const canalEnDirectValeur = useFournirCanalEnDirect();
-  // Voix en direct (02/10/2026) : une seule session pour toute l'appli, voir
-  // lib/contexteVoixDirecte.tsx.
-  const voixDirecteValeur = useFournirVoixDirecte({
-    chatPretPourVoix: contexteChatValeur.chatPretPourVoix,
-    deposerDemandeVoix: contexteChatValeur.deposerDemandeVoix,
-  });
-  // Lot R (27/09/2026, voir plan-canal-en-direct-pc.md) : pousse cet état
-  // vers la fenêtre de superposition Electron (ne fait rien ailleurs que
-  // sur la plateforme "electron", voir lib/superpositionElectron.ts). Depuis
-  // le 02/10/2026, y compris l'état de la voix en direct, pour que sa bulle
-  // suive le curseur dans la superposition comme sur le site.
-  useEmetteurSuperposition(curseurVirtuelValeur, canalEnDirectValeur, voixDirecteValeur);
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
   const minuteursValeur = useFournirMinuteurs(connecte);
@@ -127,9 +86,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // argument (contrairement à useFournirMinuteurs juste au-dessus) :
   // volontairement indépendant, voir le commentaire dans ce fichier.
   const statutUtilisateurValeur = useFournirStatutUtilisateur();
-  useEffect(() => {
-    enregistrerCanalEnDirect(canalEnDirectValeur);
-  }, [canalEnDirectValeur]);
   // Ajouté le 21/09/2026 (connexion Google) : un compte cree via "Continuer
   // avec Google" n'a jamais rempli le formulaire d'inscription (qui est ce
   // qui donne d'habitude nom_affiche, voir app/inscription/page.tsx), donc
@@ -153,29 +109,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
     })();
   }, [connecte]);
-  // Chantier F : même principe, pour que lib/canalAgentApplicatif.ts
-  // puisse déplacer le curseur virtuel avant un clic générique.
-  useEffect(() => {
-    enregistrerDeplacementCurseur(curseurVirtuelValeur.deplacerVers);
-  }, [curseurVirtuelValeur.deplacerVers]);
-  // Correctif (19/09/2026, decision Bourama : "c'est la souris du LLM
-  // donc il doit toujours être visible dès les premières réponses") :
-  // le curseur virtuel apparaît dès que le canal en direct s'active,
-  // pas seulement au moment d'un premier clic -- et disparaît quand le
-  // canal se désactive. afficher/masquer plutôt que deplacerVers : pas
-  // de trajectoire à jouer ici, juste une apparition/disparition.
-  const canalActif = canalEnDirectValeur.actif;
-  const { afficher: afficherCurseur, masquer: masquerCurseur } = curseurVirtuelValeur;
-  useEffect(() => {
-    if (canalActif) afficherCurseur();
-    else masquerCurseur();
-  }, [canalActif, afficherCurseur, masquerCurseur]);
   // Le catalogue "Pourquoi Classinus ?" est une modale globale : calque au
   // même titre que les autres, voir la pile dans lib/contexteRetour.tsx.
-  // Appel direct sur contexteRetourValeur (pas useFermetureAuRetour, qui
-  // lit le contexte via useContext -- AppShell est le composant qui
-  // FOURNIT ce contexte à ses enfants, il n'est pas lui-même sous son
-  // propre Provider et ne peut donc pas le consommer ainsi).
+  // Le contexte de retour est partagé au niveau du layout racine.
   useEffect(() => {
     if (!catalogueOuvert) return;
     const id = "catalogue-clovis";
@@ -229,7 +165,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     import("@capacitor/core").then(({ Capacitor }) => {
       const estNatif = Capacitor.isNativePlatform();
       if (!annule) setNatif(estNatif);
-      if (!annule) setSurElectronClient(surElectron());
       // Chantier "web mobile façon appli" (28/08/2026) : attribut lu par
       // --dj-barre-onglets-web dans app/globals.css, pour que cette
       // variable CSS (marge réservée par la nouvelle barre du bas web)
@@ -244,13 +179,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ContexteRetour.Provider value={contexteRetourValeur}>
-    <ContexteChat.Provider value={contexteChatValeur}>
     <ContexteCatalogue.Provider value={{ ouvrir: () => setCatalogueOuvert(true) }}>
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
-    <ContexteCurseurVirtuel.Provider value={curseurVirtuelValeur}>
-    <ContexteCanalEnDirect.Provider value={canalEnDirectValeur}>
-    <ContexteVoixDirecte.Provider value={voixDirecteValeur}>
     <ContexteMinuteurs.Provider value={minuteursValeur}>
     <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
@@ -272,6 +202,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               dans cette appli, voir commentaire dans
               BoutonNotifications.tsx. */}
           <BoutonNotifications connecte={connecte} />
+          {/* 03/10/2026, demande Bourama : minuteurs (cartes, pastilles) et
+              bouton horloge sur tous les écrans, à gauche de la cloche. Une
+              seule copie ici, plus une par chat. Réservé aux comptes connectés
+              (un minuteur est enregistré sur le compte). */}
+          {connecte && <DockMinuteurs />}
           <SyncTempsReelCache connecte={connecte} />
           {/* Guide de decouverte, etape 4 (16/09/2026, demande Bourama) :
               meme condition que AppSidebar juste en dessous -- masque sur
@@ -389,21 +324,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             natif={natif}
           />
           <FenetresSections />
-          {/* Correctif (28/09/2026) : sur Electron, ces deux là vivent
-              uniquement dans la fenêtre de superposition (voir le state
-              surElectronClient plus haut) : les monter ici en plus les
-              aurait affichés en double. Sur web/mobile, pas de fenêtre de
-              superposition : ils restent montés ici comme avant. */}
-          {!surElectronClient && <CurseurVirtuelAgent />}
-          {!surElectronClient && <BulleDialogueAgent />}
-          <VoixDirecteSuperposition />
-          {/* Sur Electron (01/10/2026, demande Bourama), le bouton du canal
-              n'est plus monté ici du tout : la superposition l'affiche en
-              permanence, fenêtre fermée comprise, et c'est le seul
-              exemplaire (en avoir un second à l'écran serait un doublon).
-              Sur web et mobile il reste monté ici comme avant. */}
-          {!surElectronClient && <CanalEnDirectFlottant />}
-          <PontMessageCanalVersChat />
           <PaletteCommandes
             connecte={connecte}
             etatChat={etatChat}
@@ -416,12 +336,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </ContexteFenetres.Provider>
     </ContexteStatutUtilisateur.Provider>
     </ContexteMinuteurs.Provider>
-    </ContexteVoixDirecte.Provider>
-    </ContexteCanalEnDirect.Provider>
-    </ContexteCurseurVirtuel.Provider>
     </ContexteDossiersCataloguePublic.Provider>
     </ContexteCatalogue.Provider>
-    </ContexteChat.Provider>
-    </ContexteRetour.Provider>
   );
 }

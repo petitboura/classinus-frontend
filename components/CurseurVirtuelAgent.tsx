@@ -4,7 +4,7 @@
 // plan-agent-applicatif-clovis.md), chantier B. Rendu visuel du curseur
 // virtuel de Classinus (état et trajectoire dans lib/contexteCurseurVirtuel.tsx,
 // même séparation que ChatFlottant pour ContexteChat). Monté une seule
-// fois dans AppShell, à côté de ChatFlottant.
+// fois au niveau du layout racine (InteractionGlobale.tsx), dans un portail.
 //
 // Purement décoratif : ce composant ne fait qu'afficher une position et
 // une forme calculées ailleurs, il ne déclenche jamais lui même de clic
@@ -16,10 +16,9 @@
 // Le curseur reste glissable : onTap ne se déclenche que pour un vrai
 // clic, jamais à la fin d'un glissement.
 //
-// Ajout du 16/09/2026 (demande Bourama) : l'icône change selon la forme
-// du curseur, comme un vrai curseur de souris (flèche par défaut, main
-// au dessus d'un élément cliquable, main qui attrape pour un élément
-// saisi).
+// 16/09/2026 (demande Bourama) : l'icône suivait la forme du curseur (flèche,
+// main au dessus d'un élément cliquable, main qui attrape). Remplacé le
+// 02/10/2026, voir ICONE_CURSEUR plus bas : toujours une flèche.
 
 import { AnimatePresence, motion } from "framer-motion";
 import { MousePointer2 } from "lucide-react";

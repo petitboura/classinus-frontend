@@ -1516,7 +1516,14 @@ export type Comportement = {
   actif: boolean;
   depuis_public: boolean;
   categorie: CategorieConfiguration | null;
+  // 04/10/2026, demande Bourama : pour un élément lié à un code, "deux" (moi
+  // et les receveurs du code) ou "destinataires" (receveurs seulement). Sans
+  // effet tant que lie_a_code est faux : l'élément s'applique alors à moi.
+  portee?: PorteeElement;
+  lie_a_code?: boolean;
 };
+
+export type PorteeElement = "deux" | "destinataires";
 
 // 28/09/2026, demande Bourama : les 4 onglets séparés de "Configuration"
 // (Bureau). Chacun a son propre lieu de création (son propre bouton "+"),
@@ -1536,6 +1543,16 @@ export async function activerDesactiverComportement(agentId: string, comportemen
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/actif`, {
     method: "PATCH",
     body: JSON.stringify({ actif }),
+  });
+  return resultat as Comportement;
+}
+
+// 04/10/2026, demande Bourama : choisir, pour un élément lié à un code, s'il
+// s'applique à moi ET aux receveurs ou aux receveurs seulement.
+export async function definirPorteeComportement(agentId: string, comportementId: string, portee: PorteeElement) {
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/portee`, {
+    method: "PATCH",
+    body: JSON.stringify({ portee }),
   });
   return resultat as Comportement;
 }

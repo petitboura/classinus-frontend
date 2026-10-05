@@ -58,7 +58,7 @@ export type ValeurCurseurVirtuel = {
   masquer: () => void;
   // Ajouté le 19/09/2026 (decision Bourama) : affiche le curseur sans
   // déclencher de trajectoire -- utilisé dès que le canal en direct
-  // s'active (voir AppShell.tsx), pour que le curseur soit visible dès
+  // s'active (voir InteractionGlobale.tsx), pour que le curseur soit visible dès
   // la première réponse, pas seulement au moment d'un premier clic.
   afficher: () => void;
   deposerPoint?: (point: PointEcran, repere: RepereCurseur) => void;
@@ -70,7 +70,7 @@ export const ContexteCurseurVirtuel = createContext<ValeurCurseurVirtuel | null>
 export function useCurseurVirtuelAgent(): ValeurCurseurVirtuel {
   const contexte = useContext(ContexteCurseurVirtuel);
   if (!contexte) {
-    throw new Error("useCurseurVirtuelAgent doit être utilisé sous AppShell (ContexteCurseurVirtuel.Provider)");
+    throw new Error("useCurseurVirtuelAgent doit être utilisé sous InteractionGlobale (ContexteCurseurVirtuel.Provider)");
   }
   return contexte;
 }
@@ -79,7 +79,7 @@ export function useCurseurVirtuelAgent(): ValeurCurseurVirtuel {
 // pas un composant React et ne peut donc pas appeler
 // useCurseurVirtuelAgent() directement -- même principe que
 // enregistrerCanalEnDirect dans lib/contexteCanalEnDirect.tsx.
-// AppShell.tsx enregistre la vraie fonction dès que le Provider est
+// InteractionGlobale.tsx enregistre la vraie fonction dès que le Provider est
 // monté.
 let deplacementGlobal: ValeurCurseurVirtuel["deplacerVers"] | null = null;
 

@@ -10,9 +10,8 @@
 
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, MoreHorizontal, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
+import { Check, ChevronRight, MessageSquare, MoreVertical, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
-import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 const LONGUEUR_MAX_TITRE = 80;
@@ -24,6 +23,57 @@ const HAUTEUR_MENU_PX = 140;
 
 function cleFil(fil: FilConversation): string {
   return fil.conversation_id ?? "legacy";
+}
+
+type GroupeDate = { cle: string; libelle: string; fils: FilConversation[] };
+
+function majuscule(texte: string): string {
+  return texte.charAt(0).toUpperCase() + texte.slice(1);
+}
+
+// Groupe de date d'un fil : jours recents, puis semaines (jusqu'a 5 Sem selon la date),
+// puis Mois dernier, puis un groupe par mois (annee affichee seulement
+// pour les annees passees).
+function groupeDeDate(iso: string, maintenant: Date): { cle: string; libelle: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { cle: "inconnu", libelle: "Plus ancien" };
+  const debutJour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const ecart = Math.max(0, Math.round((debutJour(maintenant) - debutJour(d)) / 86400000));
+  if (ecart === 0) return { cle: "aujourdhui", libelle: "Aujourd'hui" };
+  if (ecart === 1) return { cle: "hier", libelle: "Hier" };
+  if (ecart === 2) return { cle: "avant-hier", libelle: "Avant-hier" };
+  // Les semaines vont jusqu'au meme jour du mois dernier (ramene au dernier
+  // jour du mois dernier s'il est plus court), donc 28 a 31 jours selon la date.
+  const dernierJourMoisDernier = new Date(maintenant.getFullYear(), maintenant.getMonth(), 0).getDate();
+  const memeJourMoisDernier = new Date(
+    maintenant.getFullYear(),
+    maintenant.getMonth() - 1,
+    Math.min(maintenant.getDate(), dernierJourMoisDernier)
+  );
+  const limiteSemaines = Math.round((debutJour(maintenant) - memeJourMoisDernier.getTime()) / 86400000);
+  if (ecart <= limiteSemaines) {
+    const semaines = Math.ceil(ecart / 7);
+    return { cle: `sem-${semaines}`, libelle: `Il y a ${semaines} Sem` };
+  }
+  const moisEcoules = (maintenant.getFullYear() - d.getFullYear()) * 12 + (maintenant.getMonth() - d.getMonth());
+  if (moisEcoules === 1) return { cle: "mois-dernier", libelle: "Mois dernier" };
+  const nomMois = majuscule(d.toLocaleDateString("fr-FR", { month: "long" }));
+  const libelle = d.getFullYear() === maintenant.getFullYear() ? nomMois : `${nomMois} ${d.getFullYear()}`;
+  return { cle: `mois-${d.getFullYear()}-${d.getMonth()}`, libelle };
+}
+
+// Regroupe des fils deja tries du plus recent au plus ancien ; l'ordre des
+// groupes suit donc celui des fils, et un groupe vide n'existe jamais.
+function regrouperParDate(fils: FilConversation[]): GroupeDate[] {
+  const maintenant = new Date();
+  const groupes: GroupeDate[] = [];
+  for (const fil of fils) {
+    const { cle, libelle } = groupeDeDate(fil.derniere_activite, maintenant);
+    const dernier = groupes[groupes.length - 1];
+    if (dernier && dernier.cle === cle) dernier.fils.push(fil);
+    else groupes.push({ cle, libelle, fils: [fil] });
+  }
+  return groupes;
 }
 
 type PropsListe = {
@@ -50,10 +100,15 @@ export function ListeHistorique({
   const aPlus = ctx?.historiqueAPlus ?? false;
   const chargementPlus = ctx?.chargementPlusHistorique ?? false;
   const erreurPlus = ctx?.erreurPlusHistorique ?? false;
+  const erreurAction = ctx?.erreurActionHistorique ?? null;
   const chargerPlus = ctx?.chargerPlusHistorique;
 
   const racineRef = useRef<HTMLDivElement>(null);
   const sentinelleRef = useRef<HTMLDivElement>(null);
+  // A chaque ouverture de la liste : Epingles plie, tous les groupes de
+  // dates deplies (on ne retient que ceux que la personne a replies).
+  const [epinglesOuverts, setEpinglesOuverts] = useState(false);
+  const [groupesFermes, setGroupesFermes] = useState<Set<string>>(() => new Set());
 
   // Epingles : dans l'ordre recu (le plus recemment epingle en premier).
   // Recents : toujours du plus recemment actif au plus ancien, meme apres
@@ -63,12 +118,26 @@ export function ListeHistorique({
     .filter((f) => !f.epingle)
     .sort((a, b) => Date.parse(b.derniere_activite) - Date.parse(a.derniere_activite));
 
+  const groupes = regrouperParDate(recents);
+  // Rien a charger tant que tous les groupes de dates sont replies (la
+  // liste est alors courte et le bas toujours visible : on chargerait tout).
+  const chargementAutorise = groupes.length === 0 || groupes.some((g) => !groupesFermes.has(g.cle));
+
+  function basculerGroupe(cle: string) {
+    setGroupesFermes((avant) => {
+      const apres = new Set(avant);
+      if (apres.has(cle)) apres.delete(cle);
+      else apres.add(cle);
+      return apres;
+    });
+  }
+
   // Charge la page suivante quand le bas de la liste approche (defilement
   // progressif). La liste elle-meme est le conteneur observe.
   useEffect(() => {
     const racine = racineRef.current;
     const sentinelle = sentinelleRef.current;
-    if (!racine || !sentinelle || !aPlus || erreurPlus || !chargerPlus) return;
+    if (!racine || !sentinelle || !chargementAutorise || !aPlus || erreurPlus || !chargerPlus) return;
     const observateur = new IntersectionObserver(
       (entrees) => {
         if (entrees.some((e) => e.isIntersecting)) void chargerPlus();
@@ -79,7 +148,7 @@ export function ListeHistorique({
     return () => observateur.disconnect();
     // historique.length : apres chaque page recue la sentinelle est
     // observee a nouveau (elle est deja visible si la liste reste courte).
-  }, [aPlus, erreurPlus, chargerPlus, historique.length]);
+  }, [chargementAutorise, aPlus, erreurPlus, chargerPlus, historique.length]);
 
   const grand = variante === "pleinEcran";
 
@@ -98,19 +167,36 @@ export function ListeHistorique({
 
   return (
     <div ref={racineRef} className={`dj-scroll-isole overflow-y-auto ${className}`}>
-      {epingles.length > 0 && (
-        <>
-          <p className="flex items-center gap-1.5 px-2.5 pb-1 pt-1.5 text-xs font-medium uppercase tracking-wide text-dj-texte-muet">
-            <Pin size={12} />
-            Épinglés
-          </p>
-          {rendreLignes(epingles)}
-          {recents.length > 0 && (
-            <p className="px-2.5 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-dj-texte-muet">Récents</p>
-          )}
-        </>
+      {erreurAction && (
+        <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
+          {erreurAction}
+        </p>
       )}
-      {rendreLignes(recents)}
+
+      {epingles.length > 0 && (
+        <SectionPliable
+          Icone={Pin}
+          titre="Épinglés"
+          nombre={epingles.length}
+          ouverte={epinglesOuverts}
+          onBasculer={() => setEpinglesOuverts((v) => !v)}
+          grand={grand}
+        >
+          {rendreLignes(epingles)}
+        </SectionPliable>
+      )}
+
+      {groupes.map((g) => (
+        <SectionPliable
+          key={g.cle}
+          titre={g.libelle}
+          ouverte={!groupesFermes.has(g.cle)}
+          onBasculer={() => basculerGroupe(g.cle)}
+          grand={grand}
+        >
+          {rendreLignes(g.fils)}
+        </SectionPliable>
+      ))}
 
       {aPlus && (
         <div ref={sentinelleRef} className="py-1">
@@ -125,6 +211,38 @@ export function ListeHistorique({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+type PropsSection = {
+  Icone?: typeof Pin;
+  titre: string;
+  nombre?: number;
+  ouverte: boolean;
+  onBasculer: () => void;
+  grand: boolean;
+  children: React.ReactNode;
+};
+
+// Section repliable de la liste (Epingles, groupes de dates). Le contenu n'est
+// monte que quand la section est ouverte : une section pliee ne coute rien.
+function SectionPliable({ Icone, titre, nombre, ouverte, onBasculer, grand, children }: PropsSection) {
+  return (
+    <div>
+      <button
+        onClick={onBasculer}
+        aria-expanded={ouverte}
+        className={`group flex w-full items-center gap-2 rounded-lg px-2.5 text-left text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+          grand ? "min-h-10" : "min-h-8"
+        }`}
+      >
+        {Icone && <Icone size={grand ? 16 : 14} className="flex-shrink-0" />}
+        <span>{titre}</span>
+        {nombre !== undefined && <span className="text-xs font-normal opacity-70">{nombre}</span>}
+        <ChevronRight size={14} className={`ml-auto flex-shrink-0 transition-transform duration-200 ${ouverte ? "rotate-90" : ""}`} />
+      </button>
+      {ouverte && <div className="animate-dj-fade-in-rapide">{children}</div>}
     </div>
   );
 }
@@ -150,14 +268,26 @@ type PropsLigne = {
   onSupprimee?: (fil: FilConversation) => void;
 };
 
+// Date courte d'un fil : Aujourd'hui, Hier, puis jour et mois (avec l'annee
+// seulement si ce n'est pas l'annee en cours). Chaine vide si la date est illisible.
+function libelleDateFil(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const debutJour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const maintenant = new Date();
+  const ecartJours = Math.round((debutJour(maintenant) - debutJour(d)) / 86400000);
+  if (ecartJours <= 0) return "Aujourd'hui";
+  if (ecartJours === 1) return "Hier";
+  const memeAnnee = d.getFullYear() === maintenant.getFullYear();
+  return d.toLocaleDateString("fr-FR", memeAnnee ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" });
+}
+
 type ModeLigne = "normal" | "renommer" | "confirmerSuppression";
 
 function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsLigne) {
   const ctx = useContext(ContexteChat);
   const [mode, setMode] = useState<ModeLigne>("normal");
   const [titreSaisi, setTitreSaisi] = useState(fil.titre);
-  const [occupe, setOccupe] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ haut: number; gauche: number } | null>(null);
   const boutonMenuRef = useRef<HTMLButtonElement>(null);
   const champRef = useRef<HTMLInputElement>(null);
@@ -177,7 +307,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
     const gauche = Math.max(8, Math.min(r.right - LARGEUR_MENU_PX, window.innerWidth - LARGEUR_MENU_PX - 8));
     // Bascule vers le haut quand il n'y a pas la place en dessous.
     const haut = r.bottom + 4 + HAUTEUR_MENU_PX > window.innerHeight ? r.top - HAUTEUR_MENU_PX - 4 : r.bottom + 4;
-    setErreur(null);
     setMenu({ haut: Math.max(8, haut), gauche });
   }
 
@@ -191,38 +320,22 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
     [fermerMenuAnime]
   );
 
-  async function executer(action: () => Promise<void>) {
-    setOccupe(true);
-    setErreur(null);
-    try {
-      await action();
-      return true;
-    } catch (e) {
-      setErreur(messageErreur(e));
-      return false;
-    } finally {
-      setOccupe(false);
-    }
+  // Les trois actions changent la liste tout de suite (voir ContexteChat) :
+  // la ligne n'attend jamais le serveur.
+  function basculerEpingle() {
+    ctx?.epinglerFil(fil, !fil.epingle);
   }
 
-  async function basculerEpingle() {
-    if (!ctx) return;
-    await executer(() => ctx.epinglerFil(fil, !fil.epingle));
-  }
-
-  async function validerRenommage() {
+  function validerRenommage() {
     const titre = titreSaisi.replace(/\s+/g, " ").trim();
     if (!ctx || !titre) return;
-    if (titre === fil.titre) {
-      setMode("normal");
-      return;
-    }
-    if (await executer(() => ctx.renommerFil(fil, titre))) setMode("normal");
+    setMode("normal");
+    if (titre !== fil.titre) ctx.renommerFil(fil, titre);
   }
 
-  async function confirmerSuppression() {
-    if (!ctx) return;
-    if (await executer(() => ctx.supprimerFil(fil))) onSupprimee?.(fil);
+  function confirmerSuppression() {
+    ctx?.supprimerFil(fil);
+    onSupprimee?.(fil);
   }
 
   const hauteur = grand ? "min-h-11" : "min-h-9";
@@ -238,20 +351,18 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             maxLength={LONGUEUR_MAX_TITRE}
             onChange={(e) => setTitreSaisi(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") void validerRenommage();
+              if (e.key === "Enter") validerRenommage();
               if (e.key === "Escape") {
                 e.stopPropagation();
                 setMode("normal");
-                setErreur(null);
               }
             }}
-            disabled={occupe}
             aria-label="Nouveau titre de la conversation"
             className={`min-w-0 flex-1 rounded-lg border border-dj-bordure bg-dj-fond px-2.5 py-1.5 ${texte} text-dj-texte outline-none transition-colors focus:border-dj-texte-muet`}
           />
           <button
-            onClick={() => void validerRenommage()}
-            disabled={occupe || !titreSaisi.trim()}
+            onClick={validerRenommage}
+            disabled={!titreSaisi.trim()}
             aria-label="Valider le titre"
             className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte disabled:opacity-40"
           >
@@ -260,7 +371,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
           <button
             onClick={() => {
               setMode("normal");
-              setErreur(null);
             }}
             aria-label="Annuler"
             className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -268,7 +378,6 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             <X size={18} />
           </button>
         </div>
-        {erreur && <p className="px-1 pt-1 text-xs text-red-500">{erreur}</p>}
       </div>
     );
   }
@@ -280,8 +389,7 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
         <p className="truncate pt-0.5 text-xs text-dj-texte-muet">{fil.titre}</p>
         <div className="flex items-center gap-2 pt-2">
           <button
-            onClick={() => void confirmerSuppression()}
-            disabled={occupe}
+            onClick={confirmerSuppression}
             className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             Supprimer
@@ -289,15 +397,12 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
           <button
             onClick={() => {
               setMode("normal");
-              setErreur(null);
             }}
-            disabled={occupe}
             className="rounded-lg px-3 py-1.5 text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
           >
             Annuler
           </button>
         </div>
-        {erreur && <p className="pt-1.5 text-xs text-red-500">{erreur}</p>}
       </div>
     );
   }
@@ -316,11 +421,9 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             estActive ? "text-dj-accent-1-texte" : "text-dj-texte"
           }`}
         >
-          {fil.epingle && <Pin size={12} className="flex-shrink-0 text-dj-texte-muet" />}
-          <span className="truncate">
-            {estActive ? "● " : ""}
-            {fil.titre}
-          </span>
+          <MessageSquare size={11} strokeWidth={2} className={`flex-shrink-0 ${estActive ? "" : "text-dj-texte-muet"}`} />
+          <span className="min-w-0 flex-1 truncate">{fil.titre}</span>
+          <span className="flex-shrink-0 pl-2 text-xs text-dj-texte-muet">{libelleDateFil(fil.derniere_activite)}</span>
         </button>
         <button
           ref={boutonMenuRef}
@@ -335,28 +438,30 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
             menu ? "!opacity-100 text-dj-texte" : ""
           }`}
         >
-          <MoreHorizontal size={16} strokeWidth={2.25} />
+          <MoreVertical size={16} strokeWidth={2.25} />
         </button>
       </div>
-      {erreur && <p className="px-2.5 pb-1 text-xs text-red-500">{erreur}</p>}
       {menu && (
         <MenuFil
           position={menu}
           enSortie={menuEnSortie}
           epingle={Boolean(fil.epingle)}
-          occupe={occupe}
           onFermer={() => fermerMenu()}
-          onEpingler={() => fermerMenu(() => void basculerEpingle())}
+          onEpingler={() => {
+            // La liste change tout de suite : on n'attend pas la fin de
+            // l'animation de fermeture du menu (180 ms), les deux se font
+            // en meme temps. Le serveur suit en arriere-plan (ContexteChat).
+            basculerEpingle();
+            fermerMenu();
+          }}
           onRenommer={() =>
             fermerMenu(() => {
               setTitreSaisi(fil.titre);
-              setErreur(null);
               setMode("renommer");
             })
           }
           onSupprimer={() =>
             fermerMenu(() => {
-              setErreur(null);
               setMode("confirmerSuppression");
             })
           }
@@ -370,7 +475,6 @@ type PropsMenu = {
   position: { haut: number; gauche: number };
   enSortie: boolean;
   epingle: boolean;
-  occupe: boolean;
   onFermer: () => void;
   onEpingler: () => void;
   onRenommer: () => void;
@@ -379,7 +483,7 @@ type PropsMenu = {
 
 // Menu des trois points. Rendu dans document.body : la liste est dans un
 // conteneur qui defile et qui rognerait un menu positionne a l'interieur.
-function MenuFil({ position, enSortie, epingle, occupe, onFermer, onEpingler, onRenommer, onSupprimer }: PropsMenu) {
+function MenuFil({ position, enSortie, epingle, onFermer, onEpingler, onRenommer, onSupprimer }: PropsMenu) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [monte, setMonte] = useState(false);
   useLayoutEffect(() => setMonte(true), []);
@@ -422,15 +526,15 @@ function MenuFil({ position, enSortie, epingle, occupe, onFermer, onEpingler, on
         enSortie ? "animate-cgpt-sortie-modal" : "animate-dj-fade-in-rapide"
       }`}
     >
-      <button role="menuitem" onClick={onEpingler} disabled={occupe} className={`${classeItem} text-dj-texte`}>
+      <button role="menuitem" onClick={onEpingler} className={`${classeItem} text-dj-texte`}>
         {epingle ? <PinOff size={16} /> : <Pin size={16} />}
         {epingle ? "Désépingler" : "Épingler"}
       </button>
-      <button role="menuitem" onClick={onRenommer} disabled={occupe} className={`${classeItem} text-dj-texte`}>
+      <button role="menuitem" onClick={onRenommer} className={`${classeItem} text-dj-texte`}>
         <Pencil size={16} />
         Renommer
       </button>
-      <button role="menuitem" onClick={onSupprimer} disabled={occupe} className={`${classeItem} text-red-500`}>
+      <button role="menuitem" onClick={onSupprimer} className={`${classeItem} text-red-500`}>
         <Trash2 size={16} />
         Supprimer
       </button>
