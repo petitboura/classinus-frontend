@@ -302,8 +302,13 @@ $lireTexteLong = ${lireTexteLong ? "$true" : "$false"}
 $handleSuperposition = [IntPtr]([long]${handleSuperposition})
 
 try {
-  Add-Type -AssemblyName UIAutomationClient
-  Add-Type -AssemblyName UIAutomationTypes
+  # Rendre le focus a une fenetre (activerFenetre) n'utilise pas UI Automation : ne pas
+  # charger ses bibliotheques (04/10/2026, demande Bourama : lecture lente). Ce cas est
+  # lance avant chaque clic souris et chaque frappe au clavier.
+  if (-not ${activerFenetre ? "$true" : "$false"}) {
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
+  }
   ${blocCompilationUnique("LectureFenetres", CODE_CSHARP)}
   # Sans cela, Windows peut renvoyer des coordonnees mises a l'echelle
   # (ecran regle a 125 % ou 150 %) qui ne correspondent plus a celles de la
@@ -349,7 +354,9 @@ try {
 
   $pidFg = [LectureFenetres]::Pid($fg)
   $resultat.titre_fenetre_active = [LectureFenetres]::Titre($fg)
-  try { $resultat.application = (Get-Process -Id $pidFg).ProcessName } catch { }
+  # Process.GetProcessById plutot que Get-Process : la commande Get-Process est lente a
+  # chaque lancement de PowerShell.
+  try { $resultat.application = [System.Diagnostics.Process]::GetProcessById([int]$pidFg).ProcessName } catch { }
 
   $titres = New-Object System.Collections.Generic.List[string]
   foreach ($h in [LectureFenetres]::Ouvertes()) {
