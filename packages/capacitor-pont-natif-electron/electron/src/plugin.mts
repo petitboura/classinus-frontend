@@ -34,7 +34,7 @@ import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-elec
 // racine de ce paquet.
 import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/plugin.mjs";
 // Lot V : lecture en texte de la fenetre au premier plan (UI Automation).
-import { lireFenetreAuPremierPlan } from "./lectureFenetreWindows.mjs";
+import { lireFenetreAuPremierPlan, zoneDepuisParametres } from "./lectureFenetreWindows.mjs";
 import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversante, marquerEcran } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
 import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
 import { cliquerEcran } from "./clicEcran.mjs";
@@ -374,6 +374,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
           elements: [],
           coupe: false,
           mode: "titre_seul",
+          zone_lue: zoneDepuisParametres(parametres),
           erreur_lecture: titreEstClassinus
             ? `${lecture.erreur} (la fenetre active est une fenetre de Classinus, son titre est ignore)`
             : lecture.erreur,
