@@ -166,6 +166,13 @@ export default function PageAgentSuperposition() {
     journal: canal.journal,
     ajouterEntreeJournal: () => "",
     mettreAJourEntreeJournal: () => {},
+    // Champs ajoutés à ValeurCanalEnDirect par main (bouton arrêter de la tâche) : la fenêtre de
+    // superposition de staging ne les relaie pas, valeurs neutres ici.
+    tacheEnCours: false,
+    interrompue: false,
+    arreterTache: () => {},
+    continuerApresArret: () => {},
+    reessayerApresArret: () => {},
   };
 
   return (
