@@ -173,6 +173,12 @@ export function MesCodes({ sansEnTete = false }: { sansEnTete?: boolean } = {}) 
       queryClient.setQueryData<CodePartage[]>(clesRequetes.codes, (prec) =>
         (prec || []).map((c) => (c.id === codeId ? maj : c))
       );
+      // 04/10/2026 : lier ou délier un élément change son choix de
+      // destinataire possible, les listes d'éléments doivent le relire.
+      if (patch.comportement_ids !== undefined) {
+        void queryClient.invalidateQueries({ queryKey: ["comportements"] });
+        void queryClient.invalidateQueries({ queryKey: ["configuration-skills"] });
+      }
     } catch (e) {
       setErreur(messageErreur(e));
     }
@@ -652,7 +658,7 @@ function CarteCode({
           {/* 25/09/2026, demande Bourama : "l'élève peut choisir lui-même
               son mode source et son mode pédagogique", coché par défaut.
               Décoché -> côté élève, le sélecteur disparaît (voir
-              BarreDeSaisie.tsx/SelecteurModeActif.tsx) ET sa demande
+              BarreDeSaisie.tsx/barre/BoutonReglages.tsx) ET sa demande
               explicite à Clovis de changer de mode est refusée (voir
               core/outils_changement_mode.py). Ne restreint jamais un
               changement de mode piloté par un skill attaché à ce code. */}

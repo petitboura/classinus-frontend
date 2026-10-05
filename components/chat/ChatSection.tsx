@@ -189,14 +189,6 @@ export function ChatSection() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div
-        onMouseDownCapture={fermerFenetresAuClic}
-        className="hidden flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5 md:flex"
-      >
-        <Logo taille={20} />
-        <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
-      </div>
-
       <div className="flex min-h-0 flex-1">
         <AppSidebar
           connecte={connecte}
@@ -207,6 +199,12 @@ export function ChatSection() {
           historique={historique}
           onNouvelleConversation={nouvelleConversation}
           onSelectionnerConversation={selectionnerConversation}
+          // Si on supprime la conversation ouverte, on repart sur une
+          // nouvelle conversation vide (sinon ses messages resteraient
+          // affiches alors qu'ils n'existent plus).
+          onConversationSupprimee={(fil) => {
+            if (fil.conversation_id === cle) nouvelleConversation();
+          }}
         />
 
         <div
@@ -280,6 +278,7 @@ export function ChatSection() {
               onNouvelleConversationDemarree={ajouterConversationHistorique}
               pleinEcran
               natif={natif}
+              raccourcis
             />
           )}
         </div>

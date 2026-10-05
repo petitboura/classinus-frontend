@@ -21,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import type { EtatChat } from "@/lib/contexteChat";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { ROUTES_APP } from "@/lib/routesApp";
 
 // Palette de commandes (Cmd+K / Ctrl+K), 22/08/2026, demande Bourama --
 // un des chantiers "grandes applis" (avec fil d'Ariane et historique dans
@@ -117,7 +118,7 @@ export function PaletteCommandes({
 
   const commandes: Commande[] = useMemo(() => {
     const nav: Commande[] = [
-      { id: "accueil", label: "Aller à Accueil", Icone: Home, action: () => router.push("/") },
+      { id: "tableau-de-bord", label: "Aller au tableau de bord", Icone: Home, action: () => router.push(ROUTES_APP.tableauDeBord) },
       ...ONGLETS.map((o) => ({
         id: `nav-${o.id}`,
         label: `Aller à ${o.label}`,
@@ -150,7 +151,7 @@ export function PaletteCommandes({
         // doit pas rester affiché par-dessus la page /chat.
         action: () => {
           setEtatChat("fermee");
-          router.push("/chat");
+          router.push(ROUTES_APP.chat);
         },
       },
       {

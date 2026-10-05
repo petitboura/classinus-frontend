@@ -1,4 +1,4 @@
-import { CalendarCheck, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput, Terminal } from "lucide-react";
+import { CalendarCheck, ClipboardList, KeyRound, ListChecks, MessageSquareWarning, School, TextCursorInput, Terminal } from "lucide-react";
 import { ROUTES_BUREAU } from "./routesBureau";
 import type { SectionDeGroupe } from "./groupeSections";
 
@@ -53,4 +53,23 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
     description: "Écris, exécute et enregistre du code dans ta bibliothèque",
     Icone: Terminal,
   },
+  {
+    href: ROUTES_BUREAU.configuration,
+    label: "Configuration",
+    description: "Procédures, règles, comportements et styles pour Classinus",
+    Icone: ClipboardList,
+  },
 ];
+
+// Sections que seul un prof voit. Source unique : lue par la page d'accueil
+// de Bureau, le menu des pages voisines et le menu au survol du rail.
+export const SECTIONS_BUREAU_PROF_UNIQUEMENT: ReadonlySet<string> = new Set<string>([
+  ROUTES_BUREAU.audit,
+  ROUTES_BUREAU.programme,
+  ROUTES_BUREAU.signalements,
+]);
+
+/** Les sections de Bureau visibles selon le statut (estProfesseur false = pas prof). */
+export function sectionsBureauVisibles(estProfesseur: boolean | null): SectionDeGroupe[] {
+  return estProfesseur === false ? SECTIONS_BUREAU.filter((s) => !SECTIONS_BUREAU_PROF_UNIQUEMENT.has(s.href)) : SECTIONS_BUREAU;
+}

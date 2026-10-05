@@ -13,6 +13,13 @@
 // action n'a encore eu lieu (journal vide affiché comme tel), pour
 // rester repérable une fois qu'il y a quelque chose à voir.
 //
+// Sur ordinateur, la bulle "Ouvrir le chat" (ChatFlottant.tsx) occupe déjà
+// le coin bas droit : le journal se range sur la même ligne, juste à sa
+// gauche, centré verticalement sur elle. Au-dessus de la bulle, la colonne
+// est prise par le bouton "Ajouter" et son menu (EspaceBibliotheque.tsx,
+// BibliothequePublique.tsx). Sur /chat la bulle n'existe pas, le journal
+// garde le coin d'origine.
+//
 // Fermeture au clic extérieur et à Echap, même convention que les
 // autres panneaux/modales de l'app.
 
@@ -22,19 +29,25 @@ import { usePathname } from "next/navigation";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ContexteCanalEnDirect, type StatutEntreeJournal } from "@/lib/contexteCanalEnDirect";
 import { useDeplacable } from "@/lib/useDeplacable";
+import { estPageChat } from "@/lib/routesApp";
 
 const LABEL_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "En cours...",
   succes: "Réussi",
   erreur: "Échec",
+  interrompu: "Interrompu",
 };
 
 const COULEUR_PAR_STATUT: Record<StatutEntreeJournal, string> = {
   en_cours: "text-dj-texte-muet",
   succes: "text-dj-accent-1-texte",
   erreur: "text-[var(--dj-erreur)]",
+  interrompu: "text-dj-texte-muet",
 };
 
+// Remis à sa place (03/10/2026, demande Bourama) : bouton fixe en bas à droite et
+// déplaçable, affiché par ControlesInteractionCanal seulement quand le canal est
+// actif et que le groupe de boutons est déplié.
 export function BoutonJournalAgent() {
   const contexte = useContext(ContexteCanalEnDirect);
   const pathname = usePathname();
@@ -78,9 +91,10 @@ export function BoutonJournalAgent() {
 
   if (!contexte) return null;
   const { journal, actif } = contexte;
+  const surChat = estPageChat(pathname);
   // Masqué sur /chat sauf si le canal est déjà actif, même règle et même
   // décision (25/09/2026, Bourama) que CanalEnDirectFlottant.tsx.
-  if (pathname === "/chat" && !actif) return null;
+  if (surChat && !actif) return null;
 
   return (
     <div
@@ -89,7 +103,9 @@ export function BoutonJournalAgent() {
         deplacement.ref(noeud);
       }}
       data-agent-superposition="true"
-      className="fixed bottom-4 right-4 z-agent-controles"
+      className={`fixed bottom-4 right-4 z-agent-controles ${
+        surChat ? "" : "md:bottom-[calc(1.5rem+var(--dj-barre-onglets-web,0px))] md:right-20"
+      }`}
       style={deplacement.style}
     >
       <button

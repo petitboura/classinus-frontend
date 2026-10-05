@@ -1,7 +1,7 @@
 "use client";
 
 // Créé le 02/10/2026, Bourama : voix en direct (Gemini Live). Pièce partagée,
-// montée une seule fois dans AppShell, comme le canal en direct. Avant, la
+// montée une seule fois au niveau du layout racine (InteractionGlobale.tsx), comme le canal en direct. Avant, la
 // voix vivait dans la barre de saisie du chat et ne pouvait servir qu'à elle.
 // Ici, une seule session de voix existe pour toute l'appli : le chat s'en sert
 // aujourd'hui, le canal en direct pourra s'en servir demain sans en créer une
@@ -19,8 +19,11 @@
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
+import { abonnerMessagesBulle, canalEnDirectEstActif } from "./contexteCanalEnDirect";
+import { ChatIndisponiblePourVoix } from "./contexteChat";
+import { conversationActive, conversationPourVoix } from "./conversationPartagee";
 
-export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "erreur";
+export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur";
 
 export type ContexteVoixDirecteValeur = {
   etat: EtatVoixDirecte;
@@ -40,12 +43,15 @@ export type ContexteVoixDirecteValeur = {
   // qui se ferme ne doit pas couper la voix d'une autre conversation).
   fermerPourConversation: (conversationId: string | null) => void;
   basculer: (conversationId: string | null) => void;
+  // Fait dire l'essentiel d'une réponse écrite par la voix, seulement si elle
+  // est active sur cette conversation. Sans voix active, ne fait rien.
+  annoncerReponse: (conversationId: string | null, texte: string) => void;
 };
 
 export const ContexteVoixDirecte = createContext<ContexteVoixDirecteValeur | null>(null);
 
 // Ce dont la voix a besoin du chat. Passé en argument (et non lu par
-// useContext) parce que ce hook tourne dans AppShell, au dessus des Providers
+// useContext) parce que ce hook tourne dans InteractionGlobale, au dessus des Providers
 // qu'il alimente.
 type DependancesVoix = {
   chatPretPourVoix: (conversationId: string) => boolean;
@@ -105,10 +111,30 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
           }
         },
         surErreur: setErreur,
-        surDemande: (question) =>
-          dependancesRef.current.chatPretPourVoix(conversationId)
-            ? dependancesRef.current.deposerDemandeVoix(question, conversationId)
-            : demanderAClovisDirectement(question, conversationId),
+        // La voix décide du plein écran ou du mini, le navigateur applique. Tant que le canal
+        // en direct est actif, l'onde reste en bulle (le canal impose la bulle).
+        surAffichage: (mode) => {
+          if (mode === "plein_ecran") {
+            if (canalEnDirectEstActif()) return "Impossible : le canal en direct est actif, l'onde reste en petite bulle.";
+            setReduit(false);
+            return "L'onde est maintenant en plein écran.";
+          }
+          setReduit(true);
+          return "L'onde est maintenant réduite en petite bulle.";
+        },
+        surDemande: async (question) => {
+          // Tant que le canal est actif, la voix suit la conversation partagée
+          // (celle du chat affiché) ; sinon elle garde celle où elle a été ouverte.
+          const cible = conversationPourVoix(conversationId);
+          if (!dependancesRef.current.chatPretPourVoix(cible)) return demanderAClovisDirectement(question, cible);
+          try {
+            return await dependancesRef.current.deposerDemandeVoix(question, cible);
+          } catch (e) {
+            // Le chat a disparu avant de prendre la demande : chemin direct.
+            if (e instanceof ChatIndisponiblePourVoix) return demanderAClovisDirectement(question, cible);
+            throw e;
+          }
+        },
       });
       sessionRef.current = session;
     } catch (e) {
@@ -128,12 +154,26 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
     [fermer, ouvrir]
   );
 
+  const annoncerReponse = useCallback((conversationId: string | null, texte: string) => {
+    if (!conversationId || !sessionRef.current) return;
+    if (conversationSessionRef.current !== conversationId && conversationActive() !== conversationId) return;
+    sessionRef.current.annoncerReponse(texte);
+  }, []);
+
+  // Canal en direct : tout ce que Classinus dit dans sa bulle (commentaires et
+  // réponses) est lu à voix haute tant que la voix est allumée. Voix éteinte,
+  // la bulle reste silencieuse comme avant.
+  useEffect(
+    () => abonnerMessagesBulle((message) => sessionRef.current?.direMessageBulle(message.texte)),
+    []
+  );
+
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 
   const actif = etat !== "inactif" && etat !== "erreur";
 
   return useMemo(
-    () => ({ etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer }),
-    [etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer]
+    () => ({ etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse }),
+    [etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse]
   );
 }

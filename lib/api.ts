@@ -1279,7 +1279,7 @@ export async function uploaderImageChat(fichier: File) {
  */
 export async function uploaderDocumentChat(fichier: File) {
   const resultat = await appelerApiFichier("/api/uploads/document-chat", fichier);
-  return resultat as { texte: string; tronque: boolean; url: string | null; url_apercu: string | null };
+  return resultat as { texte: string; tronque: boolean; lisible: boolean; url: string | null; url_apercu: string | null };
 }
 
 /**
@@ -1515,10 +1515,25 @@ export type Comportement = {
   lien_libelle: string | null;
   actif: boolean;
   depuis_public: boolean;
+  categorie: CategorieConfiguration | null;
+  // 04/10/2026, demande Bourama : pour un élément lié à un code, "deux" (moi
+  // et les receveurs du code) ou "destinataires" (receveurs seulement). Sans
+  // effet tant que lie_a_code est faux : l'élément s'applique alors à moi.
+  portee?: PorteeElement;
+  lie_a_code?: boolean;
 };
 
-export async function lireMesComportements(agentId: string) {
-  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`);
+export type PorteeElement = "deux" | "destinataires";
+
+// 28/09/2026, demande Bourama : les 4 onglets séparés de "Configuration"
+// (Bureau). Chacun a son propre lieu de création (son propre bouton "+"),
+// jamais un choix proposé à l'utilisateur -- cette liste sert seulement
+// de garde-fou de type, jamais affichée telle quelle comme un sélecteur.
+export type CategorieConfiguration = "procedure" | "regle" | "comportement" | "style";
+
+export async function lireMesComportements(agentId: string, categorie?: CategorieConfiguration) {
+  const requete = categorie ? `?categorie=${categorie}` : "";
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements${requete}`);
   return resultat as Comportement[];
 }
 
@@ -1528,6 +1543,16 @@ export async function activerDesactiverComportement(agentId: string, comportemen
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/actif`, {
     method: "PATCH",
     body: JSON.stringify({ actif }),
+  });
+  return resultat as Comportement;
+}
+
+// 04/10/2026, demande Bourama : choisir, pour un élément lié à un code, s'il
+// s'applique à moi ET aux receveurs ou aux receveurs seulement.
+export async function definirPorteeComportement(agentId: string, comportementId: string, portee: PorteeElement) {
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/portee`, {
+    method: "PATCH",
+    body: JSON.stringify({ portee }),
   });
   return resultat as Comportement;
 }
@@ -1767,11 +1792,20 @@ export async function ajouterComportement(
   texte: string,
   nom?: string | null,
   lienType?: string | null,
-  lienId?: string | null
+  lienId?: string | null,
+  categorie?: CategorieConfiguration | null,
+  quandUtiliser?: string | null
 ) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`, {
     method: "POST",
-    body: JSON.stringify({ texte, nom: nom || null, lien_type: lienType || null, lien_id: lienId || null }),
+    body: JSON.stringify({
+      texte,
+      nom: nom || null,
+      lien_type: lienType || null,
+      lien_id: lienId || null,
+      categorie: categorie || null,
+      quand_utiliser: quandUtiliser || null,
+    }),
   });
   return resultat as Comportement;
 }
@@ -1817,10 +1851,16 @@ export async function attacherComportement(agentId: string, comportementId: stri
   return resultat as Comportement;
 }
 
-export async function modifierComportement(agentId: string, comportementId: string, texte: string, nom?: string | null) {
+export async function modifierComportement(
+  agentId: string,
+  comportementId: string,
+  texte: string,
+  nom?: string | null,
+  quandUtiliser?: string | null
+) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}`, {
     method: "PATCH",
-    body: JSON.stringify({ texte, nom: nom || null }),
+    body: JSON.stringify({ texte, nom: nom || null, quand_utiliser: quandUtiliser || null }),
   });
   return resultat as Comportement;
 }
@@ -2007,8 +2047,8 @@ export type CodePartage = {
   actif: boolean;
   // 25/09/2026, demande Bourama : "l'élève peut choisir lui-même son
   // mode source et son mode pédagogique", coché par défaut. Décoché ->
-  // le sélecteur disparaît côté élève (voir SelecteurModeActif.tsx /
-  // SelecteurPersonaPedagogique.tsx / BarreDeSaisie.tsx).
+  // le sélecteur disparaît côté élève (voir barre/BoutonReglages.tsx,
+  // barre/useModeActif.ts et BarreDeSaisie.tsx).
   eleve_choisit_mode: boolean;
   created_at: string;
   updated_at: string;
@@ -2093,7 +2133,7 @@ export async function obtenirModeActif(conversationId: string) {
     verrouille: boolean;
     // true si un choix explicite existe déjà pour cette conversation
     // (y compris "Aucun mode"), false si rien n'a jamais été choisi
-    // (11/09/2026, ajout d'un vrai "Aucun mode" -- voir SelecteurModeActif.tsx).
+    // (11/09/2026, ajout d'un vrai "Aucun mode" -- voir barre/useModeActif.ts).
     choisi: boolean;
   }>;
 }

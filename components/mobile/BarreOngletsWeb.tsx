@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Library, Hourglass, MessageCircle, Briefcase, Wand2, type LucideIcon } from "lucide-react";
+import { ROUTES_APP, correspondARoute, estPageChat } from "@/lib/routesApp";
 // Créé le 28/08/2026, Bourama : chantier "web mobile façon appli",
 // remplace le menu hamburger + tiroir (AppSidebar en mode mobile, masqué
 // pour de bon désormais via masquerChromeMobile, voir AppShell.tsx) par
@@ -42,7 +43,7 @@ import { Library, Hourglass, MessageCircle, Briefcase, Wand2, type LucideIcon } 
 const ONGLETS_WEB: { href: string; label: string; Icone: LucideIcon }[] = [
   { href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
   { href: "/controle-session", label: "Concentration", Icone: Hourglass },
-  { href: "/chat", label: "Chat", Icone: MessageCircle },
+  { href: ROUTES_APP.chat, label: "Chat", Icone: MessageCircle },
   { href: "/bureau", label: "Bureau", Icone: Briefcase },
   { href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2 },
 ];
@@ -59,7 +60,7 @@ export function BarreOngletsWeb() {
   // par-dessus elle. Alignée ici sur BarreOngletsNative.tsx, qui a déjà
   // ce même masquage sur pathname === "/chat" depuis l'étape 3 -- raté
   // ici à l'époque, corrigé maintenant.
-  if (pathname === "/chat") return null;
+  if (estPageChat(pathname)) return null;
 
   return (
     <nav
@@ -69,7 +70,7 @@ export function BarreOngletsWeb() {
       data-agent-zone="Barre du bas"
     >
       {ONGLETS_WEB.map((o) => {
-        const actif = pathname === o.href || pathname.startsWith(o.href + "/");
+        const actif = correspondARoute(pathname, o.href);
         return (
           <Link
             key={o.href}

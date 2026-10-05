@@ -16,6 +16,7 @@ import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharge
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
 import { VisionneurGlobalRacine } from "@/components/VisionneurGlobalRacine";
+import { InteractionGlobale } from "@/components/InteractionGlobale";
 import { FournisseurRequetes } from "@/lib/reactQuery";
 
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
@@ -201,7 +202,9 @@ export default function RacineLayout({
         <script src="/dj-splash-retrait.js" />
         <ServiceWorkerRegistration />
         <ReveilBackend />
-        <FournisseurRequetes>{children}</FournisseurRequetes>
+        <FournisseurRequetes>
+          <InteractionGlobale>{children}</InteractionGlobale>
+        </FournisseurRequetes>
         <BoutonFlottantTelecharger />
         <PopupExplorationDossier />
         <GardienLiensSortants />

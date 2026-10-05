@@ -93,10 +93,15 @@ import {
   afficherReponseDepuisAgent,
   afficherTexteDepuisAgent,
   activerCanalDepuisAgent,
+  desactiverCanalDepuisAgent,
+  canalEnDirectEstActif,
+  ecouterActivationCanal,
   type ImageCanal,
   type SourceCanal,
-  obtenirConversationIdCanal,
 } from "./contexteCanalEnDirect";
+import { mettreAJourSourceTache } from "./tacheCanal";
+import { consommerReglagesUniquesProchainMessage, lireReglagesProchainMessage } from "./reglagesProchainMessage";
+import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
@@ -185,25 +190,17 @@ function texteCourt(texte: string): string {
 
 const AGENT_ID_CANAL = "clovis";
 
-// Historique local de la conversation dédiée au canal (voir
-// lib/contexteCanalEnDirect.tsx, conversationId) -- chat() côté backend
-// ne recharge jamais l'historique depuis la base lui même, il se fie
-// entièrement à ce que le frontend lui passe à chaque appel (voir
-// core/main.py:chat(), `if historique is None: historique = []`). Donc
-// c'est ici, et seulement ici, que la mémoire d'une session du canal
-// vit d'un message au suivant. Réinitialisé dès que conversationId
-// change (nouvelle activation, voir la comparaison plus bas) -- jamais
-// mélangé avec une session précédente du canal ni avec le chat normal.
-let historiqueCanalDirect: { role: "user" | "assistant"; content: string }[] = [];
-let conversationIdCanalConnu: string | null = null;
+// Le serveur ne recharge jamais l'historique depuis la base (voir
+// core/main.py:chat()) : l'historique et le dernier message d'une conversation
+// vivent dans lib/conversationPartagee.ts, commun au chat, au canal et à la voix.
 
 /**
  * Déclenche un VRAI tour de Clovis (19/09/2026, décision Bourama : "il
  * doit pouvoir lui même via le chat écrire et s'envoyer un message... et
  * faire comme si de rien n'était") -- même route HTTP (/api/chat), même
  * pipeline, même sauvegarde en base (core/persistance_echanges.py) que
- * le chat normal, sur la conversation dédiée au canal
- * (lib/contexteCanalEnDirect.tsx), avec canal_en_direct=true pour que
+ * le chat normal, sur la conversation partagée (celle du chat affiché, sinon
+ * celle du canal, voir lib/conversationPartagee.ts), avec canal_en_direct=true pour que
  * les outils de clic soient forcés (voir core/main.py:chat()).
  *
  * Jamais de composant de chat monté ni ouvert pour ça : appelerApiStream
@@ -213,20 +210,40 @@ let conversationIdCanalConnu: string | null = null;
  * autre canal (WebSocket canal_agent_applicatif, indépendant de cet
  * appel HTTP), voir traiterTexteClovis plus haut dans ce fichier.
  *
- * Renvoie false si aucune conversation de canal n'existe encore (canal
+ * Renvoie false si aucune conversation n'existe encore (canal
  * jamais activé cette session) ou si l'appel échoue -- l'appelant garde
  * alors le message plutôt que de le perdre (voir envoyerViaRepli).
  */
-async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
-  const conversationId = obtenirConversationIdCanal();
+// Même consigne que le bouton Continuer du chat (ChatIA.tsx, continuerApresInterruption).
+const CONSIGNE_CONTINUER_APRES_ARRET = "Continue exactement où tu t'es arrêté, sans tout reprendre depuis le début.";
+
+async function envoyerTourCanalDirect(texte: string, options?: { automatique?: boolean }): Promise<boolean> {
+  // Conversation partagée : celle du chat quand il y en a un, sinon celle du
+  // canal. L'état (historique, dernier message) est celui de cette conversation.
+  // Vérifiée AVANT de déclarer la tâche en cours : sans conversation, rien ne part
+  // et le bouton arrêter ne doit pas rester affiché.
+  const conversationId = conversationActive();
   if (!conversationId) return false;
+  const reglages = lireReglagesProchainMessage();
+  consommerReglagesUniquesProchainMessage();
+  const controleur = new AbortController();
+  mettreAJourSourceTache("tour_direct", {
+    enCours: true,
+    interrompue: false,
+    arreter: () => controleur.abort(),
+  });
+  const etat = lireEtatConversation(conversationId);
+  let idUser: IdMessage | null = null;
+  let idAssistant: IdMessage | null = null;
+  // Message envoyé par l'appli et non par l'étudiant (fin d'un minuteur, 03/10/2026) :
+  // enregistré comme tel, jamais affiché comme une bulle de l'étudiant, et le journal
+  // ne montre pas le texte interne destiné au modèle.
+  const automatique = options?.automatique === true;
 
-  if (conversationId !== conversationIdCanalConnu) {
-    conversationIdCanalConnu = conversationId;
-    historiqueCanalDirect = [];
-  }
-
-  const idJournal = pousserJournalDepuisAgent(`Toi : ${texteCourt(texte)}`, "en_cours");
+  const idJournal = pousserJournalDepuisAgent(
+    automatique ? "Un minuteur vient de se terminer" : `Toi : ${texteCourt(texte)}`,
+    "en_cours"
+  );
   let reponseAccumulee = "";
   // Sources et images trouvées par les outils pendant ce tour, pour que la
   // réponse s'affiche comme dans le chat (pastilles de citation [[n]],
@@ -242,12 +259,21 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
       {
         message: texte,
         agent_id: AGENT_ID_CANAL,
-        historique: historiqueCanalDirect,
+        historique: etat.historique,
         conversation_id: conversationId,
-        longueur_reponse: "moyenne",
+        parent_id: etat.dernierMessageId,
+        // Réglages du prochain message, communs avec la barre de saisie du chat
+        // (lib/reglagesProchainMessage.ts, 03/10/2026, demande Bourama). Lus au moment de
+        // l'envoi : ce que l'étudiant a choisi dans les Réglages du canal ou du chat.
+        longueur_reponse: reglages.longueur,
+        sans_enseignant: reglages.sansEnseignant,
+        modele: reglages.modeleId,
+        // Reglage Effort (04/10/2026), meme valeur que dans la barre de saisie du chat.
+        effort_reflexion: reglages.effort,
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
         canal_en_direct: true,
         etat_editeur: obtenirLectureEditeurPourChat(),
+        ...(automatique ? { message_automatique: true } : {}),
       },
       (evenement) => {
         if (evenement?.type === "reponse" && typeof evenement.texte === "string") {
@@ -261,15 +287,16 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
           }
         } else if (evenement?.type === "images" && Array.isArray(evenement.images) && evenement.images.length > 0) {
           images = evenement.images as ImageCanal[];
+        } else if (evenement?.type === "meta") {
+          idUser = evenement.message_id_user ?? idUser;
+          idAssistant = evenement.message_id_assistant ?? idAssistant;
         }
-      }
+      },
+      controleur.signal
     );
 
-    historiqueCanalDirect = [
-      ...historiqueCanalDirect,
-      { role: "user", content: texte },
-      { role: "assistant", content: reponseAccumulee },
-    ];
+    mettreAJourSourceTache("tour_direct", { enCours: false, interrompue: false });
+    ajouterTourDirect(conversationId, texte, reponseAccumulee, idUser, idAssistant);
 
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
     // Filet de sécurité : si Clovis n'a rien dit via dire_a_l_etudiant
@@ -278,12 +305,54 @@ async function envoyerTourCanalDirect(texte: string): Promise<boolean> {
     if (reponseAccumulee.trim()) afficherReponseDepuisAgent({ texte: reponseAccumulee.trim(), sources, images });
     return true;
   } catch (e) {
+    // Arrêt demandé par l'étudiant (bouton arrêter du canal) : le texte déjà
+    // reçu reste affiché dans la bulle, et jamais de repli vers le chat (le
+    // message n'a pas échoué, il a été coupé). Continuer relance avec ce qui a
+    // déjà été écrit dans l'historique ; Réessayer repose la même question.
+    if (controleur.signal.aborted) {
+      if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "interrompu");
+      const texteRecu = reponseAccumulee.trim();
+      if (texteRecu) afficherReponseDepuisAgent({ texte: texteRecu, sources, images });
+      mettreAJourSourceTache("tour_direct", {
+        enCours: false,
+        interrompue: true,
+        continuer: () => {
+          ajouterTourDirect(conversationId, texte, reponseAccumulee, idUser, idAssistant);
+          void envoyerTourCanalDirect(CONSIGNE_CONTINUER_APRES_ARRET);
+        },
+        reessayer: () => {
+          void envoyerTourCanalDirect(texte);
+        },
+      });
+      return true;
+    }
+    mettreAJourSourceTache("tour_direct", { enCours: false, interrompue: false });
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
     return false;
   }
 }
 
+/**
+ * Fin d'un minuteur alors qu'aucun chat n'est à l'écran (03/10/2026, demande
+ * Bourama) : le canal en direct et sa bulle prennent le relais. Même tour que
+ * le chat aurait lancé, mais sans passer par lui : la suite prévue est faite
+ * et dite dans la bulle (et à voix haute si la voix est allumée). Renvoie false
+ * si le tour n'a pas pu partir, pour que l'appelant garde la fin en file.
+ */
+export function envoyerMessageAutomatiqueCanal(texte: string): Promise<boolean> {
+  return envoyerTourCanalDirect(texte, { automatique: true });
+}
+
 function envoyerViaRepli(texte: string) {
+  // Chat à l'écran : le message continue la conversation DANS le chat (il s'y
+  // affiche en direct, la réponse finale aussi, la bulle ne garde que les
+  // commentaires et le journal). Sans chat à l'écran : tour direct, réponse
+  // finale dans la bulle.
+  if (messagePasseParLeChat() && repliMessageEtudiant) {
+    pousserJournalDepuisAgent(`Ton message dans le chat : ${texteCourt(texte)}`, "succes");
+    repliMessageEtudiant(texte);
+    return;
+  }
   // Priorité (19/09/2026, décision Bourama) : un vrai tour indépendant
   // sur la conversation du canal, sans jamais ouvrir le chat -- le repli
   // vers le chat (components/PontMessageCanalVersChat.tsx) ne reste que
@@ -356,6 +425,8 @@ let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  // Canal en direct désactivé : rien de l'écran ne part (30/09/2026).
+  if (!canalEnDirectEstActif()) return;
   // Le WebSocket conserve la présence de l'éditeur pour les actions
   // interactives, mais le chat HTTP transmet aussi l'état exact du tour.
   // Cette synchronisation reste utile comme cache, sans être une condition
@@ -657,6 +728,16 @@ function traiterOuvertureCanal(valeur: unknown) {
   activerCanalDepuisAgent(conversationId);
 }
 
+/**
+ * 02/10/2026 (demande Bourama) : Clovis demande de désactiver le canal en
+ * direct. Aucune réponse envoyée, le serveur n'en attend pas. La fermeture
+ * est différée d'un instant pour laisser partir la dernière réponse d'outil
+ * en cours (le serveur répond à l'outil juste après avoir envoyé l'ordre).
+ */
+function traiterFermetureCanal() {
+  setTimeout(() => desactiverCanalDepuisAgent(), 300);
+}
+
 function traiterMessage(message: unknown) {
   if (estDansFenetreSuperposition()) return;
   if (!message || typeof message !== "object") return;
@@ -667,6 +748,7 @@ function traiterMessage(message: unknown) {
     texte_clovis?: unknown;
     duree_secondes?: unknown;
     ouvrir_canal_en_direct?: unknown;
+    fermer_canal_en_direct?: unknown;
     id?: string;
     action_id?: string;
     texte_a_ecrire?: string;
@@ -688,11 +770,21 @@ function traiterMessage(message: unknown) {
     // qu'un accuse negatif.
     envoyerViaRepli(m.message_etudiant_renvoye);
   } else if (m.texte_clovis !== undefined) {
-    traiterTexteClovis(m.texte_clovis, m.duree_secondes);
+    // Canal désactivé : aucune bulle, rien ne s'affiche.
+    if (canalEnDirectEstActif()) traiterTexteClovis(m.texte_clovis, m.duree_secondes);
   } else if (m.ouvrir_canal_en_direct !== undefined) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
-  } else if (m.id && m.pointer_ecran) {
-    void traiterPointageEcran(m.id, m.pointer_ecran);
+  } else if (m.fermer_canal_en_direct !== undefined) {
+    traiterFermetureCanal();
+  } else if (
+    m.id &&
+    !canalEnDirectEstActif() &&
+    (m.lire_page === true || m.editeur !== undefined || m.action_id || m.selecteur_generique || m.montrer_action_id)
+  ) {
+    // Canal désactivé (30/09/2026, demande Bourama : c'est fini, plus aucune
+    // réponse) : lecture de page, éditeur, clic, écriture et pointage sont
+    // tous ignorés, rien ne s'exécute ni ne se lit.
+    envoyerReponse(m.id, { ignore: true });
   } else if (m.id && m.lire_page === true) {
     traiterDemandeLecturePage(m.id, m.longueur_max);
   } else if (m.id && m.editeur !== undefined) {
@@ -781,7 +873,7 @@ async function ouvrirCanal() {
       // attendre un changement (chantier D), sinon le backend n'a rien
       // tant qu'aucune action ne se (dé)monte apres l'ouverture.
       envoyerEtatActionsMaintenant();
-      demarrerObservationDom();
+      if (canalEnDirectEstActif()) demarrerObservationDom();
     };
 
     ws.onmessage = (evenement) => {
@@ -876,6 +968,25 @@ export function initialiserCanalAgentApplicatif() {
   // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
   // l'état sans attendre un autre changement de l'écran.
   ecouterEtatEditeur(envoyerEtatActions);
+
+  // Activation du canal : l'écran est envoyé et suivi. Désactivation : le
+  // suivi s'arrête et le serveur reçoit une liste vide, pour qu'il n'en
+  // garde plus rien en mémoire.
+  ecouterActivationCanal((actif) => {
+    if (actif) {
+      envoyerEtatActionsMaintenant();
+      if (socket && socket.readyState === WebSocket.OPEN) demarrerObservationDom();
+      return;
+    }
+    if (debounceEtatActions) {
+      clearTimeout(debounceEtatActions);
+      debounceEtatActions = null;
+    }
+    arreterObservationDom();
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ etat_actions: [] }));
+    }
+  });
 
   document.addEventListener("visibilitychange", () => {
     if (peutMaintenirCanal()) {

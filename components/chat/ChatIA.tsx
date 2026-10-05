@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { appelerApiStream, uploaderImageChat, uploaderDocumentChat, uploaderVideoChat, transcrireAudioChat, signalerPedagogique } from "@/lib/api";
+import { appelerApiStream, signalerPedagogique } from "@/lib/api";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
 import { BulleMessage, MessageAffiche, SegmentMessage, VersionAlternative } from "./BulleMessage";
 import type { OutilEnCours } from "./OutilResultatBulle";
@@ -11,17 +11,23 @@ import { PopupFeedback } from "./PopupFeedback";
 import { StatutOutil, EtatStatut } from "./StatutOutil";
 import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
+import { mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
+import { traiterFichiersJoints, typeDeFichier } from "@/lib/preparerPiecesJointes";
+import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
+import { definirModeleProchainMessage, lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
-import { SelecteurModeActif } from "./SelecteurModeActif";
+import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
+import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
 import { texteMessageAutomatique } from "@/lib/minuteurs";
-import { DockMinuteurs } from "./minuteurs/DockMinuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
+import { detecterLangageCode } from "@/lib/texteColle";
 
 // L'aperçu interne (VisionneurPositionGlobal) n'est plus monté ici depuis
 // le 20/09/2026 : il vit dans le layout racine (VisionneurGlobalRacine.tsx)
@@ -56,6 +62,7 @@ export function ChatIA({
   outilsActifsAgent = null,
   pleinEcran = false,
   natif = false,
+  raccourcis = false,
 }: {
   agentId: string;
   nomAgent: string;
@@ -134,8 +141,25 @@ export function ChatIA({
   // côté backend (04/09/2026, demande Bourama). Jamais recalculé ici :
   // une seule source de vérité pour cette détection dans l'app.
   natif?: boolean;
+  // 01/10/2026, demande Bourama : affiche les raccourcis vers des
+  // sous-sections (RaccourcisChat.tsx) sur l'écran vide. Seulement pour la
+  // vraie page du chat (ChatSection.tsx), jamais pour la popup mini.
+  raccourcis?: boolean;
 }) {
-  const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
+  // Modèle choisi : lib/reglagesProchainMessage.ts (03/10/2026, demande Bourama), commun à la
+  // barre de saisie et au canal en direct. La préférence par défaut du créateur
+  // (modeleChoisi) n'est appliquée qu'une fois, tant que rien n'a été choisi.
+  const { modeleId: modeleStocke } = useReglagesProchainMessage();
+  const modeleInitialAppliqueRef = useRef(false);
+  if (!modeleInitialAppliqueRef.current) {
+    modeleInitialAppliqueRef.current = true;
+    if (modeleStocke === null && modeleChoisi !== null) definirModeleProchainMessage(modeleChoisi);
+  }
+  const modeleSelectionne = modeleStocke;
+  const setModeleSelectionne = definirModeleProchainMessage;
+  // 01/10/2026 : vrai tant que le curseur est dans le champ de saisie (écran
+  // vide, voir le commentaire de l'écran de démarrage plus bas).
+  const [saisieActive, setSaisieActive] = useState(false);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
   // Correctif mobile (2026-07-30, demande Bourama) : aucun scroll auto
   // n'existait avant -- sur desktop le "scroll anchoring" natif du
@@ -152,11 +176,6 @@ export function ChatIA({
   const { activer: activerNotificationsPush } = useNotificationsPush();
   const [genEnCours, setGenEnCours] = useState(false);
   const [accesBloqueMineur, setAccesBloqueMineur] = useState(false);
-  // 25/09/2026, demande Bourama : réglage eleve_choisit_mode du code
-  // actif, remonté par SelecteurModeActif -- true par défaut (aucun code
-  // actif, ou réglage non décoché par l'enseignant), pilote la
-  // visibilité de SelecteurPersonaPedagogique dans BarreDeSaisie.
-  const [eleveChoisitMode, setEleveChoisitMode] = useState(true);
   // Rythme d'affichage du texte de réponse DÉCOUPLÉ de son arrivée
   // réseau (demande Bourama : "le streaming n'est pas contrôlé, si
   // plusieurs textes sont donnés ils s'affichent [tous d'un coup]").
@@ -624,7 +643,7 @@ export function ChatIA({
     // Voix en direct (02/10/2026) : pendant un tour demandé par la voix, on
     // garde le texte écrit de la réponse pour le lui renvoyer, sans rien
     // changer à l'affichage du chat ci-dessous.
-    if (voixEnCoursRef.current) {
+    if (voixEnCoursRef.current || tourEcritSuiviRef.current) {
       if (evenement.type === "reponse" && typeof evenement.texte === "string") texteTourVoixRef.current += evenement.texte;
       else if (evenement.type === "reponse_annulee") texteTourVoixRef.current = "";
     }
@@ -831,6 +850,10 @@ export function ChatIA({
   // de la réponse de Clovis pour ce tour (voir l'effet plus bas).
   const voixEnCoursRef = useRef<DemandeVoixEnAttente | null>(null);
   const texteTourVoixRef = useRef("");
+  // Tour déclenché par un message tapé (pas par la voix) : on garde aussi le
+  // texte de la réponse pour que la voix, si elle est active, en dise l'essentiel.
+  const tourEcritSuiviRef = useRef(false);
+  const voixDirecte = useContext(ContexteVoixDirecte);
   const ctxChatCanal = useContext(ContexteChat);
   const nbMessagesEnAttenteCanal = ctxChatCanal?.nbMessagesEnAttente ?? 0;
   // Canal en direct, suite (19/09/2026, decision Bourama : "dès que le
@@ -844,7 +867,12 @@ export function ChatIA({
     if (!ctxChatCanal || nbMessagesEnAttenteCanal === 0) return;
     if (genEnCours || affichageEnCours || accesBloqueMineur) return;
     const texte = ctxChatCanal.prendreMessageEnAttente();
-    if (texte) void envoyerMessage(texte, "moyenne", []);
+    if (texte) {
+      // Réglages du prochain message communs avec le canal (03/10/2026, demande Bourama).
+      const reglages = lireReglagesProchainMessage();
+      void envoyerMessage(texte, reglages.longueur, [], null, [], false, reglages.sansEnseignant);
+      consommerReglagesUniquesProchainMessage();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbMessagesEnAttenteCanal, genEnCours, affichageEnCours, accesBloqueMineur]);
 
@@ -856,6 +884,18 @@ export function ChatIA({
   // libre, comme la file du canal.
   const enregistrerChatPourVoix = ctxChatCanal?.enregistrerChatPourVoix;
   useEffect(() => enregistrerChatPourVoix?.(conversationId), [enregistrerChatPourVoix, conversationId]);
+  // La voix reste liée à la conversation affichée : elle s'arrête quand on
+  // change de conversation ou quand le chat se ferme. Ici et non dans la barre
+  // de saisie, qui est remontée au premier message (écran d'accueil puis
+  // conversation) : la voix lancée depuis l'accueil se coupait alors dès
+  // l'envoi de la première demande et fermait son plein écran.
+  const fermerVoixPourConversation = voixDirecte?.fermerPourConversation;
+  useEffect(() => () => fermerVoixPourConversation?.(conversationId), [conversationId, fermerVoixPourConversation]);
+  // Recopie la conversation pour que le canal et la voix la poursuivent à
+  // l'identique quand ce chat est masqué ou fermé (tours directs).
+  useEffect(() => {
+    if (conversationId && !genEnCours) ecrireEtatDepuisChat(conversationId, messages);
+  }, [conversationId, messages, genEnCours]);
   const nbDemandesVoix = ctxChatCanal?.nbDemandesVoixEnAttente ?? 0;
   useEffect(() => {
     if (!ctxChatCanal || nbDemandesVoix === 0) return;
@@ -874,9 +914,11 @@ export function ChatIA({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbDemandesVoix, genEnCours, affichageEnCours, accesBloqueMineur]);
 
-  // Minuteurs du chat (20/09/2026, demande Bourama). Tant que ce chat est
-  // ouvert, il peut recevoir la fin d'un minuteur (sans lui, le serveur
-  // envoie une notification à la place, voir core/minuteurs.py). Quand un
+  // Minuteurs (20/09/2026, demande Bourama). Tant que ce chat est monté, il
+  // peut recevoir la fin d'un minuteur. Depuis le 03/10/2026, s'il n'est pas à
+  // l'écran et que le canal en direct est actif, c'est le canal et sa bulle qui
+  // prennent le relais (voir lib/contexteMinuteurs.tsx) ; sans chat ni canal,
+  // le serveur envoie une notification (voir core/minuteurs.py). Quand un
   // minuteur se termine, on envoie à Clovis un message AUTOMATIQUE, jamais
   // affiché comme une bulle de l'étudiant, qui lui rappelle ce qu'il avait
   // prévu de faire : sa réponse apparaît ensuite normalement dans la
@@ -889,7 +931,7 @@ export function ChatIA({
     if (!ctxMinuteurs || nbFinsMinuteurs === 0) return;
     if (genEnCours || affichageEnCours || accesBloqueMineur) return;
     const fin = ctxMinuteurs.prendreFinEnAttente();
-    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, null, false, false, [], true);
+    if (fin) void envoyerMessage(texteMessageAutomatique(fin), "moyenne", [], null, [], false, false, [], true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbFinsMinuteurs, genEnCours, affichageEnCours, accesBloqueMineur]);
 
@@ -898,7 +940,7 @@ export function ChatIA({
     longueur: LongueurReponse,
     fichiers: File[],
     localisation: LocalisationJointe = null,
-    texteColle: string | null = null,
+    textesColles: string[] = [],
     rechercheForcee: boolean = false,
     sansEnseignant: boolean = false,
     // Zip(s) dont le dézipage a démarré dès la sélection (26/09/2026,
@@ -930,7 +972,7 @@ export function ChatIA({
     // seul, sans fichier joint) : reprendreAgent ne gère pas encore
     // l'upload de fichiers sur ce chemin, voir sa docstring.
     const dernierMessage = messages[messages.length - 1];
-    if (!automatique && dernierMessage?.repriseDisponible && fichiers.length === 0 && !texteColle) {
+    if (!automatique && dernierMessage?.repriseDisponible && fichiers.length === 0 && textesColles.length === 0) {
       await reprendreAgent(messages.length - 1, texte);
       return;
     }
@@ -942,26 +984,27 @@ export function ChatIA({
     // fois par appareil, jamais si déjà répondu avant".
     if (!automatique) proposerNotificationsPushUneFois(activerNotificationsPush);
 
-    const typeDeFichier = (f: File): "image" | "document" | "video" | "audio" | "zip" =>
-      f.type.startsWith("image/")
-        ? "image"
-        : f.type.startsWith("video/")
-        ? "video"
-        : f.type.startsWith("audio/")
-        ? "audio"
-        : f.type === "application/zip" || f.type === "application/x-zip-compressed" || f.name.toLowerCase().endsWith(".zip")
-        ? "zip"
-        : "document";
-
     const messageUtilisateur: MessageAffiche = {
       id: null,
       role: "user",
       content: texte,
       created_at: new Date().toISOString(),
       automatique: automatique || undefined,
-      piecesJointes: fichiers.length
-        ? fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) }))
-        : null,
+      // Le texte collé reste visible dans le message après l'envoi, comme une
+      // pièce jointe de type "texte" (ligne défilable, ouverture en lecture
+      // seule), au lieu de disparaître une fois parti avec le message.
+      piecesJointes:
+        fichiers.length || textesColles.length
+          ? [
+              ...fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) })),
+              ...textesColles.map((contenu) => ({
+                nom: "Texte collé",
+                type: "texte" as const,
+                contenu,
+                langage: detecterLangageCode(contenu),
+              })),
+            ]
+          : null,
     };
     // Ajouté 15/09/2026 (demande Bourama) : avant, seul le texte final
     // (role/content) partait au backend -- tout résultat d'outil obtenu à
@@ -1049,59 +1092,12 @@ export function ChatIA({
     // plus faire échouer tout le message si une image valide l'accompagne.
     const imageUrls: string[] = [];
     const imagesBase64: string[] = [];
-    let texteEnrichi = texteColle ? `${texte}\n\n[Texte collé joint]\n${texteColle}` : texte;
+    let texteEnrichi = texte + textesColles.map((contenu) => `\n\n[Texte collé joint]\n${contenu}`).join("");
 
     if (fichiers.length) {
-      const resultats = await Promise.allSettled(
-        fichiers.map(async (fichier) => {
-          const type = typeDeFichier(fichier);
-          if (type === "image") {
-            const url = await uploaderImageChat(fichier);
-            // Le lien réel doit aussi être en TEXTE dans le message, pas
-            // seulement envoyé à part pour l'analyse visuelle (image_url) --
-            // sinon l'IA "voit" l'image via la vision mais n'a jamais son
-            // adresse réelle en mémoire, et invente un lien si on la lui
-            // redemande plus tard (repéré en test réel, 2026-07-23).
-            return { imageUrl: url, texteBloc: `\n\n[Image jointe : ${url}]` };
-          }
-          if (type === "audio") {
-            const { texte: texteAudio, url: urlAudio } = await transcrireAudioChat(fichier);
-            const lienAudio = urlAudio ? `\n[Lien réel du fichier : ${urlAudio}]` : "";
-            return { texteBloc: `\n\n[Audio joint : ${fichier.name} -- transcription]\n${texteAudio}${lienAudio}` };
-          }
-          if (type === "zip") {
-            // Rien à uploader ici : le dézipage a déjà démarré dès la
-            // sélection (voir BarreDeSaisie.tsx:ajouterFichiers), et le
-            // job_id correspondant part directement dans zipsEnAttente
-            // (voir plus bas, payload /api/chat) -- core/main.py:chat()
-            // termine lui-même le travail restant et injecte le sommaire
-            // côté serveur (voir core/zip_chat.py). Seul un repère textuel
-            // léger est ajouté ici, pour que le chip pièce jointe survive
-            // au rechargement de la page (voir BulleMessage.tsx,
-            // MARQUEURS_PIECE_JOINTE) -- volontairement AUCUN contenu de
-            // fichier n'est injecté dans le message visible.
-            return { texteBloc: `\n\n[Archive jointe : ${fichier.name}]` };
-          }
-          if (type === "video") {
-            const { transcript, frames_base64, url: urlVideo } = await uploaderVideoChat(fichier);
-            const lienVideo = urlVideo ? `\n[Lien réel du fichier : ${urlVideo}]` : "";
-            const texteBloc = transcript
-              ? `\n\n[Vidéo jointe : ${fichier.name} -- transcription audio]\n${transcript}${lienVideo}`
-              : `\n\n[Vidéo jointe : ${fichier.name} -- pas de son exploitable, images seules]${lienVideo}`;
-            return { texteBloc, imagesBase64: frames_base64.length ? frames_base64 : undefined };
-          }
-          const { texte: texteDocument, tronque, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
-          const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";
-          // Aperçu PDF (25/07) : lien séparé, volontairement en .pdf --
-          // FichierChip.tsx détecte l'extension et affiche automatiquement
-          // le visualiseur PDF intégré pour ce lien, sans aucun changement
-          // nécessaire dans FichierChip.tsx lui-même (voir core/conversion_pdf.py).
-          const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
-          return {
-            texteBloc: `\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`,
-          };
-        })
-      );
+      // Envoi et préparation de chaque fichier : lib/preparerPiecesJointes.ts (partagé
+      // avec le canal en direct). Les commentaires détaillés sont restés là bas.
+      const resultats = await traiterFichiersJoints(fichiers);
 
       const echecs: { nom: string; typeFichier: "image" | "document" | "video" | "audio" | "zip"; detail: string }[] = [];
       resultats.forEach((resultat, index) => {
@@ -1139,7 +1135,7 @@ export function ChatIA({
         );
       }
 
-      if (echecs.length === fichiers.length && !texte.trim() && !texteColle) {
+      if (echecs.length === fichiers.length && !texte.trim() && textesColles.length === 0) {
         // Cas limite : absolument aucun fichier n'a pu être traité, et pas
         // de texte à côté pour porter le message quand même -- rien
         // d'utile à envoyer au modèle.
@@ -1154,6 +1150,11 @@ export function ChatIA({
         setGenEnCours(false);
         return;
       }
+    }
+
+    if (!automatique && !voixEnCoursRef.current) {
+      texteTourVoixRef.current = "";
+      tourEcritSuiviRef.current = true;
     }
 
     try {
@@ -1214,10 +1215,14 @@ export function ChatIA({
           // change le defaut, voir modeleSelectionne plus haut. Revalide
           // cote backend avant d'etre honore (api/chat.py:_resoudre_modele_force).
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : effort de reflexion de DeepSeek, lu au
+          // moment de l'envoi. Revalide cote backend (none, low, high, max).
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
+      if (tourEcritSuiviRef.current) voixDirecte?.annoncerReponse(conversationId, texteTourVoixRef.current);
     } catch (e) {
       reinitialiserAffichageControle();
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1240,6 +1245,10 @@ export function ChatIA({
     } finally {
       controleurAbandonRef.current = null;
       setGenEnCours(false);
+      if (tourEcritSuiviRef.current) {
+        tourEcritSuiviRef.current = false;
+        texteTourVoixRef.current = "";
+      }
       // Correctif 12/09/2026 (voir appliquerEvenementOutil, cas
       // "raisonnement") : si le tout dernier événement de la génération
       // était un raisonnement mis en file (texte précédent encore en
@@ -1315,6 +1324,8 @@ export function ChatIA({
           canal_en_direct: canalEnDirectActif,
           message_automatique: messageUtilisateur.automatique === true,
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -1413,6 +1424,8 @@ export function ChatIA({
           natif,
           canal_en_direct: canalEnDirectActif,
           modele: modeleSelectionne,
+          // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
+          effort_reflexion: lireReglagesProchainMessage().effort,
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -1502,6 +1515,32 @@ export function ChatIA({
     envoyerMessage("Continue exactement où tu t'es arrêté, sans tout reprendre depuis le début.", "moyenne", []);
   }
 
+  // Canal en direct (02/10/2026, demande Bourama : bouton arrêter) : tant que ce
+  // chat est monté, sa génération est visible du canal (lib/tacheCanal.ts), qui
+  // peut l'arrêter, la continuer ou la relancer comme le fait ce bandeau. La ref
+  // garde les versions à jour des fonctions sans réenregistrer à chaque rendu.
+  const actionsTacheCanalRef = useRef({
+    arreter: () => {},
+    continuer: () => {},
+    reessayer: () => {},
+  });
+  actionsTacheCanalRef.current = {
+    arreter: arreterGeneration,
+    continuer: continuerApresInterruption,
+    reessayer: () => regenererDepuis(messages.length - 1),
+  };
+  const derniereReponseInterrompue = !genEnCours && messages.length > 1 && messages[messages.length - 1]?.interrompue === true;
+  useEffect(() => {
+    mettreAJourSourceTache("chat", {
+      enCours: genEnCours,
+      interrompue: derniereReponseInterrompue,
+      arreter: () => actionsTacheCanalRef.current.arreter(),
+      continuer: () => actionsTacheCanalRef.current.continuer(),
+      reessayer: () => actionsTacheCanalRef.current.reessayer(),
+    });
+  }, [genEnCours, derniereReponseInterrompue]);
+  useEffect(() => () => retirerSourceTache("chat"), []);
+
   // Bouton "Modifier" du bandeau (choix Bourama, 20/09/2026, parmi les
   // deux lectures possibles) : reprend le message UTILISATEUR précédent
   // pour correction, exactement comme le crayon habituel sur ce message,
@@ -1588,12 +1627,17 @@ export function ChatIA({
   // bas dans ce fichier.
   if (messages.length === 0) {
     return (
-      <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center px-4">
-        {/* Minuteurs (20/09/2026) : visibles aussi sur l'écran d'accueil, par exemple un minuteur lancé dans une conversation précédente. */}
-        <div className="absolute inset-x-0 top-0">
-          <DockMinuteurs conversationId={conversationId} />
-        </div>
-        <div className="w-full max-w-xl animate-dj-fade-up">
+      <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0">
+        {/* 01/10/2026, demande Bourama (raccourcis, voir RaccourcisChat.tsx).
+            Le centrage vertical passe de justify-center à trois espaceurs
+            dont la croissance s'anime : sur PC rien ne change (titre + barre
+            toujours centrés). Sur mobile, avec les raccourcis : tant que
+            l'étudiant n'écrit pas, la barre reste en bas avec la liste
+            au-dessus et le titre au milieu de la place libre ; dès qu'il
+            clique pour écrire, la barre monte au milieu avec le titre et la
+            liste se replie. Sans raccourcis (popup mini), centré comme avant. */}
+        <div className="flex min-h-0 w-full max-w-xl flex-1 flex-col animate-dj-fade-up">
+          <div className="shrink-0 grow basis-0" />
           {titreAccueil ? (
             <div className="mb-8 flex flex-col items-center text-center">
               <div className="flex items-center gap-3">
@@ -1612,28 +1656,45 @@ export function ChatIA({
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
           )}
-          {/* Mode actif (Partie 6, 06/09) : rendu fixe sur mobile (peu
-              importe l'emplacement DOM), juste au-dessus de la barre de
-              saisie sur PC -- voir SelecteurModeActif.tsx. */}
-          <SelecteurModeActif
-            conversationId={conversationId}
-            onAccesBloqueChange={setAccesBloqueMineur}
-            onEleveChoisitModeChange={setEleveChoisitMode}
+          <div
+            className={
+              "shrink-0 basis-0 transition-[flex-grow] duration-300 ease-cgpt-doux " +
+              (!raccourcis || saisieActive ? "grow-0" : "grow md:grow-0")
+            }
           />
-          <BarreDeSaisie
-            onEnvoyer={envoyerMessage}
-            desactive={genEnCours || affichageEnCours || accesBloqueMineur}
-            genererEnCours={genEnCours}
-            onArreter={arreterGeneration}
-            agentId={agentId}
-            texteInitial={texteInitial}
-            modelesDisponibles={modelesDisponibles}
-            modeleSelectionne={modeleSelectionne}
-            onModeleChange={setModeleSelectionne}
-            boutonSansEnseignant={boutonSansEnseignant}
-            outilsActifsAgent={outilsActifsAgent}
-            conversationId={conversationId}
-            eleveChoisitMode={eleveChoisitMode}
+          {raccourcis && <RaccourcisChat variante="mobile" visible={!saisieActive} />}
+          <div
+            onFocusCapture={(e) => {
+              if (e.target instanceof HTMLTextAreaElement) setSaisieActive(true);
+            }}
+            onBlurCapture={(e) => {
+              if (e.target instanceof HTMLTextAreaElement && !e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setSaisieActive(false);
+              }
+            }}
+          >
+            <BarreDeSaisie
+              onEnvoyer={envoyerMessage}
+              desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+              genererEnCours={genEnCours}
+              onArreter={arreterGeneration}
+              agentId={agentId}
+              texteInitial={texteInitial}
+              modelesDisponibles={modelesDisponibles}
+              modeleSelectionne={modeleSelectionne}
+              onModeleChange={setModeleSelectionne}
+              boutonSansEnseignant={boutonSansEnseignant}
+              outilsActifsAgent={outilsActifsAgent}
+              conversationId={conversationId}
+              onAccesBloqueChange={setAccesBloqueMineur}
+            />
+          </div>
+          {raccourcis && <RaccourcisChat variante="bureau" />}
+          <div
+            className={
+              "shrink-0 basis-0 transition-[flex-grow] duration-300 ease-cgpt-doux " +
+              (!raccourcis || saisieActive ? "grow" : "grow-0 md:grow")
+            }
           />
         </div>
       </div>
@@ -1670,13 +1731,9 @@ export function ChatIA({
     // largeur disponible, et la colonne de texte (48rem au plus) est
     // recréée par le remplissage latéral de la zone de défilement, avec le
     // même résultat visuel qu'avant pour le texte. L'espace libre de chaque
-    // côté sert aux tableaux et blocs de code plus larges que le texte. Le
-    // dock des minuteurs et la barre de saisie gardent, eux, leur propre
-    // colonne de 48rem centrée.
+    // côté sert aux tableaux et blocs de code plus larges que le texte. La
+    // barre de saisie garde, elle, sa propre colonne de 48rem centrée.
     <div className="relative flex h-full w-full flex-col">
-      <div className="mx-auto w-full max-w-3xl flex-none">
-        <DockMinuteurs conversationId={conversationId} />
-      </div>
       <div
         ref={conteneurMessagesRef}
         data-zone-chat
@@ -1825,13 +1882,6 @@ export function ChatIA({
           app/globals.css). Retiré : --safe-bottom seul couvre le vrai
           besoin (la zone système du bas). */}
       <div className="mx-auto w-full max-w-3xl px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]">
-        {/* Mode actif (Partie 6, 06/09) : voir le commentaire équivalent
-            dans la branche d'accueil ci-dessus. */}
-        <SelecteurModeActif
-          conversationId={conversationId}
-          onAccesBloqueChange={setAccesBloqueMineur}
-          onEleveChoisitModeChange={setEleveChoisitMode}
-        />
         <BarreDeSaisie
           onEnvoyer={envoyerMessage}
           desactive={genEnCours || affichageEnCours || accesBloqueMineur}
@@ -1844,7 +1894,7 @@ export function ChatIA({
           boutonSansEnseignant={boutonSansEnseignant}
           outilsActifsAgent={outilsActifsAgent}
           conversationId={conversationId}
-          eleveChoisitMode={eleveChoisitMode}
+          onAccesBloqueChange={setAccesBloqueMineur}
         />
       </div>
 

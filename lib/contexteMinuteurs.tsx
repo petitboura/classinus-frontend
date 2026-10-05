@@ -19,11 +19,22 @@
 // calcule lui même (voir lib/useSecondeCourante.ts), pour que le chat ne
 // se redessine pas à chaque seconde.
 //
-// Tant qu'aucun chat n'est ouvert, la fin n'est PAS prise en charge : le
-// serveur envoie alors une notification (core/minuteurs.py) et la fin sera
-// prise en charge à l'ouverture du chat.
+// Qui reçoit la fin d'un minuteur (03/10/2026, demande Bourama) :
+//  - un chat est à l'écran : Classinus répond dans ce chat ;
+//  - sinon, si le canal en direct est actif : le canal et sa bulle prennent le
+//    relais (Classinus fait et dit la suite prévue dans la bulle, à voix haute
+//    si la voix est allumée) ;
+//  - sinon, si un chat est monté mais caché : la fin attend dans ce chat ;
+//  - sinon (ni chat ni canal) : la fin n'est PAS prise en charge, le serveur
+//    envoie une notification (core/minuteurs.py) et elle sera prise en charge
+//    à l'ouverture du chat.
+// Le canal n'est jamais activé de force : il partage l'écran, c'est un choix
+// de l'étudiant.
 
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { envoyerMessageAutomatiqueCanal } from "@/lib/canalAgentApplicatif";
+import { canalEnDirectEstActif, ecouterActivationCanal } from "@/lib/contexteCanalEnDirect";
+import { etatChatAffiche } from "@/lib/conversationPartagee";
 import { messageErreur } from "@/lib/erreurs";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import {
@@ -34,6 +45,7 @@ import {
   lancerMinuteur,
   listerMinuteurs,
   terminerMinuteur,
+  texteMessageAutomatique,
   type Minuteur,
 } from "@/lib/minuteurs";
 
@@ -48,7 +60,7 @@ export type ValeurMinuteurs = {
   /** Nombre de fins de minuteur prises en charge et pas encore envoyées à Clovis. */
   nbFinsEnAttente: number;
   erreur: string | null;
-  lancer: (dureeSecondes: number, options?: { titre?: string; conversationId?: string }) => Promise<void>;
+  lancer: (dureeSecondes: number, options?: { titre?: string; conversationId?: string; actionFin?: string }) => Promise<void>;
   ajuster: (id: string, deltaSecondes: number) => Promise<void>;
   arreter: (id: string) => Promise<void>;
   /** Retire et renvoie la prochaine fin à transmettre à Clovis, ou null. */
@@ -65,6 +77,9 @@ export function useFournirMinuteurs(connecte: boolean): ValeurMinuteurs {
   const [nbFinsEnAttente, setNbFinsEnAttente] = useState(0);
   const [erreur, setErreur] = useState<string | null>(null);
   const [nbChatsOuverts, setNbChatsOuverts] = useState(0);
+  // Le canal en direct est-il activé : s'il l'est, la fin d'un minuteur peut être
+  // prise en charge même sans chat monté (le canal prend alors le relais).
+  const [canalActif, setCanalActif] = useState(false);
 
   const finsEnAttenteRef = useRef<Minuteur[]>([]);
   const dejaPrisEnCharge = useRef<Set<string>>(new Set());
@@ -86,6 +101,11 @@ export function useFournirMinuteurs(connecte: boolean): ValeurMinuteurs {
       delais.clear();
       if (delaiErreur.current) clearTimeout(delaiErreur.current);
     };
+  }, []);
+
+  useEffect(() => {
+    setCanalActif(canalEnDirectEstActif());
+    return ecouterActivationCanal(setCanalActif);
   }, []);
 
   const signalerErreur = useCallback((e: unknown) => {
@@ -152,6 +172,11 @@ export function useFournirMinuteurs(connecte: boolean): ValeurMinuteurs {
     [planifier]
   );
 
+  const mettreFinEnFile = useCallback((minuteur: Minuteur) => {
+    finsEnAttenteRef.current = [...finsEnAttenteRef.current, minuteur];
+    setNbFinsEnAttente(finsEnAttenteRef.current.length);
+  }, []);
+
   const prendreEnChargeFin = useCallback(
     async (minuteur: Minuteur) => {
       if (dejaPrisEnCharge.current.has(minuteur.id)) return;
@@ -166,8 +191,16 @@ export function useFournirMinuteurs(connecte: boolean): ValeurMinuteurs {
           return;
         }
         if (reponse.a_traiter) {
-          finsEnAttenteRef.current = [...finsEnAttenteRef.current, reponse.minuteur];
-          setNbFinsEnAttente(finsEnAttenteRef.current.length);
+          if (!etatChatAffiche().visible && canalEnDirectEstActif()) {
+            // Aucun chat à l'écran mais le canal est actif : il prend le relais.
+            // Si le tour ne peut pas partir (réseau...), la fin reste en file
+            // pour le chat plutôt que d'être perdue.
+            void envoyerMessageAutomatiqueCanal(texteMessageAutomatique(reponse.minuteur)).then((ok) => {
+              if (!ok) mettreFinEnFile(reponse.minuteur);
+            });
+          } else {
+            mettreFinEnFile(reponse.minuteur);
+          }
         }
         marquerFini(reponse.minuteur);
       } catch {
@@ -176,13 +209,14 @@ export function useFournirMinuteurs(connecte: boolean): ValeurMinuteurs {
         dejaPrisEnCharge.current.delete(minuteur.id);
       }
     },
-    [charger, marquerFini, planifier]
+    [charger, marquerFini, mettreFinEnFile, planifier]
   );
 
   // Réveil à l'instant exact où le prochain minuteur arrive à zéro, et
-  // seulement si un chat est ouvert pour recevoir la suite.
+  // seulement si un chat est monté ou le canal en direct actif pour recevoir
+  // la suite.
   useEffect(() => {
-    if (nbChatsOuverts === 0) return;
+    if (nbChatsOuverts === 0 && !canalActif) return;
     const enCours = minuteurs.filter((m) => m.statut === "en_cours" && !dejaPrisEnCharge.current.has(m.id));
     if (enCours.length === 0) return;
     const maintenant = () => Date.now() + decalageMs;
@@ -194,14 +228,15 @@ export function useFournirMinuteurs(connecte: boolean): ValeurMinuteurs {
       }
     }, delai);
     return () => clearTimeout(id);
-  }, [minuteurs, decalageMs, nbChatsOuverts, prendreEnChargeFin]);
+  }, [minuteurs, decalageMs, nbChatsOuverts, canalActif, prendreEnChargeFin]);
 
   const lancer = useCallback(
-    async (dureeSecondes: number, options?: { titre?: string; conversationId?: string }) => {
+    async (dureeSecondes: number, options?: { titre?: string; conversationId?: string; actionFin?: string }) => {
       try {
         const reponse = await lancerMinuteur({
           duree_secondes: dureeSecondes,
           titre: options?.titre ?? null,
+          action_fin: options?.actionFin ?? null,
           conversation_id: options?.conversationId ?? null,
         });
         setMinuteurs((prec) => [...prec.filter((m) => m.id !== reponse.minuteur.id), reponse.minuteur]);

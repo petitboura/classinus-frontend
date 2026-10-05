@@ -1357,7 +1357,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                 setErreursEnvoi([
                   {
                     nom: "Importer un dossier",
-                    erreur: "Pas encore disponible dans l'app. Utilise clovis.com depuis un navigateur en attendant.",
+                    erreur: "Pas encore disponible dans l'app. Utilise classinus.com depuis un navigateur en attendant.",
                   },
                 ]);
                 setMenuAjoutOuvert(false);

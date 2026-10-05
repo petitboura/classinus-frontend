@@ -17,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
-        "/chat",
+        "/tableau-de-bord",
         "/bureau",
         "/parametres",
         "/personnaliser",

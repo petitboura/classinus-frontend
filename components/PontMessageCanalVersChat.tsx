@@ -3,7 +3,7 @@
 // Créé le 19/09/2026, Bourama : canal en direct. Quand un message écrit ou
 // dicté par l'étudiant ne peut pas être lu par un tour de Clovis en cours
 // (aucun tour, canal fermé, message arrivé trop tard), il doit partir comme
-// un vrai message du chat. Ce composant, monté une fois dans AppShell sous
+// un vrai message du chat. Ce composant, monté une fois dans InteractionGlobale sous
 // ContexteChat, enregistre cette voie de repli : le message est déposé dans
 // la file du chat (lib/contexteChat.tsx), consommée par ChatIA dès qu'il est
 // déjà monté et ouvert.
@@ -21,6 +21,7 @@
 import { useContext, useEffect, useRef } from "react";
 import { enregistrerRepliMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { ContexteChat } from "@/lib/contexteChat";
+import { enregistrerLecteurChat } from "@/lib/conversationPartagee";
 
 export function PontMessageCanalVersChat() {
   const ctxChat = useContext(ContexteChat);
@@ -38,6 +39,12 @@ export function PontMessageCanalVersChat() {
       ctxRef.current?.deposerMessageEnAttente(texte);
     });
     return () => enregistrerRepliMessageEtudiant(null);
+  }, []);
+
+  // Dit au canal et à la voix si un chat est à l'écran et sur quelle conversation.
+  useEffect(() => {
+    enregistrerLecteurChat(() => ctxRef.current?.etatChatAffiche() ?? { visible: false, conversationId: null });
+    return () => enregistrerLecteurChat(null);
   }, []);
 
   return null;
