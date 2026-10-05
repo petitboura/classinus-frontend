@@ -226,7 +226,9 @@ Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses d
 `lib/sectionsPersonnaliser.tsx` et `lib/routesPersonnaliser.ts` (`/comportements` et `/memoire` gardent
 leurs adresses historiques hors de `/personnaliser`, seul `/skills-publics` est nouveau).
 Dans le chat, chaque groupe devient un bouton qui déplie la liste de ses pages
-(`components/MenuGroupeRail.tsx`) : au survol sur PC, au toucher dans le tiroir mobile.
+(`components/MenuGroupeRail.tsx`) : au survol sur PC (le premier clic ne change rien, le second
+entre dans la page du groupe), au toucher dans le tiroir mobile (un toucher ouvre la liste, un autre
+la referme, on entre dans une page en touchant sa ligne).
 Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
 et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
 les écrans ne les répètent pas dans leur carte.
