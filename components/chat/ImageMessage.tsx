@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { ImageOff, ExternalLink } from "lucide-react";
 import { VisionneuseImage } from "./VisionneuseImage";
+import { ContexteRangeeImages } from "./RangeeImagesContexte";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
 
 // Remplace le <img> par défaut de ReactMarkdown (![alt](url) en markdown).
@@ -23,6 +24,7 @@ export function ImageMessage({ src, alt }: { src?: string; alt?: string }) {
   const [chargee, setChargee] = useState(false);
   const [enErreur, setEnErreur] = useState(false);
   const [ouverte, setOuverte] = useState(false);
+  const rangee = useContext(ContexteRangeeImages);
 
   if (!src) return null;
 
@@ -69,7 +71,14 @@ export function ImageMessage({ src, alt }: { src?: string; alt?: string }) {
         // fichier était la seule des 4 copies déjà corrigée pour le bouton
         // "Fermer" sans onClick propre, ce correctif vit maintenant dans le
         // composant partagé.
-        <VisionneuseImage src={src} alt={alt} onFermer={() => setOuverte(false)} onTelecharger={telecharger} />
+        <VisionneuseImage
+          src={src}
+          alt={alt}
+          onFermer={() => setOuverte(false)}
+          onTelecharger={telecharger}
+          liste={rangee && rangee.length > 1 ? rangee : undefined}
+          indexInitial={rangee ? Math.max(0, rangee.findIndex((i) => i.src === src)) : 0}
+        />
       )}
     </>
   );

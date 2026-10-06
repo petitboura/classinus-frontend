@@ -64,7 +64,7 @@ export function CartesVideosBulle({ videos }: { videos?: VideoTrouvee[] }) {
   if (!cartes.length) return null;
 
   return (
-    <div className="mt-1.5 flex w-full snap-x gap-3 overflow-x-auto overscroll-x-contain pb-1 animate-dj-fade-in-rapide [scrollbar-width:thin]">
+    <div className="mt-1.5 flex w-full snap-x gap-3 overflow-x-auto overscroll-x-contain pb-1 animate-dj-fade-in-rapide">
       {cartes.map(({ video, id }) => {
         const enLecture = idEnLecture === id;
         const miniature = video.miniature || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;

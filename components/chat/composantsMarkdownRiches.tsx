@@ -28,6 +28,7 @@ import { FicheRevision } from "./FicheRevision";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { AnimationLecteur } from "./AnimationLecteur";
 import { ImageMessage } from "./ImageMessage";
+import { ContexteRangeeImages, type ImageDeRangee } from "./RangeeImagesContexte";
 import { TableauMessage } from "./TableauMessage";
 import { FichierChip, extensionFichier } from "./FichierChip";
 import { FichierCode, estFichierCodeAffichable } from "./FichierCode";
@@ -209,8 +210,14 @@ function ParagrapheMarkdown({ children }: { children?: ReactNode }) {
     (e) => !(typeof e === "string" && e.trim() === "") && !(isValidElement(e) && e.type === "br"),
   );
   if (enfants.length >= 2 && enfants.every(estMediaPlace)) {
+    const imagesDeLaRangee: ImageDeRangee[] = enfants.flatMap((e) => {
+      if (!isValidElement(e) || e.type !== ImgMarkdown) return [];
+      const props = e.props as { src?: unknown; alt?: string };
+      return typeof props.src === "string" ? [{ src: props.src, alt: props.alt }] : [];
+    });
     return (
-      <div className="my-2 flex w-full snap-x items-start gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:thin]">
+      <ContexteRangeeImages.Provider value={imagesDeLaRangee}>
+      <div className="my-2 flex w-full snap-x items-start gap-3 overflow-x-auto overscroll-x-contain pb-1">
         {enfants.map((enfant, i) => (
           <div
             key={i}
@@ -220,6 +227,7 @@ function ParagrapheMarkdown({ children }: { children?: ReactNode }) {
           </div>
         ))}
       </div>
+      </ContexteRangeeImages.Provider>
     );
   }
   return <p>{children}</p>;
