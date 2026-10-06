@@ -6,6 +6,7 @@ import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/out
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
+import { imagesNonPlacees, videosNonPlacees } from "./mediasNonPlaces";
 
 // Un outil encore en train de s'exécuter (15/09/2026, demande Bourama --
 // chantier "ligne connectrice") -- `id` correspond à id_appel émis par le
@@ -137,12 +138,20 @@ function donneesDeLigne(ligne: Ligne): DonneesLigneOutil {
 }
 
 export function OutilResultatBulle({
-  resultats,
+  resultats: resultatsBruts,
   enCours,
   groupe = false,
   peutSeReplier = true,
+  texteMessage = "",
+  reponseTerminee = true,
 }: {
   resultats?: ResultatOutil[];
+  // Texte de la réponse et fin de génération : les vidéos et images que le
+  // modèle a déjà placées dans sa réponse ne sont pas répétées sous le
+  // message, seules celles qu'il a oublié de placer s'affichent, une fois la
+  // réponse terminée.
+  texteMessage?: string;
+  reponseTerminee?: boolean;
   // Outils encore en train de s'exécuter, à afficher DANS la même colonne
   // icône/ligne que les outils déjà terminés (15/09/2026, demande
   // Bourama) -- peu importe le mélange (que des en cours, que des
@@ -169,6 +178,12 @@ export function OutilResultatBulle({
   peutSeReplier?: boolean;
 }) {
   const { outils, verbes } = useOutilsRegistre();
+
+  const resultats = resultatsBruts?.map((r) => ({
+    ...r,
+    images: imagesNonPlacees(r.images, texteMessage, reponseTerminee),
+    videos: videosNonPlacees(r.videos, texteMessage, reponseTerminee),
+  }));
 
   // Rangées unifiées, terminés puis en cours (ordre d'arrivée réel : un
   // outil encore en cours est forcément plus récent que tout outil déjà

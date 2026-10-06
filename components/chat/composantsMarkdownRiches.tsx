@@ -16,7 +16,7 @@
 // de l'application et ne change jamais. Les valeurs qui varient passent par
 // des contextes : un contexte qui change remet à jour les composants sans
 // jamais les démonter.
-import { createContext, isValidElement, useContext, type ReactNode } from "react";
+import { Children, createContext, isValidElement, useContext, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { BlocCode } from "./BlocCode";
 import { Mermaid } from "./Mermaid";
@@ -33,7 +33,7 @@ import { FichierChip, extensionFichier } from "./FichierChip";
 import { FichierCode, estFichierCodeAffichable } from "./FichierCode";
 import { LecteurMedia, typeMedia } from "./LecteurMedia";
 import { NoteTexteChip, estNoteTexteBibliotheque } from "./NoteTexteChip";
-import { LinkPreview } from "./LinkPreview";
+import { LinkPreview, idYoutube } from "./LinkPreview";
 import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { texteBrut } from "./texteBrut";
 import { Skeleton } from "../Skeleton";
@@ -192,6 +192,39 @@ function LienMarkdown({ href, children }: { href?: string; children?: ReactNode 
   );
 }
 
+// Plusieurs vidéos YouTube ou images écrites à la suite par le modèle (sans
+// ligne vide entre elles) forment une rangée : chaque élément garde sa taille
+// et l'utilisateur fait défiler à gauche et à droite. Un média seul garde son
+// affichage normal. Un div remplace le paragraphe pour rester un HTML valide.
+function estMediaPlace(enfant: ReactNode): boolean {
+  if (!isValidElement(enfant)) return false;
+  const props = enfant.props as { href?: string; src?: unknown };
+  if (enfant.type === ImgMarkdown) return typeof props.src === "string";
+  if (enfant.type === LienMarkdown) return typeof props.href === "string" && idYoutube(props.href) !== null;
+  return false;
+}
+
+function ParagrapheMarkdown({ children }: { children?: ReactNode }) {
+  const enfants = Children.toArray(children).filter(
+    (e) => !(typeof e === "string" && e.trim() === "") && !(isValidElement(e) && e.type === "br"),
+  );
+  if (enfants.length >= 2 && enfants.every(estMediaPlace)) {
+    return (
+      <div className="my-2 flex w-full snap-x items-start gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:thin]">
+        {enfants.map((enfant, i) => (
+          <div
+            key={i}
+            className={`shrink-0 snap-start ${isValidElement(enfant) && enfant.type === ImgMarkdown ? "" : "w-72 sm:w-80"}`}
+          >
+            {enfant}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <p>{children}</p>;
+}
+
 // Créé une seule fois et jamais recréé : c'est ce qui garde chaque élément
 // riche monté pendant toute la génération du message.
 export const COMPOSANTS_MARKDOWN = {
@@ -200,4 +233,5 @@ export const COMPOSANTS_MARKDOWN = {
   img: ImgMarkdown,
   table: TableMarkdown,
   a: LienMarkdown,
+  p: ParagrapheMarkdown,
 };

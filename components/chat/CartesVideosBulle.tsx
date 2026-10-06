@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Play, X } from "lucide-react";
 
-// Cartes des vidéos trouvées par l'outil rechercher_video (06/10/2026, demande
-// Bourama), rendues par OutilResultatBulle.tsx et LigneOutil.tsx au même
-// endroit que la galerie d'images. Toujours visibles : les cartes sont le
-// résultat que l'utilisateur est venu chercher.
+// Filet de sécurité des vidéos trouvées par l'outil rechercher_video : le
+// modèle place normalement les liens lui même dans sa réponse (rendus en
+// grandes cartes par LinkPreview.tsx). Ces cartes ne s'affichent que pour les
+// vidéos qu'il a oublié de placer, sous le message, en une rangée où chaque
+// carte garde sa taille et se fait défiler à gauche et à droite.
 //
 // Un clic sur une carte lance la lecture sur place, dans la carte elle même,
 // avec le lecteur officiel de YouTube (même principe que LinkPreview.tsx pour
@@ -63,14 +64,14 @@ export function CartesVideosBulle({ videos }: { videos?: VideoTrouvee[] }) {
   if (!cartes.length) return null;
 
   return (
-    <div className="mt-1.5 grid w-full grid-cols-1 gap-2 animate-dj-fade-in-rapide sm:grid-cols-2">
+    <div className="mt-1.5 flex w-full snap-x gap-3 overflow-x-auto overscroll-x-contain pb-1 animate-dj-fade-in-rapide [scrollbar-width:thin]">
       {cartes.map(({ video, id }) => {
         const enLecture = idEnLecture === id;
         const miniature = video.miniature || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
         return (
           <div
             key={id}
-            className="min-w-0 overflow-hidden rounded-cgpt-bouton border border-dj-bordure bg-dj-surface"
+            className="w-72 shrink-0 snap-start overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface sm:w-80"
           >
             {enLecture ? (
               <LecteurSurPlace idVideo={id} titre={video.titre} onFermer={() => setIdEnLecture(null)} />
