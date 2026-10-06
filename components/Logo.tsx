@@ -1,17 +1,21 @@
 // Logo = la vraie image de la plume dorée (05/10/2026, demande de Bourama).
 // Remplace l'ancienne plume dessinée en code (tracés SVG + dégradé piloté
-// par les variables --dj-logo-*). Le fichier public/logo-classinus.webp a
-// les coins transparents : le logo n'est jamais un carré à angles droits.
+// par les variables de couleur dj-logo).
 //
-// Même signature qu'avant (`taille` en pixels), donc aucun des appels
-// existants (barre latérale, connexion, chat, pages légales...) ne change.
-// Image décorative : le nom "Classinus" est toujours écrit à côté, d'où
-// l'alt vide.
-export function Logo({ taille = 40 }: { taille?: number }) {
+// Deux versions de la même image :
+// - par défaut, public/logo-classinus.webp : la plume sur sa tuile sombre
+//   aux coins arrondis transparents (jamais un carré à angles droits) ;
+// - avec `sansFond`, public/logo-classinus-sans-fond.webp : la plume seule,
+//   fond transparent, recadrée sur la plume. Utilisée dans l'appli (menu,
+//   connexion, chat), où la tuile sombre jurerait avec le thème clair.
+//
+// `taille` est en pixels. Image décorative : le nom "Classinus" est toujours
+// écrit à côté, d'où l'alt vide.
+export function Logo({ taille = 40, sansFond = false }: { taille?: number; sansFond?: boolean }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/logo-classinus.webp"
+      src={sansFond ? "/logo-classinus-sans-fond.webp" : "/logo-classinus.webp"}
       width={taille}
       height={taille}
       alt=""

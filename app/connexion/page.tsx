@@ -40,7 +40,7 @@ export default function PageConnexion() {
         <EcranAutonome className="flex min-h-screen items-center justify-center px-4">
           <div className="w-full max-w-sm" aria-hidden>
             <div className="mb-8 flex items-center justify-center gap-2.5">
-              <Logo taille={32} />
+              <Logo taille={32} sansFond />
               <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
                 <span className="text-dj-accent-1-texte">Classinus</span>
               </span>
@@ -112,7 +112,7 @@ function FormulaireConnexion() {
     <EcranAutonome className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm animate-dj-fade-up">
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          <Logo taille={32} />
+          <Logo taille={32} sansFond />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
             <span className="text-dj-accent-1-texte">Classinus</span>
           </span>

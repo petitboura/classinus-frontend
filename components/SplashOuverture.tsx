@@ -18,14 +18,28 @@
 // app/layout.tsx pour la disparition : elle attend la fin réelle de
 // cette animation ET que l'appli soit prête.
 //
-// Image : public/logo-classinus.webp, coins transparents. Le conteneur
-// reprend le même arrondi (22%) pour que le reflet reste à l'intérieur de
-// la forme du logo.
+// Thème (05/10/2026, demande de Bourama) : l'animation montre la plume SEULE
+// (public/logo-classinus-sans-fond.webp, fond transparent), posée sur le
+// fond du thème (bg-dj-fond, clair ou sombre) au lieu d'une tuile noire
+// qui ne s'adaptait pas. La lueur prend elle aussi sa couleur sur le thème.
+// Le reflet est découpé dans la forme de la plume avec un masque CSS
+// construit sur la même image : sans lui, il apparaîtrait comme une bande
+// rectangulaire sur le fond.
 //
 // Unité de longueur de la scène : 1px sur les écrans d'au moins 370px de
 // large, puis proportionnelle en dessous, pour que le logo et le mot
 // tiennent toujours dans l'écran.
 const UNITE = { ["--u" as string]: "min(1px, 0.27vw)" } as React.CSSProperties;
+
+// Masque qui reprend la silhouette de la plume (canal alpha de l'image).
+const MASQUE_PLUME = {
+  WebkitMaskImage: "url(/logo-classinus-sans-fond.webp)",
+  maskImage: "url(/logo-classinus-sans-fond.webp)",
+  WebkitMaskSize: "100% 100%",
+  maskSize: "100% 100%",
+  WebkitMaskRepeat: "no-repeat",
+  maskRepeat: "no-repeat",
+} as React.CSSProperties;
 
 export function SplashOuverture() {
   return (
@@ -45,24 +59,22 @@ export function SplashOuverture() {
               filter: "blur(calc(14 * var(--u)))",
             }}
           />
-          <div
-            className="relative h-full w-full overflow-hidden opacity-0 animate-[cv-logo-entree_.95s_cubic-bezier(.2,.8,.2,1)_.1s_forwards]"
-            style={{ borderRadius: "22%" }}
-          >
+          <div className="relative h-full w-full opacity-0 animate-[cv-logo-entree_.95s_cubic-bezier(.2,.8,.2,1)_.1s_forwards]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo-classinus.webp"
+              src="/logo-classinus-sans-fond.webp"
               alt=""
               aria-hidden="true"
               draggable={false}
               className="h-full w-full select-none"
             />
-            {/* Reflet qui traverse le logo. */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-y-0 left-0 w-1/3 opacity-0 animate-[cv-reflet_.9s_ease-in-out_1s_forwards]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent)" }}
-            />
+            {/* Reflet qui traverse la plume, découpé dans sa silhouette. */}
+            <div aria-hidden="true" className="absolute inset-0 overflow-hidden" style={MASQUE_PLUME}>
+              <div
+                className="absolute inset-y-0 left-0 w-1/3 opacity-0 animate-[cv-reflet_.9s_ease-in-out_1s_forwards]"
+                style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent)" }}
+              />
+            </div>
           </div>
         </div>
 
