@@ -48,7 +48,7 @@ import { ContexteVoixDirecte, type ContexteVoixDirecteValeur, type EtatVoixDirec
 import {
   marquerFenetreSuperposition,
   ecouterEtatSuperposition,
-  definirCapturerSourisSuperposition,
+  maintenirCaptureSuperposition,
   interactionsSuperposition,
   type EtatSuperposition,
   type MarqueEcranAffichee,
@@ -156,19 +156,28 @@ export default function PageAgentSuperposition() {
     interactionsSuperposition.deposerCurseur(px, py);
   }
 
-  // La capture s'active seulement au-dessus des éléments de la superposition.
-  const surElementRef = useRef(false);
+  // La capture de la souris est décidée côté Electron (suivi de la position du
+  // pointeur). Ici on signale seulement le début et la fin d'un appui sur un
+  // élément de la superposition, pour que la capture tienne pendant un
+  // glissement ou une sélection de texte, même si le pointeur sort de l'élément.
   useEffect(() => {
-    function surDeplacement(e: MouseEvent) {
-      const cible = document.elementFromPoint(e.clientX, e.clientY);
-      const surElement = !!cible?.closest('[data-agent-superposition="true"]');
-      if (surElement !== surElementRef.current) {
-        surElementRef.current = surElement;
-        definirCapturerSourisSuperposition(surElement);
-      }
+    function surAppui(e: PointerEvent) {
+      const cible = e.target instanceof Element ? e.target : null;
+      if (cible?.closest('[data-agent-superposition="true"]')) maintenirCaptureSuperposition(true);
     }
-    window.addEventListener("mousemove", surDeplacement);
-    return () => window.removeEventListener("mousemove", surDeplacement);
+    function surRelache() {
+      maintenirCaptureSuperposition(false);
+    }
+    window.addEventListener("pointerdown", surAppui, true);
+    window.addEventListener("pointerup", surRelache, true);
+    window.addEventListener("pointercancel", surRelache, true);
+    window.addEventListener("blur", surRelache);
+    return () => {
+      window.removeEventListener("pointerdown", surAppui, true);
+      window.removeEventListener("pointerup", surRelache, true);
+      window.removeEventListener("pointercancel", surRelache, true);
+      window.removeEventListener("blur", surRelache);
+    };
   }, []);
 
   const lireNiveauxVoix = useCallback(() => {

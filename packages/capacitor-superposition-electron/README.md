@@ -9,9 +9,10 @@ Clovis) et la fenetre de superposition systeme (sans bordure, transparente,
 toujours au dessus, voir `electron/main.ts`). Methodes principales : `pousserEtat`
 (fenetre principale -> superposition, avec conversion des coordonnees du
 curseur de "locales a la page" vers "absolues a l'ecran"), `envoyerInteraction`
-(superposition -> fenetre principale) et `definirCapturerSouris` (la
-superposition active/desactive elle meme son passe-clic selon ce qu'il y a
-sous le curseur). Depuis le 01/10/2026 (bouton permanent du canal, voir le Lot W du plan), la
+(superposition -> fenetre principale) et `maintenirCapture` (la
+superposition signale un appui en cours sur l'un de ses elements ; le reste
+du passe-clic est decide cote Electron par un suivi de la position du
+pointeur, sans jamais recevoir les mouvements de souris du PC). Depuis le 01/10/2026 (bouton permanent du canal, voir le Lot W du plan), la
 superposition reste affichee en permanence des que la fenetre principale a
 pousse son premier etat (`pousserEtat` avec `retirer: true` la retire), et le
 plugin expose deux methodes de plus pour le demarrage automatique avec

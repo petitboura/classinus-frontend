@@ -146,11 +146,13 @@ capacitorApp.whenReady.then(() => {
   // appli en plein ecran, pas seulement au dessus des fenetres normales.
   superposition.setAlwaysOnTop(true, 'screen-saver');
   superposition.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  // Rien capte par defaut : la page elle meme active la capture des
-  // clics uniquement la ou un element est reellement affiche (voir
-  // definirCapturerSourisSuperposition dans lib/superpositionElectron.ts,
-  // et le plugin SuperpositionAgent.definirCapturerSouris).
-  superposition.setIgnoreMouseEvents(true, { forward: true });
+  // Rien capte par defaut : le plugin SuperpositionAgent (suivreSouris dans
+  // packages/capacitor-superposition-electron/electron/src/plugin.mts) active
+  // la capture des clics uniquement quand le pointeur est au dessus d'un
+  // element reellement affiche. Volontairement SANS forward: true : avec
+  // cette option la superposition recevait tous les mouvements de souris du
+  // PC et faisait trembler la fleche au dessus des champs de saisie.
+  superposition.setIgnoreMouseEvents(true);
 
   // Correctif (29/09/2026, demande Bourama) : le plugin SuperpositionAgent
   // (packages/capacitor-superposition-electron/electron/src/plugin.mts)

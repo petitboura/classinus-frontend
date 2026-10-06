@@ -90,7 +90,7 @@ interface PluginSuperpositionAgent {
   accuserInformation(parametres: { id: string }): Promise<void>;
   pousserEtat(etat: { curseur?: Record<string, unknown>; [cle: string]: unknown }): Promise<void>;
   envoyerInteraction(action: ActionSuperposition): Promise<void>;
-  definirCapturerSouris(parametres: { capturer: boolean }): Promise<void>;
+  maintenirCapture(parametres: { maintenir: boolean }): Promise<void>;
   lireDemarrageAutomatique(): Promise<{ disponible: boolean; actif: boolean }>;
   definirDemarrageAutomatique(parametres: { actif: boolean }): Promise<void>;
   addListener(
@@ -115,12 +115,13 @@ export function definirDemarrageAutomatique(actif: boolean) {
   return SuperpositionAgent.definirDemarrageAutomatique({ actif });
 }
 
-// Contrôle le passe-clic de la fenêtre de superposition (voir
-// electron/main.ts et plugin.mts). Appelé par app/agent-superposition/page.tsx
-// depuis un hit-test sur [data-agent-superposition="true"] (attribut déjà
-// posé sur le curseur virtuel, voir components/CurseurVirtuelAgent.tsx).
-export function definirCapturerSourisSuperposition(capturer: boolean) {
-  void SuperpositionAgent.definirCapturerSouris({ capturer });
+// Garde la capture de la souris pendant un appui sur un élément de la
+// superposition (glisser le curseur, sélectionner du texte). Le reste du
+// passe-clic est décidé côté Electron (voir suivreSouris dans
+// packages/capacitor-superposition-electron/electron/src/plugin.mts) : la
+// page n'écoute plus les mouvements de souris du PC.
+export function maintenirCaptureSuperposition(maintenir: boolean) {
+  void SuperpositionAgent.maintenirCapture({ maintenir });
 }
 
 /**

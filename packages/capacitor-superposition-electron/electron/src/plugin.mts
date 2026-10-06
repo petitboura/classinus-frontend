@@ -27,12 +27,19 @@
 //   principale, qui reconnait le nom de fonction transporte et appelle la
 //   vraie fonction du contexte (voir clovis-frontend/lib/
 //   superpositionElectron.ts cote fenetre principale).
-// - definirCapturerSouris : appele par la fenetre de superposition
-//   elle-meme (hit-testing cote rendu : y a-t-il un element visuel sous le
-//   curseur en ce moment ?) pour activer/desactiver le passe-clic
-//   (setIgnoreMouseEvents), afin que la superposition ne capte les clics
-//   que la ou quelque chose est reellement affiche (voir point 1 du Lot R
-//   dans le plan).
+// - Passe-clic (setIgnoreMouseEvents) : decide ICI, dans le processus
+//   principal, par un suivi de la souris (voir suivreSouris plus bas), et
+//   non plus par la page de superposition. Avant (correctif du 06/10/2026),
+//   la superposition restait en passe-clic avec forward: true, ce qui lui
+//   faisait recevoir chaque mouvement de souris du PC entier ; sous Windows
+//   ce mode fait entrer la superposition en conflit avec la fenetre qui est
+//   dessous pour la forme du pointeur, d'ou une fleche qui tremble au
+//   dessus des champs de saisie de Classinus. Maintenant la superposition
+//   est en passe-clic simple (aucun mouvement de souris recu) et ne capte
+//   les clics que lorsque le pointeur est au dessus d'un de ses elements.
+// - maintenirCapture : appele par la fenetre de superposition pendant un
+//   appui (glisser le curseur, selectionner du texte), pour que la capture
+//   ne soit pas relachee en plein geste.
 //
 // Sciemment un pont "bete" (unknown des deux cotes) : la forme exacte de
 // l'etat/des interactions est definie et versionnee cote TypeScript
@@ -80,16 +87,99 @@ const confirmationsInformation = new Map<string, () => void>();
 let informationCurseur: { id: string; texte: string; jusqua: number } | null = null;
 let clicTraversant = false;
 let captureDemandee = false;
+let passeClicApplique: boolean | null = null;
+
+// Applique le passe-clic voulu, seulement s'il change : chaque appel a
+// setIgnoreMouseEvents coute un aller-retour vers le systeme, et en
+// enchainer sans necessite etait la source du tremblement du pointeur.
+function appliquerPasseClic(fenetre: BrowserWindow): void {
+  if (fenetre.isDestroyed()) return;
+  const traversant = clicTraversant || !captureDemandee;
+  if (passeClicApplique === traversant) return;
+  passeClicApplique = traversant;
+  fenetre.setIgnoreMouseEvents(traversant);
+}
 
 export async function avecSourisTraversante<T>(operation: () => Promise<T>): Promise<T> {
   const fenetre = trouverFenetreSuperposition();
   clicTraversant = true;
-  fenetre?.setIgnoreMouseEvents(true, { forward: true });
+  if (fenetre) appliquerPasseClic(fenetre);
   try { return await operation(); }
   finally {
     clicTraversant = false;
-    if (fenetre && !fenetre.isDestroyed()) fenetre.setIgnoreMouseEvents(!captureDemandee, { forward: true });
+    if (fenetre) appliquerPasseClic(fenetre);
   }
+}
+
+// Suivi de la souris : le processus principal lit lui meme la position du
+// pointeur et demande a la page de superposition s'il y a un de ses elements
+// dessous. La page ne recoit aucun mouvement de souris tant que rien n'est
+// capte, donc elle ne touche jamais a la forme du pointeur des autres fenetres.
+const INTERVALLE_SUIVI_SOURIS_MS = 33;
+// Garde-fou : si la fin d'un appui n'est jamais signalee (page rechargee en
+// plein geste, par exemple), la capture ne doit pas rester bloquee sur tout
+// l'ecran.
+const DUREE_MAX_MAINTIEN_CAPTURE_MS = 20000;
+const SELECTEUR_ELEMENT_SUPERPOSITION = '[data-agent-superposition="true"]';
+let minuteurSuiviSouris: ReturnType<typeof setInterval> | null = null;
+let dernierPointSouris: PointEcranLocal | null = null;
+let verificationSourisEnCours = false;
+let maintienCapture = false;
+let minuteurMaintienCapture: ReturnType<typeof setTimeout> | null = null;
+
+async function suivreSouris(): Promise<void> {
+  if (verificationSourisEnCours || maintienCapture) return;
+  const fenetre = trouverFenetreSuperposition();
+  if (!fenetre || fenetre.isDestroyed() || !fenetre.isVisible() || fenetre.webContents.isLoading()) return;
+  const point = screen.getCursorScreenPoint();
+  const immobile = dernierPointSouris !== null && dernierPointSouris.x === point.x && dernierPointSouris.y === point.y;
+  // Pointeur immobile et rien de capte : rien n'a pu changer, on ne
+  // sollicite pas la page. Si la capture est active, on continue de verifier
+  // (un element peut disparaitre sous un pointeur qui ne bouge pas).
+  if (immobile && !captureDemandee) return;
+  dernierPointSouris = { x: point.x, y: point.y };
+  const origine = fenetre.getContentBounds();
+  const zoom = fenetre.webContents.getZoomFactor();
+  const x = (point.x - origine.x) / zoom;
+  const y = (point.y - origine.y) / zoom;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  verificationSourisEnCours = true;
+  try {
+    const dessus = await fenetre.webContents.executeJavaScript(
+      `Boolean(document.elementFromPoint(${x}, ${y})?.closest('${SELECTEUR_ELEMENT_SUPERPOSITION}'))`
+    );
+    if (maintienCapture || fenetre.isDestroyed()) return;
+    captureDemandee = dessus === true;
+    appliquerPasseClic(fenetre);
+  } catch {
+    // page de superposition pas encore prete ou en cours de rechargement : au prochain passage
+  } finally {
+    verificationSourisEnCours = false;
+  }
+}
+
+function demarrerSuiviSouris(): void {
+  // La fenetre vient d'etre creee en passe-clic (electron/main.ts) : on ne
+  // se fie pas a un etat applique avant, on le reapplique au prochain besoin.
+  passeClicApplique = null;
+  if (minuteurSuiviSouris) return;
+  minuteurSuiviSouris = setInterval(() => { void suivreSouris(); }, INTERVALLE_SUIVI_SOURIS_MS);
+}
+
+function arreterSuiviSouris(): void {
+  if (minuteurSuiviSouris) {
+    clearInterval(minuteurSuiviSouris);
+    minuteurSuiviSouris = null;
+  }
+  if (minuteurMaintienCapture) {
+    clearTimeout(minuteurMaintienCapture);
+    minuteurMaintienCapture = null;
+  }
+  maintienCapture = false;
+  captureDemandee = false;
+  dernierPointSouris = null;
+  const fenetre = trouverFenetreSuperposition();
+  if (fenetre) appliquerPasseClic(fenetre);
 }
 
 // Marques dessinees par Clovis sur l'ecran (cercle, trait dessous, surlignage).
@@ -291,6 +381,7 @@ function essayerAffichageSuperposition(essai: number) {
   if (superposition && !superposition.isDestroyed()) {
     superpositionAffichee = true;
     superposition.showInactive();
+    demarrerSuiviSouris();
     return;
   }
   if (essai >= NB_MAX_ESSAIS_AFFICHAGE || minuteurEssaiAffichage) return;
@@ -315,6 +406,7 @@ function retirerSuperposition() {
   }
   if (!superpositionAffichee) return;
   superpositionAffichee = false;
+  arreterSuiviSouris();
   const superposition = trouverFenetreSuperposition();
   if (superposition && !superposition.isDestroyed()) superposition.hide();
 }
@@ -437,21 +529,32 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     app.setLoginItemSettings({ openAtLogin: parametres.actif === true, args: [ARGUMENT_LANCEMENT_SESSION] });
   }
 
-  async definirCapturerSouris(parametres: { capturer: boolean }): Promise<void> {
+  async maintenirCapture(parametres: { maintenir: boolean }): Promise<void> {
     const superposition = trouverFenetreSuperposition();
-    if (!superposition) return;
-    // capturer = true : la superposition intercepte les clics a cet
-    // endroit (setIgnoreMouseEvents(false)). capturer = false : les clics
-    // traversent vers l'appli/le site en dessous (setIgnoreMouseEvents(true)).
-    // { forward: true } laisse quand meme les evenements de mouvement
-    // remonter au renderer de la superposition pour continuer le
-    // hit-testing meme quand elle est en mode passe-clic.
-    captureDemandee = parametres.capturer;
-    superposition.setIgnoreMouseEvents(clicTraversant || !captureDemandee, { forward: true });
+    if (!superposition || superposition.isDestroyed()) return;
+    if (minuteurMaintienCapture) {
+      clearTimeout(minuteurMaintienCapture);
+      minuteurMaintienCapture = null;
+    }
+    maintienCapture = parametres.maintenir === true;
+    if (maintienCapture) {
+      // L'appui a commence sur un element de la superposition : on garde la
+      // capture jusqu'a la fin du geste, meme si le pointeur sort de l'element.
+      captureDemandee = true;
+      appliquerPasseClic(superposition);
+      minuteurMaintienCapture = setTimeout(() => {
+        minuteurMaintienCapture = null;
+        maintienCapture = false;
+        dernierPointSouris = null;
+      }, DUREE_MAX_MAINTIEN_CAPTURE_MS);
+    } else {
+      // Fin du geste : reevaluer tout de suite ce qu'il y a sous le pointeur.
+      dernierPointSouris = null;
+    }
   }
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "definirCapturerSouris", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
   SuperpositionAgentImpl
 );
