@@ -42,7 +42,7 @@ export function PageContenuLegal({ cle }: { cle: "cgu" | "copyright" | "confiden
         <div className="flex items-center gap-2">
           <BoutonRetour onClick={() => router.back()} padding="p-1" className="-ml-1" />
           <Link href="/">
-            <Logo taille={28} />
+            <Logo taille={28} sansFond />
           </Link>
         </div>
 

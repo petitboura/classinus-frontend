@@ -100,7 +100,7 @@ export default async function PageTelecharger() {
     <main className="flex min-h-screen flex-col items-center px-4 py-16">
       <div className="w-full max-w-lg animate-dj-fade-up">
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          <Logo taille={32} />
+          <Logo taille={32} sansFond />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">Classinus</span>
         </div>
 
