@@ -44,7 +44,7 @@ data class InfoMiseAJour(val version: String, val urlTelechargement: String, val
 object VerificateurMiseAJour {
 
     private const val URL_DERNIERE_RELEASE =
-        "https://api.github.com/repos/petitboura/clovis-frontend/releases/latest"
+        "https://api.github.com/repos/petitboura/classinus-frontend/releases/latest"
 
     private val http = HttpClient(Android) {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }

@@ -2578,6 +2578,11 @@ export type NotificationClovis = {
   lien: string | null;
   lu: boolean;
   created_at: string;
+  // Numéro de version, uniquement pour "nouvelle_version_disponible"
+  // (ajouté par api/notifications.py côté backend). Absent ou null pour les
+  // autres types et pour les anciennes notifications dont le texte n'a pas
+  // le format attendu : l'appli ne les masque alors jamais.
+  version?: string | null;
 };
 
 export async function listerMesNotifications() {
