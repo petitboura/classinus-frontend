@@ -264,7 +264,7 @@ export function ChatSection() {
               nomAgent="Classinus"
               titreAccueil={texteAccueilSelonHeure()}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
-              iconePersonnalisee={<Logo taille={40} />}
+              iconePersonnalisee={<Logo taille={40} sansFond />}
               conversationId={cle}
               messagesInitiaux={messagesInitiaux}
               texteInitial={texteInitialConversation ?? undefined}

@@ -36,6 +36,10 @@ components/
                           dans un portail. Ils restent donc en place en passant de l'app aux pages
                           Découvrir. À chaque changement de compte, la voix et le canal sont coupés et
                           le contexte du chat recharge son historique et ses outils.
+  Logo.tsx                la plume dorée, deux versions de la même image : par défaut sur sa tuile sombre
+                          (public/logo-classinus.webp), et avec la prop sansFond la plume seule, fond transparent
+                          (public/logo-classinus-sans-fond.webp), utilisée dans l'appli (menu, connexion, chat, accueil du tableau de bord).
+                          SplashOuverture.tsx (écran d'ouverture) utilise la plume seule sur le fond du thème
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
                           components/mobile/ à la place
