@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
+import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 
 // Un outil encore en train de s'exécuter (15/09/2026, demande Bourama --
@@ -76,6 +77,7 @@ type ResultatOutil = {
   texteTermine?: string;
   sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[];
   images?: { titre: string; url: string; miniature: string; credit?: string | null }[];
+  videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[];
 };
 
 type Rangee = { cle: string; nomOutil?: string; nomLisible?: string; action?: string; donnees: DonneesLigneOutil };
@@ -119,12 +121,14 @@ function donneesDeLigne(ligne: Ligne): DonneesLigneOutil {
   if (restants.length === 0) {
     const sources = termines.flatMap((m) => m.donnees.sources ?? []);
     const images = termines.flatMap((m) => m.donnees.images ?? []);
+    const videos = termines.flatMap((m) => m.donnees.videos ?? []);
     return {
       etat: "resultat",
       nomLisible: membres[0].donnees.nomLisible,
       resultat: termines.map((m, i) => `(${i + 1}/${total})\n${m.donnees.resultat ?? ""}`).join("\n\n"),
       sources: sources.length ? sources : undefined,
       images: images.length ? images : undefined,
+      videos: videos.length ? videos : undefined,
     };
   }
   const courant = restants[restants.length - 1].donnees;
@@ -195,6 +199,7 @@ export function OutilResultatBulle({
         resultat: r.resultat,
         sources: r.sources,
         images: r.images,
+        videos: r.videos,
         texteTermine: r.texteTermine,
       },
     })),
@@ -271,9 +276,10 @@ export function OutilResultatBulle({
   // visibles, peu importe que le groupe soit ouvert, fermé, ou déjà
   // replié automatiquement.
   const galeriesExternes = (resultats ?? [])
-    .map((r, index) =>
+    .flatMap((r, index) => [
       r.images && r.images.length ? <GalerieImagesBulle key={`galerie-${index}`} images={r.images} /> : null,
-    )
+      r.videos && r.videos.length ? <CartesVideosBulle key={`videos-${index}`} videos={r.videos} /> : null,
+    ])
     .filter(Boolean);
 
   return (

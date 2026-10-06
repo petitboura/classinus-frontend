@@ -545,6 +545,26 @@ export function ChatIA({
         copie[copie.length - 1] = { ...dernier, outilsResultats: outilsCopie, segments };
         return copie;
       });
+    } else if (item.type === "videos") {
+      majMessages((prec) => {
+        const copie = [...prec];
+        const dernier = copie[copie.length - 1];
+        const outils = dernier.outilsResultats || [];
+        if (!outils.length) return prec;
+        if (!evenement.videos || !evenement.videos.length) return prec;
+        const iDernierOutil = outils.length - 1;
+        const outilsCopie = [...outils];
+        outilsCopie[iDernierOutil] = { ...outilsCopie[iDernierOutil], videos: evenement.videos };
+        const segments = dernier.segments ? [...dernier.segments] : [];
+        const iDernierSegmentOutil = [...segments].reverse().findIndex((s) => s.type === "outil");
+        if (iDernierSegmentOutil !== -1) {
+          const i = segments.length - 1 - iDernierSegmentOutil;
+          const segmentOutil = segments[i] as Extract<SegmentMessage, { type: "outil" }>;
+          segments[i] = { ...segmentOutil, videos: evenement.videos };
+        }
+        copie[copie.length - 1] = { ...dernier, outilsResultats: outilsCopie, segments };
+        return copie;
+      });
     } else if (item.type === "outil_resultat") {
       emettreDonneesModifieesPourOutil(evenement.nom_outil);
       // Retire l'entrée "en_cours" correspondante dès que le vrai résultat
@@ -731,6 +751,7 @@ export function ChatIA({
       evenement.type === "statut_termine" ||
       evenement.type === "sources" ||
       evenement.type === "images" ||
+      evenement.type === "videos" ||
       evenement.type === "outil_resultat" ||
       evenement.type === "raisonnement"
     ) {
