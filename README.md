@@ -38,7 +38,8 @@ components/
                           le contexte du chat recharge son historique et ses outils.
   Logo.tsx                la plume dorée, deux versions de la même image : par défaut sur sa tuile sombre
                           (public/logo-classinus.webp), et avec la prop sansFond la plume seule, fond transparent
-                          (public/logo-classinus-sans-fond.webp), utilisée dans l'appli (menu, connexion, chat, accueil du tableau de bord).
+                          (public/logo-classinus-sans-fond.webp), utilisée partout (appli et pages publiques) ;
+                          la tuile ne sert plus qu'aux icônes et à l'image de partage.
                           SplashOuverture.tsx (écran d'ouverture) utilise la plume seule sur le fond du thème
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par

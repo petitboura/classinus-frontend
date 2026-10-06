@@ -6,8 +6,10 @@
 // - par défaut, public/logo-classinus.webp : la plume sur sa tuile sombre
 //   aux coins arrondis transparents (jamais un carré à angles droits) ;
 // - avec `sansFond`, public/logo-classinus-sans-fond.webp : la plume seule,
-//   fond transparent, recadrée sur la plume. Utilisée dans l'appli (menu,
-//   connexion, chat), où la tuile sombre jurerait avec le thème clair.
+//   fond transparent, recadrée sur la plume. Utilisée partout dans l'appli
+//   et sur les pages publiques (demande de Bourama, 05/10/2026), car la
+//   tuile sombre jurerait avec le thème clair. La version à tuile ne sert
+//   plus qu'aux icônes (web, PWA, natif) et à l'image de partage.
 //
 // `taille` est en pixels. Image décorative : le nom "Classinus" est toujours
 // écrit à côté, d'où l'alt vide.
