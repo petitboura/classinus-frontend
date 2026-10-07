@@ -10,6 +10,7 @@ import com.classinus.app.miseajour.MiseAJourPlugin;
 import com.classinus.app.tempsecran.TempsEcranPlugin;
 import com.classinus.app.notifications.NotificationsPlugin;
 import com.classinus.app.telechargement.TelechargementPlugin;
+import com.classinus.app.visionecran.SuperpositionPlugin;
 import com.classinus.app.visionecran.VisionEcranPlugin;
 import com.getcapacitor.BridgeActivity;
 
@@ -42,6 +43,9 @@ public class MainActivity extends BridgeActivity {
         // 07/10/2026, Bourama : capture d'ecran pour que Clovis voie l'ecran
         // (lot 1 vision ecran), commun aux deux flavors.
         registerPlugin(VisionEcranPlugin.class);
+        // 07/10/2026, Bourama : superposition pour pointer, surligner et
+        // souligner par-dessus les autres applis (lot 2 vision ecran).
+        registerPlugin(SuperpositionPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

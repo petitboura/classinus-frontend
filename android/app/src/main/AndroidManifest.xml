@@ -138,4 +138,10 @@
          VisionEcranPlugin a chaque session de capture. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- 07/10/2026, Bourama (vision ecran, lot 2) : permission speciale
+         "Afficher par-dessus les autres applications". Elle n'ouvre aucune
+         fenetre de demande : l'eleve l'active lui-meme dans les reglages
+         systeme (SuperpositionPlugin.demanderPermission l'y envoie). La
+         fenetre de superposition est intouchable, les gestes la traversent. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 </manifest>

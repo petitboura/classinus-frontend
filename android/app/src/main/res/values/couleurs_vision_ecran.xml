@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 07/10/2026, vision ecran (lot 2) : couleurs des marques de la
+         superposition. L'or est celui du logo (variable dj-logo-1 dans
+         app/globals.css), le contour clair le rend lisible sur fond clair
+         comme sombre, le fond d'etiquette reprend la surface sombre de
+         l'appli. Chaque marque peut recevoir sa propre couleur depuis le JS. -->
+    <color name="vision_ecran_marque">#D9A438</color>
+    <color name="vision_ecran_contour">#FFFFFF</color>
+    <color name="vision_ecran_etiquette_fond">#E61A1714</color>
+    <color name="vision_ecran_etiquette_texte">#F5F0E6</color>
+</resources>
