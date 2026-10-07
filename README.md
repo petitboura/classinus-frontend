@@ -36,6 +36,11 @@ components/
                           dans un portail. Ils restent donc en place en passant de l'app aux pages
                           Découvrir. À chaque changement de compte, la voix et le canal sont coupés et
                           le contexte du chat recharge son historique et ses outils.
+  Logo.tsx                la plume dorée, deux versions de la même image : par défaut sur sa tuile sombre
+                          (public/logo-classinus.webp), et avec la prop sansFond la plume seule, fond transparent
+                          (public/logo-classinus-sans-fond.webp), utilisée partout (appli et pages publiques) ;
+                          la tuile ne sert plus qu'aux icônes et à l'image de partage.
+                          SplashOuverture.tsx (écran d'ouverture) utilise la plume seule sur le fond du thème
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
                           components/mobile/ à la place
@@ -119,6 +124,15 @@ components/
                           progression p (0 à 1), rejouée dans l'ordre à chaque image (animer peut être écrit après installer ou à l'intérieur) ; titres cliquables et
                           légende facultatifs. Pause et retour en arrière sont donc exacts. Textes dans lib/textesAnimation.ts. Consignes données au modèle
                           dans clovis-backend, core/profils_agents.py (INSTRUCTIONS_FORMATS_AFFICHAGE)
+    BoutonVideoAnimation.tsx  boutons 16:9 et 9:16 de la barre d'actions du bloc animation (07/10/2026) : téléchargent
+                          l'animation en vidéo MP4, fabriquée par le serveur (classinus-backend, api/rendu_animation.py),
+                          donc aussi sur téléphone. Sans état : tout vit dans lib/useVideoAnimation.ts (envoi, suivi de
+                          l'avancement, annulation, téléchargement). Appels dans lib/apiRenduVideoAnimation.ts, textes dans
+                          lib/textesVideoAnimation.ts. Le document envoyé est celui du lecteur, mis en page au format de la
+                          vidéo par animation/styleRenduVideo.ts (16:9 : la scène seule ; 9:16 : titre de la partie en haut,
+                          scène au milieu, légende en bas, les textes dessinés dans l'animation restant prioritaires) et
+                          piloté par animation/runtimeRenduVideo.ts (dessiner l'animation à un instant donné). three.js
+                          est aussi copié côté serveur : changer sa version ici impose de changer cette copie
   icones/, icons/        icônes du produit
 
 lib/
@@ -140,6 +154,11 @@ lib/
                           minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par
                           langue), useMaintenantMs.ts (horloge locale des affichages)
   canalTempsReel.ts      client du canal temps réel avec le backend (exploration de dossier mobile...)
+  executionPython.ts      bouton Exécuter des blocs de code : Python (Pyodide) tourne dans un Worker
+                          (public/pyodide-worker.mjs) sur l'appareil de l'étudiant. prechargerPython() démarre
+                          le chargement de Pyodide dès l'ouverture de l'appli (AppShell.tsx, au repos du
+                          navigateur) et après toute coupure du worker, pour que l'exécution soit instantanée ;
+                          useExecutionPython.ts gère l'état d'un bloc (sortie, input(), sys.argv)
   liensSortants.ts        règle unique des liens qui veulent sortir de l'appli (20/09/2026) : un fichier se
                           télécharge vraiment (lib/telecharger.ts), tout autre lien passe par l'aperçu interne
                           (VisionneurPositionGlobal) qui demande ensuite d'ouvrir le site ; appliquée à tous les
@@ -226,7 +245,9 @@ Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses d
 `lib/sectionsPersonnaliser.tsx` et `lib/routesPersonnaliser.ts` (`/comportements` et `/memoire` gardent
 leurs adresses historiques hors de `/personnaliser`, seul `/skills-publics` est nouveau).
 Dans le chat, chaque groupe devient un bouton qui déplie la liste de ses pages
-(`components/MenuGroupeRail.tsx`) : au survol sur PC, au toucher dans le tiroir mobile.
+(`components/MenuGroupeRail.tsx`) : au survol sur PC (le premier clic ne change rien, le second
+entre dans la page du groupe), au toucher dans le tiroir mobile (un toucher ouvre la liste, un autre
+la referme, on entre dans une page en touchant sa ligne).
 Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
 et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
 les écrans ne les répètent pas dans leur carte.

@@ -65,9 +65,30 @@ function obtenirWorker(): Worker {
   return worker;
 }
 
+/**
+ * Démarre le worker et le chargement de Pyodide en arrière-plan, sans
+ * exécuter de code. Appelé dès l'ouverture de l'appli (AppShell.tsx) pour
+ * que le premier clic sur Exécuter n'attende plus le téléchargement de
+ * Python. Sans effet de bord : si le worker existe déjà ou si le chargement
+ * est déjà en cours, rien n'est rechargé (voir pyodide-worker.mjs). Si
+ * Python ne peut pas démarrer ici, l'erreur est montrée au moment du
+ * clic sur Exécuter, comme avant.
+ */
+export function prechargerPython() {
+  try {
+    obtenirWorker().postMessage({ type: "precharger" });
+  } catch {
+    // Worker indisponible sur cet appareil : signalé à l'exécution.
+  }
+}
+
 function arreterWorker() {
   worker?.terminate();
   worker = null;
+  // Un worker coupé (code interrompu ou trop long) emporte Pyodide avec lui.
+  // On en relance un tout de suite en arrière-plan pour que l'exécution
+  // suivante reste instantanée au lieu de retrouver l'attente du chargement.
+  prechargerPython();
 }
 
 /**

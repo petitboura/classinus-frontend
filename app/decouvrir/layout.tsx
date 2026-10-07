@@ -34,7 +34,7 @@ export default function LayoutDecouvrir({ children }: { children: ReactNode }) {
             <BoutonRetourDecouvrir />
           </Suspense>
           <Link href="/" className="flex items-center gap-2.5">
-            <Logo taille={28} />
+            <Logo taille={28} sansFond />
             <span className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
           </Link>
         </div>

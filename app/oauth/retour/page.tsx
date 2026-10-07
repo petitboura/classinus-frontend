@@ -44,7 +44,7 @@ function CadreRetour({ children }: { children: React.ReactNode }) {
     <EcranAutonome className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm animate-dj-fade-up">
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          <Logo taille={32} />
+          <Logo taille={32} sansFond />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">Classinus</span>
         </div>
         <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">

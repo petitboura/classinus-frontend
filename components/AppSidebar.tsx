@@ -1108,7 +1108,7 @@ export function AppSidebar({
                 suivi du nom, avec le même séparateur que le rail desktop. Le
                 pt-2 garde le logo sous le bouton hamburger flottant. */}
             <div className="flex items-center gap-2 px-2 pt-2">
-              <Logo taille={28} />
+              <Logo taille={28} sansFond />
               <span className="text-base font-semibold text-dj-texte">Classinus</span>
             </div>
             <div className="my-2 h-px w-full bg-dj-bordure" />
