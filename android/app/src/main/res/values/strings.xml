@@ -4,4 +4,12 @@
     <string name="title_activity_main">Classinus</string>
     <string name="package_name">com.classinus.app</string>
     <string name="custom_url_scheme">com.classinus.app</string>
+    <!-- 07/10/2026, vision ecran (lot 1) : textes par defaut de la notification
+         permanente de capture. Le JS peut les remplacer a l'appel de demarrer()
+         pour les traduire (le natif n'a pas de systeme de langues propre). -->
+    <string name="vision_ecran_canal_nom">Partage d\'écran avec Classinus</string>
+    <string name="vision_ecran_canal_description">Affiché tant que Classinus peut voir votre écran.</string>
+    <string name="vision_ecran_notif_titre">Classinus voit votre écran</string>
+    <string name="vision_ecran_notif_texte">Touchez Arrêter pour couper le partage à tout moment.</string>
+    <string name="vision_ecran_notif_arreter">Arrêter</string>
 </resources>

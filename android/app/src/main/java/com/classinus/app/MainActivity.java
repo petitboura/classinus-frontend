@@ -10,6 +10,7 @@ import com.classinus.app.miseajour.MiseAJourPlugin;
 import com.classinus.app.tempsecran.TempsEcranPlugin;
 import com.classinus.app.notifications.NotificationsPlugin;
 import com.classinus.app.telechargement.TelechargementPlugin;
+import com.classinus.app.visionecran.VisionEcranPlugin;
 import com.getcapacitor.BridgeActivity;
 
 // Modifie le 25/08/2026, Bourama : Lot 3B (fusion Capacitor). registerPlugin
@@ -38,6 +39,9 @@ public class MainActivity extends BridgeActivity {
         // 12/09/2026, Bourama : vrai téléchargement système (DownloadManager
         // / MediaStore.Downloads), voir TelechargementPlugin.kt.
         registerPlugin(TelechargementPlugin.class);
+        // 07/10/2026, Bourama : capture d'ecran pour que Clovis voie l'ecran
+        // (lot 1 vision ecran), commun aux deux flavors.
+        registerPlugin(VisionEcranPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

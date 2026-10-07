@@ -85,6 +85,16 @@
             </intent-filter>
         </service>
 
+        <!-- 07/10/2026, Bourama (vision ecran, lot 1) : service au premier plan
+             qui tient la capture d'ecran MediaProjection. Le type
+             mediaProjection est obligatoire depuis Android 14, avec la
+             permission FOREGROUND_SERVICE_MEDIA_PROJECTION plus bas. Non
+             exporte : seul Classinus peut le demarrer. -->
+        <service
+            android:name=".visionecran.CaptureEcranService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -121,4 +131,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <!-- 07/10/2026, Bourama (vision ecran, lot 1) : capture d'ecran
+         MediaProjection. FOREGROUND_SERVICE et sa variante de type sont des
+         permissions normales (aucune fenetre de demande) : le vrai
+         consentement est la fenetre du systeme montree par
+         VisionEcranPlugin a chaque session de capture. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 </manifest>
