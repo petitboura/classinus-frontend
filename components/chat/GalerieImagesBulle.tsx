@@ -28,7 +28,7 @@ export function GalerieImagesBulle({ images }: { images?: Image[] }) {
           type="button"
           onClick={() => setIndexOuvert(index)}
           title={image.credit ? `${image.titre} · ${image.credit}` : image.titre}
-          className="group relative h-44 min-w-32 shrink-0 overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface"
+          className="group relative h-44 w-56 shrink-0 overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- image
               externe (Pixabay/Pexels), pas un asset local optimisable par
@@ -36,8 +36,7 @@ export function GalerieImagesBulle({ images }: { images?: Image[] }) {
           <img
             src={image.miniature}
             alt={image.titre}
-            className="h-full w-auto transition-transform duration-200 group-hover:scale-105"
-            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
         </button>
       ))}
