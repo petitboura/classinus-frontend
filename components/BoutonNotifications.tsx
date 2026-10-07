@@ -12,6 +12,7 @@ import {
 import { ecouterNotifications } from "@/lib/canalTempsReel";
 import { dateRelative } from "@/lib/dateRelative";
 import { traiterLienSortant } from "@/lib/liensSortants";
+import { useVersionInstallee, versionEstPlusRecente } from "@/lib/versionInstallee";
 
 // Créé le 02/09/2026, demande Bourama : centre de notifications (bouton
 // cloche), couvre les types Classinus (voir api/notifications.py côté
@@ -33,11 +34,30 @@ import { traiterLienSortant } from "@/lib/liensSortants";
 // l'app est ouverte -- voir core/canal_temps_reel.py::notifier_utilisateur
 // côté backend.
 export function BoutonNotifications({ connecte }: { connecte: boolean }) {
-  const [notifications, setNotifications] = useState<NotificationClovis[]>([]);
+  const [toutesNotifications, setNotifications] = useState<NotificationClovis[]>([]);
   const [ouvert, setOuvert] = useState(false);
   const [chargement, setChargement] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const versionInstallee = useVersionInstallee();
+
+  // Une notification "nouvelle version" n'a plus de raison d'être quand la
+  // version installée est égale ou supérieure à celle annoncée : l'appli
+  // vient d'être mise à jour, ou a été installée directement en dernière
+  // version. On ne masque que si on connaît les deux numéros, sinon (web,
+  // lecture pas terminée, ancienne notification sans numéro) on laisse
+  // affichée, plutôt que de cacher une vraie mise à jour par erreur.
+  // Le filtre est fait à l'affichage, donc la liste et le compteur de non
+  // lues restent toujours d'accord.
+  const notifications = toutesNotifications.filter(
+    (n) =>
+      !(
+        n.type === "nouvelle_version_disponible" &&
+        n.version &&
+        versionInstallee &&
+        !versionEstPlusRecente(n.version, versionInstallee)
+      )
+  );
 
   const nonLues = notifications.filter((n) => !n.lu).length;
 

@@ -10,7 +10,7 @@ import { QrTelechargerPc } from "@/components/QrTelechargerPc";
 // le système de mise à jour interne existant (voir MiseAJourCarte.tsx /
 // VerificateurMiseAJour.kt, tous deux déjà branchés sur l'API publique
 // GitHub Releases, corrigée le même jour pour pointer sur ce dépôt
-// clovis-frontend plutôt que l'ancien clovis-mobile).
+// classinus-frontend plutôt que l'ancien clovis-mobile).
 //
 // Composant serveur volontairement : cette page n'est PAS incluse dans
 // l'export statique Capacitor (CAPACITOR_BUILD), elle vit uniquement sur
@@ -43,7 +43,7 @@ import { QrTelechargerPc } from "@/components/QrTelechargerPc";
 // Pas de mécanisme i18n branché ici, comme MiseAJourCarte.tsx : textes en
 // dur en français, cohérent avec le reste du projet à ce stade.
 
-const URL_DERNIERE_RELEASE = "https://api.github.com/repos/petitboura/clovis-frontend/releases/latest";
+const URL_DERNIERE_RELEASE = "https://api.github.com/repos/petitboura/classinus-frontend/releases/latest";
 
 // Une release GitHub peut contenir des assets qui ne sont pas l'APK
 // (source zip, changelog...), donc on prend explicitement celui qui finit
@@ -100,7 +100,7 @@ export default async function PageTelecharger() {
     <main className="flex min-h-screen flex-col items-center px-4 py-16">
       <div className="w-full max-w-lg animate-dj-fade-up">
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          <Logo taille={32} />
+          <Logo taille={32} sansFond />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">Classinus</span>
         </div>
 

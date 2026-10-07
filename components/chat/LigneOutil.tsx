@@ -5,6 +5,7 @@ import type { ComponentProps } from "react";
 import { CheckCircle2, ChevronDown, ChevronRight, Link2, Loader2 } from "lucide-react";
 import { SourcesBulle } from "./SourcesBulle";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
+import { CartesVideosBulle } from "./CartesVideosBulle";
 
 // Une ligne d'outil (18/09/2026, demande Bourama : le statut d'un outil
 // changeait de façon brutale et incohérente). Avant, l'outil en cours et
@@ -43,6 +44,7 @@ export type DonneesLigneOutil = {
   resultat?: string;
   sources?: ComponentProps<typeof SourcesBulle>["sources"];
   images?: ComponentProps<typeof GalerieImagesBulle>["images"];
+  videos?: ComponentProps<typeof CartesVideosBulle>["videos"];
 };
 
 function phaseInitiale(etat: EtatLigneOutil): Phase {
@@ -70,7 +72,7 @@ export function LigneOutil({
   estDerniere: boolean;
   estGroupe: boolean;
 }) {
-  const { etat, texteEnCours, texteTermine, nomLisible, resultat, sources, images } = donnees;
+  const { etat, texteEnCours, texteTermine, nomLisible, resultat, sources, images, videos } = donnees;
 
   const [phase, setPhase] = useState<Phase>(() => phaseInitiale(etat));
   const phaseRef = useRef<Phase>(phase);
@@ -210,6 +212,7 @@ export function LigneOutil({
                 Bourama) : en groupe, elle est rendue à part par le parent,
                 hors du repli automatique du groupe. */}
             {!estGroupe && <GalerieImagesBulle images={images} />}
+            {!estGroupe && <CartesVideosBulle videos={videos} />}
             <div
               className={`grid transition-[grid-template-rows] duration-300 ease-out ${
                 ouvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"

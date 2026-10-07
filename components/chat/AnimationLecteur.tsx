@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Clapperboard } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { Skeleton } from "@/components/Skeleton";
@@ -9,6 +9,9 @@ import { useProcheEcran } from "@/lib/useProcheEcran";
 import type { ThemeIframe } from "@/lib/paletteIframe";
 import { textesAnimation } from "@/lib/textesAnimation";
 import { construireDocumentAnimation } from "./animation/construireDocumentAnimation";
+import type { FormatVideo } from "./animation/styleRenduVideo";
+import { BoutonVideoAnimation } from "./BoutonVideoAnimation";
+import { useVideoAnimation } from "@/lib/useVideoAnimation";
 
 // Bloc ```animation du markdown (29/09/2026, demande Bourama) : une
 // animation qui se regarde comme une vidéo (lecture, pause, barre de
@@ -30,6 +33,11 @@ import { construireDocumentAnimation } from "./animation/construireDocumentAnima
 // L'animation ne démarre que lorsqu'elle approche de l'écran (voir
 // lib/useProcheEcran.ts), pour qu'une longue conversation avec plusieurs
 // animations ne les lance pas toutes d'un coup.
+//
+// Vidéo (07/10/2026, demande Bourama) : deux boutons dans la barre d'actions
+// (16:9 et 9:16) font fabriquer la vidéo par le serveur, voir
+// lib/useVideoAnimation.ts. Le document envoyé est celui du lecteur, mis en
+// page au format de la vidéo (voir animation/styleRenduVideo.ts).
 //
 // Même attente que WidgetSandbox : changer `srcDoc` recharge tout
 // l'iframe, or `code` grandit à chaque caractère tant que le message est
@@ -122,6 +130,13 @@ export function AnimationLecteur({ code }: { code: string }) {
     [codeStable, themeDoc, textes],
   );
 
+  const construireDocumentVideo = useCallback(
+    (format: FormatVideo) =>
+      codeStable === null ? null : construireDocumentAnimation(codeStable, themeDoc, textes, null, { format }),
+    [codeStable, themeDoc, textes],
+  );
+  const video = useVideoAnimation(construireDocumentVideo);
+
   return (
     <BlocExpansible
       titre={textes.titre}
@@ -130,6 +145,17 @@ export function AnimationLecteur({ code }: { code: string }) {
       texteACopier={code}
       contenuEnIframe
       direct
+      actionsSupplementaires={(avecTexte) => (
+        <BoutonVideoAnimation
+          etat={video.etat}
+          progression={video.progression}
+          message={video.message}
+          avecTexte={avecTexte}
+          desactive={codeStable === null}
+          surChoix={video.lancer}
+          surAnnuler={video.annuler}
+        />
+      )}
       enfant={
         document_ === null ? (
           <SqueletteAnimation surMontage={setZoneSqueletteEl} />

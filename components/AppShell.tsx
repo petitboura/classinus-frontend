@@ -26,6 +26,7 @@ import { DockMinuteurs } from "@/components/chat/minuteurs/DockMinuteurs";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
 import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { estPageChat } from "@/lib/routesApp";
+import { prechargerPython } from "@/lib/executionPython";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -159,6 +160,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     dossiersCataloguePublicValeur.rafraichirDossiersAttaches();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connecte]);
+
+  // Préchargement de Python (demande Bourama) : le moteur d'exécution du
+  // bouton Exécuter des blocs de code se télécharge dès l'ouverture de
+  // l'appli, que l'étudiant ait un éditeur de code sous les yeux ou non,
+  // au lieu d'attendre son premier clic. Lancé quand le navigateur est au
+  // repos (ou après 2 secondes sur les navigateurs sans requestIdleCallback,
+  // comme Safari) pour ne jamais ralentir l'affichage de l'appli elle-même.
+  // Pas lié à la connexion : le chat invité peut aussi exécuter du code.
+  useEffect(() => {
+    if ("requestIdleCallback" in window) {
+      const idle = window.requestIdleCallback(() => prechargerPython(), { timeout: 4000 });
+      return () => window.cancelIdleCallback(idle);
+    }
+    const minuteur = setTimeout(prechargerPython, 2000);
+    return () => clearTimeout(minuteur);
+  }, []);
 
   useEffect(() => {
     let annule = false;

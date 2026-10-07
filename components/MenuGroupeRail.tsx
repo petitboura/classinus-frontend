@@ -19,6 +19,18 @@ import { sectionsVisiblesDuGroupe, type GroupeRail } from "@/lib/groupesRail";
 // - "rail" : bouton du rail desktop, liste dessous au survol.
 // - "mobile" : tiroir du chat sur mobile, pas de survol, une vraie navigation.
 // - "plus" : ligne du menu "Plus" du rail dans le chat, liste sur le côté.
+//
+// 05/10/2026, demande de Bourama : dans le chat, le clic sur le bouton du
+// groupe se comporte ainsi.
+// - PC (rail et plus) : le survol ouvre la liste, le premier clic ne change
+//   rien (pour qu'on ne croie pas que c'est le clic qui ouvre la liste), le
+//   second clic entre dans la page du groupe. Quand la souris quitte le
+//   groupe, le compte des clics repart de zéro.
+// - Mobile : un toucher ouvre la liste, un autre la referme (pour pouvoir
+//   en ouvrir une autre). On entre dans une page en touchant sa ligne dans
+//   la liste.
+// - Un groupe sans aucune sous-section (liste vide) entre directement dans
+//   sa page dès le premier clic ou toucher.
 
 export type VarianteGroupe = "rail" | "mobile" | "plus";
 
@@ -75,6 +87,15 @@ export function MenuGroupe({
   const sections = sectionsVisiblesDuGroupe(groupe, estProfesseur);
   const actif = groupe.sections.some((s) => pathname === s.href) || pathname === groupe.href;
 
+  const sansSousSection = sections.length === 0;
+
+  // Vrai après le premier clic sur le bouton pendant que la liste est
+  // affichée (PC seulement). Le second clic entre alors dans la page.
+  const premierClicFait = useRef(false);
+  useEffect(() => {
+    if (!ouvert) premierClicFait.current = false;
+  }, [ouvert]);
+
   const minuteurFermeture = useRef<ReturnType<typeof setTimeout> | null>(null);
   function annulerFermeture() {
     if (minuteurFermeture.current) {
@@ -123,21 +144,43 @@ export function MenuGroupe({
         annulerFermeture();
         onOuvrir();
       }}
-      onMouseLeave={() => !mobile && planifierFermeture()}
+      onMouseLeave={() => {
+        if (mobile) return;
+        // La souris quitte le groupe : le compte des clics repart de zéro.
+        premierClicFait.current = false;
+        planifierFermeture();
+      }}
     >
       {/* Le bouton principal est un vrai lien : en navigation normale, il
-          ouvre la page du groupe. Dans le chat il n'y a pas de page à ouvrir
-          par-dessus, le clic bascule juste la liste. */}
+          ouvre la page du groupe. Dans le chat, voir le comportement décrit
+          en haut du fichier (PC : second clic, mobile : ouvrir ou fermer). */}
       <Link
         href={groupe.href}
         aria-current={actif ? "page" : undefined}
+        aria-expanded={contexteChat && !sansSousSection ? ouvert : undefined}
         onClick={(e) => {
           if (contexteChat) {
             e.preventDefault();
-            // Le survol a déjà ouvert la liste : un clic ne doit pas la
-            // refermer (il fallait cliquer deux fois). Basculer seulement
-            // quand il n'y a pas de survol (tactile), pour pouvoir ouvrir.
-            if (!ouvert) onOuvrir();
+            if (sansSousSection) {
+              // Rien à déplier : on entre directement dans la page du groupe.
+              onNaviguer?.();
+              onFermer();
+              naviguerVersSection(groupe.href);
+            } else if (mobile) {
+              if (ouvert) onFermer();
+              else onOuvrir();
+            } else if (!ouvert) {
+              // Liste pas encore affichée (clavier, par exemple) : ce clic
+              // l'ouvre seulement.
+              onOuvrir();
+            } else if (!premierClicFait.current) {
+              premierClicFait.current = true;
+            } else {
+              premierClicFait.current = false;
+              onNaviguer?.();
+              onFermer();
+              naviguerVersSection(groupe.href);
+            }
           } else {
             onNaviguer?.();
             onFermer();
@@ -160,7 +203,7 @@ export function MenuGroupe({
         )}
       </Link>
 
-      {ouvert && (
+      {ouvert && !sansSousSection && (
         // Le conteneur colle au bouton (aucun vide entre les deux) et porte
         // l'écart à l'intérieur de lui-même : la souris reste "dans" le
         // groupe pendant tout le trajet vers la liste.

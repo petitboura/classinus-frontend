@@ -35,7 +35,7 @@ import { traiterLienSortant } from "@/lib/liensSortants";
 // réseau, timeout...), on retombe sur un lien texte classique -- jamais de
 // carte vide ou cassée. Pendant le chargement, un squelette discret plutôt
 // qu'un vide brutal (cohérent avec la demande de fluidité de Bourama).
-function idYoutube(href: string): string | null {
+export function idYoutube(href: string): string | null {
   const motifs = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
   ];

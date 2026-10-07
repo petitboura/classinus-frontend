@@ -528,7 +528,7 @@ export function ChatFlottant({
           (estDesktop ? " cursor-grab select-none active:cursor-grabbing" : "")
         }
       >
-        <Logo taille={20} />
+        <Logo taille={20} sansFond />
         <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
 
         <div className="ml-auto flex items-center gap-1">
@@ -649,7 +649,7 @@ export function ChatFlottant({
               nomAgent="Classinus"
               titreAccueil={texteAccueilSelonHeure()}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
-              iconePersonnalisee={<Logo taille={40} />}
+              iconePersonnalisee={<Logo taille={40} sansFond />}
               conversationId={cle}
               messagesInitiaux={messagesInitiaux}
               texteInitial={texteInitialConversation ?? undefined}

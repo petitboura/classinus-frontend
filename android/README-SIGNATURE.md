@@ -56,9 +56,9 @@ Avant de générer un nouvel APK à publier sur GitHub Releases :
    `android/app/build.gradle` (`defaultConfig`).
 2. Générer l'APK signé (Android Studio → Build → Generate Signed APK, flavor
    `externe`).
-3. Créer une nouvelle Release GitHub sur `petitboura/clovis-frontend` (dépôt
+3. Créer une nouvelle Release GitHub sur `petitboura/classinus-frontend` (dépôt
    réellement interrogé par `VerificateurMiseAJour.kt` : `URL_DERNIERE_RELEASE`
-   pointe vers `api.github.com/repos/petitboura/clovis-frontend/releases/latest`,
+   pointe vers `api.github.com/repos/petitboura/classinus-frontend/releases/latest`,
    pas `clovis-mobile`), avec un tag correspondant à `versionName`
    (ex. `v0.2.0`), et joindre l'APK en pièce jointe de la release.
 

@@ -169,7 +169,7 @@ export function EcranAccueil() {
       <div className="relative overflow-hidden pb-2 pt-2">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-dj-hero-glow" aria-hidden="true" />
         <div className="flex flex-col items-center gap-5 text-center">
-          <Logo taille={52} />
+          <Logo taille={52} sansFond />
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight text-dj-texte md:text-4xl">
               {titreRevele}
