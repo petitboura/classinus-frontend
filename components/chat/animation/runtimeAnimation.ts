@@ -286,6 +286,13 @@ export const RUNTIME_ANIMATION = String.raw`
       etat.idx = idx;
       var legende = $('an-legende');
       legende.textContent = etat.parties[idx].legende;
+      // Titre de la partie, seulement dans la mise en page vidéo 9:16 (voir
+      // styleRenduVideo.ts) : l'élément n'existe pas dans le lecteur normal.
+      var titreRendu = $('an-titre-rendu');
+      if (titreRendu) {
+        var nomPartie = etat.parties[idx].nom;
+        titreRendu.textContent = (document.body.classList.contains('sans-chapitres') || nomPartie === String(idx + 1)) ? '' : (idx + 1) + '. ' + nomPartie;
+      }
       legende.classList.remove('maj');
       void legende.offsetWidth;
       legende.classList.add('maj');
@@ -455,8 +462,12 @@ export const RUNTIME_ANIMATION = String.raw`
     parent.postMessage({ type: 'dj-anim-etat', t: etat.t, joue: etat.joue }, '*');
   });
 
+  // Accès pour le rendu vidéo du serveur (voir runtimeRenduVideo.ts).
+  window.__anim = { etat: etat, rendre: rendre };
+
   window.__animDemarrer = function () {
     var zone = $('an-zone');
+    if (etat.mode === '3d') { document.body.classList.add('mode-3d'); }
     if (!etat.parties.length && !etat.installeur) { sansScene(); return; }
     if (etat.mode === '3d') {
       charger(CONF.sourcesTroisD, function () {
