@@ -1,5 +1,7 @@
 import type { TextesAnimation } from "@/lib/textesAnimation";
 import { RUNTIME_ANIMATION } from "./runtimeAnimation";
+import { RUNTIME_RENDU_VIDEO } from "./runtimeRenduVideo";
+import { construireStyleRenduVideo, type FormatVideo } from "./styleRenduVideo";
 import { PALETTES } from "@/lib/paletteIframe";
 
 // Document HTML complet du lecteur d'animation guidée, injecté dans une
@@ -20,7 +22,9 @@ import { PALETTES } from "@/lib/paletteIframe";
 
 // Three.js r128, la même version que celle vérifiée dans un widget réel
 // le 29/09/2026 (test de Bourama). Deuxième source en secours si la
-// première ne répond pas.
+// première ne répond pas. Le serveur du rendu vidéo ne charge rien depuis ces
+// adresses : il sert une copie locale de la même version (classinus-backend,
+// core/ressources_rendu_animation/three.r128.min.js), à changer en même temps.
 const SOURCES_TROIS_D = [
   "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
   "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js",
@@ -41,6 +45,9 @@ export function construireDocumentAnimation(
   textes: TextesAnimation,
   // Temps et état de lecture à retrouver après un changement de thème.
   reprise?: { t: number; joue: boolean } | null,
+  // Document destiné au rendu vidéo du serveur : mise en page au format de la
+  // vidéo, sans contrôles ni animations (voir styleRenduVideo.ts).
+  rendu?: { format: FormatVideo } | null,
 ): string {
   const p = PALETTES[theme];
   const conf = neutraliserScript(
@@ -94,9 +101,9 @@ body.joue #an-jouer .ic-lecture{display:none;}
 body.sans-chapitres #an-chap,body.sans-legende #an-legende{display:none;}
 body.echec #an-barre,body.echec #an-chap{opacity:.4;pointer-events:none;}
 #an-chap button.actif{border-color:${p.accent};background:${p.bordure};}
-</style></head><body>
+${rendu ? construireStyleRenduVideo(p, rendu.format) : ""}</style></head><body>
 <div id="an-cadre">
-<div id="an-zone"><div id="an-squelette"></div><div id="an-voile"><span>${ICONE_LECTURE}</span></div></div>
+${rendu ? '<div id="an-titre-rendu"></div>\n' : ""}<div id="an-zone"><div id="an-squelette"></div><div id="an-voile"><span>${ICONE_LECTURE}</span></div></div>
 <div id="an-erreur" role="alert"></div>
 <p id="an-legende" aria-live="polite"></p>
 <div id="an-barre">
@@ -109,7 +116,7 @@ body.echec #an-barre,body.echec #an-chap{opacity:.4;pointer-events:none;}
 </div>
 <script>window.__ANIM_CONF=${conf};</script>
 <script>${RUNTIME_ANIMATION}</script>
-<script>${neutraliserScript(code)}</script>
+${rendu ? `<script>${RUNTIME_RENDU_VIDEO}</script>\n` : ""}<script>${neutraliserScript(code)}</script>
 <script>if(window.__animDemarrer){window.__animDemarrer();}</script>
 </body></html>`;
 }
