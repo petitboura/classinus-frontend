@@ -28,6 +28,11 @@ export function videosNonPlacees<T extends VideoMinimale>(videos: T[] | undefine
 export function imagesNonPlacees<T extends ImageMinimale>(images: T[] | undefined, texte: string, reponseTerminee: boolean): T[] | undefined {
   if (!images || !images.length) return images;
   if (!reponseTerminee) return undefined;
-  const restantes = images.filter((i) => !texte.includes(i.url) && !texte.includes(i.miniature));
+  // Une image n'est "placée" que si le modèle l'a écrite en vrai markdown
+  // d'image ou de lien, c'est à dire que son adresse suit directement "](".
+  // Un simple lien dans le texte (par exemple un bloc "[Image jointe : ...]"
+  // imité du format des pièces jointes) ne s'affiche pas comme une image : la
+  // galerie doit alors rester visible.
+  const restantes = images.filter((i) => !texte.includes("](" + i.url) && !texte.includes("](" + i.miniature));
   return restantes.length ? restantes : undefined;
 }
