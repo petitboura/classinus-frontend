@@ -6,10 +6,9 @@
 import { LOCALE_ACTIVE, type Locale } from "@/lib/erreurs";
 
 const TEXTES_FR = {
-  horizontal: "Télécharger en vidéo 16:9 (horizontal)",
-  vertical: "Télécharger en vidéo 9:16 (vertical)",
-  horizontalCourt: "16:9",
-  verticalCourt: "9:16",
+  telecharger: "Télécharger",
+  horizontal: "Vidéo 16:9 (horizontal)",
+  vertical: "Vidéo 9:16 (vertical)",
   envoi: "Envoi",
   creation: (pourcent: number) => `Création ${pourcent} %`,
   annuler: "Annuler la création de la vidéo",

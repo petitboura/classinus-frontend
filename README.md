@@ -124,8 +124,8 @@ components/
                           progression p (0 à 1), rejouée dans l'ordre à chaque image (animer peut être écrit après installer ou à l'intérieur) ; titres cliquables et
                           légende facultatifs. Pause et retour en arrière sont donc exacts. Textes dans lib/textesAnimation.ts. Consignes données au modèle
                           dans clovis-backend, core/profils_agents.py (INSTRUCTIONS_FORMATS_AFFICHAGE)
-    BoutonVideoAnimation.tsx  boutons 16:9 et 9:16 de la barre d'actions du bloc animation (07/10/2026) : téléchargent
-                          l'animation en vidéo MP4, fabriquée par le serveur (classinus-backend, api/rendu_animation.py),
+    BoutonVideoAnimation.tsx  bouton Télécharger de la barre d'actions du bloc animation (07/10/2026) : il ouvre un petit menu
+                          (MenuActionsCarte) pour choisir le format, 16:9 ou 9:16, puis télécharge l'animation en vidéo MP4, fabriquée par le serveur (classinus-backend, api/rendu_animation.py),
                           donc aussi sur téléphone. Sans état : tout vit dans lib/useVideoAnimation.ts (envoi, suivi de
                           l'avancement, annulation, téléchargement). Appels dans lib/apiRenduVideoAnimation.ts, textes dans
                           lib/textesVideoAnimation.ts. Le document envoyé est celui du lecteur, mis en page au format de la
