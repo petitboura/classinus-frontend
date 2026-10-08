@@ -40,6 +40,7 @@ import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
 import { cliquerEcran } from "./clicEcran.mjs";
 import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
 import { creerGardeClavier } from "./gardeClavier.mjs";
+import { taperTexteAdapte } from "./frappeAdaptee.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -316,25 +317,29 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         } finally { clicEnCours = false; }
       }
       case "taper_clavier": {
-        const { keyboard, Key } = await import("@nut-tree-fork/nut-js");
+        const { keyboard, Key, getActiveWindow } = await import("@nut-tree-fork/nut-js");
         const texte = String(parametres.texte ?? "");
         if (!texte) return { erreur: "texte vide" };
         await restaurerFocusSousSuperposition();
-        // Par defaut la bibliotheque attend 300 ms entre deux touches (un texte
-        // de 100 lettres prenait 30 secondes). Delai court, assez pour que les
-        // applications ne perdent aucune lettre.
-        keyboard.config.autoDelayMs = DELAI_ENTRE_TOUCHES_MS;
+        // La vitesse et le traitement de l'indentation dépendent de l'application au
+        // premier plan (voir frappeAdaptee.mts). Si son titre est illisible, frappe rapide.
+        let titreFenetre: string | null = null;
+        try {
+          titreFenetre = await (await getActiveWindow()).getTitle();
+        } catch {
+          titreFenetre = null;
+        }
         const garde = await obtenirGardeClavier();
-        // Un saut de ligne n'est pas une lettre : la bibliotheque l'enverrait comme un
-        // caractere que beaucoup d'applications ignorent. Chaque saut de ligne devient
-        // un vrai appui sur Entree, pour que l'agent n'ait pas a le faire lui-meme.
-        const lignes = texte.split(/\r\n|\r|\n/);
-        await garde.exclusif(async () => {
-          for (let i = 0; i < lignes.length; i++) {
-            if (lignes[i]) await keyboard.type(lignes[i]);
-            if (i < lignes.length - 1) await keyboard.type(Key.Enter);
-          }
+        const resultat = await taperTexteAdapte({
+          clavier: keyboard as unknown as Parameters<typeof taperTexteAdapte>[0]["clavier"],
+          garde,
+          entree: Key.Enter,
+          maj: Key.LeftShift,
+          debut: Key.Home,
+          texte,
+          titreFenetre,
         });
+        if (!resultat.ok) return { erreur: resultat.erreur };
         return { ok: true };
       }
       case "appuyer_touches": {
