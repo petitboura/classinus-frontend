@@ -316,7 +316,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         } finally { clicEnCours = false; }
       }
       case "taper_clavier": {
-        const { keyboard } = await import("@nut-tree-fork/nut-js");
+        const { keyboard, Key } = await import("@nut-tree-fork/nut-js");
         const texte = String(parametres.texte ?? "");
         if (!texte) return { erreur: "texte vide" };
         await restaurerFocusSousSuperposition();
@@ -325,7 +325,16 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         // applications ne perdent aucune lettre.
         keyboard.config.autoDelayMs = DELAI_ENTRE_TOUCHES_MS;
         const garde = await obtenirGardeClavier();
-        await garde.exclusif(() => keyboard.type(texte));
+        // Un saut de ligne n'est pas une lettre : la bibliotheque l'enverrait comme un
+        // caractere que beaucoup d'applications ignorent. Chaque saut de ligne devient
+        // un vrai appui sur Entree, pour que l'agent n'ait pas a le faire lui-meme.
+        const lignes = texte.split(/\r\n|\r|\n/);
+        await garde.exclusif(async () => {
+          for (let i = 0; i < lignes.length; i++) {
+            if (lignes[i]) await keyboard.type(lignes[i]);
+            if (i < lignes.length - 1) await keyboard.type(Key.Enter);
+          }
+        });
         return { ok: true };
       }
       case "appuyer_touches": {
