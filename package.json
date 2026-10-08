@@ -10,7 +10,8 @@
     "build:capacitor": "cross-env CAPACITOR_BUILD=true next build && npx cap sync",
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
-    "test:touches-clavier": "node tests/verifier-touches-clavier.mjs"
+    "test:touches-clavier": "node tests/verifier-touches-clavier.mjs",
+    "test:garde-clavier": "node tests/verifier-garde-clavier.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "^3.7.1",

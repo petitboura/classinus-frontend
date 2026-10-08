@@ -25,7 +25,7 @@
 
 import { spawn } from "node:child_process";
 import WebSocket from "ws";
-import { BrowserWindow } from "electron";
+import { app, BrowserWindow } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 // Import direct du module compile du paquet voisin (pas un appel de
 // plugin Capacitor : juste une fonction Node partagee entre les deux
@@ -39,6 +39,7 @@ import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversa
 import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
 import { cliquerEcran } from "./clicEcran.mjs";
 import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
+import { creerGardeClavier } from "./gardeClavier.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -152,6 +153,24 @@ type NotifierWeb = (evenement: string, donnees: Record<string, unknown>) => void
 let notifierWeb: NotifierWeb | null = null;
 let clicEnCours = false;
 const DELAI_ENTRE_TOUCHES_MS = 4;
+// Courte tenue entre deux touches d'un raccourci : assez pour que Windows enregistre
+// Ctrl ou Alt avant la touche suivante, sans rendre le raccourci lent.
+const TENUE_RACCOURCI_MS = 20;
+
+// Garde du clavier (voir gardeClavier.mts) : créée au premier besoin, partagée par
+// tous les outils clavier pour qu'aucune touche ne reste enfoncée.
+let gardeClavier: ReturnType<typeof creerGardeClavier> | null = null;
+async function obtenirGardeClavier(): Promise<ReturnType<typeof creerGardeClavier>> {
+  const { keyboard } = await import("@nut-tree-fork/nut-js");
+  if (!gardeClavier) {
+    gardeClavier = creerGardeClavier(keyboard, { pauseMs: TENUE_RACCOURCI_MS });
+    // Fermeture de l'appli en plein raccourci : relâcher tout de suite.
+    const relacher = () => { void gardeClavier?.relacherToutEnUrgence(); };
+    app.on("before-quit", relacher);
+    app.on("will-quit", relacher);
+  }
+  return gardeClavier;
+}
 
 function decrireActionSysteme(type: string, parametres: Record<string, unknown>): string {
   switch (type) {
@@ -305,7 +324,8 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         // de 100 lettres prenait 30 secondes). Delai court, assez pour que les
         // applications ne perdent aucune lettre.
         keyboard.config.autoDelayMs = DELAI_ENTRE_TOUCHES_MS;
-        await keyboard.type(texte);
+        const garde = await obtenirGardeClavier();
+        await garde.exclusif(() => keyboard.type(texte));
         return { ok: true };
       }
       case "appuyer_touches": {
@@ -315,16 +335,16 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         if (!analyse.ok) return { erreur: analyse.erreur };
         const { keyboard, Key } = await import("@nut-tree-fork/nut-js");
         await restaurerFocusSousSuperposition();
+        // Sans ce réglage, la bibliothèque attend 300 ms après chaque touche.
+        keyboard.config.autoDelayMs = DELAI_ENTRE_TOUCHES_MS;
+        const garde = await obtenirGardeClavier();
         for (const noms of analyse.combinaisons) {
           const touches = noms.map((nom) => (Key as unknown as Record<string, number>)[nom]);
           if (touches.some((t) => typeof t !== "number")) return { erreur: `touche non disponible sur ce système : ${noms.join("+")}` };
-          // Les touches sont toujours relachees, meme en cas d'erreur en cours
-          // de route : jamais de Ctrl ou de Windows reste enfonce.
-          try {
-            await keyboard.pressKey(...touches);
-          } finally {
-            await keyboard.releaseKey(...[...touches].reverse());
-          }
+          // Chaque touche est enfoncée puis relâchée séparément, même en cas d'erreur
+          // en cours de route : jamais de Ctrl, Alt, Maj ou Windows resté enfoncé.
+          const resultat = await garde.combinaison(touches);
+          if (!resultat.ok) return { erreur: resultat.erreur };
         }
         return { ok: true, combinaisons: analyse.combinaisons.map(libelleCombinaison) };
       }
