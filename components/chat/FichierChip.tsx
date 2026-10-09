@@ -232,16 +232,27 @@ function BoutonsFormatBrut({ avecTexte, vueBrute, onChanger }: { avecTexte: bool
   );
 }
 
+// Nom de domaine affiché dans la mention "fichier externe" (sans "www.").
+function hoteDe(href: string): string | null {
+  try {
+    return new URL(href).hostname.replace(/^www\./, "") || null;
+  } catch {
+    return null;
+  }
+}
+
 export function FichierChip({ href, nom }: { href: string; nom: string }) {
   const infos = extensionFichier(href);
   const { icone: Icone, libelle } = infos ? EXTENSIONS_FICHIER[infos] : { icone: File, libelle: "Fichier" };
 
-  // L'aperçu intégré (PDF, Office, Markdown, texte) n'est proposé que si
-  // l'URL vient de notre propre stockage Supabase (voir
-  // estOrigineDeConfiance ci-dessus, même garde-fou qu'avant le correctif
-  // du 09/10) -- n'importe quelle autre origine retombe sur la carte
-  // téléchargement générique plus bas.
+  // 09/10/2026, demande Bourama : l'aperçu intégré (PDF, Office, Markdown,
+  // texte) s'ouvre pour n'importe quel document, quelle que soit l'origine
+  // du lien. L'origine ne sert plus qu'à deux choses : afficher la mention
+  // "fichier externe" sur la carte, et savoir si le fichier peut être une
+  // entrée de la bibliothèque publique (voir plus bas).
   const origineFiable = estOrigineDeConfiance(href);
+  const hoteExterne = origineFiable ? null : hoteDe(href);
+  const sousTitre = origineFiable ? libelle : `${libelle} · fichier externe${hoteExterne ? ` (${hoteExterne})` : ""}`;
 
   // 13/09/2026, demande Bourama : si l'IA a retrouvé ce fichier dans la
   // bibliothèque publique (et pas, par ex., un fichier fraîchement généré),
@@ -268,9 +279,9 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
   // change : le nouveau lecteur (VisionneurPdf, @anaralabs/lector, voir
   // clovis-skills-mobile-pdf) remplace l'ancienne iframe native du
   // navigateur (illisible sur mobile, cause du correctif du 09/10).
-  if (infos === "pdf" && origineFiable) {
+  if (infos === "pdf") {
     return (
-      <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<VisionneurPdf url={href} page={1} />} />
+      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<VisionneurPdf url={href} page={1} />} />
     );
   }
 
@@ -280,14 +291,14 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
   // BlocExpansible que le PDF ci-dessus -- avant le 09/10, ces types
   // tombaient tous sur la carte téléchargement générique plus bas, sans
   // aucun aperçu (signalé par Bourama, ex. les .md).
-  if (origineFiable && infos && infos in TYPE_MIME_PAR_EXTENSION) {
+  if (infos && infos in TYPE_MIME_PAR_EXTENSION) {
     const typeMime = TYPE_MIME_PAR_EXTENSION[infos];
     if (estFichierMarkdown(nom, typeMime)) {
       return (
         <BlocExpansible
           titre={nom}
           icone={Icone}
-          sousTitre={libelle}
+          sousTitre={sousTitre}
           hrefTelechargement={href}
           idBibliothequePublique={idBibliothequePublique}
           texteACopier={texteMarkdown ?? undefined}
@@ -302,15 +313,15 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
       );
     }
     if (TYPES_MIME_OFFICE.has(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={href} titre={nom} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={href} titre={nom} />} />;
     }
     if (estTypeTexteLisible(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuTexte href={href} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuTexte href={href} />} />;
     }
   }
 
   // Repli : archive ZIP, modèle 3D (aucun aperçu possible dans un
-  // navigateur), origine non fiable, ou extension inconnue -- carte
+  // navigateur), ou extension inconnue -- carte
   // téléchargement, le clic force un vrai téléchargement (blob) au lieu
   // d'ouvrir un nouvel onglet (31/07, demande Bourama : "tous les liens
   // de téléchargement restent dans l'appli"). 13/09/2026 : si connu comme
