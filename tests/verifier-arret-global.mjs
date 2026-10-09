@@ -107,7 +107,7 @@ try {
     assert.equal(r.etat.enregistrements, 0);
   }
 
-  // --- La frappe s'arrête entre deux blocs quand l'arrêt est demandé (frappeAdaptee.mts) ---
+  // La frappe s'arrête entre deux blocs quand l'arrêt est demandé (frappeAdaptee.mts).
   const sortieFrappe = join(dossier, 'frappe.mjs');
   await build({ entryPoints: [resolve(import.meta.dirname, '../packages/capacitor-pont-natif-electron/electron/src/frappeAdaptee.mts')], outfile: sortieFrappe, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent' });
   const { taperTexteAdapte, TAILLE_BLOC_FRAPPE } = await import(pathToFileURL(sortieFrappe).href);
