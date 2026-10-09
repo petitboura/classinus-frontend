@@ -11,7 +11,8 @@
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
     "test:touches-clavier": "node tests/verifier-touches-clavier.mjs",
-    "test:garde-clavier": "node tests/verifier-garde-clavier.mjs"
+    "test:garde-clavier": "node tests/verifier-garde-clavier.mjs",
+    "test:arret-global": "node tests/verifier-arret-global.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "^3.7.1",

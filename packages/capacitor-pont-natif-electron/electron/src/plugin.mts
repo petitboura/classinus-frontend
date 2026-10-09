@@ -25,7 +25,7 @@
 
 import { spawn } from "node:child_process";
 import WebSocket from "ws";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, globalShortcut } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 // Import direct du module compile du paquet voisin (pas un appel de
 // plugin Capacitor : juste une fonction Node partagee entre les deux
@@ -41,6 +41,7 @@ import { cliquerEcran } from "./clicEcran.mjs";
 import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
 import { creerGardeClavier } from "./gardeClavier.mjs";
 import { taperTexteAdapte } from "./frappeAdaptee.mjs";
+import { creerArretGlobal } from "./arretGlobal.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -173,6 +174,21 @@ async function obtenirGardeClavier(): Promise<ReturnType<typeof creerGardeClavie
   return gardeClavier;
 }
 
+// Arrêt global (voir arretGlobal.mts) : Échap arrête Clovis de n'importe où pendant une
+// tâche. Le renderer arme le raccourci au début de la tâche et le désarme à la fin
+// (armerArretGlobal et desarmerArretGlobal plus bas).
+const MESSAGE_ARRET_GLOBAL =
+  "L'étudiant a appuyé sur Échap pour t'arrêter : arrête la tâche en cours et ne recommence pas cette action.";
+let arretGlobalSurQuitEnregistre = false;
+const arretGlobal = creerArretGlobal(globalShortcut, {
+  surArret: () => {
+    // Relâcher tout de suite les touches que Clovis tient enfoncées (Ctrl, Alt, Maj...).
+    void gardeClavier?.relacherToutEnUrgence();
+    // Le renderer principal coupe la tâche, comme le bouton d'arrêt de la superposition.
+    try { notifierWeb?.("arretGlobal", {}); } catch (e) { console.warn("PontNatif : arret global non relaye", e); }
+  },
+});
+
 function decrireActionSysteme(type: string, parametres: Record<string, unknown>): string {
   switch (type) {
     case "pointer_ecran":
@@ -219,6 +235,10 @@ async function executerAvecJournal(id: string, type: string, parametres: Record<
     // Une erreur du miroir ne doit pas empêcher l'exécution ni sa réponse.
     try { notifierWeb?.("actionSysteme", donnees); } catch (e) { console.warn("PontNatif : journal indisponible", e); }
   };
+  // Arrêt demandé par l'étudiant (Échap) : plus aucune action sur le PC, la lecture de
+  // l'écran reste possible pour que Clovis voie où il s'est arrêté.
+  if (type !== "lire_ecran" && arretGlobal.arretDemande()) return { erreur: MESSAGE_ARRET_GLOBAL };
+  arretGlobal.signalerActivite();
   // Lecture automatique (le serveur lit l'écran avant un tour ou après une action,
   // sans que Classinus l'ait décidé) : rien à afficher, ni journal ni bulle.
   if (type === "lire_ecran" && parametres.automatique === true) {
@@ -338,7 +358,10 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
           debut: Key.Home,
           texte,
           titreFenetre,
+          arretDemande: () => arretGlobal.arretDemande(),
         });
+        // Arrêt demandé par l'étudiant (Échap) : prioritaire sur toute autre issue.
+        if (arretGlobal.arretDemande()) return { erreur: MESSAGE_ARRET_GLOBAL };
         if (!resultat.ok) return { erreur: resultat.erreur };
         return { ok: true };
       }
@@ -353,6 +376,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         keyboard.config.autoDelayMs = DELAI_ENTRE_TOUCHES_MS;
         const garde = await obtenirGardeClavier();
         for (const noms of analyse.combinaisons) {
+          if (arretGlobal.arretDemande()) return { erreur: MESSAGE_ARRET_GLOBAL };
           const touches = noms.map((nom) => (Key as unknown as Record<string, number>)[nom]);
           if (touches.some((t) => typeof t !== "number")) return { erreur: `touche non disponible sur ce système : ${noms.join("+")}` };
           // Chaque touche est enfoncée puis relâchée séparément, même en cas d'erreur
@@ -445,6 +469,23 @@ class PontNatifImpl extends ElectronPlugin {
   async deconnexion(): Promise<void> {
     jetonActuel = null;
     fermerConnexion();
+    arretGlobal.desarmer();
+  }
+
+  // Début d'une tâche de Clovis : Échap devient le raccourci d'arrêt. Renvoie arme=false
+  // si une autre application avait déjà pris ce raccourci.
+  async armerArretGlobal(): Promise<{ arme: boolean }> {
+    notifierWeb = (evenement, donnees) => this.context.notifyListeners(evenement, donnees);
+    if (!arretGlobalSurQuitEnregistre) {
+      arretGlobalSurQuitEnregistre = true;
+      app.on("will-quit", () => arretGlobal.desarmer());
+    }
+    return { arme: arretGlobal.armer() };
+  }
+
+  // Fin de la tâche : Échap redevient normal dans toutes les applications.
+  async desarmerArretGlobal(): Promise<void> {
+    arretGlobal.desarmer();
   }
 
   async rattraperActionsEnAttente(): Promise<{ traitees: number }> {
@@ -459,6 +500,6 @@ class PontNatifImpl extends ElectronPlugin {
 }
 
 export const PontNatif = defineElectronPlugin(
-  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente", "executerActionSysteme"] },
+  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente", "executerActionSysteme", "armerArretGlobal", "desarmerArretGlobal"] },
   PontNatifImpl
 );

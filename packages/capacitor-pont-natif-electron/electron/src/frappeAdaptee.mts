@@ -20,6 +20,11 @@ export type ProfilFrappe = {
 
 export const DELAI_RAPIDE_MS = 4;
 
+// La frappe est envoyée par petits blocs de caractères pour pouvoir s'arrêter entre deux
+// blocs (arrêt global, voir arretGlobal.mts) : un seul gros morceau ne peut pas être
+// interrompu en plein milieu.
+export const TAILLE_BLOC_FRAPPE = 20;
+
 const PROFIL_RAPIDE: ProfilFrappe = {
   nom: "rapide",
   delaiToucheMs: DELAI_RAPIDE_MS,
@@ -74,16 +79,28 @@ export async function taperTexteAdapte(options: {
   debut: ToucheNumerique;
   texte: string;
   titreFenetre: string | null;
+  // Vrai quand l'étudiant a demandé l'arrêt : la frappe s'arrête avant le bloc suivant.
+  arretDemande?: () => boolean;
 }): Promise<{ ok: true; profil: string } | { ok: false; erreur: string }> {
   const { clavier, garde, entree, maj, debut, texte, titreFenetre } = options;
+  const arretDemande = options.arretDemande ?? (() => false);
   const profil = choisirProfilFrappe(titreFenetre);
   clavier.config.autoDelayMs = profil.delaiToucheMs;
 
   const lignes = texte.split(/\r\n|\r|\n/);
   for (let i = 0; i < lignes.length; i++) {
     const ligne = lignes[i];
-    if (ligne) await garde.exclusif(() => clavier.type(ligne));
+    if (ligne) {
+      // Par caractères entiers : un emoji ne doit pas être coupé en deux.
+      const caracteres = Array.from(ligne);
+      for (let pos = 0; pos < caracteres.length; pos += TAILLE_BLOC_FRAPPE) {
+        if (arretDemande()) return { ok: false, erreur: "arret demande" };
+        const bloc = caracteres.slice(pos, pos + TAILLE_BLOC_FRAPPE).join("");
+        await garde.exclusif(() => clavier.type(bloc));
+      }
+    }
     if (i === lignes.length - 1) break;
+    if (arretDemande()) return { ok: false, erreur: "arret demande" };
     await garde.exclusif(() => clavier.type(entree));
     if (profil.pauseApresEntreeMs > 0) await attendre(profil.pauseApresEntreeMs);
     // L'éditeur vient d'ajouter son indentation : Maj+Début la sélectionne, la ligne

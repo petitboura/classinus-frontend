@@ -27,6 +27,7 @@ import {
 } from "@/lib/contexteCanalEnDirect";
 import type { ContexteVoixDirecteValeur } from "@/lib/contexteVoixDirecte";
 import { conversationActive } from "@/lib/conversationPartagee";
+import { abonnerEtatTacheCanal, arreterTacheCanal, lireEtatTacheCanal } from "@/lib/tacheCanal";
 
 export interface MarqueEcranAffichee {
   id: string;
@@ -167,6 +168,7 @@ export function useEmetteurSuperposition(
   refValeurs.current = { curseur, canal, voix };
   const envoyerRef = useRef<(() => void) | null>(null);
   useJournalActionsSysteme();
+  useArretGlobalPc();
 
   // Comme sur le site (ControlesInteractionCanal.tsx) : désactiver le canal
   // coupe la voix liée à sa conversation. Sur Electron, les contrôles vivent
@@ -382,6 +384,51 @@ interface PluginPontNatifEvenements {
     eventName: "actionSysteme",
     listenerFunc: (donnee: EvenementActionSysteme) => void
   ): Promise<{ remove: () => void }>;
+}
+
+// Garde-fou 1 du canal PC (08/10/2026, demande Bourama) : arrêt global. Pendant qu'une
+// tâche tourne, Échap (raccourci système pris par le plugin PontNatif, voir
+// packages/capacitor-pont-natif-electron/electron/src/arretGlobal.mts) arrête Clovis
+// de n'importe où, même sans le focus sur Classinus. Le raccourci n'est pris que le temps
+// de la tâche : le reste du temps, Échap fonctionne normalement dans toutes les applications.
+interface PluginPontNatifArret {
+  armerArretGlobal(): Promise<{ arme: boolean }>;
+  desarmerArretGlobal(): Promise<void>;
+  addListener(eventName: "arretGlobal", listenerFunc: () => void): Promise<{ remove: () => void }>;
+}
+
+/**
+ * Monté dans la fenêtre PRINCIPALE (voir useEmetteurSuperposition) : arme le
+ * raccourci d'arrêt quand une tâche démarre, le désarme quand elle se termine, et
+ * coupe la tâche quand l'étudiant appuie dessus (même effet que le bouton d'arrêt).
+ */
+function useArretGlobalPc() {
+  useEffect(() => {
+    if (!surElectron()) return;
+    const PontNatif = registerPlugin<PluginPontNatifArret>("PontNatif");
+    let arme = false;
+    const synchroniser = () => {
+      const enCours = lireEtatTacheCanal().enCours;
+      if (enCours === arme) return;
+      arme = enCours;
+      const appel = enCours ? PontNatif.armerArretGlobal() : PontNatif.desarmerArretGlobal();
+      appel.catch((e) => console.warn("PontNatif (JS): arret global indisponible", e));
+    };
+    const seDesabonner = abonnerEtatTacheCanal(synchroniser);
+    synchroniser();
+    let retrait: (() => void) | undefined;
+    let annule = false;
+    PontNatif.addListener("arretGlobal", () => arreterTacheCanal()).then((poignee) => {
+      if (annule) poignee.remove();
+      else retrait = () => poignee.remove();
+    });
+    return () => {
+      annule = true;
+      retrait?.();
+      seDesabonner();
+      if (arme) PontNatif.desarmerArretGlobal().catch(() => {});
+    };
+  }, []);
 }
 
 /**
