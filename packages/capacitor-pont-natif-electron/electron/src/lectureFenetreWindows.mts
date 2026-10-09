@@ -462,11 +462,15 @@ try {
   # deplier) ou ils recoivent le clavier.
   $proprietesActionnables = @($AE::IsInvokePatternAvailableProperty, $AE::IsTogglePatternAvailableProperty,
     $AE::IsSelectionItemPatternAvailableProperty, $AE::IsExpandCollapsePatternAvailableProperty)
+  $motifClassesActionnables = '(^|[.])(BUTTON|EDIT|COMBOBOX|LISTBOX|COMBOLBOX|SYSLISTVIEW32|SYSTREEVIEW32|SYSTABCONTROL32|MSCTLS_TRACKBAR32|MSCTLS_UPDOWN32|SCROLLBAR|SYSLINK|RICHEDIT[A-Za-z0-9_]*)([.]|$)'
   function EstActionnable($el) {
     foreach ($propriete in $proprietesActionnables) {
       try { if ($el.GetCachedPropertyValue($propriete) -eq $true) { return $true } } catch { }
     }
     try { if ($el.Cached.IsKeyboardFocusable) { return $true } } catch { }
+    # Classes Windows des controles sur lesquels on agit (BUTTON, EDIT...), reconnues aussi quand
+    # elles sont prefixees par le toolkit (WindowsForms10.BUTTON.app.0.xxx). STATIC (texte) n'en fait pas partie.
+    try { if ($el.Cached.ClassName -match $motifClassesActionnables) { return $true } } catch { }
     return $false
   }
 
