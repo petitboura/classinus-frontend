@@ -10,6 +10,7 @@ import { telecharger } from "@/lib/telecharger";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { useEntreePubliqueParUrl } from "@/lib/useEntreePubliqueParUrl";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
+import { extensionDepuisTexte } from "@/lib/extensionDepuisTexte";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 
 // CORRECTIF 2026-09-10 (demande Bourama : le nouveau lecteur -- PDF
@@ -131,10 +132,14 @@ const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp"]);
 // composant `a` custom dans BulleMessage.tsx appelle `extensionFichier()`
 // et bascule vers ce composant quand elle correspond, sinon rend le lien
 // normal -- pas de régression sur les liens web classiques.
-export function extensionFichier(href: string): string | null {
+export function extensionFichier(href: string, texteLien?: string): string | null {
   const match = href.split("?")[0].match(/\.([a-zA-Z0-9]+)$/);
   const ext = match?.[1]?.toLowerCase();
-  return ext && ext in EXTENSIONS_FICHIER ? ext : null;
+  if (ext && ext in EXTENSIONS_FICHIER) return ext;
+  // 09/10/2026, demande Bourama : adresse sans extension (lien de
+  // téléchargement du type ?download=12725), le texte du lien annonce le type.
+  const extTexte = extensionDepuisTexte(href, texteLien);
+  return extTexte && extTexte in EXTENSIONS_FICHIER ? extTexte : null;
 }
 
 // 12/09/2026, Bourama : vrai téléchargement système sur Android (au lieu
@@ -241,8 +246,10 @@ function hoteDe(href: string): string | null {
   }
 }
 
-export function FichierChip({ href, nom }: { href: string; nom: string }) {
-  const infos = extensionFichier(href);
+// extensionForcee : type connu par un autre moyen que l'adresse (le backend a
+// lu le type réel du fichier, voir LinkPreview.tsx).
+export function FichierChip({ href, nom, extensionForcee }: { href: string; nom: string; extensionForcee?: string }) {
+  const infos = extensionForcee && extensionForcee in EXTENSIONS_FICHIER ? extensionForcee : extensionFichier(href, nom);
   const { icone: Icone, libelle } = infos ? EXTENSIONS_FICHIER[infos] : { icone: File, libelle: "Fichier" };
 
   // 09/10/2026, demande Bourama : l'aperçu intégré (PDF, Office, Markdown,

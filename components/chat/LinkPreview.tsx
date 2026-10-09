@@ -6,6 +6,8 @@ import { Skeleton } from "../Skeleton";
 import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { API_URL } from "@/lib/api";
 import { traiterLienSortant } from "@/lib/liensSortants";
+import { FichierChip } from "./FichierChip";
+import { LecteurMedia, typeMedia } from "./LecteurMedia";
 
 // Aperçu de lien dans le chat -- demande de Bourama (2026-07-20) : "n'importe
 // quel lien génère un aperçu... comme dans n'importe quelle plateforme"
@@ -78,13 +80,17 @@ function LecteurYoutubeInline({ idVideo, onFermer }: { idVideo: string; onFermer
 
 // Mémoire (23/09/2026) : un aperçu déjà chargé réapparaît tout de suite s'il
 // se remonte, sans nouvel appel réseau ni écran de chargement.
-const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: boolean }>();
+// 09/10/2026 : `fichier` = le backend a lu dans les en-têtes que l'adresse est un
+// vrai fichier (PDF, image, audio...) alors qu'elle n'en a pas l'air (?download=12725).
+type FichierDetecte = { extension: string; nom: string | null; taille: number | null };
+const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: boolean; fichier?: FichierDetecte | null }>();
 
 export function LinkPreview({ href, texteLien, compact }: { href: string; texteLien: string; compact?: boolean }) {
   const [apercu, setApercu] = useState<Apercu | null>(() => memoireApercus.lire(href)?.apercu ?? null);
   const [echec, setEchec] = useState(() => memoireApercus.lire(href)?.echec ?? false);
   const [charge, setCharge] = useState(() => memoireApercus.lire(href) !== undefined);
   const [enLecture, setEnLecture] = useState(false);
+  const [fichier, setFichier] = useState<FichierDetecte | null>(() => memoireApercus.lire(href)?.fichier ?? null);
   const idVideo = idYoutube(href);
 
   useEffect(() => {
@@ -117,6 +123,11 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
     fetch(`${API_URL}/api/apercu-lien?url=${encodeURIComponent(href)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
+        if (data?.fichier?.extension) {
+          memoireApercus.ecrire(href, { apercu: null, echec: false, fichier: data.fichier });
+          if (!annule) setFichier(data.fichier);
+          return;
+        }
         const vide = !data?.titre && !data?.image;
         memoireApercus.ecrire(href, { apercu: vide ? null : data, echec: vide });
         if (annule) return;
@@ -136,6 +147,16 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       annule = true;
     };
   }, [href, idVideo]);
+
+  // Le backend a reconnu un vrai fichier : même carte que pour un lien qui a
+  // l'extension dans son adresse (aperçu au clic, téléchargement, mention
+  // fichier externe).
+  if (fichier) {
+    const nom = texteLien === href && fichier.nom ? fichier.nom : texteLien;
+    const media = typeMedia(`.${fichier.extension}`);
+    if (media) return <LecteurMedia href={href} type={media} />;
+    return <FichierChip href={href} nom={nom} extensionForcee={fichier.extension} />;
+  }
 
   // Repli : lien texte classique, tant que rien n'est chargé ou si l'aperçu
   // a échoué -- jamais de carte vide affichée.

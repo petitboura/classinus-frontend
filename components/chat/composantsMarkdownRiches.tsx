@@ -167,7 +167,7 @@ function LienMarkdown({ href, children }: { href?: string; children?: ReactNode 
     );
   }
 
-  const media = typeMedia(href);
+  const media = typeMedia(href, texteBrut(children));
   if (media) return <LecteurMedia href={href} type={media} />;
   if (estNoteTexteBibliotheque(href)) {
     return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
@@ -175,7 +175,7 @@ function LienMarkdown({ href, children }: { href?: string; children?: ReactNode 
   if (estFichierCodeAffichable(href)) {
     return <FichierCode href={href} nom={texteBrut(children) || href} />;
   }
-  if (extensionFichier(href)) {
+  if (extensionFichier(href, texteBrut(children))) {
     return <FichierChip href={href} nom={texteBrut(children) || href} />;
   }
   if (/^https?:\/\//i.test(href)) {

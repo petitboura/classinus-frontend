@@ -2,15 +2,18 @@
 
 import { Download } from "lucide-react";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
+import { extensionDepuisTexte } from "@/lib/extensionDepuisTexte";
 
 const EXTENSIONS_AUDIO = ["mp3", "wav", "ogg", "m4a"];
 const EXTENSIONS_VIDEO = ["mp4", "webm", "mov"];
 
-export function typeMedia(href: string): "audio" | "video" | null {
+export function typeMedia(href: string, texteLien?: string): "audio" | "video" | null {
   const ext = href.split("?")[0].split(".").pop()?.toLowerCase();
-  if (!ext) return null;
-  if (EXTENSIONS_AUDIO.includes(ext)) return "audio";
-  if (EXTENSIONS_VIDEO.includes(ext)) return "video";
+  for (const candidat of [ext, extensionDepuisTexte(href, texteLien)]) {
+    if (!candidat) continue;
+    if (EXTENSIONS_AUDIO.includes(candidat)) return "audio";
+    if (EXTENSIONS_VIDEO.includes(candidat)) return "video";
+  }
   return null;
 }
 

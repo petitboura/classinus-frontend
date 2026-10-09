@@ -132,11 +132,11 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
           </button>
         );
       }
-      const media = typeMedia(href);
+      const media = typeMedia(href, texteBrut(children));
       if (media) return <LecteurMedia href={href} type={media} />;
       if (estNoteTexteBibliotheque(href)) return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
       if (estFichierCodeAffichable(href)) return <FichierCode href={href} nom={texteBrut(children) || href} />;
-      if (extensionFichier(href)) return <FichierChip href={href} nom={texteBrut(children) || href} />;
+      if (extensionFichier(href, texteBrut(children))) return <FichierChip href={href} nom={texteBrut(children) || href} />;
       if (/^https?:\/\//i.test(href)) return <LinkPreview href={href} texteLien={texteBrut(children) || href} />;
       return (
         <a href={href} target="_blank" rel="noopener noreferrer" className="text-dj-texte-muet underline hover:text-dj-texte">
