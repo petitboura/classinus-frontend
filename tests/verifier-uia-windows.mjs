@@ -127,7 +127,15 @@ try {
     const trace = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(diagnostic,'utf16le').toString('base64')],{encoding:'utf8'});
     console.log('Diagnostic UIA :',trace.stdout);
   }
-  verifier(premiere);
+  try {
+    verifier(premiere);
+  } catch (erreur) {
+    // Le journal d'un job GitHub n'est lisible qu'a la main : un message ::error:: devient une
+    // annotation, relisible aussi par l'API. On y met ce qui a ete lu, pour voir ce qui manque.
+    const resume = premiere.elements.map(e=>`${e.type}|${e.nom}|id=${e.id_auto??''}|panneau=${e.panneau??''}`).join(' ;; ');
+    console.log('::error title=Lecture UIA::' + String(erreur.message).split('\n')[0].slice(0,200) + ' => ' + resume.slice(0,1500));
+    throw erreur;
+  }
   const moduleClic=join(dossier,'clic.mjs');
   await build({entryPoints:[resolve(import.meta.dirname,'../packages/capacitor-pont-natif-electron/electron/src/clicWindows.mts')],outfile:moduleClic,bundle:true,platform:'node',format:'esm'});
   const {cliquerParAccessibiliteWindows}=await import(pathToFileURL(moduleClic).href);
