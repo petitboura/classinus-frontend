@@ -134,6 +134,15 @@ try {
     // annotation, relisible aussi par l'API. On y met ce qui a ete lu, pour voir ce qui manque.
     const resume = premiere.elements.map(e=>`${e.type}|${e.nom}|id=${e.id_auto??''}|panneau=${e.panneau??''}`).join(' ;; ');
     console.log('::error title=Lecture UIA::' + String(erreur.message).split('\n')[0].slice(0,200) + ' => ' + resume.slice(0,1500));
+    try {
+      const trace = construireScript(limitesDepuisParametres({}),process.pid,etat.superposition)
+        .replace('$script:elements =', '$script:traces = New-Object System.Collections.Generic.List[object]\n  $script:elements =')
+        .replace('if ($el.Cached.IsOffscreen)', '$script:traces.Add(\"$($el.Cached.ControlType.ProgrammaticName)|nom=$($el.Cached.Name)|id=$($el.Cached.AutomationId)|hors=$($el.Cached.IsOffscreen)|invoke=$($el.GetCachedPropertyValue($AE::IsInvokePatternAvailableProperty))|rect=$($el.Cached.BoundingRectangle)\")\n    if ($el.Cached.IsOffscreen)')
+        .replace('$resultat.coupe = $script:coupe', '$resultat.trace = $script:traces\n  $resultat.coupe = $script:coupe');
+      const sortieTrace = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(trace,'utf16le').toString('base64')],{encoding:'utf8'});
+      const lecture = JSON.parse(sortieTrace.stdout);
+      console.log('::error title=Trace UIA::' + (lecture.trace ?? []).join(' ;; ').slice(0,3500));
+    } catch (e) { console.log('::error title=Trace UIA indisponible::' + String(e.message).slice(0,300)); }
     throw erreur;
   }
   const moduleClic=join(dossier,'clic.mjs');
