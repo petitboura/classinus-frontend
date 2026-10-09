@@ -45,7 +45,7 @@ $secret.Text='SECRET-INTERDIT'; $secret.UseSystemPasswordChar=$true; $secret.Lef
 # Bouton sans aucun libelle (comme un bouton d'icone) et bouton dans un panneau nomme :
 # l'IA doit les voir, designer le premier par son identifiant et connaitre le panneau du second.
 $sansLibelle = New-Object Windows.Forms.Button
-$sansLibelle.Name='boutonSansLibelle'; $sansLibelle.Text=''; $sansLibelle.Left=700; $sansLibelle.Top=90; $sansLibelle.Width=60
+$sansLibelle.Text=''; $sansLibelle.Left=700; $sansLibelle.Top=90; $sansLibelle.Width=60
 $groupe = New-Object Windows.Forms.GroupBox
 $groupe.Text='Panneau essai'; $groupe.Left=30; $groupe.Top=260; $groupe.Width=300; $groupe.Height=90
 $dansGroupe = New-Object Windows.Forms.Button
@@ -113,8 +113,9 @@ try {
     assert(lecture.elements.some(e=>e.valeur==='Valeur fenêtre Windows' || e.nom==='Valeur fenêtre Windows'));
     assert(lecture.elements.some(e=>e.valeur_masquee));
     assert(!JSON.stringify(lecture).includes('SECRET-INTERDIT'));
-    // Base de la vision de l'ecran : un bouton sans nom reste dans la lecture, designable par son identifiant.
-    assert(lecture.elements.some(e=>e.nom==='' && e.id_auto==='boutonSansLibelle' && Number.isFinite(e.x)),JSON.stringify(lecture));
+    // Base de la vision de l'ecran : un bouton sans nom reste dans la lecture, avec la nature
+    // (classe BUTTON) et la position qui permettent a l'IA de le designer.
+    assert(lecture.elements.some(e=>e.nom==='' && !e.valeur_masquee && /button/i.test(e.classe ?? '') && Number.isFinite(e.x)),JSON.stringify(lecture));
     // Le nom du panneau qui contient un element est indique.
     assert(lecture.elements.some(e=>e.nom==='Dans le panneau' && e.panneau==='Panneau essai'),JSON.stringify(lecture));
   };

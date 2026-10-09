@@ -94,6 +94,8 @@ export interface ElementLu {
   // pour que l'IA puisse tout de meme le designer.
   id_auto?: string;
   aide?: string;
+  // Classe de la fenetre Windows (par exemple BUTTON) : dit la nature d'un element sans nom.
+  classe?: string;
 }
 
 export interface LectureFenetre {
@@ -455,14 +457,16 @@ try {
   $script:nbInteractifs = 0
   $script:nbTextes = 0
   # Les applications classiques (WinForms, Win32, Tkinter) exposent souvent leurs boutons comme de
-  # simples zones, parfois sans nom. Ce qui les distingue d'un texte : on peut agir dessus
-  # (cliquer, cocher, choisir, deplier).
+  # simples zones, parfois sans nom, sans motif d'action et avec un numero de fenetre pour tout
+  # identifiant. Ce qui les distingue d'un texte : on peut agir dessus (cliquer, cocher, choisir,
+  # deplier) ou ils recoivent le clavier.
   $proprietesActionnables = @($AE::IsInvokePatternAvailableProperty, $AE::IsTogglePatternAvailableProperty,
     $AE::IsSelectionItemPatternAvailableProperty, $AE::IsExpandCollapsePatternAvailableProperty)
   function EstActionnable($el) {
     foreach ($propriete in $proprietesActionnables) {
       try { if ($el.GetCachedPropertyValue($propriete) -eq $true) { return $true } } catch { }
     }
+    try { if ($el.Cached.IsKeyboardFocusable) { return $true } } catch { }
     return $false
   }
 
@@ -472,7 +476,8 @@ try {
                    $AE::IsOffscreenProperty, $AE::IsPasswordProperty, $AE::IsEnabledProperty, $AE::NativeWindowHandleProperty,
                    $AE::AutomationIdProperty, $AE::HelpTextProperty,
                    $AE::IsInvokePatternAvailableProperty, $AE::IsTogglePatternAvailableProperty,
-                   $AE::IsSelectionItemPatternAvailableProperty, $AE::IsExpandCollapsePatternAvailableProperty)) { $cr.Add($p) }
+                   $AE::IsSelectionItemPatternAvailableProperty, $AE::IsExpandCollapsePatternAvailableProperty,
+                   $AE::IsKeyboardFocusableProperty, $AE::ClassNameProperty)) { $cr.Add($p) }
   foreach ($p in @([System.Windows.Automation.ValuePattern]::Pattern,
                    [System.Windows.Automation.TogglePattern]::Pattern,
                    [System.Windows.Automation.ExpandCollapsePattern]::Pattern,
@@ -610,10 +615,14 @@ try {
         if ($nom -eq '' -and -not $masquee) {
           $idAuto = ''
           $aide = ''
+          $classe = ''
           try { $idAuto = Couper $el.Cached.AutomationId $longueurMaxNom } catch { }
           try { $aide = Couper $el.Cached.HelpText $longueurMaxNom } catch { }
-          if ($idAuto -ne '') { $element.id_auto = $idAuto }
+          try { $classe = Couper $el.Cached.ClassName $longueurMaxNom } catch { }
+          # Un identifiant fait uniquement de chiffres est un numero de fenetre : il ne designe rien.
+          if ($idAuto -ne '' -and $idAuto -notmatch '^[0-9]+$') { $element.id_auto = $idAuto }
           if ($aide -ne '') { $element.aide = $aide }
+          if ($classe -ne '') { $element.classe = $classe }
         }
         if ($panneau -ne '') { $element.panneau = $panneau }
         if ($script:zoneCourante) { $element.zone = $script:zoneCourante }
@@ -823,6 +832,7 @@ function lireUneFois(
             ...(typeof e.panneau === "string" && e.panneau ? { panneau: e.panneau } : {}),
             ...(typeof e.id_auto === "string" && e.id_auto ? { id_auto: e.id_auto } : {}),
             ...(typeof e.aide === "string" && e.aide ? { aide: e.aide } : {}),
+            ...(typeof e.classe === "string" && e.classe ? { classe: e.classe } : {}),
           })),
           menu_ouvert: r.menu_ouvert === true,
           coupe: r.coupe === true,
