@@ -138,7 +138,7 @@ try {
     try {
       const trace = construireScript(limitesDepuisParametres({}),process.pid,etat.superposition)
         .replace('$script:elements =', '$script:traces = New-Object System.Collections.Generic.List[object]\n  $script:elements =')
-        .replace('if ($el.Cached.IsOffscreen)', '$script:traces.Add(\"$($el.Cached.ControlType.ProgrammaticName)|nom=$($el.Cached.Name)|id=$($el.Cached.AutomationId)|hors=$($el.Cached.IsOffscreen)|invoke=$($el.GetCachedPropertyValue($AE::IsInvokePatternAvailableProperty))|rect=$($el.Cached.BoundingRectangle)\")\n    if ($el.Cached.IsOffscreen)')
+        .replace('if ($el.Cached.IsOffscreen)', '$script:traces.Add(\"$($el.Cached.ControlType.ProgrammaticName)|nom=$($el.Cached.Name)|id=$($el.Cached.AutomationId)|hors=$($el.Cached.IsOffscreen)|invoke=$($el.GetCachedPropertyValue($AE::IsInvokePatternAvailableProperty))|focus=$($el.Cached.IsKeyboardFocusable)|classe=$($el.Cached.ClassName)|rect=$($el.Cached.BoundingRectangle)\")\n    if ($el.Cached.IsOffscreen)')
         .replace('$resultat.coupe = $script:coupe', '$resultat.trace = $script:traces\n  $resultat.coupe = $script:coupe');
       const fichierTrace = join(dossier,'trace.ps1');
       await writeFile(fichierTrace, '\uFEFF' + trace);
