@@ -25,7 +25,7 @@
 
 import { spawn } from "node:child_process";
 import WebSocket from "ws";
-import { app, BrowserWindow, globalShortcut } from "electron";
+import { app, BrowserWindow, clipboard, globalShortcut } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 // Import direct du module compile du paquet voisin (pas un appel de
 // plugin Capacitor : juste une fonction Node partagee entre les deux
@@ -41,6 +41,7 @@ import { cliquerEcran } from "./clicEcran.mjs";
 import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
 import { creerGardeClavier } from "./gardeClavier.mjs";
 import { taperTexteAdapte } from "./frappeAdaptee.mjs";
+import { creerCollage, type PressePapiers } from "./collageFrappe.mjs";
 import { creerArretGlobal } from "./arretGlobal.mjs";
 
 /**
@@ -359,6 +360,12 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
           texte,
           titreFenetre,
           arretDemande: () => arretGlobal.arretDemande(),
+          collage: creerCollage({
+            presse: clipboard as unknown as PressePapiers,
+            garde,
+            ctrl: Key.LeftControl,
+            v: Key.V,
+          }),
         });
         // Arrêt demandé par l'étudiant (Échap) : prioritaire sur toute autre issue.
         if (arretGlobal.arretDemande()) return { erreur: MESSAGE_ARRET_GLOBAL };
