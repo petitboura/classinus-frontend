@@ -26,7 +26,11 @@ import { randomBytes } from "node:crypto";
 import { blocCompilationUnique } from "./compilationUnique.mjs";
 
 export interface LimitesLectureEcran {
+  // Elements sur lesquels on agit (boutons, champs, onglets...). Les textes et
+  // conteneurs ont leur propre plafond (nbMaxTextes) : une fenetre pleine de
+  // paragraphes ne doit plus faire disparaitre ses boutons.
   nbMaxElements: number;
+  nbMaxTextes: number;
   nbMaxFenetres: number;
   longueurMaxNom: number;
   longueurMaxValeur: number;
@@ -36,6 +40,7 @@ export interface LimitesLectureEcran {
 
 const LIMITES_PAR_DEFAUT: LimitesLectureEcran = {
   nbMaxElements: 120,
+  nbMaxTextes: 150,
   nbMaxFenetres: 15,
   longueurMaxNom: 80,
   longueurMaxValeur: 400,
@@ -83,6 +88,12 @@ export interface ElementLu {
   // "menu ouvert" pour un element d'un menu, menu contextuel ou liste deroulante
   // ouvert par la fenetre (fenetre a part) ; absent pour la fenetre elle-meme.
   zone?: string;
+  // Nom du panneau, de la barre d'outils ou du groupe qui contient l'element.
+  panneau?: string;
+  // Pour un element sans nom : identifiant d'automatisation et texte d'aide,
+  // pour que l'IA puisse tout de meme le designer.
+  id_auto?: string;
+  aide?: string;
 }
 
 export interface LectureFenetre {
@@ -124,6 +135,7 @@ export function limitesDepuisParametres(parametres: Record<string, unknown>): Li
   const d = LIMITES_PAR_DEFAUT;
   return {
     nbMaxElements: entierBorne(parametres.nb_max_elements, d.nbMaxElements, 1, 1000),
+    nbMaxTextes: entierBorne(parametres.nb_max_textes, d.nbMaxTextes, 0, 1000),
     nbMaxFenetres: entierBorne(parametres.nb_max_fenetres, d.nbMaxFenetres, 0, 100),
     longueurMaxNom: entierBorne(parametres.longueur_max_nom, d.longueurMaxNom, 10, 500),
     longueurMaxValeur: entierBorne(parametres.longueur_max_valeur, d.longueurMaxValeur, 10, 5000),
@@ -257,12 +269,19 @@ public static class LectureFenetres {
       if (DwmGetWindowAttribute(h, 14, out cache, 4) == 0 && cache != 0) return true;
       string c = Classe(h);
       if (c != "#32768") {
-        if (p != pidCible) return true;
-        bool annexe = (GetWindowLong(h, -20) & 0x80) != 0 || GetWindow(h, 4) != IntPtr.Zero || Titre(h).Length == 0
-          || c.IndexOf("Popup", StringComparison.OrdinalIgnoreCase) >= 0 || c == "ComboLBox";
-        if (!annexe) return true;
+        if (p != pidCible) {
+          // Fenetre d'un autre programme restee au-dessus (toujours visible, palette
+          // flottante, bulle) : lue elle aussi, sinon ses boutons echappent a l'IA.
+          bool toujoursAuDessus = (GetWindowLong(h, -20) & 0x8) != 0;
+          if (!toujoursAuDessus || Titre(h).Length == 0 || c == "Shell_TrayWnd" || c == "Shell_SecondaryTrayWnd"
+            || c == "Progman" || c == "WorkerW") return true;
+        } else {
+          bool annexe = (GetWindowLong(h, -20) & 0x80) != 0 || GetWindow(h, 4) != IntPtr.Zero || Titre(h).Length == 0
+            || c.IndexOf("Popup", StringComparison.OrdinalIgnoreCase) >= 0 || c == "ComboLBox";
+          if (!annexe) return true;
+        }
       }
-      if (liste.Count < 6) liste.Add(h);
+      if (liste.Count < 10) liste.Add(h);
       return true;
     }, IntPtr.Zero);
     return liste;
@@ -305,6 +324,7 @@ function Sortir($objet) {
   [Console]::Out.Write($ascii)
 }
 $nbMaxElements = ${limites.nbMaxElements}
+$nbMaxTextes = ${limites.nbMaxTextes}
 $nbMaxFenetres = ${limites.nbMaxFenetres}
 $longueurMaxNom = ${limites.longueurMaxNom}
 $longueurMaxValeur = ${limites.longueurMaxValeur}
@@ -426,11 +446,20 @@ try {
     Pane = 'zone'; Group = 'groupe'; Custom = 'élément'
   }
   $typesAvecValeur = @('Edit', 'Document', 'ComboBox')
+  # Textes et conteneurs : plafond a part (nbMaxTextes), pour ne jamais prendre la place d'un bouton.
+  $typesPassifs = @('Text', 'Pane', 'Group', 'Custom')
+  # Gardes meme sans nom : l'IA doit connaitre chaque bouton, pas seulement ceux qui ont un libelle.
+  $typesToujoursListes = @('Button', 'SplitButton', 'CheckBox', 'RadioButton', 'ComboBox', 'Hyperlink', 'MenuItem', 'TabItem', 'Edit')
+  # Conteneurs dont le nom devient le panneau des elements qu'ils contiennent.
+  $typesPanneau = @('Pane', 'Group', 'Window', 'ToolBar', 'Tab', 'TitleBar', 'Menu', 'MenuBar', 'List', 'Tree', 'Header', 'StatusBar', 'Table')
+  $script:nbInteractifs = 0
+  $script:nbTextes = 0
 
   $AE = [System.Windows.Automation.AutomationElement]
   $cr = New-Object System.Windows.Automation.CacheRequest
   foreach ($p in @($AE::NameProperty, $AE::ControlTypeProperty, $AE::BoundingRectangleProperty,
-                   $AE::IsOffscreenProperty, $AE::IsPasswordProperty, $AE::IsEnabledProperty, $AE::NativeWindowHandleProperty)) { $cr.Add($p) }
+                   $AE::IsOffscreenProperty, $AE::IsPasswordProperty, $AE::IsEnabledProperty, $AE::NativeWindowHandleProperty,
+                   $AE::AutomationIdProperty, $AE::HelpTextProperty)) { $cr.Add($p) }
   foreach ($p in @([System.Windows.Automation.ValuePattern]::Pattern,
                    [System.Windows.Automation.TogglePattern]::Pattern,
                    [System.Windows.Automation.ExpandCollapsePattern]::Pattern,
@@ -453,7 +482,7 @@ try {
       if ($null -eq $acc) { return }
       $nb = [int]$acc.accChildCount
       for ($i = 1; $i -le $nb -and $i -le 40; $i++) {
-        if ($script:elements.Count -ge $nbMaxElements) { $script:coupe = $true; break }
+        if ($script:nbInteractifs -ge $nbMaxElements) { $script:coupe = $true; break }
         $nom = [string]$acc.accName($i)
         if ([string]::IsNullOrWhiteSpace($nom)) { continue }
         $g = 0; $h = 0; $l = 0; $a = 0
@@ -473,6 +502,7 @@ try {
           hauteur = [int]$a
           zone = 'menu ouvert'
         })
+        $script:nbInteractifs++
       }
     } catch { }
   }
@@ -520,9 +550,9 @@ try {
     return $etats
   }
 
-  function Visiter($el, $profondeur, $nomParent) {
+  function Visiter($el, $profondeur, $nomParent, $panneau = '') {
     if ($script:coupe) { return }
-    if ($chrono.ElapsedMilliseconds -gt $delaiMaxMs -or $script:noeuds -ge $nbMaxNoeuds -or $script:elements.Count -ge $nbMaxElements) {
+    if ($chrono.ElapsedMilliseconds -gt $delaiMaxMs -or $script:noeuds -ge $nbMaxNoeuds -or $script:nbInteractifs -ge $nbMaxElements) {
       $script:coupe = $true
       return
     }
@@ -546,7 +576,10 @@ try {
         if (-not $masquee) { $valeur = Couper (LireValeur $el $typeCle) $longueurMaxValeur }
       }
       $doublon = ($typeCle -eq 'Text' -and $nom -ne '' -and $nom -eq $nomParent)
-      if (-not $doublon -and ($nom -ne '' -or $valeur -ne '' -or $masquee)) {
+      $estPassif = ($typesPassifs -contains $typeCle)
+      $placeLibre = (-not $estPassif) -or ($script:nbTextes -lt $nbMaxTextes)
+      $toujoursListe = ($typesToujoursListes -contains $typeCle)
+      if (-not $doublon -and $placeLibre -and ($nom -ne '' -or $valeur -ne '' -or $masquee -or $toujoursListe)) {
         $element = [ordered]@{
           type = $types[$typeCle]
           nom = $nom
@@ -560,16 +593,31 @@ try {
           largeur = [int]$rect.Width
           hauteur = [int]$rect.Height
         }
+        if ($nom -eq '' -and -not $masquee) {
+          $idAuto = ''
+          $aide = ''
+          try { $idAuto = Couper $el.Cached.AutomationId $longueurMaxNom } catch { }
+          try { $aide = Couper $el.Cached.HelpText $longueurMaxNom } catch { }
+          if ($idAuto -ne '') { $element.id_auto = $idAuto }
+          if ($aide -ne '') { $element.aide = $aide }
+        }
+        if ($panneau -ne '') { $element.panneau = $panneau }
         if ($script:zoneCourante) { $element.zone = $script:zoneCourante }
         $script:elements.Add($element)
+        if ($estPassif) { $script:nbTextes++ } else { $script:nbInteractifs++ }
         if ($nom -ne '') { $nomTransmis = $nom }
       }
     }
 
+    # Le nom d'un conteneur (panneau, barre d'outils, groupe, boite de dialogue) devient le panneau
+    # de tout ce qu'il contient. La fenetre racine n'en est pas un : son titre est deja donne.
+    $panneauEnfant = $panneau
+    if ($profondeur -gt 0 -and $nom -ne '' -and ($typesPanneau -contains $typeCle)) { $panneauEnfant = $nom }
+
     if ($profondeur -ge $profondeurMax) { return }
     $enfant = $marcheur.GetFirstChild($el, $cr)
     while ($null -ne $enfant) {
-      Visiter $enfant ($profondeur + 1) $nomTransmis
+      Visiter $enfant ($profondeur + 1) $nomTransmis $panneauEnfant
       if ($script:coupe) { return }
       $enfant = $marcheur.GetNextSibling($enfant, $cr)
     }
@@ -608,7 +656,12 @@ try {
     if ($script:coupe) { break }
     $avantAnnexe = $script:elements.Count
     try {
-      $script:zoneCourante = 'menu ouvert'
+      if ([LectureFenetres]::Classe($annexe) -eq '#32768') {
+        $script:zoneCourante = 'menu ouvert'
+      } else {
+        $titreAnnexe = Couper ([LectureFenetres]::Titre($annexe)) 60
+        $script:zoneCourante = $(if ($titreAnnexe -ne '') { "fenêtre flottante « $titreAnnexe »" } else { 'fenêtre flottante' })
+      }
       Visiter ($AE::FromHandle($annexe).GetUpdatedCache($cr)) 0 ''
       if ($script:elements.Count -eq $avantAnnexe) {
         # Menus natifs : l'arbre UIA est souvent accroche au bureau, pas a la fenetre elle-meme.
@@ -753,6 +806,9 @@ function lireUneFois(
             largeur: Number(e.largeur) || 0,
             hauteur: Number(e.hauteur) || 0,
             ...(typeof e.zone === "string" ? { zone: e.zone } : {}),
+            ...(typeof e.panneau === "string" && e.panneau ? { panneau: e.panneau } : {}),
+            ...(typeof e.id_auto === "string" && e.id_auto ? { id_auto: e.id_auto } : {}),
+            ...(typeof e.aide === "string" && e.aide ? { aide: e.aide } : {}),
           })),
           menu_ouvert: r.menu_ouvert === true,
           coupe: r.coupe === true,

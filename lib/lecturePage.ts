@@ -18,7 +18,8 @@
 // le navigateur marque comme carte bancaire ou code à usage unique, n'est
 // jamais lue.
 
-import { decrireElement, SELECTEURS_ELEMENTS_INTERACTIFS } from "./scanElementsInteractifs";
+import { decrireElement, estElementInteractif, SELECTEURS_ELEMENTS_INTERACTIFS } from "./scanElementsInteractifs";
+import { listerZonesVisibles, type CacheZones } from "./structureEcran";
 import { estMasqueParAutreElement, ATTRIBUT_SUPERPOSITION, type CacheAffichage } from "./clicGenerique";
 
 const NOM_ATTRIBUT_ID = "data-agent-id";
@@ -46,6 +47,8 @@ const BALISES_IGNOREES = new Set([
   "meta",
   "link",
 ]);
+
+const MAX_FENETRES_LISTEES = 15;
 
 const TYPES_INPUT_BOUTON = new Set(["button", "submit", "reset", "image"]);
 
@@ -96,6 +99,7 @@ class LecteurPage {
 
     if (document.body) this.parcourir(document.body, regionEcran());
     this.viderLigne();
+    this.ajouterFenetresAffichees();
 
     let texte = this.lignes.join("\n");
     if (this.lignes.length <= 1) {
@@ -105,6 +109,29 @@ class LecteurPage {
       texte += "\n[Lecture coupée : la limite de taille est atteinte, la suite de ce qui est affiché n'est pas incluse.]";
     }
     return { texte, coupe: this.coupe };
+  }
+
+  // Liste des fenêtres, menus et panneaux affichés, trouvés par leur structure :
+  // filet de sécurité pour qu'une fenêtre que la lecture du texte n'a pas
+  // décrite soit au moins connue de l'IA (ses boutons sont dans la liste des actions).
+  private ajouterFenetresAffichees() {
+    if (this.coupe) return;
+    const vues = new Set<HTMLElement>();
+    const lignes: string[] = [];
+    for (const zone of listerZonesVisibles(new Map() as CacheZones)) {
+      if (vues.has(zone.racine) || lignes.length >= MAX_FENETRES_LISTEES) continue;
+      vues.add(zone.racine);
+      const nombre = zone.racine.querySelectorAll(SELECTEURS_ELEMENTS_INTERACTIFS).length;
+      lignes.push(`- ${zone.libelle} (${nombre} ${nombre > 1 ? "éléments" : "élément"} sur lesquels agir)`);
+    }
+    if (lignes.length === 0) return;
+    this.viderLigne();
+    this.ajouter("[Fenêtres et panneaux affichés]");
+    this.viderLigne();
+    for (const ligne of lignes) {
+      this.ajouter(ligne);
+      this.viderLigne();
+    }
   }
 
   private viderLigne() {
@@ -182,7 +209,7 @@ class LecteurPage {
     }
 
     // Élément d'action : une seule entrée structurée, sans descendre.
-    if (element.matches(SELECTEURS_ELEMENTS_INTERACTIFS)) {
+    if (estElementInteractif(element)) {
       if (!contenu && !this.masque(element)) {
         // Un lien reste dans le fil de la phrase, un champ ou un bouton
         // prend sa propre ligne pour rester lisible.

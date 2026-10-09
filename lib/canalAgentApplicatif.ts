@@ -142,6 +142,16 @@ function estPresentMaisMasque(element: HTMLElement | null): boolean {
   return !!element && estVisibleEtActifSansMasquage(element) && estMasqueParAutreElement(element);
 }
 
+const ERREUR_ELEMENT_DESACTIVE =
+  "Cet élément est affiché mais désactivé : il ne répond pas au clic pour le moment. Regarde ce qui le débloque (un champ à remplir, une étape à finir, une option à choisir) avant de réessayer.";
+
+/** Monté ICI, bien affiché, mais grisé : un vrai message plutôt qu'un silence. */
+function estPresentMaisDesactive(element: HTMLElement | null): boolean {
+  if (!element) return false;
+  const desactive = element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true";
+  return desactive && estVisibleEtActifSansMasquage(element, undefined, { accepterDesactive: true });
+}
+
 function urlWebSocket(): string | null {
   if (!API_URL) return null;
   const base = API_URL.replace(/^http/, "ws");
@@ -469,6 +479,10 @@ async function traiterDemandeAction(id: string, actionId: string) {
       envoyerReponse(id, { erreur: ERREUR_ELEMENT_MASQUE });
       return;
     }
+    if (brut instanceof HTMLElement && estPresentMaisDesactive(brut)) {
+      envoyerReponse(id, { erreur: ERREUR_ELEMENT_DESACTIVE });
+      return;
+    }
     envoyerReponse(id, { ignore: true });
     return;
   }
@@ -571,6 +585,10 @@ async function traiterDemandeEcriture(id: string, actionId: string, texteAEcrire
     const brut = document.querySelector(`[${ATTRIBUT_AGENT_ID}="${CSS.escape(actionId)}"]`);
     if (brut instanceof HTMLElement && estPresentMaisMasque(brut)) {
       envoyerReponse(id, { erreur: ERREUR_ELEMENT_MASQUE });
+      return;
+    }
+    if (brut instanceof HTMLElement && estPresentMaisDesactive(brut)) {
+      envoyerReponse(id, { erreur: ERREUR_ELEMENT_DESACTIVE });
       return;
     }
     envoyerReponse(id, { ignore: true });
