@@ -454,12 +454,25 @@ try {
   $typesPanneau = @('Pane', 'Group', 'Window', 'ToolBar', 'Tab', 'TitleBar', 'Menu', 'MenuBar', 'List', 'Tree', 'Header', 'StatusBar', 'Table')
   $script:nbInteractifs = 0
   $script:nbTextes = 0
+  # Les applications classiques (WinForms, Win32, Tkinter) exposent souvent leurs boutons comme de
+  # simples zones, parfois sans nom. Ce qui les distingue d'un texte : on peut agir dessus
+  # (cliquer, cocher, choisir, deplier).
+  $proprietesActionnables = @($AE::IsInvokePatternAvailableProperty, $AE::IsTogglePatternAvailableProperty,
+    $AE::IsSelectionItemPatternAvailableProperty, $AE::IsExpandCollapsePatternAvailableProperty)
+  function EstActionnable($el) {
+    foreach ($propriete in $proprietesActionnables) {
+      try { if ($el.GetCachedPropertyValue($propriete) -eq $true) { return $true } } catch { }
+    }
+    return $false
+  }
 
   $AE = [System.Windows.Automation.AutomationElement]
   $cr = New-Object System.Windows.Automation.CacheRequest
   foreach ($p in @($AE::NameProperty, $AE::ControlTypeProperty, $AE::BoundingRectangleProperty,
                    $AE::IsOffscreenProperty, $AE::IsPasswordProperty, $AE::IsEnabledProperty, $AE::NativeWindowHandleProperty,
-                   $AE::AutomationIdProperty, $AE::HelpTextProperty)) { $cr.Add($p) }
+                   $AE::AutomationIdProperty, $AE::HelpTextProperty,
+                   $AE::IsInvokePatternAvailableProperty, $AE::IsTogglePatternAvailableProperty,
+                   $AE::IsSelectionItemPatternAvailableProperty, $AE::IsExpandCollapsePatternAvailableProperty)) { $cr.Add($p) }
   foreach ($p in @([System.Windows.Automation.ValuePattern]::Pattern,
                    [System.Windows.Automation.TogglePattern]::Pattern,
                    [System.Windows.Automation.ExpandCollapsePattern]::Pattern,
@@ -576,9 +589,10 @@ try {
         if (-not $masquee) { $valeur = Couper (LireValeur $el $typeCle) $longueurMaxValeur }
       }
       $doublon = ($typeCle -eq 'Text' -and $nom -ne '' -and $nom -eq $nomParent)
-      $estPassif = ($typesPassifs -contains $typeCle)
+      $actionnable = EstActionnable $el
+      $estPassif = ($typesPassifs -contains $typeCle) -and (-not $actionnable)
       $placeLibre = (-not $estPassif) -or ($script:nbTextes -lt $nbMaxTextes)
-      $toujoursListe = ($typesToujoursListes -contains $typeCle)
+      $toujoursListe = ($typesToujoursListes -contains $typeCle) -or $actionnable
       if (-not $doublon -and $placeLibre -and ($nom -ne '' -or $valeur -ne '' -or $masquee -or $toujoursListe)) {
         $element = [ordered]@{
           type = $types[$typeCle]
