@@ -42,7 +42,16 @@ $champ = New-Object Windows.Forms.TextBox
 $champ.Text='Valeur fenêtre Windows'; $champ.Left=30; $champ.Top=140; $champ.Width=250
 $secret = New-Object Windows.Forms.TextBox
 $secret.Text='SECRET-INTERDIT'; $secret.UseSystemPasswordChar=$true; $secret.Left=30; $secret.Top=190
-$form.Controls.AddRange(@($label,$bouton,$champ,$secret,$case))
+# Bouton sans aucun libelle (comme un bouton d'icone) et bouton dans un panneau nomme :
+# l'IA doit les voir, designer le premier par son identifiant et connaitre le panneau du second.
+$sansLibelle = New-Object Windows.Forms.Button
+$sansLibelle.Name='boutonSansLibelle'; $sansLibelle.Text=''; $sansLibelle.Left=700; $sansLibelle.Top=90; $sansLibelle.Width=60
+$groupe = New-Object Windows.Forms.GroupBox
+$groupe.Text='Panneau essai'; $groupe.Left=30; $groupe.Top=260; $groupe.Width=300; $groupe.Height=90
+$dansGroupe = New-Object Windows.Forms.Button
+$dansGroupe.Text='Dans le panneau'; $dansGroupe.Left=10; $dansGroupe.Top=30; $dansGroupe.Width=150
+$groupe.Controls.Add($dansGroupe)
+$form.Controls.AddRange(@($label,$bouton,$champ,$secret,$case,$sansLibelle,$groupe))
 # Menu Windows natif (classe #32768), comme Bloc-notes ou l'Explorateur : un ContextMenuStrip
 # WinForms n'expose aucun element a UI Automation et ne represente donc pas les vraies applications.
 $menu = New-Object Windows.Forms.ContextMenu
@@ -104,6 +113,10 @@ try {
     assert(lecture.elements.some(e=>e.valeur==='Valeur fenêtre Windows' || e.nom==='Valeur fenêtre Windows'));
     assert(lecture.elements.some(e=>e.valeur_masquee));
     assert(!JSON.stringify(lecture).includes('SECRET-INTERDIT'));
+    // Base de la vision de l'ecran : un bouton sans nom reste dans la lecture, designable par son identifiant.
+    assert(lecture.elements.some(e=>e.nom==='' && e.id_auto==='boutonSansLibelle' && Number.isFinite(e.x)),JSON.stringify(lecture));
+    // Le nom du panneau qui contient un element est indique.
+    assert(lecture.elements.some(e=>e.nom==='Dans le panneau' && e.panneau==='Panneau essai'),JSON.stringify(lecture));
   };
   const premiere = await lireFenetreAuPremierPlan({},etat.superposition);
   if (premiere.mode !== 'uia') {
