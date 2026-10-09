@@ -1,10 +1,10 @@
 // Frappe du texte adaptée à l'application au premier plan.
 //
-// Dans la plupart des applications, une frappe très rapide ne pose aucun problème.
-// Mais certains éditeurs perdent des lettres si on va trop vite (le Bloc-notes, Thonny),
-// et les éditeurs de code ajoutent tout seuls de l'indentation après chaque retour à
-// la ligne, ce qui s'additionne à celle écrite par l'agent. Chaque application connue
-// reçoit donc son propre réglage ; toutes les autres gardent la frappe rapide.
+// La vitesse de frappe est au maximum partout : les essais récents montrent que le
+// Bloc-notes et Thonny reçoivent le texte correctement. Seul reste adapté le traitement
+// de l'indentation : les éditeurs de code ajoutent tout seuls des espaces après chaque
+// retour à la ligne, ce qui s'additionne à ceux écrits par l'agent. Pour ces éditeurs,
+// l'indentation ajoutée est effacée avant d'écrire la ligne suivante.
 
 import type { ResultatCombinaison } from "./gardeClavier.mjs";
 
@@ -36,11 +36,11 @@ const PROFIL_RAPIDE: ProfilFrappe = {
 const PROFILS_CONNUS: { motifs: string[]; profil: ProfilFrappe }[] = [
   {
     motifs: ["thonny", "notepad++"],
-    profil: { nom: "editeur de code", delaiToucheMs: 10, pauseApresEntreeMs: 60, effacerIndentationAuto: true },
+    profil: { nom: "editeur de code", delaiToucheMs: DELAI_RAPIDE_MS, pauseApresEntreeMs: 60, effacerIndentationAuto: true },
   },
   {
     motifs: ["bloc-notes", "notepad"],
-    profil: { nom: "editeur de texte simple", delaiToucheMs: 10, pauseApresEntreeMs: 60, effacerIndentationAuto: false },
+    profil: { nom: "editeur de texte simple", delaiToucheMs: DELAI_RAPIDE_MS, pauseApresEntreeMs: 0, effacerIndentationAuto: false },
   },
 ];
 
