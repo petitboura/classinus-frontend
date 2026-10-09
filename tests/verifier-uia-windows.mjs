@@ -139,7 +139,9 @@ try {
         .replace('$script:elements =', '$script:traces = New-Object System.Collections.Generic.List[object]\n  $script:elements =')
         .replace('if ($el.Cached.IsOffscreen)', '$script:traces.Add(\"$($el.Cached.ControlType.ProgrammaticName)|nom=$($el.Cached.Name)|id=$($el.Cached.AutomationId)|hors=$($el.Cached.IsOffscreen)|invoke=$($el.GetCachedPropertyValue($AE::IsInvokePatternAvailableProperty))|rect=$($el.Cached.BoundingRectangle)\")\n    if ($el.Cached.IsOffscreen)')
         .replace('$resultat.coupe = $script:coupe', '$resultat.trace = $script:traces\n  $resultat.coupe = $script:coupe');
-      const sortieTrace = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(trace,'utf16le').toString('base64')],{encoding:'utf8'});
+      const fichierTrace = join(dossier,'trace.ps1');
+      await writeFile(fichierTrace, '\uFEFF' + trace);
+      const sortieTrace = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',fichierTrace],{encoding:'utf8',maxBuffer:20*1024*1024});
       const lecture = JSON.parse(sortieTrace.stdout);
       console.log('::error title=Trace UIA::' + (lecture.trace ?? []).join(' ;; ').slice(0,3500));
     } catch (e) { console.log('::error title=Trace UIA indisponible::' + String(e.message).slice(0,300)); }
