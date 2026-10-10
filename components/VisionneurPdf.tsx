@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasLayer,
   CurrentZoom,
@@ -45,6 +45,11 @@ GlobalWorkerOptions.workerSrc = "/pdf-worker/pdf.worker.min.mjs";
 // bloqué (lector n'expose aucun callback d'erreur de chargement, vérifié
 // dans son code source : un échec de getDocument() est seulement loggé).
 const DELAI_AVIS_MS = 15000;
+
+// Taille des tranches demandées au serveur quand pdf.js lit un PDF par morceaux
+// (voir VisionneurPdfCharge). Le défaut de pdf.js est 64 Ko, trop petit pour un
+// gros livre dont chaque page oblige à lire un endroit différent du fichier.
+const TAILLE_TRANCHE_PDF_OCTETS = 4 * 1024 * 1024;
 const DELAI_ERREUR_MS = 120000;
 
 // Composant interne : une fois le document chargé (donc à l'intérieur du
@@ -211,6 +216,17 @@ function VisionneurPdfCharge({
   const delaiAvisRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [lent, setLent] = useState(false);
 
+  // 10/10/2026, demande Bourama (ouvrir un gros livre PDF bloquait le
+  // navigateur puis le PC) : le lecteur demande d'un coup les infos de TOUTES
+  // les pages, et pdf.js lit alors le fichier par tranches de 64 Ko. Pour un
+  // livre de plusieurs centaines de pages, cela donnait plus de 150 demandes en
+  // 45 secondes (vu dans les journaux du serveur, une demande de relais chacune).
+  // Des tranches de 4 Mo ramènent ce nombre à quelques dizaines au plus. Seules
+  // les adresses réseau sont concernées (un fichier local blob: ou data: reste
+  // lu tel quel). L'objet est mémorisé : lector recharge le document dès que
+  // sa valeur change, un nouvel objet à chaque rendu relancerait tout.
+  const source = useMemo(() => (/^https?:/i.test(url) ? { url, rangeChunkSize: TAILLE_TRANCHE_PDF_OCTETS } : url), [url]);
+
   useEffect(() => {
     delaiAvisRef.current = setTimeout(() => setLent(true), DELAI_AVIS_MS);
     delaiErreurRef.current = setTimeout(onErreur, DELAI_ERREUR_MS);
@@ -233,7 +249,7 @@ function VisionneurPdfCharge({
   return (
     <div className="relative h-full">
     <Root
-      source={url}
+      source={source}
       className="flex h-full flex-col overflow-hidden"
       loader={
         <div className="flex h-full justify-center p-4" aria-hidden>
