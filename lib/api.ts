@@ -11,6 +11,20 @@ if (!API_URL) {
   throw new Error("NEXT_PUBLIC_API_URL est requis (voir .env.local.example).");
 }
 
+// 10/10/2026, demande Bourama : un visiteur sans compte ne doit jamais voir une
+// erreur technique ("Token d'authentification manquant") ni "ta session a expiré"
+// (il n'en a jamais eu), mais une invitation à se connecter. Le statut 401 est
+// conservé : les écrans qui l'attendent déjà (fenêtre "Compte requis") continuent
+// de fonctionner. Avec une session, un 401 veut dire que la session a expiré.
+export async function erreurNonAuthentifie(): Promise<ErreurApi> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session
+    ? new ErreurApi(401, "Ta session a expiré, reconnecte-toi.", "SESSION_EXPIREE")
+    : new ErreurApi(401, "Connecte-toi ou crée un compte pour continuer.", "CONNEXION_REQUISE");
+}
+
 /**
  * Construit une ErreurApi à partir d'une réponse HTTP en échec.
  *
@@ -31,6 +45,8 @@ if (!API_URL) {
  * - corps non-JSON ou vide                                       (erreur réseau, proxy, etc.)
  */
 async function construireErreurApi(reponse: Response, chemin: string): Promise<ErreurApi> {
+  if (reponse.status === 401) return erreurNonAuthentifie();
+
   const texteBrut = await reponse.text().catch(() => "");
 
   let corps: unknown = null;
@@ -56,10 +72,6 @@ async function construireErreurApi(reponse: Response, chemin: string): Promise<E
     // Erreur de validation automatique de FastAPI/pydantic (422), jamais
     // écrite pour un humain -- on ne montre pas sa structure technique.
     return new ErreurApi(reponse.status, "La requête envoyée est invalide.", "REQUETE_INVALIDE");
-  }
-
-  if (reponse.status === 401) {
-    return new ErreurApi(401, "Ta session a expiré, reconnecte-toi.", "SESSION_EXPIREE");
   }
 
   // Corps vide/non-JSON (ex: proxy, 502/504, coupure réseau) : pas de code
@@ -1205,6 +1217,13 @@ export async function ajouterFichiersABibliothequePublique(
 // même pattern de gestion que ajouterABibliothequePublique.
 export async function copierVersBibliothequePersonnelle(entreeId: string) {
   return appelerApi(`/api/bibliotheque/copier-depuis-publique/${entreeId}`, { method: "POST" });
+}
+
+// 10/10/2026, demande Bourama : ajoute à la bibliothèque personnelle un fichier
+// hébergé sur un site externe (par exemple un PDF donné par Clovis dans le
+// chat), à partir de son adresse. Le backend le télécharge lui-même.
+export async function ajouterFichierExterneABibliotheque(url: string, titre?: string) {
+  return appelerApi("/api/bibliotheque/depuis-url", { method: "POST", body: JSON.stringify({ url, titre }) });
 }
 
 // 13/09/2026, demande Bourama : dans le chat, une carte fichier
