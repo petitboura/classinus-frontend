@@ -319,8 +319,15 @@ function VisionneurPdfCharge({
   // PDF, Bibliothèque comme chat). <Root> devient ici le conteneur flex
   // englobant (au lieu de n'entourer que la zone de pages), la barre de
   // zoom passe dans ses children, en dessous de <Pages>.
+  // 10/10/2026 : dans le fil du chat (BlocExpansible, repère data-apercu-inline),
+  // rien ne donne de hauteur au lecteur : "h-full" d'un parent sans hauteur ne vaut
+  // rien, la zone de pages s'agrandit alors jusqu'à la taille du livre entier et
+  // lector croit que TOUTES les pages sont à l'écran (il les monte toutes d'un
+  // coup : blocage du PC, fin du livre en squelette). Dans le fil, le lecteur
+  // prend donc une hauteur fixe de 70vh. En plein écran (Agrandir), en
+  // bibliothèque et dans le panneau de position, le parent a une hauteur : h-full.
   return (
-    <div className="relative h-full">
+    <div className="relative h-full [[data-apercu-inline]_&]:h-[70vh]">
     <Root
       source={source}
       className="flex h-full flex-col overflow-hidden"

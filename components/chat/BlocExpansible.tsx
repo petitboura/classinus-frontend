@@ -277,7 +277,7 @@ export function BlocExpansible({
         </div>
       </div>
 
-      <div className="group/rail relative" onClick={basculerRailTactile}>
+      <div className="group/rail relative" data-apercu-inline="" onClick={basculerRailTactile}>
         {/* Rail d'icônes sticky, en overlay HORS FLUX (absolute inset-0
             plutôt que float-right) -- le float précédent réservait de la
             largeur dans le flux normal et écrasait/compressait le
@@ -417,7 +417,7 @@ export function BlocExpansible({
               <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
             </div>
           </div>
-          <div className="group/rail relative">
+          <div className="group/rail relative" data-apercu-inline="">
             <div className="pointer-events-none absolute inset-0 z-10 flex justify-end">
               <div className={`sticky top-2 mr-2 self-start ${classeRailDirect}`}>
                 <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
