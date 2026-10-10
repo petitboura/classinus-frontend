@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState, ReactNode } from "react";
-import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Check, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
 import { PleinEcranApercu } from "./PleinEcranApercu";
 import { BlocLarge } from "./BlocLarge";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
-import { useTelechargement } from "@/lib/useTelechargement";
+import { telecharger } from "@/lib/telecharger";
+import {
+  BarreProgressionTelechargement,
+  IconeTelechargement,
+  LibelleTelechargement,
+  MessageEchecTelechargement,
+  classeEtatTelechargement,
+} from "@/components/EtatTelechargement";
+import { useEtatTelechargement } from "@/lib/etatTelechargements";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { GardeApercu } from "./GardeApercu";
@@ -107,9 +115,6 @@ export function BlocExpansible({
   direct?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(!!direct);
-  // Etat du téléchargement gardé ici (et non dans BoutonsActions, recréé à chaque rendu) :
-  // la rangée du haut, le rail et le plein écran partagent le même état.
-  const { enCours: telechargementEnCours, lancer: lancerTelechargement } = useTelechargement();
   const [pleinEcran, setPleinEcran] = useState(false);
   const [copie, setCopie] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
@@ -126,6 +131,7 @@ export function BlocExpansible({
   // sur `topRowRef` (rangée du haut, mode non-plein-écran uniquement --
   // l'en-tête du mode plein écran est fixe dans PleinEcranApercu, donc
   // hors sujet ici).
+  const etatTelechargement = useEtatTelechargement(hrefTelechargement);
   const topRowRef = useRef<HTMLDivElement | null>(null);
   const [hautVisible, setHautVisible] = useState(true);
 
@@ -213,23 +219,13 @@ export function BlocExpansible({
         {hrefTelechargement && (
           <button
             onClick={() =>
-              copieDisponible ? setModalTelechargementOuverte(true) : lancerTelechargement(hrefTelechargement, titre)
+              copieDisponible ? setModalTelechargementOuverte(true) : void telecharger(hrefTelechargement, titre)
             }
-            disabled={telechargementEnCours}
-            aria-busy={telechargementEnCours}
-            className={`${classe} transition-opacity disabled:cursor-wait disabled:opacity-70`}
+            className={`${classe} ${classeEtatTelechargement(etatTelechargement)}`}
             aria-label="Télécharger"
           >
-            {telechargementEnCours ? (
-              <span key="chargement" className="flex animate-dj-fade-in">
-                <Loader2 size={14} className="animate-spin" />
-              </span>
-            ) : (
-              <span key="repos" className="flex animate-dj-fade-in">
-                <Download size={14} />
-              </span>
-            )}
-            {avecTexte && (telechargementEnCours ? "Préparation…" : "Télécharger")}
+            <IconeTelechargement href={hrefTelechargement} size={14} />
+            {avecTexte && <LibelleTelechargement href={hrefTelechargement} defaut="Télécharger" />}
           </button>
         )}
         <button onClick={surAgrandir} className={classe} aria-label={pleinEcran ? "Rétrécir" : "Agrandir"}>
@@ -331,7 +327,8 @@ export function BlocExpansible({
     <TelechargerCopierModal
       titre={titre}
       surCopie={copieDisponible}
-      surTelechargement={() => lancerTelechargement(hrefTelechargement, titre)}
+      surTelechargement={() => telecharger(hrefTelechargement, titre)}
+      hrefTelechargement={hrefTelechargement}
       onFermer={() => setModalTelechargementOuverte(false)}
     />
   );

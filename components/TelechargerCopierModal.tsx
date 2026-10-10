@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { X, Download, Loader2 } from "lucide-react";
 import { CaseACocher } from "./CaseACocher";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { messageErreur } from "@/lib/erreurs";
+import { useEtatTelechargement, useSuiviParBouton } from "@/lib/etatTelechargements";
+import { textesTelechargement } from "@/lib/textesTelechargement";
 
 // Créé le 13/09/2026, demande Bourama : "Copier dans ma bibliothèque" et
 // "Télécharger" utilisaient la même icône (Download) à plusieurs endroits
@@ -16,6 +18,11 @@ import { messageErreur } from "@/lib/erreurs";
 // réel" -- et un bouton Valider qui déclenche les actions cochées (les
 // deux si les deux sont cochées).
 //
+// 10/10/2026, demande Bourama : la fenêtre montre aussi l'avancement du
+// téléchargement en pourcentage et, s'il échoue, reste ouverte avec le
+// message d'erreur et un bouton "Réessayer". Elle suit le téléchargement par
+// `hrefTelechargement` (la même adresse que celle passée à telecharger()).
+//
 // `surCopie` n'est fourni que là où "copier chez moi" a un sens
 // (bibliothèque publique, ou un fichier du chat identifié comme venant
 // de la bibliothèque publique) -- absent, sa case n'apparaît pas et seul
@@ -24,17 +31,25 @@ export function TelechargerCopierModal({
   titre,
   surCopie,
   surTelechargement,
+  hrefTelechargement,
   onFermer,
 }: {
   titre: string;
   surCopie?: () => Promise<void>;
-  surTelechargement?: () => Promise<void> | void;
+  // Renvoie false quand le téléchargement a échoué (voir lib/telecharger.ts).
+  surTelechargement?: () => Promise<boolean | void> | boolean | void;
+  hrefTelechargement?: string;
   onFermer: () => void;
 }) {
   const [perso, setPerso] = useState(false);
   const [reel, setReel] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  // Si le téléchargement échoue après la copie, "Réessayer" ne copie pas une seconde fois.
+  const copieFaite = useRef(false);
+  const etatTelechargement = useEtatTelechargement(hrefTelechargement);
+  useSuiviParBouton(hrefTelechargement);
+  const t = textesTelechargement();
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onFermer);
 
@@ -43,8 +58,19 @@ export function TelechargerCopierModal({
     setEnCours(true);
     setErreur(null);
     try {
-      if (perso && surCopie) await surCopie();
-      if (reel && surTelechargement) await surTelechargement();
+      if (perso && surCopie && !copieFaite.current) {
+        await surCopie();
+        copieFaite.current = true;
+      }
+      if (reel && surTelechargement) {
+        const reussi = await surTelechargement();
+        if (reussi === false) {
+          // Le message précis est affiché depuis l'état du téléchargement ;
+          // la fenêtre reste ouverte pour pouvoir réessayer.
+          setErreur(hrefTelechargement ? null : t.erreurReseau);
+          return;
+        }
+      }
       fermer();
     } catch (e) {
       setErreur(messageErreur(e));
@@ -77,6 +103,11 @@ export function TelechargerCopierModal({
         </div>
 
         {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
+        {etatTelechargement?.statut === "echec" && etatTelechargement.erreur && (
+          <p role="alert" className="text-sm text-[var(--dj-erreur)]">
+            {etatTelechargement.erreur}
+          </p>
+        )}
 
         <div className="flex flex-col gap-2.5">
           {surCopie && (
@@ -99,8 +130,24 @@ export function TelechargerCopierModal({
           className="flex items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1a0f06] transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 disabled:opacity-50"
         >
           {enCours && <Loader2 size={14} className="animate-spin" />}
-          Valider
+          {etatTelechargement?.statut === "encours"
+            ? etatTelechargement.pourcentage === null
+              ? t.preparation
+              : t.pourcentage(etatTelechargement.pourcentage)
+            : etatTelechargement?.statut === "echec"
+              ? t.reessayer
+              : "Valider"}
         </button>
+        {etatTelechargement?.statut === "encours" && (
+          <span className="-mt-2 block h-1 w-full overflow-hidden rounded-full bg-dj-bordure">
+            <span
+              className={`block h-full rounded-full bg-dj-accent-1 transition-[width] duration-200 ease-out ${
+                etatTelechargement.pourcentage === null ? "w-1/3 animate-pulse" : ""
+              }`}
+              style={etatTelechargement.pourcentage === null ? undefined : { width: `${etatTelechargement.pourcentage}%` }}
+            />
+          </span>
+        )}
       </div>
     </div>
   );

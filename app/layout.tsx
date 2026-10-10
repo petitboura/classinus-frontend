@@ -17,6 +17,7 @@ import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
 import { VisionneurGlobalRacine } from "@/components/VisionneurGlobalRacine";
 import { InteractionGlobale } from "@/components/InteractionGlobale";
+import { IndicateurTelechargements } from "@/components/IndicateurTelechargements";
 import { FournisseurRequetes } from "@/lib/reactQuery";
 
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
@@ -192,6 +193,7 @@ export default function RacineLayout({
         <BoutonFlottantTelecharger />
         <PopupExplorationDossier />
         <GardienLiensSortants />
+        <IndicateurTelechargements />
         <VisionneurGlobalRacine />
         <SplashPret />
       </body>

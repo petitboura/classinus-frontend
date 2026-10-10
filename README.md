@@ -159,6 +159,13 @@ lib/
                           le chargement de Pyodide dès l'ouverture de l'appli (AppShell.tsx, au repos du
                           navigateur) et après toute coupure du worker, pour que l'exécution soit instantanée ;
                           useExecutionPython.ts gère l'état d'un bloc (sortie, input(), sys.argv)
+  telecharger.ts          téléchargement réel d'un fichier par adresse (10/10/2026) : lecture au fil de l'eau
+                          avec pourcentage (Content-Length exposé par le backend), échec signalé avec un message
+                          clair, jamais d'exception. L'état de chaque téléchargement vit dans etatTelechargements.ts ;
+                          les boutons l'affichent via components/EtatTelechargement.tsx (icône, pourcentage, rouge
+                          + "Réessayer" en cas d'échec) et components/IndicateurTelechargements.tsx (carte globale,
+                          layout racine) couvre les téléchargements sans bouton (lien du chat, sélection). Textes
+                          dans textesTelechargement.ts
   liensSortants.ts        règle unique des liens qui veulent sortir de l'appli (20/09/2026) : un fichier se
                           télécharge vraiment (lib/telecharger.ts), tout autre lien passe par l'aperçu interne
                           (VisionneurPositionGlobal) qui demande ensuite d'ouvrir le site ; appliquée à tous les

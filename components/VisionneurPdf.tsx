@@ -14,11 +14,12 @@ import {
   usePdfJump,
 } from "@anaralabs/lector";
 import "pdfjs-dist/web/pdf_viewer.css";
-import { Download, RotateCw, ZoomIn as IconZoomIn, ZoomOut as IconZoomOut } from "lucide-react";
+import { RotateCw, ZoomIn as IconZoomIn, ZoomOut as IconZoomOut } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { Skeleton } from "./Skeleton";
 import { AvisPdfLent } from "./AvisPdfLent";
 import { telecharger } from "@/lib/telecharger";
+import { IconeTelechargement, LibelleTelechargement, MessageEchecTelechargement } from "@/components/EtatTelechargement";
 
 // 10/09, remplacement du lecteur PDF -- l'ancien (react-pdf/pdfjs custom,
 // avec bascule orientation/mode page-par-page codée à la main) posait trop
@@ -242,11 +243,12 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
           </button>
           <button
             type="button"
-            onClick={() => telecharger(url, "document.pdf")}
+            onClick={() => void telecharger(url, "document.pdf")}
             className="flex items-center gap-1 text-dj-accent-1-texte hover:underline"
           >
-            <Download size={14} /> Télécharger
+            <IconeTelechargement href={url} size={14} /> <LibelleTelechargement href={url} defaut="Télécharger" />
           </button>
+          <MessageEchecTelechargement href={url} />
         </div>
       </div>
     );

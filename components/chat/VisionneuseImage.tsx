@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { IconeTelechargement, classeEtatTelechargement } from "@/components/EtatTelechargement";
+import { useEtatTelechargement } from "@/lib/etatTelechargements";
 
 // Zoom plein écran d'image, réutilisé partout où le chat affiche une
 // image cliquable (audit 25/08/2026 : ce même overlay était réécrit
@@ -45,6 +47,7 @@ export function VisionneuseImage({
   const [index, setIndex] = useState(indexInitial);
   const plusieurs = !!liste && liste.length > 1;
   const courante = liste && liste[index] ? liste[index] : { src, alt };
+  const etatTelechargement = useEtatTelechargement(courante.src);
   const aller = (sens: 1 | -1) => {
     if (!liste || liste.length < 2) return;
     setIndex((i) => (i + sens + liste.length) % liste.length);
@@ -96,12 +99,12 @@ export function VisionneuseImage({
           aria-label="Télécharger"
           onClick={(e) => {
             e.stopPropagation();
-            if (liste) telechargerFichier(courante.src, courante.alt || "image");
+            if (liste) void telechargerFichier(courante.src, courante.alt || "image");
             else onTelecharger?.();
           }}
-          className="absolute right-16 top-5 text-dj-texte-muet hover:text-dj-texte"
+          className={`absolute right-16 top-5 rounded-lg p-1 text-dj-texte-muet hover:text-dj-texte ${classeEtatTelechargement(etatTelechargement)}`}
         >
-          <Download size={22} />
+          <IconeTelechargement href={courante.src} size={22} />
         </button>
       )}
       <button

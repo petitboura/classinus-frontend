@@ -1,8 +1,9 @@
 "use client";
 
-import { Download } from "lucide-react";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
 import { extensionDepuisTexte } from "@/lib/extensionDepuisTexte";
+import { IconeTelechargement, MessageEchecTelechargement, classeEtatTelechargement } from "@/components/EtatTelechargement";
+import { useEtatTelechargement } from "@/lib/etatTelechargements";
 
 const EXTENSIONS_AUDIO = ["mp3", "wav", "ogg", "m4a"];
 const EXTENSIONS_VIDEO = ["mp4", "webm", "mov"];
@@ -32,8 +33,9 @@ export function LecteurMedia({ href, type }: { href: string; type: "audio" | "vi
   // lieu du fetch+blob web ici depuis toujours) -- voir lib/telecharger.ts.
   function telecharger() {
     const nom = href.split("/").pop()?.split("?")[0] || (type === "audio" ? "audio" : "video");
-    telechargerFichier(href, nom);
+    void telechargerFichier(href, nom);
   }
+  const etat = useEtatTelechargement(href);
 
   return (
     <span className="my-2 block animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface p-2">
@@ -46,11 +48,15 @@ export function LecteurMedia({ href, type }: { href: string; type: "audio" | "vi
         <button
           onClick={telecharger}
           aria-label="Télécharger"
-          className="shrink-0 rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:text-dj-texte"
+          className={`flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:text-dj-texte ${classeEtatTelechargement(etat)}`}
         >
-          <Download size={16} />
+          <IconeTelechargement href={href} size={16} />
+          {etat?.statut === "encours" && etat.pourcentage !== null && (
+            <span className="text-[11px] tabular-nums">{etat.pourcentage} %</span>
+          )}
         </button>
       </span>
+      <MessageEchecTelechargement href={href} className="px-2 pb-1 pt-1" />
     </span>
   );
 }
