@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { API_URL, appelerApi } from "./api";
+import { API_URL, appelerApi, erreurNonAuthentifie } from "./api";
 import { ErreurApi } from "./erreurs";
 import type { FormatVideo } from "@/components/chat/animation/styleRenduVideo";
 
@@ -40,6 +40,7 @@ export async function telechargerVideoRendue(id: string): Promise<Blob> {
   const reponse = await fetch(`${API_URL}${CHEMIN}/${id}/video`, {
     headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
   });
+  if (reponse.status === 401) throw await erreurNonAuthentifie();
   if (!reponse.ok) {
     let detail: { code?: string; message?: string } | undefined;
     try {

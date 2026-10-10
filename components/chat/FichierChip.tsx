@@ -12,6 +12,7 @@ import { useEntreePubliqueParUrl } from "@/lib/useEntreePubliqueParUrl";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
 import { useLienRelaisExterne } from "@/lib/useLienRelaisExterne";
 import { Skeleton } from "../Skeleton";
+import { FichierConnexionRequise } from "./FichierConnexionRequise";
 import { extensionDepuisTexte } from "@/lib/extensionDepuisTexte";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 
@@ -284,6 +285,9 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
 
   if (relais.enAttente) {
     return <Skeleton className="h-14 w-full max-w-xl rounded-xl" />;
+  }
+  if (relais.connexionRequise) {
+    return <FichierConnexionRequise nom={nom} sousTitre={sousTitre} Icone={Icone} />;
   }
 
   // Image (png/jpg/jpeg/webp) : vignette + zoom, voir ImageGenereeChip
