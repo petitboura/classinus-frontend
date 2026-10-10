@@ -10,6 +10,7 @@ import {
   TextLayer,
   ZoomIn,
   ZoomOut,
+  usePdf,
   usePdfJump,
 } from "@anaralabs/lector";
 import "pdfjs-dist/web/pdf_viewer.css";
@@ -65,6 +66,67 @@ function SautInitial({ page }: { page: number }) {
     jumpToPage(page - 1, { behavior: "auto" });
   }, [page, jumpToPage]);
   return null;
+}
+
+// 10/10/2026, demande Bourama : un gros livre PDF ne doit jamais être préparé
+// en entier. La bibliothèque lector a été corrigée (voir patches/, patch-package) :
+// à l'ouverture elle ne lit que la page 1 et suppose que les autres ont la même
+// taille. Ce composant charge chaque page seulement quand le défilement l'amène à
+// l'écran (lector n'affiche que les pages visibles et deux de chaque côté), puis
+// corrige sa vraie taille. Le squelette garde la place pendant le chargement.
+function PageALaDemande({ pageNumber = 1 }: { pageNumber?: number }) {
+  const pdf = usePdf((s) => s.pdfDocumentProxy);
+  const proxies = usePdf((s) => s.pageProxies);
+  const viewports = usePdf((s) => s.viewports);
+  const virtualizer = usePdf((s) => s.virtualizer);
+  const [pret, setPret] = useState(Boolean(proxies[pageNumber - 1]));
+
+  useEffect(() => {
+    if (proxies[pageNumber - 1]) {
+      setPret(true);
+      return;
+    }
+    let annule = false;
+    pdf
+      .getPage(pageNumber)
+      .then((page) => {
+        // Rangée même si l'utilisateur a déjà défilé plus loin : la page reste prête
+        // s'il revient.
+        if (!proxies[pageNumber - 1]) {
+          proxies[pageNumber - 1] = page;
+          const reel = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
+          const estime = viewports[pageNumber - 1];
+          viewports[pageNumber - 1] = reel;
+          if (!estime || estime.width !== reel.width || estime.height !== reel.height) {
+            virtualizer?.measure();
+          }
+        }
+        if (!annule) setPret(true);
+      })
+      .catch(() => {
+        // Page illisible : le squelette reste, sans interrompre les autres pages.
+      });
+    return () => {
+      annule = true;
+    };
+  }, [pdf, proxies, viewports, virtualizer, pageNumber]);
+
+  if (!pret) {
+    const estime = viewports[pageNumber - 1];
+    return (
+      <Skeleton
+        className="rounded-sm"
+        style={{ width: estime?.width ?? 600, height: estime?.height ?? 800 }}
+      />
+    );
+  }
+
+  return (
+    <Page pageNumber={pageNumber}>
+      <CanvasLayer />
+      <TextLayer />
+    </Page>
+  );
 }
 
 export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number }) {
@@ -267,10 +329,7 @@ function VisionneurPdfCharge({
     >
       <SautInitial page={page} />
       <Pages className="flex-1 overflow-auto p-3">
-        <Page>
-          <CanvasLayer />
-          <TextLayer />
-        </Page>
+        <PageALaDemande />
       </Pages>
 
       <div className="flex items-center justify-center gap-2 border-t border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet">

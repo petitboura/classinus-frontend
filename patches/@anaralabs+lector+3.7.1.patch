@@ -1,0 +1,42 @@
+diff --git a/node_modules/@anaralabs/lector/dist/index.js b/node_modules/@anaralabs/lector/dist/index.js
+index 42cf345..c29f944 100644
+--- a/node_modules/@anaralabs/lector/dist/index.js
++++ b/node_modules/@anaralabs/lector/dist/index.js
+@@ -4873,29 +4873,19 @@ var usePDFDocumentContext = ({
+   const [rotation] = useState(initialRotation);
+   useEffect(() => {
+     const generateViewports = async (pdf) => {
+-      const pageProxies = [];
+-      const rotations = [];
+-      const viewports = await Promise.all(
+-        Array.from({ length: pdf.numPages }, async (_2, index) => {
+-          const page = await pdf.getPage(index + 1);
+-          const deltaRotate = page.rotate || 0;
+-          const viewport = page.getViewport({
+-            scale: 1,
+-            rotation: rotation + deltaRotate
+-          });
+-          pageProxies.push(page);
+-          rotations.push(page.rotate);
+-          return viewport;
+-        })
+-      );
+-      const sortedPageProxies = pageProxies.sort((a, b) => {
+-        return a.pageNumber - b.pageNumber;
++      const premierePage = await pdf.getPage(1);
++      const premierViewport = premierePage.getViewport({
++        scale: 1,
++        rotation: rotation + (premierePage.rotate || 0)
+       });
++      const pageProxies = new Array(pdf.numPages);
++      pageProxies[0] = premierePage;
++      const viewports = Array.from({ length: pdf.numPages }, () => premierViewport);
+       setInitialState((prev) => ({
+         ...prev,
+         isZoomFitWidth,
+         viewports,
+-        pageProxies: sortedPageProxies,
++        pageProxies,
+         pdfDocumentProxy: pdf,
+         zoom,
+         zoomOptions
