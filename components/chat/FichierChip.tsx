@@ -10,6 +10,8 @@ import { telecharger } from "@/lib/telecharger";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { useEntreePubliqueParUrl } from "@/lib/useEntreePubliqueParUrl";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
+import { useLienRelaisExterne } from "@/lib/useLienRelaisExterne";
+import { Skeleton } from "../Skeleton";
 import { extensionDepuisTexte } from "@/lib/extensionDepuisTexte";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 
@@ -269,16 +271,25 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // ne peut pas être une entrée publiée, inutile d'appeler le serveur.
   const idBibliothequePublique = useEntreePubliqueParUrl(href, origineFiable);
 
+  // 10/10/2026, demande Bourama : un fichier de site externe passe par le relais
+  // du backend (le navigateur ne peut pas le charger lui-même, CORS). En cas
+  // d'échec du relais, le lien d'origine est gardé, comme avant.
+  const relais = useLienRelaisExterne(href, !origineFiable && !!infos);
+
   // 20/09/2026, demande Bourama, voir BoutonsFormatBrut ci-dessus --
   // déclarés sans condition (règle des Hooks) même si seule la branche
   // markdown plus bas les utilise réellement.
   const [texteMarkdown, setTexteMarkdown] = useState<string | null>(null);
   const [vueBruteMarkdown, setVueBruteMarkdown] = useState(false);
 
+  if (relais.enAttente) {
+    return <Skeleton className="h-14 w-full max-w-xl rounded-xl" />;
+  }
+
   // Image (png/jpg/jpeg/webp) : vignette + zoom, voir ImageGenereeChip
   // ci-dessus. Inchangé par le correctif du 09/10 -- déjà un bon aperçu.
   if (infos && EXTENSIONS_IMAGE.has(infos)) {
-    return <ImageGenereeChip href={href} nom={nom} idBibliothequePublique={idBibliothequePublique} />;
+    return <ImageGenereeChip href={relais.href} nom={nom} idBibliothequePublique={idBibliothequePublique} />;
   }
 
   // PDF : déroulé dans le fil comme le code et les widgets (voir
@@ -288,7 +299,7 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // navigateur (illisible sur mobile, cause du correctif du 09/10).
   if (infos === "pdf") {
     return (
-      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<VisionneurPdf url={href} page={1} />} />
+      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} enfant={<VisionneurPdf url={relais.href} page={1} />} />
     );
   }
 
@@ -306,7 +317,7 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
           titre={nom}
           icone={Icone}
           sousTitre={sousTitre}
-          hrefTelechargement={href}
+          hrefTelechargement={relais.href}
           idBibliothequePublique={idBibliothequePublique}
           texteACopier={texteMarkdown ?? undefined}
           elargissable
@@ -314,16 +325,16 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
             <BoutonsFormatBrut avecTexte={avecTexte} vueBrute={vueBruteMarkdown} onChanger={setVueBruteMarkdown} />
           )}
           enfant={
-            <ContenuMarkdown href={href} masquerEntete vueBrute={vueBruteMarkdown} onTexteCharge={setTexteMarkdown} />
+            <ContenuMarkdown href={relais.href} masquerEntete vueBrute={vueBruteMarkdown} onTexteCharge={setTexteMarkdown} />
           }
         />
       );
     }
     if (TYPES_MIME_OFFICE.has(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={href} titre={nom} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={relais.href} titre={nom} />} />;
     }
     if (estTypeTexteLisible(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuTexte href={href} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuTexte href={relais.href} />} />;
     }
   }
 
@@ -334,7 +345,7 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // de téléchargement restent dans l'appli"). 13/09/2026 : si connu comme
   // entrée de la bibliothèque publique, ouvre TelechargerCopierModal au
   // lieu de lancer directement le téléchargement.
-  return <FichierGeneriqueChip href={href} nom={nom} libelle={libelle} Icone={Icone} idBibliothequePublique={idBibliothequePublique} />;
+  return <FichierGeneriqueChip href={relais.href} nom={nom} libelle={libelle} Icone={Icone} idBibliothequePublique={idBibliothequePublique} />;
 }
 
 function FichierGeneriqueChip({
