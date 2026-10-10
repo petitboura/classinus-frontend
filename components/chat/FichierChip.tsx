@@ -7,6 +7,7 @@ import { BlocExpansible } from "./BlocExpansible";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuTexte, ContenuMarkdown, ContenuOffice } from "../VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
+import { useTelechargement } from "@/lib/useTelechargement";
 import { ajouterFichierExterneABibliotheque, copierVersBibliothequePersonnelle } from "@/lib/api";
 import { useEntreePubliqueParUrl } from "@/lib/useEntreePubliqueParUrl";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
@@ -386,11 +387,14 @@ function FichierGeneriqueChip({
   idBibliothequePublique: string | null;
 }) {
   const [modalOuverte, setModalOuverte] = useState(false);
+  const { enCours, lancer } = useTelechargement();
   return (
     <>
       <button
-        onClick={() => (idBibliothequePublique ? setModalOuverte(true) : telechargerFichier(href, nom))}
-        className="my-2 flex w-fit max-w-full animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-left transition-colors hover:border-dj-bordure-forte"
+        onClick={() => (idBibliothequePublique ? setModalOuverte(true) : lancer(href, nom))}
+        disabled={enCours}
+        aria-busy={enCours}
+        className="my-2 flex w-fit max-w-full animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-left transition-[color,border-color,opacity] hover:border-dj-bordure-forte disabled:cursor-wait disabled:opacity-70"
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte">
           <Icone size={16} />
@@ -399,13 +403,21 @@ function FichierGeneriqueChip({
           <span className="block truncate text-sm text-dj-texte">{nom}</span>
           <span className="block text-[11px] text-dj-texte-muet">{libelle}</span>
         </span>
-        <Download size={14} className="ml-1 shrink-0 text-dj-texte-muet" />
+        {enCours ? (
+          <span key="chargement" className="ml-1 flex shrink-0 animate-dj-fade-in text-dj-texte-muet">
+            <Loader2 size={14} className="animate-spin" />
+          </span>
+        ) : (
+          <span key="repos" className="ml-1 flex shrink-0 animate-dj-fade-in text-dj-texte-muet">
+            <Download size={14} />
+          </span>
+        )}
       </button>
       {modalOuverte && (
         <TelechargerCopierModal
           titre={nom}
           surCopie={idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined}
-          surTelechargement={() => telechargerFichier(href, nom)}
+          surTelechargement={() => lancer(href, nom)}
           onFermer={() => setModalOuverte(false)}
         />
       )}
