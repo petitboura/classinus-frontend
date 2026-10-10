@@ -10,6 +10,7 @@ import {
   TextLayer,
   ZoomIn,
   ZoomOut,
+  usePdf,
   usePdfJump,
 } from "@anaralabs/lector";
 import "pdfjs-dist/web/pdf_viewer.css";
@@ -65,6 +66,78 @@ function SautInitial({ page }: { page: number }) {
     jumpToPage(page - 1, { behavior: "auto" });
   }, [page, jumpToPage]);
   return null;
+}
+
+// 10/10/2026, demande Bourama : un gros livre PDF ne doit jamais être préparé
+// en entier. La bibliothèque lector a été corrigée (voir patches/, patch-package) :
+// à l'ouverture elle ne lit que la page 1 et suppose que les autres ont la même
+// taille. Ce composant charge chaque page seulement quand le défilement l'amène à
+// l'écran (lector n'affiche que les pages visibles et deux de chaque côté), puis
+// corrige sa vraie taille. Le squelette garde la place pendant le chargement.
+function PageALaDemande({ pageNumber = 1 }: { pageNumber?: number }) {
+  const pdf = usePdf((s) => s.pdfDocumentProxy);
+  const proxies = usePdf((s) => s.pageProxies);
+  const viewports = usePdf((s) => s.viewports);
+  const virtualizer = usePdf((s) => s.virtualizer);
+  const [pret, setPret] = useState(Boolean(proxies[pageNumber - 1]));
+
+  useEffect(() => {
+    if (proxies[pageNumber - 1]) {
+      setPret(true);
+      return;
+    }
+    let annule = false;
+    pdf
+      .getPage(pageNumber)
+      .then((page) => {
+        // Rangée même si l'utilisateur a déjà défilé plus loin : la page reste prête
+        // s'il revient.
+        if (!proxies[pageNumber - 1]) {
+          proxies[pageNumber - 1] = page;
+          const reel = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
+          const estime = viewports[pageNumber - 1];
+          viewports[pageNumber - 1] = reel;
+          if (!estime || estime.width !== reel.width || estime.height !== reel.height) {
+            virtualizer?.measure();
+          }
+        }
+        if (!annule) setPret(true);
+      })
+      .catch(() => {
+        // Page illisible : le squelette reste, sans interrompre les autres pages.
+      });
+    return () => {
+      annule = true;
+    };
+  }, [pdf, proxies, viewports, virtualizer, pageNumber]);
+
+  // Page sortie de la zone affichée (lector ne garde montées que les pages proches) :
+  // on libère ce que pdf.js a gardé pour elle (image décodée, instructions de dessin).
+  // Sur un livre scanné, une page décodée pèse plusieurs dizaines de Mo, et sans cette
+  // libération la mémoire grossit à chaque page vue. Si la page revient à l'écran,
+  // pdf.js la relit simplement.
+  useEffect(() => {
+    return () => {
+      proxies[pageNumber - 1]?.cleanup();
+    };
+  }, [proxies, pageNumber]);
+
+  if (!pret) {
+    const estime = viewports[pageNumber - 1];
+    return (
+      <Skeleton
+        className="rounded-sm"
+        style={{ width: estime?.width ?? 600, height: estime?.height ?? 800 }}
+      />
+    );
+  }
+
+  return (
+    <Page pageNumber={pageNumber}>
+      <CanvasLayer />
+      <TextLayer />
+    </Page>
+  );
 }
 
 export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number }) {
@@ -246,8 +319,15 @@ function VisionneurPdfCharge({
   // PDF, Bibliothèque comme chat). <Root> devient ici le conteneur flex
   // englobant (au lieu de n'entourer que la zone de pages), la barre de
   // zoom passe dans ses children, en dessous de <Pages>.
+  // 10/10/2026 : dans le fil du chat (BlocExpansible, repère data-apercu-inline),
+  // rien ne donne de hauteur au lecteur : "h-full" d'un parent sans hauteur ne vaut
+  // rien, la zone de pages s'agrandit alors jusqu'à la taille du livre entier et
+  // lector croit que TOUTES les pages sont à l'écran (il les monte toutes d'un
+  // coup : blocage du PC, fin du livre en squelette). Dans le fil, le lecteur
+  // prend donc une hauteur fixe de 70vh. En plein écran (Agrandir), en
+  // bibliothèque et dans le panneau de position, le parent a une hauteur : h-full.
   return (
-    <div className="relative h-full">
+    <div className="relative h-full [[data-apercu-inline]_&]:h-[70vh]">
     <Root
       source={source}
       className="flex h-full flex-col overflow-hidden"
@@ -267,10 +347,7 @@ function VisionneurPdfCharge({
     >
       <SautInitial page={page} />
       <Pages className="flex-1 overflow-auto p-3">
-        <Page>
-          <CanvasLayer />
-          <TextLayer />
-        </Page>
+        <PageALaDemande />
       </Pages>
 
       <div className="flex items-center justify-center gap-2 border-t border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet">
