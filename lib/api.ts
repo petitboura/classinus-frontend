@@ -1219,6 +1219,13 @@ export async function copierVersBibliothequePersonnelle(entreeId: string) {
   return appelerApi(`/api/bibliotheque/copier-depuis-publique/${entreeId}`, { method: "POST" });
 }
 
+// 10/10/2026, demande Bourama : ajoute à la bibliothèque personnelle un fichier
+// hébergé sur un site externe (par exemple un PDF donné par Clovis dans le
+// chat), à partir de son adresse. Le backend le télécharge lui-même.
+export async function ajouterFichierExterneABibliotheque(url: string, titre?: string) {
+  return appelerApi("/api/bibliotheque/depuis-url", { method: "POST", body: JSON.stringify({ url, titre }) });
+}
+
 // 13/09/2026, demande Bourama : dans le chat, une carte fichier
 // (components/chat/FichierChip.tsx) ne reçoit qu'un lien -- cette fonction
 // retrouve l'entrée de bibliothèque publique correspondante (id) à partir

@@ -42,6 +42,7 @@ export function BlocExpansible({
   texteACopier,
   hrefTelechargement,
   idBibliothequePublique,
+  surCopie,
   enfant,
   chargement,
   onPremiereOuverture,
@@ -61,6 +62,11 @@ export function BlocExpansible({
   // téléchargement réel, via TelechargerCopierModal, au lieu du
   // téléchargement direct.
   idBibliothequePublique?: string | null;
+  // 10/10/2026, demande Bourama : action "ajouter à ma bibliothèque" pour un
+  // fichier de site externe (voir FichierChip.tsx). Prioritaire sur
+  // idBibliothequePublique. Fait apparaître le même bouton unique
+  // Télécharger avec le choix télécharger / bibliothèque / les deux.
+  surCopie?: () => Promise<void>;
   enfant: ReactNode;
   chargement?: boolean;
   onPremiereOuverture?: () => void;
@@ -104,6 +110,10 @@ export function BlocExpansible({
   const [pleinEcran, setPleinEcran] = useState(false);
   const [copie, setCopie] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
+  // Action "ajouter à ma bibliothèque" : fournie par l'appelant (fichier de site
+  // externe) ou déduite de la bibliothèque publique. Absente = téléchargement seul.
+  const copieDisponible =
+    surCopie ?? (idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined);
   const [premiereOuvertureFaite, setPremiereOuvertureFaite] = useState(false);
 
   // 11/09/2026, demande Bourama : le rail d'icônes sticky (sans texte) et
@@ -200,7 +210,7 @@ export function BlocExpansible({
         {hrefTelechargement && (
           <button
             onClick={() =>
-              idBibliothequePublique ? setModalTelechargementOuverte(true) : telecharger(hrefTelechargement, titre)
+              copieDisponible ? setModalTelechargementOuverte(true) : telecharger(hrefTelechargement, titre)
             }
             className={classe}
             aria-label="Télécharger"
@@ -288,7 +298,7 @@ export function BlocExpansible({
             </button>
           </div>
         </div>
-        <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+        <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique} surCopie={copieDisponible}>
           {enfant}
         </GardeApercu>
       </div>
@@ -307,7 +317,7 @@ export function BlocExpansible({
   const modaleTelechargement = modalTelechargementOuverte && hrefTelechargement && (
     <TelechargerCopierModal
       titre={titre}
-      surCopie={idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined}
+      surCopie={copieDisponible}
       surTelechargement={() => telecharger(hrefTelechargement, titre)}
       onFermer={() => setModalTelechargementOuverte(false)}
     />
@@ -362,7 +372,7 @@ export function BlocExpansible({
               contenuEnIframe ? "[&_iframe]:!h-full [&_iframe]:!min-h-0" : ""
             }`}
           >
-            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique} surCopie={copieDisponible}>
               {enfant}
             </GardeApercu>
           </div>
@@ -413,7 +423,7 @@ export function BlocExpansible({
                 <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
               </div>
             </div>
-            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique} surCopie={copieDisponible}>
               {enfant}
             </GardeApercu>
           </div>

@@ -7,7 +7,7 @@ import { BlocExpansible } from "./BlocExpansible";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuTexte, ContenuMarkdown, ContenuOffice } from "../VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
-import { copierVersBibliothequePersonnelle } from "@/lib/api";
+import { ajouterFichierExterneABibliotheque, copierVersBibliothequePersonnelle } from "@/lib/api";
 import { useEntreePubliqueParUrl } from "@/lib/useEntreePubliqueParUrl";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
 import { useLienRelaisExterne } from "@/lib/useLienRelaisExterne";
@@ -155,7 +155,19 @@ const telechargerFichier = telecharger;
 // carte téléchargement générique utilisée jusqu'ici pour toute extension
 // non-PDF, qui faisait quitter l'appli pour une simple image (31/07,
 // signalé par Bourama : "les images générées ne restent pas dans l'appli").
-function ImageGenereeChip({ href, nom, idBibliothequePublique }: { href: string; nom: string; idBibliothequePublique: string | null }) {
+function ImageGenereeChip({
+  href,
+  nom,
+  idBibliothequePublique,
+  surCopie,
+}: {
+  href: string;
+  nom: string;
+  idBibliothequePublique: string | null;
+  surCopie?: () => Promise<void>;
+}) {
+  const copieDisponible =
+    surCopie ?? (idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined);
   const [ouverte, setOuverte] = useState(false);
   const [enErreur, setEnErreur] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
@@ -193,7 +205,7 @@ function ImageGenereeChip({ href, nom, idBibliothequePublique }: { href: string;
           alt={nom}
           onFermer={() => setOuverte(false)}
           onTelecharger={() =>
-            idBibliothequePublique ? setModalTelechargementOuverte(true) : telechargerFichier(href, nom)
+            copieDisponible ? setModalTelechargementOuverte(true) : telechargerFichier(href, nom)
           }
         />
       )}
@@ -201,7 +213,7 @@ function ImageGenereeChip({ href, nom, idBibliothequePublique }: { href: string;
       {modalTelechargementOuverte && (
         <TelechargerCopierModal
           titre={nom}
-          surCopie={idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined}
+          surCopie={copieDisponible}
           surTelechargement={() => telechargerFichier(href, nom)}
           onFermer={() => setModalTelechargementOuverte(false)}
         />
@@ -277,6 +289,13 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // d'échec du relais, le lien d'origine est gardé, comme avant.
   const relais = useLienRelaisExterne(href, !origineFiable && !!infos);
 
+  // 10/10/2026, demande Bourama : pour un fichier de site externe, le bouton
+  // unique Télécharger propose aussi "Ajouter à ma bibliothèque" (télécharger,
+  // ajouter, ou les deux). Le backend télécharge lui-même le fichier depuis son
+  // adresse d'origine (pas le lien de relais). Le zip n'est pas pris en charge.
+  const surCopieExterne =
+    !origineFiable && infos && infos !== "zip" ? () => ajouterFichierExterneABibliotheque(href, nom).then(() => undefined) : undefined;
+
   // 20/09/2026, demande Bourama, voir BoutonsFormatBrut ci-dessus --
   // déclarés sans condition (règle des Hooks) même si seule la branche
   // markdown plus bas les utilise réellement.
@@ -293,7 +312,7 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // Image (png/jpg/jpeg/webp) : vignette + zoom, voir ImageGenereeChip
   // ci-dessus. Inchangé par le correctif du 09/10 -- déjà un bon aperçu.
   if (infos && EXTENSIONS_IMAGE.has(infos)) {
-    return <ImageGenereeChip href={relais.href} nom={nom} idBibliothequePublique={idBibliothequePublique} />;
+    return <ImageGenereeChip href={relais.href} nom={nom} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} />;
   }
 
   // PDF : déroulé dans le fil comme le code et les widgets (voir
@@ -303,7 +322,7 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // navigateur (illisible sur mobile, cause du correctif du 09/10).
   if (infos === "pdf") {
     return (
-      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} enfant={<VisionneurPdf url={relais.href} page={1} />} />
+      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} enfant={<VisionneurPdf url={relais.href} page={1} />} />
     );
   }
 
@@ -323,6 +342,7 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
           sousTitre={sousTitre}
           hrefTelechargement={relais.href}
           idBibliothequePublique={idBibliothequePublique}
+          surCopie={surCopieExterne}
           texteACopier={texteMarkdown ?? undefined}
           elargissable
           actionsSupplementaires={(avecTexte) => (
@@ -335,10 +355,10 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
       );
     }
     if (TYPES_MIME_OFFICE.has(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={relais.href} titre={nom} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} contenuEnIframe enfant={<ContenuOffice href={relais.href} titre={nom} />} />;
     }
     if (estTypeTexteLisible(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuTexte href={relais.href} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} enfant={<ContenuTexte href={relais.href} />} />;
     }
   }
 

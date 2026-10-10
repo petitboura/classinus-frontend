@@ -35,6 +35,9 @@ type Props = {
   hrefTelechargement?: string;
   nomTelechargement?: string;
   idBibliothequePublique?: string | null;
+  // 10/10/2026 : action "ajouter à ma bibliothèque" fournie par l'appelant
+  // (fichier de site externe). Prioritaire sur idBibliothequePublique.
+  surCopie?: () => Promise<void>;
 };
 
 type State = {
@@ -57,15 +60,16 @@ export class GardeApercu extends Component<Props, State> {
 
   render() {
     if (this.state.enErreur) {
-      const { hrefTelechargement, nomTelechargement, idBibliothequePublique } = this.props;
+      const { hrefTelechargement, nomTelechargement, idBibliothequePublique, surCopie } = this.props;
       const nom = nomTelechargement || "fichier";
+      const copie = surCopie ?? (idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined);
       return (
         <div className="flex flex-col items-center gap-2 p-8 text-center text-dj-texte-muet">
           <p className="text-sm">Impossible d&apos;afficher ce fichier ici.</p>
           {hrefTelechargement && (
             <button
               onClick={() =>
-                idBibliothequePublique
+                copie
                   ? this.setState({ modalOuverte: true })
                   : telecharger(hrefTelechargement, nom)
               }
@@ -74,10 +78,10 @@ export class GardeApercu extends Component<Props, State> {
               <Download size={13} /> Télécharger
             </button>
           )}
-          {this.state.modalOuverte && hrefTelechargement && idBibliothequePublique && (
+          {this.state.modalOuverte && hrefTelechargement && copie && (
             <TelechargerCopierModal
               titre={nom}
-              surCopie={() => copierVersBibliothequePersonnelle(idBibliothequePublique)}
+              surCopie={copie}
               surTelechargement={() => telecharger(hrefTelechargement, nom)}
               onFermer={() => this.setState({ modalOuverte: false })}
             />
