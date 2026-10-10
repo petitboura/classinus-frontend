@@ -1119,6 +1119,11 @@ function BulleMessageInterne({
                     );
                     const dernierSegment = segments[segments.length - 1];
                     const raisonnementFusionEnCours = !!raisonnementEnCours && dernierSegment?.type === "raisonnement";
+                    // Des outils ont commencé : déjà terminés (segment outil)
+                    // ou encore en cours. Sert à garder la bulle de
+                    // raisonnement repliée, voir RaisonnementBulle.
+                    const outilsCommences =
+                      segments.some((s) => s.type === "outil") || (outilsEnCours?.length ?? 0) > 0;
                     const texteRaisonnementFusionne = segments
                       .filter((s): s is { type: "raisonnement"; texte: string } => s.type === "raisonnement")
                       .map((s) => s.texte)
@@ -1173,6 +1178,7 @@ function BulleMessageInterne({
                             nomAgent={nomAgent ?? "Classinus"}
                             texte={texteRaisonnementFusionne}
                             enCours={raisonnementFusionEnCours}
+                            outilsCommences={outilsCommences}
                           />,
                         );
                       }
