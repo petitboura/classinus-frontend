@@ -1,7 +1,25 @@
 diff --git a/node_modules/@anaralabs/lector/dist/index.js b/node_modules/@anaralabs/lector/dist/index.js
-index 42cf345..c29f944 100644
+index 42cf345..b272891 100644
 --- a/node_modules/@anaralabs/lector/dist/index.js
 +++ b/node_modules/@anaralabs/lector/dist/index.js
+@@ -1177,7 +1177,7 @@ var useDetailCanvasLayer = ({
+   const viewportRef = usePdf((state) => state.viewportRef);
+   const [zoom] = useDebounce(bouncyZoom, 200);
+   const [scrollTick, setScrollTick] = useState(0);
+-  const [debouncedScrollTick] = useDebounce(scrollTick, 20);
++  const [debouncedScrollTick] = useDebounce(scrollTick, 200);
+   const ensureDetailCanvas = useCallback(() => {
+     let detailCanvas = detailCanvasRef.current;
+     if (!detailCanvas) {
+@@ -1267,7 +1267,7 @@ var useDetailCanvasLayer = ({
+     );
+     const visibleWidth = Math.max(0, visibleRight - visibleLeft);
+     const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+-    const targetDetailScale = dpr * zoom * 1.3;
++    const targetDetailScale = Math.min(dpr * zoom * 1.3, 3);
+     const baseTargetScale = dpr * Math.min(zoom, 1);
+     const baseScale = clampScaleForPage(baseTargetScale, pageWidth, pageHeight);
+     const needsDetail = zoom > 1 && targetDetailScale - baseScale > 1e-3;
 @@ -4873,29 +4873,19 @@ var usePDFDocumentContext = ({
    const [rotation] = useState(initialRotation);
    useEffect(() => {

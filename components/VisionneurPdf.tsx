@@ -111,6 +111,17 @@ function PageALaDemande({ pageNumber = 1 }: { pageNumber?: number }) {
     };
   }, [pdf, proxies, viewports, virtualizer, pageNumber]);
 
+  // Page sortie de la zone affichée (lector ne garde montées que les pages proches) :
+  // on libère ce que pdf.js a gardé pour elle (image décodée, instructions de dessin).
+  // Sur un livre scanné, une page décodée pèse plusieurs dizaines de Mo, et sans cette
+  // libération la mémoire grossit à chaque page vue. Si la page revient à l'écran,
+  // pdf.js la relit simplement.
+  useEffect(() => {
+    return () => {
+      proxies[pageNumber - 1]?.cleanup();
+    };
+  }, [proxies, pageNumber]);
+
   if (!pret) {
     const estime = viewports[pageNumber - 1];
     return (
