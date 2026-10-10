@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X,
 import { PleinEcranApercu } from "./PleinEcranApercu";
 import { BlocLarge } from "./BlocLarge";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
-import { telecharger } from "@/lib/telecharger";
+import { useTelechargement } from "@/lib/useTelechargement";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { GardeApercu } from "./GardeApercu";
@@ -107,6 +107,9 @@ export function BlocExpansible({
   direct?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(!!direct);
+  // Etat du téléchargement gardé ici (et non dans BoutonsActions, recréé à chaque rendu) :
+  // la rangée du haut, le rail et le plein écran partagent le même état.
+  const { enCours: telechargementEnCours, lancer: lancerTelechargement } = useTelechargement();
   const [pleinEcran, setPleinEcran] = useState(false);
   const [copie, setCopie] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
@@ -210,13 +213,23 @@ export function BlocExpansible({
         {hrefTelechargement && (
           <button
             onClick={() =>
-              copieDisponible ? setModalTelechargementOuverte(true) : telecharger(hrefTelechargement, titre)
+              copieDisponible ? setModalTelechargementOuverte(true) : lancerTelechargement(hrefTelechargement, titre)
             }
-            className={classe}
+            disabled={telechargementEnCours}
+            aria-busy={telechargementEnCours}
+            className={`${classe} transition-opacity disabled:cursor-wait disabled:opacity-70`}
             aria-label="Télécharger"
           >
-            <Download size={14} />
-            {avecTexte && "Télécharger"}
+            {telechargementEnCours ? (
+              <span key="chargement" className="flex animate-dj-fade-in">
+                <Loader2 size={14} className="animate-spin" />
+              </span>
+            ) : (
+              <span key="repos" className="flex animate-dj-fade-in">
+                <Download size={14} />
+              </span>
+            )}
+            {avecTexte && (telechargementEnCours ? "Préparation…" : "Télécharger")}
           </button>
         )}
         <button onClick={surAgrandir} className={classe} aria-label={pleinEcran ? "Rétrécir" : "Agrandir"}>
@@ -318,7 +331,7 @@ export function BlocExpansible({
     <TelechargerCopierModal
       titre={titre}
       surCopie={copieDisponible}
-      surTelechargement={() => telecharger(hrefTelechargement, titre)}
+      surTelechargement={() => lancerTelechargement(hrefTelechargement, titre)}
       onFermer={() => setModalTelechargementOuverte(false)}
     />
   );
