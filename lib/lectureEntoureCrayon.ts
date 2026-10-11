@@ -26,6 +26,8 @@ export type ElementEntoure = {
   zone?: string;
   // Vrai si l'élément tombe dans une zone entourée ; les autres sont le reste de la fenêtre.
   entoure?: boolean;
+  // Texte exact lu sous le trait, pour un champ ou un document dont le texte est lisible.
+  texte_entoure?: string;
 };
 
 export type LectureEntouree = {

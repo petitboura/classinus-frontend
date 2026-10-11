@@ -84,10 +84,17 @@ try {
   assert.equal(r.message.split('bouton « A »').length - 1, 1);
   assert.ok(r.message.endsWith(' et 2 autres éléments.'));
 
+  // Texte exact lu sous le trait : il part en entier (jusqu'à 600 caractères), pas les 120 d'une valeur.
+  r = composerPhraseCrayon(lecture([el('champ', 'Zone de texte', 'Debut du cours. '.repeat(30), { entoure: true, texte_entoure: 'La derivee de f en a est la limite du taux' })]), '');
+  assert.ok(r.message.includes('champ « Zone de texte », texte entouré : « La derivee de f en a est la limite du taux »'));
+  assert.ok(!r.message.includes('Debut du cours'));
+  r = composerPhraseCrayon(lecture([el('champ', '', null, { entoure: true, texte_entoure: 'x'.repeat(700) })]), '');
+  assert.ok(r.message.includes('texte entouré : « ' + 'x'.repeat(599)) && !r.message.includes('x'.repeat(601)));
+
   // 11. Aucun texte affiché ne contient de double tiret.
   for (const t of [TEXTE_BULLE_RIEN_LISIBLE, TEXTE_BULLE_FENETRE_CLASSINUS, TEXTE_BULLE_LECTURE_IMPOSSIBLE]) assert.ok(!t.includes('--'));
 
-  console.log('phrase du crayon : 11 verifications ok');
+  console.log('phrase du crayon : 13 verifications ok');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }
