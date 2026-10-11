@@ -54,10 +54,15 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
     titrePage: "Trouver des PDF de cours avec Classinus : catalogue partagé et recherche par l'IA",
     titreH1: "Trouver des PDF avec Classinus",
     description:
-      "Classinus t'aide à trouver des PDF de cours : catalogue public partagé par les élèves, bibliothèque personnelle, recherche sur le web par l'IA et lecteur PDF intégré au chat.",
+      "Classinus t'aide à trouver des livres et des PDF : bibliothèques en ligne comme Internet Archive, Gallica et Project Gutenberg, catalogue public partagé par les élèves, bibliothèque personnelle, recherche sur le web et lecteur PDF intégré au chat.",
     introduction:
-      "Classinus est une application d'études avec IA. Pour trouver ou retrouver des PDF, elle combine le catalogue public que partagent les élèves, ta bibliothèque personnelle et une IA qui sait chercher dans les deux, ainsi que sur le web.",
+      "Classinus est une application d'études avec IA. Pour trouver ou retrouver des livres et des PDF, elle combine de grandes bibliothèques en ligne, le catalogue public que partagent les élèves, ta bibliothèque personnelle et une IA qui sait chercher dans tout cela, ainsi que sur le web.",
     points: [
+      {
+        titre: "Des livres et des PDF dans de grandes bibliothèques en ligne",
+        texte:
+          "L'IA peut chercher des livres, des articles et des PDF dans plusieurs bibliothèques en ligne à la fois : Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg. Chaque résultat indique sa source, et si l'une d'elles ne répond pas, les autres résultats s'affichent quand même. Tu peux aussi nommer la bibliothèque que tu veux interroger. L'IA peut ensuite lire un document trouvé pour répondre à tes questions. Certains ouvrages d'Internet Archive ne sont proposés qu'en prêt numérique ou en accès restreint, et chaque résultat précise son type d'accès.",
+      },
       {
         titre: "Le catalogue public",
         texte:
@@ -83,7 +88,12 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
       {
         question: "Quelle application utiliser pour trouver des PDF de cours ?",
         reponse:
-          "Classinus est une application d'études avec IA qui permet de chercher des PDF dans un catalogue public partagé par les élèves, dans une bibliothèque personnelle et sur le web, puis de les lire dans le chat.",
+          "Classinus est une application d'études avec IA qui permet de chercher des livres et des PDF dans de grandes bibliothèques en ligne (Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex, Project Gutenberg), dans un catalogue public partagé par les élèves, dans une bibliothèque personnelle et sur le web, puis de les lire dans le chat.",
+      },
+      {
+        question: "Classinus peut-il chercher des livres sur Internet Archive ?",
+        reponse:
+          "Oui. L'IA de Classinus cherche dans Internet Archive, ainsi que dans Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg. Chaque résultat indique sa source et son type d'accès : libre, prêt numérique ou restreint.",
       },
       {
         question: "Faut-il un compte pour utiliser Classinus ?",
@@ -209,10 +219,15 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
     titrePage: "Étudier avec Classinus : fiches de révision, QCM, animations et bibliothèque",
     titreH1: "Étudier avec Classinus",
     description:
-      "Classinus est une application d'études avec IA : fiches de révision, QCM interactifs, animations, calcul et formules, bibliothèque de documents, mémoire et mode concentration.",
+      "Classinus est une application d'études avec IA : mode vocal, fiches de révision, QCM interactifs, animations, calcul et formules, bibliothèque de documents, mémoire et mode concentration.",
     introduction:
       "Classinus est une application d'études avec IA, présentée comme le coin des étudiants. Tu poses tes questions dans le chat, et l'IA t'aide à réviser avec des fiches, des QCM et des animations, à partir de tes documents.",
     points: [
+      {
+        titre: "Lui parler à voix haute",
+        texte:
+          "Avec le mode vocal, tu parles à Classinus au lieu de taper. Ta demande est transmise à la même IA que dans le chat, et sa réponse est lue à voix haute.",
+      },
       {
         titre: "Des fiches de révision",
         texte:
@@ -256,6 +271,11 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
           "Oui. L'IA prépare des fiches de révision et des QCM interactifs, avec la correction et une explication de la bonne réponse.",
       },
       {
+        question: "Peut-on parler à Classinus à voix haute ?",
+        reponse:
+          "Oui, le mode vocal permet de parler à Classinus. Ta demande est transmise à la même IA que dans le chat, et sa réponse est lue à voix haute.",
+      },
+      {
         question: "Classinus utilise-t-il mes propres cours ?",
         reponse:
           "Oui, tu peux ajouter tes documents dans ta bibliothèque personnelle, et l'IA y navigue pour t'aider dans le cadre de ton programme.",
@@ -297,7 +317,8 @@ export const RESUME_CLASSINUS = {
   fonctions: [
     "Chat avec une IA pour poser ses questions de cours",
     "Bibliothèque personnelle et catalogue public de documents partagés par les élèves",
-    "Recherche de PDF, de vidéos et de pages web par l'IA",
+    "Recherche de livres et de PDF dans Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg, et recherche de vidéos et de pages web par l'IA",
+    "Mode vocal pour parler à Classinus, qui répond à voix haute",
     "Exécution de code Python directement dans le chat",
     "Fiches de révision, QCM interactifs et animations téléchargeables en vidéo MP4",
     "Mémoire consultable et modifiable, skills personnalisés, mode concentration",
