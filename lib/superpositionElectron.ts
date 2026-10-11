@@ -93,10 +93,11 @@ interface PluginSuperpositionAgent {
   envoyerInteraction(action: ActionSuperposition): Promise<void>;
   maintenirCapture(parametres: { maintenir: boolean }): Promise<void>;
   definirModeCrayon(parametres: { actif: boolean }): Promise<void>;
+  definirRaccourcisCrayon(touches: Record<string, string>): Promise<void>;
   lireDemarrageAutomatique(): Promise<{ disponible: boolean; actif: boolean }>;
   definirDemarrageAutomatique(parametres: { actif: boolean }): Promise<void>;
   addListener(
-    eventName: "etat" | "interaction",
+    eventName: "etat" | "interaction" | "crayon",
     listenerFunc: (donnee: Record<string, unknown>) => void
   ): Promise<{ remove: () => void }>;
 }
@@ -133,6 +134,34 @@ export function definirModeCrayonSuperposition(actif: boolean) {
   SuperpositionAgent.definirModeCrayon({ actif }).catch(() => {
     // Hors Electron, ou superposition pas prête : rien à capter, rien à relâcher.
   });
+}
+
+// Raccourcis clavier du crayon (11/10/2026) : le processus principal d'Electron les prend
+// à l'échelle du PC, seulement canal actif, et prévient cette page à chaque appui.
+// Les touches viennent de lib/crayonEcran.ts (source unique).
+export type EvenementRaccourciCrayon =
+  | { action: "basculer" | "rappeler" | "effacer" }
+  | { action: "indisponibles"; actions: string[] };
+
+export function definirRaccourcisCrayonSuperposition(touches: Record<string, string>) {
+  SuperpositionAgent.definirRaccourcisCrayon(touches).catch(() => {
+    // Hors Electron : les boutons restent seuls à commander le crayon.
+  });
+}
+
+export function ecouterRaccourcisCrayon(sur: (evenement: EvenementRaccourciCrayon) => void): () => void {
+  let retrait: (() => void) | undefined;
+  let annule = false;
+  SuperpositionAgent.addListener("crayon", (donnee) => {
+    sur(donnee as unknown as EvenementRaccourciCrayon);
+  }).then((poignee) => {
+    if (annule) poignee.remove();
+    else retrait = () => poignee.remove();
+  });
+  return () => {
+    annule = true;
+    retrait?.();
+  };
 }
 
 /**

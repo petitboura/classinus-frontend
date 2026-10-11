@@ -43,15 +43,19 @@
 // - definirModeCrayon : appele par la fenetre de superposition quand le crayon
 //   est sorti ou range (components/CoucheCrayonAgent.tsx). Crayon sorti, la
 //   superposition capte la souris sur tout l'ecran.
+// - definirRaccourcisCrayon : appele par la page de superposition avec les trois
+//   touches du crayon. Elles ne sont prises (raccourcis systeme) que canal actif, et
+//   relayees a la page par l'evenement "crayon" (voir raccourcisCrayon.mts).
 //
 // Sciemment un pont "bete" (unknown des deux cotes) : la forme exacte de
 // l'etat/des interactions est definie et versionnee cote TypeScript
 // applicatif (lib/superpositionElectron.ts), pas ici -- ce plugin n'a pas
 // a etre retouche si ces formes evoluent.
 
-import { app, BrowserWindow, screen } from "electron";
+import { app, BrowserWindow, globalShortcut, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
+import { creerRaccourcisCrayon } from "./raccourcisCrayon.mjs";
 
 // Identification des deux fenetres par leur titre plutot que par un pont
 // d'export entre paquets (electron/main.ts et ce plugin sont deux projets
@@ -95,6 +99,22 @@ let passeClicApplique: boolean | null = null;
 // ses elements, pour que l'etudiant puisse dessiner n'importe ou. Un clic reel de
 // Clovis (clicTraversant) reste prioritaire.
 let crayonActif = false;
+
+// Raccourcis du crayon (voir raccourcisCrayon.mts) : pris seulement canal actif, relayes a la
+// page de superposition par l'evenement "crayon". Les touches viennent de la page
+// (lib/crayonEcran.ts), source unique.
+let notifierCrayon: ((evenement: Record<string, unknown>) => void) | null = null;
+const raccourcisCrayon = creerRaccourcisCrayon(globalShortcut, {
+  surAction: (action) => {
+    try { notifierCrayon?.({ action }); } catch { /* superposition fermee entre-temps */ }
+  },
+  surIndisponibles: (actions) => {
+    if (actions.length === 0) return;
+    console.warn("SuperpositionAgent : raccourcis du crayon refuses par le systeme :", actions.join(", "));
+    try { notifierCrayon?.({ action: "indisponibles", actions }); } catch { /* idem */ }
+  },
+});
+app.on("will-quit", () => raccourcisCrayon.definirActif(false));
 
 // Applique le passe-clic voulu, seulement s'il change : chaque appel a
 // setIgnoreMouseEvents coute un aller-retour vers le systeme, et en
@@ -408,6 +428,7 @@ function afficherSuperpositionPermanente() {
 // fermee) : un bouton qui ne ferait rien ne doit pas rester a l'ecran.
 function retirerSuperposition() {
   affichageVoulu = false;
+  raccourcisCrayon.definirActif(false);
   if (minuteurEssaiAffichage) {
     clearTimeout(minuteurEssaiAffichage);
     minuteurEssaiAffichage = null;
@@ -468,11 +489,13 @@ class SuperpositionAgentImpl extends ElectronPlugin {
   async pousserEtat(etat: EtatPousse): Promise<void> {
     notifierEtat = e => this.context.notifyListeners("etat", e);
     notifierInteraction = action => this.context.notifyListeners("interaction", action);
+    notifierCrayon = evenement => this.context.notifyListeners("crayon", evenement);
     if (etat.retirer === true) {
       retirerSuperposition();
       return;
     }
     afficherSuperpositionPermanente();
+    raccourcisCrayon.definirActif((etat.canal as { actif?: boolean } | undefined)?.actif === true);
 
     const principale = trouverFenetrePrincipale();
     if (!principale || !etat.curseur) {
@@ -537,6 +560,11 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     app.setLoginItemSettings({ openAtLogin: parametres.actif === true, args: [ARGUMENT_LANCEMENT_SESSION] });
   }
 
+  async definirRaccourcisCrayon(touches: Record<string, string>): Promise<void> {
+    notifierCrayon = evenement => this.context.notifyListeners("crayon", evenement);
+    if (!raccourcisCrayon.definirTouches(touches)) throw new Error("Touches du crayon invalides (trois touches differentes attendues).");
+  }
+
   async definirModeCrayon(parametres: { actif: boolean }): Promise<void> {
     crayonActif = parametres.actif === true;
     const superposition = trouverFenetreSuperposition();
@@ -569,6 +597,6 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "definirModeCrayon", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "definirModeCrayon", "definirRaccourcisCrayon", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
   SuperpositionAgentImpl
 );

@@ -17,6 +17,20 @@
 import { useSyncExternalStore } from "react";
 
 export const DUREE_AFFICHAGE_TRAITS_MS = 10000;
+
+// Raccourcis clavier du crayon, source unique. Format Electron pour le système, et
+// libellé affiché dans les infobulles des boutons.
+export type ActionCrayon = "basculer" | "rappeler" | "effacer";
+export const ACCELERATEURS_CRAYON: Record<ActionCrayon, string> = {
+  basculer: "CommandOrControl+Shift+Y",
+  rappeler: "CommandOrControl+Shift+U",
+  effacer: "CommandOrControl+Shift+L",
+};
+export const LIBELLES_RACCOURCIS_CRAYON: Record<ActionCrayon, string> = {
+  basculer: "Ctrl+Maj+Y",
+  rappeler: "Ctrl+Maj+U",
+  effacer: "Ctrl+Maj+L",
+};
 // Durée du fondu à l'estompage et à l'effacement, reprise par l'affichage.
 export const DUREE_FONDU_TRAITS_MS = 400;
 
@@ -35,9 +49,12 @@ export type EtatCrayon = {
   visibles: boolean;
   // Vrai tant que des traits estompés peuvent encore être rappelés.
   restaurable: boolean;
+  // Raccourcis refusés par le système (déjà pris par une autre application) : l'infobulle
+  // de leur bouton n'annonce pas un raccourci qui ne marche pas.
+  raccourcisIndisponibles: ActionCrayon[];
 };
 
-const ETAT_INITIAL: EtatCrayon = { actif: false, traits: [], visibles: true, restaurable: false };
+const ETAT_INITIAL: EtatCrayon = { actif: false, traits: [], visibles: true, restaurable: false, raccourcisIndisponibles: [] };
 
 let etat: EtatCrayon = ETAT_INITIAL;
 let traitEnCours: Trait | null = null;
@@ -124,22 +141,37 @@ export function terminerTrait() {
   programmerEstompage();
 }
 
-/**
- * Un seul bouton pour les deux cas : traits affichés, il les efface pour de bon ;
- * traits estompés, il les fait réapparaître pour 10 secondes de plus.
- */
-export function rappelerOuEffacerTraits() {
-  if (etat.traits.length === 0) return;
+/** Fait réapparaître des traits estompés, pour 10 secondes de plus. Sans effet sinon. */
+export function rappelerTraits() {
+  if (etat.visibles || !etat.restaurable) return;
   annulerMinuteurs();
-  if (etat.visibles) {
-    changer({ visibles: false, restaurable: false });
-    minuteurVidage = setTimeout(() => {
-      minuteurVidage = null;
-      changer({ traits: [] });
-    }, DUREE_FONDU_TRAITS_MS);
-    return;
-  }
-  if (!etat.restaurable) return;
   changer({ visibles: true, restaurable: false });
   programmerEstompage();
+}
+
+/** Efface les traits pour de bon, affichés ou estompés. */
+export function effacerTraits() {
+  if (etat.traits.length === 0) return;
+  annulerMinuteurs();
+  if (!etat.visibles) {
+    // Déjà estompés : rien à faire disparaître en fondu.
+    changer({ traits: [], restaurable: false });
+    return;
+  }
+  changer({ visibles: false, restaurable: false });
+  minuteurVidage = setTimeout(() => {
+    minuteurVidage = null;
+    changer({ traits: [] });
+  }, DUREE_FONDU_TRAITS_MS);
+}
+
+/** Le bouton des traits : efface s'ils sont affichés, les rappelle s'ils sont estompés. */
+export function rappelerOuEffacerTraits() {
+  if (etat.visibles) effacerTraits();
+  else rappelerTraits();
+}
+
+export function definirRaccourcisIndisponibles(actions: ActionCrayon[]) {
+  const pareil = actions.length === etat.raccourcisIndisponibles.length && actions.every((a) => etat.raccourcisIndisponibles.includes(a));
+  if (!pareil) changer({ raccourcisIndisponibles: actions });
 }
