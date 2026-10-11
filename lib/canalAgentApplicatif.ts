@@ -65,6 +65,10 @@
 // au lieu du clic de traiterDemandeAction pour un {"id", "action_id"}
 // simple.
 //
+// Ajout du 11/10/2026 (vision ecran Android, lot 3) : forme de message
+// {"id", "action_ecran_telephone", "parametres"} : lecture du texte de l'ecran
+// du telephone ou pose d'une marque, traitee dans lib/canalEcranTelephone.ts.
+//
 // Ajout du 19/09/2026 (decision Bourama : le message de l'etudiant doit
 // etre envoye) : envoyerMessageEtudiant. Le message part sur ce canal ;
 // si un tour de Clovis est en cours, le backend le lui fait lire a son
@@ -79,6 +83,7 @@ import { scannerElementsInteractifs, decrireElement } from "./scanElementsIntera
 import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
+import { traiterDemandeEcranTelephone } from "./canalEcranTelephone";
 import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
@@ -726,6 +731,8 @@ function traiterMessage(message: unknown) {
     editeur?: unknown;
     lire_page?: boolean;
     longueur_max?: number;
+    action_ecran_telephone?: unknown;
+    parametres?: unknown;
   };
   if (m.accuse_message_etudiant !== undefined) {
     traiterAccuseMessageEtudiant(m.accuse_message_etudiant, m.pris_en_compte);
@@ -761,6 +768,8 @@ function traiterMessage(message: unknown) {
     traiterDemandeClicGenerique(m.id, m.selecteur_generique, m.description ?? "une action dans l'application");
   } else if (m.id && m.montrer_action_id) {
     traiterDemandeMontrer(m.id, m.montrer_action_id);
+  } else if (m.id && m.action_ecran_telephone !== undefined) {
+    void traiterDemandeEcranTelephone(m.id, m.action_ecran_telephone, m.parametres, envoyerReponse);
   }
 }
 
