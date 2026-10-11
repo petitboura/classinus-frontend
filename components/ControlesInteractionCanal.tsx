@@ -49,16 +49,14 @@ const DELAI_REPLI_AUTO_MS = 2000;
 //             chevron qui déplie ou replie (toujours au même endroit), « + » ;
 //   ligne 2 : Écrire, Mode vocal, Utilitaires ;
 //   ligne 3 : Arrêter la tâche (pendant une tâche, à gauche, il pousse les autres vers la
-//             droite), micro de dictée, opacité (superposition PC seulement), Réglages.
+//             droite), micro de dictée, Réglages.
 // Le groupe est déplié dès l'activation et se replie seul après un court délai. Arrêter la
 // tâche reste visible groupe replié. Le journal est un bouton fixe et déplaçable, affiché
 // canal actif et groupe déplié ; le menu du « + » s'ouvre sur le côté pour ne pas recouvrir
 // Utilitaires.
 export function ControlesInteractionCanal({
-  reglageOpacite = null,
   boutonActivation = null,
 }: {
-  reglageOpacite?: ReactNode;
   boutonActivation?: ReactNode;
 }) {
   const contexte = useContext(ContexteCanalEnDirect);
@@ -435,7 +433,6 @@ export function ControlesInteractionCanal({
                   </button>
                   </ApparitionBoutonCanal>
                 )}
-                {groupeOuvert && reglageOpacite && <ApparitionBoutonCanal key="opacite">{reglageOpacite}</ApparitionBoutonCanal>}
                 {groupeOuvert && (
                   <ApparitionBoutonCanal key="reglages">
                     <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
