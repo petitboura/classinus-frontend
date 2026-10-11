@@ -25,7 +25,7 @@
 // Le web Vercel n'est pas touche (CAPACITOR_BUILD absent).
 if (process.env.CAPACITOR_BUILD === "true") {
   process.env.NEXT_PUBLIC_API_URL =
-    "https://clovis-backend-staging.up.railway.app";
+    "https://classinus-staging.up.railway.app";
 }
 // 30/09/2026, demande Bourama : le chat a pris l'adresse "/" (voir
 // lib/routesApp.ts). L'ancienne adresse /chat redirige vers "/" pour ne
