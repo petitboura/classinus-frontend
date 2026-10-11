@@ -153,6 +153,13 @@ lib/
                           direct et sa bulle s'il est actif, 03/10/2026) ;
                           minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par
                           langue), useMaintenantMs.ts (horloge locale des affichages)
+  crayonEcran.ts         crayon du canal en direct sur PC (11/10/2026) : traits dessinés sur l'écran, effacement après
+                          10 s, trois raccourcis (components/CoucheCrayonAgent.tsx, BoutonsCrayonCanal.tsx) ;
+                          zonesCrayon.ts (rectangle de chaque trait), lectureEntoureCrayon.ts (éléments de la
+                          fenêtre au premier plan qui tombent dans ces rectangles), phraseCrayon.ts (phrase envoyée
+                          au grand modèle et message de la bulle quand rien n'est lisible), envoiCrayon.ts (envoi) ;
+                          bouton Envoyer dans components/BoutonEnvoyerCrayon.tsx, question reprise du champ du canal
+                          (brouillonCanal.ts). Seules les applications extérieures sont lues, pas encore Classinus
   canalTempsReel.ts      client du canal temps réel avec le backend (exploration de dossier mobile...)
   executionPython.ts      bouton Exécuter des blocs de code : Python (Pyodide) tourne dans un Worker
                           (public/pyodide-worker.mjs) sur l'appareil de l'étudiant. prechargerPython() démarre

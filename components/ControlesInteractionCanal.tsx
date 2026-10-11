@@ -28,6 +28,7 @@ import { MenuPlus, type EntreeMenuPlus } from "@/components/chat/barre/MenuPlus"
 import { traiterFichiersJoints } from "@/lib/preparerPiecesJointes";
 import { useFichiersJointsCanal } from "@/lib/useFichiersJointsCanal";
 import { BoutonReglagesCanal, BoutonUtilitairesCanal } from "@/components/BoutonsReglagesCanal";
+import { definirBrouillonCanal, useBrouillonCanal } from "@/lib/brouillonCanal";
 import { BoutonCrayonCanal, BoutonTraitsCanal, peutAfficherBoutonTraits } from "@/components/BoutonsCrayonCanal";
 import { reinitialiserCrayon, useCrayonEcran } from "@/lib/crayonEcran";
 import { CanvasDessin } from "@/components/chat/CanvasDessin";
@@ -105,7 +106,11 @@ export function ControlesInteractionCanal({
   const inputFichierRef = useRef<HTMLInputElement>(null);
   const inputPhotoRef = useRef<HTMLInputElement>(null);
   const { enSortie: pleinEcranEnSortie, demarrerFermeture: fermerPleinEcranAnime } = useFermetureAnimee();
-  const [texteSaisi, setTexteSaisi] = useState("");
+  // Texte en cours de saisie, partagé pour que le bouton Envoyer du crayon y reprenne la
+  // question de l'étudiant (lib/brouillonCanal.ts). Vidé à la fermeture, comme avant.
+  const texteSaisi = useBrouillonCanal();
+  const setTexteSaisi = definirBrouillonCanal;
+  useEffect(() => () => definirBrouillonCanal(""), []);
   const [erreur, setErreur] = useState<string | null>(null);
   const champRef = useRef<HTMLTextAreaElement>(null);
   const minuteurErreur = useRef<ReturnType<typeof setTimeout> | null>(null);

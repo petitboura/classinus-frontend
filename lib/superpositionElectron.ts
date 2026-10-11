@@ -86,6 +86,7 @@ interface ActionSuperposition {
     | "choisirModeInteraction"
     | "choisirMoteurDictee"
     | "envoyerMessageEtudiant"
+    | "afficherTexteBulle"
     | "basculerVoix"
     | "arreterTache"
     | "continuerApresArret"
@@ -189,6 +190,11 @@ function relayerInteraction(fonction: ActionSuperposition["fonction"], ...args: 
 // juste appelé depuis un autre fichier).
 export function relayerEnvoiMessageEtudiant(texte: string) {
   relayerInteraction("envoyerMessageEtudiant", texte);
+}
+
+/** Fait dire un texte à Classinus dans sa bulle (la bulle vit dans la fenêtre principale). */
+export function relayerAffichageTexteBulle(texte: string) {
+  relayerInteraction("afficherTexteBulle", texte);
 }
 
 let dansLaFenetreDeSuperposition = false;
@@ -408,6 +414,9 @@ export function useEmetteurSuperposition(
           // canalAgentApplicatif.ts, qui importe relayerEnvoiMessageEtudiant
           // de ce fichier pour le sens inverse (voir plus haut).
           void import("@/lib/canalAgentApplicatif").then((m) => m.envoyerMessageEtudiant(action.args[0] as string));
+          break;
+        case "afficherTexteBulle":
+          if (typeof action.args[0] === "string") afficherTexteDepuisAgent(action.args[0], { commentaire: true });
           break;
         default:
           void c; // évite un avertissement "non utilisé" si aucun cas ci-dessus ne concerne le curseur pour l'instant

@@ -49,12 +49,15 @@ export type EtatCrayon = {
   visibles: boolean;
   // Vrai tant que des traits estompés peuvent encore être rappelés.
   restaurable: boolean;
+  // Vrai une fois les traits envoyés à Classinus : le bouton Envoyer disparaît, jusqu'au
+  // prochain trait.
+  envoyes: boolean;
   // Raccourcis refusés par le système (déjà pris par une autre application) : l'infobulle
   // de leur bouton n'annonce pas un raccourci qui ne marche pas.
   raccourcisIndisponibles: ActionCrayon[];
 };
 
-const ETAT_INITIAL: EtatCrayon = { actif: false, traits: [], visibles: true, restaurable: false, raccourcisIndisponibles: [] };
+const ETAT_INITIAL: EtatCrayon = { actif: false, traits: [], visibles: true, restaurable: false, envoyes: false, raccourcisIndisponibles: [] };
 
 let etat: EtatCrayon = ETAT_INITIAL;
 let traitEnCours: Trait | null = null;
@@ -120,7 +123,7 @@ export function commencerTrait(x: number, y: number) {
   const base = etat.visibles ? etat.traits : [];
   compteurTraits += 1;
   traitEnCours = { id: compteurTraits, points: [{ x, y }] };
-  changer({ traits: [...base, traitEnCours].slice(-NB_MAX_TRAITS), visibles: true, restaurable: false });
+  changer({ traits: [...base, traitEnCours].slice(-NB_MAX_TRAITS), visibles: true, restaurable: false, envoyes: false });
 }
 
 export function ajouterPoint(x: number, y: number) {
@@ -139,6 +142,12 @@ export function terminerTrait() {
   if (!traitEnCours) return;
   traitEnCours = null;
   programmerEstompage();
+}
+
+/** Les traits viennent d'être envoyés à Classinus. */
+export function marquerTraitsEnvoyes() {
+  if (etat.traits.length === 0 || etat.envoyes) return;
+  changer({ envoyes: true });
 }
 
 /** Fait réapparaître des traits estompés, pour 10 secondes de plus. Sans effet sinon. */
