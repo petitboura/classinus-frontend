@@ -151,7 +151,8 @@ Un clic UIA commencé mais dont le résultat est incertain n’est pas répété
 La methode `lireElementsEntoures({ zones })` recoit un rectangle par trait dessine (pixels de la
 page de superposition, voir `lib/zonesCrayon.ts`), les convertit en pixels d'ecran (origine et
 zoom de la fenetre de superposition, echelle de l'ecran), lit la fenetre au premier plan avec la
-meme lecture que `lire_ecran` et ne garde que les elements dont la position tombe dans une zone.
+meme lecture que `lire_ecran` et rend tous les elements lus, ceux dont la position tombe dans une zone etant marques `entoure`
+(le grand modele recoit tout, ce qui est entoure d'abord).
 Logique de conversion et de choix dans `electron/src/zonesCrayon.mts`, testee par
 `npm run test:zones-crayon`. Cote site : `lib/lectureEntoureCrayon.ts`. Le bouton Envoyer du champ
 d'ecriture du canal (`components/ControlesInteractionCanal.tsx`) l'appelle quand un dessin attend, voir `lib/envoiCrayon.ts`. Conversion d'ecran et lecture reelle non verifiees sur un

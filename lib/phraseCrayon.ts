@@ -9,6 +9,9 @@ export const TEXTE_BULLE_FENETRE_CLASSINUS = "Je ne peux pas encore lire ce que 
 export const TEXTE_BULLE_LECTURE_IMPOSSIBLE = "Je n'ai pas réussi à lire ce que tu as entouré.";
 
 const NB_MAX_ELEMENTS_DANS_LA_PHRASE = 10;
+// Reste de la fenêtre lue : la lecture d'écran a déjà son propre plafond, celui-ci évite
+// seulement un message démesuré.
+const NB_MAX_ELEMENTS_RESTE_FENETRE = 80;
 const LONGUEUR_MAX_NOM = 80;
 const LONGUEUR_MAX_VALEUR = 120;
 const LONGUEUR_MAX_TITRE = 60;
@@ -35,18 +38,25 @@ function decrireElement(e: ElementEntoure): string | null {
   return null;
 }
 
-function decrireElements(elements: ElementEntoure[]): { liste: string[]; reste: number } {
-  const vus = new Set<string>();
+function decrireElements(
+  elements: ElementEntoure[],
+  max: number,
+  vus: Set<string> = new Set<string>()
+): { liste: string[]; reste: number } {
   const liste: string[] = [];
   let reste = 0;
   for (const e of elements) {
     const description = decrireElement(e);
     if (!description || vus.has(description)) continue;
     vus.add(description);
-    if (liste.length < NB_MAX_ELEMENTS_DANS_LA_PHRASE) liste.push(description);
+    if (liste.length < max) liste.push(description);
     else reste += 1;
   }
   return { liste, reste };
+}
+
+function suiteDeLaListe(reste: number): string {
+  return reste === 0 ? "" : reste === 1 ? " et un autre élément" : ` et ${reste} autres éléments`;
 }
 
 function ajouterQuestion(phrase: string, question: string): string {
@@ -77,17 +87,31 @@ export function composerPhraseCrayon(
     };
   }
 
-  const { liste, reste } = decrireElements(lecture.elements);
-  if (liste.length === 0) {
+  // Tout ce que la lecture a trouvé part au grand modèle : d'abord ce qui est entouré, puis
+  // le reste de la fenêtre. Un élément sans marque est compté comme entouré.
+  const vus = new Set<string>();
+  const entoures = decrireElements(lecture.elements.filter((e) => e.entoure !== false), NB_MAX_ELEMENTS_DANS_LA_PHRASE, vus);
+  const autres = decrireElements(lecture.elements.filter((e) => e.entoure === false), NB_MAX_ELEMENTS_RESTE_FENETRE, vus);
+  const resteDeLaFenetre =
+    autres.liste.length === 0
+      ? ""
+      : `\n\nTout le reste de ce que la lecture de la fenêtre voit : ${autres.liste.join(", ")}${suiteDeLaListe(autres.reste)}.`;
+
+  if (entoures.liste.length === 0) {
     return {
-      message: ajouterQuestion(`L'étudiant a entouré un endroit de l'écran${dansLaFenetre}.`, question),
+      message: ajouterQuestion(
+        `L'étudiant a entouré un endroit de l'écran${dansLaFenetre}, où aucun texte lisible n'a été trouvé.${resteDeLaFenetre}`,
+        question
+      ),
       messageBulle: TEXTE_BULLE_RIEN_LISIBLE,
     };
   }
 
-  const suite = reste === 0 ? "" : reste === 1 ? " et un autre élément" : ` et ${reste} autres éléments`;
   return {
-    message: ajouterQuestion(`L'étudiant a entouré${dansLaFenetre} : ${liste.join(", ")}${suite}.`, question),
+    message: ajouterQuestion(
+      `L'étudiant a entouré${dansLaFenetre} : ${entoures.liste.join(", ")}${suiteDeLaListe(entoures.reste)}.${resteDeLaFenetre}`,
+      question
+    ),
     messageBulle: null,
   };
 }
