@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, ImageOff, Loader2, Eye, Code2 } from "lucide-react";
+import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, ImageOff, Loader2, Eye, Code2, BookOpen, Film, Music } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuTexte, ContenuMarkdown, ContenuOffice } from "../VisionneuseBibliotheque";
@@ -40,6 +40,19 @@ import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 // donc VisionneurPdf doit rester chargé en dynamic({ssr:false}), même
 // raison que VisionneuseBibliotheque.tsx et VisionneurPositionGlobal.tsx.
 const VisionneurPdf = dynamic(() => import("../VisionneurPdf").then((m) => m.VisionneurPdf), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[70vh] items-center justify-center">
+      <Loader2 size={20} className="animate-spin text-dj-texte-muet" />
+    </div>
+  ),
+});
+
+// 11/10/2026, demande Bourama : liseuse des livres numériques (EPUB, MOBI),
+// dépliée dans le fil comme le PDF. Chargée à la demande (ssr:false) : elle
+// touche des API du navigateur dès son ouverture, et ce fichier est importé
+// statiquement par le chat.
+const VisionneurLivre = dynamic(() => import("../VisionneurLivre").then((m) => m.VisionneurLivre), {
   ssr: false,
   loading: () => (
     <div className="flex h-[70vh] items-center justify-center">
@@ -108,9 +121,53 @@ const EXTENSIONS_FICHIER: Record<string, { icone: typeof File; libelle: string }
   // 18/08) -- même famille que .tex : sans cette entrée, retombe dans le
   // rendu générique cassé.
   md: { icone: FileText, libelle: "Markdown" },
+  // 11/10/2026, demande Bourama : le relais (clovis-backend, core/relais_fichier_externe.py)
+  // accepte maintenant tous les formats sauf le code exécutable. Sans ces
+  // entrées, ces fichiers ne seraient pas reconnus comme fichiers par le chat.
+  //
+  // Livres numériques : EPUB et MOBI s'ouvrent dans la liseuse (VisionneurLivre),
+  // DjVu n'a pas de lecteur léger dans un navigateur (carte téléchargement).
+  epub: { icone: BookOpen, libelle: "EPUB" },
+  mobi: { icone: BookOpen, libelle: "MOBI" },
+  djvu: { icone: BookOpen, libelle: "DjVu" },
+  // Documents OpenDocument et RTF : le lecteur Office intégré (Microsoft) ne
+  // les lit pas de façon fiable, carte téléchargement.
+  odt: { icone: FileText, libelle: "OpenDocument texte" },
+  ods: { icone: FileSpreadsheet, libelle: "OpenDocument tableur" },
+  odp: { icone: Presentation, libelle: "OpenDocument présentation" },
+  rtf: { icone: FileText, libelle: "RTF" },
+  // Archives : carte téléchargement, comme le zip.
+  "7z": { icone: FileArchive, libelle: "Archive 7z" },
+  rar: { icone: FileArchive, libelle: "Archive RAR" },
+  gz: { icone: FileArchive, libelle: "Archive gzip" },
+  // Images que les navigateurs affichent (aperçu, voir EXTENSIONS_IMAGE) ou non
+  // (TIFF, HEIC : carte téléchargement).
+  gif: { icone: IconeImage, libelle: "Image" },
+  bmp: { icone: IconeImage, libelle: "Image" },
+  avif: { icone: IconeImage, libelle: "Image" },
+  tiff: { icone: IconeImage, libelle: "Image TIFF" },
+  heic: { icone: IconeImage, libelle: "Image HEIC" },
+  // Audio et vidéo que les navigateurs ne lisent pas : LecteurMedia.tsx ne les
+  // prend pas (voir typeMedia), ils arrivent donc ici en carte téléchargement.
+  avi: { icone: Film, libelle: "Vidéo AVI" },
+  flv: { icone: Film, libelle: "Vidéo FLV" },
+  asf: { icone: Film, libelle: "Vidéo ASF" },
+  mpeg: { icone: Film, libelle: "Vidéo MPEG" },
+  aiff: { icone: Music, libelle: "Audio AIFF" },
+  mid: { icone: Music, libelle: "Audio MIDI" },
 };
 
-const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp"]);
+const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp", "gif", "bmp", "avif"]);
+
+// Types que l'import dans la bibliothèque personnelle accepte (backend,
+// api/bibliotheque_utilisateur.py, _TYPES_IMPORT_DEPUIS_URL : pdf, docx, xlsx,
+// pptx, anciens formats Office, png, jpg, gif, webp, texte brut). À garder
+// alignée avec cette liste.
+const TYPES_IMPORTABLES_EXTERNES = new Set([
+  "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+  "png", "jpg", "jpeg", "gif", "webp",
+  "csv", "json", "md", "tex",
+]);
 
 // CORRECTIF 2026-07-31 (audit sécurité, alternative après l'échec du
 // correctif sandbox="" du 31/07 -- voir plus bas, ça cassait le rendu
@@ -301,9 +358,13 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // 10/10/2026, demande Bourama : pour un fichier de site externe, le bouton
   // unique Télécharger propose aussi "Ajouter à ma bibliothèque" (télécharger,
   // ajouter, ou les deux). Le backend télécharge lui-même le fichier depuis son
-  // adresse d'origine (pas le lien de relais). Le zip n'est pas pris en charge.
+  // adresse d'origine (pas le lien de relais). 11/10/2026 : seulement pour les
+  // types que l'import accepte (TYPES_IMPORTABLES_EXTERNES), le backend refuse
+  // les vidéos, sons, livres numériques et archives.
   const surCopieExterne =
-    !origineFiable && infos && infos !== "zip" ? () => ajouterFichierExterneABibliotheque(href, nom).then(() => undefined) : undefined;
+    !origineFiable && infos && TYPES_IMPORTABLES_EXTERNES.has(infos)
+      ? () => ajouterFichierExterneABibliotheque(href, nom).then(() => undefined)
+      : undefined;
 
   // 20/09/2026, demande Bourama, voir BoutonsFormatBrut ci-dessus --
   // déclarés sans condition (règle des Hooks) même si seule la branche
@@ -332,6 +393,13 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   if (infos === "pdf") {
     return (
       <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} enfant={<VisionneurPdf url={relais.href} page={1} />} />
+    );
+  }
+
+  // Livre numérique (EPUB, MOBI) : liseuse dépliée dans le fil, comme le PDF.
+  if (infos === "epub" || infos === "mobi") {
+    return (
+      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} enfant={<VisionneurLivre url={relais.href} nom={nom} extension={infos} />} />
     );
   }
 

@@ -21,6 +21,9 @@ import { ouvrirPosition } from "@/components/chat/visionneurPositionEvenement";
 const EXTENSIONS_TELECHARGEMENT = new Set([
   "pdf", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx", "zip",
   "json", "xml", "png", "jpg", "jpeg", "webp", "glb", "tex", "md", "apk",
+  // 11/10/2026 : formats ajoutés au chat avec le relais (voir FichierChip.tsx).
+  "epub", "mobi", "djvu", "odt", "ods", "odp", "rtf", "7z", "rar", "gz",
+  "gif", "bmp", "avif", "tiff", "heic",
 ]);
 
 function extensionDeUrl(url: URL): string | null {

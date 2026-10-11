@@ -134,6 +134,24 @@ components/
                           piloté par animation/runtimeRenduVideo.ts (dessiner l'animation à un instant donné). three.js
                           est aussi copié côté serveur : changer sa version ici impose de changer cette copie
   icones/, icons/        icônes du produit
+  VisionneurLivre.tsx     liseuse des livres numériques EPUB et MOBI (11/10/2026), dépliée dans le fil comme le PDF
+                          (components/chat/FichierChip.tsx). Charge le moteur public/foliate-js à l'ouverture
+                          seulement, lit le fichier en suivant l'avancement (refus au-delà de
+                          NEXT_PUBLIC_LIVRE_TAILLE_MAX_MO, 100 par défaut), sommaire, flèches du clavier, thème
+                          clair ou sombre. Chaque page du livre passe par lib/neutraliserPageLivre.ts avant
+                          d'être affichée
+  chat/LecteurMedia.tsx   lecteur audio et vidéo du chat. Un fichier d'un site externe passe par le relais
+                          (lib/useLienRelaisExterne.ts) ; si la lecture échoue, il retente avec l'adresse
+                          d'origine puis affiche une carte de téléchargement
+
+public/
+  foliate-js/             moteur de lecture EPUB et MOBI (foliate-js, licence MIT), copié sans modification
+                          (voir ORIGINE.txt dans le dossier : commit repris, fichiers gardés). Servi tel quel,
+                          jamais intégré au bundle (chargé par import dynamique depuis VisionneurLivre.tsx) ;
+                          pour le mettre à jour, remplacer les fichiers par ceux du dépôt d'origine puis
+                          rouvrir un livre dont une page contient un script, pour vérifier que rien ne s'exécute
+  pdf-worker/             worker pdf.js du lecteur PDF
+  pyodide-worker.mjs      worker Python (voir lib/executionPython.ts)
 
 lib/
   api.ts                 client HTTP vers clovis-backend (NEXT_PUBLIC_API_URL)
@@ -171,6 +189,11 @@ lib/
                           (VisionneurPositionGlobal) qui demande ensuite d'ouvrir le site ; appliquée à tous les
                           clics par components/GardienLiensSortants.tsx (layout racine). data-lien-libre sur un
                           lien = garde son comportement natif. Seul ouvrirSiteExterieur quitte réellement l'appli
+  neutraliserPageLivre.ts filtre de sécurité des livres numériques (11/10/2026) : retire scripts, gestionnaires
+                          on*, liens javascript:, iframes, objets et redirections de chaque page d'un livre, et
+                          pose une règle Content-Security-Policy qui interdit le reste. Un livre venu d'un site
+                          externe est un contenu non fiable, ses pages tournent avec les mêmes droits que
+                          l'appli (limite de WebKit sur le bac à sable des iframes)
   useHauteurWidget.ts     hauteur du cadre d'un widget interactif (03/10/2026) : suit la hauteur du contenu entre
                           120 et 1200 px, repart de 384 px (l'ancienne hauteur fixe) ; garde contre un widget
                           qui dépend de la hauteur de la fenêtre (retour à 384 px après 5 agrandissements de
@@ -291,6 +314,7 @@ tous ont désormais un point d'entrée dans la nav web/TypeScript.
 |---|---|
 | `NEXT_PUBLIC_API_URL` | URL de `clovis-backend` |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client Supabase (auth + DB) |
+| `NEXT_PUBLIC_LIVRE_TAILLE_MAX_MO` | taille maximale, en Mo, d'un livre numérique ouvert dans la liseuse (100 si absente ou invalide) ; au-delà, carte de téléchargement. Optionnelle |
 | `NEXT_PUBLIC_APP_URL` | URL publique du déploiement, utilisée par `app/layout.tsx` (balises OG) et le bouton partager (lien de téléchargement de l'app) ; sur Vercel, doit être créée en type "Configuration", jamais "Secrète" (incompatible avec un préfixe `NEXT_PUBLIC_`) |
 
 Voir `.env.local.example`.
