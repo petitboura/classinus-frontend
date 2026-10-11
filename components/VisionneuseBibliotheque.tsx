@@ -465,9 +465,12 @@ export function VisionneuseBibliotheque({
   }, [fichier]);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
 
-  if (!fichier && !enSortie) return null;
+  // Ce hook doit rester AVANT tout retour anticipé : sinon le nombre de hooks
+  // change entre le rendu vide et le rendu ouvert (erreur React 310, écran qui
+  // plante à l'ouverture d'un aperçu). Ne jamais le redescendre sous un return.
   const f = fichier ?? dernierFichier;
   const etatTelechargementFichier = useEtatTelechargement(f?.url_publique);
+  if (!fichier && !enSortie) return null;
   if (!f) return null;
 
   const estImage = f.type_mime.startsWith("image/");
