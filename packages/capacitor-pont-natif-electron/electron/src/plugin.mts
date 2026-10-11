@@ -25,7 +25,7 @@
 
 import { spawn } from "node:child_process";
 import WebSocket from "ws";
-import { app, BrowserWindow, clipboard, globalShortcut } from "electron";
+import { app, BrowserWindow, clipboard, globalShortcut, screen } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 // Import direct du module compile du paquet voisin (pas un appel de
 // plugin Capacitor : juste une fonction Node partagee entre les deux
@@ -36,6 +36,7 @@ import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/p
 // Lot V : lecture en texte de la fenetre au premier plan (UI Automation).
 import { lireFenetreAuPremierPlan, zoneDepuisParametres } from "./lectureFenetreWindows.mjs";
 import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversante, marquerEcran } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
+import { convertirZonesPageEnEcran, elementsDansZones } from "./zonesCrayon.mjs";
 import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
 import { cliquerEcran } from "./clicEcran.mjs";
 import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
@@ -573,6 +574,29 @@ class PontNatifImpl extends ElectronPlugin {
     arretGlobal.desarmer();
   }
 
+  // Crayon, lot 3 : lit la fenetre au premier plan (meme lecture que lire_ecran, la fenetre de
+  // superposition est ignoree) et ne garde que les elements qui tombent dans les zones
+  // entourees. Les zones arrivent en pixels de la page de superposition.
+  async lireElementsEntoures(options: { zones: unknown[] }): Promise<unknown> {
+    const fenetre = fenetreSuperposition();
+    if (!fenetre) return { erreur: "La superposition de Classinus n'est pas prête." };
+    const versEcran = (p: { x: number; y: number }) =>
+      process.platform === "win32" || process.platform === "linux"
+        ? screen.dipToScreenPoint({ x: Math.round(p.x), y: Math.round(p.y) })
+        : p;
+    const origine = fenetre.getContentBounds();
+    const zones = convertirZonesPageEnEcran(
+      Array.isArray(options?.zones) ? options.zones : [],
+      { x: origine.x, y: origine.y },
+      fenetre.webContents.getZoomFactor(),
+      versEcran
+    );
+    if (zones.length === 0) return { erreur: "Aucune zone entourée valide." };
+    const lecture = await lireFenetreAuPremierPlan({}, handleSuperposition());
+    if ("erreur" in lecture) return lecture;
+    return { ...lecture, elements: elementsDansZones(lecture.elements, zones), zones };
+  }
+
   async rattraperActionsEnAttente(): Promise<{ traitees: number }> {
     // Pas d'equivalent PC a la file d'actions differees mobile
     // (core/actions_appareil_mobile.py) : les actions systeme PC sont
@@ -585,6 +609,6 @@ class PontNatifImpl extends ElectronPlugin {
 }
 
 export const PontNatif = defineElectronPlugin(
-  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente", "executerActionSysteme", "armerArretGlobal", "desarmerArretGlobal", "repondreAutorisation"] },
+  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente", "executerActionSysteme", "armerArretGlobal", "desarmerArretGlobal", "repondreAutorisation", "lireElementsEntoures"] },
   PontNatifImpl
 );
