@@ -17,6 +17,8 @@ superposition reste affichee en permanence des que la fenetre principale a
 pousse son premier etat (`pousserEtat` avec `retirer: true` la retire), et le
 plugin expose deux methodes de plus pour le demarrage automatique avec
 Windows : `lireDemarrageAutomatique` et `definirDemarrageAutomatique`.
+Depuis le 11/10/2026 (crayon du canal), `definirModeCrayon` fait capter la
+souris a la superposition sur tout l'ecran tant que le crayon est sorti.
 Voir les commentaires de `electron/src/plugin.mts` pour le
 detail, et `lib/superpositionElectron.ts` (racine du depot) pour la forme
 exacte de l'etat/des interactions transportes.

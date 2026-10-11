@@ -41,6 +41,7 @@ import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { MarquesEcranAgent } from "@/components/MarquesEcranAgent";
+import { CoucheCrayonAgent } from "@/components/CoucheCrayonAgent";
 import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
 import { ContexteCurseurVirtuel, type ValeurCurseurVirtuel, type FormeCurseur } from "@/lib/contexteCurseurVirtuel";
 import { ContexteCanalEnDirect, type ValeurCanalEnDirect } from "@/lib/contexteCanalEnDirect";
@@ -272,6 +273,7 @@ export default function PageAgentSuperposition() {
               transition={{ duration: 0.18 }}
             >
               <MarquesEcranAgent marques={marques} />
+              <CoucheCrayonAgent />
               <CurseurVirtuelAgent />
               <BulleDialogueAgent />
               <VoixDirecteSuperposition />

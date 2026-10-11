@@ -28,6 +28,8 @@ import { MenuPlus, type EntreeMenuPlus } from "@/components/chat/barre/MenuPlus"
 import { traiterFichiersJoints } from "@/lib/preparerPiecesJointes";
 import { useFichiersJointsCanal } from "@/lib/useFichiersJointsCanal";
 import { BoutonReglagesCanal, BoutonUtilitairesCanal } from "@/components/BoutonsReglagesCanal";
+import { BoutonCrayonCanal, BoutonTraitsCanal, peutAfficherBoutonTraits } from "@/components/BoutonsCrayonCanal";
+import { reinitialiserCrayon, useCrayonEcran } from "@/lib/crayonEcran";
 import { CanvasDessin } from "@/components/chat/CanvasDessin";
 import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
 import { messageErreur } from "@/lib/erreurs";
@@ -57,11 +59,15 @@ const DELAI_REPLI_AUTO_MS = 2000;
 export function ControlesInteractionCanal({
   reglageOpacite = null,
   boutonActivation = null,
+  crayonDisponible = false,
 }: {
   reglageOpacite?: ReactNode;
   boutonActivation?: ReactNode;
+  // Crayon pour entourer quelque chose à l'écran : fenêtre de superposition PC seulement.
+  crayonDisponible?: boolean;
 }) {
   const contexte = useContext(ContexteCanalEnDirect);
+  const crayon = useCrayonEcran();
   const actif = contexte?.actif ?? false;
   const modeInteraction = contexte?.modeInteraction ?? "texte";
   const moteurChoisi = contexte?.moteurDictee ?? "whisper";
@@ -133,6 +139,7 @@ export function ControlesInteractionCanal({
     setMathsOuvert(false);
     setErreur(null);
     piecesJointes.vider();
+    reinitialiserCrayon();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- vider est stable (useCallback sans dépendance).
   }, [actif, annuler]);
 
@@ -181,9 +188,11 @@ export function ControlesInteractionCanal({
     if (!actif || !groupeOuvert) return;
     if (pointeurSurGroupe || panneauOuvert || pleinEcran || dessinOuvert || mathsOuvert) return;
     if (dictee.enEcoute || geminiLive.actif) return;
+    // Crayon sorti : le groupe reste ouvert, sinon son bouton disparaîtrait et on ne pourrait plus le ranger.
+    if (crayon.actif) return;
     const minuteur = setTimeout(() => setGroupeOuvert(false), DELAI_REPLI_AUTO_MS);
     return () => clearTimeout(minuteur);
-  }, [actif, groupeOuvert, pointeurSurGroupe, panneauOuvert, pleinEcran, dessinOuvert, mathsOuvert, dictee.enEcoute, geminiLive.actif, activiteGroupe]);
+  }, [actif, groupeOuvert, pointeurSurGroupe, panneauOuvert, pleinEcran, dessinOuvert, mathsOuvert, dictee.enEcoute, geminiLive.actif, crayon.actif, activiteGroupe]);
 
   function basculerPanneau() {
     choisirModeInteraction("texte");
@@ -474,6 +483,16 @@ export function ControlesInteractionCanal({
                 {groupeOuvert && (
                   <ApparitionBoutonCanal key="utilitaires">
                     <BoutonUtilitairesCanal actions={actionsUtilitaires} />
+                  </ApparitionBoutonCanal>
+                )}
+                {groupeOuvert && crayonDisponible && (
+                  <ApparitionBoutonCanal key="crayon">
+                    <BoutonCrayonCanal />
+                  </ApparitionBoutonCanal>
+                )}
+                {groupeOuvert && crayonDisponible && peutAfficherBoutonTraits(crayon) && (
+                  <ApparitionBoutonCanal key="traits">
+                    <BoutonTraitsCanal />
                   </ApparitionBoutonCanal>
                 )}
                 {groupeOuvert && (
