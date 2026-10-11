@@ -575,8 +575,10 @@ class PontNatifImpl extends ElectronPlugin {
   }
 
   // Crayon, lot 3 : lit la fenetre au premier plan (meme lecture que lire_ecran, la fenetre de
-  // superposition est ignoree) et ne garde que les elements qui tombent dans les zones
-  // entourees. Les zones arrivent en pixels de la page de superposition.
+  // superposition est ignoree) et rend TOUS les elements lus, ceux qui tombent dans les zones
+  // entourees etant marques `entoure: true` (decision de Bourama, 11/10/2026 : le grand modele
+  // doit voir tout ce que la lecture d'ecran lit, avec ce qui est entoure repere).
+  // Les zones arrivent en pixels de la page de superposition.
   async lireElementsEntoures(options: { zones: unknown[] }): Promise<unknown> {
     const fenetre = fenetreSuperposition();
     if (!fenetre) return { erreur: "La superposition de Classinus n'est pas prête." };
@@ -594,7 +596,8 @@ class PontNatifImpl extends ElectronPlugin {
     if (zones.length === 0) return { erreur: "Aucune zone entourée valide." };
     const lecture = await lireFenetreAuPremierPlan({}, handleSuperposition());
     if ("erreur" in lecture) return lecture;
-    return { ...lecture, elements: elementsDansZones(lecture.elements, zones), zones };
+    const entoures = new Set<unknown>(elementsDansZones(lecture.elements, zones));
+    return { ...lecture, elements: lecture.elements.map((e) => ({ ...e, entoure: entoures.has(e) })), zones };
   }
 
   async rattraperActionsEnAttente(): Promise<{ traitees: number }> {

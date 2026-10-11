@@ -52,6 +52,7 @@ try {
   // 7. Rien de lisible (image, schéma) : un endroit entouré, et la bulle le dit.
   r = composerPhraseCrayon(lecture([]), 'Explique ce schéma');
   assert.ok(r.message.startsWith('L\'étudiant a entouré un endroit de l\'écran dans la fenêtre'));
+  assert.ok(r.message.includes('aucun texte lisible'));
   assert.ok(r.message.endsWith('\n\nExplique ce schéma'));
   assert.equal(r.messageBulle, TEXTE_BULLE_RIEN_LISIBLE);
   // Éléments sans nom ni valeur : même cas.
@@ -69,10 +70,24 @@ try {
   assert.ok(r.message.includes('Aide moi'));
   assert.equal(composerPhraseCrayon({ erreur: 'aucun_trait' }, 'x'), null);
 
-  // 10. Aucun texte affiché ne contient de double tiret.
+  // 10. Tout ce que la lecture voit part au grand modèle, ce qui est entouré d'abord.
+  r = composerPhraseCrayon(lecture([el('bouton', 'Valider', null, { entoure: true }), el('menu', 'Fichier', null, { entoure: false }), el('texte', 'Titre du cours', null, { entoure: false })]), '');
+  assert.ok(r.message.startsWith('L\'étudiant a entouré dans la fenêtre « Cours.txt - Bloc-notes » : bouton « Valider ».'));
+  assert.ok(r.message.includes('Tout le reste de ce que la lecture de la fenêtre voit : menu « Fichier », texte « Titre du cours ».'));
+  assert.equal(r.messageBulle, null);
+  // Rien d'entouré de lisible, mais le reste de la fenêtre part quand même (image entourée).
+  r = composerPhraseCrayon(lecture([el('menu', 'Fichier', null, { entoure: false })]), 'Que vois-tu ?');
+  assert.ok(r.message.includes('aucun texte lisible') && r.message.includes('menu « Fichier »') && r.message.endsWith('\n\nQue vois-tu ?'));
+  assert.equal(r.messageBulle, TEXTE_BULLE_RIEN_LISIBLE);
+  // Un élément entouré n'est pas répété dans le reste ; au delà de 80, le reste est compté.
+  r = composerPhraseCrayon(lecture([el('bouton', 'A', null, { entoure: true }), el('bouton', 'A', null, { entoure: false }), ...Array.from({ length: 82 }, (_, i) => el('lien', `L${i}`, null, { entoure: false }))]), '');
+  assert.equal(r.message.split('bouton « A »').length - 1, 1);
+  assert.ok(r.message.endsWith(' et 2 autres éléments.'));
+
+  // 11. Aucun texte affiché ne contient de double tiret.
   for (const t of [TEXTE_BULLE_RIEN_LISIBLE, TEXTE_BULLE_FENETRE_CLASSINUS, TEXTE_BULLE_LECTURE_IMPOSSIBLE]) assert.ok(!t.includes('--'));
 
-  console.log('phrase du crayon : 10 verifications ok');
+  console.log('phrase du crayon : 11 verifications ok');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }

@@ -155,8 +155,8 @@ lib/
                           langue), useMaintenantMs.ts (horloge locale des affichages)
   crayonEcran.ts         crayon du canal en direct sur PC (11/10/2026) : traits dessinés sur l'écran, estompage après
                           10 s, trois raccourcis (components/CoucheCrayonAgent.tsx, BoutonsCrayonCanal.tsx) ;
-                          zonesCrayon.ts (rectangle de chaque trait), lectureEntoureCrayon.ts (éléments de la
-                          fenêtre au premier plan qui tombent dans ces rectangles), phraseCrayon.ts (phrase envoyée
+                          zonesCrayon.ts (rectangle de chaque trait), lectureEntoureCrayon.ts (tous les éléments lus dans la
+                          fenêtre au premier plan, ceux qui tombent dans ces rectangles marqués comme entourés), phraseCrayon.ts (phrase envoyée
                           au grand modèle et message de la bulle quand rien n'est lisible), envoiCrayon.ts (envoi) ;
                           pas de bouton Envoyer propre au dessin : c'est celui du champ d'écriture du canal
                           (ControlesInteractionCanal.tsx) qui joint le dessin, avec ou sans texte. Les traits effacés

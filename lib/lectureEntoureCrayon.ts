@@ -2,8 +2,9 @@
 
 // Crayon du canal PC, lot 3 (11/10/2026, demande Bourama) : ce que l'étudiant a entouré.
 // Demande au processus principal d'Electron de lire la fenêtre au premier plan avec la
-// lecture d'écran existante, et de ne garder que les éléments qui tombent dans les zones
-// des traits. Le résultat sert au lot 4 (phrase envoyée au grand modèle).
+// lecture d'écran existante. Tous les éléments lus sont rendus, ceux qui tombent dans les
+// zones des traits étant marqués `entoure`. Le résultat sert à la phrase envoyée au grand
+// modèle (lib/phraseCrayon.ts).
 
 import { registerPlugin } from "@capacitor/core";
 import { lireEtatCrayon } from "@/lib/crayonEcran";
@@ -23,6 +24,8 @@ export type ElementEntoure = {
   hauteur: number;
   // "menu ouvert" pour un élément d'un menu ouvert au-dessus de la fenêtre.
   zone?: string;
+  // Vrai si l'élément tombe dans une zone entourée ; les autres sont le reste de la fenêtre.
+  entoure?: boolean;
 };
 
 export type LectureEntouree = {
@@ -30,7 +33,7 @@ export type LectureEntouree = {
   application: string | null;
   // Vrai si la fenêtre au premier plan est celle de Classinus : rien n'est lu (lot 5).
   fenetre_classinus: boolean;
-  // Seulement les éléments qui tombent dans une zone entourée.
+  // Tout ce que la lecture de la fenêtre a trouvé, les éléments entourés étant marqués.
   elements: ElementEntoure[];
   // Zones entourées, en pixels d'écran.
   zones: ZonePage[];
