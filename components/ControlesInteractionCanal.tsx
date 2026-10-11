@@ -40,6 +40,9 @@ import { conversationActive } from "@/lib/conversationPartagee";
 import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 
 const DUREE_ERREUR_MS = 6000;
+// Repli automatique des boutons (11/10/2026, demande Bourama) : délai sans aucune action avant que
+// le groupe se replie tout seul.
+const DELAI_REPLI_AUTO_MS = 7000;
 
 const LABEL_MOTEUR: Record<MoteurDictee, string> = {
   navigateur: "Navigateur",
@@ -55,8 +58,10 @@ const LABEL_MOTEUR: Record<MoteurDictee, string> = {
 // replié. Le journal est un bouton fixe et déplaçable, affiché canal actif et groupe déplié ;
 // le menu du « + » s'ouvre sur le côté pour ne pas recouvrir Utilitaires.
 export function ControlesInteractionCanal({
+  reglageOpacite = null,
   boutonActivation = null,
 }: {
+  reglageOpacite?: ReactNode;
   boutonActivation?: ReactNode;
 }) {
   const contexte = useContext(ContexteCanalEnDirect);
@@ -169,6 +174,19 @@ export function ControlesInteractionCanal({
     if (dictee.enEcoute) dictee.arreter();
     else dictee.demarrer();
   }
+
+  // Repli automatique : quelques secondes après la dernière action, le groupe se replie seul.
+  // Il reste ouvert tant que le pointeur est dessus, qu'une zone d'écriture, le dessin ou
+  // l'éditeur est ouvert, ou que la dictée ou la conversation vocale tourne.
+  const [pointeurSurGroupe, setPointeurSurGroupe] = useState(false);
+  const [activiteGroupe, setActiviteGroupe] = useState(0);
+  useEffect(() => {
+    if (!actif || !groupeOuvert) return;
+    if (pointeurSurGroupe || panneauOuvert || pleinEcran || dessinOuvert || mathsOuvert) return;
+    if (dictee.enEcoute || geminiLive.actif) return;
+    const minuteur = setTimeout(() => setGroupeOuvert(false), DELAI_REPLI_AUTO_MS);
+    return () => clearTimeout(minuteur);
+  }, [actif, groupeOuvert, pointeurSurGroupe, panneauOuvert, pleinEcran, dessinOuvert, mathsOuvert, dictee.enEcoute, geminiLive.actif, activiteGroupe]);
 
   function basculerPanneau() {
     choisirModeInteraction("texte");
@@ -285,11 +303,29 @@ export function ControlesInteractionCanal({
           : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
     }`;
 
+  // Même bouton « Écrire » dans la ligne du milieu (groupe déplié) et à côté du chevron (groupe replié).
+  const boutonEcrire = (
+    <button
+      onClick={basculerPanneau}
+      aria-pressed={panneauOuvert}
+      aria-label={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
+      title={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
+      className={classeBouton(modeInteraction === "texte", panneauOuvert)}
+    >
+      <PenLine size={18} />
+    </button>
+  );
+
   const fermerPleinEcran = () => fermerPleinEcranAnime(() => setPleinEcran(false));
 
   return (
     <>
-      <div className="flex flex-col items-start gap-2">
+      <div
+        className="flex flex-col items-start gap-2"
+        onPointerEnter={() => setPointeurSurGroupe(true)}
+        onPointerLeave={() => setPointeurSurGroupe(false)}
+        onPointerDown={() => setActiviteGroupe((v) => v + 1)}
+      >
         <AnimatePresence>
           {actif && erreur && (
             <motion.p
@@ -394,6 +430,7 @@ export function ControlesInteractionCanal({
                     <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
                   </ApparitionBoutonCanal>
                 )}
+                {groupeOuvert && reglageOpacite && <ApparitionBoutonCanal key="opacite">{reglageOpacite}</ApparitionBoutonCanal>}
               </AnimatePresence>
             </motion.div>
           )}
@@ -461,15 +498,7 @@ export function ControlesInteractionCanal({
               transition={{ duration: 0.15 }}
               className="flex items-center gap-2"
             >
-              <button
-                onClick={basculerPanneau}
-                aria-pressed={panneauOuvert}
-                aria-label={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
-                title={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
-                className={classeBouton(modeInteraction === "texte", panneauOuvert)}
-              >
-                <PenLine size={18} />
-              </button>
+              {boutonEcrire}
               <AnimatePresence initial={false}>
                 {groupeOuvert && (
                   <ApparitionBoutonCanal key="mode-vocal">
@@ -496,8 +525,10 @@ export function ControlesInteractionCanal({
         </AnimatePresence>
 
         <div className="flex items-center gap-2">
-          {boutonActivation}
           <AnimatePresence initial={false}>
+            {/* Une fois le canal actif, le bouton d'activation se range derrière le chevron et
+                réapparaît quand on déplie le groupe (c'est là qu'on désactive le canal). */}
+            {(!actif || groupeOuvert) && <ApparitionBoutonCanal key="activation">{boutonActivation}</ApparitionBoutonCanal>}
             {actif && (
               <ApparitionBoutonCanal key="chevron">
                 <button
@@ -511,6 +542,7 @@ export function ControlesInteractionCanal({
                 </button>
               </ApparitionBoutonCanal>
             )}
+            {actif && !groupeOuvert && <ApparitionBoutonCanal key="ecrire-replie">{boutonEcrire}</ApparitionBoutonCanal>}
             {actif && groupeOuvert && (
               <ApparitionBoutonCanal key="plus">
                 <div className="flex h-10 w-10 items-center justify-center">
@@ -543,29 +575,34 @@ export function ControlesInteractionCanal({
           document.body,
         )}
 
-      <input
-        ref={inputFichierRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          ajouterFichiersJoints(Array.from(e.target.files ?? []));
-          // Sans ça, rejoindre le même fichier juste après l'avoir retiré ne redéclenche pas onChange.
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={inputPhotoRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          ajouterFichiersJoints(Array.from(e.target.files ?? []));
-          e.target.value = "";
-        }}
-      />
+          <input
+            ref={inputFichierRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              ajouterFichiersJoints(Array.from(e.target.files ?? []));
+              // Sans ça, rejoindre le même fichier juste après l'avoir retiré ne redéclenche pas onChange.
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={inputPhotoRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              ajouterFichiersJoints(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
+          />
 
+      {/* Dessin, éditeur et plein écran sont posés dans le body : le groupe de boutons est déplaçable
+          (transform), ce qui enfermait leur position fixe dans un petit cadre invisible. */}
+      {monte &&
+        createPortal(
+          <div onPointerDown={(e) => e.stopPropagation()}>
       {dessinOuvert && (
         <CanvasDessin
           enSortie={dessinEnSortie}
@@ -645,6 +682,9 @@ export function ControlesInteractionCanal({
           </div>
         </PleinEcranApercu>
       )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
