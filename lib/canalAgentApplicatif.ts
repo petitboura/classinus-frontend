@@ -84,6 +84,7 @@ import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
 import { traiterDemandeEcranTelephone } from "./canalEcranTelephone";
+import { initialiserVisionEcranCanal } from "./pontVisionEcranCanal";
 import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
@@ -918,6 +919,9 @@ function fermerCanal() {
 export function initialiserCanalAgentApplicatif() {
   if (dejaInitialise || typeof window === "undefined") return;
   dejaInitialise = true;
+
+  // Android : le canal en direct démarre et arrête la vision de l'écran.
+  initialiserVisionEcranCanal();
 
   // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
   // l'état sans attendre un autre changement de l'écran.
