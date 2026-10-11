@@ -32,7 +32,7 @@ import { CanvasDessin } from "@/components/chat/CanvasDessin";
 import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
 import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
-import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
+import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
@@ -44,19 +44,16 @@ const DUREE_ERREUR_MS = 6000;
 // le groupe se replie tout seul.
 const DELAI_REPLI_AUTO_MS = 2000;
 
-const LABEL_MOTEUR: Record<MoteurDictee, string> = {
-  navigateur: "Navigateur",
-  whisper: "Whisper",
-};
-
-// Disposition (03/10/2026, demande Bourama), de bas en haut, en trois colonnes alignées :
-//   ligne 1 : activation du canal (boutonActivation), chevron qui déplie ou replie, « + » ;
+// Disposition (mise à jour le 11/10/2026, demande Bourama), de bas en haut :
+//   ligne 1 : activation du canal (remplacée par Écrire quand le groupe est replié),
+//             chevron qui déplie ou replie (toujours au même endroit), « + » ;
 //   ligne 2 : Écrire, Mode vocal, Utilitaires ;
-//   puis la ligne de la dictée (bouton et choix du moteur), puis celle de Arrêter la tâche
-//   (pendant une tâche) et Réglages.
-// Le groupe est déplié dès l'activation. Écrire et Arrêter la tâche restent visibles groupe
-// replié. Le journal est un bouton fixe et déplaçable, affiché canal actif et groupe déplié ;
-// le menu du « + » s'ouvre sur le côté pour ne pas recouvrir Utilitaires.
+//   ligne 3 : Arrêter la tâche (pendant une tâche, à gauche, il pousse les autres vers la
+//             droite), micro de dictée, opacité (superposition PC seulement), Réglages.
+// Le groupe est déplié dès l'activation et se replie seul après un court délai. Arrêter la
+// tâche reste visible groupe replié. Le journal est un bouton fixe et déplaçable, affiché
+// canal actif et groupe déplié ; le menu du « + » s'ouvre sur le côté pour ne pas recouvrir
+// Utilitaires.
 export function ControlesInteractionCanal({
   reglageOpacite = null,
   boutonActivation = null,
@@ -165,7 +162,7 @@ export function ControlesInteractionCanal({
   );
 
   if (!contexte) return null;
-  const { choisirModeInteraction, choisirMoteurDictee } = contexte;
+  const { choisirModeInteraction } = contexte;
 
   function basculerDictee() {
     choisirModeInteraction("voix");
@@ -289,11 +286,6 @@ export function ControlesInteractionCanal({
     }
   }
 
-  function choisirMoteur(moteur: MoteurDictee) {
-    if (dictee.enEcoute) dictee.annuler();
-    choisirMoteurDictee(moteur);
-  }
-
   const classeBouton = (misEnAvant: boolean, occupe: boolean) =>
     `flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
       occupe
@@ -398,7 +390,7 @@ export function ControlesInteractionCanal({
         <AnimatePresence initial={false}>
           {actif && (contexte.tacheEnCours || groupeOuvert) && (
             <motion.div
-              key="ligne-reglages"
+              key="ligne-dictee"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
@@ -408,8 +400,8 @@ export function ControlesInteractionCanal({
               <AnimatePresence initial={false}>
                 {/* Arrêter la tâche en cours, comme le bouton d'arrêt du chat : le texte déjà
                     écrit reste, la bulle propose ensuite Continuer ou Réessayer (voir
-                    lib/tacheCanal.ts). N'apparaît que pendant une tâche et reste visible même
-                    quand le groupe est replié. */}
+                    lib/tacheCanal.ts). N'apparaît que pendant une tâche, reste visible même
+                    quand le groupe est replié, et pousse les autres boutons vers la droite. */}
                 {contexte.tacheEnCours && (
                   <motion.button
                     key="arreter-tache"
@@ -426,64 +418,30 @@ export function ControlesInteractionCanal({
                   </motion.button>
                 )}
                 {groupeOuvert && (
+                  <ApparitionBoutonCanal key="micro">
+                  <button
+                    onClick={basculerDictee}
+                    disabled={dictee.transcriptionEnCours}
+                    aria-pressed={dictee.enEcoute}
+                    aria-label={
+                      dictee.enEcoute ? "Arrêter la dictée" : dictee.transcriptionEnCours ? "Transcription en cours" : "Dicter un message"
+                    }
+                    title={dictee.enEcoute ? "Arrêter la dictée" : "Dicter un message"}
+                    className={`${classeBouton(modeInteraction === "voix", dictee.enEcoute)} ${
+                      dictee.enEcoute || dictee.transcriptionEnCours ? "animate-pulse" : ""
+                    }`}
+                  >
+                    {dictee.enEcoute ? <Square size={16} /> : <Mic size={18} />}
+                  </button>
+                  </ApparitionBoutonCanal>
+                )}
+                {groupeOuvert && reglageOpacite && <ApparitionBoutonCanal key="opacite">{reglageOpacite}</ApparitionBoutonCanal>}
+                {groupeOuvert && (
                   <ApparitionBoutonCanal key="reglages">
                     <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
                   </ApparitionBoutonCanal>
                 )}
-                {groupeOuvert && reglageOpacite && <ApparitionBoutonCanal key="opacite">{reglageOpacite}</ApparitionBoutonCanal>}
               </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence initial={false}>
-          {actif && groupeOuvert && (
-            <motion.div
-              key="ligne-dictee"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-2"
-            >
-              <button
-                onClick={basculerDictee}
-                disabled={dictee.transcriptionEnCours}
-                aria-pressed={dictee.enEcoute}
-                aria-label={
-                  dictee.enEcoute ? "Arrêter la dictée" : dictee.transcriptionEnCours ? "Transcription en cours" : "Dicter un message"
-                }
-                title={dictee.enEcoute ? "Arrêter la dictée" : "Dicter un message"}
-                className={`${classeBouton(modeInteraction === "voix", dictee.enEcoute)} ${
-                  dictee.enEcoute || dictee.transcriptionEnCours ? "animate-pulse" : ""
-                }`}
-              >
-                {dictee.enEcoute ? <Square size={16} /> : <Mic size={18} />}
-              </button>
-
-              {dictee.navigateurDisponible && (
-                <div
-                  role="radiogroup"
-                  aria-label="Moteur de dictée"
-                  className="flex overflow-hidden rounded-full border border-dj-bordure bg-dj-surface text-[11px] shadow-lg"
-                >
-                  {(Object.keys(LABEL_MOTEUR) as MoteurDictee[]).map((moteur) => (
-                    <button
-                      key={moteur}
-                      role="radio"
-                      aria-checked={dictee.moteurUtilise === moteur}
-                      onClick={() => choisirMoteur(moteur)}
-                      className={`px-2.5 py-1.5 transition-colors ${
-                        dictee.moteurUtilise === moteur
-                          ? "bg-dj-accent-1 text-[#1A0D02]"
-                          : "text-dj-texte-muet hover:text-dj-texte"
-                      }`}
-                    >
-                      {LABEL_MOTEUR[moteur]}
-                    </button>
-                  ))}
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
