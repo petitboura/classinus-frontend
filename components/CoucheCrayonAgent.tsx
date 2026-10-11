@@ -13,14 +13,24 @@
 import { useEffect, type PointerEvent } from "react";
 import { COUCHE_VOIX_PLEIN_ECRAN } from "@/lib/couchesAgent";
 import {
+  ACCELERATEURS_CRAYON,
   DUREE_FONDU_TRAITS_MS,
   ajouterPoint,
+  basculerCrayon,
   commencerTrait,
+  definirRaccourcisIndisponibles,
+  effacerTraits,
+  rappelerTraits,
   terminerTrait,
   useCrayonEcran,
+  type ActionCrayon,
   type Trait,
 } from "@/lib/crayonEcran";
-import { definirModeCrayonSuperposition } from "@/lib/superpositionElectron";
+import {
+  definirModeCrayonSuperposition,
+  definirRaccourcisCrayonSuperposition,
+  ecouterRaccourcisCrayon,
+} from "@/lib/superpositionElectron";
 
 function dessinerTrait(trait: Trait): string {
   const [premier, ...suite] = trait.points;
@@ -40,6 +50,18 @@ export function CoucheCrayonAgent() {
     definirModeCrayonSuperposition(actif);
     return () => definirModeCrayonSuperposition(false);
   }, [actif]);
+
+  // Raccourcis clavier du PC : le processus principal d'Electron les prend canal actif
+  // et nous prévient à chaque appui (voir lib/crayonEcran.ts pour les touches).
+  useEffect(() => {
+    definirRaccourcisCrayonSuperposition(ACCELERATEURS_CRAYON);
+    return ecouterRaccourcisCrayon((evenement) => {
+      if (evenement.action === "basculer") basculerCrayon();
+      else if (evenement.action === "rappeler") rappelerTraits();
+      else if (evenement.action === "effacer") effacerTraits();
+      else if (evenement.action === "indisponibles") definirRaccourcisIndisponibles(evenement.actions as ActionCrayon[]);
+    });
+  }, []);
 
   function surAppui(e: PointerEvent<SVGSVGElement>) {
     if (e.button !== 0) return;

@@ -14,7 +14,8 @@
     "test:garde-clavier": "node tests/verifier-garde-clavier.mjs",
     "test:arret-global": "node tests/verifier-arret-global.mjs",
     "test:applications-protegees": "node tests/verifier-applications-protegees.mjs",
-    "test:autorisation-canal": "node tests/verifier-autorisation-canal.mjs"
+    "test:autorisation-canal": "node tests/verifier-autorisation-canal.mjs",
+    "test:raccourcis-crayon": "node tests/verifier-raccourcis-crayon.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "^3.7.1",

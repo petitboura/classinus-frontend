@@ -7,18 +7,29 @@
 // Les icônes sont volontairement différentes de celles d'Écrire et du dessin des Utilitaires.
 
 import { Eraser, Highlighter, History } from "lucide-react";
-import { basculerCrayon, rappelerOuEffacerTraits, useCrayonEcran } from "@/lib/crayonEcran";
+import {
+  LIBELLES_RACCOURCIS_CRAYON,
+  basculerCrayon,
+  rappelerOuEffacerTraits,
+  useCrayonEcran,
+  type ActionCrayon,
+} from "@/lib/crayonEcran";
 
 const LIBELLE_CRAYON_SORTI = "Ranger le crayon";
 const LIBELLE_CRAYON_RANGE = "Entourer quelque chose à l'écran pour le montrer à Classinus";
 const LIBELLE_EFFACER = "Effacer les traits";
 const LIBELLE_RAPPELER = "Faire réapparaître les traits";
 
+// L'infobulle annonce le raccourci clavier, sauf si le système l'a refusé.
+function avecRaccourci(libelle: string, action: ActionCrayon, indisponibles: ActionCrayon[]): string {
+  return indisponibles.includes(action) ? libelle : `${libelle} (${LIBELLES_RACCOURCIS_CRAYON[action]})`;
+}
+
 const CLASSE_BASE = "flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors";
 
 export function BoutonCrayonCanal() {
-  const { actif } = useCrayonEcran();
-  const libelle = actif ? LIBELLE_CRAYON_SORTI : LIBELLE_CRAYON_RANGE;
+  const { actif, raccourcisIndisponibles } = useCrayonEcran();
+  const libelle = avecRaccourci(actif ? LIBELLE_CRAYON_SORTI : LIBELLE_CRAYON_RANGE, "basculer", raccourcisIndisponibles);
   return (
     <button
       onClick={basculerCrayon}
@@ -42,8 +53,10 @@ export function peutAfficherBoutonTraits(etat: { traits: unknown[]; visibles: bo
 }
 
 export function BoutonTraitsCanal() {
-  const { visibles } = useCrayonEcran();
-  const libelle = visibles ? LIBELLE_EFFACER : LIBELLE_RAPPELER;
+  const { visibles, raccourcisIndisponibles } = useCrayonEcran();
+  const libelle = visibles
+    ? avecRaccourci(LIBELLE_EFFACER, "effacer", raccourcisIndisponibles)
+    : avecRaccourci(LIBELLE_RAPPELER, "rappeler", raccourcisIndisponibles);
   return (
     <button
       onClick={rappelerOuEffacerTraits}
