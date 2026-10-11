@@ -66,6 +66,28 @@ export function zoneDepuisParametres(parametres: Record<string, unknown>): ZoneL
   return zone === "barre_des_taches" || zone === "bureau" ? zone : "fenetre";
 }
 
+// Zone entouree au crayon, en pixels d'ecran (entiers).
+export interface ZoneEntouree {
+  gauche: number;
+  haut: number;
+  droite: number;
+  bas: number;
+}
+
+export function zonesEntoureesDepuisParametres(parametres: Record<string, unknown>): ZoneEntouree[] {
+  const brut = parametres.zones_entourees;
+  if (!Array.isArray(brut)) return [];
+  const zones: ZoneEntouree[] = [];
+  for (const z of brut) {
+    if (typeof z !== "object" || z === null) continue;
+    const { gauche, haut, droite, bas } = z as Record<string, unknown>;
+    const valeurs = [gauche, haut, droite, bas].map((v) => Math.round(Number(v)));
+    if (!valeurs.every((v) => Number.isFinite(v) && Math.abs(v) < 100000)) continue;
+    zones.push({ gauche: valeurs[0], haut: valeurs[1], droite: valeurs[2], bas: valeurs[3] });
+  }
+  return zones.slice(0, 8);
+}
+
 export interface ElementLu {
   type: string;
   nom: string;
@@ -83,6 +105,8 @@ export interface ElementLu {
   // "menu ouvert" pour un element d'un menu, menu contextuel ou liste deroulante
   // ouvert par la fenetre (fenetre a part) ; absent pour la fenetre elle-meme.
   zone?: string;
+  // Crayon : texte exact lu sous les zones entourees, pour un champ ou un document.
+  texte_entoure?: string;
 }
 
 export interface LectureFenetre {
@@ -173,6 +197,20 @@ public interface IUiaTextRange {
   void M0(); void M1(); void M2(); void M3(); void M4(); void M5(); void M6(); void M7(); void M8();
   void GetText(int maxLength, [MarshalAs(UnmanagedType.BStr)] out string text);
 }
+// Crayon (11/10/2026) : memes interfaces COM, avec les methodes qui permettent de retrouver le
+// texte sous un point (RangeFromPoint, ExpandToEnclosingUnit). Les anciennes interfaces
+// ci dessus ne sont pas modifiees.
+[ComImport, Guid("32eba289-3583-42c9-9c59-3b6d9a1e9b6a"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUiaTextPatternPt {
+  void RangeFromPoint(PtUia pt, out IUiaTextRangeUnit range);
+}
+[ComImport, Guid("a543cc6a-f4ae-494b-8239-c814481187a8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUiaTextRangeUnit {
+  void M0(); void M1(); void M2();
+  void ExpandToEnclosingUnit(int unit);
+  void M4(); void M5(); void M6(); void M7(); void M8();
+  void GetText(int maxLength, [MarshalAs(UnmanagedType.BStr)] out string text);
+}
 public static class LectureMsaa {
   // Ancienne API d'accessibilite (MSAA) : c'est elle que les menus Windows classiques
   // (classe #32768) exposent de facon fiable quand UI Automation ne voit rien dedans.
@@ -217,6 +255,54 @@ public static class LectureTexteCom {
         if (!string.IsNullOrEmpty(t)) { if (sb.Length > 0) sb.Append(' '); sb.Append(t); restant -= t.Length; }
       }
       return sb.ToString();
+    } catch (Exception) { return null; }
+  }
+  // Texte exact sous une zone entouree d'un champ ou d'un document (poignee de fenetre connue) :
+  // on balaie la zone point par point, et pour chaque point on lit le mot qui s'y trouve.
+  // Les mots sont rendus dans l'ordre de lecture, sans repetition de deux mots identiques de
+  // suite. Renvoie null si le champ n'expose pas son texte ou si rien n'est lu.
+  public static string LireZone(IntPtr hwnd, int gauche, int haut, int droite, int bas, int maxCar) {
+    try {
+      if (hwnd == IntPtr.Zero) return null;
+      IUia uia = (IUia)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("ff48dba4-60ef-4201-aa87-54103eef594e")));
+      IUiaElement el = null;
+      uia.ElementFromHandle(hwnd, out el);
+      if (el == null) return null;
+      object obj = null;
+      el.GetCurrentPattern(10014, out obj);
+      IUiaTextPatternPt tp = obj as IUiaTextPatternPt;
+      if (tp == null) return null;
+      int pasX = Math.Max(8, (droite - gauche) / 60);
+      int pasY = Math.Max(8, (bas - haut) / 40);
+      int departX = Math.Min(2, (droite - gauche) / 2);
+      int departY = Math.Min(2, (bas - haut) / 2);
+      DateTime fin = DateTime.UtcNow.AddMilliseconds(3000);
+      StringBuilder sb = new StringBuilder();
+      string prec = "";
+      bool termine = false;
+      for (int y = haut + departY; y <= bas && !termine; y += pasY) {
+        for (int x = gauche + departX; x <= droite; x += pasX) {
+          if (DateTime.UtcNow > fin || sb.Length >= maxCar) { termine = true; break; }
+          try {
+            PtUia pt = new PtUia();
+            pt.X = x;
+            pt.Y = y;
+            IUiaTextRangeUnit r = null;
+            tp.RangeFromPoint(pt, out r);
+            if (r == null) continue;
+            r.ExpandToEnclosingUnit(2);
+            string t = null;
+            r.GetText(200, out t);
+            if (t == null) continue;
+            t = t.Trim();
+            if (t.Length == 0 || t == prec) continue;
+            prec = t;
+            if (sb.Length > 0) sb.Append(' ');
+            sb.Append(t);
+          } catch (Exception) { }
+        }
+      }
+      return sb.Length == 0 ? null : sb.ToString();
     } catch (Exception) { return null; }
   }
 }
@@ -287,10 +373,15 @@ public static class LectureFenetres {
 `;
 
 // Exportee pour pouvoir verifier la syntaxe du script hors de Windows.
-export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true, zone: ZoneLecture = "fenetre"): string {
+export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true, zone: ZoneLecture = "fenetre", zonesEntourees: ZoneEntouree[] = []): string {
   if (zone !== "fenetre" && zone !== "barre_des_taches" && zone !== "bureau") throw new Error("Zone de lecture invalide");
   if (!/^\d+$/.test(handleSuperposition)) throw new Error("Handle de superposition invalide");
   const nbMaxNoeuds = limites.nbMaxElements * FACTEUR_NOEUDS_PARCOURUS;
+  // Zones entourees au crayon : seuls des entiers bornes sont inseres dans le script.
+  const ajoutsZones = zonesEntourees
+    .slice(0, 8)
+    .map((z) => `$zonesEntourees.Add(@(${z.gauche}, ${z.haut}, ${z.droite}, ${z.bas}))`)
+    .join("\n");
   // Les seules valeurs inserees dans le script sont des entiers deja
   // bornes par entierBorne : aucune chaine venue de l'exterieur.
   return `
@@ -315,6 +406,8 @@ $pidClassinus = ${pidClassinus}
 $lireTexteLong = ${lireTexteLong ? "$true" : "$false"}
 $handleSuperposition = [IntPtr]([long]${handleSuperposition})
 $zoneDemandee = '${zone}'
+$zonesEntourees = New-Object System.Collections.Generic.List[object]
+${ajoutsZones}
 
 try {
   # Rendre le focus a une fenetre (activerFenetre) n'utilise pas UI Automation : ne pas
@@ -561,6 +654,23 @@ try {
           hauteur = [int]$rect.Height
         }
         if ($script:zoneCourante) { $element.zone = $script:zoneCourante }
+        # Crayon : texte exact sous les zones entourees, pour un champ ou un document (jamais
+        # pour un champ masque).
+        if ($lireTexteLong -and $zonesEntourees.Count -gt 0 -and -not $masquee -and $handle -ne [IntPtr]::Zero -and ($typeCle -eq 'Edit' -or $typeCle -eq 'Document')) {
+          $textesZones = @()
+          foreach ($z in $zonesEntourees) {
+            $zg = [Math]::Max([int]$z[0], [int]$rect.X)
+            $zh = [Math]::Max([int]$z[1], [int]$rect.Y)
+            $zd = [Math]::Min([int]$z[2], [int]($rect.X + $rect.Width))
+            $zb = [Math]::Min([int]$z[3], [int]($rect.Y + $rect.Height))
+            if ($zg -le $zd -and $zh -le $zb) {
+              $tz = $null
+              try { $tz = [LectureTexteCom]::LireZone($handle, $zg, $zh, $zd, $zb, 1500) } catch { }
+              if ($tz) { $textesZones += $tz }
+            }
+          }
+          if ($textesZones.Count -gt 0) { $element.texte_entoure = ($textesZones -join ' ') }
+        }
         $script:elements.Add($element)
         if ($nom -ne '') { $nomTransmis = $nom }
       }
@@ -667,7 +777,7 @@ function lireUneFois(
 
   const limites = limitesDepuisParametres(parametres);
   const zone = zoneDepuisParametres(parametres);
-  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong, zone);
+  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong, zone, zonesEntoureesDepuisParametres(parametres));
 
   // Le script est ecrit dans un fichier temporaire plutot que passe en -EncodedCommand :
   // le script encode approche la limite de 32 767 caracteres d'une ligne de commande
@@ -753,6 +863,7 @@ function lireUneFois(
             largeur: Number(e.largeur) || 0,
             hauteur: Number(e.hauteur) || 0,
             ...(typeof e.zone === "string" ? { zone: e.zone } : {}),
+            ...(typeof e.texte_entoure === "string" && e.texte_entoure ? { texte_entoure: e.texte_entoure } : {}),
           })),
           menu_ouvert: r.menu_ouvert === true,
           coupe: r.coupe === true,

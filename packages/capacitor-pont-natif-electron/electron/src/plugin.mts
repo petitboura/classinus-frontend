@@ -594,10 +594,16 @@ class PontNatifImpl extends ElectronPlugin {
       versEcran
     );
     if (zones.length === 0) return { erreur: "Aucune zone entourée valide." };
-    const lecture = await lireFenetreAuPremierPlan({}, handleSuperposition());
+    const lecture = await lireFenetreAuPremierPlan({ zones_entourees: zones }, handleSuperposition());
     if ("erreur" in lecture) return lecture;
     const entoures = new Set<unknown>(elementsDansZones(lecture.elements, zones));
-    return { ...lecture, elements: lecture.elements.map((e) => ({ ...e, entoure: entoures.has(e) })), zones };
+    // Un champ ou un document dont le texte exact a ete lu sous le trait compte comme entoure,
+    // meme si son centre tombe hors de la zone.
+    return {
+      ...lecture,
+      elements: lecture.elements.map((e) => ({ ...e, entoure: entoures.has(e) || Boolean(e.texte_entoure) })),
+      zones,
+    };
   }
 
   async rattraperActionsEnAttente(): Promise<{ traitees: number }> {

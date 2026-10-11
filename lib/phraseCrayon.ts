@@ -9,6 +9,8 @@ export const TEXTE_BULLE_FENETRE_CLASSINUS = "Je ne peux pas encore lire ce que 
 export const TEXTE_BULLE_LECTURE_IMPOSSIBLE = "Je n'ai pas réussi à lire ce que tu as entouré.";
 
 const NB_MAX_ELEMENTS_DANS_LA_PHRASE = 10;
+// Texte exact lu sous le trait : plus long qu'une valeur ordinaire, c'est ce que l'étudiant a montré.
+const LONGUEUR_MAX_TEXTE_ENTOURE = 600;
 // Reste de la fenêtre lue : la lecture d'écran a déjà son propre plafond, celui-ci évite
 // seulement un message démesuré.
 const NB_MAX_ELEMENTS_RESTE_FENETRE = 80;
@@ -31,6 +33,8 @@ function couper(texte: string, max: number): string {
 function decrireElement(e: ElementEntoure): string | null {
   if (e.valeur_masquee) return `${e.type} masqué`;
   const nom = couper(e.nom, LONGUEUR_MAX_NOM);
+  const texteEntoure = couper(e.texte_entoure ?? "", LONGUEUR_MAX_TEXTE_ENTOURE);
+  if (texteEntoure) return `${e.type}${nom ? ` « ${nom} »` : ""}, texte entouré : « ${texteEntoure} »`;
   const valeur = couper(e.valeur ?? "", LONGUEUR_MAX_VALEUR);
   if (nom && valeur && valeur !== nom) return `${e.type} « ${nom} » contenant « ${valeur} »`;
   if (nom) return `${e.type} « ${nom} »`;

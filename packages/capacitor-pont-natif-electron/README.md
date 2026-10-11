@@ -152,7 +152,10 @@ La methode `lireElementsEntoures({ zones })` recoit un rectangle par trait dessi
 page de superposition, voir `lib/zonesCrayon.ts`), les convertit en pixels d'ecran (origine et
 zoom de la fenetre de superposition, echelle de l'ecran), lit la fenetre au premier plan avec la
 meme lecture que `lire_ecran` et rend tous les elements lus, ceux dont la position tombe dans une zone etant marques `entoure`
-(le grand modele recoit tout, ce qui est entoure d'abord).
+(le grand modele recoit tout, ce qui est entoure d'abord). Pour un champ ou un document
+dont le texte est lisible (poignee de fenetre connue), le texte exact sous le trait est lu mot par mot
+et rendu dans `texte_entoure` (`LectureTexteCom.LireZone`, nouveau code, la lecture normale est inchangee).
+Sans poignee (certains navigateurs), seul le champ est marque entoure, pas les mots.
 Logique de conversion et de choix dans `electron/src/zonesCrayon.mts`, testee par
 `npm run test:zones-crayon`. Cote site : `lib/lectureEntoureCrayon.ts`. Le bouton Envoyer du champ
 d'ecriture du canal (`components/ControlesInteractionCanal.tsx`) l'appelle quand un dessin attend, voir `lib/envoiCrayon.ts`. Conversion d'ecran et lecture reelle non verifiees sur un
