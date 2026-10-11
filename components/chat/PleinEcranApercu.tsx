@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
+import { estDansFenetreSuperposition } from "@/lib/superpositionElectron";
 
 // 20/09/2026, demande Bourama : le bouton Agrandir d'un aperçu (widget,
 // PDF, Word, Excel, texte) ouvrait une petite fenêtre flottante coincée
@@ -68,6 +69,16 @@ export function PleinEcranApercu({
 
   if (!monte) return null;
 
+  // Fenêtre de superposition PC (11/10/2026, demande Bourama) : cette fenêtre couvre tout
+  // l'écran du PC et est transparente. Un plein écran de bord à bord y peignait tout l'écran
+  // en noir ou en blanc (selon le thème) et cachait l'application d'en dessous. Ici c'est donc
+  // un grand panneau centré avec des marges : le reste de l'écran reste visible et les clics
+  // le traversent toujours.
+  const enPanneauSurPc = capturerSouris && estDansFenetreSuperposition();
+  const formeEtFond = enPanneauSurPc
+    ? "fixed inset-x-[6vw] inset-y-[8vh] z-[160] flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-2xl"
+    : "fixed inset-0 z-[160] flex flex-col bg-dj-surface pb-[var(--safe-bottom)] pt-[var(--safe-top)]";
+
   return createPortal(
     <div
       role="dialog"
@@ -77,7 +88,7 @@ export function PleinEcranApercu({
       // Un clic dans le plein écran ne doit rien déclencher dans le
       // message d'origine (l'arbre React traverse le portail).
       onClick={(e) => e.stopPropagation()}
-      className={`fixed inset-0 z-[160] flex flex-col bg-dj-surface pb-[var(--safe-bottom)] pt-[var(--safe-top)] text-dj-texte ${
+      className={`${formeEtFond} text-dj-texte ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
     >
