@@ -155,9 +155,10 @@ components/
   chat/LecteurMedia.tsx   lecteur audio et vidéo du chat. Un fichier d'un site externe passe par le relais
                           (lib/useLienRelaisExterne.ts) ; si la lecture échoue, il retente avec l'adresse
                           d'origine puis affiche une carte de téléchargement
-  chat/BoutonCopierLien.tsx  bouton qui copie l'adresse d'un lien (11/10/2026). Variante survol : pastille posée
-                          à côté d'une carte de LinkPreview, visible seulement à la souris (cachée sur téléphone) ;
-                          variante texte : "Copier le lien" de l'aperçu de site (VisionneurPositionGlobal)
+  chat/BoutonCopierLien.tsx  bouton qui copie l'adresse d'un lien (11/10/2026). Icône nue (sans cadre ni
+                          texte). Variante survol : posée à côté d'une carte de LinkPreview, visible seulement au
+                          survol de CETTE carte (groupe nommé group/lien) et à la souris, cachée sur téléphone ;
+                          variante texte : même icône dans l'aperçu de site (VisionneurPositionGlobal)
 
 public/
   foliate-js/             moteur de lecture EPUB et MOBI (foliate-js, licence MIT), copié sans modification
