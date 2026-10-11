@@ -9,6 +9,13 @@
 //                               capture tourne reellement.
 //   capturer({tailleMax, qualite}) : derniere image de l'ecran (JPEG base64)
 //   arreter()                 : coupe la capture
+//   lireTexte({tailleMax})    : modifie le 11/10/2026, demande Bourama. Lit le
+//                               texte de l'ecran SUR le telephone (OCR) et
+//                               renvoie les lignes avec leur position, sans
+//                               envoyer aucune image. Les positions sont dans
+//                               l'espace de l'image lue (largeur, hauteur
+//                               renvoyees), directement utilisable comme
+//                               "espace" de la superposition.
 //
 // Evenement : "etatChange" { actif, erreur? }, emis a chaque demarrage,
 // arret, ou coupure par le systeme (indicateur systeme, autre appli qui
@@ -16,7 +23,7 @@
 //
 // Codes d'erreur stables pour le JS (le JS decide du texte affiche et le
 // traduit) : REFUSE, INDISPONIBLE, DEJA_EN_COURS, DELAI, ECHEC, INACTIF,
-// AUCUNE_IMAGE, CAPTURE_ECHEC.
+// AUCUNE_IMAGE, CAPTURE_ECHEC, LECTURE_ECHEC.
 package com.classinus.app.visionecran
 
 import android.app.Activity
@@ -25,12 +32,17 @@ import android.media.projection.MediaProjectionManager
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.result.ActivityResult
+import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 @CapacitorPlugin(name = "VisionEcran")
 class VisionEcranPlugin : Plugin() {
@@ -56,6 +68,12 @@ class VisionEcranPlugin : Plugin() {
     private var appelDemarrage: PluginCall? = null
     private var delaiDemarrage: Runnable? = null
 
+    // Lecteur de texte cree au premier besoin, ferme avec le plugin.
+    private var reconnaisseur: TextRecognizer? = null
+
+    private fun obtenirReconnaisseur(): TextRecognizer =
+        reconnaisseur ?: TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS).also { reconnaisseur = it }
+
     override fun load() {
         CaptureEcranService.surChangementEtat = { actif, erreur ->
             gererChangementEtat(actif, erreur)
@@ -65,6 +83,8 @@ class VisionEcranPlugin : Plugin() {
     override fun handleOnDestroy() {
         CaptureEcranService.surChangementEtat = null
         delaiDemarrage?.let { gestionnairePrincipal.removeCallbacks(it) }
+        reconnaisseur?.close()
+        reconnaisseur = null
         super.handleOnDestroy()
     }
 
@@ -171,6 +191,76 @@ class VisionEcranPlugin : Plugin() {
         reponse.put("ecranHauteur", service.hauteurEcran)
         reponse.put("horodatage", capture.horodatage)
         call.resolve(reponse)
+    }
+
+    @PluginMethod
+    fun lireTexte(call: PluginCall) {
+        val service = CaptureEcranService.instance
+        if (service == null || !CaptureEcranService.estActif()) {
+            call.reject("La capture d'écran n'est pas active.", "INACTIF")
+            return
+        }
+        val tailleMax = (call.getInt("tailleMax") ?: TAILLE_CAPTURE_MAX_DEFAUT).coerceIn(TAILLE_MIN, TAILLE_MAX)
+
+        val copie = try {
+            service.copierDerniereImage(tailleMax)
+        } catch (e: Exception) {
+            call.reject("La lecture de l'écran a échoué.", "CAPTURE_ECHEC")
+            return
+        }
+        if (copie == null) {
+            call.reject("Aucune image de l'écran n'est encore disponible.", "AUCUNE_IMAGE")
+            return
+        }
+
+        val bitmap = copie.bitmap
+        val largeur = bitmap.width
+        val hauteur = bitmap.height
+        val ecranLargeur = service.largeurEcran
+        val ecranHauteur = service.hauteurEcran
+        try {
+            obtenirReconnaisseur().process(InputImage.fromBitmap(bitmap, 0))
+                .addOnSuccessListener { texte ->
+                    try {
+                        val lignes = JSArray()
+                        var numero = 0
+                        for (bloc in texte.textBlocks) {
+                            for (ligne in bloc.lines) {
+                                val cadre = ligne.boundingBox ?: continue
+                                val contenu = ligne.text.trim()
+                                if (contenu.isEmpty()) continue
+                                val objet = JSObject()
+                                objet.put("id", numero++)
+                                objet.put("texte", contenu)
+                                objet.put("x", cadre.left)
+                                objet.put("y", cadre.top)
+                                objet.put("largeur", cadre.width())
+                                objet.put("hauteur", cadre.height())
+                                lignes.put(objet)
+                            }
+                        }
+                        val reponse = JSObject()
+                        reponse.put("lignes", lignes)
+                        reponse.put("largeur", largeur)
+                        reponse.put("hauteur", hauteur)
+                        reponse.put("ecranLargeur", ecranLargeur)
+                        reponse.put("ecranHauteur", ecranHauteur)
+                        reponse.put("horodatage", copie.horodatage)
+                        call.resolve(reponse)
+                    } catch (e: Exception) {
+                        call.reject("La lecture du texte a échoué.", "LECTURE_ECHEC")
+                    } finally {
+                        if (!bitmap.isRecycled) bitmap.recycle()
+                    }
+                }
+                .addOnFailureListener {
+                    if (!bitmap.isRecycled) bitmap.recycle()
+                    call.reject("La lecture du texte a échoué.", "LECTURE_ECHEC")
+                }
+        } catch (e: Exception) {
+            if (!bitmap.isRecycled) bitmap.recycle()
+            call.reject("La lecture du texte a échoué.", "LECTURE_ECHEC")
+        }
     }
 
     @PluginMethod

@@ -164,6 +164,15 @@ dependencies {
     // du JS, pas de supabase-kt natif) -- 1.8.0 devrait donc suffire, mais
     // pas verifie avec compileSdk 36 dans CE projet precis.
     implementation "androidx.browser:browser:1.8.0"
+
+    // visionecran/VisionEcranPlugin.kt, methode lireTexte : lecture du texte de
+    // l'ecran directement sur le telephone (OCR), sans envoyer d'image.
+    // Ajoute le 11/10/2026, demande Bourama. Version "groupee" (le modele est
+    // dans l'appli) : fonctionne aussi sans les services Google Play, donc
+    // pour les deux flavors. Version confirmee par la doc officielle ML Kit.
+    // Ecritures reconnues : latine, chinoise, devanagari, japonaise, coreenne
+    // (pas l'arabe pour l'instant, choix assume).
+    implementation "com.google.mlkit:text-recognition:16.0.1"
 }
 
 apply from: 'capacitor.build.gradle'

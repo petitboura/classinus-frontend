@@ -51,6 +51,35 @@ export type CaptureVisionEcran = {
   horodatage: number;
 };
 
+export type OptionsLectureTexteEcran = {
+  /** Grand cote maximal de l'image lue, en pixels. */
+  tailleMax?: number;
+};
+
+/** Une ligne de texte lue sur l'ecran, avec sa position dans l'espace de l'image lue. */
+export type LigneTexteEcran = {
+  /** Numero de la ligne dans cette lecture (0, 1, 2...), pour y faire reference. */
+  id: number;
+  texte: string;
+  /** Coin haut gauche et taille de la ligne, en pixels de l'image lue. */
+  x: number;
+  y: number;
+  largeur: number;
+  hauteur: number;
+};
+
+export type LectureTexteEcran = {
+  lignes: LigneTexteEcran[];
+  /** Taille de l'image lue : c'est l'espace des positions ci dessus (valeur de "espace" pour la superposition). */
+  largeur: number;
+  hauteur: number;
+  /** Taille reelle de l'ecran. */
+  ecranLargeur: number;
+  ecranHauteur: number;
+  /** Moment de la capture, en millisecondes depuis 1970. */
+  horodatage: number;
+};
+
 export type ChangementEtatVisionEcran = {
   actif: boolean;
   /** Seulement pour un echec ou un arret force (ex: ARRET_SYSTEME). */
@@ -65,12 +94,14 @@ export type CodeErreurVisionEcran =
   | "ECHEC"
   | "INACTIF"
   | "AUCUNE_IMAGE"
-  | "CAPTURE_ECHEC";
+  | "CAPTURE_ECHEC"
+  | "LECTURE_ECHEC";
 
 type PluginVisionEcran = {
   etat(): Promise<EtatVisionEcran>;
   demarrer(options?: OptionsDemarrageVisionEcran): Promise<EtatVisionEcran>;
   capturer(options?: OptionsCaptureVisionEcran): Promise<CaptureVisionEcran>;
+  lireTexte(options?: OptionsLectureTexteEcran): Promise<LectureTexteEcran>;
   arreter(): Promise<{ actif: false }>;
   addListener(
     evenement: "etatChange",
@@ -105,6 +136,15 @@ export function demarrerVisionEcran(options?: OptionsDemarrageVisionEcran): Prom
 
 export function capturerEcran(options?: OptionsCaptureVisionEcran): Promise<CaptureVisionEcran> {
   return VisionEcran.capturer(options);
+}
+
+/**
+ * Lit le texte de l'ecran sur le telephone (OCR), sans envoyer d'image. Chaque
+ * ligne porte sa position, utilisable telle quelle pour pointer, surligner ou
+ * souligner avec la superposition (espace = { largeur, hauteur } du resultat).
+ */
+export function lireTexteEcran(options?: OptionsLectureTexteEcran): Promise<LectureTexteEcran> {
+  return VisionEcran.lireTexte(options);
 }
 
 export function arreterVisionEcran(): Promise<{ actif: false }> {

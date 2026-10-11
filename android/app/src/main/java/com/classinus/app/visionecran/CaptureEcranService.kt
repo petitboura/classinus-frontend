@@ -54,6 +54,12 @@ import com.classinus.app.R
 import java.io.ByteArrayOutputStream
 import kotlin.math.roundToInt
 
+/** Copie de la derniere image sous forme de bitmap (a liberer par l'appelant) et moment de la capture. */
+data class CopieEcran(
+    val bitmap: Bitmap,
+    val horodatage: Long,
+)
+
 /** Une image capturee, deja reduite et encodee, plus les dimensions utiles au pointage. */
 data class ResultatCapture(
     val imageBase64: String,
@@ -396,6 +402,51 @@ class CaptureEcranService : Service() {
             val aLiberer = linkedSetOf(bitmapBrut, bitmapRogne, bitmapFinal)
             aLiberer.forEach { if (!it.isRecycled) it.recycle() }
             return resultat
+        }
+    }
+
+    /**
+     * Modifie le 11/10/2026, demande Bourama : donne la derniere image sous
+     * forme de bitmap, pour la lecture du texte sur le telephone (OCR). Le
+     * bitmap est une copie : l'appelant doit le liberer (recycle) quand il a
+     * fini. Renvoie null s'il n'y a encore aucune image. A appeler hors du
+     * thread principal. Le verrou n'est tenu que le temps de la copie, pour ne
+     * pas bloquer la reception des images pendant la lecture.
+     */
+    fun copierDerniereImage(tailleMax: Int): CopieEcran? {
+        synchronized(verrou) {
+            val image = derniereImage ?: return null
+            val plan = image.planes[0]
+            val tampon = plan.buffer
+            tampon.rewind()
+            val largeurBrute = plan.rowStride / plan.pixelStride
+            val bitmapBrut = Bitmap.createBitmap(largeurBrute, image.height, Bitmap.Config.ARGB_8888)
+            bitmapBrut.copyPixelsFromBuffer(tampon)
+
+            val bitmapRogne = if (largeurBrute != image.width) {
+                Bitmap.createBitmap(bitmapBrut, 0, 0, image.width, image.height)
+            } else {
+                bitmapBrut
+            }
+
+            val plusGrand = maxOf(bitmapRogne.width, bitmapRogne.height)
+            val bitmapFinal = if (tailleMax > 0 && plusGrand > tailleMax) {
+                val ratio = tailleMax.toFloat() / plusGrand
+                Bitmap.createScaledBitmap(
+                    bitmapRogne,
+                    (bitmapRogne.width * ratio).roundToInt().coerceAtLeast(1),
+                    (bitmapRogne.height * ratio).roundToInt().coerceAtLeast(1),
+                    true,
+                )
+            } else {
+                bitmapRogne
+            }
+
+            // On libere les bitmaps intermediaires, jamais celui qu'on rend.
+            val aLiberer = linkedSetOf(bitmapBrut, bitmapRogne)
+            aLiberer.remove(bitmapFinal)
+            aLiberer.forEach { if (!it.isRecycled) it.recycle() }
+            return CopieEcran(bitmapFinal, horodatageImage)
         }
     }
 
