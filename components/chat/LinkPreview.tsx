@@ -225,7 +225,7 @@ export function LinkPreview({
       );
     }
     return (
-      <span className="group relative my-2 block w-full max-w-sm animate-dj-fade-in">
+      <span className="group/lien relative my-2 block w-full max-w-sm animate-dj-fade-in">
       <button
         onClick={() => (idVideo ? setEnLecture(true) : traiterLienSortant(href, { titre: apercu?.titre || texteLien }))}
         className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
@@ -248,7 +248,7 @@ export function LinkPreview({
         {!idVideo && <ExternalLink size={13} className="shrink-0 text-dj-texte-muet" />}
       </button>
       {!sansBoutonCopier && (
-        <BoutonCopierLien href={href} variante="survol" className={idVideo ? "right-2 top-2" : "right-8 top-1/2 -translate-y-1/2"} />
+        <BoutonCopierLien href={href} variante="survol" className={idVideo ? "right-2 top-2" : "right-8 top-1/2 -translate-y-1/2 bg-dj-surface"} />
       )}
       </span>
     );
@@ -276,7 +276,7 @@ export function LinkPreview({
       );
     }
     return (
-      <span className="group relative my-2 block w-full max-w-md animate-dj-fade-in">
+      <span className="group/lien relative my-2 block w-full max-w-md animate-dj-fade-in">
       <button
         onClick={() => setEnLecture(true)}
         className="block w-full overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface text-left transition-colors hover:border-dj-bordure-forte"
@@ -303,7 +303,7 @@ export function LinkPreview({
   }
 
   return (
-    <span className="group relative my-2 block w-full max-w-md animate-dj-fade-in">
+    <span className="group/lien relative my-2 block w-full max-w-md animate-dj-fade-in">
     <a
       href={href}
       target="_blank"
@@ -322,7 +322,7 @@ export function LinkPreview({
       </span>
       <ExternalLink size={14} className="shrink-0 text-dj-texte-muet" />
     </a>
-    {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-9 top-1/2 -translate-y-1/2" />}
+    {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-9 top-1/2 -translate-y-1/2 bg-dj-surface" />}
     </span>
   );
 }

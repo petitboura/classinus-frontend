@@ -9,13 +9,16 @@ import { Check, Copy } from "lucide-react";
 // Deux variantes :
 //   - "survol" : petite pastille posée sur une carte de lien (LinkPreview).
 //     Visible seulement au survol de la carte (parent portant la classe
-//     `group`) et uniquement sur les appareils qui ont un vrai survol
+//     `group/lien`, un groupe NOMMÉ : le `group` tout court est déjà porté
+//     par toute la bulle du message, ce qui affichait tous les boutons dès
+//     qu'on survolait le message) et uniquement sur les appareils qui ont un vrai survol
 //     (souris). Sur téléphone elle reste cachée : la copie se fait depuis
 //     l'aperçu. Toujours posée À CÔTÉ du lien, jamais dedans : un bouton
 //     dans un <a> serait avalé par GardienLiensSortants (clic intercepté en
 //     phase de capture).
-//   - "texte" : bouton avec libellé, pour l'aperçu (VisionneurPositionGlobal),
-//     à côté de "Ouvrir le site".
+//   - "texte" : même icône nue, sans libellé, pour l'aperçu
+//     (VisionneurPositionGlobal), à côté de "Ouvrir le site".
+// Dans les deux cas : icône nue (ni cadre, ni fond, ni ombre, ni texte).
 //
 // Même repli que ButtonPartager.tsx si le presse-papiers est refusé : une
 // invite avec l'adresse à copier à la main.
@@ -54,7 +57,7 @@ export function BoutonCopierLien({
   const libelle = copie ? "Lien copié" : "Copier le lien";
   const icone = (
     <span key={copie ? "copie" : "normal"} className="flex animate-dj-fade-in-rapide items-center justify-center">
-      {copie ? <Check size={variante === "texte" ? 13 : 14} /> : <Copy size={variante === "texte" ? 13 : 14} />}
+      {copie ? <Check size={15} /> : <Copy size={15} />}
     </span>
   );
 
@@ -62,14 +65,13 @@ export function BoutonCopierLien({
     return (
       <button
         onClick={copier}
-        aria-label="Copier le lien"
+        aria-label={libelle}
         className={
-          "flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte " +
+          "flex h-7 w-7 items-center justify-center text-dj-texte-muet transition-colors hover:text-dj-texte " +
           className
         }
       >
         {icone}
-        {libelle}
       </button>
     );
   }
@@ -79,7 +81,7 @@ export function BoutonCopierLien({
       onClick={copier}
       aria-label={libelle}
       className={
-        "pointer-events-none absolute flex h-7 w-7 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet opacity-0 shadow-sm transition-all duration-150 hover:border-dj-bordure-forte hover:text-dj-texte focus-visible:pointer-events-auto focus-visible:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100 " +
+        "pointer-events-none absolute flex h-7 w-7 items-center justify-center text-dj-texte-muet opacity-0 transition-all duration-150 hover:text-dj-texte focus-visible:pointer-events-auto focus-visible:opacity-100 [@media(hover:hover)]:group-hover/lien:pointer-events-auto [@media(hover:hover)]:group-hover/lien:opacity-100 " +
         className
       }
     >
