@@ -145,3 +145,15 @@ le repli souris annoncé ci-dessous.
 `cliquer_ecran` place d’abord le curseur dessiné sur la cible et tente une action UI Automation (bouton, case, sélection, menu ou focus de champ). Aucun pilote souris n’est chargé sur ce chemin. Si aucune action compatible n’existe, la superposition affiche « Je ne peux pas cliquer ici avec mon curseur seul. Je vais utiliser ton curseur maintenant. » avant le clic par la vraie souris, sans validation de l’étudiant. Le pointeur est remis à sa position initiale si l’étudiant ne l’a pas repris. La superposition laisse traverser le clic pendant toute l’opération.
 
 Un clic UIA commencé mais dont le résultat est incertain n’est pas répété, pour éviter une double action. Les confirmations internes concernent uniquement l’affichage de la superposition ; aucun bouton d’approbation n’est présenté.
+
+## Ce que l'etudiant a entoure (11/10/2026, crayon du canal, lot 3)
+
+La methode `lireElementsEntoures({ zones })` recoit un rectangle par trait dessine (pixels de la
+page de superposition, voir `lib/zonesCrayon.ts`), les convertit en pixels d'ecran (origine et
+zoom de la fenetre de superposition, echelle de l'ecran), lit la fenetre au premier plan avec la
+meme lecture que `lire_ecran` et ne garde que les elements dont la position tombe dans une zone.
+Logique de conversion et de choix dans `electron/src/zonesCrayon.mts`, testee par
+`npm run test:zones-crayon`. Cote site : `lib/lectureEntoureCrayon.ts`. Pas encore branche a un
+bouton (lot 4, envoi au grand modele). Conversion d'ecran et lecture reelle non verifiees sur un
+vrai Windows au moment de l'ecriture : a controler au premier essai, notamment sur un ecran mis
+a l'echelle (125 % ou 150 %).
