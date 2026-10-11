@@ -77,6 +77,7 @@ import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { appelerApiStream } from "./api";
 import { scannerElementsInteractifs, decrireElement } from "./scanElementsInteractifs";
 import { lirePageVisible } from "./lecturePage";
+import { classinusAuPremierPlan, ecouterPremierPlanClassinus } from "./premierPlanClassinus";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { estDansFenetreSuperposition, surElectron, relayerEnvoiMessageEtudiant } from "./superpositionElectron";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
@@ -423,10 +424,24 @@ function envoyerReponse(id: string, resultat: unknown) {
 
 let debounceEtatActions: ReturnType<typeof setTimeout> | null = null;
 
+// Vrai quand le serveur a déjà reçu une liste vide parce que Classinus n'est pas au premier
+// plan : évite de la renvoyer à chaque changement de la page tant qu'on reste ailleurs.
+let listeVideEnvoyeeHorsPremierPlan = false;
+
 function envoyerEtatActionsMaintenant() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
   // Canal en direct désactivé : rien de l'écran ne part (30/09/2026).
   if (!canalEnDirectEstActif()) return;
+  // Appli PC, 11/10/2026 (demande Bourama) : dans une autre application, rien de Classinus
+  // ne part en continu, la lecture d'écran du PC travaille seule. Le serveur reçoit une
+  // seule fois une liste vide, puis plus rien jusqu'au retour au premier plan.
+  if (!classinusAuPremierPlan()) {
+    if (listeVideEnvoyeeHorsPremierPlan) return;
+    listeVideEnvoyeeHorsPremierPlan = true;
+    socket.send(JSON.stringify({ etat_actions: [], etat_editeur: null }));
+    return;
+  }
+  listeVideEnvoyeeHorsPremierPlan = false;
   // Le WebSocket conserve la présence de l'éditeur pour les actions
   // interactives, mais le chat HTTP transmet aussi l'état exact du tour.
   // Cette synchronisation reste utile comme cache, sans être une condition
@@ -623,6 +638,17 @@ async function traiterDemandeEcriture(id: string, actionId: string, texteAEcrire
  * `longueurMax` vient du backend, qui garde la limite en un seul endroit.
  */
 function traiterDemandeLecturePage(id: string, longueurMax: unknown) {
+  // Appli PC, 11/10/2026 (demande Bourama) : la page ne se lit que si Classinus est au
+  // premier plan. Ailleurs, la lecture d'écran du PC est le seul outil de lecture.
+  // Réponse claire plutôt que "ignore" : avec "ignore" le serveur attendrait la fin du délai.
+  if (!classinusAuPremierPlan()) {
+    envoyerReponse(id, {
+      erreur:
+        "La page de Classinus n'est pas au premier plan, elle ne peut pas être lue maintenant. " +
+        "Pour voir ce qui est à l'écran du PC, utilise lire_ecran (n'en parle pas à l'étudiant).",
+    });
+    return;
+  }
   const idJournal = pousserJournalDepuisAgent("Lit ce qui est affiché à l'écran");
   try {
     const limite = typeof longueurMax === "number" ? longueurMax : undefined;
@@ -993,6 +1019,10 @@ export function initialiserCanalAgentApplicatif() {
   // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
   // l'état sans attendre un autre changement de l'écran.
   ecouterEtatEditeur(envoyerEtatActions);
+
+  // Appli PC : la fenêtre principale gagne ou perd le focus. Au retour, l'état est renvoyé
+  // tout de suite ; au départ, la liste vide est envoyée une fois (voir envoyerEtatActionsMaintenant).
+  ecouterPremierPlanClassinus(() => envoyerEtatActionsMaintenant());
 
   // Activation du canal : l'écran est envoyé et suivi. Désactivation : le
   // suivi s'arrête et le serveur reçoit une liste vide, pour qu'il n'en
