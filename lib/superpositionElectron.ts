@@ -28,6 +28,12 @@ import {
 import type { ContexteVoixDirecteValeur } from "@/lib/contexteVoixDirecte";
 import { conversationActive } from "@/lib/conversationPartagee";
 import { abonnerEtatTacheCanal, arreterTacheCanal, lireEtatTacheCanal } from "@/lib/tacheCanal";
+import {
+  definirRepondeurAutorisation,
+  effacerDemandeAutorisation,
+  poserDemandeAutorisation,
+  repondreAutorisationCanal,
+} from "@/lib/autorisationCanal";
 
 export interface MarqueEcranAffichee {
   id: string;
@@ -60,6 +66,8 @@ export interface EtatSuperposition {
     // Tâche en cours et interruption (02/10/2026, bouton arrêter), voir lib/tacheCanal.ts.
     tacheEnCours?: boolean;
     interrompue?: boolean;
+    // Demande d'accord pour une application protégée (08/10/2026), voir lib/autorisationCanal.ts.
+    autorisationEnAttente?: { id: string; texte: string } | null;
   };
 }
 
@@ -82,6 +90,7 @@ interface ActionSuperposition {
     | "arreterTache"
     | "continuerApresArret"
     | "reessayerApresArret"
+    | "repondreAutorisation"
     | "deposerCurseur";
   args: unknown[];
 }
@@ -169,6 +178,7 @@ export function useEmetteurSuperposition(
   const envoyerRef = useRef<(() => void) | null>(null);
   useJournalActionsSysteme();
   useArretGlobalPc();
+  useAutorisationPc();
 
   // Comme sur le site (ControlesInteractionCanal.tsx) : désactiver le canal
   // coupe la voix liée à sa conversation. Sur Electron, les contrôles vivent
@@ -216,6 +226,7 @@ export function useEmetteurSuperposition(
           journal: canal.journal,
           tacheEnCours: canal.tacheEnCours,
           interrompue: canal.interrompue,
+          autorisationEnAttente: canal.autorisationEnAttente ?? null,
         },
       });
     };
@@ -267,6 +278,7 @@ export function useEmetteurSuperposition(
     canal.journal,
     canal.tacheEnCours,
     canal.interrompue,
+    canal.autorisationEnAttente,
   ]);
 
   // Niveaux sonores de la voix : tant que la bulle de voix est affichée dans
@@ -347,6 +359,11 @@ export function useEmetteurSuperposition(
             else m.reessayerTacheInterrompue();
           });
           break;
+        case "repondreAutorisation":
+          // Réponse de l'étudiant à la bulle de la superposition : la demande vit dans la
+          // fenêtre principale (magasin lib/autorisationCanal.ts), qui la transmet au plugin.
+          if (typeof action.args[0] === "string") repondreAutorisationCanal(action.args[0], action.args[1] === true);
+          break;
         case "envoyerMessageEtudiant":
           // Import dynamique : évite un cycle statique avec
           // canalAgentApplicatif.ts, qui importe relayerEnvoiMessageEtudiant
@@ -395,6 +412,58 @@ interface PluginPontNatifArret {
   armerArretGlobal(): Promise<{ arme: boolean }>;
   desarmerArretGlobal(): Promise<void>;
   addListener(eventName: "arretGlobal", listenerFunc: () => void): Promise<{ remove: () => void }>;
+}
+
+// Garde-fou 2 du canal PC (08/10/2026, demande Bourama) : accord de l'étudiant pour les
+// applications protégées. Le plugin PontNatif annonce chaque demande (événement "autorisation") ;
+// elle est affichée dans la bulle de Clovis (components/BandeauAutorisationAgent.tsx) et la
+// réponse repart vers le plugin par repondreAutorisation.
+interface EvenementAutorisationPc {
+  id: string;
+  phase: "demande" | "fin";
+  texte?: string;
+}
+
+interface PluginPontNatifAutorisation {
+  repondreAutorisation(options: { id: string; accepte: boolean }): Promise<void>;
+  addListener(
+    eventName: "autorisation",
+    listenerFunc: (donnee: EvenementAutorisationPc) => void
+  ): Promise<{ remove: () => void }>;
+}
+
+/**
+ * Monté dans la fenêtre PRINCIPALE (voir useEmetteurSuperposition) : garde la demande d'accord
+ * en cours dans le magasin partagé et transmet la réponse de l'étudiant au plugin.
+ */
+function useAutorisationPc() {
+  useEffect(() => {
+    if (!surElectron()) return;
+    const PontNatif = registerPlugin<PluginPontNatifAutorisation>("PontNatif");
+    definirRepondeurAutorisation((id, accepte) => {
+      PontNatif.repondreAutorisation({ id, accepte }).catch((e) =>
+        console.warn("PontNatif (JS): reponse d'autorisation non transmise", e)
+      );
+    });
+    let retrait: (() => void) | undefined;
+    let annule = false;
+    PontNatif.addListener("autorisation", (evenement) => {
+      if (evenement.phase === "demande" && typeof evenement.texte === "string") {
+        poserDemandeAutorisation({ id: evenement.id, texte: evenement.texte });
+      } else {
+        effacerDemandeAutorisation(evenement.id);
+      }
+    }).then((poignee) => {
+      if (annule) poignee.remove();
+      else retrait = () => poignee.remove();
+    });
+    return () => {
+      annule = true;
+      retrait?.();
+      definirRepondeurAutorisation(null);
+      effacerDemandeAutorisation(null);
+    };
+  }, []);
 }
 
 /**
@@ -510,4 +579,5 @@ export const interactionsSuperposition = {
   arreterTache: () => relayerInteraction("arreterTache"),
   continuerApresArret: () => relayerInteraction("continuerApresArret"),
   reessayerApresArret: () => relayerInteraction("reessayerApresArret"),
+  repondreAutorisation: (id: string, accepte: boolean) => relayerInteraction("repondreAutorisation", id, accepte),
 };

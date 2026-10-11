@@ -43,6 +43,13 @@ import { creerGardeClavier } from "./gardeClavier.mjs";
 import { taperTexteAdapte } from "./frappeAdaptee.mjs";
 import { creerCollage, type PressePapiers } from "./collageFrappe.mjs";
 import { creerArretGlobal } from "./arretGlobal.mjs";
+import {
+  combinaisonsOuvrentExecuter,
+  creerGestionnaireAutorisations,
+  delaiAutorisationDepuisParametres,
+  estApplicationProtegee,
+  listeDepuisParametres,
+} from "./applicationsProtegees.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -181,8 +188,20 @@ async function obtenirGardeClavier(): Promise<ReturnType<typeof creerGardeClavie
 const MESSAGE_ARRET_GLOBAL =
   "L'étudiant a appuyé sur Échap pour t'arrêter : arrête la tâche en cours et ne recommence pas cette action.";
 let arretGlobalSurQuitEnregistre = false;
+
+// Applications protégées (voir applicationsProtegees.mts) : accord de l'étudiant, action par
+// action. La bulle de la superposition affiche la demande (événement "autorisation") et
+// renvoie la réponse par repondreAutorisation.
+const autorisations = creerGestionnaireAutorisations({
+  envoyer: (evenement) => {
+    try { notifierWeb?.("autorisation", evenement); } catch (e) { console.warn("PontNatif : demande d'accord non relayee", e); }
+  },
+});
+
 const arretGlobal = creerArretGlobal(globalShortcut, {
   surArret: () => {
+    // Une demande d'accord encore ouverte est refusée : l'étudiant vient d'arrêter Clovis.
+    autorisations.refuserTout();
     // Relâcher tout de suite les touches que Clovis tient enfoncées (Ctrl, Alt, Maj...).
     void gardeClavier?.relacherToutEnUrgence();
     // Le renderer principal coupe la tâche, comme le bouton d'arrêt de la superposition.
@@ -277,6 +296,46 @@ function handleSuperposition(): string {
   return (handle.length >= 8 ? handle.readBigUInt64LE() : BigInt(handle.readUInt32LE())).toString();
 }
 
+// Quelle application reçoit le clavier : la fenêtre au premier plan, ou la première fenêtre
+// hors Classinus quand c'est Classinus qui a le focus (comme pour lire_ecran). Lecture
+// minimale (un seul élément), seul le nom du programme et le titre comptent ici.
+async function applicationAuPremierPlan(): Promise<{
+  statut: "classinus" | "identifiee" | "inconnue";
+  application: string | null;
+  titre: string | null;
+}> {
+  const lecture = await lireFenetreAuPremierPlan({ nb_max_elements: 1, nb_max_fenetres: 0 }, handleSuperposition(), false);
+  if ("erreur" in lecture) return { statut: "inconnue", application: null, titre: null };
+  if (lecture.fenetre_classinus) return { statut: "classinus", application: null, titre: null };
+  if (!lecture.application) return { statut: "inconnue", application: null, titre: lecture.titre_fenetre_active };
+  return { statut: "identifiee", application: lecture.application, titre: lecture.titre_fenetre_active };
+}
+
+// Pose la question à l'étudiant et attend. Renvoie null si l'action est autorisée, sinon le
+// message à donner à Clovis (action NON faite).
+async function demanderAccord(texte: string, nom: string, parametres: Record<string, unknown>): Promise<string | null> {
+  const decision = await autorisations.demander(texte, delaiAutorisationDepuisParametres(parametres));
+  if (decision === "accepte") return null;
+  if (arretGlobal.arretDemande()) return MESSAGE_ARRET_GLOBAL;
+  if (decision === "delai") {
+    return `L'étudiant n'a pas répondu à temps à la demande d'autorisation (${nom}) : l'action n'a PAS été faite. Ne réessaie pas sans qu'il te le demande.`;
+  }
+  return `L'étudiant a refusé cette action (${nom}). Ne réessaie pas : explique-lui ce que tu voulais faire et propose une autre approche.`;
+}
+
+// Garde-fou 2 : le clavier va dans une application protégée ? Dans le doute (application non
+// identifiée), on demande aussi : mieux vaut une question de trop qu'une frappe dans un
+// terminal. Sans liste envoyée par le serveur, la protection n'est pas activée.
+async function verifierAccordClavier(parametres: Record<string, unknown>, verbe: string): Promise<string | null> {
+  const liste = listeDepuisParametres(parametres);
+  if (liste.length === 0) return null;
+  const cible = await applicationAuPremierPlan();
+  if (cible.statut === "classinus") return null;
+  if (cible.statut === "identifiee" && !estApplicationProtegee(cible.application, liste)) return null;
+  const nom = cible.titre?.trim() || cible.application || "une application que Classinus n'a pas pu identifier";
+  return demanderAccord(`Clovis veut ${verbe} dans ${nom}. Autoriser cette fois ?`, nom, parametres);
+}
+
 async function restaurerFocusSousSuperposition(): Promise<void> {
   if (!BrowserWindow.getAllWindows().some(f => !f.isDestroyed() && f.isFocused())) return;
   const resultat = await lireFenetreAuPremierPlan({}, handleSuperposition(), true);
@@ -350,6 +409,8 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         } catch {
           titreFenetre = null;
         }
+        const refusClavier = await verifierAccordClavier(parametres, "écrire");
+        if (refusClavier) return { erreur: refusClavier };
         const garde = await obtenirGardeClavier();
         const resultat = await taperTexteAdapte({
           clavier: keyboard as unknown as Parameters<typeof taperTexteAdapte>[0]["clavier"],
@@ -379,6 +440,12 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         if (!analyse.ok) return { erreur: analyse.erreur };
         const { keyboard, Key } = await import("@nut-tree-fork/nut-js");
         await restaurerFocusSousSuperposition();
+        // Win+R (fenêtre Exécuter) demande toujours l'accord ; sinon on regarde où va le clavier.
+        const refusTouches =
+          listeDepuisParametres(parametres).length > 0 && combinaisonsOuvrentExecuter(analyse.combinaisons)
+            ? await demanderAccord("Clovis veut ouvrir la fenêtre Exécuter de Windows (Win+R). Autoriser cette fois ?", "la fenêtre Exécuter", parametres)
+            : await verifierAccordClavier(parametres, "utiliser le clavier");
+        if (refusTouches) return { erreur: refusTouches };
         // Sans ce réglage, la bibliothèque attend 300 ms après chaque touche.
         keyboard.config.autoDelayMs = DELAI_ENTRE_TOUCHES_MS;
         const garde = await obtenirGardeClavier();
@@ -396,6 +463,10 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
       case "ouvrir_application": {
         const nom = String(parametres.nom ?? "").trim();
         if (!nom) return { erreur: "nom d'application vide" };
+        if (estApplicationProtegee(nom, listeDepuisParametres(parametres))) {
+          const refusOuverture = await demanderAccord(`Clovis veut ouvrir ${nom}. Autoriser cette fois ?`, nom, parametres);
+          if (refusOuverture) return { erreur: refusOuverture };
+        }
         // Accuser le lancement sans attendre la fermeture de l'application.
         await new Promise<void>((resolve, reject) => {
           const enfant = spawn(nom, [], { detached: true, stdio: "ignore", shell: false });
@@ -477,6 +548,13 @@ class PontNatifImpl extends ElectronPlugin {
     jetonActuel = null;
     fermerConnexion();
     arretGlobal.desarmer();
+    autorisations.refuserTout();
+  }
+
+  // Réponse de l'étudiant à une demande d'accord (bulle de la superposition). Une réponse
+  // inconnue, en double ou tardive est ignorée.
+  async repondreAutorisation(options: { id: string; accepte: boolean }): Promise<void> {
+    autorisations.repondre(options.id, options.accepte);
   }
 
   // Début d'une tâche de Clovis : Échap devient le raccourci d'arrêt. Renvoie arme=false
@@ -507,6 +585,6 @@ class PontNatifImpl extends ElectronPlugin {
 }
 
 export const PontNatif = defineElectronPlugin(
-  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente", "executerActionSysteme", "armerArretGlobal", "desarmerArretGlobal"] },
+  { name: "PontNatif", methods: ["enregistrerToken", "deconnexion", "rattraperActionsEnAttente", "executerActionSysteme", "armerArretGlobal", "desarmerArretGlobal", "repondreAutorisation"] },
   PontNatifImpl
 );

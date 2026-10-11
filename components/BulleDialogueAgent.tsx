@@ -54,6 +54,7 @@ import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { COUCHE_AGENT_BULLE } from "@/lib/couchesAgent";
 import { BandeauReponseInterrompue } from "@/components/chat/BandeauReponseInterrompue";
+import { BandeauAutorisationAgent } from "@/components/BandeauAutorisationAgent";
 
 // Chargé à la demande : le rendu complet (code, formules, schémas) est
 // lourd et la bulle vit au niveau du layout racine, donc sur toutes les pages. Ce code
@@ -92,7 +93,10 @@ export function BulleDialogueAgent() {
   // « Réponse interrompue » avec Continuer et Réessayer, comme le chat mais sans
   // Modifier. Elle reste là tant que l'étudiant n'a pas choisi (ou envoyé autre chose).
   const interrompue = actif && !!contexte?.interrompue;
-  const contenuPresent = !!(reponse || info || interrompue);
+  // Accord de l'étudiant (08/10/2026, garde-fou 2 du canal PC) : une application protégée veut
+  // recevoir le clavier ou être ouverte. Clovis attend, la bulle propose Autoriser ou Refuser.
+  const autorisation = actif ? (contexte?.autorisationEnAttente ?? null) : null;
+  const contenuPresent = !!(reponse || info || interrompue || autorisation);
   const largeurMax = reponse ? LARGEUR_MAX_REPONSE : LARGEUR_MAX_INFO;
   const curseurVisible = curseur?.visible ?? false;
   const curseurX = curseur?.x;
@@ -330,6 +334,13 @@ export function BulleDialogueAgent() {
                 enAttente={false}
                 onContinuer={contexte.continuerApresArret}
                 onReessayer={contexte.reessayerApresArret}
+              />
+            )}
+            {autorisation && contexte.repondreAutorisation && (
+              <BandeauAutorisationAgent
+                texte={autorisation.texte}
+                onAutoriser={() => contexte.repondreAutorisation?.(autorisation.id, true)}
+                onRefuser={() => contexte.repondreAutorisation?.(autorisation.id, false)}
               />
             )}
           </div>

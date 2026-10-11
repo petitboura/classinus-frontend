@@ -12,7 +12,9 @@
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
     "test:touches-clavier": "node tests/verifier-touches-clavier.mjs",
     "test:garde-clavier": "node tests/verifier-garde-clavier.mjs",
-    "test:arret-global": "node tests/verifier-arret-global.mjs"
+    "test:arret-global": "node tests/verifier-arret-global.mjs",
+    "test:applications-protegees": "node tests/verifier-applications-protegees.mjs",
+    "test:autorisation-canal": "node tests/verifier-autorisation-canal.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "^3.7.1",

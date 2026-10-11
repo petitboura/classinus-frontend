@@ -27,6 +27,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { definirConversationCanal } from "./conversationPartagee";
 import {
+  abonnerDemandeAutorisation,
+  demandeAutorisationRepos,
+  lireDemandeAutorisation,
+  repondreAutorisationCanal,
+} from "./autorisationCanal";
+import {
   abonnerEtatTacheCanal,
   arreterTacheCanal,
   continuerTacheInterrompue,
@@ -153,6 +159,12 @@ export type ValeurCanalEnDirect = {
   arreterTache: () => void;
   continuerApresArret: () => void;
   reessayerApresArret: () => void;
+
+  // Accord de l'étudiant (08/10/2026, garde-fou 2 du canal PC) : une application protégée veut
+  // recevoir le clavier ou être ouverte, la bulle affiche Autoriser ou Refuser (voir
+  // lib/autorisationCanal.ts). Facultatifs : seule la version PC les fournit.
+  autorisationEnAttente?: { id: string; texte: string } | null;
+  repondreAutorisation?: (id: string, accepte: boolean) => void;
 };
 
 export const ContexteCanalEnDirect = createContext<ValeurCanalEnDirect | null>(null);
@@ -489,6 +501,11 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
   }, []);
 
   const etatTache = useSyncExternalStore(abonnerEtatTacheCanal, lireEtatTacheCanal, etatTacheCanalRepos);
+  const demandeAutorisation = useSyncExternalStore(
+    abonnerDemandeAutorisation,
+    lireDemandeAutorisation,
+    demandeAutorisationRepos
+  );
 
   const mettreAJourEntreeJournal = useCallback((id: string, statut: StatutEntreeJournal, description?: string) => {
     journalRef.current = journalRef.current.map((e) => (e.id === id ? { ...e, statut, ...(description ? { description } : {}) } : e));
@@ -521,5 +538,7 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     arreterTache: arreterTacheCanal,
     continuerApresArret: continuerTacheInterrompue,
     reessayerApresArret: reessayerTacheInterrompue,
+    autorisationEnAttente: demandeAutorisation,
+    repondreAutorisation: repondreAutorisationCanal,
   };
 }

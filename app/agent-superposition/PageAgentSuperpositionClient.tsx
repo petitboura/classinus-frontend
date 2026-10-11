@@ -66,6 +66,7 @@ type CanalAffichage = Pick<
   | "journal"
   | "tacheEnCours"
   | "interrompue"
+  | "autorisationEnAttente"
 >;
 
 type VoixAffichage = { actif: boolean; etat: EtatVoixDirecte };
@@ -87,6 +88,7 @@ const ETAT_CANAL_INITIAL: CanalAffichage = {
   journal: [],
   tacheEnCours: false,
   interrompue: false,
+  autorisationEnAttente: null,
 };
 
 export default function PageAgentSuperposition() {
@@ -256,6 +258,8 @@ export default function PageAgentSuperposition() {
     arreterTache: interactionsSuperposition.arreterTache,
     continuerApresArret: interactionsSuperposition.continuerApresArret,
     reessayerApresArret: interactionsSuperposition.reessayerApresArret,
+    autorisationEnAttente: canal.autorisationEnAttente ?? null,
+    repondreAutorisation: interactionsSuperposition.repondreAutorisation,
   };
 
   return (
