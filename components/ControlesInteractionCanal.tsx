@@ -31,7 +31,6 @@ import { BoutonReglagesCanal, BoutonUtilitairesCanal } from "@/components/Bouton
 import { CanvasDessin } from "@/components/chat/CanvasDessin";
 import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
 import { messageErreur } from "@/lib/erreurs";
-import { estDansFenetreSuperposition } from "@/lib/superpositionElectron";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
@@ -281,10 +280,6 @@ export function ControlesInteractionCanal({
     ui_localisation: { executer: joindrePosition, occupe: positionEnCours },
   };
 
-  // La fenêtre de superposition PC n'a pas de session connectée : l'envoi de fichiers
-  // y viendra avec un relais vers la fenêtre principale, pour l'instant le « + » est absent.
-  const peutJoindre = !estDansFenetreSuperposition();
-
   function surToucheChamp(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (entreeDoitEnvoyer(e)) {
       e.preventDefault();
@@ -430,7 +425,7 @@ export function ControlesInteractionCanal({
                     <Square size={14} />
                   </motion.button>
                 )}
-                {groupeOuvert && peutJoindre && (
+                {groupeOuvert && (
                   <ApparitionBoutonCanal key="reglages">
                     <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
                   </ApparitionBoutonCanal>
@@ -519,7 +514,7 @@ export function ControlesInteractionCanal({
                     </button>
                   </ApparitionBoutonCanal>
                 )}
-                {groupeOuvert && peutJoindre && (
+                {groupeOuvert && (
                   <ApparitionBoutonCanal key="utilitaires">
                     <BoutonUtilitairesCanal actions={actionsUtilitaires} />
                   </ApparitionBoutonCanal>
@@ -548,7 +543,7 @@ export function ControlesInteractionCanal({
               </ApparitionBoutonCanal>
             )}
             {actif && !groupeOuvert && <ApparitionBoutonCanal key="ecrire-replie">{boutonEcrire}</ApparitionBoutonCanal>}
-            {actif && groupeOuvert && peutJoindre && (
+            {actif && groupeOuvert && (
               <ApparitionBoutonCanal key="plus">
                 <div className="flex h-10 w-10 items-center justify-center">
                   <MenuPlus variante="bureau" entrees={entreesMenuPlus} ouverture="droite" />
@@ -580,8 +575,6 @@ export function ControlesInteractionCanal({
           document.body,
         )}
 
-      {peutJoindre && (
-        <>
           <input
             ref={inputFichierRef}
             type="file"
@@ -604,8 +597,6 @@ export function ControlesInteractionCanal({
               e.target.value = "";
             }}
           />
-        </>
-      )}
 
       {/* Dessin, éditeur et plein écran sont posés dans le body : le groupe de boutons est déplaçable
           (transform), ce qui enfermait leur position fixe dans un petit cadre invisible. */}
