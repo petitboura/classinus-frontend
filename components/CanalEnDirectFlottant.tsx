@@ -111,6 +111,7 @@ export function CanalEnDirectFlottant() {
       style={{ left: `calc(${decalageRail}px + 1rem)`, ...deplacement.style }}
     >
       <ControlesInteractionCanal
+        crayonDisponible={dansSuperposition}
         boutonActivation={
           <motion.button
             key="activation"

@@ -40,6 +40,9 @@
 // - maintenirCapture : appele par la fenetre de superposition pendant un
 //   appui (glisser le curseur, selectionner du texte), pour que la capture
 //   ne soit pas relachee en plein geste.
+// - definirModeCrayon : appele par la fenetre de superposition quand le crayon
+//   est sorti ou range (components/CoucheCrayonAgent.tsx). Crayon sorti, la
+//   superposition capte la souris sur tout l'ecran.
 //
 // Sciemment un pont "bete" (unknown des deux cotes) : la forme exacte de
 // l'etat/des interactions est definie et versionnee cote TypeScript
@@ -88,13 +91,17 @@ let informationCurseur: { id: string; texte: string; jusqua: number } | null = n
 let clicTraversant = false;
 let captureDemandee = false;
 let passeClicApplique: boolean | null = null;
+// Crayon sorti (11/10/2026) : toute la superposition capte la souris, pas seulement
+// ses elements, pour que l'etudiant puisse dessiner n'importe ou. Un clic reel de
+// Clovis (clicTraversant) reste prioritaire.
+let crayonActif = false;
 
 // Applique le passe-clic voulu, seulement s'il change : chaque appel a
 // setIgnoreMouseEvents coute un aller-retour vers le systeme, et en
 // enchainer sans necessite etait la source du tremblement du pointeur.
 function appliquerPasseClic(fenetre: BrowserWindow): void {
   if (fenetre.isDestroyed()) return;
-  const traversant = clicTraversant || !captureDemandee;
+  const traversant = clicTraversant || !(captureDemandee || crayonActif);
   if (passeClicApplique === traversant) return;
   passeClicApplique = traversant;
   fenetre.setIgnoreMouseEvents(traversant);
@@ -177,6 +184,7 @@ function arreterSuiviSouris(): void {
   }
   maintienCapture = false;
   captureDemandee = false;
+  crayonActif = false;
   dernierPointSouris = null;
   const fenetre = trouverFenetreSuperposition();
   if (fenetre) appliquerPasseClic(fenetre);
@@ -529,6 +537,12 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     app.setLoginItemSettings({ openAtLogin: parametres.actif === true, args: [ARGUMENT_LANCEMENT_SESSION] });
   }
 
+  async definirModeCrayon(parametres: { actif: boolean }): Promise<void> {
+    crayonActif = parametres.actif === true;
+    const superposition = trouverFenetreSuperposition();
+    if (superposition && !superposition.isDestroyed()) appliquerPasseClic(superposition);
+  }
+
   async maintenirCapture(parametres: { maintenir: boolean }): Promise<void> {
     const superposition = trouverFenetreSuperposition();
     if (!superposition || superposition.isDestroyed()) return;
@@ -555,6 +569,6 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "definirModeCrayon", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
   SuperpositionAgentImpl
 );

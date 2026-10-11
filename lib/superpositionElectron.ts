@@ -101,6 +101,7 @@ interface PluginSuperpositionAgent {
   pousserEtat(etat: { curseur?: Record<string, unknown>; [cle: string]: unknown }): Promise<void>;
   envoyerInteraction(action: ActionSuperposition): Promise<void>;
   maintenirCapture(parametres: { maintenir: boolean }): Promise<void>;
+  definirModeCrayon(parametres: { actif: boolean }): Promise<void>;
   lireDemarrageAutomatique(): Promise<{ disponible: boolean; actif: boolean }>;
   definirDemarrageAutomatique(parametres: { actif: boolean }): Promise<void>;
   addListener(
@@ -132,6 +133,15 @@ export function definirDemarrageAutomatique(actif: boolean) {
 // page n'écoute plus les mouvements de souris du PC.
 export function maintenirCaptureSuperposition(maintenir: boolean) {
   void SuperpositionAgent.maintenirCapture({ maintenir });
+}
+
+// Crayon sorti (11/10/2026) : la superposition capte la souris sur tout l'écran,
+// pas seulement au dessus de ses éléments, jusqu'à ce que le crayon soit rangé.
+// Voir components/CoucheCrayonAgent.tsx.
+export function definirModeCrayonSuperposition(actif: boolean) {
+  SuperpositionAgent.definirModeCrayon({ actif }).catch(() => {
+    // Hors Electron, ou superposition pas prête : rien à capter, rien à relâcher.
+  });
 }
 
 /**
