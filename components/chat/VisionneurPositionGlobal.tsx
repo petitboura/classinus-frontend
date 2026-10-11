@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, ExternalLink, Maximize2, Minimize2 } from "lucide-react";
 import { LinkPreview } from "./LinkPreview";
+import { BoutonCopierLien } from "./BoutonCopierLien";
 import { VisionneurPdf } from "@/components/VisionneurPdf";
 import {
   TYPES_MIME_OFFICE,
@@ -94,13 +95,16 @@ function CarteSiteExterne({ url, titre }: { url: string; titre: string }) {
     // data-apercu-actif : GardienLiensSortants.tsx laisse la carte inerte ici,
     // la seule sortie est le bouton "Ouvrir le site" ci dessous.
     <div className="p-5" data-apercu-actif>
-      <LinkPreview href={url} texteLien={titre} />
-      <button
-        onClick={() => ouvrirSiteExterieur(url)}
-        className="mt-3 flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
-      >
-        <ExternalLink size={13} /> Ouvrir le site
-      </button>
+      <LinkPreview href={url} texteLien={titre} sansBoutonCopier />
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => ouvrirSiteExterieur(url)}
+          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+        >
+          <ExternalLink size={13} /> Ouvrir le site
+        </button>
+        <BoutonCopierLien href={url} variante="texte" />
+      </div>
     </div>
   );
 }

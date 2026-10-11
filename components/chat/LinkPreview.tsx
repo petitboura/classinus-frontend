@@ -8,6 +8,7 @@ import { API_URL } from "@/lib/api";
 import { traiterLienSortant } from "@/lib/liensSortants";
 import { FichierChip } from "./FichierChip";
 import { LecteurMedia, typeMedia } from "./LecteurMedia";
+import { BoutonCopierLien } from "./BoutonCopierLien";
 
 // Aperçu de lien dans le chat -- demande de Bourama (2026-07-20) : "n'importe
 // quel lien génère un aperçu... comme dans n'importe quelle plateforme"
@@ -85,7 +86,19 @@ function LecteurYoutubeInline({ idVideo, onFermer }: { idVideo: string; onFermer
 type FichierDetecte = { extension: string; nom: string | null; taille: number | null };
 const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: boolean; fichier?: FichierDetecte | null }>();
 
-export function LinkPreview({ href, texteLien, compact }: { href: string; texteLien: string; compact?: boolean }) {
+// `sansBoutonCopier` : l'aperçu (VisionneurPositionGlobal) a déjà son propre
+// bouton "Copier le lien" sous la carte, inutile de le doubler au survol.
+export function LinkPreview({
+  href,
+  texteLien,
+  compact,
+  sansBoutonCopier,
+}: {
+  href: string;
+  texteLien: string;
+  compact?: boolean;
+  sansBoutonCopier?: boolean;
+}) {
   const [apercu, setApercu] = useState<Apercu | null>(() => memoireApercus.lire(href)?.apercu ?? null);
   const [echec, setEchec] = useState(() => memoireApercus.lire(href)?.echec ?? false);
   const [charge, setCharge] = useState(() => memoireApercus.lire(href) !== undefined);
@@ -212,9 +225,10 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       );
     }
     return (
+      <span className="group relative my-2 block w-full max-w-sm animate-dj-fade-in">
       <button
         onClick={() => (idVideo ? setEnLecture(true) : traiterLienSortant(href, { titre: apercu?.titre || texteLien }))}
-        className="my-2 flex w-full max-w-sm animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
+        className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
       >
         {apercu!.image && (
           <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-dj-surface-haute">
@@ -233,6 +247,10 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
         </span>
         {!idVideo && <ExternalLink size={13} className="shrink-0 text-dj-texte-muet" />}
       </button>
+      {!sansBoutonCopier && (
+        <BoutonCopierLien href={href} variante="survol" className={idVideo ? "right-2 top-2" : "right-8 top-1/2 -translate-y-1/2"} />
+      )}
+      </span>
     );
   }
 
@@ -258,9 +276,10 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       );
     }
     return (
+      <span className="group relative my-2 block w-full max-w-md animate-dj-fade-in">
       <button
         onClick={() => setEnLecture(true)}
-        className="my-2 block w-full max-w-md animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface text-left transition-colors hover:border-dj-bordure-forte"
+        className="block w-full overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface text-left transition-colors hover:border-dj-bordure-forte"
       >
         {apercu!.image && (
           <span className="relative block aspect-video w-full overflow-hidden bg-dj-surface-haute">
@@ -278,15 +297,18 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
           <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
         </span>
       </button>
+      {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-2 top-2" />}
+      </span>
     );
   }
 
   return (
+    <span className="group relative my-2 block w-full max-w-md animate-dj-fade-in">
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="my-2 flex w-full max-w-md animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2.5 no-underline transition-colors hover:border-dj-bordure-forte"
+      className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2.5 no-underline transition-colors hover:border-dj-bordure-forte"
     >
       {apercu!.image && (
         <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-dj-surface-haute">
@@ -300,5 +322,7 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       </span>
       <ExternalLink size={14} className="shrink-0 text-dj-texte-muet" />
     </a>
+    {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-9 top-1/2 -translate-y-1/2" />}
+    </span>
   );
 }
