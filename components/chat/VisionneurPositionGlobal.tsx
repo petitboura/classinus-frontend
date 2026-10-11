@@ -81,7 +81,7 @@ function LecteurAudioPosition({ url, debutSecondes }: { url: string; debutSecond
 function VisionneurImage({ url, titre }: { url: string; titre: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- source dynamique (bucket Supabase)
-    <img src={url} alt={titre} className="mx-auto max-h-[75vh] w-auto object-contain" />
+    <img src={url} alt={titre} className="mx-auto min-h-[12rem] max-h-[75vh] w-auto object-contain" />
   );
 }
 
@@ -155,6 +155,17 @@ export function VisionneurPositionGlobal() {
   // Aucun type_mime du tout : pas un fichier de bibliothèque, donc une
   // source web (résultat de recherche) -- carte de site, jamais d'iframe.
   const estSiteWeb = !detail.typeMime && !estPdf && !estAudio;
+  // 11/10/2026, demande Bourama : le cadre était toujours à 85 % de la
+  // hauteur de l'écran, même pour une simple carte de site (cadre presque
+  // vide). Les contenus dont la taille est connue tout de suite (carte de
+  // site, image, audio, fichier non prévisualisable) laissent le cadre suivre
+  // leur taille, avec un maximum de 85 % et un défilement au delà. PDF,
+  // Word/Excel, texte et markdown gardent la hauteur fixe : ils se chargent
+  // après l'ouverture (le cadre sauterait) et le lecteur PDF a besoin d'une
+  // hauteur définie.
+  const estNonPrevisualisable = !(estAudio || estPdf || estImage || estOffice || estMarkdown || estTexte || estSiteWeb || estLien);
+  const tailleAuto = estAudio || estImage || estSiteWeb || estLien || estNonPrevisualisable;
+  const largeurAuto = tailleAuto && !estImage;
 
   return (
     <div
@@ -165,7 +176,9 @@ export function VisionneurPositionGlobal() {
     >
       <div
         className={`flex flex-col border-dj-bordure bg-dj-fond shadow-2xl ${
-          pleinEcran ? "h-full w-full rounded-none border-0" : "h-[85vh] w-full max-w-2xl rounded-cgpt-bouton border"
+          pleinEcran
+            ? "h-full w-full rounded-none border-0"
+            : `${tailleAuto ? "max-h-[85vh]" : "h-[85vh]"} w-full ${largeurAuto ? "max-w-lg" : "max-w-2xl"} rounded-cgpt-bouton border`
         } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -193,7 +206,7 @@ export function VisionneurPositionGlobal() {
             </button>
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-auto">
+        <div className={`min-h-0 overflow-auto ${tailleAuto ? "" : "flex-1"}`}>
           {estAudio ? (
             <LecteurAudioPosition url={detail.url} debutSecondes={detail.positionValeur ?? 0} />
           ) : estPdf ? (
