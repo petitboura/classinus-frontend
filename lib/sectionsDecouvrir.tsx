@@ -44,6 +44,12 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     titre: "Concentration",
     description: "Coupe les distractions pendant tes sessions de travail, et suis le temps passé sur chaque application.",
   },
+  {
+    slug: "usages",
+    href: ROUTES_DECOUVRIR.usages.accueil,
+    titre: "Ce que tu peux faire",
+    description: "Trouver des PDF, apprendre à coder, trouver des vidéos et étudier avec l'IA de Classinus.",
+  },
 ];
 
 // Les trois volets de la Bibliothèque, textes validés par Bourama le

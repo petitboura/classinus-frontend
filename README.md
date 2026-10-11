@@ -27,7 +27,19 @@ app/
   mon-espace/            section publique "Mon espace" (bibliothèque publique, portfolio)
   telecharger/           page qui sert le dernier APK publié (GitHub Releases)
   cgu/, copyright/       contenu légal
-  layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG
+  decouvrir/             pages publiques de présentation (SEO/AEO), sans compte : accueil, bibliothèque,
+                          personnaliser, concentration, et usages/ (11/10/2026) : une page par question
+                          d'étudiant (trouver des PDF, apprendre à coder, trouver des vidéos, étudier),
+                          avec questions fréquentes. Les textes des usages vivent dans lib/usagesDecouvrir.ts,
+                          source unique partagée avec llms.txt et les données structurées ; adresses dans
+                          lib/routesDecouvrir.ts ; une fonction qui change dans l'appli se corrige là
+  layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG, porte la
+                          description de l'appli (RESUME_CLASSINUS) et la fiche WebApplication en
+                          données structurées (lib/donneesApplication.ts, components/DonneesStructurees.tsx)
+  llms.txt/route.ts      fiche /llms.txt pour les IA, fabriquée à partir des mêmes listes que les pages
+                          /decouvrir (rien d'écrit à la main)
+  robots.ts, sitemap.ts  autorisations des robots (robots des IA nommés un par un, avec la liste des pages
+                          privées répétée pour chacun, voir le commentaire du fichier) et plan du site
 
 components/
   InteractionGlobale.tsx  couche montée une seule fois au niveau du layout racine : fournisseurs du chat,

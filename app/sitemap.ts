@@ -5,6 +5,7 @@ import {
   listerEtablissementsPublics,
   listerDossiersCataloguePublic,
 } from "@/lib/api";
+import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
 
 // Chantier "Classinus ouvert" (10/09/2026, Lot F, dernier lot -- transverse
 // aux quatre précédents). Un seul fichier suffit : même avec 500+ PDF,
@@ -104,6 +105,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${URL_BASE}/decouvrir/concentration` },
     { url: `${URL_BASE}/decouvrir/concentration/session` },
     { url: `${URL_BASE}/decouvrir/concentration/temps-ecran` },
+    // Pages d'usage (11/10/2026, chantier "visibilité auprès des IA") : les
+    // plus importantes pour qu'une IA ou un moteur trouve Classinus quand
+    // on cherche une appli pour trouver des PDF, apprendre à coder, trouver
+    // des vidéos ou étudier. Adresses prises dans ROUTES_DECOUVRIR.
+    ...Object.values(ROUTES_DECOUVRIR.usages).map((href) => ({ url: `${URL_BASE}${href}`, priority: 0.8 })),
     ...bibliotheque,
     ...skills,
     ...etablissements,
