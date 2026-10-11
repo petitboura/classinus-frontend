@@ -15,7 +15,8 @@
     "test:arret-global": "node tests/verifier-arret-global.mjs",
     "test:raccourcis-crayon": "node tests/verifier-raccourcis-crayon.mjs",
     "test:zones-crayon": "node tests/verifier-zones-crayon.mjs",
-    "test:phrase-crayon": "node tests/verifier-phrase-crayon.mjs"
+    "test:phrase-crayon": "node tests/verifier-phrase-crayon.mjs",
+    "test:traits-crayon": "node tests/verifier-traits-crayon.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "^3.7.1",

@@ -153,8 +153,9 @@ lib/
                           direct et sa bulle s'il est actif, 03/10/2026) ;
                           minuteurs.ts (appels /api/minuteurs, formats), textesMinuteurs.ts (textes par
                           langue), useMaintenantMs.ts (horloge locale des affichages)
-  crayonEcran.ts         crayon du canal en direct sur PC (11/10/2026) : traits dessinés sur l'écran, estompage après
-                          10 s, trois raccourcis (components/CoucheCrayonAgent.tsx, BoutonsCrayonCanal.tsx) ;
+  crayonEcran.ts         crayon du canal en direct sur PC (11/10/2026) : traits dessinés sur l'écran, jamais effacés
+                          avant l'envoi (estompage 10 s après l'envoi seulement), la zone d'écriture s'ouvre seule à la fin
+                          d'un trait, trois raccourcis (components/CoucheCrayonAgent.tsx, BoutonsCrayonCanal.tsx) ;
                           zonesCrayon.ts (rectangle de chaque trait), lectureEntoureCrayon.ts (tous les éléments lus dans la
                           fenêtre au premier plan, ceux qui tombent dans ces rectangles marqués comme entourés), phraseCrayon.ts (phrase envoyée
                           au grand modèle et message de la bulle quand rien n'est lisible), envoiCrayon.ts (envoi) ;

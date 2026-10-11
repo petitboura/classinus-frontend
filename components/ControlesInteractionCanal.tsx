@@ -150,6 +150,14 @@ export function ControlesInteractionCanal({
     if (panneauOuvert) champRef.current?.focus();
   }, [panneauOuvert]);
 
+  // Dès qu'un trait est terminé, la zone d'écriture et son bouton Envoyer s'affichent d'eux
+  // mêmes : plus besoin d'entourer puis de cliquer sur Écrire (demande de Bourama, 11/10/2026).
+  // Ne se relance qu'à la fin d'un trait : si l'étudiant ferme la zone, elle reste fermée.
+  useEffect(() => {
+    if (actif && crayonDisponible && !crayon.dessine && traitsAJoindre(crayon)) setPanneauOuvert(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seulement à la fin d'un trait.
+  }, [crayon.dessine, crayon.traits.length]);
+
   // Auto-agrandissement (19/09/2026, bug signalé Bourama : "il reste
   // bloqué et défile dans quelques lignes") -- même mécanisme que
   // components/chat/BarreDeSaisie.tsx:ajusterHauteurTexte, pas
