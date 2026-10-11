@@ -5,8 +5,10 @@
 //
 // Règles :
 // - plusieurs traits possibles, ils restent affichés ensemble ;
-// - 10 secondes après le dernier trait, tous les traits s'estompent mais restent
-//   gardés en mémoire : on peut les faire réapparaître ;
+// - les traits restent à l'écran tant qu'ils n'ont pas été envoyés à Classinus (décision de
+//   Bourama, 11/10/2026) : pas d'effacement automatique avant l'envoi. Une fois envoyés, ils
+//   s'estompent au bout de 10 secondes mais restent gardés en mémoire : on peut les faire
+//   réapparaître ;
 // - effacer (bouton ou raccourci) les fait disparaître de la même façon : ils restent
 //   gardés en mémoire et on peut TOUJOURS les faire réapparaître, même effacés à la main
 //   (décision de Bourama, 11/10/2026). Seul un nouveau dessin ou l'extinction du canal
@@ -50,6 +52,8 @@ export type EtatCrayon = {
   traits: Trait[];
   // Traits affichés à l'écran (faux pendant le fondu et une fois estompés).
   visibles: boolean;
+  // Vrai pendant qu'un trait est en train d'être tracé (bouton de la souris enfoncé).
+  dessine: boolean;
   // Vrai tant que des traits estompés ou effacés peuvent encore être rappelés.
   restaurable: boolean;
   // Vrai une fois les traits envoyés à Classinus : ils ne sont plus joints aux messages
@@ -63,7 +67,7 @@ export type EtatCrayon = {
   raccourcisIndisponibles: ActionCrayon[];
 };
 
-const ETAT_INITIAL: EtatCrayon = { actif: false, traits: [], visibles: true, restaurable: false, envoyes: false, ecartes: false, raccourcisIndisponibles: [] };
+const ETAT_INITIAL: EtatCrayon = { actif: false, traits: [], visibles: true, dessine: false, restaurable: false, envoyes: false, ecartes: false, raccourcisIndisponibles: [] };
 
 let etat: EtatCrayon = ETAT_INITIAL;
 let traitEnCours: Trait | null = null;
@@ -85,7 +89,8 @@ function programmerEstompage() {
   if (minuteurEstompage) clearTimeout(minuteurEstompage);
   minuteurEstompage = setTimeout(() => {
     minuteurEstompage = null;
-    if (etat.traits.length > 0) changer({ visibles: false, restaurable: true });
+    // Seuls des traits déjà envoyés s'estompent tout seuls.
+    if (etat.traits.length > 0 && etat.envoyes) changer({ visibles: false, restaurable: true });
   }, DUREE_AFFICHAGE_TRAITS_MS);
 }
 
@@ -126,7 +131,7 @@ export function commencerTrait(x: number, y: number) {
   const base = etat.visibles ? etat.traits : [];
   compteurTraits += 1;
   traitEnCours = { id: compteurTraits, points: [{ x, y }] };
-  changer({ traits: [...base, traitEnCours].slice(-NB_MAX_TRAITS), visibles: true, restaurable: false, envoyes: false, ecartes: false });
+  changer({ traits: [...base, traitEnCours].slice(-NB_MAX_TRAITS), visibles: true, dessine: true, restaurable: false, envoyes: false, ecartes: false });
 }
 
 export function ajouterPoint(x: number, y: number) {
@@ -144,21 +149,21 @@ export function ajouterPoint(x: number, y: number) {
 export function terminerTrait() {
   if (!traitEnCours) return;
   traitEnCours = null;
-  programmerEstompage();
+  changer({ dessine: false });
 }
 
-/** Les traits viennent d'être envoyés à Classinus. */
+/** Les traits viennent d'être envoyés à Classinus : ils s'estompent 10 secondes plus tard. */
 export function marquerTraitsEnvoyes() {
   if (etat.traits.length === 0 || etat.envoyes) return;
   changer({ envoyes: true });
+  programmerEstompage();
 }
 
-/** Fait réapparaître des traits estompés ou effacés, pour 10 secondes de plus. Sans effet sinon. */
+/** Fait réapparaître des traits estompés ou effacés. Ils restent jusqu'au prochain envoi ou effacement. */
 export function rappelerTraits() {
   if (etat.visibles || !etat.restaurable) return;
   annulerMinuteurs();
   changer({ visibles: true, restaurable: false, envoyes: false, ecartes: false });
-  programmerEstompage();
 }
 
 /** Efface les traits de l'écran. Ils restent gardés en mémoire et peuvent toujours revenir. */
