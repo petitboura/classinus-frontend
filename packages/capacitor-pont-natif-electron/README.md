@@ -153,7 +153,7 @@ page de superposition, voir `lib/zonesCrayon.ts`), les convertit en pixels d'ecr
 zoom de la fenetre de superposition, echelle de l'ecran), lit la fenetre au premier plan avec la
 meme lecture que `lire_ecran` et ne garde que les elements dont la position tombe dans une zone.
 Logique de conversion et de choix dans `electron/src/zonesCrayon.mts`, testee par
-`npm run test:zones-crayon`. Cote site : `lib/lectureEntoureCrayon.ts`. Le bouton Envoyer du crayon
-(`components/BoutonEnvoyerCrayon.tsx`) l'appelle, voir `lib/envoiCrayon.ts`. Conversion d'ecran et lecture reelle non verifiees sur un
+`npm run test:zones-crayon`. Cote site : `lib/lectureEntoureCrayon.ts`. Le bouton Envoyer du champ
+d'ecriture du canal (`components/ControlesInteractionCanal.tsx`) l'appelle quand un dessin attend, voir `lib/envoiCrayon.ts`. Conversion d'ecran et lecture reelle non verifiees sur un
 vrai Windows au moment de l'ecriture : a controler au premier essai, notamment sur un ecran mis
 a l'echelle (125 % ou 150 %).
