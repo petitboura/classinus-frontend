@@ -28,9 +28,9 @@ import { MenuPlus, type EntreeMenuPlus } from "@/components/chat/barre/MenuPlus"
 import { traiterFichiersJoints } from "@/lib/preparerPiecesJointes";
 import { useFichiersJointsCanal } from "@/lib/useFichiersJointsCanal";
 import { BoutonReglagesCanal, BoutonUtilitairesCanal } from "@/components/BoutonsReglagesCanal";
-import { definirBrouillonCanal, useBrouillonCanal } from "@/lib/brouillonCanal";
 import { BoutonCrayonCanal, BoutonTraitsCanal, peutAfficherBoutonTraits } from "@/components/BoutonsCrayonCanal";
-import { reinitialiserCrayon, useCrayonEcran } from "@/lib/crayonEcran";
+import { lireEtatCrayon, marquerTraitsEnvoyes, reinitialiserCrayon, traitsAJoindre, useCrayonEcran } from "@/lib/crayonEcran";
+import { envoyerCeQuiEstEntoure } from "@/lib/envoiCrayon";
 import { CanvasDessin } from "@/components/chat/CanvasDessin";
 import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
 import { messageErreur } from "@/lib/erreurs";
@@ -69,6 +69,8 @@ export function ControlesInteractionCanal({
 }) {
   const contexte = useContext(ContexteCanalEnDirect);
   const crayon = useCrayonEcran();
+  // Dessin dessiné, pas encore envoyé ni effacé à la main : il part avec le prochain envoi.
+  const dessinAJoindre = crayonDisponible && traitsAJoindre(crayon);
   const actif = contexte?.actif ?? false;
   const modeInteraction = contexte?.modeInteraction ?? "texte";
   const moteurChoisi = contexte?.moteurDictee ?? "whisper";
@@ -106,11 +108,7 @@ export function ControlesInteractionCanal({
   const inputFichierRef = useRef<HTMLInputElement>(null);
   const inputPhotoRef = useRef<HTMLInputElement>(null);
   const { enSortie: pleinEcranEnSortie, demarrerFermeture: fermerPleinEcranAnime } = useFermetureAnimee();
-  // Texte en cours de saisie, partagé pour que le bouton Envoyer du crayon y reprenne la
-  // question de l'étudiant (lib/brouillonCanal.ts). Vidé à la fermeture, comme avant.
-  const texteSaisi = useBrouillonCanal();
-  const setTexteSaisi = definirBrouillonCanal;
-  useEffect(() => () => definirBrouillonCanal(""), []);
+  const [texteSaisi, setTexteSaisi] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const champRef = useRef<HTMLTextAreaElement>(null);
   const minuteurErreur = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -214,7 +212,7 @@ export function ControlesInteractionCanal({
   async function envoyerTexte(): Promise<boolean> {
     if (envoiEnCours) return false;
     const propre = texteSaisi.trim();
-    if (!propre && piecesJointes.fichiers.length === 0) return false;
+    if (!propre && piecesJointes.fichiers.length === 0 && !dessinAJoindre) return false;
     let texteFinal = propre;
     if (piecesJointes.fichiers.length > 0) {
       setEnvoiEnCours(true);
@@ -234,7 +232,14 @@ export function ControlesInteractionCanal({
         setEnvoiEnCours(false);
       }
     }
-    envoyerMessageEtudiant(texteFinal.trim());
+    const question = texteFinal.trim();
+    // Un dessin attend (crayon) : l'écran est lu et Classinus reçoit ce qui est entouré, avec
+    // le texte écrit s'il y en a un, sinon seul. Le bouton Envoyer est le même qu'avant.
+    let parti = false;
+    if (crayonDisponible && traitsAJoindre(lireEtatCrayon())) parti = await envoyerCeQuiEstEntoure(question);
+    if (parti) marquerTraitsEnvoyes();
+    else if (question) envoyerMessageEtudiant(question);
+    else return false;
     setTexteSaisi("");
     piecesJointes.vider();
     setPanneauOuvert(false);
@@ -388,7 +393,7 @@ export function ControlesInteractionCanal({
                 />
                 <button
                   onClick={() => void envoyerTexte()}
-                  disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0)}
+                  disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0 && !dessinAJoindre)}
                   aria-label="Envoyer le message"
                   className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-[#1A0D02] transition-opacity disabled:opacity-40 ${
                     envoiEnCours ? "animate-pulse" : ""
@@ -655,7 +660,7 @@ export function ControlesInteractionCanal({
           <div className="flex justify-end pt-4">
             <button
               onClick={() => void envoyerTexte().then((parti) => parti && fermerPleinEcran())}
-              disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0)}
+              disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0 && !dessinAJoindre)}
               aria-label="Envoyer le message"
               className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >
