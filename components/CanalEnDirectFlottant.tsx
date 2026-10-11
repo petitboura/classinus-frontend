@@ -22,8 +22,9 @@
 // choisie par l'étudiant, jamais en dessous du minimum de
 // lib/opaciteBoutonCanal.ts ; elle revient à 100 % au survol et dès que le
 // canal est actif. Le réglage se fait depuis le bouton, une fois le canal
-// activé (ReglageOpaciteBoutonCanal.tsx). Rien de tout cela ne s'applique sur
-// web et mobile : l'opacité y reste à 100 %.
+// activé (ReglageOpaciteBoutonCanal.tsx). Depuis le 11/10/2026
+// (demande Bourama), le bouton et son réglage sont aussi sur web et mobile, avec le même
+// fonctionnement.
 //
 // Regroupement (02/10/2026, demande Bourama) : le réglage d'opacité est rangé
 // avec les autres boutons dans le groupe de ControlesInteractionCanal (déplié
@@ -58,7 +59,6 @@ import {
   ecrireOpaciteRepos,
   lireOpaciteRepos,
 } from "@/lib/opaciteBoutonCanal";
-import { estDansFenetreSuperposition } from "@/lib/superpositionElectron";
 import { useDecalageRailLateral } from "@/lib/useDecalageRailLateral";
 import { useDeplacable } from "@/lib/useDeplacable";
 import { estPageChat } from "@/lib/routesApp";
@@ -78,16 +78,13 @@ export function CanalEnDirectFlottant() {
   // canal, dictée, écriture) se déplace ensemble, voir lib/useDeplacable.ts.
   const deplacement = useDeplacable<HTMLDivElement>();
 
-  // Opacité au repos : uniquement dans la superposition Electron. Lue après
+  // Opacité au repos : même réglage partout (superposition PC, web, mobile). Lue après
   // le premier rendu (pas pendant), pour que la page statique et le premier
   // rendu côté client restent identiques.
-  const [dansSuperposition, setDansSuperposition] = useState(false);
   const [opaciteRepos, setOpaciteRepos] = useState(OPACITE_REPOS_DEFAUT);
   const [survol, setSurvol] = useState(false);
   const [reglageOuvert, setReglageOuvert] = useState(false);
   useEffect(() => {
-    if (!estDansFenetreSuperposition()) return;
-    setDansSuperposition(true);
     setOpaciteRepos(lireOpaciteRepos());
   }, []);
 
@@ -115,7 +112,7 @@ export function CanalEnDirectFlottant() {
           <motion.button
             key="activation"
             initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: dansSuperposition && (reglageOuvert || (!actif && !survol)) ? opaciteRepos : 1, scale: 1 }}
+            animate={{ opacity: (reglageOuvert || (!actif && !survol)) ? opaciteRepos : 1, scale: 1 }}
             transition={{ duration: 0.15 }}
             onMouseEnter={() => setSurvol(true)}
             onMouseLeave={() => setSurvol(false)}
@@ -133,9 +130,7 @@ export function CanalEnDirectFlottant() {
           </motion.button>
         }
         reglageOpacite={
-          dansSuperposition ? (
-            <ReglageOpaciteBoutonCanal valeur={opaciteRepos} surChangement={changerOpaciteRepos} surOuverture={setReglageOuvert} />
-          ) : null
+          <ReglageOpaciteBoutonCanal valeur={opaciteRepos} surChangement={changerOpaciteRepos} surOuverture={setReglageOuvert} />
         }
       />
     </div>
