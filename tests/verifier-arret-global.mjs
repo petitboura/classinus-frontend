@@ -159,12 +159,13 @@ try {
     assert.deepEqual(m.tape, ['ligne1']);
   }
 
-  // 13. Un emoji à la frontière d'un bloc n'est jamais coupé en deux.
+  // 13. Un emoji à la frontière d'un bloc n'est jamais coupé en deux. Sans presse-papiers, la
+  //     frappe le remplace par un seul "?" (comportement de frappeAdaptee.mts depuis le 09/10).
   {
     const m = fauxMateriel();
     const ligne = 'a'.repeat(TAILLE_BLOC_FRAPPE - 1) + '😀' + 'b';
     await taperTexteAdapte(base(m, ligne));
-    assert.equal(m.tape.join(''), ligne);
+    assert.equal(m.tape.join(''), 'a'.repeat(TAILLE_BLOC_FRAPPE - 1) + '?' + 'b');
     for (const bloc of m.tape) assert.equal(bloc.isWellFormed(), true, 'pas de moitié d\'emoji');
   }
 
