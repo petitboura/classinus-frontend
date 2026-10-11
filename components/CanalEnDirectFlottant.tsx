@@ -4,7 +4,7 @@
 // plan-canal-agent-applicatif-v1.md), chantier L. Groupe flottant en bas
 // à gauche (emplacement choisi par Bourama le 19/09/2026) :
 // - en bas, le bouton d'activation du canal (ce fichier), que
-//   ControlesInteractionCanal range sur sa ligne du bas avec le chevron et le « + » ;
+//   ControlesInteractionCanal range sur sa ligne du bas, à droite du chevron et d'Écrire ;
 // - au dessus, quand le canal est actif, les boutons d'interaction du
 //   chantier M et N (ControlesInteractionCanal.tsx).
 //

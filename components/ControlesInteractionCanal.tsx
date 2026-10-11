@@ -45,9 +45,9 @@ const DUREE_ERREUR_MS = 6000;
 const DELAI_REPLI_AUTO_MS = 2000;
 
 // Disposition (mise à jour le 11/10/2026, demande Bourama), de bas en haut :
-//   ligne 1 : activation du canal (remplacée par Écrire quand le groupe est replié),
-//             chevron qui déplie ou replie (toujours au même endroit), « + » ;
-//   ligne 2 : Écrire, Mode vocal, Utilitaires ;
+//   ligne 1 : chevron qui déplie ou replie (tout à gauche), Écrire, activation du canal
+//             (visible seulement groupe déplié, ou canal éteint) ;
+//   ligne 2 : Mode vocal, Utilitaires, « + » ;
 //   ligne 3 : Arrêter la tâche (pendant une tâche, à gauche, il pousse les autres vers la
 //             droite), micro de dictée, opacité (superposition PC seulement), Réglages.
 // Le groupe est déplié dès l'activation et se replie seul après un court délai. Arrêter la
@@ -295,7 +295,7 @@ export function ControlesInteractionCanal({
           : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
     }`;
 
-  // Même bouton « Écrire » dans la ligne du milieu (groupe déplié) et à côté du chevron (groupe replié).
+  // Bouton « Écrire » : sur la ligne du bas, à droite du chevron, groupe déplié ou replié.
   const boutonEcrire = (
     <button
       onClick={basculerPanneau}
@@ -456,7 +456,6 @@ export function ControlesInteractionCanal({
               transition={{ duration: 0.15 }}
               className="flex items-center gap-2"
             >
-              {boutonEcrire}
               <AnimatePresence initial={false}>
                 {groupeOuvert && (
                   <ApparitionBoutonCanal key="mode-vocal">
@@ -477,6 +476,13 @@ export function ControlesInteractionCanal({
                     <BoutonUtilitairesCanal actions={actionsUtilitaires} />
                   </ApparitionBoutonCanal>
                 )}
+                {groupeOuvert && (
+                  <ApparitionBoutonCanal key="plus">
+                    <div className="flex h-10 w-10 items-center justify-center">
+                      <MenuPlus variante="bureau" entrees={entreesMenuPlus} ouverture="droite" />
+                    </div>
+                  </ApparitionBoutonCanal>
+                )}
               </AnimatePresence>
             </motion.div>
           )}
@@ -484,20 +490,8 @@ export function ControlesInteractionCanal({
 
         <div className="flex items-center gap-2">
           <AnimatePresence initial={false}>
-            {/* Une fois le canal actif, le bouton d'activation se range derrière le chevron et
-                réapparaît quand on déplie le groupe (c'est là qu'on désactive le canal). */}
-            {/* Emplacement de taille fixe : le chevron ne bouge jamais. Déplié (ou canal éteint) on
-                voit le bouton d'activation, replié le bouton Écrire prend sa place (il n'existe
-                qu'à un seul endroit à la fois). */}
-            <div key="emplacement" className="flex h-10 w-10 items-center justify-center">
-              <AnimatePresence mode="wait" initial={false}>
-                {!actif || groupeOuvert ? (
-                  <ApparitionBoutonCanal key="activation">{boutonActivation}</ApparitionBoutonCanal>
-                ) : (
-                  <ApparitionBoutonCanal key="ecrire-replie">{boutonEcrire}</ApparitionBoutonCanal>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Ligne du bas : chevron tout à gauche, Écrire à sa droite, puis le bouton d'activation,
+                qui n'est visible que groupe déplié (c'est là qu'on désactive le canal). */}
             {actif && (
               <ApparitionBoutonCanal key="chevron">
                 <button
@@ -511,13 +505,8 @@ export function ControlesInteractionCanal({
                 </button>
               </ApparitionBoutonCanal>
             )}
-            {actif && groupeOuvert && (
-              <ApparitionBoutonCanal key="plus">
-                <div className="flex h-10 w-10 items-center justify-center">
-                  <MenuPlus variante="bureau" entrees={entreesMenuPlus} ouverture="droite" />
-                </div>
-              </ApparitionBoutonCanal>
-            )}
+            {actif && <ApparitionBoutonCanal key="ecrire">{boutonEcrire}</ApparitionBoutonCanal>}
+            {(!actif || groupeOuvert) && <ApparitionBoutonCanal key="activation">{boutonActivation}</ApparitionBoutonCanal>}
           </AnimatePresence>
         </div>
       </div>
