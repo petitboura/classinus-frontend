@@ -84,7 +84,7 @@ import { lirePageVisible } from "./lecturePage";
 import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
 import { traiterDemandeEcranTelephone } from "./canalEcranTelephone";
-import { initialiserVisionEcranCanal } from "./pontVisionEcranCanal";
+import { initialiserVisionEcranCanal, visionEcranEstDemarree } from "./pontVisionEcranCanal";
 import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
@@ -949,7 +949,9 @@ export function initialiserCanalAgentApplicatif() {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       ouvrirCanal();
-    } else {
+    } else if (!visionEcranEstDemarree()) {
+      // Vision de l'écran active sur Android : le canal reste ouvert en
+      // arrière-plan, Clovis lit et marque l'écran d'une autre application.
       fermerCanal();
     }
   });

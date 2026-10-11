@@ -17,14 +17,34 @@
 
 import { canalEnDirectEstActif, ecouterActivationCanal } from "./contexteCanalEnDirect";
 import { demanderPermissionSuperposition, effacerSuperposition, etatSuperposition } from "./superposition";
-import { arreterVisionEcran, codeErreurVisionEcran, demarrerVisionEcran, etatVisionEcran, visionEcranDisponible } from "./visionEcran";
+import {
+  arreterVisionEcran,
+  codeErreurVisionEcran,
+  demarrerVisionEcran,
+  ecouterEtatVisionEcran,
+  etatVisionEcran,
+  visionEcranDisponible,
+} from "./visionEcran";
 import { textesVisionEcran } from "./textesVisionEcran";
 
 let dejaInitialise = false;
 let permissionSuperpositionDejaDemandee = false;
+// Vrai tant que la capture de l'ecran tourne. Tenu a jour par nos propres
+// demarrages et arrets, et par les arrets venus du systeme (bouton Arreter de la
+// notification, coupure par Android).
+let visionDemarree = false;
 // Les demarrages et arrets s'executent l'un apres l'autre : une activation suivie
 // d'une desactivation rapide ne doit jamais laisser la capture allumee.
 let fileOperations: Promise<void> = Promise.resolve();
+
+/**
+ * La vision de l'ecran tourne-t-elle ? Tant que c'est vrai, le canal en direct
+ * reste ouvert quand l'appli passe en arriere-plan : Clovis doit pouvoir lire et
+ * marquer l'ecran d'une autre application (voir lib/canalAgentApplicatif.ts).
+ */
+export function visionEcranEstDemarree(): boolean {
+  return visionDemarree;
+}
 
 function signaler(operation: string, e: unknown) {
   console.warn(`Vision ecran : ${operation} impossible`, codeErreurVisionEcran(e) ?? "erreur inconnue");
@@ -51,6 +71,7 @@ async function arreter() {
   try {
     const etat = await etatVisionEcran();
     if (etat.actif) await arreterVisionEcran();
+    visionDemarree = false;
   } catch (e) {
     signaler("arret", e);
   }
@@ -67,6 +88,7 @@ async function demarrer() {
         libelleArreter: textes.notificationArreter,
       });
     }
+    visionDemarree = true;
   } catch (e) {
     // REFUSE : l'etudiant a refuse la fenetre du systeme. Le canal reste actif.
     signaler("demarrage", e);
@@ -88,6 +110,9 @@ function planifier(actif: boolean) {
 export function initialiserVisionEcranCanal() {
   if (dejaInitialise || typeof window === "undefined" || !visionEcranDisponible()) return;
   dejaInitialise = true;
+  ecouterEtatVisionEcran((changement) => {
+    visionDemarree = changement.actif;
+  }).catch((e) => signaler("suivi de l'etat", e));
   ecouterActivationCanal(planifier);
   if (canalEnDirectEstActif()) planifier(true);
 }
