@@ -41,8 +41,9 @@ export function PageContenuLegal({ cle }: { cle: "cgu" | "copyright" | "confiden
       <div className="mx-auto flex max-w-2xl flex-col gap-6">
         <div className="flex items-center gap-2">
           <BoutonRetour onClick={() => router.back()} padding="p-1" className="-ml-1" />
-          <Link href="/">
+          <Link href="/" className="flex items-center gap-2.5">
             <Logo taille={28} sansFond />
+            <span className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
           </Link>
         </div>
 
