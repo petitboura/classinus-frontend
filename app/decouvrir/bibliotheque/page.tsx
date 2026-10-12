@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
 import { SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE } from "@/lib/sectionsDecouvrir";
+import { QUESTIONS_DECOUVRIR_BIBLIOTHEQUE } from "@/lib/questionsDecouvrir";
+import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDecouvrir";
 
 // Chantier SEO/AEO de Classinus (25 26/09/2026). Titre, description et
 // texte de présentation validés par Bourama le 25/09/2026 (document de
@@ -48,6 +50,8 @@ export default function PageDecouvrirBibliotheque() {
           </li>
         ))}
       </ul>
+
+      <AccordeonQuestionsDecouvrir groupes={QUESTIONS_DECOUVRIR_BIBLIOTHEQUE} />
     </main>
   );
 }
