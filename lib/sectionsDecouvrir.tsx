@@ -125,8 +125,9 @@ export const SOUS_PAGES_DECOUVRIR_CONCENTRATION: CarteDecouvrir[] = [
   },
 ];
 
-// Les cinq volets de Bureau traités ici, textes validés par Bourama le
-// 27/09/2026. Établissements (6e carte de Bureau) volontairement exclu :
+// Les sept volets de Bureau traités ici, textes validés par Bourama le
+// 27/09/2026 (cinq premiers) et le 12/10/2026 (Éditeur de code et
+// Configuration). Établissements (6e carte de Bureau) volontairement exclu :
 // c'est exactement le même écran que la future section publique
 // Établissements (components/EspaceEtablissements.tsx, partagé entre
 // /bureau/etablissements et /etablissements), pas une page à part.
@@ -160,5 +161,17 @@ export const SOUS_PAGES_DECOUVRIR_BUREAU: CarteDecouvrir[] = [
     href: ROUTES_DECOUVRIR.bureau.signalements,
     titre: "Signalements",
     description: "Discute avec Classinus de chaque signalement reçu de tes élèves. Réservé aux enseignants.",
+  },
+  {
+    slug: "editeur",
+    href: ROUTES_DECOUVRIR.bureau.editeur,
+    titre: "Éditeur de code",
+    description: "Écris et exécute du code, et enregistre tes fichiers dans ta bibliothèque.",
+  },
+  {
+    slug: "configuration",
+    href: ROUTES_DECOUVRIR.bureau.configuration,
+    titre: "Configuration",
+    description: "Des procédures, règles, comportements et styles pour guider les réponses de Classinus.",
   },
 ];

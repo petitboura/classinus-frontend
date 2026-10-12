@@ -50,5 +50,7 @@ export const ROUTES_DECOUVRIR = {
     entrerCode: "/decouvrir/bureau/entrer-code",
     audit: "/decouvrir/bureau/audit",
     signalements: "/decouvrir/bureau/signalements",
+    editeur: "/decouvrir/bureau/editeur",
+    configuration: "/decouvrir/bureau/configuration",
   },
 } as const;
