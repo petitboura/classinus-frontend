@@ -185,6 +185,9 @@ export function VisionneurPositionGlobal() {
         <div className="flex items-center justify-between gap-2 border-b border-dj-bordure px-4 py-3">
           <p className="min-w-0 truncate pr-3 text-sm font-medium text-dj-texte">{detail.titre}</p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {/* Copier le lien (11/10/2026, demande Bourama : tous les types, pas
+                seulement la carte de site, qui a déjà le sien sous la carte). */}
+            {!(estSiteWeb || estLien) && <BoutonCopierLien href={detail.url} variante="texte" />}
             {estPdf && (
               <button
                 type="button"

@@ -158,7 +158,12 @@ components/
   chat/BoutonCopierLien.tsx  bouton qui copie l'adresse d'un lien (11/10/2026). Icône nue (sans cadre ni
                           texte). Variante survol : posée à côté d'une carte de LinkPreview, visible seulement au
                           survol de CETTE carte (groupe nommé group/lien) et à la souris, cachée sur téléphone ;
-                          variante texte : même icône dans l'aperçu de site (VisionneurPositionGlobal)
+                          variante texte : même icône dans l'en-tête de l'aperçu (VisionneurPositionGlobal), pour
+                          tous les types sauf la carte de site, qui a la sienne sous la carte
+  lib/copierMarkdown.ts   copie "formatée" d'un markdown : HTML rendu + markdown brut dans le presse-papiers
+                          (boutons "Copier formaté" / "Copier brut" de ContenuMarkdown, VisionneuseBibliotheque.tsx).
+                          FenetreTexteColle.tsx (aperçu d'un long texte collé) affiche le texte formaté par défaut,
+                          avec un bouton Brut ; code et LaTeX gardent leur rendu
 
 public/
   foliate-js/             moteur de lecture EPUB et MOBI (foliate-js, licence MIT), copié sans modification

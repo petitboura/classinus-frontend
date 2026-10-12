@@ -17,6 +17,7 @@ import {
 } from "@/components/EtatTelechargement";
 import { useEtatTelechargement } from "@/lib/etatTelechargements";
 import { ouvrirSiteExterieur } from "@/lib/liensSortants";
+import { copierMarkdownFormate } from "@/lib/copierMarkdown";
 import { TelechargerCopierModal } from "./TelechargerCopierModal";
 
 // Chargé dynamiquement, ssr:false (01/09) : ce fichier-ci est importé
@@ -116,12 +117,16 @@ export type FichierBiblio = {
 // 25/08/2026, demande Bourama : "les truc comme du texte ou autre
 // doivent avoir un bouton copier" -- réutilisé par ContenuTexte et
 // ContenuMarkdown (formaté + brut) ci-dessous.
-function BoutonCopier({ texte }: { texte: string }) {
+// 11/10/2026, demande Bourama : pour un markdown, deux boutons (formaté et
+// brut). `formate` copie le rendu riche (lib/copierMarkdown.ts), sinon le
+// texte tel quel ; `libelle` change le texte du bouton.
+function BoutonCopier({ texte, formate = false, libelle = "Copier" }: { texte: string; formate?: boolean; libelle?: string }) {
   const [copie, setCopie] = useState(false);
 
   async function copier() {
     try {
-      await navigator.clipboard.writeText(texte);
+      if (formate) await copierMarkdownFormate(texte);
+      else await navigator.clipboard.writeText(texte);
       setCopie(true);
       setTimeout(() => setCopie(false), 1500);
     } catch {
@@ -136,7 +141,7 @@ function BoutonCopier({ texte }: { texte: string }) {
       className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
     >
       {copie ? <Check size={13} /> : <Copy size={13} />}
-      {copie ? "Copié" : "Copier"}
+      {copie ? "Copié" : libelle}
     </button>
   );
 }
@@ -289,7 +294,10 @@ export function ContenuMarkdown({
               Brut
             </button>
           </div>
-          <BoutonCopier texte={texte} />
+          <div className="flex gap-1">
+            <BoutonCopier texte={texte} formate libelle="Copier formaté" />
+            <BoutonCopier texte={texte} libelle="Copier brut" />
+          </div>
         </div>
       )}
       {vueBrute ? (
