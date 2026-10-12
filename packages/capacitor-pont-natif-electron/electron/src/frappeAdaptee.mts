@@ -112,9 +112,20 @@ export async function taperTexteAdapte(options: {
   arretDemande?: () => boolean;
   // Colle les caractères que la frappe ne sait pas envoyer. Sans lui, ils sont remplacés par "?".
   collage?: Collage;
-}): Promise<{ ok: true; profil: string } | { ok: false; erreur: string }> {
+  // Demandé avant chaque bloc, chaque collage et chaque retour à la ligne (12/10/2026) :
+  // renvoie faux quand le clavier n'est plus dans la fenêtre voulue (l'étudiant est parti
+  // ailleurs). La frappe s'arrête alors tout de suite, sans rien écrire dans l'autre fenêtre.
+  fenetreToujoursBonne?: () => Promise<boolean>;
+}): Promise<
+  | { ok: true; profil: string; tapes: number }
+  | { ok: false; erreur: string; tapes: number; fenetreChangee?: boolean }
+> {
   const { clavier, garde, entree, maj, debut, texte, titreFenetre, collage } = options;
   const arretDemande = options.arretDemande ?? (() => false);
+  const fenetreToujoursBonne = options.fenetreToujoursBonne ?? (async () => true);
+  // Nombre de caractères réellement écrits (un retour à la ligne compte pour un).
+  let tapes = 0;
+  const FENETRE_CHANGEE = { ok: false as const, erreur: "fenetre changee", fenetreChangee: true };
   const profil = choisirProfilFrappe(titreFenetre);
   clavier.config.autoDelayMs = profil.delaiToucheMs;
 
@@ -122,37 +133,46 @@ export async function taperTexteAdapte(options: {
     const lignes = nettoyerTexteFrappe(texte).split(/\r\n|\r|\n/);
     for (let i = 0; i < lignes.length; i++) {
       for (const segment of segmenterLigne(lignes[i])) {
-        if (arretDemande()) return { ok: false, erreur: "arret demande" };
+        if (arretDemande()) return { ok: false, erreur: "arret demande", tapes };
         if (segment.special) {
+          if (!(await fenetreToujoursBonne())) return { ...FENETRE_CHANGEE, tapes };
           if (!collage) {
             const remplacement = "?".repeat(Array.from(segment.texte).length);
             await garde.exclusif(() => clavier.type(remplacement));
+            tapes += Array.from(segment.texte).length;
             continue;
           }
           collage.preparer();
           const resultat = await collage.coller(segment.texte);
-          if (!resultat.ok) return { ok: false, erreur: resultat.erreur };
+          if (!resultat.ok) return { ok: false, erreur: resultat.erreur, tapes };
+          tapes += Array.from(segment.texte).length;
           continue;
         }
         const caracteres = Array.from(segment.texte);
         for (let pos = 0; pos < caracteres.length; pos += TAILLE_BLOC_FRAPPE) {
-          if (arretDemande()) return { ok: false, erreur: "arret demande" };
+          if (arretDemande()) return { ok: false, erreur: "arret demande", tapes };
+          if (!(await fenetreToujoursBonne())) return { ...FENETRE_CHANGEE, tapes };
           const bloc = caracteres.slice(pos, pos + TAILLE_BLOC_FRAPPE).join("");
           await garde.exclusif(() => clavier.type(bloc));
+          tapes += Array.from(bloc).length;
         }
       }
       if (i === lignes.length - 1) break;
-      if (arretDemande()) return { ok: false, erreur: "arret demande" };
+      if (arretDemande()) return { ok: false, erreur: "arret demande", tapes };
+      if (!(await fenetreToujoursBonne())) return { ...FENETRE_CHANGEE, tapes };
       await garde.exclusif(() => clavier.type(entree));
+      tapes += 1;
       if (profil.pauseApresEntreeMs > 0) await attendre(profil.pauseApresEntreeMs);
       // L'éditeur vient d'ajouter son indentation : Maj+Début la sélectionne, la ligne
       // suivante la remplace. Inutile si cette ligne est vide (rien à écrire par-dessus).
       if (profil.effacerIndentationAuto && lignes[i + 1]) {
+        // Maj+Début est un raccourci : jamais envoyé dans une autre fenêtre que la bonne.
+        if (!(await fenetreToujoursBonne())) return { ...FENETRE_CHANGEE, tapes };
         const resultat = await garde.combinaison([maj, debut]);
-        if (!resultat.ok) return { ok: false, erreur: resultat.erreur };
+        if (!resultat.ok) return { ok: false, erreur: resultat.erreur, tapes };
       }
     }
-    return { ok: true, profil: profil.nom };
+    return { ok: true, profil: profil.nom, tapes };
   } finally {
     collage?.restaurer();
   }

@@ -74,7 +74,13 @@ lit donc d'abord les fenetres annexes placees AU-DESSUS de la fenetre cible
 nom contenant `Popup`, ou `ComboLBox`), maximum 6. Leurs elements portent
 `zone: "menu ouvert"` et le resultat `menu_ouvert: true`.
 
-Clavier : `taper_clavier` ecrit du texte ; `appuyer_touches` (module pur
+Clavier : `taper_clavier` ecrit du texte dans la fenetre annoncee par le modele
+(parametre `cible`, module pur `cibleSaisie.mts`, 12/10/2026) : sans cible, ou si
+la fenetre au premier plan n'est pas la bonne, rien n'est tape. L'identifiant de
+la fenetre est relu avant chaque bloc de texte, collage, retour a la ligne et
+raccourci interne : si l'etudiant part ailleurs en cours de frappe, la frappe
+s'arrete tout de suite et Clovis est prevenu du nombre de caracteres deja tapes.
+Test : `npm run test:cible-saisie`. `appuyer_touches` (module pur
 `touchesClavier.mts`) appuie sur des touches seules et des raccourcis
 (`ctrl+c`, `alt+tab`, `win+d`, `enter`, `ctrl+a ctrl+c`...), comme un
 utilisateur. Une touche inconnue est refusee, les touches sont toujours

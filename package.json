@@ -13,6 +13,7 @@
     "test:touches-clavier": "node tests/verifier-touches-clavier.mjs",
     "test:garde-clavier": "node tests/verifier-garde-clavier.mjs",
     "test:arret-global": "node tests/verifier-arret-global.mjs",
+    "test:cible-saisie": "node tests/verifier-cible-saisie.mjs",
     "test:applications-protegees": "node tests/verifier-applications-protegees.mjs",
     "test:autorisation-canal": "node tests/verifier-autorisation-canal.mjs",
     "test:raccourcis-crayon": "node tests/verifier-raccourcis-crayon.mjs",

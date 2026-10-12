@@ -41,7 +41,8 @@ import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
 import { cliquerEcran } from "./clicEcran.mjs";
 import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
 import { creerGardeClavier } from "./gardeClavier.mjs";
-import { taperTexteAdapte } from "./frappeAdaptee.mjs";
+import { taperTexteAdapte, nettoyerTexteFrappe } from "./frappeAdaptee.mjs";
+import { cibleDepuisParametres, cibleCorrespond, messageMauvaiseCible, messageFrappeInterrompue } from "./cibleSaisie.mjs";
 import { creerCollage, type PressePapiers } from "./collageFrappe.mjs";
 import { creerArretGlobal } from "./arretGlobal.mjs";
 import {
@@ -401,17 +402,64 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         const { keyboard, Key, getActiveWindow } = await import("@nut-tree-fork/nut-js");
         const texte = String(parametres.texte ?? "");
         if (!texte) return { erreur: "texte vide" };
+        // 12/10/2026 : le modele doit dire dans quelle fenetre le texte va. Sans cela, rien
+        // n'est tape (avant, le texte partait dans n'importe quelle fenetre au premier plan).
+        const cible = cibleDepuisParametres(parametres);
+        if (!cible) {
+          return {
+            erreur:
+              "Texte NON tapé : tu n'as pas dit dans quelle fenêtre écrire (paramètre « cible »). Rien n'a été écrit. " +
+              "Relis l'écran, puis recommence en donnant le titre de la fenêtre voulue.",
+          };
+        }
         await restaurerFocusSousSuperposition();
         // La vitesse et le traitement de l'indentation dépendent de l'application au
         // premier plan (voir frappeAdaptee.mts). Si son titre est illisible, frappe rapide.
-        let titreFenetre: string | null = null;
+        const lireFenetreActive = async (): Promise<{ identifiant: number | null; titre: string | null }> => {
+          const fenetre = await getActiveWindow();
+          // L'identifiant de la fenêtre ne change pas quand son titre change (étoile d'un
+          // document non enregistré). Il n'est pas déclaré par la bibliothèque : lu avec prudence.
+          const brut = (fenetre as unknown as { windowHandle?: unknown }).windowHandle;
+          let titre: string | null = null;
+          try { titre = await fenetre.getTitle(); } catch { titre = null; }
+          return { identifiant: typeof brut === "number" ? brut : null, titre };
+        };
+        let depart: { identifiant: number | null; titre: string | null };
         try {
-          titreFenetre = await (await getActiveWindow()).getTitle();
+          depart = await lireFenetreActive();
         } catch {
-          titreFenetre = null;
+          depart = { identifiant: null, titre: null };
         }
+        const titreFenetre = depart.titre;
+        // Le clavier est-il dans la fenêtre annoncée ? Le titre d'abord (rapide), le nom du
+        // programme seulement si le titre ne suffit pas.
+        let bonneFenetre = cibleCorrespond(cible, depart.titre, null);
+        if (!bonneFenetre) {
+          const programme = await applicationAuPremierPlan();
+          bonneFenetre = cibleCorrespond(cible, depart.titre, programme.application);
+        }
+        if (!bonneFenetre) return { erreur: messageMauvaiseCible(cible, depart.titre) };
         const refusClavier = await verifierAccordClavier(parametres, "écrire");
         if (refusClavier) return { erreur: refusClavier };
+        // Même fenêtre qu'au départ ? Avec l'identifiant quand il est connu, sinon avec le
+        // titre annoncé. Sert avant de commencer (l'accord a pu durer longtemps) puis avant
+        // chaque bloc de texte.
+        const memeFenetreQueDepart = async (): Promise<boolean> => {
+          try {
+            const maintenant = await lireFenetreActive();
+            if (depart.identifiant !== null && maintenant.identifiant !== null) {
+              return depart.identifiant === maintenant.identifiant;
+            }
+            return cibleCorrespond(cible, maintenant.titre, null);
+          } catch {
+            return false;
+          }
+        };
+        if (!(await memeFenetreQueDepart())) {
+          let titreMaintenant: string | null = null;
+          try { titreMaintenant = (await lireFenetreActive()).titre; } catch { titreMaintenant = null; }
+          return { erreur: messageMauvaiseCible(cible, titreMaintenant) };
+        }
         const garde = await obtenirGardeClavier();
         const resultat = await taperTexteAdapte({
           clavier: keyboard as unknown as Parameters<typeof taperTexteAdapte>[0]["clavier"],
@@ -422,6 +470,7 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
           texte,
           titreFenetre,
           arretDemande: () => arretGlobal.arretDemande(),
+          fenetreToujoursBonne: memeFenetreQueDepart,
           collage: creerCollage({
             presse: clipboard as unknown as PressePapiers,
             garde,
@@ -431,6 +480,11 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         });
         // Arrêt demandé par l'étudiant (Échap) : prioritaire sur toute autre issue.
         if (arretGlobal.arretDemande()) return { erreur: MESSAGE_ARRET_GLOBAL };
+        if (!resultat.ok && resultat.fenetreChangee) {
+          const lignesTexte = nettoyerTexteFrappe(texte).split(/\r\n|\r|\n/);
+          const total = lignesTexte.reduce((n, l) => n + Array.from(l).length, 0) + lignesTexte.length - 1;
+          return { erreur: messageFrappeInterrompue(cible, resultat.tapes, total) };
+        }
         if (!resultat.ok) return { erreur: resultat.erreur };
         return { ok: true };
       }
