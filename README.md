@@ -158,7 +158,8 @@ components/
   chat/LinkPreview.tsx    carte d'un lien du chat (aperçu du site, vignette YouTube). Depuis le 12/10/2026, le texte
                           du lien markdown écrit par le modèle devient le titre de la carte et l'attribut title
                           ([Titre](url "Description")) sa description (2 lignes sur la carte, en entier dans l'aperçu
-                          ouvert au clic) ; le titre du site ne sert que de repli. La carte porte data-titre-lien et
+                          ouvert au clic) ; le titre du site ne sert que de repli (les vignettes YouTube gardent le titre de la vidéo et
+                          la ligne de la chaîne). La carte porte data-titre-lien et
                           data-description-lien, que GardienLiensSortants.tsx relit pour les passer à l'aperçu
   chat/BoutonCopierLien.tsx  bouton qui copie l'adresse d'un lien (11/10/2026). Icône nue (sans cadre ni
                           texte). Variante survol : posée à côté d'une carte de LinkPreview, visible seulement au

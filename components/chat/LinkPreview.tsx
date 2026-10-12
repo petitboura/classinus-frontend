@@ -92,7 +92,8 @@ const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: bool
 // une courte description, doivent se voir sur la carte (ils apportent le contexte
 // que le titre du site ne donne pas). `titreDuModele` et `descriptionLien` passent
 // avant ce que renvoie le site ; le site reste le repli quand le modèle n'a rien
-// donné. `detaille` (aperçu ouvert au clic) : description en entier, et titre
+// donné. Les vignettes YouTube gardent le titre de la vidéo et la ligne de la chaîne.
+// `detaille` (aperçu ouvert au clic) : description en entier, et titre
 // d'origine du site en petit s'il diffère de celui du modèle.
 export function LinkPreview({
   href,
@@ -283,8 +284,8 @@ export function LinkPreview({
         <span className="my-2 block w-full max-w-md animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface">
           <LecteurYoutubeInline idVideo={idVideo} onFermer={() => setEnLecture(false)} />
           <span className="block p-3">
-            <span className="block truncate text-sm text-dj-texte">{titreDuModele || apercu!.titre || texteLien}</span>
-            <span className="block truncate text-[12px] text-dj-texte-muet">{descriptionLien || apercu!.description}</span>
+            <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
+            <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
           </span>
         </span>
       );
@@ -307,8 +308,8 @@ export function LinkPreview({
           </span>
         )}
         <span className="block p-3">
-          <span className="block truncate text-sm text-dj-texte">{titreDuModele || apercu!.titre || texteLien}</span>
-          <span className="block truncate text-[12px] text-dj-texte-muet">{descriptionLien || apercu!.description}</span>
+          <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
+          <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
         </span>
       </button>
       {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-2 top-2" />}
