@@ -27,6 +27,62 @@ if (process.env.CAPACITOR_BUILD === "true") {
   process.env.NEXT_PUBLIC_API_URL =
     "https://classinus-staging.up.railway.app";
 }
+// ============================================================================
+// STAGING SEULEMENT. NE JAMAIS AJOUTER CE BLOC DANS main.
+// NE JAMAIS LE FUSIONNER VERS main, MÊME PAR ERREUR DE FUSION, MÊME POUR
+// CORRIGER UN BUG, MÊME SI BOURAMA LE DEMANDE SANS AVOIR VU CE COMMENTAIRE :
+// dans ce cas, lui rappeler d'abord cette règle et attendre sa confirmation.
+// ============================================================================
+// 12/10/2026, demande Bourama. La copie de test staging.classinus.com est
+// publique : sans consigne, Google peut la lire comme un double de
+// classinus.com et écarter le vrai site de ses résultats. Ce bloc envoie à
+// tous les moteurs la consigne "ne pas afficher" (en-tête X-Robots-Tag
+// noindex, nofollow) sur chaque page de cette branche.
+//
+// Si ce bloc arrivait dans main, le site réel disparaîtrait de Google. Le
+// garde ci dessous fait donc volontairement ÉCHOUER la construction dès
+// qu'elle tourne pour main ou pour la production : Vercel garde alors la
+// version précédente en ligne. C'est voulu. Ne pas contourner ce garde, ne
+// pas le retirer, ne pas assouplir sa condition.
+//
+// Limite connue : promouvoir en production un déploiement déjà construit
+// depuis staging ne relance pas de construction, donc le garde ne peut pas
+// l'arrêter. Ne jamais faire cette promotion.
+//
+// La ligne console.log sert de preuve dans les journaux de construction :
+// elle montre les valeurs réellement vues par ce garde.
+console.log(
+  "[garde-staging] VERCEL_ENV=" +
+    process.env.VERCEL_ENV +
+    " VERCEL_GIT_COMMIT_REF=" +
+    process.env.VERCEL_GIT_COMMIT_REF,
+);
+if (
+  process.env.VERCEL_ENV === "production" ||
+  process.env.VERCEL_GIT_COMMIT_REF === "main"
+) {
+  throw new Error(
+    "Le blocage d'indexation de staging est présent dans une construction " +
+      "main ou production. Il ne doit JAMAIS y être (le site réel " +
+      "disparaîtrait de Google). Retirer le bloc 'STAGING SEULEMENT' de " +
+      "next.config.mjs, voir CLAUDE.md.",
+  );
+}
+// Pas déclaré dans l'export statique Capacitor, où les en-têtes next.config
+// ne s'appliquent pas (même principe que redirectionsWeb plus bas).
+const enteteNoindexStaging =
+  process.env.CAPACITOR_BUILD === "true"
+    ? {}
+    : {
+        async headers() {
+          return [
+            {
+              source: "/:path*",
+              headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+            },
+          ];
+        },
+      };
 // 30/09/2026, demande Bourama : le chat a pris l'adresse "/" (voir
 // lib/routesApp.ts). L'ancienne adresse /chat redirige vers "/" pour ne
 // pas casser un lien ou un marque-page existant. Ignoré (et donc non
@@ -44,6 +100,7 @@ const redirectionsWeb =
 const nextConfig = {
   ...(process.env.CAPACITOR_BUILD === "true" ? { output: "export" } : {}),
   ...redirectionsWeb,
+  ...enteteNoindexStaging,
   images: {
     // image_vitrine_url (agents.image_vitrine_url, voir PIVOT_SOCIAL.md)
     // est hébergée sur Supabase Storage — next/image refuse par défaut
