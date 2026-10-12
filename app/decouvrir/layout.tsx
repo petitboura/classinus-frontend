@@ -5,6 +5,7 @@ import { Logo } from "@/components/Logo";
 import { EcranAutonome } from "@/components/EcranAutonome";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { BoutonRetourDecouvrir } from "@/components/BoutonRetourDecouvrir";
+import { DonneesPageDecouvrir } from "@/components/DonneesPageDecouvrir";
 
 // Chantier SEO/AEO de Classinus (26/09/2026, demande Bourama). En tête
 // partagé par toute la famille de pages publiques de présentation
@@ -29,6 +30,7 @@ export default function LayoutDecouvrir({ children }: { children: ReactNode }) {
   return (
     <EcranAutonome className="min-h-screen bg-dj-fond">
       <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8">
+        <DonneesPageDecouvrir />
         <div className="flex w-fit items-center gap-2">
           <Suspense fallback={<BoutonRetour href="/" avecTexte />}>
             <BoutonRetourDecouvrir />

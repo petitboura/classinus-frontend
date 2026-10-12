@@ -20,7 +20,7 @@ import { InteractionGlobale } from "@/components/InteractionGlobale";
 import { IndicateurTelechargements } from "@/components/IndicateurTelechargements";
 import { FournisseurRequetes } from "@/lib/reactQuery";
 import { DonneesStructurees } from "@/components/DonneesStructurees";
-import { donneesApplication } from "@/lib/donneesApplication";
+import { donneesApplication, donneesOrganisation } from "@/lib/donneesApplication";
 import { RESUME_CLASSINUS } from "@/lib/usagesDecouvrir";
 
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
@@ -152,6 +152,7 @@ export default function RacineLayout({
             IA (11/10/2026, chantier "visibilité auprès des IA") : voir
             lib/donneesApplication.ts. Dans le HTML du serveur, donc lue
             même par un robot qui n'exécute pas de JavaScript. */}
+        <DonneesStructurees donnees={donneesOrganisation()} />
         <DonneesStructurees donnees={donneesApplication()} />
         {/* Script anti-flash (17/08, thème clair/sombre) : doit s'exécuter
             de façon SYNCHRONE avant le premier rendu de <body>, sinon
