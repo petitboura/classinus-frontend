@@ -88,14 +88,26 @@ const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: bool
 
 // `sansBoutonCopier` : l'aperçu (VisionneurPositionGlobal) a déjà son propre
 // bouton "Copier le lien" sous la carte, inutile de le doubler au survol.
+// 12/10/2026, demande Bourama : le titre que le modèle donne au lien et, en plus,
+// une courte description, doivent se voir sur la carte (ils apportent le contexte
+// que le titre du site ne donne pas). `titreDuModele` et `descriptionLien` passent
+// avant ce que renvoie le site ; le site reste le repli quand le modèle n'a rien
+// donné. `detaille` (aperçu ouvert au clic) : description en entier, et titre
+// d'origine du site en petit s'il diffère de celui du modèle.
 export function LinkPreview({
   href,
   texteLien,
+  titreDuModele,
+  descriptionLien,
+  detaille,
   compact,
   sansBoutonCopier,
 }: {
   href: string;
   texteLien: string;
+  titreDuModele?: string;
+  descriptionLien?: string;
+  detaille?: boolean;
   compact?: boolean;
   sansBoutonCopier?: boolean;
 }) {
@@ -105,6 +117,7 @@ export function LinkPreview({
   const [enLecture, setEnLecture] = useState(false);
   const [fichier, setFichier] = useState<FichierDetecte | null>(() => memoireApercus.lire(href)?.fichier ?? null);
   const idVideo = idYoutube(href);
+  const classeTitreModele = detaille ? "break-words" : titreDuModele ? "line-clamp-2" : "truncate";
 
   useEffect(() => {
     let annule = false;
@@ -206,6 +219,7 @@ export function LinkPreview({
         <Skeleton as="span" className="h-20 w-20 shrink-0 rounded-lg" />
         <span className="flex-1 space-y-2">
           <Skeleton as="span" className="block h-3.5 w-3/4 rounded" />
+          {descriptionLien && <Skeleton as="span" className="block h-3 w-full rounded" style={{ animationDelay: "100ms" }} />}
           <Skeleton as="span" className="block h-3 w-1/2 rounded" style={{ animationDelay: "150ms" }} />
         </span>
       </span>
@@ -269,8 +283,8 @@ export function LinkPreview({
         <span className="my-2 block w-full max-w-md animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface">
           <LecteurYoutubeInline idVideo={idVideo} onFermer={() => setEnLecture(false)} />
           <span className="block p-3">
-            <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
-            <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
+            <span className="block truncate text-sm text-dj-texte">{titreDuModele || apercu!.titre || texteLien}</span>
+            <span className="block truncate text-[12px] text-dj-texte-muet">{descriptionLien || apercu!.description}</span>
           </span>
         </span>
       );
@@ -293,8 +307,8 @@ export function LinkPreview({
           </span>
         )}
         <span className="block p-3">
-          <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
-          <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
+          <span className="block truncate text-sm text-dj-texte">{titreDuModele || apercu!.titre || texteLien}</span>
+          <span className="block truncate text-[12px] text-dj-texte-muet">{descriptionLien || apercu!.description}</span>
         </span>
       </button>
       {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-2 top-2" />}
@@ -308,6 +322,8 @@ export function LinkPreview({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      data-titre-lien={titreDuModele}
+      data-description-lien={descriptionLien}
       className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2.5 no-underline transition-colors hover:border-dj-bordure-forte"
     >
       {apercu!.image && (
@@ -317,8 +333,14 @@ export function LinkPreview({
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
+        <span className={`block text-sm text-dj-texte ${classeTitreModele}`}>{titreDuModele || apercu!.titre || texteLien}</span>
+        {descriptionLien && (
+          <span className={`block text-[12px] leading-snug text-dj-texte-muet ${detaille ? "" : "line-clamp-2"}`}>{descriptionLien}</span>
+        )}
         <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.siteName}</span>
+        {detaille && titreDuModele && apercu!.titre && apercu!.titre !== titreDuModele && (
+          <span className="block text-[11px] text-dj-texte-muet">{apercu!.titre}</span>
+        )}
       </span>
       <ExternalLink size={14} className="shrink-0 text-dj-texte-muet" />
     </a>

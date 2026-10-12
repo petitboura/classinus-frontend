@@ -90,12 +90,22 @@ function VisionneurImage({ url, titre }: { url: string; titre: string }) {
 // docstring plus haut). Jamais d'iframe forcée (la quasi-totalité des
 // sites la refusent, voir LinkPreview.tsx) : aperçu Open Graph + bouton
 // explicite pour sortir si l'utilisateur le veut vraiment.
-function CarteSiteExterne({ url, titre }: { url: string; titre: string }) {
+function CarteSiteExterne({
+  url,
+  titre,
+  titreDuModele,
+  descriptionLien,
+}: {
+  url: string;
+  titre: string;
+  titreDuModele?: string;
+  descriptionLien?: string;
+}) {
   return (
     // data-apercu-actif : GardienLiensSortants.tsx laisse la carte inerte ici,
     // la seule sortie est le bouton "Ouvrir le site" ci dessous.
     <div className="p-5" data-apercu-actif>
-      <LinkPreview href={url} texteLien={titre} sansBoutonCopier />
+      <LinkPreview href={url} texteLien={titre} titreDuModele={titreDuModele} descriptionLien={descriptionLien} detaille sansBoutonCopier />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           onClick={() => ouvrirSiteExterieur(url)}
@@ -223,7 +233,7 @@ export function VisionneurPositionGlobal() {
           ) : estTexte ? (
             <ContenuTexte href={detail.url} />
           ) : estSiteWeb || estLien ? (
-            <CarteSiteExterne url={detail.url} titre={detail.titre} />
+            <CarteSiteExterne url={detail.url} titre={detail.titre} titreDuModele={detail.titreDuModele} descriptionLien={detail.descriptionLien} />
           ) : (
             <ContenuNonPrevisualisable href={detail.url} nom={detail.titre} />
           )}

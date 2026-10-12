@@ -73,7 +73,7 @@ function nomDepuisUrl(href: string): string {
 // de fichier téléchargé (sinon déduit de l'URL).
 export function traiterLienSortant(
   href: string,
-  options: { titre?: string; nomFichier?: string; aAttributDownload?: boolean } = {}
+  options: { titre?: string; nomFichier?: string; aAttributDownload?: boolean; titreDuModele?: string; descriptionLien?: string } = {}
 ) {
   if (estLienTelechargement(href, options.aAttributDownload)) {
     void telecharger(href, options.nomFichier || nomDepuisUrl(href));
@@ -82,8 +82,10 @@ export function traiterLienSortant(
   const url = resoudreUrl(href);
   ouvrirPosition({
     url: href,
-    titre: options.titre || url?.hostname || href,
+    titre: options.titre || options.titreDuModele || url?.hostname || href,
     typeMime: null,
+    titreDuModele: options.titreDuModele,
+    descriptionLien: options.descriptionLien,
   });
 }
 
