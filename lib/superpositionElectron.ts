@@ -103,6 +103,7 @@ interface PluginSuperpositionAgent {
   envoyerInteraction(action: ActionSuperposition): Promise<void>;
   maintenirCapture(parametres: { maintenir: boolean }): Promise<void>;
   definirModeCrayon(parametres: { actif: boolean }): Promise<void>;
+  definirSaisieTexte(parametres: { actif: boolean }): Promise<void>;
   definirRaccourcisCrayon(touches: Record<string, string>): Promise<void>;
   lireDemarrageAutomatique(): Promise<{ disponible: boolean; actif: boolean }>;
   definirDemarrageAutomatique(parametres: { actif: boolean }): Promise<void>;
@@ -144,6 +145,24 @@ export function definirModeCrayonSuperposition(actif: boolean) {
   SuperpositionAgent.definirModeCrayon({ actif }).catch(() => {
     // Hors Electron, ou superposition pas prête : rien à capter, rien à relâcher.
   });
+}
+
+// Saisie au clavier dans la superposition (12/10/2026, demande de Bourama) : la superposition
+// ne prend jamais le focus d'elle meme, pour ne pas figer la fenetre qui est derriere. Elle ne
+// devient activable que pendant que l'etudiant ecrit dans une de ses zones de texte.
+// Sans effet hors de la fenetre de superposition (la fenetre principale n'a rien a demander).
+export function definirSaisieTexteSuperposition(actif: boolean) {
+  if (!estDansFenetreSuperposition()) return;
+  SuperpositionAgent.definirSaisieTexte({ actif }).catch(() => {
+    // Hors Electron, ou superposition pas prete : rien a activer, rien a rendre.
+  });
+}
+
+// Vrai pour une zone ou l'etudiant peut ecrire du texte (pas les cases, boutons ou fichiers).
+export function estZoneDeTexte(element: Element | null): boolean {
+  return Boolean(element?.closest(
+    'textarea, input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="range"]), [contenteditable=""], [contenteditable="true"]'
+  ));
 }
 
 // Raccourcis clavier du crayon (11/10/2026) : le processus principal d'Electron les prend
