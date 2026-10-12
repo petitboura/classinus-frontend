@@ -14,6 +14,14 @@
 // étape séparée du plan.
 
 import { estVisibleEtActif, type CacheAffichage } from "./clicGenerique";
+import {
+  cibleDeLAgrandissement,
+  estUnBoutonAgrandir,
+  etatsDeLElement,
+  nomDeSecours,
+  zoneDeLElement,
+  type CacheZones,
+} from "./structureEcran";
 
 export type ElementInteractifDetecte = {
   id: string;
@@ -30,11 +38,58 @@ export type ElementInteractifDetecte = {
 export const SELECTEURS_ELEMENTS_INTERACTIFS = [
   "button",
   "a[href]",
-  '[role="button"]',
+  "summary",
   'input:not([type="hidden"])',
   "textarea",
   "select",
+  '[contenteditable=""]',
+  '[contenteditable="true"]',
+  '[role="button"]',
+  '[role="tab"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="option"]',
+  '[role="switch"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="link"]',
+  '[role="combobox"]',
+  '[role="slider"]',
+  '[role="treeitem"]',
 ].join(", ");
+
+// Prefixe des proprietes que React pose sur chaque noeud du DOM qu'il rend :
+// c'est la seule facon de savoir qu'un simple div ou span reagit au clic quand
+// aucun composant n'a pense a lui donner un role.
+const PREFIXE_PROPRIETES_REACT = "__reactProps$";
+const GESTIONNAIRES_DE_CLIC = ["onClick", "onMouseDown", "onPointerDown"];
+const INDICES_CURSEUR_MAIN = '[class*="cursor-pointer"], [onclick], [style*="cursor: pointer"], [style*="cursor:pointer"]';
+
+/**
+ * Vrai pour un element qui reagit au clic sans etre un bouton, un lien ou un
+ * champ : div ou span avec onClick, curseur main, attribut onclick. Les
+ * composants n'ont rien a declarer : c'est ce qui garantit qu'un element
+ * cliquable ajoute demain, ou dont l'auteur a oublie le role, est quand meme vu.
+ */
+function reagitAuClicSansRole(element: HTMLElement): boolean {
+  if (element.matches(SELECTEURS_ELEMENTS_INTERACTIFS)) return false;
+  let reagit = element.matches(INDICES_CURSEUR_MAIN);
+  if (!reagit) {
+    for (const cle of Object.keys(element)) {
+      if (!cle.startsWith(PREFIXE_PROPRIETES_REACT)) continue;
+      const proprietes = (element as unknown as Record<string, Record<string, unknown> | undefined>)[cle];
+      if (proprietes && GESTIONNAIRES_DE_CLIC.some((nom) => typeof proprietes[nom] === "function")) reagit = true;
+      break;
+    }
+  }
+  if (!reagit) return false;
+  // Un element deja couvert par un vrai bouton ou lien, ou qui en contient un,
+  // n'est pas liste une seconde fois : l'element interieur est deja dans la liste.
+  if (element.closest(SELECTEURS_ELEMENTS_INTERACTIFS)) return false;
+  if (element.querySelector(SELECTEURS_ELEMENTS_INTERACTIFS)) return false;
+  return true;
+}
 
 const NOM_ATTRIBUT = "data-agent-id";
 const PREFIXE_ID = "el";
@@ -65,16 +120,21 @@ function tronquer(texte: string): string {
   return `${texte.slice(0, LONGUEUR_MAX_DESCRIPTION - 1).trimEnd()}…`;
 }
 
+/** Vrai pour tout élément sur lequel on peut agir, qu'il ait un rôle ou non. */
+export function estElementInteractif(element: HTMLElement): boolean {
+  return element.matches(SELECTEURS_ELEMENTS_INTERACTIFS) || reagitAuClicSansRole(element);
+}
+
 /**
  * Description automatique d'un élément, jamais écrite à la main.
  * Ordre de priorité : texte visible, puis aria-label, puis title, puis
- * placeholder (utile pour les champs de saisie) -- et un texte
- * générique de repli si rien de tout ça n'est disponible, jamais une
- * chaîne vide.
+ * placeholder (utile pour les champs de saisie), puis nomDeSecours
+ * (libellés référencés, icône, position) : jamais une chaîne vide ni un
+ * texte générique qui ne désigne aucun bouton précis.
  */
 export function decrireElement(element: HTMLElement): string {
   const texteVisible = nettoyerTexte(element.textContent);
-  if (texteVisible) return tronquer(texteVisible);
+  if (texteVisible.length > 1) return tronquer(texteVisible);
 
   const ariaLabel = nettoyerTexte(element.getAttribute("aria-label"));
   if (ariaLabel) return tronquer(ariaLabel);
@@ -82,44 +142,49 @@ export function decrireElement(element: HTMLElement): string {
   const title = nettoyerTexte(element.getAttribute("title"));
   if (title) return tronquer(title);
 
+  // Un seul caractère (x, ×, …) ne vaut qu'à défaut de tout libellé : il ne
+  // désigne aucun bouton quand un aria-label ou un titre existe.
+  if (texteVisible) return texteVisible;
+
   const placeholder = nettoyerTexte(element.getAttribute("placeholder"));
   if (placeholder) return tronquer(placeholder);
 
-  const balise = element.tagName.toLowerCase();
-  return `élément ${balise} sans texte visible`;
+  return tronquer(nomDeSecours(element));
 }
 
-// Nom de l'attribut posé par les composants sur leur zone principale
-// (barre latérale, page, fenêtre flottante...). Le libellé vient donc du
-// composant lui même, jamais d'une liste écrite ici.
-const ATTRIBUT_ZONE = "data-agent-zone";
-
 // Longueur maximale d'une ligne de la liste vue par Clovis, alignée sur
-// la coupe faite côté backend.
-const LONGUEUR_MAX_POUR_IA = 100;
+// la coupe faite côté backend (core/construction_system_prompt.py).
+const LONGUEUR_MAX_POUR_IA = 220;
+// Un nom plus court que ça serait inutilisable : le préfixe et les notes
+// cèdent la place avant lui.
+const LONGUEUR_MIN_NOM = 30;
 
 /**
  * Description destinée à Clovis dans la liste des éléments à l'écran
  * (jamais affichée à l'étudiant, elle ne remplace donc pas
- * decrireElement pour la bulle et le journal). Ajoutée le 20/09/2026
- * (Bourama : "il décide d'ouvrir des sections là où il est déjà") :
- * jusque là, Clovis ne recevait que le nom du bouton, sans savoir où il
- * se trouve (deux boutons de même nom sont indiscernables) ni si la
- * page qu'il représente est celle qui est déjà ouverte.
+ * decrireElement pour la bulle et le journal). Chaque ligne dit : où se trouve
+ * l'élément (fenêtre, panneau, menu, zone), comment il s'appelle, dans quel
+ * état il est (désactivé, ouvert, fermé, coché...) et, pour un bouton agrandir
+ * ou plein écran, ce qu'il agrandit. Ajoutée le 20/09/2026 (Bourama : "il
+ * décide d'ouvrir des sections là où il est déjà"), étendue en octobre 2026.
  */
-export function decrirePourIA(element: HTMLElement): string {
+export function decrirePourIA(element: HTMLElement, cacheZones?: CacheZones): string {
   const base = decrireElement(element);
-  const zone = nettoyerTexte(element.closest(`[${ATTRIBUT_ZONE}]`)?.getAttribute(ATTRIBUT_ZONE));
+  const zone = zoneDeLElement(element, cacheZones);
   const courant = element.getAttribute("aria-current");
   const estPageActuelle = Boolean(courant) && courant !== "false";
 
-  const prefixe = zone ? `${zone}, ` : "";
-  const suffixe = estPageActuelle ? " (page actuelle, déjà ouverte)" : "";
-  // Le backend coupe chaque ligne à 100 caractères quand il construit la
-  // liste de Clovis (core/construction_system_prompt.py) : on raccourcit
-  // le nom du bouton plutôt que de laisser cette coupe effacer la fin de
-  // la ligne, où se trouve l'indication de page actuelle.
-  const place = LONGUEUR_MAX_POUR_IA - prefixe.length - suffixe.length;
+  const notes: string[] = [];
+  if (estPageActuelle) notes.push("page actuelle, déjà ouverte");
+  notes.push(...etatsDeLElement(element));
+  if (estUnBoutonAgrandir(element, base)) notes.push(cibleDeLAgrandissement(element, cacheZones));
+
+  const prefixe = zone ? `${zone.libelle}, ` : "";
+  const suffixe = notes.length > 0 ? ` (${notes.join(", ")})` : "";
+  // Le backend coupe chaque ligne : on raccourcit le nom du bouton plutôt que
+  // de laisser cette coupe effacer la fin de la ligne, où se trouvent l'état
+  // et la cible d'un agrandissement.
+  const place = Math.max(LONGUEUR_MAX_POUR_IA - prefixe.length - suffixe.length, LONGUEUR_MIN_NOM);
   const nom = base.length > place ? `${base.slice(0, Math.max(place - 1, 10)).trimEnd()}…` : base;
   return `${prefixe}${nom}${suffixe}`;
 }
@@ -149,14 +214,18 @@ export function decrirePourIA(element: HTMLElement): string {
 export function scannerElementsInteractifs(): ElementInteractifDetecte[] {
   if (typeof document === "undefined") return [];
 
-  const elements = document.querySelectorAll<HTMLElement>(SELECTEURS_ELEMENTS_INTERACTIFS);
+  const elements = document.body ? document.body.querySelectorAll<HTMLElement>("*") : [];
   const resultat: ElementInteractifDetecte[] = [];
   // Un seul cache par scan : les éléments partagent les mêmes parents.
   const cache: CacheAffichage = new Map();
+  const cacheZones: CacheZones = new Map();
 
   for (const element of elements) {
     if (element.closest("[data-agent-superposition]")) continue;
-    if (!estVisibleEtActif(element, cache)) continue;
+    if (!estElementInteractif(element)) continue;
+    // Un bouton grisé mais bien affiché reste dans la liste, marqué désactivé :
+    // l'IA doit savoir qu'il existe et qu'il ne répondra pas.
+    if (!estVisibleEtActif(element, cache, { accepterDesactive: true })) continue;
 
     let id = idsConnus.get(element);
     if (!id) {
@@ -168,7 +237,7 @@ export function scannerElementsInteractifs(): ElementInteractifDetecte[] {
 
     resultat.push({
       id,
-      description: decrirePourIA(element),
+      description: decrirePourIA(element, cacheZones),
       continuerEnArrierePlan: false,
     });
   }

@@ -260,6 +260,13 @@ export function estMasqueParAutreElement(element: HTMLElement, cache?: CacheAffi
 }
 
 /**
+ * accepterDesactive : un bouton désactivé mais bien affiché reste visible.
+ * Le scan s'en sert pour que l'IA connaisse aussi les boutons grisés (et sache
+ * qu'ils ne répondront pas), au lieu de les ignorer.
+ */
+export type OptionsVisibilite = { accepterDesactive?: boolean };
+
+/**
  * Vrai si l'élément est réellement visible et actionnable à l'instant
  * présent -- jamais mémorisé, toujours recalculé au moment de l'appel
  * (même principe que obtenirActionsDisponibles pour le chantier A).
@@ -267,8 +274,8 @@ export function estMasqueParAutreElement(element: HTMLElement, cache?: CacheAffi
  * fois le style de chaque parent commun. Un élément recouvert par une
  * popup ou une fenêtre n'est PAS disponible (voir estMasqueParAutreElement).
  */
-export function estVisibleEtActif(element: HTMLElement, cache?: CacheAffichage): boolean {
-  return estVisibleEtActifSansMasquage(element, cache) && !estMasqueParAutreElement(element, cache);
+export function estVisibleEtActif(element: HTMLElement, cache?: CacheAffichage, options?: OptionsVisibilite): boolean {
+  return estVisibleEtActifSansMasquage(element, cache, options) && !estMasqueParAutreElement(element, cache);
 }
 
 /**
@@ -276,9 +283,11 @@ export function estVisibleEtActif(element: HTMLElement, cache?: CacheAffichage):
  * sert à savoir si un élément est bien là mais recouvert (pour le dire
  * clairement à Clovis) plutôt que simplement absent.
  */
-export function estVisibleEtActifSansMasquage(element: HTMLElement, cache?: CacheAffichage): boolean {
-  if (element.hasAttribute("disabled")) return false;
-  if (element.getAttribute("aria-disabled") === "true") return false;
+export function estVisibleEtActifSansMasquage(element: HTMLElement, cache?: CacheAffichage, options?: OptionsVisibilite): boolean {
+  if (!options?.accepterDesactive) {
+    if (element.hasAttribute("disabled")) return false;
+    if (element.getAttribute("aria-disabled") === "true") return false;
+  }
 
   const rect = element.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return false;

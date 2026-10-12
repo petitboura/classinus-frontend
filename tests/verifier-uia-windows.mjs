@@ -42,7 +42,16 @@ $champ = New-Object Windows.Forms.TextBox
 $champ.Text='Valeur fenêtre Windows'; $champ.Left=30; $champ.Top=140; $champ.Width=250
 $secret = New-Object Windows.Forms.TextBox
 $secret.Text='SECRET-INTERDIT'; $secret.UseSystemPasswordChar=$true; $secret.Left=30; $secret.Top=190
-$form.Controls.AddRange(@($label,$bouton,$champ,$secret,$case))
+# Bouton sans aucun libelle (comme un bouton d'icone) et bouton dans un panneau nomme :
+# l'IA doit les voir, designer le premier par son identifiant et connaitre le panneau du second.
+$sansLibelle = New-Object Windows.Forms.Button
+$sansLibelle.Text=''; $sansLibelle.Left=700; $sansLibelle.Top=90; $sansLibelle.Width=60
+$groupe = New-Object Windows.Forms.GroupBox
+$groupe.Text='Panneau essai'; $groupe.Left=30; $groupe.Top=260; $groupe.Width=300; $groupe.Height=90
+$dansGroupe = New-Object Windows.Forms.Button
+$dansGroupe.Text='Dans le panneau'; $dansGroupe.Left=10; $dansGroupe.Top=30; $dansGroupe.Width=150
+$groupe.Controls.Add($dansGroupe)
+$form.Controls.AddRange(@($label,$bouton,$champ,$secret,$case,$sansLibelle,$groupe))
 # Menu Windows natif (classe #32768), comme Bloc-notes ou l'Explorateur : un ContextMenuStrip
 # WinForms n'expose aucun element a UI Automation et ne represente donc pas les vraies applications.
 $menu = New-Object Windows.Forms.ContextMenu
@@ -104,6 +113,11 @@ try {
     assert(lecture.elements.some(e=>e.valeur==='Valeur fenêtre Windows' || e.nom==='Valeur fenêtre Windows'));
     assert(lecture.elements.some(e=>e.valeur_masquee));
     assert(!JSON.stringify(lecture).includes('SECRET-INTERDIT'));
+    // Base de la vision de l'ecran : un bouton sans nom reste dans la lecture, avec la nature
+    // (classe BUTTON) et la position qui permettent a l'IA de le designer.
+    assert(lecture.elements.some(e=>e.nom==='' && !e.valeur_masquee && /button/i.test(e.classe ?? '') && Number.isFinite(e.x)),JSON.stringify(lecture));
+    // Le nom du panneau qui contient un element est indique.
+    assert(lecture.elements.some(e=>e.nom==='Dans le panneau' && e.panneau==='Panneau essai'),JSON.stringify(lecture));
   };
   const premiere = await lireFenetreAuPremierPlan({},etat.superposition);
   if (premiere.mode !== 'uia') {
@@ -114,7 +128,26 @@ try {
     const trace = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from(diagnostic,'utf16le').toString('base64')],{encoding:'utf8'});
     console.log('Diagnostic UIA :',trace.stdout);
   }
-  verifier(premiere);
+  try {
+    verifier(premiere);
+  } catch (erreur) {
+    // Le journal d'un job GitHub n'est lisible qu'a la main : un message ::error:: devient une
+    // annotation, relisible aussi par l'API. On y met ce qui a ete lu, pour voir ce qui manque.
+    const resume = premiere.elements.map(e=>`${e.type}|${e.nom}|id=${e.id_auto??''}|panneau=${e.panneau??''}`).join(' ;; ');
+    console.log('::error title=Lecture UIA::' + String(erreur.message).split('\n')[0].slice(0,200) + ' => ' + resume.slice(0,1500));
+    try {
+      const trace = construireScript(limitesDepuisParametres({}),process.pid,etat.superposition)
+        .replace('$script:elements =', '$script:traces = New-Object System.Collections.Generic.List[object]\n  $script:elements =')
+        .replace('if ($el.Cached.IsOffscreen)', '$script:traces.Add(\"$($el.Cached.ControlType.ProgrammaticName)|nom=$($el.Cached.Name)|id=$($el.Cached.AutomationId)|hors=$($el.Cached.IsOffscreen)|invoke=$($el.GetCachedPropertyValue($AE::IsInvokePatternAvailableProperty))|focus=$($el.Cached.IsKeyboardFocusable)|classe=$($el.Cached.ClassName)|rect=$($el.Cached.BoundingRectangle)\")\n    if ($el.Cached.IsOffscreen)')
+        .replace('$resultat.coupe = $script:coupe', '$resultat.trace = $script:traces\n  $resultat.coupe = $script:coupe');
+      const fichierTrace = join(dossier,'trace.ps1');
+      await writeFile(fichierTrace, '\uFEFF' + trace);
+      const sortieTrace = await promisify(execFile)('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',fichierTrace],{encoding:'utf8',maxBuffer:20*1024*1024});
+      const lecture = JSON.parse(sortieTrace.stdout);
+      console.log('::error title=Trace UIA::' + (lecture.trace ?? []).join(' ;; ').slice(0,3500));
+    } catch (e) { console.log('::error title=Trace UIA indisponible::' + String(e.message).slice(0,300)); }
+    throw erreur;
+  }
   const moduleClic=join(dossier,'clic.mjs');
   await build({entryPoints:[resolve(import.meta.dirname,'../packages/capacitor-pont-natif-electron/electron/src/clicWindows.mts')],outfile:moduleClic,bundle:true,platform:'node',format:'esm'});
   const {cliquerParAccessibiliteWindows}=await import(pathToFileURL(moduleClic).href);
