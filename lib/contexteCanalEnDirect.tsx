@@ -27,6 +27,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { definirConversationCanal } from "./conversationPartagee";
 import {
+  abonnerArretTache,
   abonnerEtatTacheCanal,
   arreterTacheCanal,
   continuerTacheInterrompue,
@@ -409,6 +410,10 @@ export function useFournirCanalEnDirect(): ValeurCanalEnDirect {
     epingleJusqua.current = 0;
     setDernierTexte(null);
   }, []);
+
+  // Bouton Arrêter (12/10/2026, demande Bourama : « arrêter c'est arrêter ») : le commentaire de
+  // Clovis encore affiché disparaît avec la tâche qu'il accompagnait.
+  useEffect(() => abonnerArretTache(effacerTexte), [effacerTexte]);
 
   const afficherTexte = useCallback((texte: string, options?: OptionsAfficherTexte) => {
     // Un commentaire de Clovis encore dans sa durée d'affichage n'est pas
