@@ -49,6 +49,19 @@ export function idYoutube(href: string): string | null {
   return null;
 }
 
+// 12/10/2026, demande de Bourama : la dernière ligne de la carte est toujours l'adresse
+// du site (son nom de domaine), jamais le titre ou le nom que le site se donne (og:site_name),
+// qui apparaissait à la place quand l'aperçu avait une image. Calculée depuis le lien lui-même,
+// donc identique avec ou sans image.
+function adresseSite(href: string, repli: string): string {
+  try {
+    const hote = new URL(href).hostname;
+    return hote.startsWith("www.") ? hote.slice(4) : hote || repli;
+  } catch {
+    return repli;
+  }
+}
+
 type Apercu = { titre: string | null; image: string | null; description: string | null; siteName: string };
 
 // Lecteur YouTube embarqué (31/07, demande Bourama : "ça se lit
@@ -258,7 +271,7 @@ export function LinkPreview({
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
-          <span className="block truncate text-[11px] text-dj-texte-muet">{apercu!.siteName}</span>
+          <span className="block truncate text-[11px] text-dj-texte-muet">{idVideo ? apercu!.siteName : adresseSite(href, apercu!.siteName)}</span>
         </span>
         {!idVideo && <ExternalLink size={13} className="shrink-0 text-dj-texte-muet" />}
       </button>
@@ -338,7 +351,7 @@ export function LinkPreview({
         {descriptionLien && (
           <span className={`block text-[12px] leading-snug text-dj-texte-muet ${detaille ? "" : "line-clamp-2"}`}>{descriptionLien}</span>
         )}
-        <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.siteName}</span>
+        <span className="block truncate text-[12px] text-dj-texte-muet">{adresseSite(href, apercu!.siteName)}</span>
         {detaille && titreDuModele && apercu!.titre && apercu!.titre !== titreDuModele && (
           <span className="block text-[11px] text-dj-texte-muet">{apercu!.titre}</span>
         )}
