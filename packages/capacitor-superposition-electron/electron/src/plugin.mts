@@ -378,6 +378,35 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
 }
 
 
+// Saisie au clavier dans la superposition (12/10/2026, demande de Bourama). Sous Windows la
+// superposition nait NON activable (electron/main.ts) : un clic sur elle n'active plus sa
+// fenetre, donc la fenetre qui est derriere ne se fige plus. Elle ne devient activable que le
+// temps que l'etudiant ecrit dans une de ses zones de texte ; setFocusable(false) rend alors
+// aussi l'activation a la fenetre du dessous. Ailleurs qu'a Windows, rien ne change.
+let saisieTexteActive = false;
+
+function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
+  if (fenetre.isDestroyed()) return;
+  if (process.platform !== "win32") {
+    if (actif && !fenetre.isFocused()) fenetre.focus();
+    return;
+  }
+  if (actif === saisieTexteActive) {
+    if (actif && !fenetre.isFocused()) fenetre.focus();
+    return;
+  }
+  saisieTexteActive = actif;
+  if (actif) {
+    fenetre.setFocusable(true);
+    // setFocusable remet la fenetre dans la barre des taches : on l'en retire de nouveau.
+    fenetre.setSkipTaskbar(true);
+    fenetre.focus();
+  } else {
+    fenetre.setFocusable(false);
+    fenetre.setSkipTaskbar(true);
+  }
+}
+
 // Visibilite (01/10/2026, demande Bourama, remplace le correctif du 28/09/2026
 // qui cachait la superposition tant que le canal etait inactif) : le bouton
 // d'activation du canal doit etre disponible a tout moment, fenetre principale
@@ -409,6 +438,11 @@ function essayerAffichageSuperposition(essai: number) {
   if (superposition && !superposition.isDestroyed()) {
     superpositionAffichee = true;
     superposition.showInactive();
+    // L'etudiant clique dans une autre fenetre : la superposition perd le focus, elle redevient
+    // non activable (rien a rendre : c'est deja l'autre fenetre qui est active).
+    superposition.on("blur", () => {
+      if (saisieTexteActive) definirSaisieTexte(superposition, false);
+    });
     demarrerSuiviSouris();
     return;
   }
@@ -437,7 +471,10 @@ function retirerSuperposition() {
   superpositionAffichee = false;
   arreterSuiviSouris();
   const superposition = trouverFenetreSuperposition();
-  if (superposition && !superposition.isDestroyed()) superposition.hide();
+  if (superposition && !superposition.isDestroyed()) {
+    definirSaisieTexte(superposition, false);
+    superposition.hide();
+  }
 }
 
 // Demarrage automatique avec Windows (01/10/2026, demande Bourama), reglage
@@ -565,6 +602,14 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     if (!raccourcisCrayon.definirTouches(touches)) throw new Error("Touches du crayon invalides (trois touches differentes attendues).");
   }
 
+  // Appelee par la page de superposition quand l'etudiant ecrit (ou arrete d'ecrire) dans une
+  // de ses zones de texte, voir lib/superpositionElectron.ts (definirSaisieTexteSuperposition).
+  async definirSaisieTexte(parametres: { actif: boolean }): Promise<void> {
+    const superposition = trouverFenetreSuperposition();
+    if (!superposition || superposition.isDestroyed()) return;
+    definirSaisieTexte(superposition, parametres.actif === true);
+  }
+
   async definirModeCrayon(parametres: { actif: boolean }): Promise<void> {
     crayonActif = parametres.actif === true;
     const superposition = trouverFenetreSuperposition();
@@ -597,6 +642,6 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "definirModeCrayon", "definirRaccourcisCrayon", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "definirSaisieTexte", "definirModeCrayon", "definirRaccourcisCrayon", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
   SuperpositionAgentImpl
 );

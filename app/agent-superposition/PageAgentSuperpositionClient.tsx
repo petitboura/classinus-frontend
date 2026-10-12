@@ -50,6 +50,8 @@ import {
   marquerFenetreSuperposition,
   ecouterEtatSuperposition,
   maintenirCaptureSuperposition,
+  definirSaisieTexteSuperposition,
+  estZoneDeTexte,
   interactionsSuperposition,
   type EtatSuperposition,
   type MarqueEcranAffichee,
@@ -180,6 +182,33 @@ export default function PageAgentSuperposition() {
       window.removeEventListener("pointerup", surRelache, true);
       window.removeEventListener("pointercancel", surRelache, true);
       window.removeEventListener("blur", surRelache);
+    };
+  }, []);
+
+  // Clavier (12/10/2026) : la superposition n'est activable par Windows que pendant que
+  // l'etudiant ecrit. Un appui dans une zone de texte la rend activable ; quand le texte
+  // perd le focus vers autre chose qu'une zone de texte, elle redevient non activable et
+  // la fenetre du dessous reprend la main.
+  useEffect(() => {
+    function surAppuiTexte(e: PointerEvent) {
+      if (estZoneDeTexte(e.target instanceof Element ? e.target : null)) definirSaisieTexteSuperposition(true);
+    }
+    function surFocusTexte(e: FocusEvent) {
+      if (estZoneDeTexte(e.target instanceof Element ? e.target : null)) definirSaisieTexteSuperposition(true);
+    }
+    function surPerteFocusTexte(e: FocusEvent) {
+      if (!estZoneDeTexte(e.target instanceof Element ? e.target : null)) return;
+      // Passage d'une zone de texte a une autre : on garde le clavier.
+      if (estZoneDeTexte(e.relatedTarget instanceof Element ? e.relatedTarget : null)) return;
+      definirSaisieTexteSuperposition(false);
+    }
+    document.addEventListener("pointerdown", surAppuiTexte, true);
+    document.addEventListener("focusin", surFocusTexte, true);
+    document.addEventListener("focusout", surPerteFocusTexte, true);
+    return () => {
+      document.removeEventListener("pointerdown", surAppuiTexte, true);
+      document.removeEventListener("focusin", surFocusTexte, true);
+      document.removeEventListener("focusout", surPerteFocusTexte, true);
     };
   }, []);
 

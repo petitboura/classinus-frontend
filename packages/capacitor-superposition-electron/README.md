@@ -57,3 +57,15 @@ npx cap run @capawesome/capacitor-electron
 Critere de fin du Lot R (voir le plan) : appli Electron lancee, ouvrir le
 Bloc-notes ou un site quelconque au premier plan -- le curseur, la bulle, la
 barre de saisie et le journal restent visibles et utilisables par dessus.
+
+## Focus et clavier (12/10/2026)
+
+Sous Windows, la fenetre de superposition nait non activable (`focusable: false`
+dans `electron/main.ts`) : un clic sur la bulle, un bouton ou le crayon arrive
+normalement mais n'active pas la superposition, donc la fenetre qui est derriere
+ne se fige plus. `definirSaisieTexte({ actif })` la rend activable seulement
+pendant que l'etudiant ecrit dans une de ses zones de texte (la page l'appelle
+depuis `PageAgentSuperpositionClient.tsx` et `ControlesInteractionCanal.tsx`),
+puis la rend non activable, ce qui redonne aussi l'activation a la fenetre du
+dessous. Perte de focus de la superposition : elle redevient non activable seule.
+Hors Windows, rien ne change.

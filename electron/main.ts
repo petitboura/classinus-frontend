@@ -125,12 +125,16 @@ capacitorApp.whenReady.then(() => {
     maximizable: false,
     fullscreenable: false,
     skipTaskbar: true,
-    // focusable: false retire le 28/09/2026 : sous Windows, une fenetre non
-    // focusable ne recoit jamais le clavier, donc la barre de saisie texte
-    // de la superposition (ControlesInteractionCanal.tsx) n'aurait pas pu
-    // ecrire. La fenetre apparait toujours sans voler le focus (voir
-    // showInactive plus bas) ; elle ne le prend que si l'etudiant clique
-    // lui meme sur un de ses elements.
+    // Windows, 12/10/2026 (demande de Bourama) : la superposition ne doit jamais etre
+    // activee par un simple clic (bulle, boutons, crayon), sinon la fenetre qui est
+    // derriere se fige, comme inactive, jusqu'a ce qu'on y reclique. Elle nait donc non
+    // activable : les clics arrivent normalement mais ne lui donnent pas le focus. Le
+    // plugin SuperpositionAgent (definirSaisieTexte) ne la rend activable que pendant que
+    // l'etudiant ecrit dans une de ses zones de texte, puis la rend aussitot.
+    // (Avant, focusable etait laisse vrai depuis le 28/09/2026 pour que la barre de saisie
+    // puisse recevoir le clavier, d'ou le blocage de la fenetre du dessous.)
+    // La fenetre apparait toujours sans voler le focus (voir showInactive plus bas).
+    focusable: process.platform !== 'win32',
     show: false,
     webPreferences: {
       sandbox: true,

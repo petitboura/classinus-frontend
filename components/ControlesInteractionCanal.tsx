@@ -19,6 +19,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, ArrowUpRight, AudioLines, Camera, ChevronDown, ChevronUp, Mic, Minimize2, PenLine, Pin, Square } from "lucide-react";
 import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { definirSaisieTexteSuperposition } from "@/lib/superpositionElectron";
 import { createPortal } from "react-dom";
 import { ApparitionBoutonCanal } from "@/components/ApparitionBoutonCanal";
 import { BoutonJournalAgent } from "@/components/BoutonJournalAgent";
@@ -150,11 +151,36 @@ export function ControlesInteractionCanal({
     if (panneauOuvert) champRef.current?.focus();
   }, [panneauOuvert]);
 
+  // Clavier dans la superposition Electron (12/10/2026, demande de Bourama) : elle ne prend
+  // jamais le focus d'elle même, pour ne pas figer la fenêtre qui est derrière. Quand
+  // l'étudiant ouvre la zone d'écriture, ou son plein écran, elle devient activable le
+  // temps d'écrire. Exception : la zone ouverte seule à la fin d'un trait du crayon ne
+  // prend pas le clavier tant que l'étudiant n'a pas cliqué dedans (sinon la fenêtre
+  // entourée se figerait à chaque trait). Sans effet hors de la superposition.
+  const panneauOuvertParCrayon = useRef(false);
+  useEffect(() => {
+    if (!panneauOuvert) {
+      panneauOuvertParCrayon.current = false;
+      return;
+    }
+    if (panneauOuvertParCrayon.current) return;
+    definirSaisieTexteSuperposition(true);
+    return () => definirSaisieTexteSuperposition(false);
+  }, [panneauOuvert]);
+  useEffect(() => {
+    if (!pleinEcran) return;
+    definirSaisieTexteSuperposition(true);
+    return () => definirSaisieTexteSuperposition(false);
+  }, [pleinEcran]);
+
   // Dès qu'un trait est terminé, la zone d'écriture et son bouton Envoyer s'affichent d'eux
   // mêmes : plus besoin d'entourer puis de cliquer sur Écrire (demande de Bourama, 11/10/2026).
   // Ne se relance qu'à la fin d'un trait : si l'étudiant ferme la zone, elle reste fermée.
   useEffect(() => {
-    if (actif && crayonDisponible && !crayon.dessine && traitsAJoindre(crayon)) setPanneauOuvert(true);
+    if (actif && crayonDisponible && !crayon.dessine && traitsAJoindre(crayon)) {
+      if (!panneauOuvert) panneauOuvertParCrayon.current = true;
+      setPanneauOuvert(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- seulement à la fin d'un trait.
   }, [crayon.dessine, crayon.traits.length]);
 
