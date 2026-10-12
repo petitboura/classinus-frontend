@@ -43,6 +43,7 @@ import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
 import { creerGardeClavier } from "./gardeClavier.mjs";
 import { taperTexteAdapte, nettoyerTexteFrappe } from "./frappeAdaptee.mjs";
 import { cibleDepuisParametres, cibleCorrespond, messageMauvaiseCible, messageFrappeInterrompue } from "./cibleSaisie.mjs";
+import { ecrireEnArrierePlanWindows, activerFenetreParTitreWindows, RAISON_FENETRE_INTROUVABLE } from "./ecritureArrierePlan.mjs";
 import { creerCollage, type PressePapiers } from "./collageFrappe.mjs";
 import { creerArretGlobal } from "./arretGlobal.mjs";
 import {
@@ -313,6 +314,50 @@ async function applicationAuPremierPlan(): Promise<{
   return { statut: "identifiee", application: lecture.application, titre: lecture.titre_fenetre_active };
 }
 
+// Ecriture dans une fenêtre qui n'est pas devant (12/10/2026, demande de Bourama). Renvoie
+// { fini: true, resultat } quand tout est dit (écrit en arrière plan, ou refus à expliquer),
+// ou { fini: false } quand la fenêtre visée vient d'être mise devant, avec l'annonce faite : le
+// clavier prend alors le relais comme avant.
+async function ecrireDerriereOuBasculer(
+  cible: string,
+  texte: string,
+  parametres: Record<string, unknown>,
+  titreDevant: string | null,
+): Promise<{ fini: true; resultat: Record<string, unknown> } | { fini: false }> {
+  const mauvaiseCible = { fini: true as const, resultat: { erreur: messageMauvaiseCible(cible, titreDevant) } };
+  if (process.platform !== "win32") return mauvaiseCible;
+  const liste = listeDepuisParametres(parametres);
+  let arriere = await ecrireEnArrierePlanWindows({ cible, texte, applicationsProtegees: liste });
+  if (arriere.statut === "protegee") {
+    const refus = await demanderAccord(`Clovis veut écrire dans ${arriere.fenetre}. Autoriser cette fois ?`, arriere.fenetre, parametres);
+    if (refus) return { fini: true, resultat: { erreur: refus } };
+    arriere = await ecrireEnArrierePlanWindows({ cible, texte, applicationsProtegees: liste, forcer: true });
+  }
+  if (arriere.statut === "effectue") {
+    return { fini: true, resultat: { ok: true, mode: "arriere_plan", fenetre: arriere.fenetre } };
+  }
+  if (arriere.statut === "incertain") {
+    return { fini: true, resultat: { erreur: `${arriere.raison}. Je ne réessaie pas, pour ne pas écrire le texte deux fois. Regarde la fenêtre « ${cible} » avant de continuer.` } };
+  }
+  if (arriere.statut === "protegee") return mauvaiseCible;
+  // Fenêtre introuvable : rien à passer devant, le modèle doit choisir une fenêtre qui existe.
+  if (arriere.raison === RAISON_FENETRE_INTROUVABLE) return mauvaiseCible;
+  // L'application ne se laisse pas écrire derrière : on prévient, puis on passe devant.
+  try {
+    await annoncerUtilisationCurseurReel(
+      `Je ne peux pas écrire dans « ${cible} » sans la mettre devant. Je la passe devant et j'écris avec ton clavier. Tu peux m'arrêter avec Échap.`
+    );
+  } catch {
+    return { fini: true, resultat: { erreur: "L'annonce n'a pas pu être affichée. Je n'ai rien écrit et je n'ai pas pris ton clavier." } };
+  }
+  const devant = await activerFenetreParTitreWindows(cible);
+  if (devant.statut !== "effectue") {
+    return { fini: true, resultat: { erreur: `Je n'ai pas pu mettre « ${cible} » devant. Rien n'a été écrit.` } };
+  }
+  await new Promise<void>(resolve => setTimeout(resolve, 350));
+  return { fini: false };
+}
+
 // Pose la question à l'étudiant et attend. Renvoie null si l'action est autorisée, sinon le
 // message à donner à Clovis (action NON faite).
 async function demanderAccord(texte: string, nom: string, parametres: Record<string, unknown>): Promise<string | null> {
@@ -430,15 +475,28 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         } catch {
           depart = { identifiant: null, titre: null };
         }
-        const titreFenetre = depart.titre;
-        // Le clavier est-il dans la fenêtre annoncée ? Le titre d'abord (rapide), le nom du
+        // La fenêtre visée est-elle celle qui est devant ? Le titre d'abord (rapide), le nom du
         // programme seulement si le titre ne suffit pas.
         let bonneFenetre = cibleCorrespond(cible, depart.titre, null);
         if (!bonneFenetre) {
           const programme = await applicationAuPremierPlan();
           bonneFenetre = cibleCorrespond(cible, depart.titre, programme.application);
         }
-        if (!bonneFenetre) return { erreur: messageMauvaiseCible(cible, depart.titre) };
+        if (!bonneFenetre) {
+          // 12/10/2026 (demande de Bourama) : la fenêtre visée n'est pas devant, l'étudiant
+          // travaille ailleurs. On écrit dedans en arrière plan, sans clavier ni souris. Si
+          // l'application ne le permet pas, Classinus prévient, passe la fenêtre devant et
+          // écrit au clavier sans s'arrêter ; l'étudiant peut l'arrêter avec Échap.
+          const issue = await ecrireDerriereOuBasculer(cible, texte, parametres, depart.titre);
+          if (issue.fini) return issue.resultat;
+          try {
+            depart = await lireFenetreActive();
+          } catch {
+            depart = { identifiant: null, titre: null };
+          }
+          if (!cibleCorrespond(cible, depart.titre, null)) return { erreur: messageMauvaiseCible(cible, depart.titre) };
+        }
+        const titreFenetre = depart.titre;
         const refusClavier = await verifierAccordClavier(parametres, "écrire");
         if (refusClavier) return { erreur: refusClavier };
         // Même fenêtre qu'au départ ? Avec l'identifiant quand il est connu, sinon avec le

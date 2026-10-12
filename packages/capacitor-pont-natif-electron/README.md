@@ -167,3 +167,19 @@ Logique de conversion et de choix dans `electron/src/zonesCrayon.mts`, testee pa
 d'ecriture du canal (`components/ControlesInteractionCanal.tsx`) l'appelle quand un dessin attend, voir `lib/envoiCrayon.ts`. Conversion d'ecran et lecture reelle non verifiees sur un
 vrai Windows au moment de l'ecriture : a controler au premier essai, notamment sur un ecran mis
 a l'echelle (125 % ou 150 %).
+
+## Ecriture en arriere plan (12/10/2026)
+
+Quand la fenetre visee par `taper_clavier` (parametre `cible`) n'est PAS celle qui est
+devant, `ecritureArrierePlan.mts` ecrit le texte directement dans son champ de texte par
+UI Automation (ValuePattern), AJOUTE A LA FIN du champ, sans la mettre devant, sans
+clavier et sans souris. Echecs surs : avant l'ecriture, tout echec renvoie "indisponible" ;
+des que le fichier marqueur est pose, tout echec renvoie "incertain" et rien n'est rejoue.
+Application protegee : l'accord de l'etudiant est demande avant d'ecrire.
+
+Si l'application ne le permet pas (champ absent, plusieurs champs sans focus, champ non
+modifiable par accessibilite), Classinus annonce, met la fenetre devant et ecrit au
+clavier sans s'arreter ; l'etudiant peut arreter avec Echap. Fenetre introuvable : rien
+n'est fait, Clovis est prevenu. Si la fenetre visee est deja devant, la frappe touche par
+touche reste celle d'avant. Test : `npm run test:ecriture-arriere-plan` (le script
+PowerShell lui meme ne se verifie que sur un vrai Windows).
