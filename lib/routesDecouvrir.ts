@@ -43,4 +43,12 @@ export const ROUTES_DECOUVRIR = {
     videos: "/decouvrir/usages/trouver-des-videos",
     etudier: "/decouvrir/usages/etudier",
   },
+  bureau: {
+    accueil: "/decouvrir/bureau",
+    programme: "/decouvrir/bureau/programme",
+    codes: "/decouvrir/bureau/codes",
+    entrerCode: "/decouvrir/bureau/entrer-code",
+    audit: "/decouvrir/bureau/audit",
+    signalements: "/decouvrir/bureau/signalements",
+  },
 } as const;

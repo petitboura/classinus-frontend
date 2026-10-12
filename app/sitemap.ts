@@ -110,6 +110,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // on cherche une appli pour trouver des PDF, apprendre à coder, trouver
     // des vidéos ou étudier. Adresses prises dans ROUTES_DECOUVRIR.
     ...Object.values(ROUTES_DECOUVRIR.usages).map((href) => ({ url: `${URL_BASE}${href}`, priority: 0.8 })),
+    { url: `${URL_BASE}/decouvrir/bureau` },
+    { url: `${URL_BASE}/decouvrir/bureau/programme` },
+    { url: `${URL_BASE}/decouvrir/bureau/codes` },
+    { url: `${URL_BASE}/decouvrir/bureau/entrer-code` },
+    { url: `${URL_BASE}/decouvrir/bureau/audit` },
+    { url: `${URL_BASE}/decouvrir/bureau/signalements` },
     ...bibliotheque,
     ...skills,
     ...etablissements,
