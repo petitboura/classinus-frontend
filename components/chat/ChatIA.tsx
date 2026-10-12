@@ -11,7 +11,7 @@ import { PopupFeedback } from "./PopupFeedback";
 import { StatutOutil, EtatStatut } from "./StatutOutil";
 import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
-import { mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
+import { arreterToutLocalEtServeur, mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
 import { traiterFichiersJoints, typeDeFichier } from "@/lib/preparerPiecesJointes";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
 import { definirModeleProchainMessage, lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
@@ -1566,7 +1566,22 @@ export function ChatIA({
   // interrompue" (BandeauReponseInterrompue.tsx). Rien à faire ici pour
   // CE marquage : .abort() déclenche l'AbortError qui, lui, s'en charge
   // dans le catch de la fonction en cours.
+  //
+  // 12/10/2026, demande Bourama (« arrêter c'est arrêter ») : couper la requête ne suffisait pas.
+  // Le serveur reçoit maintenant la demande d'arrêt (outils et boucle d'agent), la voix et la
+  // frappe du canal se coupent, et les outils encore « en cours » passent en « annulée » (leur
+  // ligne ne doit pas continuer de tourner à l'écran).
   function arreterGeneration() {
+    setStatuts((prec) =>
+      prec.some((s) => s.etat === "en_cours")
+        ? prec.map((s) =>
+            s.etat === "en_cours"
+              ? { ...s, texte: `${(s.nomLisible || s.texte.replace(/\.{3}$/, "")).trim()} annulée`, etat: "annule" as EtatStatut }
+              : s
+          )
+        : prec
+    );
+    arreterToutLocalEtServeur();
     controleurAbandonRef.current?.abort();
   }
 

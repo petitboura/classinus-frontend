@@ -10,6 +10,8 @@
 // Le canal n'a pas à savoir laquelle tourne : arreterTacheCanal coupe celle qui est
 // en cours, continuer et réessayer relancent celle qui a été interrompue.
 
+import { demanderArretServeur } from "./arretServeur";
+
 export type SourceTache = "tour_direct" | "chat";
 
 type EtatSource = {
@@ -83,4 +85,29 @@ export function reessayerTacheInterrompue() {
       return;
     }
   }
+}
+
+// Arrêt complet (12/10/2026, demande Bourama : « arrêter c'est arrêter »). Au-delà de la
+// génération elle-même, un arrêt doit couper tout ce que la tâche avait mis en route
+// côté appli : la voix qui lit une bulle, le commentaire affiché, la frappe simulée dans
+// un champ. Chacun s'abonne ici et se coupe quand le signal part.
+const ecouteursArret = new Set<() => void>();
+
+export function abonnerArretTache(ecouteur: () => void): () => void {
+  ecouteursArret.add(ecouteur);
+  return () => {
+    ecouteursArret.delete(ecouteur);
+  };
+}
+
+// Coupe seulement ce qui est local à cet appareil (sert aussi à réagir à un arrêt venu du serveur).
+export function signalerArretTache() {
+  ecouteursArret.forEach((ecouteur) => ecouteur());
+}
+
+// Appelé par les boutons Arrêter (chat et canal) : coupe le local ET demande au serveur
+// d'arrêter les outils et la boucle d'agent.
+export function arreterToutLocalEtServeur() {
+  signalerArretTache();
+  demanderArretServeur();
 }

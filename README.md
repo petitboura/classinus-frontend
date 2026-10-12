@@ -166,6 +166,10 @@ components/
                           survol de CETTE carte (groupe nommé group/lien) et à la souris, cachée sur téléphone ;
                           variante texte : même icône dans l'en-tête de l'aperçu (VisionneurPositionGlobal), pour
                           tous les types sauf la carte de site, qui a la sienne sous la carte
+  lib/arretServeur.ts     appel POST /api/chat/arreter : demande au serveur d'arrêter les outils et la boucle d'agent du tour (12/10/2026)
+  lib/tacheCanal.ts       état de la tâche du canal et signal d'arrêt commun : le bouton Arrêter (chat ou canal) coupe aussi la
+                          voix, le commentaire affiché et la frappe simulée, et prévient le serveur (abonnerArretTache,
+                          arreterToutLocalEtServeur)
   lib/copierMarkdown.ts   copie "formatée" d'un markdown : HTML rendu + markdown brut dans le presse-papiers
                           (boutons "Copier formaté" / "Copier brut" de ContenuMarkdown, VisionneuseBibliotheque.tsx).
                           FenetreTexteColle.tsx (aperçu d'un long texte collé) affiche le texte formaté par défaut,
