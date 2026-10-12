@@ -143,6 +143,7 @@ export default function PageAgentSuperposition() {
         journal: etat.canal.journal,
         tacheEnCours: etat.canal.tacheEnCours ?? false,
         interrompue: etat.canal.interrompue ?? false,
+        autorisationEnAttente: etat.canal.autorisationEnAttente ?? null,
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
