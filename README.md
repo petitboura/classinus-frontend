@@ -134,6 +134,10 @@ components/
                           piloté par animation/runtimeRenduVideo.ts (dessiner l'animation à un instant donné). three.js
                           est aussi copié côté serveur : changer sa version ici impose de changer cette copie
   icones/, icons/        icônes du produit
+  lib/arretServeur.ts     appel POST /api/chat/arreter : demande au serveur d'arrêter les outils et la boucle d'agent du tour (12/10/2026)
+  lib/tacheCanal.ts       état de la tâche du canal et signal d'arrêt commun : le bouton Arrêter (chat ou canal) coupe aussi la
+                          voix, le commentaire affiché et la frappe simulée, et prévient le serveur (abonnerArretTache,
+                          arreterToutLocalEtServeur)
 
 lib/
   api.ts                 client HTTP vers clovis-backend (NEXT_PUBLIC_API_URL)

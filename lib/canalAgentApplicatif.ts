@@ -100,7 +100,7 @@ import {
   type ImageCanal,
   type SourceCanal,
 } from "./contexteCanalEnDirect";
-import { mettreAJourSourceTache } from "./tacheCanal";
+import { abonnerArretTache, arreterToutLocalEtServeur, mettreAJourSourceTache, signalerArretTache } from "./tacheCanal";
 import { consommerReglagesUniquesProchainMessage, lireReglagesProchainMessage } from "./reglagesProchainMessage";
 import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 
@@ -241,7 +241,11 @@ async function envoyerTourCanalDirect(texte: string, options?: { automatique?: b
   mettreAJourSourceTache("tour_direct", {
     enCours: true,
     interrompue: false,
-    arreter: () => controleur.abort(),
+    arreter: () => {
+      // 12/10/2026 : « arrêter c'est arrêter », le serveur et l'appli s'arrêtent aussi, pas seulement le flux.
+      arreterToutLocalEtServeur();
+      controleur.abort();
+    },
   });
   const etat = lireEtatConversation(conversationId);
   let idUser: IdMessage | null = null;
@@ -567,13 +571,22 @@ const DELAI_FRAPPE_MAX_MS = 42;
 const DUREE_MAX_FRAPPE_MS = 1500;
 const DELAI_FRAPPE_MOYEN_MS = (DELAI_FRAPPE_MIN_MS + DELAI_FRAPPE_MAX_MS) / 2;
 
+// Compteur d'arrêts (12/10/2026) : chaque signal d'arrêt l'incrémente, une frappe en cours le voit
+// changer et s'interrompt au lieu de finir d'écrire dans le champ.
+let generationArret = 0;
+abonnerArretTache(() => {
+  generationArret += 1;
+});
+
 async function simulerFrappeVisible(element: HTMLInputElement | HTMLTextAreaElement, texte: string) {
+  const generationAuDebut = generationArret;
   definirValeurNative(element, "");
   const caracteres = Array.from(texte);
   const etapesMax = Math.max(1, Math.floor(DUREE_MAX_FRAPPE_MS / DELAI_FRAPPE_MOYEN_MS));
   const lettresParEtape = Math.max(1, Math.ceil(caracteres.length / etapesMax));
   let accumule = "";
   for (let i = 0; i < caracteres.length; i += lettresParEtape) {
+    if (generationArret !== generationAuDebut) return;
     accumule += caracteres.slice(i, i + lettresParEtape).join("");
     definirValeurNative(element, accumule);
     if (i + lettresParEtape < caracteres.length) {
@@ -798,6 +811,7 @@ function traiterMessage(message: unknown) {
   if (estDansFenetreSuperposition()) return;
   if (!message || typeof message !== "object") return;
   const m = message as {
+    arret_tache?: unknown;
     accuse_message_etudiant?: unknown;
     pris_en_compte?: unknown;
     message_etudiant_renvoye?: unknown;
@@ -819,7 +833,10 @@ function traiterMessage(message: unknown) {
     parametres?: Record<string, unknown>;
     via_renderer?: boolean;
   };
-  if (m.accuse_message_etudiant !== undefined) {
+  if (m.arret_tache === true) {
+    // Le serveur annonce un arrêt (bouton Arrêter, ici ou sur un autre appareil du compte).
+    signalerArretTache();
+  } else if (m.accuse_message_etudiant !== undefined) {
     traiterAccuseMessageEtudiant(m.accuse_message_etudiant, m.pris_en_compte);
   } else if (typeof m.message_etudiant_renvoye === "string") {
     // Arrive trop tard pour que le tour de Clovis le lise : meme traitement
