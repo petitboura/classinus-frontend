@@ -76,7 +76,11 @@ export function useInfoSection(id: string | null) {
 // négative remonte la ligne dans la bande que <main> réserve au
 // hamburger (--dj-hamburger-espace, voir app/globals.css), qui vaut 0px
 // sur PC. Les pages qui n'ont pas cette ligne (chat, tableau de bord)
-// gardent cette bande telle quelle. Sur
+// gardent cette bande telle quelle. Les deux conteneurs de page sont en
+// flow-root : sans cela, cette marge négative remontait à travers les
+// couches de TransitionPage (la page entrante et la page sortante, en
+// position absolue, ne la traitaient pas pareil) et toute la page sautait
+// à chaque changement de sous-section. Sur
 // téléphone, pl-8 laisse la place du hamburger, et pr-20 laisse celle de
 // la cloche et du bouton minuteur sur toute la largeur.
 function TitreSection({ title, infoRubriqueId, retour }: { title: string; infoRubriqueId: string | null; retour?: string }) {
@@ -141,7 +145,7 @@ export function SectionPage({
   if (!groupe) {
     return (
       <ContexteInfoSection.Provider value={setInfoRubriqueId}>
-        <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-24">
+        <div className="mx-auto flow-root w-full max-w-3xl space-y-4 px-4 pb-24">
           <TitreSection title={title} infoRubriqueId={infoRubriqueId} retour={retour} />
           {children}
         </div>
@@ -159,7 +163,7 @@ export function SectionPage({
   // Bourama le 13/10/2026 : il doit toujours y en avoir un).
   return (
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
-    <div className="mx-auto w-full max-w-5xl px-4 pb-24">
+    <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
       <TitreSection title={groupe.label} infoRubriqueId={infoRubriqueId} retour={groupe.href} />
 
       <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
