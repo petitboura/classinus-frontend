@@ -59,11 +59,24 @@ export function messageMauvaiseCible(cible: string, titre: string | null): strin
   );
 }
 
+// Distance (en pixels) dont le pointeur peut bouger pendant la frappe avant qu'on considere
+// que l'etudiant reprend la main (13/10/2026). Pendant que Clovis ecrit au clavier, il ne
+// deplace jamais le pointeur : tout deplacement vient de l'etudiant. Sert a voir qu'il change
+// de champ ou d'onglet DANS la meme fenetre, ce que l'identifiant de fenetre ne montre pas.
+export const DISTANCE_POINTEUR_REPRISE_PX = 60;
+
+export type PointEcran = { x: number; y: number };
+
+// Vrai quand le pointeur s'est eloigne de sa position de depart de plus que le seuil.
+export function pointeurDeplace(depart: PointEcran, actuel: PointEcran, seuilPx = DISTANCE_POINTEUR_REPRISE_PX): boolean {
+  return Math.hypot(actuel.x - depart.x, actuel.y - depart.y) > seuilPx;
+}
+
 // Message donne au modele quand l'etudiant quitte la fenetre en plein milieu de la frappe.
 export function messageFrappeInterrompue(cible: string, tapes: number, total: number): string {
   return (
-    `Frappe INTERROMPUE : l'étudiant a quitté « ${cible} » pendant l'écriture. ` +
+    `Frappe INTERROMPUE : l'étudiant a repris la main pendant l'écriture dans « ${cible} » (changement de fenêtre, d'onglet ou mouvement de la souris). ` +
     `${tapes} caractères sur ${total} ont été tapés dans la bonne fenêtre, le reste n'a PAS été écrit, ` +
-    "et rien n'a été écrit dans l'autre fenêtre. Ne continue pas sans que l'étudiant te le demande."
+    "et plus rien n'a été écrit ensuite. Ne continue pas sans que l'étudiant te le demande."
   );
 }
