@@ -9,6 +9,7 @@ import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { LANGUES_TRADUCTION_ERREURS } from "@/lib/languesTraductionErreurs";
+import { ReglageBoutonFlottantAndroid } from "./ReglageBoutonFlottantAndroid";
 
 // 19/09/2026, demande Bourama : ancien écran "preferences" d'EspaceParametres.tsx.
 const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
@@ -258,6 +259,8 @@ export function ParametresPreferences() {
         </button>
       </div>
       {messageAuto && <span className="text-sm text-dj-texte-muet">{messageAuto}</span>}
+
+      <ReglageBoutonFlottantAndroid />
     </div>
   );
 }

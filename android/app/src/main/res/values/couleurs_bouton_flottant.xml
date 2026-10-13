@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 13/10/2026, bouton flottant natif : couleurs du bouton du canal en
+         direct affiche par-dessus les autres applis. Memes teintes que le
+         bouton du canal dans l'appli : l'or du logo quand le canal est actif,
+         la surface sombre de l'appli au repos. -->
+    <color name="bouton_flottant_repos_fond">#F21A1714</color>
+    <color name="bouton_flottant_repos_trait">#B8AFA0</color>
+    <color name="bouton_flottant_repos_contour">#4D4638</color>
+    <color name="bouton_flottant_actif_fond">#D9A438</color>
+    <color name="bouton_flottant_actif_trait">#1A0D02</color>
+    <color name="bouton_flottant_actif_contour">#F0C56A</color>
+</resources>

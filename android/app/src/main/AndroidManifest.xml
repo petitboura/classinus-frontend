@@ -95,6 +95,32 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
+        <!-- 13/10/2026, Bourama (bouton flottant natif) : service au premier plan
+             qui porte le bouton du canal en direct par-dessus les autres applis et
+             garde l'appli en vie. Type specialUse : aucun type standard ne decrit
+             ce cas, le sous-type ci-dessous est celui relu par le Play Console.
+             Non exporte : seul Classinus peut le demarrer. -->
+        <service
+            android:name=".boutonflottant.BoutonFlottantService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Bouton flottant choisi par l'etudiant, affiche par-dessus les autres applications pour activer ou couper le canal en direct de Classinus. Aucune action n'est lancee sans un appui de l'etudiant." />
+        </service>
+
+        <!-- Ramene le bouton apres un redemarrage du telephone ou une mise a jour
+             de l'appli, seulement si l'etudiant veut le bouton (voir
+             DemarrageBoutonFlottantReceiver.kt). Diffusions systeme : non exporte. -->
+        <receiver
+            android:name=".boutonflottant.DemarrageBoutonFlottantReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -144,4 +170,12 @@
          systeme (SuperpositionPlugin.demanderPermission l'y envoie). La
          fenetre de superposition est intouchable, les gestes la traversent. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- 13/10/2026, Bourama (bouton flottant natif) : FOREGROUND_SERVICE_SPECIAL_USE
+         est la variante de type du service du bouton (permission normale, aucune
+         fenetre de demande). RECEIVE_BOOT_COMPLETED ramene le bouton apres un
+         redemarrage du telephone. L'affichage par-dessus les autres applications
+         reste la permission SYSTEM_ALERT_WINDOW ci-dessus, donnee par l'etudiant
+         dans les reglages systeme. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 </manifest>

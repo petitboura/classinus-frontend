@@ -46,6 +46,15 @@ export function visionEcranEstDemarree(): boolean {
   return visionDemarree;
 }
 
+/**
+ * Se resout quand tous les demarrages et arrets de la vision deja demandes sont
+ * termines (fenetre d'autorisation passee, accordee ou refusee). Le bouton
+ * flottant s'en sert pour rendre la main a l'appli d'avant seulement apres.
+ */
+export function attendreOperationsVision(): Promise<void> {
+  return fileOperations;
+}
+
 function signaler(operation: string, e: unknown) {
   console.warn(`Vision ecran : ${operation} impossible`, codeErreurVisionEcran(e) ?? "erreur inconnue");
 }

@@ -296,3 +296,29 @@ Build statique Next.js vers `out/`, puis `npx cap sync`. Nécessite
 Android Studio/Xcode installés localement pour ouvrir et compiler les
 projets `android/`/`ios/` ensuite (hors de portée d'un sandbox sans ces
 outils).
+
+### Bouton flottant du canal en direct (Android)
+
+Petit bouton affiché par-dessus toutes les autres applications, même Classinus
+fermé et après un redémarrage du téléphone. Un appui bascule le canal en direct
+exactement comme le bouton rond de l'appli. Commun aux deux versions de l'appli
+(`src/main`), aucune accessibilité utilisée.
+
+- Natif : `android/app/src/main/java/com/classinus/app/boutonflottant/`.
+  `VueBoutonFlottant` (dessin et gestes), `BoutonFlottantManager` (fenêtre de
+  superposition touchable, collage au bord, position gardée), `BoutonFlottantService`
+  (service au premier plan de type `specialUse` : porte le bouton et garde
+  l'appli en vie pour que la page qui tient la connexion du canal ne soit pas
+  gelée), `DemarrageBoutonFlottantReceiver` (retour après redémarrage ou mise à
+  jour), `BoutonFlottantPlugin` (pont JS) et `PreferencesBoutonFlottant`.
+- Page : `lib/boutonFlottantAndroid.ts` (plugin), `lib/pontBoutonFlottantCanal.ts`
+  (appui, canal, retour à l'appli d'avant), `lib/textesBoutonFlottant.ts` (textes),
+  `components/ReglageBoutonFlottantAndroid.tsx` (réglage dans Paramètres,
+  Préférences).
+- La connexion du canal reste dans la page : le natif ne parle jamais au backend,
+  donc pas de clé ni d'adresse à configurer côté Kotlin. Si la page ne répond pas
+  à un appui dans les 1,5 secondes (appli fermée, page gelée), l'appli est lancée
+  et l'appui est rejoué dès que la page est prête.
+- Affiché par défaut dès que la permission « Afficher par-dessus les autres
+  applications » est accordée, sauf si l'étudiant l'a masqué dans les réglages ou
+  depuis la notification.

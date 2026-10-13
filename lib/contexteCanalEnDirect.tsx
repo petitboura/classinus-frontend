@@ -189,6 +189,16 @@ export function canalEnDirectEstActif(): boolean {
   return canalGlobal?.actif ?? false;
 }
 
+/**
+ * Vrai des que le Provider du canal est monte : les modules hors React peuvent
+ * alors l'activer ou le desactiver (voir lib/pontBoutonFlottantCanal.ts, qui
+ * attend ce moment quand un appui sur le bouton flottant arrive pendant le
+ * demarrage de l'appli).
+ */
+export function canalEnDirectEstPret(): boolean {
+  return canalGlobal !== null;
+}
+
 export function ecouterActivationCanal(ecouteur: (actif: boolean) => void): () => void {
   ecouteursActivation.add(ecouteur);
   return () => {

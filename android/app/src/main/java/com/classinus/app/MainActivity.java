@@ -10,6 +10,7 @@ import com.classinus.app.miseajour.MiseAJourPlugin;
 import com.classinus.app.tempsecran.TempsEcranPlugin;
 import com.classinus.app.notifications.NotificationsPlugin;
 import com.classinus.app.telechargement.TelechargementPlugin;
+import com.classinus.app.boutonflottant.BoutonFlottantPlugin;
 import com.classinus.app.visionecran.SuperpositionPlugin;
 import com.classinus.app.visionecran.VisionEcranPlugin;
 import com.getcapacitor.BridgeActivity;
@@ -46,6 +47,9 @@ public class MainActivity extends BridgeActivity {
         // 07/10/2026, Bourama : superposition pour pointer, surligner et
         // souligner par-dessus les autres applis (lot 2 vision ecran).
         registerPlugin(SuperpositionPlugin.class);
+        // 13/10/2026, Bourama : bouton flottant natif du canal en direct,
+        // disponible par-dessus les autres applis (commun aux deux flavors).
+        registerPlugin(BoutonFlottantPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

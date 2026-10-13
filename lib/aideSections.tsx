@@ -76,6 +76,15 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Le canal en direct te permet de rester en contact avec Classinus pendant qu'il agit dans l'app. Active le avec le bouton rond en bas à gauche de l'écran, ou depuis le menu du chat. Une fois actif, deux boutons apparaissent : un micro pour dicter et un crayon pour écrire. Pour la dictée, tu peux choisir entre le moteur de ton navigateur et Whisper, quand ton navigateur sait le faire. Ce que tu écris ou dictes est envoyé à Classinus, qui te répond dans une bulle près de son curseur, sans ouvrir le chat. Sa réponse s'affiche comme dans le chat et se referme seule : clique sur son curseur pour la faire réapparaître. Quand il a juste une information à te donner, un petit message apparaît au même endroit. Il choisit lui même combien de temps ce message reste affiché selon sa longueur, et il peut attendre que tu aies fini de lire avant de continuer. Un petit bouton en bas à droite garde la liste de ce que Classinus a fait pendant la session. Tu peux déplacer ces boutons, et le bouton du journal, en les faisant glisser où tu veux : ils restent toujours entièrement visibles et reprennent leur place d'origine à chaque ouverture de l'app. Le canal en direct repart de zéro à chaque ouverture de l'app.",
   },
   {
+    // 13/10/2026, demande Bourama : bouton flottant natif du canal en direct
+    // (appli Android seulement), réglage dans Paramètres, Préférences.
+    id: "bouton-flottant",
+    titre: "Bouton flottant",
+    texteCourt: "Garde le bouton du canal en direct par-dessus les autres applications, même quand Classinus est fermé.",
+    texteComplet:
+      "Sur Android, le bouton du canal en direct peut rester affiché par-dessus toutes les autres applications, même quand Classinus est fermé et après un redémarrage du téléphone. Un appui active le canal en direct, comme le bouton rond de l'application, un second appui le coupe. Il est sombre au repos et doré quand le canal est actif. Tu peux le faire glisser : il se colle au bord de l'écran. Quand tu l'actives depuis une autre application, Classinus te laisse là où tu étais et travaille en arrière-plan. Pour fonctionner, il demande l'autorisation d'afficher par-dessus les autres applications, que tu donnes dans les réglages du téléphone, et il garde une notification discrète avec un bouton pour le masquer. Tu peux l'activer ou le masquer à tout moment dans Paramètres, Préférences.",
+  },
+  {
     id: "controle-session",
     titre: "Contrôle de session",
     // 19/09/2026, demande Bourama : le bouton "i" passe de l'écran à la

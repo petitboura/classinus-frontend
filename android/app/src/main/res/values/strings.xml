@@ -12,4 +12,15 @@
     <string name="vision_ecran_notif_titre">Classinus voit votre écran</string>
     <string name="vision_ecran_notif_texte">Touchez Arrêter pour couper le partage à tout moment.</string>
     <string name="vision_ecran_notif_arreter">Arrêter</string>
+    <!-- 13/10/2026, bouton flottant natif : textes par defaut, remplaces par ceux
+         que le JS transmet a demarrer() (le natif n'a pas de systeme de langues
+         propre). Les textes de la notification sont gardes sur l'appareil pour
+         que le bouton puisse revenir apres un redemarrage, appli fermee. -->
+    <string name="bouton_flottant_canal_nom">Bouton Classinus</string>
+    <string name="bouton_flottant_canal_description">Affiché tant que le bouton Classinus reste disponible par-dessus les autres applications.</string>
+    <string name="bouton_flottant_notif_titre">Le bouton Classinus est disponible</string>
+    <string name="bouton_flottant_notif_texte">Touchez le bouton pour activer ou couper le canal en direct, depuis n\'importe quelle application.</string>
+    <string name="bouton_flottant_notif_masquer">Masquer le bouton</string>
+    <string name="bouton_flottant_description_inactif">Activer le canal en direct</string>
+    <string name="bouton_flottant_description_actif">Désactiver le canal en direct</string>
 </resources>

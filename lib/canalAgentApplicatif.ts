@@ -85,6 +85,7 @@ import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { traiterDemandeEditeur } from "./canalEditeurAgent";
 import { traiterDemandeEcranTelephone } from "./canalEcranTelephone";
 import { initialiserVisionEcranCanal, visionEcranEstDemarree } from "./pontVisionEcranCanal";
+import { initialiserBoutonFlottantCanal } from "./pontBoutonFlottantCanal";
 import { ecouterEtatEditeur, obtenirEtatEditeurPourCanal, obtenirLectureEditeurPourChat } from "./pontEditeurAgent";
 import {
   estMasqueParAutreElement,
@@ -922,6 +923,8 @@ export function initialiserCanalAgentApplicatif() {
 
   // Android : le canal en direct démarre et arrête la vision de l'écran.
   initialiserVisionEcranCanal();
+  // Android : le bouton flottant bascule le canal depuis n'importe quelle appli.
+  initialiserBoutonFlottantCanal();
 
   // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
   // l'état sans attendre un autre changement de l'écran.
