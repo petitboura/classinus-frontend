@@ -46,7 +46,7 @@ const substituts = (modules) => ({
 
 try {
   await attendre(async () => (await fetch(`${api}/test/etat`)).ok, 'serveur Python');
-  const contexteCanal = ['pousserJournalDepuisAgent', 'mettreAJourJournalDepuisAgent', 'afficherReponseDepuisAgent', 'afficherTexteDepuisAgent', 'activerCanalDepuisAgent'].map(n => `export const ${n}=()=>null;`).join('\n') + '\nexport const obtenirConversationIdCanal=()=>null;';
+  const contexteCanal = ['pousserJournalDepuisAgent', 'mettreAJourJournalDepuisAgent', 'afficherReponseDepuisAgent', 'afficherTexteDepuisAgent', 'activerCanalDepuisAgent', 'desactiverCanalDepuisAgent', 'canalEnDirectEstActif', 'ecouterActivationCanal'].map(n => `export const ${n}=()=>null;`).join('\n') + '\nexport const obtenirConversationIdCanal=()=>null;';
   const bundle = await build({
     stdin: { contents: `import {initialiserCanalAgentApplicatif} from './lib/canalAgentApplicatif';
       import {lirePageVisible} from './lib/lecturePage';
@@ -60,7 +60,7 @@ try {
       if (p === '@capacitor/core') return `export const Capacitor={getPlatform:()=>window.plateforme||'electron',isNativePlatform:()=>true,isPluginAvailable:()=>false}; export const registerPlugin=()=>({obtenirInfosAppareil:async()=>({appareilId:'pc-test'})});`;
       if (p.endsWith('contexteCanalEnDirect')) return contexteCanal;
       if (p.endsWith('contexteCurseurVirtuel')) return 'export const deplacerCurseurDepuisAgent=async()=>{};';
-      if (p === './api') return 'export const appelerApiStream=async()=>{};';
+      if (p === './api') return 'export const appelerApiStream=async()=>{}; export const appelerApi=async()=>null;';
     })],
   });
   const html = `<html><head><meta charset="utf-8"><title>Classinus test</title></head><body style="margin:0; height:100vh; overflow:hidden">

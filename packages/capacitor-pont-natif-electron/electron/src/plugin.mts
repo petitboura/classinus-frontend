@@ -247,6 +247,17 @@ async function traiterMessage(ws: WebSocket, brut: string): Promise<void> {
   } catch {
     return;
   }
+  // Arrêt annoncé par le serveur (12/10/2026, demande Bourama : « arrêter c'est arrêter »), quand
+  // l'étudiant arrête la tâche avec le bouton Arrêter du chat ou du canal, sur cet appareil ou un
+  // autre. Même effet que sur Échap (garde-fou 1) : la frappe et les raccourcis en cours s'arrêtent,
+  // les touches tenues sont relâchées, une demande d'accord ouverte est refusée. On ne prévient pas
+  // l'interface ici : elle a reçu le même message du serveur sur sa propre connexion.
+  if (typeof message === "object" && message !== null && (message as { arret_tache?: unknown }).arret_tache === true) {
+    arretGlobal.demanderArret();
+    autorisations.refuserTout();
+    void gardeClavier?.relacherToutEnUrgence();
+    return;
+  }
   if (!estMessageActionSysteme(message)) return; // pas pour nous, on ignore silencieusement
 
   const resultat = await executerAvecJournal(message.id, message.action_systeme, message.parametres || {});

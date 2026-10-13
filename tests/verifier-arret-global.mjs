@@ -169,6 +169,24 @@ try {
     for (const bloc of m.tape) assert.equal(bloc.isWellFormed(), true, 'pas de moitié d\'emoji');
   }
 
+  // 14. Arrêt annoncé par le serveur (bouton Arrêter) : mêmes effets que Échap sur les actions
+  //     en cours, mais sans rappeler surArret (sinon l'interface re-demanderait l'arrêt au
+  //     serveur, qui le rediffuserait : boucle sans fin). La demande tient jusqu'à la tâche suivante.
+  {
+    let rappels = 0;
+    const r = fauxRaccourci(); const g = creerArretGlobal(r, { surArret: () => { rappels++; } });
+    g.armer();
+    assert.equal(g.arretDemande(), false);
+    g.demanderArret();
+    assert.equal(g.arretDemande(), true, 'une action en cours voit la demande');
+    assert.equal(rappels, 0, 'pas de rappel vers l\'interface');
+    g.desarmer();
+    assert.equal(g.arretDemande(), true, 'la demande survit à la fin de la tâche');
+    g.armer();
+    assert.equal(g.arretDemande(), false, 'la tâche suivante repart propre');
+    g.desarmer();
+  }
+
   console.log('OK : arret global (Echap pris seulement pendant une tache, demande conservee, filet de securite).');
 } finally {
   await rm(dossier, { recursive: true, force: true });

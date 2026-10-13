@@ -92,6 +92,15 @@ export function creerArretGlobal(raccourci: RaccourciSysteme, options: OptionsAr
     }
   }
 
+  // Arrêt venu de l'extérieur (12/10/2026, demande Bourama : « arrêter c'est arrêter ») : le
+  // serveur annonce que l'étudiant a arrêté la tâche avec le bouton Arrêter, pas avec Échap.
+  // Même effet sur les actions en cours (elles lisent arretDemande et s'arrêtent), sans
+  // rappeler surArret : ce rappel prévient l'interface, qui re-demanderait l'arrêt au serveur,
+  // d'où une boucle sans fin.
+  function demanderArret(): void {
+    demande = true;
+  }
+
   // À appeler au début de chaque action : une tâche active repousse le filet de sécurité.
   function signalerActivite(): void {
     if (arme) programmerSecurite();
@@ -101,6 +110,7 @@ export function creerArretGlobal(raccourci: RaccourciSysteme, options: OptionsAr
     armer,
     desarmer,
     signalerActivite,
+    demanderArret,
     arretDemande: () => demande,
     estArme: () => arme,
   };
