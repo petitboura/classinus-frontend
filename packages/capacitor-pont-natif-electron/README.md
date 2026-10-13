@@ -76,10 +76,12 @@ nom contenant `Popup`, ou `ComboLBox`), maximum 6. Leurs elements portent
 
 Clavier : `taper_clavier` ecrit du texte dans la fenetre annoncee par le modele
 (parametre `cible`, module pur `cibleSaisie.mts`, 12/10/2026) : sans cible, ou si
-la fenetre au premier plan n'est pas la bonne, rien n'est tape. L'identifiant de
-la fenetre est relu avant chaque bloc de texte, collage, retour a la ligne et
-raccourci interne : si l'etudiant part ailleurs en cours de frappe, la frappe
-s'arrete tout de suite et Clovis est prevenu du nombre de caracteres deja tapes.
+la fenetre au premier plan n'est pas la bonne, rien n'est tape. Avant chaque bloc
+de texte, collage, retour a la ligne et raccourci interne, trois signaux sont
+relus : meme identifiant de fenetre, titre qui correspond encore a la cible
+(changement d'onglet), pointeur qui n'a pas bouge de plus de 60 pixels (changement
+de champ dans la meme fenetre, Clovis ne deplace jamais le pointeur en ecrivant).
+Si l'etudiant reprend la main en cours de frappe, la frappe s'arrete tout de suite et Clovis est prevenu du nombre de caracteres deja tapes.
 Test : `npm run test:cible-saisie`. `appuyer_touches` (module pur
 `touchesClavier.mts`) appuie sur des touches seules et des raccourcis
 (`ctrl+c`, `alt+tab`, `win+d`, `enter`, `ctrl+a ctrl+c`...), comme un

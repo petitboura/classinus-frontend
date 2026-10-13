@@ -16,7 +16,7 @@ try {
     await build({ entryPoints: [join(src, `${nom}.mts`)], outfile: sortie, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent' });
     return import(pathToFileURL(sortie).href);
   };
-  const { cibleDepuisParametres, cibleCorrespond, normaliserPourCible, messageMauvaiseCible, messageFrappeInterrompue } = await charger('cibleSaisie');
+  const { cibleDepuisParametres, cibleCorrespond, normaliserPourCible, messageMauvaiseCible, messageFrappeInterrompue, pointeurDeplace, DISTANCE_POINTEUR_REPRISE_PX } = await charger('cibleSaisie');
   const { taperTexteAdapte, TAILLE_BLOC_FRAPPE } = await charger('frappeAdaptee');
 
   // 1. La cible est lue dans les paramètres ; absente ou vide, elle est vide (rien n'est tapé).
@@ -49,6 +49,18 @@ try {
   assert.match(messageMauvaiseCible('Bloc-notes', 'Google Chrome'), /NON tapé.*Bloc-notes.*Google Chrome/s);
   assert.match(messageMauvaiseCible('Bloc-notes', null), /illisible/);
   assert.match(messageFrappeInterrompue('Bloc-notes', 20, 60), /INTERROMPUE.*20 caractères sur 60/s);
+
+  // 6 bis. Un autre onglet du navigateur garde la même fenêtre mais change de titre : avec la
+  //        cible donnée en titre complet, il n'y a plus correspondance.
+  assert.equal(cibleCorrespond('Claude - Nouvelle conversation - Claude', 'Claude - Nouvelle conversation - Claude - Google Chrome', null), true);
+  assert.equal(cibleCorrespond('Claude - Nouvelle conversation - Claude', 'Gmail - Boîte de réception - Google Chrome', null), false);
+
+  // 6 ter. Le pointeur : un petit tremblement ne compte pas, un vrai déplacement oui.
+  assert.equal(pointeurDeplace({ x: 100, y: 100 }, { x: 100, y: 100 }), false);
+  assert.equal(pointeurDeplace({ x: 100, y: 100 }, { x: 110, y: 105 }), false);
+  assert.equal(pointeurDeplace({ x: 100, y: 100 }, { x: 100 + DISTANCE_POINTEUR_REPRISE_PX + 1, y: 100 }), true);
+  assert.equal(pointeurDeplace({ x: 0, y: 0 }, { x: 50, y: 50 }), true, 'diagonale : 70 pixels');
+  assert.equal(pointeurDeplace({ x: 0, y: 0 }, { x: 50, y: 0 }, 40), true, 'seuil réglable');
 
   // Faux matériel de frappe, comme dans verifier-arret-global.mjs.
   const ENTREE = 999, MAJ = 998, DEBUT = 997;

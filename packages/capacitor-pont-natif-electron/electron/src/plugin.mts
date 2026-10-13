@@ -42,7 +42,7 @@ import { cliquerEcran } from "./clicEcran.mjs";
 import { analyserTouches, libelleCombinaison } from "./touchesClavier.mjs";
 import { creerGardeClavier } from "./gardeClavier.mjs";
 import { taperTexteAdapte, nettoyerTexteFrappe } from "./frappeAdaptee.mjs";
-import { cibleDepuisParametres, cibleCorrespond, messageMauvaiseCible, messageFrappeInterrompue } from "./cibleSaisie.mjs";
+import { cibleDepuisParametres, cibleCorrespond, messageMauvaiseCible, messageFrappeInterrompue, pointeurDeplace } from "./cibleSaisie.mjs";
 import { ecrireEnArrierePlanWindows, activerFenetreParTitreWindows, RAISON_FENETRE_INTROUVABLE } from "./ecritureArrierePlan.mjs";
 import { creerCollage, type PressePapiers } from "./collageFrappe.mjs";
 import { creerArretGlobal } from "./arretGlobal.mjs";
@@ -499,14 +499,23 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         const titreFenetre = depart.titre;
         const refusClavier = await verifierAccordClavier(parametres, "écrire");
         if (refusClavier) return { erreur: refusClavier };
-        // Même fenêtre qu'au départ ? Avec l'identifiant quand il est connu, sinon avec le
-        // titre annoncé. Sert avant de commencer (l'accord a pu durer longtemps) puis avant
-        // chaque bloc de texte.
+        // L'étudiant a-t-il gardé la main au clavier de Clovis ? Vérifié avant de commencer (l'accord
+        // a pu durer longtemps) puis avant chaque bloc de texte. Trois signaux (13/10/2026) :
+        // 1. l'identifiant de la fenêtre est le même qu'au départ ;
+        // 2. son titre correspond encore à la cible (un autre onglet du navigateur garde le même
+        //    identifiant mais change de titre) ; seulement si c'est le titre qui l'avait reconnue ;
+        // 3. le pointeur n'a pas bougé de plus de quelques pixels : Clovis ne le déplace jamais
+        //    pendant qu'il écrit, donc un mouvement vient de l'étudiant qui va dans un autre champ
+        //    de la même fenêtre, ce que les deux premiers signaux ne voient pas.
+        const reconnueParLeTitre = cibleCorrespond(cible, depart.titre, null);
+        const pointeurDepart = screen.getCursorScreenPoint();
         const memeFenetreQueDepart = async (): Promise<boolean> => {
           try {
+            if (pointeurDeplace(pointeurDepart, screen.getCursorScreenPoint())) return false;
             const maintenant = await lireFenetreActive();
             if (depart.identifiant !== null && maintenant.identifiant !== null) {
-              return depart.identifiant === maintenant.identifiant;
+              if (depart.identifiant !== maintenant.identifiant) return false;
+              return reconnueParLeTitre ? cibleCorrespond(cible, maintenant.titre, null) : true;
             }
             return cibleCorrespond(cible, maintenant.titre, null);
           } catch {
