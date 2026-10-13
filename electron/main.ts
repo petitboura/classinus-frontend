@@ -24,6 +24,10 @@ const capacitorApp = createCapacitorElectronApp(config);
 // aucune action reelle en dehors de la page Clovis.
 const TITRE_FENETRE_SUPERPOSITION = 'classinus-superposition-agent';
 
+// Intervalle du rappel au premier plan de la superposition (voir la creation
+// de la fenetre plus bas).
+const INTERVALLE_RAPPEL_PREMIER_PLAN_MS = 500;
+
 function zoneTousEcrans() {
   const ecrans = screen.getAllDisplays();
   const gauche = Math.min(...ecrans.map((e) => e.bounds.x));
@@ -146,10 +150,28 @@ capacitorApp.whenReady.then(() => {
   });
 
   // 'screen-saver' = niveau le plus haut disponible (Electron,
-  // setAlwaysOnTop) -- necessaire pour rester visible par dessus une
-  // appli en plein ecran, pas seulement au dessus des fenetres normales.
+  // setAlwaysOnTop), necessaire pour rester visible par dessus une appli
+  // en plein ecran et par dessus la barre des taches, pas seulement au
+  // dessus des fenetres normales.
   superposition.setAlwaysOnTop(true, 'screen-saver');
   superposition.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
+  // Rappel au premier plan (13/10/2026, demande Bourama) : le curseur de
+  // Classinus disparaissait derriere la barre des taches et le menu
+  // Demarrer. La barre des taches de Windows peut repasser devant une
+  // fenetre toujours au dessus des qu'on interagit avec elle, et le niveau
+  // n'etait fixe qu'une fois, au demarrage. On remet donc la superposition
+  // au sommet de sa couche plusieurs fois par seconde tant qu'elle est
+  // affichee. Sous Windows, moveTop ne donne jamais le focus
+  // (SWP_NOACTIVATE) et n'est appele que si la fenetre est deja montree,
+  // pour ne jamais l'afficher avant le plugin SuperpositionAgent. Le
+  // panneau Demarrer de Windows 11 peut rester devant : c'est une fenetre
+  // systeme qu'une appli ordinaire ne peut pas toujours recouvrir.
+  const rappelPremierPlan = setInterval(() => {
+    if (superposition.isDestroyed() || !superposition.isVisible()) return;
+    superposition.moveTop();
+  }, INTERVALLE_RAPPEL_PREMIER_PLAN_MS);
+  superposition.on('closed', () => clearInterval(rappelPremierPlan));
   // Rien capte par defaut : le plugin SuperpositionAgent (suivreSouris dans
   // packages/capacitor-superposition-electron/electron/src/plugin.mts) active
   // la capture des clics uniquement quand le pointeur est au dessus d'un
