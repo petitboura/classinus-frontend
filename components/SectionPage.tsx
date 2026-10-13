@@ -154,11 +154,13 @@ export function SectionPage({
   // "Bibliothèque". La page voisine active se lit dans les pastilles
   // (téléphone) ou dans le menu de gauche (PC), plus de fil d'Ariane ni de
   // second titre. `title` n'est donc plus affiché ici, il reste dans la
-  // signature pour ne pas toucher les pages qui l'envoient.
+  // signature pour ne pas toucher les pages qui l'envoient. Le bouton
+  // retour vers la page mère du groupe reste, à gauche du titre (retour de
+  // Bourama le 13/10/2026 : il doit toujours y en avoir un).
   return (
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
     <div className="mx-auto w-full max-w-5xl px-4 pb-24">
-      <TitreSection title={groupe.label} infoRubriqueId={infoRubriqueId} />
+      <TitreSection title={groupe.label} infoRubriqueId={infoRubriqueId} retour={groupe.href} />
 
       <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
         <div className="-mb-2 md:hidden">
