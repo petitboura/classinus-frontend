@@ -183,3 +183,19 @@ clavier sans s'arreter ; l'etudiant peut arreter avec Echap. Fenetre introuvable
 n'est fait, Clovis est prevenu. Si la fenetre visee est deja devant, la frappe touche par
 touche reste celle d'avant. Test : `npm run test:ecriture-arriere-plan` (le script
 PowerShell lui meme ne se verifie que sur un vrai Windows).
+
+## Lecture d'une fenetre derriere (13/10/2026)
+
+`lire_ecran` accepte un parametre `fenetre_cible` (le titre de la fenetre, tel que lu a
+l'ecran, ou le nom de l'application). La fenetre est retrouvee parmi les fenetres ouvertes
+visibles (hors Classinus) comme `ecritureArrierePlan.mts` retrouve la sienne : titre sans
+accents ni majuscules, titre exact prefere quand plusieurs correspondent. Aucune fenetre ou
+plusieurs : la lecture s'arrete avec la liste des fenetres lisibles, jamais de choix au
+hasard et jamais de repli sur la fenetre du premier plan. Une fenetre reduite dans la barre
+des taches n'est pas dans la liste (son contenu n'est pas lisible). La fenetre n'est pas
+mise devant : UI Automation lit une fenetre cachee sans la toucher. Les menus ouverts ne
+sont pas lus (ils appartiennent a la fenetre du premier plan). Le resultat porte
+`fenetre_visee: true` : les positions des elements ne sont pas cliquables tant que la
+fenetre est derriere (le clic tomberait sur la fenetre qui est devant). Ne se combine pas
+avec `zone`. Test : `npm run test:lecture-fenetre-visee` (le script PowerShell lui meme ne
+se verifie que sur un vrai Windows).

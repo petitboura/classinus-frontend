@@ -34,7 +34,7 @@ import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-elec
 // racine de ce paquet.
 import { obtenirAppareilIdPc } from "capacitor-dossiers-electron/electron/dist/plugin.mjs";
 // Lot V : lecture en texte de la fenetre au premier plan (UI Automation).
-import { lireFenetreAuPremierPlan, zoneDepuisParametres } from "./lectureFenetreWindows.mjs";
+import { lireFenetreAuPremierPlan, zoneDepuisParametres, fenetreVoulueDepuisParametres } from "./lectureFenetreWindows.mjs";
 import { pointerCurseurEcran, annoncerUtilisationCurseurReel, avecSourisTraversante, marquerEcran } from "capacitor-superposition-electron/electron/dist/plugin.mjs";
 import { convertirZonesPageEnEcran, elementsDansZones } from "./zonesCrayon.mjs";
 import { cliquerParAccessibiliteWindows } from "./clicWindows.mjs";
@@ -233,8 +233,10 @@ function decrireActionSysteme(type: string, parametres: Record<string, unknown>)
       const nom = String(parametres.nom ?? "").trim();
       return nom ? `Classinus a ouvert ${nom}` : "Classinus a ouvert une application";
     }
-    case "lire_ecran":
-      return "Classinus regarde l'écran";
+    case "lire_ecran": {
+      const fenetre = fenetreVoulueDepuisParametres(parametres);
+      return fenetre ? `Classinus regarde la fenêtre « ${fenetre} »` : "Classinus regarde l'écran";
+    }
     default:
       return "Classinus agit sur l'ordinateur";
   }
@@ -290,7 +292,13 @@ async function executerAvecJournal(id: string, type: string, parametres: Record<
 // Ce que Classinus a réellement pu lire, dit au passé une fois la lecture finie.
 function descriptionFinLecture(resultat: unknown, enErreur: boolean): string {
   if (enErreur || typeof resultat !== "object" || resultat === null) return "Classinus n'a pas pu lire l'écran";
-  const lecture = resultat as { fenetre_classinus?: unknown; mode?: unknown; elements?: unknown; texte_long_ignore?: unknown };
+  const lecture = resultat as { fenetre_classinus?: unknown; mode?: unknown; elements?: unknown; texte_long_ignore?: unknown; fenetre_visee?: unknown; titre_fenetre_active?: unknown };
+  if (lecture.fenetre_visee === true) {
+    const titre = typeof lecture.titre_fenetre_active === "string" && lecture.titre_fenetre_active ? ` « ${lecture.titre_fenetre_active} »` : "";
+    return Array.isArray(lecture.elements) && lecture.elements.length > 0
+      ? `Classinus a lu la fenêtre${titre} sans la mettre devant`
+      : `Classinus n'a lu que le titre de la fenêtre${titre}`;
+  }
   if (lecture.fenetre_classinus === true) return "Classinus n'a vu aucune autre fenêtre que la sienne";
   if (lecture.mode !== "uia" || !Array.isArray(lecture.elements) || lecture.elements.length === 0) {
     return "Classinus n'a lu que le titre de la fenêtre";
@@ -606,6 +614,10 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         // Les limites viennent du backend (parametres de la demande).
         const lecture = await lireFenetreAuPremierPlan(parametres, handleSuperposition());
         if (!("erreur" in lecture)) return lecture;
+        // Fenetre choisie par son titre : en cas d'echec (introuvable, plusieurs, reduite), l'erreur
+        // est rendue telle quelle. Le repli ci dessous donnerait le titre de la fenetre au premier
+        // plan, qui n'est pas celle qu'on voulait lire.
+        if (fenetreVoulueDepuisParametres(parametres)) return { erreur: lecture.erreur };
 
         // Repli : si la lecture fine echoue (PowerShell absent ou bloque,
         // delai depasse...), on garde au moins le titre de la fenetre,

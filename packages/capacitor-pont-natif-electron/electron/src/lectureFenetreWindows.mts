@@ -71,6 +71,16 @@ export function zoneDepuisParametres(parametres: Record<string, unknown>): ZoneL
   return zone === "barre_des_taches" || zone === "bureau" ? zone : "fenetre";
 }
 
+// Fenetre a lire meme si elle est derriere les autres (13/10/2026, demande Bourama) : le titre
+// de la fenetre tel que lu a l'ecran. Chaine vide = comportement habituel (fenetre au premier
+// plan). Le titre n'est jamais insere tel quel dans le script : il y passe en base64.
+const LONGUEUR_MAX_FENETRE_VOULUE = 200;
+
+export function fenetreVoulueDepuisParametres(parametres: Record<string, unknown>): string {
+  const brute = parametres.fenetre_cible;
+  return typeof brute === "string" ? brute.trim().slice(0, LONGUEUR_MAX_FENETRE_VOULUE) : "";
+}
+
 // Zone entouree au crayon, en pixels d'ecran (entiers).
 export interface ZoneEntouree {
   gauche: number;
@@ -141,6 +151,9 @@ export interface LectureFenetre {
   texte_long_ignore?: boolean;
   // Ce qui a vraiment ete lu : la fenetre, la barre des taches ou le bureau.
   zone_lue?: ZoneLecture;
+  // Vrai si la fenetre lue a ete choisie par son titre (fenetre_cible) au lieu d'etre celle du
+  // premier plan : elle peut etre derriere une autre, ses positions ne sont pas cliquables.
+  fenetre_visee?: boolean;
 }
 
 // Echec de la lecture : plantage = le processus PowerShell s'est arrete
@@ -394,10 +407,12 @@ public static class LectureFenetres {
 `;
 
 // Exportee pour pouvoir verifier la syntaxe du script hors de Windows.
-export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true, zone: ZoneLecture = "fenetre", zonesEntourees: ZoneEntouree[] = []): string {
+export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true, zone: ZoneLecture = "fenetre", zonesEntourees: ZoneEntouree[] = [], fenetreVoulue = ""): string {
   if (zone !== "fenetre" && zone !== "barre_des_taches" && zone !== "bureau") throw new Error("Zone de lecture invalide");
   if (!/^\d+$/.test(handleSuperposition)) throw new Error("Handle de superposition invalide");
+  if (fenetreVoulue && zone !== "fenetre") throw new Error("Une fenêtre précise ne se lit qu'avec la zone « fenetre »");
   const nbMaxNoeuds = limites.nbMaxElements * FACTEUR_NOEUDS_PARCOURUS;
+  const fenetreVoulueBase64 = Buffer.from(fenetreVoulue.slice(0, LONGUEUR_MAX_FENETRE_VOULUE), "utf8").toString("base64");
   // Zones entourees au crayon : seuls des entiers bornes sont inseres dans le script.
   const ajoutsZones = zonesEntourees
     .slice(0, 8)
@@ -430,6 +445,16 @@ $handleSuperposition = [IntPtr]([long]${handleSuperposition})
 $zoneDemandee = '${zone}'
 $zonesEntourees = New-Object System.Collections.Generic.List[object]
 ${ajoutsZones}
+$fenetreVoulue = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${fenetreVoulueBase64}'))
+function NormTitre($s) {
+  if ($null -eq $s) { return '' }
+  $d = $s.Normalize([System.Text.NormalizationForm]::FormD)
+  $d = [regex]::Replace($d, '\\p{Mn}', '')
+  $d = $d.ToLowerInvariant()
+  $d = [regex]::Replace($d, '^[\\s*•●]+', '')
+  $d = [regex]::Replace($d, '\\s+', ' ')
+  return $d.Trim()
+}
 
 try {
   # Rendre le focus a une fenetre (activerFenetre) n'utilise pas UI Automation : ne pas
@@ -464,11 +489,40 @@ try {
   $bureauAuto = $false
 
   $fg = [LectureFenetres]::GetForegroundWindow()
+  # Fenetre choisie par son titre (peut etre derriere les autres) : jamais devinee, une seule
+  # fenetre doit correspondre, sinon la lecture s'arrete avec la liste des fenetres lisibles.
+  $fenetreVisee = $false
+  if ($fenetreVoulue -ne '' -and $zoneLue -eq 'fenetre' -and -not ${activerFenetre ? "$true" : "$false"}) {
+    $voulue = NormTitre $fenetreVoulue
+    $lisibles = New-Object System.Collections.Generic.List[string]
+    $candidats = New-Object System.Collections.Generic.List[object]
+    foreach ($h in [LectureFenetres]::Ouvertes()) {
+      if ($h -eq $handleSuperposition) { continue }
+      if ([LectureFenetres]::Pid($h) -eq $pidClassinus) { continue }
+      $titreH = [LectureFenetres]::Titre($h)
+      if ($lisibles.Count -lt $nbMaxFenetres) { $lisibles.Add($titreH) }
+      if ($voulue.Length -gt 0 -and (NormTitre $titreH).Contains($voulue)) { $candidats.Add($h) }
+    }
+    if ($candidats.Count -gt 1) {
+      $exactes = @($candidats | Where-Object { (NormTitre ([LectureFenetres]::Titre($_))) -eq $voulue })
+      if ($exactes.Count -eq 1) { $candidats = New-Object System.Collections.Generic.List[object]; $candidats.Add($exactes[0]) }
+    }
+    $listeLisibles = ($lisibles | ForEach-Object { '« ' + $_ + ' »' }) -join ', '
+    if ($candidats.Count -eq 0) {
+      throw ('Aucune fenêtre ouverte ne correspond à « ' + $fenetreVoulue + ' » (elle est peut-être réduite dans la barre des tâches, ou fermée). Fenêtres lisibles : ' + $listeLisibles)
+    }
+    if ($candidats.Count -gt 1) {
+      throw ('Plusieurs fenêtres correspondent à « ' + $fenetreVoulue + ' » : donne un titre plus précis. Fenêtres lisibles : ' + $listeLisibles)
+    }
+    $fg = [IntPtr]$candidats[0]
+    $fenetreVisee = $true
+    $resultat.fenetre_visee = $true
+  }
   # Une demande dans Classinus ou dans sa barre flottante lui donne le focus.
   # lire_ecran sert aux applications externes : retrouver la première fenêtre
   # externe dans l'ordre Z, sans activer ni masquer de fenêtre pour une lecture.
-  if (($handleSuperposition -ne [IntPtr]::Zero -and $fg -eq $handleSuperposition) -or
-      [LectureFenetres]::Pid($fg) -eq $pidClassinus) {
+  if (-not $fenetreVisee -and (($handleSuperposition -ne [IntPtr]::Zero -and $fg -eq $handleSuperposition) -or
+      [LectureFenetres]::Pid($fg) -eq $pidClassinus)) {
     $externeTrouvee = $false
     $classinusAffichee = $false
     foreach ($h in [LectureFenetres]::Ouvertes()) {
@@ -788,7 +842,7 @@ try {
   # eux que l'etudiant voit apres un clic sur un bouton de menu.
   $menuOuvert = $false
   $annexes = @()
-  if ($zoneLue -eq 'fenetre') { $annexes = [LectureFenetres]::Annexes($fg, [uint32]$pidFg, [uint32]$pidClassinus, $handleSuperposition) }
+  if ($zoneLue -eq 'fenetre' -and -not $fenetreVisee) { $annexes = [LectureFenetres]::Annexes($fg, [uint32]$pidFg, [uint32]$pidClassinus, $handleSuperposition) }
   foreach ($annexe in $annexes) {
     if ($script:coupe) { break }
     $avantAnnexe = $script:elements.Count
@@ -857,7 +911,11 @@ function lireUneFois(
 
   const limites = limitesDepuisParametres(parametres);
   const zone = zoneDepuisParametres(parametres);
-  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong, zone, zonesEntoureesDepuisParametres(parametres));
+  const fenetreVoulue = fenetreVoulueDepuisParametres(parametres);
+  if (fenetreVoulue && zone !== "fenetre") {
+    return Promise.resolve({ erreur: "Une fenêtre précise ne se lit qu'avec la zone « fenetre »." });
+  }
+  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong, zone, zonesEntoureesDepuisParametres(parametres), fenetreVoulue);
 
   // Le script est ecrit dans un fichier temporaire plutot que passe en -EncodedCommand :
   // le script encode approche la limite de 32 767 caracteres d'une ligne de commande
@@ -953,6 +1011,7 @@ function lireUneFois(
           coupe: r.coupe === true,
           mode: r.mode === "uia" ? "uia" : "titre_seul",
           zone_lue: r.zone_lue === "bureau" || r.zone_lue === "barre_des_taches" ? r.zone_lue : "fenetre",
+          ...(r.fenetre_visee === true ? { fenetre_visee: true } : {}),
         });
       }
     );
