@@ -16,6 +16,7 @@
     "test:cible-saisie": "node tests/verifier-cible-saisie.mjs",
     "test:ecriture-arriere-plan": "node tests/verifier-ecriture-arriere-plan.mjs",
     "test:lecture-fenetre-visee": "node tests/verifier-lecture-fenetre-visee.mjs",
+    "test:clic-sans-premier-plan": "node tests/verifier-clic-sans-premier-plan.mjs",
     "test:applications-protegees": "node tests/verifier-applications-protegees.mjs",
     "test:autorisation-canal": "node tests/verifier-autorisation-canal.mjs",
     "test:raccourcis-crayon": "node tests/verifier-raccourcis-crayon.mjs",

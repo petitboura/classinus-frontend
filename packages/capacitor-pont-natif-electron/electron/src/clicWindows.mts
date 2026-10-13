@@ -46,8 +46,18 @@ public static class CibleClic {
     string classe=nom.ToString();
     return classe.Equals("Button",StringComparison.OrdinalIgnoreCase) || classe.StartsWith("WindowsForms10.BUTTON.",StringComparison.OrdinalIgnoreCase);
   }
+  // Boite de dialogue Windows (classe #32770). Microsoft precise que BM_CLICK peut echouer sur un
+  // bouton d'une boite de dialogue inactive : seule celle ci doit etre activee avant le clic.
+  public static bool EstBoiteDialogue(IntPtr h) {
+    if(h==IntPtr.Zero) return false;
+    StringBuilder nom=new StringBuilder(256); GetClassName(h,nom,nom.Capacity);
+    return nom.ToString().Equals("#32770",StringComparison.Ordinal);
+  }
   public static void CliquerBouton(IntPtr h, IntPtr fenetre) {
-    SetForegroundWindow(fenetre);
+    // Une fenetre ordinaire reste ou elle est (13/10/2026) : le clic passe sans la mettre devant
+    // et sans prendre le focus a l'etudiant. Une boite de dialogue inactive est activee d'abord,
+    // sinon Windows peut ignorer le clic.
+    if (EstBoiteDialogue(fenetre)) SetForegroundWindow(fenetre);
     UIntPtr resultat;
     if(SendMessageTimeout(h,0x00F5,IntPtr.Zero,IntPtr.Zero,2,2000,out resultat)==IntPtr.Zero) throw new Exception("Le bouton Windows n'a pas confirmé le clic.");
   }

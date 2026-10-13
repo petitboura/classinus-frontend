@@ -201,3 +201,14 @@ sont pas lus (ils appartiennent a la fenetre du premier plan). Le resultat porte
 fenetre est derriere (le clic tomberait sur la fenetre qui est devant). Ne se combine pas
 avec `zone`. Test : `npm run test:lecture-fenetre-visee` (le script PowerShell lui meme ne
 se verifie que sur un vrai Windows).
+
+## Clic sur un bouton Windows classique sans premier plan (13/10/2026)
+
+Pour un bouton Win32 classique (action `BoutonWindows` de `clicWindows.mts`), le clic passe par
+`BM_CLICK` et la fenetre n'est plus mise au premier plan : l'etudiant garde son focus. Seule
+exception, une boite de dialogue Windows (classe `#32770`) est activee avant le clic, car
+Microsoft indique que `BM_CLICK` peut echouer sur une boite de dialogue inactive. Ne change rien
+pour les autres actions (Invoke, Toggle, selection, deploiement). Limite connue : le clic se fait
+a des coordonnees, la fenetre trouvee est la plus haute a cet endroit ; un bouton entierement
+cache derriere une autre fenetre n'est pas atteignable ainsi. Test : `npm run test:clic-sans-premier-plan`
+(le script lui meme ne se verifie que sur un vrai Windows).
