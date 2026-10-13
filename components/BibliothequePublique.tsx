@@ -2559,7 +2559,7 @@ export function BibliothequePublique() {
 
       {panneauDemandesOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 pb-[var(--safe-bottom,0px)] backdrop-blur-sm sm:items-center sm:p-6 sm:pb-6"
           onClick={() => setPanneauDemandesOuvert(false)}
         >
           <div
@@ -2690,7 +2690,7 @@ export function BibliothequePublique() {
           encore envoyés, d'où l'avertissement -- mais on peut naviguer
           ailleurs dans l'app pendant ce temps, le popup reste visible. */}
       {(envoi || uploadDossierEnCours) && progressionEnvoi && progressionEnvoi.total > 1 && (
-        <div className="fixed bottom-[calc(8.25rem+var(--cap-native-navigation-bottom,0px))] right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl animate-dj-fade-in-rapide">
+        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl animate-dj-fade-in-rapide">
           <div className="flex items-center gap-2">
             <Loader2 size={14} className="animate-spin" />
             <span>
@@ -2709,8 +2709,8 @@ export function BibliothequePublique() {
         <div
           className={`fixed right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl animate-dj-fade-in-rapide ${
             (envoi || uploadDossierEnCours) && progressionEnvoi && progressionEnvoi.total > 1
-              ? "bottom-[calc(11.5rem+var(--cap-native-navigation-bottom,0px))]"
-              : "bottom-[calc(8.25rem+var(--cap-native-navigation-bottom,0px))]"
+              ? "bottom-[calc(11.5rem+var(--dj-barre-onglets-web,0px))]"
+              : "bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))]"
           }`}
         >
           <div className="flex items-center gap-2">
@@ -2727,7 +2727,7 @@ export function BibliothequePublique() {
       )}
 
       {menuAjoutOuvert && (
-        <div className="fixed bottom-[calc(8.25rem+var(--cap-native-navigation-bottom,0px))] right-5 z-40 flex animate-dj-fade-in-rapide flex-col items-end gap-2">
+        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex animate-dj-fade-in-rapide flex-col items-end gap-2">
           {/* 12/09/2026, demande Bourama : sélection multiple, même
               principe que EspaceBibliotheque.tsx. */}
           {idsElementsAffiches.length > 0 && (
@@ -2810,7 +2810,7 @@ export function BibliothequePublique() {
       <button
         onClick={() => setMenuAjoutOuvert((v) => !v)}
         aria-label={menuAjoutOuvert ? "Fermer le menu d'ajout" : "Ajouter"}
-        className="fixed bottom-[calc(5rem+var(--cap-native-navigation-bottom,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
+        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
       >
         <Plus size={18} className={`transition-transform ${menuAjoutOuvert ? "rotate-45" : ""}`} />
       </button>

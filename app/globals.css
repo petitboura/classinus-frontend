@@ -309,25 +309,19 @@ body {
   }
 }
 
-/* Hauteur réservée pour BarreOngletsWeb.tsx (barre d'onglets du web
-   mobile, chantier 28/08/2026) -- 0px partout par défaut (desktop, et
-   appli native Capacitor qui a sa propre barre système, voir
-   --cap-native-navigation-bottom déjà utilisé ailleurs dans le projet).
-   Activée UNIQUEMENT en dessous du point de rupture md (768px, même
-   valeur que le reste du projet) ET seulement si <html> n'a pas
-   l'attribut data-natif="true" (posé par AppShell.tsx dès qu'il sait
-   qu'on tourne dans l'appli Capacitor) -- sans cette exclusion, l'appli
-   native (qui tourne aussi en dessous de 768px) aurait empilé CETTE
-   marge par-dessus celle déjà réservée par le plugin natif. Consommée
-   par tout élément fixed ancré en bas d'écran sur les pages normales
-   (voir ChatFlottant.tsx, EspaceBibliotheque.tsx) via
-   var(--dj-barre-onglets-web, 0px), même convention que
-   --cap-native-navigation-bottom. */
+/* Hauteur réservée pour BarreOngletsWeb.tsx, la barre d'onglets du bas.
+   Depuis le 13/10/2026 (demande Bourama) c'est la seule barre du bas, sur
+   le site comme dans l'appli native : la capsule native flottante est
+   supprimée, plus aucune exception pour l'appli Capacitor. 0px par défaut
+   (PC), activée en dessous du point de rupture md (768px, même valeur que
+   le reste du projet). Consommée par tout élément fixed ancré en bas
+   d'écran sur les pages normales (voir ChatFlottant.tsx,
+   EspaceBibliotheque.tsx) via var(--dj-barre-onglets-web, 0px). */
 :root {
   --dj-barre-onglets-web: 0px;
 }
 @media (max-width: 767px) {
-  :root:not([data-natif="true"]) {
+  :root {
     --dj-barre-onglets-web: calc(4rem + var(--safe-bottom));
   }
 }

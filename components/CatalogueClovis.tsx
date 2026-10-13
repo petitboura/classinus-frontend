@@ -109,7 +109,7 @@ export function CatalogueClovis({ onFerme }: { onFerme: () => void }) {
       // s'ouvrir directement au-dessus de TOUT, sans rien fermer avant.
       // z-[200] > z-[150] (panneau "Plus" du tiroir, seul calque plus
       // haut que l'ancien z-[100]) suffit, aucune autre logique requise.
-      className={`fixed inset-0 z-[200] flex items-start justify-center bg-black/50 p-4 sm:items-center ${
+      className={`fixed inset-0 z-[200] flex items-end justify-center bg-black/50 p-4 pb-[calc(1rem+var(--safe-bottom,0px))] sm:items-center sm:pb-4 ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
       onClick={fermer}
