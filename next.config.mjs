@@ -23,9 +23,22 @@
 // parlent au backend de test Railway (environnement staging), pas a la
 // production. Adresse en dur volontairement, a retirer avant toute fusion.
 // Le web Vercel n'est pas touche (CAPACITOR_BUILD absent).
+//
+// 14/10/2026 : le backend de test verifie les jetons aupres de la base
+// Supabase de test (projet Clovis-staging). Sans les deux lignes Supabase
+// ci dessous, le build prenait l'adresse et la cle du .env.local (base de
+// production) : le backend de test refusait le jeton (cle de signature
+// inconnue), l'appli PC n'etait jamais enregistree et lire_ecran echouait
+// aussitot. L'adresse et la cle "anon" sont publiques par conception (elles
+// sont deja dans chaque page web), donc rien de secret n'est ecrit ici.
+// A retirer avant toute fusion, comme l'adresse du backend.
 if (process.env.CAPACITOR_BUILD === "true") {
   process.env.NEXT_PUBLIC_API_URL =
     "https://classinus-staging.up.railway.app";
+  process.env.NEXT_PUBLIC_SUPABASE_URL =
+    "https://prchrczmcoqngesbzzfi.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByY2hyY3ptY29xbmdlc2J6emZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3MDc5NTksImV4cCI6MjEwNjI4Mzk1OX0.zvWXP16CL8MIyLcRkXMUZwrArQNhKOSQkyriVweEUW0";
 }
 // ============================================================================
 // STAGING SEULEMENT. NE JAMAIS AJOUTER CE BLOC DANS main.
