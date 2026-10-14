@@ -61,8 +61,9 @@ function Choix({
 /**
  * Bouton "Réglages" de la barre de saisie (01/10/2026, refonte de la barre) :
  * un seul bouton qui regroupe tous les réglages de réponse. Au clic il ouvre
- * une liste de lignes (Modèle, Longueur de réponse, Effort, Mode pédagogique, Modes
- * ressources, Code enseignant), chacune avec son icône. Les choix d'une ligne
+ * une liste de lignes (Longueur de réponse, Effort, Mode pédagogique, Modes
+ * ressources, Code enseignant, et Modèle seulement quand afficherChoixModele est
+ * vrai, cas du canal en direct), chacune avec son icône. Les choix d'une ligne
  * montrent le choix actuel marqué. Une seule ligne est ouverte à la fois : en
  * ouvrir une referme l'autre. Sur PC les choix s'affichent dans un volet à part,
  * collé au panneau, à droite ou à gauche selon la place à l'écran ; sur mobile
@@ -83,6 +84,7 @@ function Choix({
 export function BoutonReglages({
   variante,
   ancrage = "droite",
+  afficherChoixModele = true,
   modelesDisponibles,
   modeleSelectionne,
   onModeleChange,
@@ -99,6 +101,10 @@ export function BoutonReglages({
   // s'étend vers la gauche, cas de la barre de saisie. "gauche" : il s'étend vers la
   // droite, cas du canal en direct posé à gauche de l'écran.
   ancrage?: "droite" | "gauche";
+  // Faux dans la barre de saisie du chat (14/10/2026) : le choix du modèle y est fait par le
+  // bouton du haut du chat (SelecteurModeleHaut.tsx). Vrai par défaut : le canal en direct,
+  // qui n'a pas ce bouton, garde la ligne Modèle ici.
+  afficherChoixModele?: boolean;
   modelesDisponibles: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleSelectionne: string | null;
   onModeleChange?: (modeleId: string | null) => void;
@@ -128,7 +134,7 @@ export function BoutonReglages({
   // replier aussitôt (le survol l'a déjà ouverte).
   const ouverteParSurvolRef = useRef<LigneId | null>(null);
 
-  const afficherModele = modelesDisponibles.length > 0;
+  const afficherModele = afficherChoixModele && modelesDisponibles.length > 0;
   const afficherPersona = eleveChoisitMode;
   const afficherCode = !modeActif.chargement && modeActif.rattachements.length > 0;
 

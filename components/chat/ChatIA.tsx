@@ -14,6 +14,7 @@ import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { arreterToutLocalEtServeur, mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
 import { traiterFichiersJoints, typeDeFichier } from "@/lib/preparerPiecesJointes";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
+import { SelecteurModeleHaut } from "./SelecteurModeleHaut";
 import { definirModeleProchainMessage, lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { RaccourcisChat } from "./RaccourcisChat";
@@ -1704,6 +1705,14 @@ export function ChatIA({
   if (messages.length === 0) {
     return (
       <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0">
+        {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center">
+          <SelecteurModeleHaut
+            modelesDisponibles={modelesDisponibles}
+            modeleSelectionne={modeleSelectionne}
+            onModeleChange={setModeleSelectionne}
+          />
+        </div>
         {/* 01/10/2026, demande Bourama (raccourcis, voir RaccourcisChat.tsx).
             Le centrage vertical passe de justify-center à trois espaceurs
             dont la croissance s'anime : sur PC rien ne change (titre + barre
@@ -1810,6 +1819,16 @@ export function ChatIA({
     // côté sert aux tableaux et blocs de code plus larges que le texte. La
     // barre de saisie garde, elle, sa propre colonne de 48rem centrée.
     <div className="relative flex h-full w-full flex-col">
+      {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat. */}
+      {modelesDisponibles.length > 0 && (
+        <div className="relative z-20 flex h-11 flex-shrink-0 items-center justify-center">
+          <SelecteurModeleHaut
+            modelesDisponibles={modelesDisponibles}
+            modeleSelectionne={modeleSelectionne}
+            onModeleChange={setModeleSelectionne}
+          />
+        </div>
+      )}
       <div
         ref={conteneurMessagesRef}
         data-zone-chat

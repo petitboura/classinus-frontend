@@ -1740,6 +1740,7 @@ export function BarreDeSaisie({
           <div className="flex items-center gap-3">
             <BoutonReglages
               variante="bureau"
+              afficherChoixModele={false}
               modelesDisponibles={modelesDisponibles}
               modeleSelectionne={modeleSelectionne}
               onModeleChange={onModeleChange}
@@ -1941,6 +1942,7 @@ export function BarreDeSaisie({
         <div className="flex items-center gap-1">
         <BoutonReglages
           variante="mobile"
+          afficherChoixModele={false}
           modelesDisponibles={modelesDisponibles}
           modeleSelectionne={modeleSelectionne}
           onModeleChange={onModeleChange}
