@@ -29,6 +29,14 @@ const config: CapacitorConfig = {
     SystemBars: {
       insetsHandling: "css",
     },
+    // Mises à jour OTA (13/10/2026) : mode manuel. C'est lib/miseAJourOta.ts
+    // qui décide quand télécharger, donc autoUpdate reste désactivé (sinon le
+    // plugin interrogerait le service cloud de Capgo). statsUrl vide : rien
+    // n'est envoyé à Capgo.
+    CapacitorUpdater: {
+      autoUpdate: false,
+      statsUrl: "",
+    },
   },
 };
 

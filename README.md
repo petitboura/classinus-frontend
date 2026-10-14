@@ -346,6 +346,7 @@ tous ont désormais un point d'entrée dans la nav web/TypeScript.
 | `NEXT_PUBLIC_API_URL` | URL de `clovis-backend` |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client Supabase (auth + DB) |
 | `NEXT_PUBLIC_LIVRE_TAILLE_MAX_MO` | taille maximale, en Mo, d'un livre numérique ouvert dans la liseuse (100 si absente ou invalide) ; au-delà, carte de téléchargement. Optionnelle |
+| `NEXT_PUBLIC_OTA_LATEST_URL` | adresse de `latest.json` pour les mises à jour OTA de l'appli installée (voir "Mises à jour OTA") ; adresse du dépôt `classinus-updates` par défaut. Optionnelle |
 | `NEXT_PUBLIC_APP_URL` | URL publique du déploiement, utilisée par `app/layout.tsx` (balises OG) et le bouton partager (lien de téléchargement de l'app) ; sur Vercel, doit être créée en type "Configuration", jamais "Secrète" (incompatible avec un préfixe `NEXT_PUBLIC_`) |
 
 Voir `.env.local.example`.
@@ -367,3 +368,33 @@ Build statique Next.js vers `out/`, puis `npx cap sync`. Nécessite
 Android Studio/Xcode installés localement pour ouvrir et compiler les
 projets `android/`/`ios/` ensuite (hors de portée d'un sandbox sans ces
 outils).
+
+## Mises à jour OTA (sans réinstaller l'APK)
+
+Le code web de l'appli installée se met à jour tout seul : à l'ouverture,
+l'appli télécharge en arrière-plan le dernier bundle, et il s'active à
+l'ouverture suivante. Seuls les changements natifs (nouveau plugin, permission,
+manifest Android, mise à jour de Capacitor) exigent un nouvel APK.
+
+- **Publication automatique** : chaque push sur `main` lance
+  `.github/workflows/ota.yml` (jamais depuis `staging`). Il construit l'export
+  statique, publie `bundle.zip` en release du dépôt `classinus-updates`, puis met
+  à jour `latest.json` dans ce même dépôt. Les 5 dernières versions sont gardées
+  (variable `OTA_VERSIONS_GARDEES` pour changer).
+- **Côté appli** : `lib/miseAJourOta.ts`, lancé par `components/MiseAJourOta.tsx`
+  (monté dans `app/layout.tsx`). Plugin `@capgo/capacitor-updater` en mode
+  manuel, aucun service Capgo n'est utilisé. Si un bundle ne démarre pas, le
+  plugin revient à la version précédente et cette version n'est plus retentée.
+- **Compatibilité native** : `ota.config.json` contient `versionNativeMin`, le
+  `versionCode` (`android/app/build.gradle`) minimal d'un APK pour recevoir les
+  bundles. À relever dès qu'un changement natif rend les anciens APK
+  incompatibles avec le nouveau code web.
+- **Réglages GitHub à faire une fois** dans ce dépôt (Settings, Secrets and
+  variables, Actions) : secret `UPDATES_TOKEN` (jeton avec droit d'écriture sur
+  `classinus-updates`), variables `OTA_DEPOT` (`petitboura/classinus-updates`),
+  `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`. Le workflow s'arrête
+  avec un message clair si l'un d'eux manque.
+- **Première mise en place** : les APK déjà installés n'ont pas le plugin. Un
+  APK qui l'embarque doit d'abord être publié par le circuit habituel
+  (`/telecharger`), ensuite tout le code web passe en OTA.
