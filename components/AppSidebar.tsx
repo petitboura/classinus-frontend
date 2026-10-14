@@ -6,6 +6,7 @@ import { PAGES_FILLES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { PAGES_FILLES_BUREAU } from "@/lib/routesBureau";
 import { PAGES_FILLES_CONCENTRATION } from "@/lib/routesConcentration";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useFenetres } from "@/lib/contexteFenetres";
 import { MenuGroupe } from "@/components/MenuGroupeRail";
 import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
@@ -374,6 +375,7 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   // 22/08/2026, demande Bourama : remplace le comportement précédent
   // (fermer le chat plein écran au clic sur une section, cf. commit du
   // même jour) -- désormais le clic ouvre la section dans une fenêtre
@@ -575,13 +577,26 @@ export function AppSidebar({
     }
   }
 
+  // 14/10/2026, demande Bourama (appli PC, canal en direct) : "Se connecter"
+  // affichait une double barre latérale et jamais la page de connexion.
+  // Cause : window.location.href = "/connexion" recharge tout, et le
+  // runtime Electron (@capawesome/capacitor-electron) ne trouve pas de
+  // fichier "connexion" (l'export statique écrit connexion.html), donc il
+  // sert index.html (le chat) sous l'adresse /connexion. L'appli, qui
+  // décide quelle barre cacher d'après l'adresse, n'y reconnaît plus le
+  // chat et monte deux barres. router.push passe par la navigation
+  // interne, qui charge bien la page de connexion partout (site, PC,
+  // mobile). Après la déconnexion, on vide aussi le cache de données pour
+  // ne pas garder en mémoire celles du compte qui vient de sortir (le
+  // rechargement complet qui existait avant n'était pas fiable pour ça).
   async function seDeconnecter() {
     if (!connecte) {
-      window.location.href = "/connexion";
+      router.push("/connexion");
       return;
     }
     await supabase.auth.signOut();
-    window.location.href = "/connexion";
+    queryClient.clear();
+    router.push("/connexion");
   }
 
   // Correctif du 20/09/2026 (Bourama : "l'IA voit les éléments mais clique

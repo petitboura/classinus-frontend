@@ -132,7 +132,11 @@ export function ParametresAccueil() {
     if (!window.confirm("Se déconnecter de Classinus ?")) return;
 
     await supabase.auth.signOut();
-    window.location.href = "/connexion";
+    // 14/10/2026 : navigation interne au lieu d'un rechargement complet,
+    // qui affichait le chat sous l'adresse /connexion dans l'appli PC
+    // (voir seDeconnecter dans AppSidebar.tsx). Cache vidé comme là bas.
+    queryClient.clear();
+    router.push("/connexion");
   }
 
   async function oublierUneCategorie(categorie: string) {
