@@ -62,6 +62,7 @@ export function ChatIA({
   onMessagesSync,
   onNouvelleConversationDemarree,
   modelesDisponibles = [],
+  modelesBientot = [],
   modeleChoisi = null,
   boutonSansEnseignant = false,
   avantEnvoi,
@@ -112,6 +113,8 @@ export function ChatIA({
   // (AgentEditable.modele_choisi cote backend), simple valeur initiale --
   // l'utilisateur peut la changer pour la session via le selecteur.
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
+  // Modèles affichés grisés avec la mention Bientôt dans le bouton du modèle (14/10/2026).
+  modelesBientot?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleChoisi?: string | null;
   // Agent "Classinus" / contenu dynamique par matière (06/08/2026) -- voir
   // core/contenu_dynamique_matiere.py. Passé jusqu'à BarreDeSaisie pour
@@ -1709,6 +1712,7 @@ export function ChatIA({
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center">
           <SelecteurModeleHaut
             modelesDisponibles={modelesDisponibles}
+            modelesBientot={modelesBientot}
             modeleSelectionne={modeleSelectionne}
             onModeleChange={setModeleSelectionne}
           />
@@ -1824,6 +1828,7 @@ export function ChatIA({
         <div className="relative z-20 flex h-11 flex-shrink-0 items-center justify-center">
           <SelecteurModeleHaut
             modelesDisponibles={modelesDisponibles}
+            modelesBientot={modelesBientot}
             modeleSelectionne={modeleSelectionne}
             onModeleChange={setModeleSelectionne}
           />

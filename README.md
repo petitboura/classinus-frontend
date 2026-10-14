@@ -91,7 +91,8 @@ components/
                           useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
                           de réglages partagées (reglagesReponse.ts) ;
                           SelecteurModeleHaut.tsx (14/10/2026) : bouton du modèle en haut au milieu du chat,
-                          nom et icône du fournisseur du modèle actif, liste dépliante groupée par fournisseur.
+                          nom et icône du fournisseur du modèle actif, liste dépliante groupée par fournisseur. Les modèles pas encore
+                          ouverts (modeles_bientot, envoyés par le backend) y sont grisés avec la mention Bientôt.
                           Il remplace la ligne Modèle de Réglages dans la barre de saisie (BoutonReglages garde
                           cette ligne seulement pour le canal en direct, prop afficherChoixModele) ;
                           IconeFournisseur.tsx : icône d'un fournisseur de modèles, depuis public/icones-fournisseurs/ ;

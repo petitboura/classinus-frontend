@@ -16,7 +16,9 @@ type ModeleDisponible = { modele_id: string; label: string; distributeur: string
  *
  * Il remplace la ligne "Modèle" du bouton Réglages de la barre de saisie. Les données
  * (liste, modèle choisi) et le stockage du choix (lib/reglagesProchainMessage.ts)
- * sont ceux d'avant : seul l'endroit où l'on choisit change. Le canal en direct garde,
+ * sont ceux d'avant : seul l'endroit où l'on choisit change. Les modèles pas encore
+ * ouverts (modelesBientot, envoyés par le backend) sont montrés grisés avec la mention
+ * Bientôt, à la suite des modèles utilisables de leur fournisseur. Le canal en direct garde,
  * lui, la ligne Modèle dans son propre bouton Réglages.
  *
  * Se ferme au clic extérieur, à la touche Echap et après un choix. L'ouverture et la
@@ -24,10 +26,13 @@ type ModeleDisponible = { modele_id: string; label: string; distributeur: string
  */
 export function SelecteurModeleHaut({
   modelesDisponibles,
+  modelesBientot = [],
   modeleSelectionne,
   onModeleChange,
 }: {
   modelesDisponibles: ModeleDisponible[];
+  // Modèles montrés grisés avec la mention Bientôt, jamais choisissables.
+  modelesBientot?: ModeleDisponible[];
   modeleSelectionne: string | null;
   onModeleChange: (modeleId: string | null) => void;
 }) {
@@ -94,7 +99,9 @@ export function SelecteurModeleHaut({
               <OptionModele actif={!modeleSelectionne} distributeur={null} onClick={() => choisir(null)}>
                 Auto
               </OptionModele>
-              {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter((d) => modelesDisponibles.some((m) => m.distributeur === d)).map(
+              {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter(
+                (d) => modelesDisponibles.some((m) => m.distributeur === d) || modelesBientot.some((m) => m.distributeur === d)
+              ).map(
                 (distributeur) => (
                   <div key={distributeur} className="mt-1">
                     <div className="px-2.5 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-dj-texte-muet">
@@ -111,6 +118,13 @@ export function SelecteurModeleHaut({
                           {m.label}
                         </OptionModele>
                       ))}
+                    {modelesBientot
+                      .filter((m) => m.distributeur === distributeur)
+                      .map((m) => (
+                        <OptionModele key={m.modele_id} actif={false} bientot distributeur={m.distributeur} onClick={() => {}}>
+                          {m.label}
+                        </OptionModele>
+                      ))}
                   </div>
                 )
               )}
@@ -124,11 +138,14 @@ export function SelecteurModeleHaut({
 
 function OptionModele({
   actif,
+  bientot = false,
   distributeur,
   onClick,
   children,
 }: {
   actif: boolean;
+  // Modèle pas encore ouvert : grisé, non cliquable, avec la mention Bientôt.
+  bientot?: boolean;
   distributeur: string | null;
   onClick: () => void;
   children: string;
@@ -138,13 +155,23 @@ function OptionModele({
       type="button"
       role="option"
       aria-selected={actif}
+      aria-disabled={bientot}
+      disabled={bientot}
       onClick={onClick}
       className={
-        "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-dj-surface-haute " +
-        (actif ? "text-dj-accent-1-texte" : "text-dj-texte")
+        "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors " +
+        (bientot ? "cursor-not-allowed text-dj-texte-muet " : "hover:bg-dj-surface-haute ") +
+        (actif ? "text-dj-accent-1-texte" : bientot ? "" : "text-dj-texte")
       }>
-      <IconeFournisseur distributeur={distributeur} />
+      <span className={bientot ? "opacity-50" : ""}>
+        <IconeFournisseur distributeur={distributeur} />
+      </span>
       <span className="min-w-0 flex-1 truncate">{children}</span>
+      {bientot && (
+        <span className="flex-shrink-0 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] font-medium text-dj-texte-muet">
+          Bientôt
+        </span>
+      )}
       {actif && <Check size={14} className="flex-shrink-0" />}
     </button>
   );
