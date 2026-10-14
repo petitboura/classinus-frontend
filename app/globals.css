@@ -324,6 +324,11 @@ body {
   :root {
     --dj-barre-onglets-web: calc(4rem + var(--safe-bottom));
   }
+  /* Sur /chat la barre du bas est masquée (posé par AppShell.tsx) : rien
+     à réserver, les fenêtres retombent au bas de l'écran. */
+  :root[data-sans-barre="true"] {
+    --dj-barre-onglets-web: var(--safe-bottom);
+  }
 }
 
 ::selection {

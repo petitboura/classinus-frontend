@@ -2559,7 +2559,7 @@ export function BibliothequePublique() {
 
       {panneauDemandesOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 pb-[var(--safe-bottom,0px)] backdrop-blur-sm sm:items-center sm:p-6 sm:pb-6"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 pb-[var(--dj-barre-onglets-web,0px)] backdrop-blur-sm sm:items-center sm:p-6 sm:pb-6"
           onClick={() => setPanneauDemandesOuvert(false)}
         >
           <div

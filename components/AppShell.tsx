@@ -93,6 +93,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // fois avec le nom que Google a fourni. Ne fait rien pour un compte deja
   // nomme (email/telephone ou reconnexion Google), ni si Google n'a donne
   // aucun nom.
+  // Sur /chat la barre du bas est masquée : on le signale à globals.css pour
+  // que la marge réservée aux fenêtres et aux boutons flottants retombe à
+  // la zone de sécurité seule (voir --dj-barre-onglets-web).
+  useEffect(() => {
+    document.documentElement.setAttribute("data-sans-barre", estPageChat(pathname) ? "true" : "false");
+  }, [pathname]);
+
   useEffect(() => {
     if (!connecte) return;
     (async () => {

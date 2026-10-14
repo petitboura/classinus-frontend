@@ -1409,7 +1409,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
 
       {modaleAjout && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--safe-bottom,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => {
             setModaleAjout(null);
             setTitreAjout("");
@@ -1588,7 +1588,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           peut être rattaché à plusieurs dossiers à la fois. */}
       {fichierARanger && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--safe-bottom,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => setFichierARanger(null)}
         >
           <div
@@ -1627,7 +1627,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
 
       {rangerEnGroupeOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--safe-bottom,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => setRangerEnGroupeOuvert(false)}
         >
           <div
@@ -1684,7 +1684,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           cas). */}
       {pickerFichiersOuvert && dossierCourantId !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--safe-bottom,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => setPickerFichiersOuvert(false)}
         >
           <div
