@@ -107,7 +107,7 @@ export function BoutonReglages({
   afficherChoixModele?: boolean;
   modelesDisponibles: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleSelectionne: string | null;
-  onModeleChange?: (modeleId: string | null) => void;
+  onModeleChange?: (modeleId: string) => void;
   longueur: LongueurReponse;
   onLongueurChange: (valeur: LongueurReponse) => void;
   // Effort de réflexion de DeepSeek (04/10/2026), voir lib/reglagesProchainMessage.ts.
@@ -139,7 +139,7 @@ export function BoutonReglages({
   const afficherCode = !modeActif.chargement && modeActif.rattachements.length > 0;
 
   // Choix actuel de chaque ligne, lu dans la bulle au survol du bouton.
-  const valeurModele = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "Auto";
+  const valeurModele = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "";
   const valeurLongueur = LABELS_LONGUEUR[longueur];
   const valeurEffort = LABELS_EFFORT[effort];
   const valeurPersona = PERSONAS.find((p) => p.id === pedagogie.persona)?.label ?? "Aucun mode";
@@ -315,16 +315,6 @@ export function BoutonReglages({
         <div className={mobile ? "overflow-y-auto p-1" : ""}>
           {afficherModele && (
             <LigneReglage Icone={Sparkles} titre="Modèle" {...ligneProps("modele")}>
-              <Choix
-                grand={mobile}
-                actif={!modeleSelectionne}
-                onClick={() => {
-                  onModeleChange?.(null);
-                  fermer();
-                }}
-              >
-                Auto
-              </Choix>
               {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter((d) => modelesDisponibles.some((m) => m.distributeur === d)).map(
                 (distributeur) => (
                   <div key={distributeur} className="mt-1">

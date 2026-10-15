@@ -1978,6 +1978,8 @@ export async function enregistrerMonProfil(payload: {
   // api/profiles.py:MettreAJourProfilPayload.
   langue_cible_erreurs?: string;
   traduction_auto_erreurs?: boolean;
+  // 15/10/2026, voir api/profiles.py:MettreAJourProfilPayload.
+  modele_prefere?: string;
 }) {
   return appelerApi("/api/profiles/me", {
     method: "PATCH",
@@ -1999,6 +2001,8 @@ export async function obtenirMonStatut() {
     // api/profiles.py:MonStatutReponse -- null = jamais répondu.
     langue_cible_erreurs: string | null;
     traduction_auto_erreurs: boolean | null;
+    // 15/10/2026, voir api/profiles.py:MonStatutReponse -- null = jamais choisi.
+    modele_prefere: string | null;
   }>;
 }
 

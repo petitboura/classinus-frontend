@@ -13,9 +13,9 @@ import { ConfirmationOutil } from "./ConfirmationOutil";
 import { BoutonRepriseAgent } from "./BoutonRepriseAgent";
 import { arreterToutLocalEtServeur, mettreAJourSourceTache, retirerSourceTache } from "@/lib/tacheCanal";
 import { traiterFichiersJoints, typeDeFichier } from "@/lib/preparerPiecesJointes";
-import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
+import { choisirModele, useModeleActif } from "@/lib/modeleActif";
 import { SelecteurModeleHaut } from "./SelecteurModeleHaut";
-import { definirModeleProchainMessage, lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
+import { lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
@@ -62,7 +62,7 @@ export function ChatIA({
   onMessagesSync,
   onNouvelleConversationDemarree,
   modelesDisponibles = [],
-  modeleChoisi = null,
+  modelesBientot = [],
   boutonSansEnseignant = false,
   avantEnvoi,
   iconePersonnalisee,
@@ -108,11 +108,10 @@ export function ChatIA({
   // Modeles premium (02/08/2026, voir core/fournisseurs_llm.py) : liste
   // vide = agent sans abonnement premium debloque, BarreDeSaisie
   // n'affiche alors AUCUN selecteur (comportement identique a avant
-  // cette feature). `modeleChoisi` = preference par defaut du createur
-  // (AgentEditable.modele_choisi cote backend), simple valeur initiale --
-  // l'utilisateur peut la changer pour la session via le selecteur.
+  // cette feature). Le modele actif est resolu par lib/modeleActif.ts.
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
-  modeleChoisi?: string | null;
+  // Modèles affichés grisés avec la mention Bientôt dans le bouton du modèle (14/10/2026).
+  modelesBientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string> }[];
   // Agent "Classinus" / contenu dynamique par matière (06/08/2026) -- voir
   // core/contenu_dynamique_matiere.py. Passé jusqu'à BarreDeSaisie pour
   // afficher le bouton "Sans enseignant" (forcer le prompt généraliste
@@ -153,17 +152,12 @@ export function ChatIA({
   // vraie page du chat (ChatSection.tsx), jamais pour la popup mini.
   raccourcis?: boolean;
 }) {
-  // Modèle choisi : lib/reglagesProchainMessage.ts (03/10/2026, demande Bourama), commun à la
-  // barre de saisie et au canal en direct. La préférence par défaut du créateur
-  // (modeleChoisi) n'est appliquée qu'une fois, tant que rien n'a été choisi.
-  const { modeleId: modeleStocke } = useReglagesProchainMessage();
-  const modeleInitialAppliqueRef = useRef(false);
-  if (!modeleInitialAppliqueRef.current) {
-    modeleInitialAppliqueRef.current = true;
-    if (modeleStocke === null && modeleChoisi !== null) definirModeleProchainMessage(modeleChoisi);
-  }
-  const modeleSelectionne = modeleStocke;
-  const setModeleSelectionne = definirModeleProchainMessage;
+  // Modèle actif (15/10/2026, demande Bourama, plus de choix "Auto") : le dernier choix de
+  // l'élève, sinon DeepSeek Flash, sinon le premier de la liste (lib/modeleActif.ts). Le choix
+  // est partagé avec la barre de saisie et le canal en direct (lib/reglagesProchainMessage.ts)
+  // et gardé sur le compte de l'élève.
+  const modeleSelectionne = useModeleActif(modelesDisponibles);
+  const setModeleSelectionne = choisirModele;
   // 01/10/2026 : vrai tant que le curseur est dans le champ de saisie (écran
   // vide, voir le commentaire de l'écran de démarrage plus bas).
   const [saisieActive, setSaisieActive] = useState(false);
@@ -1705,10 +1699,17 @@ export function ChatIA({
   if (messages.length === 0) {
     return (
       <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0">
-        {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat. */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center">
+        {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
+            15/10/2026 : sur téléphone (chat plein écran), il est posé tout en haut de l'écran,
+            sur la ligne du bouton hamburger (même décalage, voir AppSidebar.tsx). */}
+        <div
+          className={
+            "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center" +
+            (pleinEcran ? " max-md:fixed max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-40 max-md:h-8" : "")
+          }>
           <SelecteurModeleHaut
             modelesDisponibles={modelesDisponibles}
+            modelesBientot={modelesBientot}
             modeleSelectionne={modeleSelectionne}
             onModeleChange={setModeleSelectionne}
           />
@@ -1819,11 +1820,20 @@ export function ChatIA({
     // côté sert aux tableaux et blocs de code plus larges que le texte. La
     // barre de saisie garde, elle, sa propre colonne de 48rem centrée.
     <div className="relative flex h-full w-full flex-col">
-      {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat. */}
+      {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
+          15/10/2026 : sur téléphone (chat plein écran), posé tout en haut de l'écran, sur la
+          ligne du bouton hamburger, et il ne prend plus de place au dessus des messages. */}
       {modelesDisponibles.length > 0 && (
-        <div className="relative z-20 flex h-11 flex-shrink-0 items-center justify-center">
+        <div
+          className={
+            "relative z-20 flex h-11 flex-shrink-0 items-center justify-center" +
+            (pleinEcran
+              ? " max-md:pointer-events-none max-md:fixed max-md:inset-x-0 max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-40 max-md:h-8"
+              : "")
+          }>
           <SelecteurModeleHaut
             modelesDisponibles={modelesDisponibles}
+            modelesBientot={modelesBientot}
             modeleSelectionne={modeleSelectionne}
             onModeleChange={setModeleSelectionne}
           />

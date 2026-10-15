@@ -8,7 +8,9 @@
 // et lue par l'envoi direct du canal (lib/canalAgentApplicatif.ts).
 //
 // - longueur : "courte" | "moyenne" | "longue", durable (reste d'un message à l'autre).
-// - modeleId : modèle premium choisi, null = choix automatique de l'agent. Durable.
+// - modeleId : dernier modèle choisi par l'élève, null = jamais choisi (le modèle actif est alors
+//   résolu par lib/modeleActif.ts : DeepSeek Flash, plus de choix "Auto"). Durable, et gardé sur le
+//   compte de l'élève (profiles.modele_prefere).
 // - effort : effort de réflexion de DeepSeek (04/10/2026), "none" | "low" | "high" | "max", durable.
 //   Même défaut que le backend (DEEPSEEK_REASONING_EFFORT = "low").
 // - sansEnseignant : ne vaut que pour le prochain message, remis à faux à l'envoi.

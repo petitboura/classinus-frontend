@@ -5,18 +5,37 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { IconeFournisseur } from "./IconeFournisseur";
 import { ORDRE_DISTRIBUTEURS_AFFICHAGE, LABELS_DISTRIBUTEUR } from "./barre/reglagesReponse";
+import { LOCALE_ACTIVE } from "@/lib/erreurs";
 
-type ModeleDisponible = { modele_id: string; label: string; distributeur: string; palier: string };
+// libelles_bientot : le mot affiché sur un modèle Bientôt, par langue. Il vient du backend, qui le lit
+// dans Supabase (table textes_modeles_llm), donc il se change sans toucher au code.
+type ModeleDisponible = {
+  modele_id: string;
+  label: string;
+  distributeur: string;
+  palier: string;
+  libelles_bientot?: Record<string, string>;
+};
+
+// Dernier recours si le backend n'envoie aucun mot (ancienne version du serveur).
+const LIBELLE_BIENTOT_PAR_DEFAUT = "Bientôt";
+
+function libelleBientot(libelles?: Record<string, string>): string {
+  return libelles?.[LOCALE_ACTIVE] ?? libelles?.fr ?? LIBELLE_BIENTOT_PAR_DEFAUT;
+}
 
 /**
  * Bouton du modèle, en haut au milieu du chat (14/10/2026, demande Bourama). Il montre
- * le nom du modèle actif avec l'icône de son fournisseur ("Auto" quand aucun modèle
- * n'est imposé). Au clic il déplie la liste de tous les modèles, groupés par
+ * le nom du modèle actif avec l'icône de son fournisseur. Il n'y a plus de choix "Auto"
+ * (15/10/2026) : le modèle actif est toujours un vrai modèle, voir lib/modeleActif.ts.
+ * Au clic il déplie la liste de tous les modèles, groupés par
  * fournisseur dans le même ordre que partout ailleurs (reglagesReponse.ts).
  *
  * Il remplace la ligne "Modèle" du bouton Réglages de la barre de saisie. Les données
  * (liste, modèle choisi) et le stockage du choix (lib/reglagesProchainMessage.ts)
- * sont ceux d'avant : seul l'endroit où l'on choisit change. Le canal en direct garde,
+ * sont ceux d'avant : seul l'endroit où l'on choisit change. Les modèles pas encore
+ * ouverts (modelesBientot, envoyés par le backend) sont montrés grisés avec la mention
+ * Bientôt, à la suite des modèles utilisables de leur fournisseur. Le canal en direct garde,
  * lui, la ligne Modèle dans son propre bouton Réglages.
  *
  * Se ferme au clic extérieur, à la touche Echap et après un choix. L'ouverture et la
@@ -24,12 +43,16 @@ type ModeleDisponible = { modele_id: string; label: string; distributeur: string
  */
 export function SelecteurModeleHaut({
   modelesDisponibles,
+  modelesBientot = [],
   modeleSelectionne,
   onModeleChange,
 }: {
   modelesDisponibles: ModeleDisponible[];
+  // Modèles montrés grisés avec la mention Bientôt, jamais choisissables.
+  modelesBientot?: ModeleDisponible[];
+  // Modèle actif déjà résolu (lib/modeleActif.ts), toujours présent dans la liste.
   modeleSelectionne: string | null;
-  onModeleChange: (modeleId: string | null) => void;
+  onModeleChange: (modeleId: string) => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const idListe = useId();
@@ -57,7 +80,7 @@ export function SelecteurModeleHaut({
 
   const modeleActif = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne) ?? null;
 
-  function choisir(modeleId: string | null) {
+  function choisir(modeleId: string) {
     onModeleChange(modeleId);
     setOuvert(false);
   }
@@ -73,7 +96,7 @@ export function SelecteurModeleHaut({
         className="flex max-w-[70vw] items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute"
       >
         <IconeFournisseur distributeur={modeleActif?.distributeur ?? null} />
-        <span className="truncate">{modeleActif?.label ?? "Auto"}</span>
+        <span className="truncate">{modeleActif?.label ?? ""}</span>
         <ChevronDown
           size={14}
           className={"flex-shrink-0 text-dj-texte-muet transition-transform duration-200 " + (ouvert ? "rotate-180" : "")}
@@ -91,10 +114,9 @@ export function SelecteurModeleHaut({
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
               className="max-h-[min(24rem,60vh)] overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
-              <OptionModele actif={!modeleSelectionne} distributeur={null} onClick={() => choisir(null)}>
-                Auto
-              </OptionModele>
-              {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter((d) => modelesDisponibles.some((m) => m.distributeur === d)).map(
+              {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter(
+                (d) => modelesDisponibles.some((m) => m.distributeur === d) || modelesBientot.some((m) => m.distributeur === d)
+              ).map(
                 (distributeur) => (
                   <div key={distributeur} className="mt-1">
                     <div className="px-2.5 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-dj-texte-muet">
@@ -111,6 +133,19 @@ export function SelecteurModeleHaut({
                           {m.label}
                         </OptionModele>
                       ))}
+                    {modelesBientot
+                      .filter((m) => m.distributeur === distributeur)
+                      .map((m) => (
+                        <OptionModele
+                          key={m.modele_id}
+                          actif={false}
+                          bientot
+                          libelleBientot={libelleBientot(m.libelles_bientot)}
+                          distributeur={m.distributeur}
+                          onClick={() => {}}>
+                          {m.label}
+                        </OptionModele>
+                      ))}
                   </div>
                 )
               )}
@@ -124,11 +159,17 @@ export function SelecteurModeleHaut({
 
 function OptionModele({
   actif,
+  bientot = false,
+  libelleBientot = LIBELLE_BIENTOT_PAR_DEFAUT,
   distributeur,
   onClick,
   children,
 }: {
   actif: boolean;
+  // Modèle pas encore ouvert : grisé, non cliquable, avec la mention Bientôt.
+  bientot?: boolean;
+  // Mot affiché sur un modèle Bientôt (réglé dans Supabase, voir libelleBientot plus haut).
+  libelleBientot?: string;
   distributeur: string | null;
   onClick: () => void;
   children: string;
@@ -138,13 +179,23 @@ function OptionModele({
       type="button"
       role="option"
       aria-selected={actif}
+      aria-disabled={bientot}
+      disabled={bientot}
       onClick={onClick}
       className={
-        "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-dj-surface-haute " +
-        (actif ? "text-dj-accent-1-texte" : "text-dj-texte")
+        "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors " +
+        (bientot ? "cursor-not-allowed text-dj-texte-muet " : "hover:bg-dj-surface-haute ") +
+        (actif ? "text-dj-accent-1-texte" : bientot ? "" : "text-dj-texte")
       }>
-      <IconeFournisseur distributeur={distributeur} />
+      <span className={bientot ? "opacity-50" : ""}>
+        <IconeFournisseur distributeur={distributeur} />
+      </span>
       <span className="min-w-0 flex-1 truncate">{children}</span>
+      {bientot && (
+        <span className="flex-shrink-0 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] font-medium text-dj-texte-muet">
+          {libelleBientot}
+        </span>
+      )}
       {actif && <Check size={14} className="flex-shrink-0" />}
     </button>
   );
