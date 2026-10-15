@@ -150,7 +150,7 @@ export function SourcesBulle({ sources }: { sources?: Source[] }) {
               className="flex max-w-[220px] items-center gap-1 rounded-cgpt-bouton border border-dj-bordure px-2.5 py-1 text-[12px] text-dj-texte-muet transition-colors hover:text-dj-texte"
             >
               <Favicon url={source.url} />
-              <BulleSurvol texte={source.titre} className="truncate" revelerAuClic={false}>
+              <BulleSurvol texte={source.titre} className="block truncate" revelerAuClic={false} flottante>
                 {source.titre}
               </BulleSurvol>
               <sup className="shrink-0 font-semibold text-dj-texte-muet">{source.numero}</sup>
