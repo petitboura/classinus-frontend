@@ -5,8 +5,24 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { IconeFournisseur } from "./IconeFournisseur";
 import { ORDRE_DISTRIBUTEURS_AFFICHAGE, LABELS_DISTRIBUTEUR } from "./barre/reglagesReponse";
+import { LOCALE_ACTIVE } from "@/lib/erreurs";
 
-type ModeleDisponible = { modele_id: string; label: string; distributeur: string; palier: string };
+// libelles_bientot : le mot affiché sur un modèle Bientôt, par langue. Il vient du backend, qui le lit
+// dans Supabase (table textes_modeles_llm), donc il se change sans toucher au code.
+type ModeleDisponible = {
+  modele_id: string;
+  label: string;
+  distributeur: string;
+  palier: string;
+  libelles_bientot?: Record<string, string>;
+};
+
+// Dernier recours si le backend n'envoie aucun mot (ancienne version du serveur).
+const LIBELLE_BIENTOT_PAR_DEFAUT = "Bientôt";
+
+function libelleBientot(libelles?: Record<string, string>): string {
+  return libelles?.[LOCALE_ACTIVE] ?? libelles?.fr ?? LIBELLE_BIENTOT_PAR_DEFAUT;
+}
 
 /**
  * Bouton du modèle, en haut au milieu du chat (14/10/2026, demande Bourama). Il montre
@@ -120,7 +136,13 @@ export function SelecteurModeleHaut({
                     {modelesBientot
                       .filter((m) => m.distributeur === distributeur)
                       .map((m) => (
-                        <OptionModele key={m.modele_id} actif={false} bientot distributeur={m.distributeur} onClick={() => {}}>
+                        <OptionModele
+                          key={m.modele_id}
+                          actif={false}
+                          bientot
+                          libelleBientot={libelleBientot(m.libelles_bientot)}
+                          distributeur={m.distributeur}
+                          onClick={() => {}}>
                           {m.label}
                         </OptionModele>
                       ))}
@@ -138,6 +160,7 @@ export function SelecteurModeleHaut({
 function OptionModele({
   actif,
   bientot = false,
+  libelleBientot = LIBELLE_BIENTOT_PAR_DEFAUT,
   distributeur,
   onClick,
   children,
@@ -145,6 +168,8 @@ function OptionModele({
   actif: boolean;
   // Modèle pas encore ouvert : grisé, non cliquable, avec la mention Bientôt.
   bientot?: boolean;
+  // Mot affiché sur un modèle Bientôt (réglé dans Supabase, voir libelleBientot plus haut).
+  libelleBientot?: string;
   distributeur: string | null;
   onClick: () => void;
   children: string;
@@ -168,7 +193,7 @@ function OptionModele({
       <span className="min-w-0 flex-1 truncate">{children}</span>
       {bientot && (
         <span className="flex-shrink-0 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] font-medium text-dj-texte-muet">
-          Bientôt
+          {libelleBientot}
         </span>
       )}
       {actif && <Check size={14} className="flex-shrink-0" />}

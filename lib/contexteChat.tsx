@@ -37,7 +37,7 @@ export type AgentDetail = {
   sous_titre_accueil: string;
   modeles_disponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   // Modèles montrés grisés avec la mention Bientôt, jamais choisissables (14/10/2026).
-  modeles_bientot?: { modele_id: string; label: string; distributeur: string; palier: string }[];
+  modeles_bientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string> }[];
   bouton_sans_enseignant?: boolean;
   section_mes_comportements?: boolean;
 };
