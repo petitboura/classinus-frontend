@@ -9,6 +9,7 @@ import "./globals.css";
 import "katex/dist/katex.min.css";
 import "mathlive/fonts.css";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { MiseAJourOta } from "@/components/MiseAJourOta";
 import { ReveilBackend } from "@/components/ReveilBackend";
 import { SplashOuverture } from "@/components/SplashOuverture";
 import { SplashPret } from "@/components/SplashPret";
@@ -195,6 +196,7 @@ export default function RacineLayout({
           }}
         />
         <ServiceWorkerRegistration />
+        <MiseAJourOta />
         <ReveilBackend />
         <FournisseurRequetes>
           <InteractionGlobale>{children}</InteractionGlobale>

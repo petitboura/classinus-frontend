@@ -1,0 +1,128 @@
+name: Publier la mise à jour OTA
+
+# Construit l'appli mobile (export statique Capacitor), publie le zip dans le
+# dépôt de mises à jour, puis met à jour latest.json que l'appli installée
+# lit à l'ouverture. Voir lib/miseAJourOta.ts et la section "Mises à jour OTA"
+# du README.
+#
+# Uniquement depuis main : ne jamais déclencher depuis staging (voir CLAUDE.md,
+# section STAGING).
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+# Une publication à la fois, dans l'ordre, sans en annuler en cours de route.
+concurrency:
+  group: ota-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publier:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CAPACITOR_BUILD: "true"
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      OTA_DEPOT: ${{ vars.OTA_DEPOT }}
+      OTA_VERSIONS_GARDEES: ${{ vars.OTA_VERSIONS_GARDEES || '5' }}
+      UPDATES_TOKEN: ${{ secrets.UPDATES_TOKEN }}
+      GH_TOKEN: ${{ secrets.UPDATES_TOKEN }}
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Vérifier la configuration
+        shell: bash
+        run: |
+          manquantes=""
+          for nom in NEXT_PUBLIC_API_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_APP_URL OTA_DEPOT UPDATES_TOKEN; do
+            if [ -z "${!nom}" ]; then
+              manquantes="$manquantes $nom"
+            fi
+          done
+          if [ -n "$manquantes" ]; then
+            echo "Configuration incomplète. Variables ou secrets manquants :$manquantes"
+            echo "À renseigner dans Settings, Secrets and variables, Actions."
+            exit 1
+          fi
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Fixer l'heure de construction
+        shell: bash
+        run: |
+          # Même valeur dans le bundle (NEXT_PUBLIC_BUILD_TIME) et dans latest.json.
+          echo "NEXT_PUBLIC_BUILD_TIME=$(date +%s)000" >> "$GITHUB_ENV"
+
+      - name: Construire l'export statique
+        run: npx next build
+
+      - name: Préparer le zip
+        shell: bash
+        run: |
+          test -f out/index.html
+          (cd out && zip -q -r ../bundle.zip .)
+          echo "OTA_SHA256=$(sha256sum bundle.zip | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "OTA_VERSION=ota-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Écrire latest.json
+        shell: bash
+        run: |
+          export OTA_URL_ZIP="https://github.com/${OTA_DEPOT}/releases/download/${OTA_VERSION}/bundle.zip"
+          export OTA_HEURE_BUILD="$NEXT_PUBLIC_BUILD_TIME"
+          node scripts/generer-latest-ota.mjs latest.json
+          cat latest.json
+
+      - name: Publier le zip
+        shell: bash
+        run: |
+          gh release create "$OTA_VERSION" bundle.zip -R "$OTA_DEPOT" \
+            -t "Bundle $OTA_VERSION" \
+            -n "Bundle OTA construit depuis le commit $GITHUB_SHA"
+
+      # latest.json est mis à jour APRÈS le zip : l'appli ne voit jamais une
+      # version dont le fichier n'existe pas encore.
+      - name: Publier latest.json
+        shell: bash
+        run: |
+          sha_actuel=$(gh api "repos/$OTA_DEPOT/contents/latest.json" -q .sha 2>/dev/null || true)
+          contenu=$(base64 -w0 latest.json)
+          if [ -n "$sha_actuel" ]; then
+            gh api -X PUT "repos/$OTA_DEPOT/contents/latest.json" \
+              -f message="Publication de $OTA_VERSION" -f content="$contenu" \
+              -f sha="$sha_actuel" -f branch=main
+          else
+            gh api -X PUT "repos/$OTA_DEPOT/contents/latest.json" \
+              -f message="Publication de $OTA_VERSION" -f content="$contenu" \
+              -f branch=main
+          fi
+
+      - name: Supprimer les anciennes versions
+        shell: bash
+        run: |
+          gh api "repos/$OTA_DEPOT/releases?per_page=100" -q '.[] | "\(.id) \(.tag_name)"' \
+            | tail -n +$((OTA_VERSIONS_GARDEES + 1)) \
+            | while read -r id tag; do
+                gh api -X DELETE "repos/$OTA_DEPOT/releases/$id"
+                gh api -X DELETE "repos/$OTA_DEPOT/git/refs/tags/$tag" || true
+              done
