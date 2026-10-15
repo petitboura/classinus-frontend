@@ -10,8 +10,9 @@ type ModeleDisponible = { modele_id: string; label: string; distributeur: string
 
 /**
  * Bouton du modèle, en haut au milieu du chat (14/10/2026, demande Bourama). Il montre
- * le nom du modèle actif avec l'icône de son fournisseur ("Auto" quand aucun modèle
- * n'est imposé). Au clic il déplie la liste de tous les modèles, groupés par
+ * le nom du modèle actif avec l'icône de son fournisseur. Il n'y a plus de choix "Auto"
+ * (15/10/2026) : le modèle actif est toujours un vrai modèle, voir lib/modeleActif.ts.
+ * Au clic il déplie la liste de tous les modèles, groupés par
  * fournisseur dans le même ordre que partout ailleurs (reglagesReponse.ts).
  *
  * Il remplace la ligne "Modèle" du bouton Réglages de la barre de saisie. Les données
@@ -33,8 +34,9 @@ export function SelecteurModeleHaut({
   modelesDisponibles: ModeleDisponible[];
   // Modèles montrés grisés avec la mention Bientôt, jamais choisissables.
   modelesBientot?: ModeleDisponible[];
+  // Modèle actif déjà résolu (lib/modeleActif.ts), toujours présent dans la liste.
   modeleSelectionne: string | null;
-  onModeleChange: (modeleId: string | null) => void;
+  onModeleChange: (modeleId: string) => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const idListe = useId();
@@ -62,7 +64,7 @@ export function SelecteurModeleHaut({
 
   const modeleActif = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne) ?? null;
 
-  function choisir(modeleId: string | null) {
+  function choisir(modeleId: string) {
     onModeleChange(modeleId);
     setOuvert(false);
   }
@@ -78,7 +80,7 @@ export function SelecteurModeleHaut({
         className="flex max-w-[70vw] items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute"
       >
         <IconeFournisseur distributeur={modeleActif?.distributeur ?? null} />
-        <span className="truncate">{modeleActif?.label ?? "Auto"}</span>
+        <span className="truncate">{modeleActif?.label ?? ""}</span>
         <ChevronDown
           size={14}
           className={"flex-shrink-0 text-dj-texte-muet transition-transform duration-200 " + (ouvert ? "rotate-180" : "")}
@@ -96,9 +98,6 @@ export function SelecteurModeleHaut({
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
               className="max-h-[min(24rem,60vh)] overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
-              <OptionModele actif={!modeleSelectionne} distributeur={null} onClick={() => choisir(null)}>
-                Auto
-              </OptionModele>
               {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter(
                 (d) => modelesDisponibles.some((m) => m.distributeur === d) || modelesBientot.some((m) => m.distributeur === d)
               ).map(

@@ -94,7 +94,11 @@ components/
                           nom et icône du fournisseur du modèle actif, liste dépliante groupée par fournisseur. Les modèles pas encore
                           ouverts (modeles_bientot, envoyés par le backend) y sont grisés avec la mention Bientôt.
                           Il remplace la ligne Modèle de Réglages dans la barre de saisie (BoutonReglages garde
-                          cette ligne seulement pour le canal en direct, prop afficherChoixModele) ;
+                          cette ligne seulement pour le canal en direct, prop afficherChoixModele).
+                          Plus de choix "Auto" (15/10/2026) : le modèle actif est le dernier choix de l'élève
+                          (gardé sur son compte, profiles.modele_prefere, donc le même sur tous ses appareils),
+                          sinon DeepSeek Flash, sinon le premier de la liste (lib/modeleActif.ts). Sur
+                          téléphone (chat plein écran) le bouton est posé tout en haut, sur la ligne du hamburger ;
                           IconeFournisseur.tsx : icône d'un fournisseur de modèles, depuis public/icones-fournisseurs/ ;
                           LigneApercuPieces.tsx (02/10/2026) : ligne unique défilable des pièces jointes,
                           avant envoi (BarreDeSaisie.tsx) et après envoi (BulleMessage.tsx) ; carrés pour

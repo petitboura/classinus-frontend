@@ -22,6 +22,7 @@
 
 import { createContext, useCallback, useEffect, useState } from "react";
 import { obtenirMonStatut, enregistrerMonProfil } from "@/lib/api";
+import { hydraterModelePrefere } from "@/lib/modeleActif";
 
 export type ValeurStatutUtilisateur = {
   /** true tant que la lecture initiale (une seule, au tout premier montage) n'est pas revenue. */
@@ -88,6 +89,8 @@ export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
         setEstProfesseur(s.est_professeur);
         setLangueCibleErreurs(s.langue_cible_erreurs);
         setTraductionAutoErreurs(s.traduction_auto_erreurs);
+        // 15/10/2026 : le dernier modèle choisi, retrouvé sur n'importe quel appareil.
+        hydraterModelePrefere(s.modele_prefere);
         setConnecte(true);
       })
       .catch(() => {
