@@ -22,6 +22,7 @@ export function BulleSurvol({
   align = "gauche",
   revelerAuClic = true,
   flottante = false,
+  detail,
   children,
 }: {
   /** Texte complet affiché dans la bulle. */
@@ -39,6 +40,9 @@ export function BulleSurvol({
    * position fixe) pour ne plus être rognée. Les autres usages gardent la
    * bulle classique. */
   flottante?: boolean;
+  /** Petit texte en plus sous le titre (bulle flottante seulement), pour
+   * que la bulle apporte une info que le titre tronqué ne donne pas déjà. */
+  detail?: string;
   children: ReactNode;
 }) {
   const [ouvert, setOuvert] = useState(false);
@@ -50,7 +54,7 @@ export function BulleSurvol({
       const r = ancre.current.getBoundingClientRect();
       const largeur = Math.min(256, window.innerWidth * 0.8);
       const x = Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8));
-      const dessus = r.bottom + 120 > window.innerHeight;
+      const dessus = r.bottom + (detail ? 200 : 120) > window.innerHeight;
       setCoord({ x, y: dessus ? r.top : r.bottom, dessus });
     }
     setOuvert(true);
@@ -83,7 +87,10 @@ export function BulleSurvol({
             }}
             className="pointer-events-none w-64 max-w-[80vw] break-words rounded-cgpt-bouton border border-dj-bordure bg-dj-surface p-2 text-[11px] font-normal text-dj-texte shadow-xl animate-dj-fade-in-rapide"
           >
-            {texte}
+            <span className="block font-medium">{texte}</span>
+            {detail && (
+              <span className="mt-1 block whitespace-pre-line text-dj-texte-muet">{detail}</span>
+            )}
           </span>,
           document.body
         )}

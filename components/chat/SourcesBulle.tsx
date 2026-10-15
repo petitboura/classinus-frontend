@@ -52,6 +52,24 @@ type Source = {
   type_mime?: string | null;
 };
 
+// Petit texte de la bulle de survol (15/10/2026, retour Bourama : la bulle
+// ne faisait que répéter le titre). Ajoute ce que le titre ne dit pas : le
+// site d'origine, le repère (page ou minute) et le début du passage utilisé.
+function detailSource(source: Source): string | undefined {
+  const lignes: string[] = [];
+  try {
+    lignes.push(new URL(source.url).hostname.replace(/^www\./, ""));
+  } catch {
+    // URL invalide : pas de nom de site à afficher
+  }
+  if (source.reperage) lignes.push(source.reperage);
+  if (source.extrait) {
+    const extrait = source.extrait.replace(/\s+/g, " ").trim();
+    if (extrait) lignes.push(extrait.length > 140 ? `${extrait.slice(0, 140).trimEnd()}...` : extrait);
+  }
+  return lignes.length ? lignes.join("\n") : undefined;
+}
+
 // Deuxième puce cliquable, distincte de la source (26/08, demande
 // Bourama : deux popups séparées -- l'une ouvre le document, l'autre
 // montre directement le paragraphe/passage exact utilisé). Un clic
@@ -150,7 +168,7 @@ export function SourcesBulle({ sources }: { sources?: Source[] }) {
               className="flex max-w-[220px] items-center gap-1 rounded-cgpt-bouton border border-dj-bordure px-2.5 py-1 text-[12px] text-dj-texte-muet transition-colors hover:text-dj-texte"
             >
               <Favicon url={source.url} />
-              <BulleSurvol texte={source.titre} className="block truncate" revelerAuClic={false} flottante>
+              <BulleSurvol texte={source.titre} detail={detailSource(source)} className="block truncate" revelerAuClic={false} flottante>
                 {source.titre}
               </BulleSurvol>
               <sup className="shrink-0 font-semibold text-dj-texte-muet">{source.numero}</sup>
