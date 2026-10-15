@@ -186,7 +186,7 @@ components/
                           avec un bouton Brut ; code et LaTeX gardent leur rendu
 
 public/
-  icones-fournisseurs/    icônes SVG des fournisseurs de modèles (claude, gpt, gemini, deepseek), nommées comme la clé
+  icones-fournisseurs/    icônes SVG des fournisseurs de modèles (claude, gpt, gemini, deepseek, grok), nommées comme la clé
                           "distributeur" du backend, tirées de @lobehub/icons-static-svg (licence MIT). Pour ajouter
                           un fournisseur : déposer son SVG ici et l'ajouter dans components/chat/IconeFournisseur.tsx
   foliate-js/             moteur de lecture EPUB et MOBI (foliate-js, licence MIT), copié sans modification

@@ -30,13 +30,14 @@ export const LABELS_EFFORT: Record<EffortReflexion, string> = {
 // voir ModelesPremiumAgent.tsx côté dashboard pour le même mapping). Ordre
 // volontairement identique à la hiérarchie backend
 // (core/fournisseurs_llm.py:ORDRE_DISTRIBUTEURS).
-export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["claude", "gpt", "gemini", "deepseek"];
+export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["claude", "gpt", "gemini", "deepseek", "grok"];
 
 export const LABELS_DISTRIBUTEUR: Record<string, string> = {
   claude: "Claude",
   gpt: "GPT",
   gemini: "Gemini",
   deepseek: "DeepSeek",
+  grok: "Grok",
 };
 
 // Modes pédagogiques : mêmes clés que MODES_PEDAGOGIQUES côté backend
