@@ -39,6 +39,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
+import { definirZoneUtile } from "@/lib/zoneUtileSuperposition";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { MarquesEcranAgent } from "@/components/MarquesEcranAgent";
 import { CoucheCrayonAgent } from "@/components/CoucheCrayonAgent";
@@ -117,6 +118,7 @@ export default function PageAgentSuperposition() {
     marquerFenetreSuperposition();
     return ecouterEtatSuperposition((etat: EtatSuperposition) => {
       dernierePositionRecue.current = { x: etat.curseur.x, y: etat.curseur.y };
+      definirZoneUtile(etat.zoneUtile);
       setMarques(Array.isArray(etat.marques) ? etat.marques : []);
       setVoix((precedent) => {
         const actif = etat.voix?.actif ?? false;

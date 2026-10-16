@@ -49,6 +49,9 @@ export interface EtatSuperposition {
   marques?: MarqueEcranAffichee[];
   pointageId?: string;
   informationId?: string;
+  // Zone utile de l'ecran ou est le curseur, hors barre des taches (16/10/2026), dans le repere
+  // de la page. Voir lib/zoneUtileSuperposition.ts.
+  zoneUtile?: { gauche: number; haut: number; droite: number; bas: number };
   curseur: { x: number; y: number; echelle: number; visible: boolean; forme: string; enAction: boolean };
   // Voix en direct (02/10/2026) : la session vit dans la fenêtre principale,
   // la superposition n'en reçoit que l'état et les niveaux sonores pour
