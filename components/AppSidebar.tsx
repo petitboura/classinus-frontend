@@ -49,6 +49,7 @@ import {
   CELLULE_ICONE_RAIL,
   CELLULE_ICONE_TACTILE,
   ECART_ELEMENTS_RAIL,
+  RAPPROCHE_LIBELLE_RAIL,
   TAILLE_ICONE_RAIL,
   TRAIT_ICONE_RAIL,
 } from "@/lib/styleBarreLaterale";
@@ -153,7 +154,7 @@ const MOUVEMENT_NAV = "group-hover:translate-x-0.5";
 function LibelleRail({ ouverte, children, titre = false }: { ouverte: boolean; children: React.ReactNode; titre?: boolean }) {
   return (
     <span
-      className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
+      className={`${RAPPROCHE_LIBELLE_RAIL} overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
         titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm"
       } ${
         ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
