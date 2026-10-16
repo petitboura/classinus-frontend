@@ -98,6 +98,14 @@ math-field {
   --dj-fond: #faf8f5;
   --dj-surface: #ffffff;
   --dj-surface-haute: #ebebe9;
+  /* Barre latérale PC (16/10/2026) : un ton à part, ni le fond de la page ni
+     le blanc des cartes. Même principe que Notion : le rail est un peu plus
+     foncé que la page en clair. --dj-rail-survol sert au survol et à l'état
+     actif des boutons du rail, --dj-rail-texte à leur texte et icônes au repos
+     (plus soutenu que --dj-texte-muet pour que les boutons restent nets). */
+  --dj-rail: #f1ece2;
+  --dj-rail-survol: #e5dfd2;
+  --dj-rail-texte: #4f4b43;
   --dj-bordure: rgba(28, 26, 22, 0.08);
   --dj-bordure-forte: rgba(184, 134, 11, 0.35);
   --dj-accent-1: #b8860b;
@@ -205,6 +213,9 @@ math-field {
     --dj-fond: #0f0d0b;
     --dj-surface: #1a1714;
     --dj-surface-haute: #221e18;
+    --dj-rail: #211d17;
+    --dj-rail-survol: #2e2921;
+    --dj-rail-texte: #b8b0a2;
     --dj-bordure: rgba(245, 240, 230, 0.08);
     --dj-bordure-forte: rgba(227, 179, 65, 0.35);
     --dj-accent-1: #e8bf60;
@@ -234,6 +245,9 @@ math-field {
   --dj-fond: #0f0d0b;
   --dj-surface: #1a1714;
   --dj-surface-haute: #221e18;
+  --dj-rail: #211d17;
+  --dj-rail-survol: #2e2921;
+  --dj-rail-texte: #b8b0a2;
   --dj-bordure: rgba(245, 240, 230, 0.08);
   --dj-bordure-forte: rgba(227, 179, 65, 0.35);
   --dj-accent-1: #e8bf60;
