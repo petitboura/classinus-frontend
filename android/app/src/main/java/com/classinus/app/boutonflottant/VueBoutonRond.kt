@@ -1,14 +1,16 @@
-// Cree le 13/10/2026, demande Bourama : bouton flottant natif du canal en
+// Cree le 17/10/2026, demande Bourama : bouton flottant natif du canal en
 // direct sur Android. Code COMMUN aux deux flavors (src/main).
 //
-// Le dessin du bouton : un rond avec le symbole "radio" (un point et deux arcs
-// de chaque cote), le meme que le bouton du canal dans l'appli. Au repos il est
-// sombre et discret, canal actif il est or. Le passage d'un etat a l'autre est
-// anime (jamais de changement brut).
+// Un bouton rond du groupe flottant, dessine comme les boutons ronds du bouton
+// du PC : un rond avec une icone au centre. Trois icones pour l'instant : le
+// symbole "radio" (un point et deux arcs de chaque cote) du bouton qui active
+// le canal, et le chevron (vers le haut ou vers le bas) qui deplie et replie le
+// groupe. Au repos le rond est sombre, canal actif il est or. Le passage d'un
+// etat a l'autre est anime (jamais de changement brut).
 //
-// Cette vue ne sait RIEN du canal : elle signale seulement un appui (surAppui),
-// un deplacement (surDeplacement) et un relachement apres glissement
-// (surRelachement). C'est le gestionnaire qui decide quoi en faire.
+// Cette vue ne sait RIEN du canal ni du groupe : elle signale seulement un appui
+// (surAppui). Le glissement du groupe entier est gere par GroupeBoutonsFlottant,
+// qui reprend la main des qu'un doigt se deplace au dela du seuil.
 package com.classinus.app.boutonflottant
 
 import android.animation.ArgbEvaluator
@@ -16,19 +18,22 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
 import com.classinus.app.R
 
-class VueBoutonFlottant(context: Context) : View(context) {
+class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
+
+    enum class Icone { RADIO, CHEVRON_HAUT, CHEVRON_BAS }
 
     companion object {
         const val TAILLE_DP = 52f
-        private const val ALPHA_REPOS = 0.6f
         private const val DUREE_TRANSITION_MS = 200L
         private const val ECHELLE_APPUI = 0.92f
         private const val DUREE_APPUI_MS = 90L
@@ -37,15 +42,17 @@ class VueBoutonFlottant(context: Context) : View(context) {
     /** Appui court sans glissement. */
     var surAppui: (() -> Unit)? = null
 
-    /** Glissement en cours : deplacement en pixels depuis le dernier evenement. */
-    var surDeplacement: ((dx: Float, dy: Float) -> Unit)? = null
-
-    /** Doigt leve apres un glissement. */
-    var surRelachement: (() -> Unit)? = null
+    /** Icone dessinee au centre. Peut changer (le chevron se retourne quand le groupe se deplie). */
+    var icone: Icone = iconeInitiale
+        set(valeur) {
+            if (field == valeur) return
+            field = valeur
+            invalidate()
+        }
 
     private val densite = context.resources.displayMetrics.density
-    private val tailleDpEnPixels = (TAILLE_DP * densite).toInt()
-    private val seuilGlissement = android.view.ViewConfiguration.get(context).scaledTouchSlop
+    private val tailleEnPixels = (TAILLE_DP * densite).toInt()
+    private val seuilGlissement = ViewConfiguration.get(context).scaledTouchSlop
 
     private val couleurReposFond = ContextCompat.getColor(context, R.color.bouton_flottant_repos_fond)
     private val couleurReposTrait = ContextCompat.getColor(context, R.color.bouton_flottant_repos_trait)
@@ -62,10 +69,12 @@ class VueBoutonFlottant(context: Context) : View(context) {
     private val pinceauTrait = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
         strokeWidth = 2f * densite
     }
     private val pinceauPoint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val zoneArc = RectF()
+    private val traceChevron = Path()
     private val evaluateurCouleur = ArgbEvaluator()
 
     // 0 = repos, 1 = canal actif. Anime entre les deux.
@@ -74,31 +83,22 @@ class VueBoutonFlottant(context: Context) : View(context) {
 
     private var departX = 0f
     private var departY = 0f
-    private var dernierX = 0f
-    private var dernierY = 0f
-    private var glissementEnCours = false
-    private var glissementDemarre = false
+    private var deplace = false
 
     init {
-        alpha = ALPHA_REPOS
         isClickable = true
-        contentDescription = context.getString(R.string.bouton_flottant_description_inactif)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        setMeasuredDimension(tailleDpEnPixels, tailleDpEnPixels)
+        setMeasuredDimension(tailleEnPixels, tailleEnPixels)
     }
 
-    /** Passe du repos au canal actif (ou l'inverse) avec une transition douce. Thread principal. */
+    /** Passe du repos a l'etat actif (ou l'inverse) avec une transition douce. Thread principal. */
     fun definirActif(actif: Boolean, animer: Boolean = true) {
-        contentDescription = context.getString(
-            if (actif) R.string.bouton_flottant_description_actif else R.string.bouton_flottant_description_inactif,
-        )
         val cible = if (actif) 1f else 0f
         animateurProgression?.cancel()
         if (!animer || !isAttachedToWindow) {
             progression = cible
-            alpha = if (actif) 1f else ALPHA_REPOS
             invalidate()
             return
         }
@@ -107,7 +107,6 @@ class VueBoutonFlottant(context: Context) : View(context) {
             interpolator = DecelerateInterpolator()
             addUpdateListener {
                 progression = it.animatedValue as Float
-                if (!glissementDemarre) alpha = ALPHA_REPOS + (1f - ALPHA_REPOS) * progression
                 invalidate()
             }
             start()
@@ -134,7 +133,15 @@ class VueBoutonFlottant(context: Context) : View(context) {
         canvas.drawCircle(centreX, centreY, rayon, pinceauFond)
         canvas.drawCircle(centreX, centreY, rayon, pinceauContour)
 
-        // Symbole radio : un point au centre, deux arcs de chaque cote.
+        when (icone) {
+            Icone.RADIO -> dessinerRadio(canvas, centreX, centreY)
+            Icone.CHEVRON_HAUT -> dessinerChevron(canvas, centreX, centreY, versLeHaut = true)
+            Icone.CHEVRON_BAS -> dessinerChevron(canvas, centreX, centreY, versLeHaut = false)
+        }
+    }
+
+    /** Symbole radio : un point au centre, deux arcs de chaque cote. */
+    private fun dessinerRadio(canvas: Canvas, centreX: Float, centreY: Float) {
         canvas.drawCircle(centreX, centreY, 2.6f * densite, pinceauPoint)
         val petitRayon = 7f * densite
         val grandRayon = 11.5f * densite
@@ -145,43 +152,37 @@ class VueBoutonFlottant(context: Context) : View(context) {
         }
     }
 
+    /** Chevron : deux traits qui se rejoignent, la pointe vers le haut ou vers le bas. */
+    private fun dessinerChevron(canvas: Canvas, centreX: Float, centreY: Float, versLeHaut: Boolean) {
+        val demiLargeur = 5.75f * densite
+        val demiHauteur = 2.9f * densite
+        val sens = if (versLeHaut) -1f else 1f
+        traceChevron.reset()
+        traceChevron.moveTo(centreX - demiLargeur, centreY - sens * demiHauteur)
+        traceChevron.lineTo(centreX, centreY + sens * demiHauteur)
+        traceChevron.lineTo(centreX + demiLargeur, centreY - sens * demiHauteur)
+        canvas.drawPath(traceChevron, pinceauTrait)
+    }
+
     override fun onTouchEvent(evenement: MotionEvent): Boolean {
         when (evenement.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 departX = evenement.rawX
                 departY = evenement.rawY
-                dernierX = departX
-                dernierY = departY
-                glissementEnCours = false
-                glissementDemarre = false
+                deplace = false
                 animate().cancel()
                 animate().scaleX(ECHELLE_APPUI).scaleY(ECHELLE_APPUI).setDuration(DUREE_APPUI_MS).start()
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
-                val dxTotal = evenement.rawX - departX
-                val dyTotal = evenement.rawY - departY
-                if (!glissementEnCours && (dxTotal * dxTotal + dyTotal * dyTotal) > seuilGlissement * seuilGlissement) {
-                    glissementEnCours = true
-                    glissementDemarre = true
-                    // Pendant le glissement le bouton est bien visible.
-                    animate().alpha(1f).setDuration(DUREE_APPUI_MS).start()
-                }
-                if (glissementEnCours) {
-                    surDeplacement?.invoke(evenement.rawX - dernierX, evenement.rawY - dernierY)
-                }
-                dernierX = evenement.rawX
-                dernierY = evenement.rawY
+                val dx = evenement.rawX - departX
+                val dy = evenement.rawY - departY
+                if (!deplace && (dx * dx + dy * dy) > seuilGlissement * seuilGlissement) deplace = true
                 return true
             }
             MotionEvent.ACTION_UP -> {
-                animate().scaleX(1f).scaleY(1f).setDuration(DUREE_APPUI_MS).start()
-                if (glissementEnCours) {
-                    glissementEnCours = false
-                    glissementDemarre = false
-                    animate().alpha(ALPHA_REPOS + (1f - ALPHA_REPOS) * progression).setDuration(DUREE_TRANSITION_MS).start()
-                    surRelachement?.invoke()
-                } else {
+                rendreEchelle()
+                if (!deplace) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     performClick()
                     surAppui?.invoke()
@@ -189,17 +190,15 @@ class VueBoutonFlottant(context: Context) : View(context) {
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
-                animate().scaleX(1f).scaleY(1f).setDuration(DUREE_APPUI_MS).start()
-                if (glissementEnCours) {
-                    glissementEnCours = false
-                    glissementDemarre = false
-                    animate().alpha(ALPHA_REPOS + (1f - ALPHA_REPOS) * progression).setDuration(DUREE_TRANSITION_MS).start()
-                    surRelachement?.invoke()
-                }
+                rendreEchelle()
                 return true
             }
         }
         return super.onTouchEvent(evenement)
+    }
+
+    private fun rendreEchelle() {
+        animate().scaleX(1f).scaleY(1f).setDuration(DUREE_APPUI_MS).start()
     }
 
     override fun performClick(): Boolean {

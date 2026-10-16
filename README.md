@@ -300,13 +300,18 @@ outils).
 ### Bouton flottant du canal en direct (Android)
 
 Petit bouton affiché par-dessus toutes les autres applications, même Classinus
-fermé et après un redémarrage du téléphone. Un appui bascule le canal en direct
-exactement comme le bouton rond de l'appli. Commun aux deux versions de l'appli
-(`src/main`), aucune accessibilité utilisée.
+fermé et après un redémarrage du téléphone. Un appui sur le bouton rond bascule
+le canal en direct exactement comme le bouton rond de l'appli. Une fois le canal
+actif, un chevron déplie ou replie le groupe de boutons, qui se replie seul après
+2 secondes sans toucher. Il suit le modèle du groupe du PC et sera complété
+lot par lot. Commun aux deux versions de l'appli (`src/main`), aucune
+accessibilité utilisée.
 
 - Natif : `android/app/src/main/java/com/classinus/app/boutonflottant/`.
-  `VueBoutonFlottant` (dessin et gestes), `BoutonFlottantManager` (fenêtre de
-  superposition touchable, collage au bord, position gardée), `BoutonFlottantService`
+  `VueBoutonRond` (un bouton rond : dessin et appui), `GroupeBoutonsFlottant` (le
+  groupe : chevron, bouton d'activation, repli automatique, glissement du groupe
+  entier), `BoutonFlottantManager` (fenêtre de superposition touchable qui suit la
+  taille du groupe, collage au bord, position gardée), `BoutonFlottantService`
   (service au premier plan de type `specialUse` : porte le bouton et garde
   l'appli en vie pour que la page qui tient la connexion du canal ne soit pas
   gelée), `DemarrageBoutonFlottantReceiver` (retour après redémarrage ou mise à

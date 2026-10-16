@@ -23,4 +23,7 @@
     <string name="bouton_flottant_notif_masquer">Masquer le bouton</string>
     <string name="bouton_flottant_description_inactif">Activer le canal en direct</string>
     <string name="bouton_flottant_description_actif">Désactiver le canal en direct</string>
+    <!-- 17/10/2026 : chevron du groupe flottant (libelles repris du bouton du PC). -->
+    <string name="bouton_flottant_chevron_replier">Replier les boutons du canal</string>
+    <string name="bouton_flottant_chevron_deplier">Déplier les boutons du canal</string>
 </resources>

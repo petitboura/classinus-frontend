@@ -1,19 +1,24 @@
 // Cree le 13/10/2026, demande Bourama : bouton flottant natif du canal en
 // direct sur Android. Code COMMUN aux deux flavors (src/main).
+// Mis a jour le 17/10/2026 : la fenetre porte maintenant le groupe de boutons
+// (GroupeBoutonsFlottant) et non plus un rond seul.
 //
 // Gere UNE fenetre de superposition (permission "Afficher par-dessus les
 // autres applications", la meme que les marques de SuperpositionManager) qui
-// porte le bouton. Contrairement a la fenetre des marques, celle-ci est
-// TOUCHABLE, mais elle ne couvre que le bouton : partout ailleurs les gestes
+// porte le groupe de boutons. Contrairement a la fenetre des marques, celle-ci
+// est TOUCHABLE, mais elle ne couvre que le groupe : partout ailleurs les gestes
 // vont a l'application en dessous.
 //
 // Regles de conception :
-//   - le bouton se colle au bord gauche ou droit de l'ecran apres un
+//   - le groupe se colle au bord gauche ou droit de l'ecran apres un
 //     glissement (animation), pour ne gener aucune application ;
 //   - sa position est gardee en proportion de l'ecran (bord + hauteur), donc
 //     elle reste juste apres une rotation ;
-//   - il ne decide de rien : un appui est remis a BoutonFlottantPlugin, qui
-//     sait si la page de l'appli peut repondre ;
+//   - la fenetre est ancree au bord ou le groupe est colle (gauche ou droit) :
+//     quand un bouton apparait ou disparait, le groupe grandit ou retrecit du
+//     cote libre, sans que le bord bouge ;
+//   - il ne decide de rien : un appui sur le bouton d'activation est remis a
+//     BoutonFlottantPlugin, qui sait si la page de l'appli peut repondre ;
 //   - sans permission d'affichage, rien ne s'affiche (jamais contournee).
 //
 // Tout ce qui touche aux fenetres se fait sur le thread principal.
@@ -27,6 +32,7 @@ import android.os.Build
 import android.provider.Settings
 import android.util.DisplayMetrics
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 
@@ -36,11 +42,16 @@ object BoutonFlottantManager {
     private const val MARGE_BORD_DP = 4f
 
     private var contexte: Context? = null
-    private var vue: VueBoutonFlottant? = null
+    private var vue: GroupeBoutonsFlottant? = null
     private var parametres: WindowManager.LayoutParams? = null
     private var animateurCollage: ValueAnimator? = null
 
-    /** Appui court sur le bouton. Branche par le service. */
+    // Vrai quand la fenetre est ancree au bord droit : x est alors la distance a ce
+    // bord. Faux : ancree au bord gauche, x est la distance au bord gauche. Pendant
+    // un glissement x est toujours compte depuis la gauche.
+    private var ancreADroite = false
+
+    /** Appui sur le bouton qui active ou coupe le canal. Branche par le service. */
     var surAppui: (() -> Unit)? = null
 
     fun estAffiche(): Boolean = vue != null
@@ -48,7 +59,7 @@ object BoutonFlottantManager {
     fun permissionAccordee(context: Context): Boolean = Settings.canDrawOverlays(context.applicationContext)
 
     /**
-     * Montre le bouton (sans effet s'il l'est deja). Renvoie faux si la
+     * Montre le groupe (sans effet s'il l'est deja). Renvoie faux si la
      * permission est absente ou si la fenetre n'a pas pu s'ajouter.
      */
     fun afficher(context: Context): Boolean {
@@ -57,17 +68,16 @@ object BoutonFlottantManager {
         if (vue != null) return true
         if (!Settings.canDrawOverlays(c)) return false
 
-        val nouvelle = VueBoutonFlottant(c)
-        val canalActif = PreferencesBoutonFlottant.canalActif(c)
-        nouvelle.definirActif(canalActif, animer = false)
-        // Invisible au depart : le bouton apparait en fondu juste apres.
+        val nouvelle = GroupeBoutonsFlottant(c)
+        nouvelle.definirActif(PreferencesBoutonFlottant.canalActif(c), animer = false)
+        // Invisible au depart : le groupe apparait en fondu juste apres.
         nouvelle.alpha = 0f
-        nouvelle.surAppui = { surAppui?.invoke() }
+        nouvelle.surAppuiActivation = { surAppui?.invoke() }
         nouvelle.surDeplacement = { dx, dy -> deplacer(dx, dy) }
         nouvelle.surRelachement = { coller() }
 
         val reglages = creerParametresFenetre()
-        placerDepuisPreferences(c, reglages)
+        placerDepuisPreferences(c, reglages, nouvelle)
         try {
             c.getSystemService(WindowManager::class.java).addView(nouvelle, reglages)
         } catch (e: Exception) {
@@ -75,12 +85,12 @@ object BoutonFlottantManager {
         }
         vue = nouvelle
         parametres = reglages
-        // Apparition en fondu : le bouton ne surgit jamais d'un coup.
-        nouvelle.animate().alpha(if (canalActif) 1f else 0.6f).setDuration(200L).start()
+        // Apparition en fondu : le groupe ne surgit jamais d'un coup.
+        nouvelle.apparaitre()
         return true
     }
 
-    /** Retire le bouton en fondu. Sans effet s'il n'est pas affiche. */
+    /** Retire le groupe en fondu. Sans effet s'il n'est pas affiche. */
     fun retirer() {
         animateurCollage?.cancel()
         animateurCollage = null
@@ -98,7 +108,7 @@ object BoutonFlottantManager {
         }.start()
     }
 
-    /** Dessine le bouton selon l'etat du canal en direct. */
+    /** Dessine le groupe selon l'etat du canal en direct. */
     fun definirEtatCanal(actif: Boolean) {
         vue?.definirActif(actif)
     }
@@ -108,8 +118,10 @@ object BoutonFlottantManager {
         val c = contexte ?: return
         val v = vue ?: return
         val reglages = parametres ?: return
+        // Pendant un glissement c'est le doigt qui place le groupe, pas les preferences.
+        if (v.enGlissement) return
         animateurCollage?.cancel()
-        placerDepuisPreferences(c, reglages)
+        placerDepuisPreferences(c, reglages, v)
         try {
             c.getSystemService(WindowManager::class.java).updateViewLayout(v, reglages)
         } catch (e: Exception) {
@@ -117,9 +129,18 @@ object BoutonFlottantManager {
         }
     }
 
-    private fun taille(): Int = (VueBoutonFlottant.TAILLE_DP * (contexte?.resources?.displayMetrics?.density ?: 1f)).toInt()
-
     private fun marge(): Int = (MARGE_BORD_DP * (contexte?.resources?.displayMetrics?.density ?: 1f)).toInt()
+
+    /** Mesure le groupe s'il n'a pas encore de taille (avant l'ajout de la fenetre). */
+    private fun mesurer(v: View) {
+        if (v.width > 0 && v.height > 0) return
+        val libre = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        v.measure(libre, libre)
+    }
+
+    private fun largeur(v: View): Int = if (v.width > 0) v.width else v.measuredWidth
+
+    private fun hauteur(v: View): Int = if (v.height > 0) v.height else v.measuredHeight
 
     /** Zone utilisable de l'ecran, dans son orientation actuelle. */
     private fun limitesEcran(c: Context): Rect {
@@ -133,12 +154,23 @@ object BoutonFlottantManager {
         return Rect(0, 0, metriques.widthPixels, metriques.heightPixels)
     }
 
-    private fun placerDepuisPreferences(c: Context, reglages: WindowManager.LayoutParams) {
+    /** Place la fenetre selon le bord et la hauteur gardes : ancree au bord choisi, a une marge de ce bord. */
+    private fun placerDepuisPreferences(c: Context, reglages: WindowManager.LayoutParams, v: View) {
+        mesurer(v)
         val ecran = limitesEcran(c)
-        val t = taille()
-        reglages.x = if (PreferencesBoutonFlottant.coteDroit(c)) ecran.width() - t - marge() else marge()
-        val hauteurLibre = (ecran.height() - t).coerceAtLeast(0)
+        ancreADroite = PreferencesBoutonFlottant.coteDroit(c)
+        reglages.gravity = Gravity.TOP or (if (ancreADroite) Gravity.RIGHT else Gravity.LEFT)
+        reglages.x = marge()
+        val hauteurLibre = (ecran.height() - hauteur(v)).coerceAtLeast(0)
         reglages.y = (PreferencesBoutonFlottant.positionVerticale(c) * hauteurLibre).toInt()
+    }
+
+    /** Pendant un glissement x se compte depuis la gauche : convertit une fenetre ancree a droite. */
+    private fun compterDepuisLaGauche(reglages: WindowManager.LayoutParams, ecran: Rect, l: Int) {
+        if (!ancreADroite) return
+        reglages.x = (ecran.width() - l - reglages.x).coerceAtLeast(0)
+        reglages.gravity = Gravity.TOP or Gravity.LEFT
+        ancreADroite = false
     }
 
     private fun deplacer(dx: Float, dy: Float) {
@@ -147,9 +179,10 @@ object BoutonFlottantManager {
         val reglages = parametres ?: return
         animateurCollage?.cancel()
         val ecran = limitesEcran(c)
-        val t = taille()
-        reglages.x = (reglages.x + dx.toInt()).coerceIn(0, (ecran.width() - t).coerceAtLeast(0))
-        reglages.y = (reglages.y + dy.toInt()).coerceIn(0, (ecran.height() - t).coerceAtLeast(0))
+        val l = largeur(v)
+        compterDepuisLaGauche(reglages, ecran, l)
+        reglages.x = (reglages.x + dx.toInt()).coerceIn(0, (ecran.width() - l).coerceAtLeast(0))
+        reglages.y = (reglages.y + dy.toInt()).coerceIn(0, (ecran.height() - hauteur(v)).coerceAtLeast(0))
         try {
             c.getSystemService(WindowManager::class.java).updateViewLayout(v, reglages)
         } catch (e: Exception) {
@@ -157,20 +190,29 @@ object BoutonFlottantManager {
         }
     }
 
-    /** Colle le bouton au bord le plus proche avec une animation, puis garde sa position. */
+    /**
+     * Colle le groupe au bord le plus proche avec une animation, puis garde sa
+     * position. La fenetre s'ancre tout de suite a ce bord : x devient la distance
+     * a ce bord, et l'animation la ramene a la marge.
+     */
     private fun coller() {
         val c = contexte ?: return
         val v = vue ?: return
         val reglages = parametres ?: return
         val ecran = limitesEcran(c)
-        val t = taille()
-        val coteDroit = reglages.x + t / 2 > ecran.width() / 2
-        val xCible = if (coteDroit) ecran.width() - t - marge() else marge()
-        val hauteurLibre = (ecran.height() - t).coerceAtLeast(1)
+        val l = largeur(v)
+        compterDepuisLaGauche(reglages, ecran, l)
+        val coteDroit = reglages.x + l / 2 > ecran.width() / 2
+        val hauteurLibre = (ecran.height() - hauteur(v)).coerceAtLeast(1)
         PreferencesBoutonFlottant.definirPosition(c, coteDroit, reglages.y.toFloat() / hauteurLibre)
 
+        val xDepart = if (coteDroit) (ecran.width() - l - reglages.x).coerceAtLeast(0) else reglages.x
+        reglages.gravity = Gravity.TOP or (if (coteDroit) Gravity.RIGHT else Gravity.LEFT)
+        reglages.x = xDepart
+        ancreADroite = coteDroit
+
         animateurCollage?.cancel()
-        animateurCollage = ValueAnimator.ofInt(reglages.x, xCible).apply {
+        animateurCollage = ValueAnimator.ofInt(xDepart, marge()).apply {
             duration = DUREE_COLLAGE_MS
             interpolator = DecelerateInterpolator()
             addUpdateListener {
@@ -197,7 +239,9 @@ object BoutonFlottantManager {
             drapeaux,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
+            // Ancrage reel (gauche ou droite) pose par placerDepuisPreferences : ni START ni
+            // END, qui s'inverseraient sur un telephone configure de droite a gauche.
+            gravity = Gravity.TOP or Gravity.LEFT
             title = "ClassinusBoutonFlottant"
         }
     }
