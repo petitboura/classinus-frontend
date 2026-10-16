@@ -799,8 +799,24 @@ export function AppSidebar({
           aria-label={railOuvert ? "Replier le panneau" : "Déplier le panneau"}
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
-          <span className={CELLULE_ICONE_RAIL}>
-            <PanelLeft size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:scale-95" />
+          {/* Barre repliée : l'icône qui déplie. Barre dépliée : la plume de
+              Classinus prend sa place, à gauche du nom (16/10/2026, demande de
+              Bourama). Les deux se fondent l'une dans l'autre. */}
+          <span className={`relative ${CELLULE_ICONE_RAIL}`}>
+            <PanelLeft
+              size={TAILLE_ICONE_RAIL}
+              strokeWidth={TRAIT_ICONE_RAIL}
+              className={`absolute transition-opacity duration-200 ${railOuvert ? "opacity-0" : "opacity-100"}`}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-classinus-sans-fond.webp"
+              alt=""
+              aria-hidden="true"
+              width={22}
+              height={22}
+              className={`absolute h-[22px] w-[22px] object-contain transition-opacity duration-200 ${railOuvert ? "opacity-100" : "opacity-0"}`}
+            />
           </span>
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
