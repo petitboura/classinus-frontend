@@ -45,7 +45,13 @@ import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 import { ROUTES_APP } from "@/lib/routesApp";
-import { TAILLE_ICONE_RAIL, TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
+import {
+  CELLULE_ICONE_RAIL,
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_RAIL,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Nav principale de l'app (refonte "Mon espace = l'app", 15/08/2026,
 // demande Bourama : "faut changer l'affichage même de mon espace, son
@@ -249,14 +255,14 @@ function MenuProfil({
   );
 
   return (
-    <div ref={ref} className={`relative w-full ${mobile ? "" : "mt-2"}`}>
+    <div ref={ref} className={`relative w-full ${mobile ? "" : ECART_ELEMENTS_RAIL}`}>
       <button
         onClick={onBasculerMenu}
         className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
           mobile ? "px-2" : ""
         }`}
       >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">{Avatar}</span>
+        <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>{Avatar}</span>
         {mobile ? <span className="text-sm">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
       </button>
 
@@ -643,11 +649,11 @@ export function AppSidebar({
             }
           }
         }}
-        className={`group relative mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
+        className={`group relative ${mobile ? "mt-2" : ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
       >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+        <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
           <onglet.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
         {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
@@ -792,7 +798,7 @@ export function AppSidebar({
           aria-label={railOuvert ? "Replier le panneau" : "Déplier le panneau"}
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+          <span className={CELLULE_ICONE_RAIL}>
             <PanelLeft size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:scale-95" />
           </span>
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
@@ -807,7 +813,7 @@ export function AppSidebar({
                 onClick={onNouvelleConversation}
                 className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
               >
-                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                <span className={CELLULE_ICONE_RAIL}>
                   <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
                 </span>
                 <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
@@ -822,7 +828,7 @@ export function AppSidebar({
                     historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
                   }`}
                 >
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                  <span className={CELLULE_ICONE_RAIL}>
                     <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-300 group-hover:rotate-45" />
                   </span>
                   <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
@@ -891,7 +897,7 @@ export function AppSidebar({
               actionsDeplie ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
             }`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <span className={CELLULE_ICONE_RAIL}>
               <MoreHorizontal size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
             </span>
             <LibelleRail ouverte={railOuvert}>Plus</LibelleRail>
@@ -1050,9 +1056,9 @@ export function AppSidebar({
             onClick={seDeconnecter}
             aria-label="Se connecter"
             title="Se connecter"
-            className="group mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            className={`group ${ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <span className={CELLULE_ICONE_RAIL}>
               <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface-haute">
                 <UserRound size={13} className="text-dj-texte-muet" />
               </span>

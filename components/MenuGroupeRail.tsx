@@ -6,7 +6,14 @@ import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { estCleSection } from "@/lib/cleSections";
 import type { CleFenetre } from "@/lib/contexteFenetres";
 import { sectionsVisiblesDuGroupe, type GroupeRail } from "@/lib/groupesRail";
-import { TAILLE_ICONE_BULLE, TAILLE_ICONE_RAIL, TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
+import {
+  CELLULE_ICONE_RAIL,
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_RAIL,
+  TAILLE_ICONE_BULLE,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Bouton de groupe du rail (Bureau, Bibliothèque, Concentration,
 // Personnaliser Classinus) : UN bouton qui montre la liste de ses
@@ -139,7 +146,7 @@ export function MenuGroupe({
   return (
     <div
       ref={ref}
-      className={`relative w-full ${mobile || plus ? "" : "mt-2"}`}
+      className={`relative w-full ${mobile || plus ? "" : ECART_ELEMENTS_RAIL}`}
       onMouseEnter={() => {
         if (mobile) return;
         annulerFermeture();
@@ -196,7 +203,7 @@ export function MenuGroupe({
           </>
         ) : (
           <>
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
               <groupe.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             </span>
             {mobile ? <span className="text-sm">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
