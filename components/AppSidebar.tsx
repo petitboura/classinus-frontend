@@ -45,6 +45,14 @@ import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 import { ROUTES_APP } from "@/lib/routesApp";
+import {
+  CELLULE_ICONE_RAIL,
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_RAIL,
+  RAPPROCHE_LIBELLE_RAIL,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Nav principale de l'app (refonte "Mon espace = l'app", 15/08/2026,
 // demande Bourama : "faut changer l'affichage même de mon espace, son
@@ -146,7 +154,7 @@ const MOUVEMENT_NAV = "group-hover:translate-x-0.5";
 function LibelleRail({ ouverte, children, titre = false }: { ouverte: boolean; children: React.ReactNode; titre?: boolean }) {
   return (
     <span
-      className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
+      className={`${RAPPROCHE_LIBELLE_RAIL} overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
         titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm"
       } ${
         ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
@@ -248,21 +256,21 @@ function MenuProfil({
   );
 
   return (
-    <div ref={ref} className={`relative w-full ${mobile ? "" : "mt-2"}`}>
+    <div ref={ref} className={`relative w-full ${mobile ? "" : ECART_ELEMENTS_RAIL}`}>
       <button
         onClick={onBasculerMenu}
         className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
           mobile ? "px-2" : ""
         }`}
       >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">{Avatar}</span>
+        <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>{Avatar}</span>
         {mobile ? <span className="text-sm">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
       </button>
 
       {(menuOuvert || enSortie) && (
         <div
-          className={`absolute bottom-full z-50 mb-2 w-56 overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
-            mobile ? "left-2" : "left-0"
+          className={`absolute bottom-full z-50 mb-2 w-56 overflow-hidden rounded-cgpt-carte border border-dj-bordure shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
+            mobile ? "left-2 bg-dj-surface" : "left-0 bg-dj-rail"
           } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
         >
           {/* 07/09/2026, demande Bourama : "Paramètres" doit être une
@@ -642,12 +650,12 @@ export function AppSidebar({
             }
           }
         }}
-        className={`group relative mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
+        className={`group relative ${mobile ? "mt-2" : ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
       >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <onglet.Icone size={18} className={`transition-transform duration-200 ${mouvement}`} />
+        <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
+          <onglet.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
         {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
       </Link>
@@ -778,7 +786,7 @@ export function AppSidebar({
           sourisSurRail.current = false;
           if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
         }}
-        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 py-3 transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
           railOuvert ? "shadow-xl" : ""
         } ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
@@ -791,8 +799,24 @@ export function AppSidebar({
           aria-label={railOuvert ? "Replier le panneau" : "Déplier le panneau"}
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <PanelLeft size={18} className="transition-transform duration-200 group-hover:scale-95" />
+          {/* Barre repliée : l'icône qui déplie. Barre dépliée : la plume de
+              Classinus prend sa place, à gauche du nom (16/10/2026, demande de
+              Bourama). Les deux se fondent l'une dans l'autre. */}
+          <span className={`relative ${CELLULE_ICONE_RAIL}`}>
+            <PanelLeft
+              size={TAILLE_ICONE_RAIL}
+              strokeWidth={TRAIT_ICONE_RAIL}
+              className={`absolute transition-opacity duration-200 ${railOuvert ? "opacity-0" : "opacity-100"}`}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-classinus-sans-fond.webp"
+              alt=""
+              aria-hidden="true"
+              width={22}
+              height={22}
+              className={`absolute h-[22px] w-[22px] object-contain transition-opacity duration-200 ${railOuvert ? "opacity-100" : "opacity-0"}`}
+            />
           </span>
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
@@ -806,8 +830,8 @@ export function AppSidebar({
                 onClick={onNouvelleConversation}
                 className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
               >
-                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                  <MessageSquarePlus size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
+                <span className={CELLULE_ICONE_RAIL}>
+                  <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
                 </span>
                 <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
               </button>
@@ -821,13 +845,13 @@ export function AppSidebar({
                     historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
                   }`}
                 >
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                    <History size={18} className="transition-transform duration-300 group-hover:rotate-45" />
+                  <span className={CELLULE_ICONE_RAIL}>
+                    <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-300 group-hover:rotate-45" />
                   </span>
                   <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
                 </button>
                 {historiqueDeplie && (
-                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-rail shadow-lg">
                     {/* Plein écran : même style que celui de la barre de saisie, posé
                         dehors, collé juste au-dessus du coin haut droit du panneau. */}
                     <button
@@ -890,13 +914,13 @@ export function AppSidebar({
               actionsDeplie ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
             }`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
+            <span className={CELLULE_ICONE_RAIL}>
+              <MoreHorizontal size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
             </span>
             <LibelleRail ouverte={railOuvert}>Plus</LibelleRail>
           </button>
           {actionsDeplie && (
-            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-rail p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-2">
                 {ongletsDansActions.map((o) => {
                     const actif = pathname === o.href;
@@ -1049,9 +1073,9 @@ export function AppSidebar({
             onClick={seDeconnecter}
             aria-label="Se connecter"
             title="Se connecter"
-            className="group mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            className={`group ${ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <span className={CELLULE_ICONE_RAIL}>
               <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface-haute">
                 <UserRound size={13} className="text-dj-texte-muet" />
               </span>
@@ -1088,7 +1112,7 @@ export function AppSidebar({
         <div
           data-agent-zone="Menu latéral"
           className={
-            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-fond px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
+            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-surface px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
               // 07/09/2026, correctif Bourama (bug "sous-sections de
               // Personnaliser Classinus ne marchent pas") : groupeOuvertId
               // manquait ici, contrairement au rail desktop juste plus
@@ -1119,7 +1143,7 @@ export function AppSidebar({
                     onClick={onNouvelleConversation}
                     className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
-                    <MessageSquarePlus size={18} className="flex-shrink-0" />
+                    <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
                     <span className="text-sm">Nouvelle conversation</span>
                   </button>
                 )}
@@ -1132,7 +1156,7 @@ export function AppSidebar({
                         historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet"
                       }`}
                     >
-                      <History size={18} className="flex-shrink-0" />
+                      <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
                       Historique
                     </button>
                     {historiqueDeplie && (
