@@ -269,8 +269,8 @@ function MenuProfil({
 
       {(menuOuvert || enSortie) && (
         <div
-          className={`absolute bottom-full z-50 mb-2 w-56 overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
-            mobile ? "left-2" : "left-0"
+          className={`absolute bottom-full z-50 mb-2 w-56 overflow-hidden rounded-cgpt-carte border border-dj-bordure shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
+            mobile ? "left-2 bg-dj-surface" : "left-0 bg-dj-rail"
           } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
         >
           {/* 07/09/2026, demande Bourama : "Paramètres" doit être une
@@ -835,7 +835,7 @@ export function AppSidebar({
                   <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
                 </button>
                 {historiqueDeplie && (
-                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-rail shadow-lg">
                     {/* Plein écran : même style que celui de la barre de saisie, posé
                         dehors, collé juste au-dessus du coin haut droit du panneau. */}
                     <button
@@ -904,7 +904,7 @@ export function AppSidebar({
             <LibelleRail ouverte={railOuvert}>Plus</LibelleRail>
           </button>
           {actionsDeplie && (
-            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-rail p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-2">
                 {ongletsDansActions.map((o) => {
                     const actif = pathname === o.href;

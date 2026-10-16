@@ -221,8 +221,8 @@ export function MenuGroupe({
         // taille tactile, comme le bouton Réglages sur mobile.
         <div className={`absolute z-50 ${mobile ? "w-56" : "w-max min-w-[9rem] max-w-[16rem]"} ${CLASSE_POSITION_LISTE[variante]}`}>
           <div
-            className={`${CLASSE_ECART_LISTE[variante]} animate-dj-fade-in-rapide overflow-hidden border border-dj-bordure bg-dj-surface p-1 ${
-              mobile ? "rounded-cgpt-carte shadow-[0_8px_30px_rgba(0,0,0,0.35)]" : "rounded-cgpt-bouton shadow-xl"
+            className={`${CLASSE_ECART_LISTE[variante]} animate-dj-fade-in-rapide overflow-hidden border border-dj-bordure p-1 ${
+              mobile ? "rounded-cgpt-carte bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.35)]" : "rounded-cgpt-bouton bg-dj-rail shadow-xl"
             }`}
           >
             {sections.map((s) => {
@@ -248,7 +248,7 @@ export function MenuGroupe({
                     }
                   }}
                   className={`flex w-full items-center rounded-lg text-left transition-colors ${
-                    mobile ? "gap-2.5 px-2.5 py-2 text-sm" : "gap-2 px-2 py-1 text-[11px]"
+                    mobile ? "gap-2.5 px-2.5 py-2 text-sm" : "gap-2 px-2 py-1 text-xs"
                   } ${estActif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
                 >
                   <s.Icone
