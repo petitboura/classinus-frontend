@@ -45,6 +45,7 @@ import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 import { ROUTES_APP } from "@/lib/routesApp";
+import { TAILLE_ICONE_RAIL, TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
 
 // Nav principale de l'app (refonte "Mon espace = l'app", 15/08/2026,
 // demande Bourama : "faut changer l'affichage même de mon espace, son
@@ -647,7 +648,7 @@ export function AppSidebar({
         } ${mobile ? "px-2" : ""}`}
       >
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <onglet.Icone size={18} className={`transition-transform duration-200 ${mouvement}`} />
+          <onglet.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
         {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
       </Link>
@@ -778,7 +779,7 @@ export function AppSidebar({
           sourisSurRail.current = false;
           if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
         }}
-        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-surface px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
           railOuvert ? "shadow-xl" : ""
         } ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
@@ -792,7 +793,7 @@ export function AppSidebar({
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <PanelLeft size={18} className="transition-transform duration-200 group-hover:scale-95" />
+            <PanelLeft size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:scale-95" />
           </span>
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
@@ -807,7 +808,7 @@ export function AppSidebar({
                 className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
               >
                 <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                  <MessageSquarePlus size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
+                  <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
                 </span>
                 <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
               </button>
@@ -822,7 +823,7 @@ export function AppSidebar({
                   }`}
                 >
                   <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                    <History size={18} className="transition-transform duration-300 group-hover:rotate-45" />
+                    <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-300 group-hover:rotate-45" />
                   </span>
                   <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
                 </button>
@@ -891,7 +892,7 @@ export function AppSidebar({
             }`}
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
+              <MoreHorizontal size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
             </span>
             <LibelleRail ouverte={railOuvert}>Plus</LibelleRail>
           </button>
@@ -1088,7 +1089,7 @@ export function AppSidebar({
         <div
           data-agent-zone="Menu latéral"
           className={
-            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-fond px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
+            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-surface px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
               // 07/09/2026, correctif Bourama (bug "sous-sections de
               // Personnaliser Classinus ne marchent pas") : groupeOuvertId
               // manquait ici, contrairement au rail desktop juste plus
@@ -1119,7 +1120,7 @@ export function AppSidebar({
                     onClick={onNouvelleConversation}
                     className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
-                    <MessageSquarePlus size={18} className="flex-shrink-0" />
+                    <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
                     <span className="text-sm">Nouvelle conversation</span>
                   </button>
                 )}
@@ -1132,7 +1133,7 @@ export function AppSidebar({
                         historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet"
                       }`}
                     >
-                      <History size={18} className="flex-shrink-0" />
+                      <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
                       Historique
                     </button>
                     {historiqueDeplie && (
