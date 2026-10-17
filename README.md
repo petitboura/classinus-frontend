@@ -307,7 +307,10 @@ retirée à la demande de Bourama, qui bloquait aussi le chat invité.
 ## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau, Concentration)
 
 Une section en groupe a une page d'accueil en liste (`components/ListeSections.tsx`)
-et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Chaque
+et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Les lignes de cette liste sont
+à nu, sans carte ni flèche : un trait les sépare et commence après l'icône. Ce trait, ainsi que le trait
+renforcé des icônes de section, viennent de `lib/styleLignes.ts`, lu aussi par les listes de la Bibliothèque
+et des Dossiers du téléphone. Chaque
 page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
 l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
 gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut

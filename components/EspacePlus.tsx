@@ -7,6 +7,7 @@ import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { ROUTES_APP } from "@/lib/routesApp";
 
 // Créé le 26/08/2026, Bourama : refonte navigation mobile native. Contenu
@@ -117,13 +118,13 @@ function LigneSection({
           que chaque ligne est une action, sans changer la structure de la
           liste ni son comportement. */}
       <span className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur">
-        <Icone size={17} className="text-dj-accent-1-texte" />
+        <Icone size={17} strokeWidth={TRAIT_ICONE_SECTION} className="text-dj-accent-1-texte" />
         {pointRouge && (
           <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-[var(--dj-erreur)]" />
         )}
       </span>
       <div className="flex-1 overflow-hidden">
-        <div className="truncate text-sm text-dj-texte">{titre}</div>
+        <div className="truncate text-sm font-semibold text-dj-texte">{titre}</div>
         {sousTitre && <div className="truncate text-xs text-dj-texte-muet">{sousTitre}</div>}
       </div>
       <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />

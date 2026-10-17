@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
+import { LIGNE_TRAIT_ICONE_28 } from "@/lib/styleLignes";
 import {
   Link as IconLien,
   Link2,
@@ -1141,7 +1142,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           plutôt que 2 fixes : remplit l'espace visible au lieu de sauter
           brutalement à une vraie liste plus longue une fois chargée. */}
       {fichiersAffiches === null && (
-        <div className="flex flex-col gap-2" aria-hidden>
+        <div className="flex flex-col" aria-hidden>
           {[
             { largeur: "w-3/5", delai: "0ms" },
             { largeur: "w-2/5", delai: "100ms" },
@@ -1151,7 +1152,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           ].map(({ largeur, delai }, i) => (
             <div
               key={i}
-              className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+              className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_28}`}
             >
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Skeleton className="h-7 w-7 flex-shrink-0 rounded-full" style={{ animationDelay: delai }} />
@@ -1172,7 +1173,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         // reçu n'apparaît que dans l'onglet "Depuis un code" -- inutile de
         // le regrouper une deuxième fois ici. L'étiquette "Reçu de {x}"
         // reste affichée sur sa carte (CarteDossier) pour l'identifier.
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           {sousDossiersAffiches.map((d) => (
             <CarteDossier
               key={d.id}
@@ -1478,7 +1479,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>
       )}
       {fichiersAffiches && fichiersAffiches.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           {fichiersAffiches.map((f) => {
             const type = typeDe(f);
             const Icone =
@@ -1494,11 +1495,9 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                 key={f.id}
                 draggable={!selectionMultiple.actif}
                 onDragStart={(e) => e.dataTransfer.setData("text/fichier-bibliotheque-id", f.id)}
-                className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
                   selectionMultiple.actif ? "" : "cursor-grab active:cursor-grabbing"
-                } ${
-                  selectionne ? "border-dj-accent-1 bg-dj-accent-1-conteneur" : "border-dj-bordure bg-dj-surface"
-                }`}
+                } ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
               >
                 <button
                   onClick={(e) =>
@@ -1883,12 +1882,12 @@ function CarteDossier({
         const fichierId = e.dataTransfer.getData("text/fichier-bibliotheque-id");
         if (fichierId) deposerFichierDansDossier(d.id, fichierId);
       }}
-      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
+      className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
         selectionne
-          ? "border-dj-accent-1 bg-dj-accent-1-conteneur"
+          ? "bg-dj-accent-1-conteneur"
           : dossierSurvole === d.id
-          ? "border-dj-accent-1 bg-dj-surface-haute"
-          : "border-dj-bordure bg-dj-surface"
+          ? "bg-dj-surface-haute ring-1 ring-inset ring-dj-accent-1"
+          : ""
       }`}
     >
       {dossierEnRenommage === d.id ? (
