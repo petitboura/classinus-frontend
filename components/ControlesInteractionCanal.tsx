@@ -32,7 +32,7 @@ import { CanvasDessin } from "@/components/chat/CanvasDessin";
 import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
 import { messageErreur } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
-import { ContexteCanalEnDirect, type MoteurDictee } from "@/lib/contexteCanalEnDirect";
+import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { envoyerMessageEtudiant } from "@/lib/canalAgentApplicatif";
 import { useDicteeVocale } from "@/lib/useDicteeVocale";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
@@ -40,20 +40,20 @@ import { conversationActive } from "@/lib/conversationPartagee";
 import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 
 const DUREE_ERREUR_MS = 6000;
+// Repli automatique des boutons (11/10/2026, demande Bourama) : délai sans aucune action avant que
+// le groupe se replie tout seul.
+const DELAI_REPLI_AUTO_MS = 2000;
 
-const LABEL_MOTEUR: Record<MoteurDictee, string> = {
-  navigateur: "Navigateur",
-  whisper: "Whisper",
-};
-
-// Disposition (03/10/2026, demande Bourama), de bas en haut, en trois colonnes alignées :
-//   ligne 1 : activation du canal (boutonActivation), chevron qui déplie ou replie, « + » ;
-//   ligne 2 : Écrire, Mode vocal, Utilitaires ;
-//   puis la ligne de la dictée (bouton et choix du moteur), puis celle de Arrêter la tâche
-//   (pendant une tâche) et Réglages.
-// Le groupe est déplié dès l'activation. Écrire et Arrêter la tâche restent visibles groupe
-// replié. Le journal est un bouton fixe et déplaçable, affiché canal actif et groupe déplié ;
-// le menu du « + » s'ouvre sur le côté pour ne pas recouvrir Utilitaires.
+// Disposition (mise à jour le 11/10/2026, demande Bourama), de bas en haut :
+//   ligne 1 : chevron qui déplie ou replie (tout à gauche), Écrire, activation du canal
+//             (visible seulement groupe déplié, ou canal éteint) ;
+//   ligne 2 : Mode vocal, Utilitaires, « + » ;
+//   ligne 3 : Arrêter la tâche (pendant une tâche, à gauche, il pousse les autres vers la
+//             droite), micro de dictée, Réglages.
+// Le groupe est déplié dès l'activation et se replie seul après un court délai. Arrêter la
+// tâche reste visible groupe replié. Le journal est un bouton fixe et déplaçable, affiché
+// canal actif et groupe déplié ; le menu du « + » s'ouvre sur le côté pour ne pas recouvrir
+// Utilitaires.
 export function ControlesInteractionCanal({
   boutonActivation = null,
 }: {
@@ -160,7 +160,7 @@ export function ControlesInteractionCanal({
   );
 
   if (!contexte) return null;
-  const { choisirModeInteraction, choisirMoteurDictee } = contexte;
+  const { choisirModeInteraction } = contexte;
 
   function basculerDictee() {
     choisirModeInteraction("voix");
@@ -169,6 +169,19 @@ export function ControlesInteractionCanal({
     if (dictee.enEcoute) dictee.arreter();
     else dictee.demarrer();
   }
+
+  // Repli automatique : quelques secondes après la dernière action, le groupe se replie seul.
+  // Il reste ouvert tant que le pointeur est dessus, qu'une zone d'écriture, le dessin ou
+  // l'éditeur est ouvert, ou que la dictée ou la conversation vocale tourne.
+  const [pointeurSurGroupe, setPointeurSurGroupe] = useState(false);
+  const [activiteGroupe, setActiviteGroupe] = useState(0);
+  useEffect(() => {
+    if (!actif || !groupeOuvert) return;
+    if (pointeurSurGroupe || panneauOuvert || pleinEcran || dessinOuvert || mathsOuvert) return;
+    if (dictee.enEcoute || geminiLive.actif) return;
+    const minuteur = setTimeout(() => setGroupeOuvert(false), DELAI_REPLI_AUTO_MS);
+    return () => clearTimeout(minuteur);
+  }, [actif, groupeOuvert, pointeurSurGroupe, panneauOuvert, pleinEcran, dessinOuvert, mathsOuvert, dictee.enEcoute, geminiLive.actif, activiteGroupe]);
 
   function basculerPanneau() {
     choisirModeInteraction("texte");
@@ -271,11 +284,6 @@ export function ControlesInteractionCanal({
     }
   }
 
-  function choisirMoteur(moteur: MoteurDictee) {
-    if (dictee.enEcoute) dictee.annuler();
-    choisirMoteurDictee(moteur);
-  }
-
   const classeBouton = (misEnAvant: boolean, occupe: boolean) =>
     `flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
       occupe
@@ -285,11 +293,29 @@ export function ControlesInteractionCanal({
           : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
     }`;
 
+  // Bouton « Écrire » : sur la ligne du bas, à droite du chevron, groupe déplié ou replié.
+  const boutonEcrire = (
+    <button
+      onClick={basculerPanneau}
+      aria-pressed={panneauOuvert}
+      aria-label={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
+      title={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
+      className={classeBouton(modeInteraction === "texte", panneauOuvert)}
+    >
+      <PenLine size={18} />
+    </button>
+  );
+
   const fermerPleinEcran = () => fermerPleinEcranAnime(() => setPleinEcran(false));
 
   return (
     <>
-      <div className="flex flex-col items-start gap-2">
+      <div
+        className="flex flex-col items-start gap-2"
+        onPointerEnter={() => setPointeurSurGroupe(true)}
+        onPointerLeave={() => setPointeurSurGroupe(false)}
+        onPointerDown={() => setActiviteGroupe((v) => v + 1)}
+      >
         <AnimatePresence>
           {actif && erreur && (
             <motion.p
@@ -362,7 +388,7 @@ export function ControlesInteractionCanal({
         <AnimatePresence initial={false}>
           {actif && (contexte.tacheEnCours || groupeOuvert) && (
             <motion.div
-              key="ligne-reglages"
+              key="ligne-dictee"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
@@ -372,8 +398,8 @@ export function ControlesInteractionCanal({
               <AnimatePresence initial={false}>
                 {/* Arrêter la tâche en cours, comme le bouton d'arrêt du chat : le texte déjà
                     écrit reste, la bulle propose ensuite Continuer ou Réessayer (voir
-                    lib/tacheCanal.ts). N'apparaît que pendant une tâche et reste visible même
-                    quand le groupe est replié. */}
+                    lib/tacheCanal.ts). N'apparaît que pendant une tâche, reste visible même
+                    quand le groupe est replié, et pousse les autres boutons vers la droite. */}
                 {contexte.tacheEnCours && (
                   <motion.button
                     key="arreter-tache"
@@ -390,6 +416,24 @@ export function ControlesInteractionCanal({
                   </motion.button>
                 )}
                 {groupeOuvert && (
+                  <ApparitionBoutonCanal key="micro">
+                  <button
+                    onClick={basculerDictee}
+                    disabled={dictee.transcriptionEnCours}
+                    aria-pressed={dictee.enEcoute}
+                    aria-label={
+                      dictee.enEcoute ? "Arrêter la dictée" : dictee.transcriptionEnCours ? "Transcription en cours" : "Dicter un message"
+                    }
+                    title={dictee.enEcoute ? "Arrêter la dictée" : "Dicter un message"}
+                    className={`${classeBouton(modeInteraction === "voix", dictee.enEcoute)} ${
+                      dictee.enEcoute || dictee.transcriptionEnCours ? "animate-pulse" : ""
+                    }`}
+                  >
+                    {dictee.enEcoute ? <Square size={16} /> : <Mic size={18} />}
+                  </button>
+                  </ApparitionBoutonCanal>
+                )}
+                {groupeOuvert && (
                   <ApparitionBoutonCanal key="reglages">
                     <BoutonReglagesCanal conversationId={contexte?.conversationId ?? null} />
                   </ApparitionBoutonCanal>
@@ -402,74 +446,13 @@ export function ControlesInteractionCanal({
         <AnimatePresence initial={false}>
           {actif && groupeOuvert && (
             <motion.div
-              key="ligne-dictee"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-2"
-            >
-              <button
-                onClick={basculerDictee}
-                disabled={dictee.transcriptionEnCours}
-                aria-pressed={dictee.enEcoute}
-                aria-label={
-                  dictee.enEcoute ? "Arrêter la dictée" : dictee.transcriptionEnCours ? "Transcription en cours" : "Dicter un message"
-                }
-                title={dictee.enEcoute ? "Arrêter la dictée" : "Dicter un message"}
-                className={`${classeBouton(modeInteraction === "voix", dictee.enEcoute)} ${
-                  dictee.enEcoute || dictee.transcriptionEnCours ? "animate-pulse" : ""
-                }`}
-              >
-                {dictee.enEcoute ? <Square size={16} /> : <Mic size={18} />}
-              </button>
-
-              {dictee.navigateurDisponible && (
-                <div
-                  role="radiogroup"
-                  aria-label="Moteur de dictée"
-                  className="flex overflow-hidden rounded-full border border-dj-bordure bg-dj-surface text-[11px] shadow-lg"
-                >
-                  {(Object.keys(LABEL_MOTEUR) as MoteurDictee[]).map((moteur) => (
-                    <button
-                      key={moteur}
-                      role="radio"
-                      aria-checked={dictee.moteurUtilise === moteur}
-                      onClick={() => choisirMoteur(moteur)}
-                      className={`px-2.5 py-1.5 transition-colors ${
-                        dictee.moteurUtilise === moteur
-                          ? "bg-dj-accent-1 text-[#1A0D02]"
-                          : "text-dj-texte-muet hover:text-dj-texte"
-                      }`}
-                    >
-                      {LABEL_MOTEUR[moteur]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence initial={false}>
-          {actif && (
-            <motion.div
               key="ligne-ecrire"
               initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.15, delay: 0.15 } }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.15 }}
               className="flex items-center gap-2"
             >
-              <button
-                onClick={basculerPanneau}
-                aria-pressed={panneauOuvert}
-                aria-label={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
-                title={panneauOuvert ? "Fermer la zone d'écriture" : "Écrire un message"}
-                className={classeBouton(modeInteraction === "texte", panneauOuvert)}
-              >
-                <PenLine size={18} />
-              </button>
               <AnimatePresence initial={false}>
                 {groupeOuvert && (
                   <ApparitionBoutonCanal key="mode-vocal">
@@ -490,14 +473,22 @@ export function ControlesInteractionCanal({
                     <BoutonUtilitairesCanal actions={actionsUtilitaires} />
                   </ApparitionBoutonCanal>
                 )}
+                {groupeOuvert && (
+                  <ApparitionBoutonCanal key="plus">
+                    <div className="flex h-10 w-10 items-center justify-center">
+                      <MenuPlus variante="bureau" entrees={entreesMenuPlus} ouverture="droite" />
+                    </div>
+                  </ApparitionBoutonCanal>
+                )}
               </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
 
         <div className="flex items-center gap-2">
-          {boutonActivation}
           <AnimatePresence initial={false}>
+            {/* Ligne du bas : chevron tout à gauche, Écrire à sa droite, puis le bouton d'activation,
+                qui n'est visible que groupe déplié (c'est là qu'on désactive le canal). */}
             {actif && (
               <ApparitionBoutonCanal key="chevron">
                 <button
@@ -511,13 +502,8 @@ export function ControlesInteractionCanal({
                 </button>
               </ApparitionBoutonCanal>
             )}
-            {actif && groupeOuvert && (
-              <ApparitionBoutonCanal key="plus">
-                <div className="flex h-10 w-10 items-center justify-center">
-                  <MenuPlus variante="bureau" entrees={entreesMenuPlus} ouverture="droite" />
-                </div>
-              </ApparitionBoutonCanal>
-            )}
+            {actif && <ApparitionBoutonCanal key="ecrire">{boutonEcrire}</ApparitionBoutonCanal>}
+            {(!actif || groupeOuvert) && <ApparitionBoutonCanal key="activation">{boutonActivation}</ApparitionBoutonCanal>}
           </AnimatePresence>
         </div>
       </div>
@@ -543,29 +529,34 @@ export function ControlesInteractionCanal({
           document.body,
         )}
 
-      <input
-        ref={inputFichierRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          ajouterFichiersJoints(Array.from(e.target.files ?? []));
-          // Sans ça, rejoindre le même fichier juste après l'avoir retiré ne redéclenche pas onChange.
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={inputPhotoRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          ajouterFichiersJoints(Array.from(e.target.files ?? []));
-          e.target.value = "";
-        }}
-      />
+          <input
+            ref={inputFichierRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              ajouterFichiersJoints(Array.from(e.target.files ?? []));
+              // Sans ça, rejoindre le même fichier juste après l'avoir retiré ne redéclenche pas onChange.
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={inputPhotoRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              ajouterFichiersJoints(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
+          />
 
+      {/* Dessin, éditeur et plein écran sont posés dans le body : le groupe de boutons est déplaçable
+          (transform), ce qui enfermait leur position fixe dans un petit cadre invisible. */}
+      {monte &&
+        createPortal(
+          <div onPointerDown={(e) => e.stopPropagation()}>
       {dessinOuvert && (
         <CanvasDessin
           enSortie={dessinEnSortie}
@@ -645,6 +636,9 @@ export function ControlesInteractionCanal({
           </div>
         </PleinEcranApercu>
       )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

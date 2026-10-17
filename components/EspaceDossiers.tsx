@@ -25,6 +25,7 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { CaseACocher } from "./CaseACocher";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
+import { LIGNE_TRAIT_ICONE_18 } from "@/lib/styleLignes";
 import { VisionneuseBibliotheque, type FichierBiblio } from "./VisionneuseBibliotheque";
 
 /**
@@ -413,10 +414,9 @@ export function EspaceDossiers() {
           <Skeleton className="h-3.5 w-36 rounded" />
           <Skeleton className="h-7 w-20 flex-shrink-0 rounded-lg" />
         </div>
-        <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-          <div className="divide-y divide-dj-bordure">
+        <div>
             {["w-32", "w-44", "w-28", "w-36"].map((largeur, i) => (
-              <div key={i} className="flex items-center gap-2 px-4 py-3">
+              <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
                 <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
                 <div className="flex-1 overflow-hidden">
                   <Skeleton className={`h-3.5 ${largeur} rounded`} />
@@ -425,7 +425,6 @@ export function EspaceDossiers() {
               </div>
             ))}
           </div>
-        </div>
       </div>
     );
   }
@@ -506,10 +505,9 @@ export function EspaceDossiers() {
 
       {chargement ? (
         !dossierCourant ? (
-          <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface" aria-hidden>
-            <div className="divide-y divide-dj-bordure">
+          <div aria-hidden>
               {["w-32", "w-44", "w-28", "w-36"].map((largeur, i) => (
-                <div key={i} className="flex items-center gap-2 px-4 py-3">
+                <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
                   <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
                   <div className="flex-1 overflow-hidden">
                     <Skeleton className={`h-3.5 ${largeur} rounded`} />
@@ -518,17 +516,15 @@ export function EspaceDossiers() {
                 </div>
               ))}
             </div>
-          </div>
         ) : (
-          <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface" aria-hidden>
-            <div className="divide-y divide-dj-bordure">
+          <div aria-hidden>
               {[
                 { largeur: "w-36", taille: false },
                 { largeur: "w-28", taille: true },
                 { largeur: "w-44", taille: false },
                 { largeur: "w-32", taille: true },
               ].map((el, i) => (
-                <div key={i} className="flex items-center gap-2 px-4 py-3">
+                <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
                   <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <Skeleton className={`h-3.5 ${el.largeur} rounded`} />
@@ -538,21 +534,19 @@ export function EspaceDossiers() {
                 </div>
               ))}
             </div>
-          </div>
         )
       ) : !dossierCourant ? (
         (dossiersDesignes ?? []).length === 0 ? (
           <p className="p-2 text-sm text-dj-texte-muet">Aucun dossier désigné pour l&apos;instant.</p>
         ) : (
-          <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-            <div className="divide-y divide-dj-bordure">
+          <div>
               {(dossiersDesignes ?? []).map((d) => {
                 const progression = progressions[d.nom];
                 const selectionne = selectionDossiersDesignes.estSelectionne(d.uri);
                 return (
                   <div
                     key={d.uri}
-                    className={`flex flex-col gap-1.5 px-4 py-3 ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
+                    className={`flex flex-col gap-1.5 px-4 py-3 ${LIGNE_TRAIT_ICONE_18} ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       <button
@@ -607,19 +601,17 @@ export function EspaceDossiers() {
                 );
               })}
             </div>
-          </div>
         )
       ) : (elements ?? []).length === 0 ? (
         <p className="p-2 text-sm text-dj-texte-muet">Ce dossier est vide.</p>
       ) : (
-        <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-          <div className="divide-y divide-dj-bordure">
+        <div>
             {(elements ?? []).map((el) => {
               const selectionne = selectionElements.estSelectionne(el.uri);
               return (
               <div
                 key={el.uri}
-                className={`relative flex items-center gap-2 px-4 py-3 ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
+                className={`flex items-center gap-2 px-4 py-3 ${LIGNE_TRAIT_ICONE_18} ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
               >
                 <button
                   onClick={(e) =>
@@ -699,7 +691,6 @@ export function EspaceDossiers() {
             );
             })}
           </div>
-        </div>
       )}
 
       {erreur && <span className="text-sm text-[var(--dj-erreur)]">{erreur}</span>}

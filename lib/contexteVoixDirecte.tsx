@@ -20,6 +20,7 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { demanderAClovisDirectement, ouvrirGeminiLive, type NiveauxVoix, type SessionGeminiLive } from "./geminiLive";
 import { abonnerMessagesBulle, canalEnDirectEstActif } from "./contexteCanalEnDirect";
+import { abonnerArretTache } from "./tacheCanal";
 import { ChatIndisponiblePourVoix } from "./contexteChat";
 import { conversationActive, conversationPourVoix } from "./conversationPartagee";
 
@@ -167,6 +168,10 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
     () => abonnerMessagesBulle((message) => sessionRef.current?.direMessageBulle(message.texte)),
     []
   );
+
+  // Bouton Arrêter (12/10/2026, demande Bourama : « arrêter c'est arrêter ») : la parole en cours
+  // est coupée, pas seulement la génération.
+  useEffect(() => abonnerArretTache(() => sessionRef.current?.interrompre()), []);
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 

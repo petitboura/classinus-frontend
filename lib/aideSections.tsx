@@ -53,6 +53,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Une fois par semaine, un résumé des signalements de tes élèves, même s'il n'y en a aucun.",
     texteComplet:
       "Chaque semaine, Classinus t'envoie un résumé des signalements reçus de tes élèves, même s'il n'y en a aucun. Les signalements encore en attente sont listés en priorité, avec un accès direct pour les corriger.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.audit,
   },
   {
     // 20/09/2026, demande Bourama : tableau de bord par code, phase 1
@@ -127,6 +128,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Quelqu'un t'a donné un code ? Entre-le ici pour recevoir tout ce qu'il partage.",
     texteComplet:
       "Si quelqu'un t'a donné un code, entre-le ici pour recevoir tout ce qu'il partage : comportement, bibliothèque, ou texte, selon ce que la personne y a mis.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.entrerCode,
   },
   {
     id: "editeur-code",
@@ -134,6 +136,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Écris et exécute du code, ouvre ou enregistre-le dans ta bibliothèque.",
     texteComplet:
       "Écris du code dans n'importe quel langage. Le bouton Exécuter (Python uniquement pour l'instant) lance le code directement dans le navigateur, comme dans le chat. Ouvrir et Enregistrer utilisent ta bibliothèque personnelle comme espace de fichiers : choisis un fichier existant à ouvrir, ou enregistre le code affiché sous un nom, avec ou sans dossier. Quand le canal en direct est actif, Classinus voit ton code : il peut te répondre, te montrer des lignes, te conseiller et écrire directement dans l'éditeur, en plein écran comme en petit. Tu peux annuler ce qu'il écrit avec Ctrl+Z (Cmd+Z sur Mac).",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.editeur,
   },
   {
     id: "ecrire-matiere",
@@ -172,6 +175,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Crée un code et partage-le : tous ceux qui l'entrent reçoivent ce que tu y mets.",
     texteComplet:
       "Crée un code et partage-le : tous ceux qui l'entrent reçoivent tout ce que tu y mets (comportement, bibliothèque, texte). Modifiable après coup, tout le monde voit la mise à jour dès qu'elle est faite.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.codes,
   },
   {
     id: "programme-notions",
@@ -183,6 +187,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Organise le programme (matière > chapitre > partie > notion) et coche l'avancement.",
     texteComplet:
       "Organise les notions à enseigner pour un code, avec des sous-notions si besoin (renommer, fusionner, réordonner, supprimer). Chaque notion a un statut que tu coches toi-même : à venir, en cours, ou acquis. Tu peux aussi importer un document (sommaire, plan de cours) pour proposer une structure de départ, à valider avant de l'appliquer.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.programme,
   },
   // 19/09/2026, demande Bourama : rubrique de la page Signalements de
   // Bureau. La carte l'annonçait déjà (rubriqueId "signalements-prof")
@@ -197,6 +202,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme, rien n'est automatique, rien n'est traité sans toi.",
     texteComplet:
       "Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme, rien n'est automatique, rien n'est traité sans toi.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.signalements,
   },
   // Les 6 rubriques suivantes ajoutées le 02/09/2026 -- écrans oubliés du
   // premier passage du 01/09 (signalé par Bourama), textes repris tels

@@ -95,7 +95,7 @@ export function EspaceEntrerCode({ sansEnTete = false }: { sansEnTete?: boolean 
 
   if (chargement) {
     return (
-      <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5" aria-hidden>
+      <section className="px-4" aria-hidden>
         {!sansEnTete && (
           <>
             <Skeleton className="h-5 w-40 rounded" />
@@ -117,7 +117,7 @@ export function EspaceEntrerCode({ sansEnTete = false }: { sansEnTete?: boolean 
           ].map(({ largeur, delai }, i) => (
             <div
               key={i}
-              className="flex items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2"
+              className="flex items-center justify-between gap-2 py-2"
             >
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <Skeleton className={`h-3.5 rounded ${largeur}`} style={{ animationDelay: delai }} />
@@ -135,7 +135,7 @@ export function EspaceEntrerCode({ sansEnTete = false }: { sansEnTete?: boolean 
   }
 
   return (
-    <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
+    <section className="px-4">
       {!sansEnTete && (
         <div className="flex items-center gap-1.5">
           <h2 className="font-display text-base font-semibold text-dj-texte">Entrer un code</h2>
@@ -173,7 +173,7 @@ export function EspaceEntrerCode({ sansEnTete = false }: { sansEnTete?: boolean 
           {rattachements.map((r) => (
             <div
               key={r.rattachement_id}
-              className="flex items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-2 py-2 text-sm"
             >
               <div className="min-w-0">
                 <span className="text-dj-texte">{r.nom_code || r.code}</span>
@@ -211,7 +211,7 @@ export function EspaceEntrerCode({ sansEnTete = false }: { sansEnTete?: boolean 
         <div className="mt-4 animate-dj-fade-in-rapide space-y-2 border-t border-dj-bordure pt-3">
           <p className="text-xs font-semibold text-dj-texte-muet">Reçu</p>
           {avecTexteLibre.map((r) => (
-            <div key={r.rattachement_id} className="rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2">
+            <div key={r.rattachement_id} className="py-2">
               <p className="text-xs text-dj-texte-muet">Reçu de {r.proprietaire_nom}</p>
               <p className="mt-0.5 text-sm text-dj-texte">{r.texte_libre}</p>
             </div>

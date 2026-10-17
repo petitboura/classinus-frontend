@@ -6,6 +6,9 @@ import { Skeleton } from "../Skeleton";
 import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { API_URL } from "@/lib/api";
 import { traiterLienSortant } from "@/lib/liensSortants";
+import { FichierChip } from "./FichierChip";
+import { LecteurMedia, typeMedia } from "./LecteurMedia";
+import { BoutonCopierLien } from "./BoutonCopierLien";
 
 // Aperçu de lien dans le chat -- demande de Bourama (2026-07-20) : "n'importe
 // quel lien génère un aperçu... comme dans n'importe quelle plateforme"
@@ -46,6 +49,19 @@ export function idYoutube(href: string): string | null {
   return null;
 }
 
+// 12/10/2026, demande de Bourama : la dernière ligne de la carte est toujours l'adresse
+// du site (son nom de domaine), jamais le titre ou le nom que le site se donne (og:site_name),
+// qui apparaissait à la place quand l'aperçu avait une image. Calculée depuis le lien lui-même,
+// donc identique avec ou sans image.
+function adresseSite(href: string, repli: string): string {
+  try {
+    const hote = new URL(href).hostname;
+    return hote.startsWith("www.") ? hote.slice(4) : hote || repli;
+  } catch {
+    return repli;
+  }
+}
+
 type Apercu = { titre: string | null; image: string | null; description: string | null; siteName: string };
 
 // Lecteur YouTube embarqué (31/07, demande Bourama : "ça se lit
@@ -78,14 +94,44 @@ function LecteurYoutubeInline({ idVideo, onFermer }: { idVideo: string; onFermer
 
 // Mémoire (23/09/2026) : un aperçu déjà chargé réapparaît tout de suite s'il
 // se remonte, sans nouvel appel réseau ni écran de chargement.
-const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: boolean }>();
+// 09/10/2026 : `fichier` = le backend a lu dans les en-têtes que l'adresse est un
+// vrai fichier (PDF, image, audio...) alors qu'elle n'en a pas l'air (?download=12725).
+type FichierDetecte = { extension: string; nom: string | null; taille: number | null };
+const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: boolean; fichier?: FichierDetecte | null }>();
 
-export function LinkPreview({ href, texteLien, compact }: { href: string; texteLien: string; compact?: boolean }) {
+// `sansBoutonCopier` : l'aperçu (VisionneurPositionGlobal) a déjà son propre
+// bouton "Copier le lien" sous la carte, inutile de le doubler au survol.
+// 12/10/2026, demande Bourama : le titre que le modèle donne au lien et, en plus,
+// une courte description, doivent se voir sur la carte (ils apportent le contexte
+// que le titre du site ne donne pas). `titreDuModele` et `descriptionLien` passent
+// avant ce que renvoie le site ; le site reste le repli quand le modèle n'a rien
+// donné. Les vignettes YouTube gardent le titre de la vidéo et la ligne de la chaîne.
+// `detaille` (aperçu ouvert au clic) : description en entier, et titre
+// d'origine du site en petit s'il diffère de celui du modèle.
+export function LinkPreview({
+  href,
+  texteLien,
+  titreDuModele,
+  descriptionLien,
+  detaille,
+  compact,
+  sansBoutonCopier,
+}: {
+  href: string;
+  texteLien: string;
+  titreDuModele?: string;
+  descriptionLien?: string;
+  detaille?: boolean;
+  compact?: boolean;
+  sansBoutonCopier?: boolean;
+}) {
   const [apercu, setApercu] = useState<Apercu | null>(() => memoireApercus.lire(href)?.apercu ?? null);
   const [echec, setEchec] = useState(() => memoireApercus.lire(href)?.echec ?? false);
   const [charge, setCharge] = useState(() => memoireApercus.lire(href) !== undefined);
   const [enLecture, setEnLecture] = useState(false);
+  const [fichier, setFichier] = useState<FichierDetecte | null>(() => memoireApercus.lire(href)?.fichier ?? null);
   const idVideo = idYoutube(href);
+  const classeTitreModele = detaille ? "break-words" : titreDuModele ? "line-clamp-2" : "truncate";
 
   useEffect(() => {
     let annule = false;
@@ -117,6 +163,11 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
     fetch(`${API_URL}/api/apercu-lien?url=${encodeURIComponent(href)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
+        if (data?.fichier?.extension) {
+          memoireApercus.ecrire(href, { apercu: null, echec: false, fichier: data.fichier });
+          if (!annule) setFichier(data.fichier);
+          return;
+        }
         const vide = !data?.titre && !data?.image;
         memoireApercus.ecrire(href, { apercu: vide ? null : data, echec: vide });
         if (annule) return;
@@ -136,6 +187,16 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       annule = true;
     };
   }, [href, idVideo]);
+
+  // Le backend a reconnu un vrai fichier : même carte que pour un lien qui a
+  // l'extension dans son adresse (aperçu au clic, téléchargement, mention
+  // fichier externe).
+  if (fichier) {
+    const nom = texteLien === href && fichier.nom ? fichier.nom : texteLien;
+    const media = typeMedia(`.${fichier.extension}`);
+    if (media) return <LecteurMedia href={href} type={media} />;
+    return <FichierChip href={href} nom={nom} extensionForcee={fichier.extension} />;
+  }
 
   // Repli : lien texte classique, tant que rien n'est chargé ou si l'aperçu
   // a échoué -- jamais de carte vide affichée.
@@ -172,6 +233,7 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
         <Skeleton as="span" className="h-20 w-20 shrink-0 rounded-lg" />
         <span className="flex-1 space-y-2">
           <Skeleton as="span" className="block h-3.5 w-3/4 rounded" />
+          {descriptionLien && <Skeleton as="span" className="block h-3 w-full rounded" style={{ animationDelay: "100ms" }} />}
           <Skeleton as="span" className="block h-3 w-1/2 rounded" style={{ animationDelay: "150ms" }} />
         </span>
       </span>
@@ -191,9 +253,10 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       );
     }
     return (
+      <span className="group/lien relative my-2 block w-full max-w-sm animate-dj-fade-in">
       <button
         onClick={() => (idVideo ? setEnLecture(true) : traiterLienSortant(href, { titre: apercu?.titre || texteLien }))}
-        className="my-2 flex w-full max-w-sm animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
+        className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
       >
         {apercu!.image && (
           <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-dj-surface-haute">
@@ -208,10 +271,14 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
-          <span className="block truncate text-[11px] text-dj-texte-muet">{apercu!.siteName}</span>
+          <span className={`block truncate text-[11px] text-dj-texte-muet ${idVideo ? "" : "underline"}`}>{idVideo ? apercu!.siteName : adresseSite(href, apercu!.siteName)}</span>
         </span>
         {!idVideo && <ExternalLink size={13} className="shrink-0 text-dj-texte-muet" />}
       </button>
+      {!sansBoutonCopier && (
+        <BoutonCopierLien href={href} variante="survol" className={idVideo ? "right-2 top-2" : "right-8 top-1/2 -translate-y-1/2 bg-dj-surface"} />
+      )}
+      </span>
     );
   }
 
@@ -237,9 +304,10 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
       );
     }
     return (
+      <span className="group/lien relative my-2 block w-full max-w-md animate-dj-fade-in">
       <button
         onClick={() => setEnLecture(true)}
-        className="my-2 block w-full max-w-md animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface text-left transition-colors hover:border-dj-bordure-forte"
+        className="block w-full overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface text-left transition-colors hover:border-dj-bordure-forte"
       >
         {apercu!.image && (
           <span className="relative block aspect-video w-full overflow-hidden bg-dj-surface-haute">
@@ -257,15 +325,20 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
           <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
         </span>
       </button>
+      {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-2 top-2" />}
+      </span>
     );
   }
 
   return (
+    <span className="group/lien relative my-2 block w-full max-w-md animate-dj-fade-in">
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="my-2 flex w-full max-w-md animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2.5 no-underline transition-colors hover:border-dj-bordure-forte"
+      data-titre-lien={titreDuModele}
+      data-description-lien={descriptionLien}
+      className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2.5 no-underline transition-colors hover:border-dj-bordure-forte"
     >
       {apercu!.image && (
         <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-dj-surface-haute">
@@ -274,10 +347,18 @@ export function LinkPreview({ href, texteLien, compact }: { href: string; texteL
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
-        <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.siteName}</span>
+        <span className={`block text-sm text-dj-texte ${classeTitreModele}`}>{titreDuModele || apercu!.titre || texteLien}</span>
+        {descriptionLien && (
+          <span className={`block text-[12px] leading-snug text-dj-texte-muet ${detaille ? "" : "line-clamp-2"}`}>{descriptionLien}</span>
+        )}
+        <span className="block truncate text-[12px] text-dj-texte-muet underline">{adresseSite(href, apercu!.siteName)}</span>
+        {detaille && titreDuModele && apercu!.titre && apercu!.titre !== titreDuModele && (
+          <span className="block text-[11px] text-dj-texte-muet">{apercu!.titre}</span>
+        )}
       </span>
       <ExternalLink size={14} className="shrink-0 text-dj-texte-muet" />
     </a>
+    {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-9 top-1/2 -translate-y-1/2 bg-dj-surface" />}
+    </span>
   );
 }

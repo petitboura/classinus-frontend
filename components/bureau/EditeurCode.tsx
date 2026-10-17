@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { vscodeDark, vscodeLight } from "@uiw/codemirror-theme-vscode";
-import { FolderOpen, MessageCircle, Maximize2, Minimize2, Play, Save, Square } from "lucide-react";
+import { FolderOpen, MessageCircle, Maximize2, MoreHorizontal, Minimize2, Play, Save, Square } from "lucide-react";
 import { EXTENSION_PAR_LANGAGE, LANGAGES_PYTHON } from "@/components/chat/BlocCode";
 import { FormulaireValeursPrealables, SortieExecutionCode } from "@/components/chat/SortieExecutionCode";
 import { PleinEcranApercu } from "@/components/chat/PleinEcranApercu";
@@ -15,6 +15,8 @@ import { detecterLangage, extensionsLangage, LANGAGES_EDITEUR } from "@/lib/lang
 import { extensionsAgentEditeur } from "@/lib/operationsEditeurAgent";
 import { usePontEditeurAgent } from "@/lib/usePontEditeurAgent";
 import type { FichierBibliothequePersonnelle } from "@/lib/api";
+import { MenuActionsCarte } from "@/components/MenuActionsCarte";
+import type { ActionSelection } from "@/components/BarreActionsSelection";
 import { DialogueOuvrirEditeur } from "./DialogueOuvrirEditeur";
 import { DialogueEnregistrerEditeur } from "./DialogueEnregistrerEditeur";
 import { DialogueRetourChat } from "./DialogueRetourChat";
@@ -163,48 +165,47 @@ export function EditeurCode() {
   // de code isolé côté chat, voir BlocCode.tsx) -- réutilise le même
   // composant PleinEcranApercu que le reste du dépôt plutôt qu'une
   // implémentation maison.
+  // 15/10/2026, demande Bourama : trop de boutons, surtout sur téléphone. Ouvrir, Enregistrer
+  // et Vers le chat passent derrière un seul bouton "trois points" horizontal ; Exécuter et
+  // Agrandir restent visibles, en plus petit.
+  const actionsMenu: ActionSelection[] = [
+    { cle: "ouvrir", label: "Ouvrir", icone: <FolderOpen size={14} />, onClick: () => setDialogueOuvrirVisible(true) },
+    { cle: "enregistrer", label: "Enregistrer", icone: <Save size={14} />, onClick: () => setDialogueEnregistrerVisible(true) },
+    { cle: "vers-le-chat", label: "Vers le chat", icone: <MessageCircle size={14} />, onClick: versLeChat },
+  ];
+
   const boutonsBarre = (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1 md:gap-1.5">
       {executable && (
         <button
           onClick={execution.enCours ? execution.arreter : execution.executer}
-          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs font-medium text-dj-accent-1-texte transition-colors hover:opacity-80"
+          className="flex items-center gap-1 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2 py-1 text-xs font-medium text-dj-accent-1-texte transition-colors hover:opacity-80 md:gap-1.5 md:px-2.5 md:py-1.5"
         >
           {execution.enCours ? <Square size={13} /> : <Play size={13} />}
           {execution.enCours ? "Arrêter" : "Exécuter"}
         </button>
       )}
       <button
-        onClick={() => setDialogueOuvrirVisible(true)}
-        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
-      >
-        <FolderOpen size={13} /> Ouvrir
-      </button>
-      <button
-        onClick={() => setDialogueEnregistrerVisible(true)}
-        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
-      >
-        <Save size={13} /> Enregistrer
-      </button>
-      <button
-        onClick={versLeChat}
-        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
-      >
-        <MessageCircle size={13} /> Vers le chat
-      </button>
-      <button
         onClick={() => setPleinEcran((v) => !v)}
         aria-label={pleinEcran ? "Rétrécir" : "Agrandir l'éditeur"}
-        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+        className="flex items-center rounded-lg border border-dj-bordure bg-dj-surface-haute p-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte md:px-2.5"
       >
         {pleinEcran ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
       </button>
+      <MenuActionsCarte
+        actions={actionsMenu}
+        ariaLabel="Plus d'actions"
+        portail
+        niveauPortail="z-[170]"
+        declencheur={<MoreHorizontal size={15} />}
+        classeDeclencheur="flex items-center rounded-lg border border-dj-bordure bg-dj-surface-haute p-1.5 text-dj-texte-muet transition-colors hover:text-dj-texte md:px-2.5"
+      />
     </div>
   );
 
   const barreOutils = (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2">
-      <div className="w-36">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-2 py-1.5 md:px-3 md:py-2">
+      <div className="w-28 md:w-36">
         <SelectPersonnalise
           options={LANGAGES_EDITEUR.map((l) => ({ id: l.valeur, label: l.libelle }))}
           valeur={langage}
@@ -286,7 +287,7 @@ export function EditeurCode() {
         onFerme={() => setPleinEcran(false)}
         entete={
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="w-36">
+            <div className="w-28 md:w-36">
               <SelectPersonnalise
                 options={LANGAGES_EDITEUR.map((l) => ({ id: l.valeur, label: l.libelle }))}
                 valeur={langage}

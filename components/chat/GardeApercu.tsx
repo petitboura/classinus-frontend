@@ -1,8 +1,14 @@
 "use client";
 
 import { Component, ReactNode } from "react";
-import { Download } from "lucide-react";
 import { telecharger } from "@/lib/telecharger";
+import {
+  IconeTelechargement,
+  LibelleTelechargement,
+  MessageEchecTelechargement,
+  classeEtatTelechargement,
+} from "@/components/EtatTelechargement";
+import { useEtatTelechargement } from "@/lib/etatTelechargements";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 
@@ -35,12 +41,33 @@ type Props = {
   hrefTelechargement?: string;
   nomTelechargement?: string;
   idBibliothequePublique?: string | null;
+  // 10/10/2026 : action "ajouter à ma bibliothèque" fournie par l'appelant
+  // (fichier de site externe). Prioritaire sur idBibliothequePublique.
+  surCopie?: () => Promise<void>;
 };
 
 type State = {
   enErreur: boolean;
   modalOuverte: boolean;
 };
+
+// Bouton du repli, extrait en composant fonction : GardeApercu est une classe
+// et ne peut pas lire l'état du téléchargement (10/10/2026, pourcentage et
+// échec affichés sur le bouton).
+function BoutonTelechargerRepli({ href, onClic }: { href: string; onClic: () => void }) {
+  const etat = useEtatTelechargement(href);
+  return (
+    <>
+      <button
+        onClick={onClic}
+        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-dj-accent-1-texte hover:underline ${classeEtatTelechargement(etat)}`}
+      >
+        <IconeTelechargement href={href} size={13} /> <LibelleTelechargement href={href} defaut="Télécharger" />
+      </button>
+      <MessageEchecTelechargement href={href} />
+    </>
+  );
+}
 
 export class GardeApercu extends Component<Props, State> {
   state: State = { enErreur: false, modalOuverte: false };
@@ -57,28 +84,24 @@ export class GardeApercu extends Component<Props, State> {
 
   render() {
     if (this.state.enErreur) {
-      const { hrefTelechargement, nomTelechargement, idBibliothequePublique } = this.props;
+      const { hrefTelechargement, nomTelechargement, idBibliothequePublique, surCopie } = this.props;
       const nom = nomTelechargement || "fichier";
+      const copie = surCopie ?? (idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined);
       return (
         <div className="flex flex-col items-center gap-2 p-8 text-center text-dj-texte-muet">
           <p className="text-sm">Impossible d&apos;afficher ce fichier ici.</p>
           {hrefTelechargement && (
-            <button
-              onClick={() =>
-                idBibliothequePublique
-                  ? this.setState({ modalOuverte: true })
-                  : telecharger(hrefTelechargement, nom)
-              }
-              className="flex items-center gap-1.5 text-xs text-dj-accent-1-texte hover:underline"
-            >
-              <Download size={13} /> Télécharger
-            </button>
+            <BoutonTelechargerRepli
+              href={hrefTelechargement}
+              onClic={() => (copie ? this.setState({ modalOuverte: true }) : void telecharger(hrefTelechargement, nom))}
+            />
           )}
-          {this.state.modalOuverte && hrefTelechargement && idBibliothequePublique && (
+          {this.state.modalOuverte && hrefTelechargement && copie && (
             <TelechargerCopierModal
               titre={nom}
-              surCopie={() => copierVersBibliothequePersonnelle(idBibliothequePublique)}
+              surCopie={copie}
               surTelechargement={() => telecharger(hrefTelechargement, nom)}
+              hrefTelechargement={hrefTelechargement}
               onFermer={() => this.setState({ modalOuverte: false })}
             />
           )}

@@ -1,0 +1,6 @@
+foliate-js (MIT, John Factotum), https://github.com/johnfactotum/foliate-js
+Commit repris : 78914aef4466eb960965702401634c2cb348e9b1
+Fichiers gardés : view, epub, epubcfi, mobi, paginator, fixed-layout, overlayer, progress, text-walker, vendor/zip, vendor/fflate.
+Non repris (inutiles ici) : pdf, fb2, comic-book, search, tts, lecteur de démonstration, pdfjs.
+Aucune modification du code d aucun fichier. Le filtrage du contenu des livres se fait côté Classinus (lib/neutraliserPageLivre.ts).
+Chargé à l exécution par components/VisionneurLivre.tsx.

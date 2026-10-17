@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
+import { LIGNE_TRAIT_ICONE_28 } from "@/lib/styleLignes";
 import {
   Link as IconLien,
   Link2,
@@ -1141,7 +1142,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           plutôt que 2 fixes : remplit l'espace visible au lieu de sauter
           brutalement à une vraie liste plus longue une fois chargée. */}
       {fichiersAffiches === null && (
-        <div className="flex flex-col gap-2" aria-hidden>
+        <div className="flex flex-col" aria-hidden>
           {[
             { largeur: "w-3/5", delai: "0ms" },
             { largeur: "w-2/5", delai: "100ms" },
@@ -1151,7 +1152,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           ].map(({ largeur, delai }, i) => (
             <div
               key={i}
-              className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+              className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_28}`}
             >
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Skeleton className="h-7 w-7 flex-shrink-0 rounded-full" style={{ animationDelay: delai }} />
@@ -1172,7 +1173,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         // reçu n'apparaît que dans l'onglet "Depuis un code" -- inutile de
         // le regrouper une deuxième fois ici. L'étiquette "Reçu de {x}"
         // reste affichée sur sa carte (CarteDossier) pour l'identifier.
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           {sousDossiersAffiches.map((d) => (
             <CarteDossier
               key={d.id}
@@ -1232,11 +1233,10 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
 
       {/* +var(--dj-barre-onglets-web,0px) ajouté aux 3 calc() bottom-[...]
           de ce bloc (28/08/2026, chantier "web mobile façon appli") --
-          même principe que --cap-native-navigation-bottom déjà présent :
-          vaut 0px partout sauf sur mobile web, pour lever ces boutons
-          au-dessus de BarreOngletsWeb.tsx. */}
+          vaut 0px sur PC, pour lever ces boutons au-dessus de
+          BarreOngletsWeb.tsx (barre du bas commune au site et au natif). */}
       {(envoi || uploadDossierEnCours || uploadDansPickerEnCours) && (
-        <div className="fixed bottom-[calc(8.25rem+var(--cap-native-navigation-bottom,0px)+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl">
+        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl">
           <div className="flex items-center gap-2">
             <Loader2 size={14} className="animate-spin" />
             {progressionEnvoi && progressionEnvoi.total > 1
@@ -1269,8 +1269,8 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         <div
           className={`fixed right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl animate-dj-fade-in-rapide ${
             envoi || uploadDossierEnCours || uploadDansPickerEnCours
-              ? "bottom-[calc(11rem+var(--cap-native-navigation-bottom,0px)+var(--dj-barre-onglets-web,0px))]"
-              : "bottom-[calc(8.25rem+var(--cap-native-navigation-bottom,0px)+var(--dj-barre-onglets-web,0px))]"
+              ? "bottom-[calc(11rem+var(--dj-barre-onglets-web,0px))]"
+              : "bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))]"
           }`}
         >
           <div className="flex items-center gap-2">
@@ -1293,7 +1293,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         />
       )}
       {menuAjoutOuvert && (
-        <div className="fixed bottom-[calc(8.25rem+var(--cap-native-navigation-bottom,0px)+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex animate-dj-fade-in-rapide flex-col items-end gap-2">
+        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex animate-dj-fade-in-rapide flex-col items-end gap-2">
           {/* 12/09/2026, demande Bourama : sélection multiple, entrée
               placée en premier dans le même "+" flottant plutôt qu'un
               deuxième bouton séparé. */}
@@ -1402,7 +1402,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
       <button
         onClick={() => setMenuAjoutOuvert((v) => !v)}
         aria-label={menuAjoutOuvert ? "Fermer le menu d'ajout" : "Ajouter"}
-        className="fixed bottom-[calc(5rem+var(--cap-native-navigation-bottom,0px)+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
+        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
       >
         <Plus size={18} className={`transition-transform ${menuAjoutOuvert ? "rotate-45" : ""}`} />
       </button>
@@ -1410,7 +1410,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
 
       {modaleAjout && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 animate-dj-fade-in-rapide sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => {
             setModaleAjout(null);
             setTitreAjout("");
@@ -1479,7 +1479,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>
       )}
       {fichiersAffiches && fichiersAffiches.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           {fichiersAffiches.map((f) => {
             const type = typeDe(f);
             const Icone =
@@ -1495,11 +1495,9 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                 key={f.id}
                 draggable={!selectionMultiple.actif}
                 onDragStart={(e) => e.dataTransfer.setData("text/fichier-bibliotheque-id", f.id)}
-                className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
+                className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
                   selectionMultiple.actif ? "" : "cursor-grab active:cursor-grabbing"
-                } ${
-                  selectionne ? "border-dj-accent-1 bg-dj-accent-1-conteneur" : "border-dj-bordure bg-dj-surface"
-                }`}
+                } ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
               >
                 <button
                   onClick={(e) =>
@@ -1589,7 +1587,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           peut être rattaché à plusieurs dossiers à la fois. */}
       {fichierARanger && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 animate-dj-fade-in-rapide sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => setFichierARanger(null)}
         >
           <div
@@ -1628,7 +1626,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
 
       {rangerEnGroupeOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 animate-dj-fade-in-rapide sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => setRangerEnGroupeOuvert(false)}
         >
           <div
@@ -1685,7 +1683,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           cas). */}
       {pickerFichiersOuvert && dossierCourantId !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 animate-dj-fade-in-rapide sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] animate-dj-fade-in-rapide sm:items-center sm:pb-4"
           onClick={() => setPickerFichiersOuvert(false)}
         >
           <div
@@ -1884,12 +1882,12 @@ function CarteDossier({
         const fichierId = e.dataTransfer.getData("text/fichier-bibliotheque-id");
         if (fichierId) deposerFichierDansDossier(d.id, fichierId);
       }}
-      className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
+      className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
         selectionne
-          ? "border-dj-accent-1 bg-dj-accent-1-conteneur"
+          ? "bg-dj-accent-1-conteneur"
           : dossierSurvole === d.id
-          ? "border-dj-accent-1 bg-dj-surface-haute"
-          : "border-dj-bordure bg-dj-surface"
+          ? "bg-dj-surface-haute ring-1 ring-inset ring-dj-accent-1"
+          : ""
       }`}
     >
       {dossierEnRenommage === d.id ? (

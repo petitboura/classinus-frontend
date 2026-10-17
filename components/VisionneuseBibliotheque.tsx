@@ -2,14 +2,22 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { X, Download, ExternalLink, Loader2, File as IconFichier, Copy, Check, FolderOpen, Maximize2, Minimize2 } from "lucide-react";
+import { X, ExternalLink, Loader2, File as IconFichier, Copy, Check, FolderOpen, Maximize2, Minimize2 } from "lucide-react";
 import { MenuActionsCarte } from "./MenuActionsCarte";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LinkPreview } from "./chat/LinkPreview";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
+import {
+  IconeTelechargement,
+  LibelleTelechargement,
+  MessageEchecTelechargement,
+  classeEtatTelechargement,
+} from "@/components/EtatTelechargement";
+import { useEtatTelechargement } from "@/lib/etatTelechargements";
 import { ouvrirSiteExterieur } from "@/lib/liensSortants";
+import { copierMarkdownFormate } from "@/lib/copierMarkdown";
 import { TelechargerCopierModal } from "./TelechargerCopierModal";
 
 // Chargé dynamiquement, ssr:false (01/09) : ce fichier-ci est importé
@@ -109,12 +117,16 @@ export type FichierBiblio = {
 // 25/08/2026, demande Bourama : "les truc comme du texte ou autre
 // doivent avoir un bouton copier" -- réutilisé par ContenuTexte et
 // ContenuMarkdown (formaté + brut) ci-dessous.
-function BoutonCopier({ texte }: { texte: string }) {
+// 11/10/2026, demande Bourama : pour un markdown, deux boutons (formaté et
+// brut). `formate` copie le rendu riche (lib/copierMarkdown.ts), sinon le
+// texte tel quel ; `libelle` change le texte du bouton.
+function BoutonCopier({ texte, formate = false, libelle = "Copier" }: { texte: string; formate?: boolean; libelle?: string }) {
   const [copie, setCopie] = useState(false);
 
   async function copier() {
     try {
-      await navigator.clipboard.writeText(texte);
+      if (formate) await copierMarkdownFormate(texte);
+      else await navigator.clipboard.writeText(texte);
       setCopie(true);
       setTimeout(() => setCopie(false), 1500);
     } catch {
@@ -129,7 +141,7 @@ function BoutonCopier({ texte }: { texte: string }) {
       className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
     >
       {copie ? <Check size={13} /> : <Copy size={13} />}
-      {copie ? "Copié" : "Copier"}
+      {copie ? "Copié" : libelle}
     </button>
   );
 }
@@ -282,7 +294,10 @@ export function ContenuMarkdown({
               Brut
             </button>
           </div>
-          <BoutonCopier texte={texte} />
+          <div className="flex gap-1">
+            <BoutonCopier texte={texte} formate libelle="Copier formaté" />
+            <BoutonCopier texte={texte} libelle="Copier brut" />
+          </div>
         </div>
       )}
       {vueBrute ? (
@@ -387,16 +402,18 @@ export function ContenuOffice({ href, titre }: { href: string; titre: string }) 
 }
 
 export function ContenuNonPrevisualisable({ href, nom }: { href: string; nom: string }) {
+  const etat = useEtatTelechargement(href);
   return (
     <div className="flex flex-col items-center gap-3 p-10 text-center">
       <IconFichier size={28} className="text-dj-texte-muet" />
       <p className="text-sm text-dj-texte-muet">Aperçu non disponible pour ce type de fichier.</p>
       <button
-        onClick={() => telecharger(href, nom)}
-        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+        onClick={() => void telecharger(href, nom)}
+        className={`flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte ${classeEtatTelechargement(etat)}`}
       >
-        <Download size={13} /> Télécharger
+        <IconeTelechargement href={href} size={13} /> <LibelleTelechargement href={href} defaut="Télécharger" />
       </button>
+      <MessageEchecTelechargement href={href} />
     </div>
   );
 }
@@ -456,8 +473,12 @@ export function VisionneuseBibliotheque({
   }, [fichier]);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
 
-  if (!fichier && !enSortie) return null;
+  // Ce hook doit rester AVANT tout retour anticipé : sinon le nombre de hooks
+  // change entre le rendu vide et le rendu ouvert (erreur React 310, écran qui
+  // plante à l'ouverture d'un aperçu). Ne jamais le redescendre sous un return.
   const f = fichier ?? dernierFichier;
+  const etatTelechargementFichier = useEtatTelechargement(f?.url_publique);
+  if (!fichier && !enSortie) return null;
   if (!f) return null;
 
   const estImage = f.type_mime.startsWith("image/");
@@ -513,12 +534,15 @@ export function VisionneuseBibliotheque({
             {!estLien && (
               <button
                 onClick={() =>
-                  onCopierVersBibliotheque ? setModalTelechargementOuverte(true) : telecharger(f.url_publique, f.nom_fichier)
+                  onCopierVersBibliotheque ? setModalTelechargementOuverte(true) : void telecharger(f.url_publique, f.nom_fichier)
                 }
                 aria-label="Télécharger"
-                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:text-dj-texte"
+                className={`flex h-8 items-center justify-center gap-1 rounded-cgpt-bouton px-2 text-dj-texte-muet transition-colors hover:text-dj-texte ${classeEtatTelechargement(etatTelechargementFichier)}`}
               >
-                <Download size={16} />
+                <IconeTelechargement href={f.url_publique} size={16} />
+                {etatTelechargementFichier?.statut === "encours" && etatTelechargementFichier.pourcentage !== null && (
+                  <span className="text-[11px] tabular-nums">{etatTelechargementFichier.pourcentage} %</span>
+                )}
               </button>
             )}
             {actions && actions.length > 0 && (
@@ -588,6 +612,7 @@ export function VisionneuseBibliotheque({
           titre={titre}
           surCopie={() => onCopierVersBibliotheque(f.id)}
           surTelechargement={() => telecharger(f.url_publique, f.nom_fichier)}
+          hrefTelechargement={f.url_publique}
           onFermer={() => setModalTelechargementOuverte(false)}
         />
       )}

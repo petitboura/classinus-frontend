@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { appelerApi } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -10,6 +11,7 @@ import { useInfoSection } from "./SectionPage";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { dateRelative } from "@/lib/dateRelative";
 import { oublierCategorieMemoire, titreCategorieMemoire } from "@/lib/categoriesMemoire";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 // Écran "Ma mémoire" (29/09/2026, demande Bourama : un seul système de
 // mémoire). Il lit la mémoire structurée de l'élève (table memoire_eleve,
@@ -145,6 +147,17 @@ export function MaMemoire() {
   const [message, setMessage] = useState<string | null>(null);
   // Catégorie en cours d'effacement, ou null.
   const [efface, setEfface] = useState<string | null>(null);
+  // Catégories dépliées : aucune au départ, tout est replié par défaut.
+  const [ouvertes, setOuvertes] = useState<Set<string>>(new Set());
+
+  function basculerCategorie(categorie: string) {
+    setOuvertes((prec) => {
+      const suivant = new Set(prec);
+      if (suivant.has(categorie)) suivant.delete(categorie);
+      else suivant.add(categorie);
+      return suivant;
+    });
+  }
 
   // Description fixe remplacée par le bouton "i" du titre de page (voir
   // lib/aideSections.tsx, rubrique "memoire").
@@ -186,30 +199,22 @@ export function MaMemoire() {
   const toutEstVide = categories.every((c) => c.lignes.length === 0);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Skeleton fidèle à la forme réelle : 4 cartes avec un titre, puis un
-          champ (libellé court + valeur) et une rangée de pastilles. */}
+    <div className="flex flex-col gap-2">
+      {/* Skeleton fidèle à la forme réelle : 4 catégories repliées, chacune
+          avec sa flèche, son titre, sa date de mise à jour et le bouton
+          Oublier à droite. */}
       {chargement && (
-        <div className="flex flex-col gap-4" aria-hidden>
+        <div className="flex flex-col gap-2" aria-hidden>
           {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4"
-            >
-              <Skeleton className="h-4 w-1/3 rounded" style={{ animationDelay: `${i * 80}ms` }} />
-              <div className="flex flex-col gap-1.5">
-                <Skeleton className="h-3 w-1/4 rounded" style={{ animationDelay: `${i * 80 + 60}ms` }} />
-                <Skeleton className="h-3.5 w-3/4 rounded" style={{ animationDelay: `${i * 80 + 100}ms` }} />
+            <div key={i} className="flex items-center justify-between gap-3 py-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: `${i * 80}ms` }} />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <Skeleton className="h-4 w-1/3 rounded" style={{ animationDelay: `${i * 80}ms` }} />
+                  <Skeleton className="h-3 w-1/4 rounded" style={{ animationDelay: `${i * 80 + 60}ms` }} />
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {[70, 90, 60].map((largeur, j) => (
-                  <Skeleton
-                    key={j}
-                    className="h-6 rounded-full"
-                    style={{ width: largeur, animationDelay: `${i * 80 + 140 + j * 40}ms` }}
-                  />
-                ))}
-              </div>
+              <Skeleton className="h-6 w-16 flex-shrink-0 rounded-cgpt-bouton" style={{ animationDelay: `${i * 80 + 100}ms` }} />
             </div>
           ))}
         </div>
@@ -218,52 +223,72 @@ export function MaMemoire() {
       {!chargement && erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {!chargement && !erreur && toutEstVide && (
-        <div className="animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
-          <p className="text-sm text-dj-texte-muet">
-            Rien de retenu pour l&apos;instant. Ta mémoire se construit toute seule au fil de tes conversations.
-          </p>
-        </div>
+        <p className="animate-dj-fade-in-rapide py-2 text-sm text-dj-texte-muet">
+          Rien de retenu pour l&apos;instant. Ta mémoire se construit toute seule au fil de tes conversations.
+        </p>
       )}
 
       {!chargement &&
         categories.map((c) => {
+          const ouverte = ouvertes.has(c.categorie);
           const derniereMaj = c.lignes
             .map((l) => l.updated_at)
             .filter(Boolean)
             .sort()
             .at(-1);
           return (
-            <section
-              key={c.categorie}
-              className="animate-dj-fade-in-rapide flex min-w-0 flex-col gap-4 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <h3 className="break-words text-sm font-bold text-dj-texte">{titreCategorieMemoire(c.categorie)}</h3>
-                  {derniereMaj && (
-                    <span className="text-xs text-dj-texte-muet">Mis à jour {dateRelative(derniereMaj)}</span>
-                  )}
-                </div>
+            <section key={c.categorie} className="animate-dj-fade-in-rapide flex min-w-0 flex-col">
+              <div className="flex items-center justify-between gap-2 py-2">
+                <h3 className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => basculerCategorie(c.categorie)}
+                    aria-expanded={ouverte}
+                    className="flex w-full min-w-0 items-center gap-2 text-left"
+                  >
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={TRAIT_ICONE_SECTION}
+                      className={`flex-shrink-0 text-dj-texte-muet transition-transform duration-300 ${ouverte ? "rotate-180" : ""}`}
+                    />
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="break-words text-sm font-bold text-dj-texte">{titreCategorieMemoire(c.categorie)}</span>
+                      {derniereMaj && (
+                        <span className="text-xs font-normal text-dj-texte-muet">Mis à jour {dateRelative(derniereMaj)}</span>
+                      )}
+                    </span>
+                  </button>
+                </h3>
                 {c.lignes.length > 0 && (
                   <button
                     onClick={() => oublierCategorie(c.categorie)}
                     disabled={efface !== null}
-                    className="rounded-cgpt-bouton border border-[var(--dj-erreur)] px-3 py-1 text-xs text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
+                    className="flex-shrink-0 rounded-cgpt-bouton border border-[var(--dj-erreur)] px-3 py-1 text-xs text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
                   >
                     {efface === c.categorie ? "Suppression…" : "Oublier"}
                   </button>
                 )}
               </div>
 
-              {c.lignes.length === 0 ? (
-                <p className="text-sm text-dj-texte-muet">Rien de retenu ici pour l&apos;instant.</p>
-              ) : (
-                <div className="flex min-w-0 flex-col gap-4">
-                  {c.lignes.map((ligne) => (
-                    <BlocLigne key={ligne.sous_categorie ?? "racine"} ligne={ligne} />
-                  ))}
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                  ouverte ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="pb-2 pl-6 pt-2">
+                    {c.lignes.length === 0 ? (
+                      <p className="text-sm text-dj-texte-muet">Rien de retenu ici pour l&apos;instant.</p>
+                    ) : (
+                      <div className="flex min-w-0 flex-col gap-4">
+                        {c.lignes.map((ligne) => (
+                          <BlocLigne key={ligne.sous_categorie ?? "racine"} ligne={ligne} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </section>
           );
         })}

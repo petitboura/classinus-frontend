@@ -135,7 +135,7 @@ function TableMarkdown({ children }: { children?: ReactNode }) {
   return <TableauMessage>{children}</TableauMessage>;
 }
 
-function LienMarkdown({ href, children }: { href?: string; children?: ReactNode }) {
+function LienMarkdown({ href, title, children }: { href?: string; title?: string; children?: ReactNode }) {
   const etat = useContext(ContexteRenduBulle);
   if (!href) return <>{children}</>;
 
@@ -167,7 +167,7 @@ function LienMarkdown({ href, children }: { href?: string; children?: ReactNode 
     );
   }
 
-  const media = typeMedia(href);
+  const media = typeMedia(href, texteBrut(children));
   if (media) return <LecteurMedia href={href} type={media} />;
   if (estNoteTexteBibliotheque(href)) {
     return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
@@ -175,11 +175,20 @@ function LienMarkdown({ href, children }: { href?: string; children?: ReactNode 
   if (estFichierCodeAffichable(href)) {
     return <FichierCode href={href} nom={texteBrut(children) || href} />;
   }
-  if (extensionFichier(href)) {
+  if (extensionFichier(href, texteBrut(children))) {
     return <FichierChip href={href} nom={texteBrut(children) || href} />;
   }
   if (/^https?:\/\//i.test(href)) {
-    return <LinkPreview href={href} texteLien={texteBrut(children) || href} compact={!!etat?.estUtilisateur} />;
+    const texteDuLien = texteBrut(children);
+    return (
+      <LinkPreview
+        href={href}
+        texteLien={texteDuLien || href}
+        titreDuModele={texteDuLien && texteDuLien !== href ? texteDuLien : undefined}
+        descriptionLien={title?.trim() || undefined}
+        compact={!!etat?.estUtilisateur}
+      />
+    );
   }
   return (
     <a

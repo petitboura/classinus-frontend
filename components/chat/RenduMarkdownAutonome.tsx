@@ -105,7 +105,7 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
     table({ children }: { children?: ReactNode }) {
       return <TableauMessage>{children}</TableauMessage>;
     },
-    a({ href, children }: { href?: string; children?: ReactNode }) {
+    a({ href, title, children }: { href?: string; title?: string; children?: ReactNode }) {
       if (!href) return <>{children}</>;
       const matchCitation = /^citation:(\d+)$/.exec(href);
       if (matchCitation) {
@@ -132,12 +132,22 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
           </button>
         );
       }
-      const media = typeMedia(href);
+      const media = typeMedia(href, texteBrut(children));
       if (media) return <LecteurMedia href={href} type={media} />;
       if (estNoteTexteBibliotheque(href)) return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
       if (estFichierCodeAffichable(href)) return <FichierCode href={href} nom={texteBrut(children) || href} />;
-      if (extensionFichier(href)) return <FichierChip href={href} nom={texteBrut(children) || href} />;
-      if (/^https?:\/\//i.test(href)) return <LinkPreview href={href} texteLien={texteBrut(children) || href} />;
+      if (extensionFichier(href, texteBrut(children))) return <FichierChip href={href} nom={texteBrut(children) || href} />;
+      if (/^https?:\/\//i.test(href)) {
+        const texteDuLien = texteBrut(children);
+        return (
+          <LinkPreview
+            href={href}
+            texteLien={texteDuLien || href}
+            titreDuModele={texteDuLien && texteDuLien !== href ? texteDuLien : undefined}
+            descriptionLien={title?.trim() || undefined}
+          />
+        );
+      }
       return (
         <a href={href} target="_blank" rel="noopener noreferrer" className="text-dj-texte-muet underline hover:text-dj-texte">
           {children}

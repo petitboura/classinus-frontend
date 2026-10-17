@@ -49,7 +49,7 @@ export function CompteRequisModal({
 
   return (
     <div
-      className={`fixed inset-0 ${zIndex} flex items-start justify-center bg-black/50 p-4 sm:items-center ${
+      className={`fixed inset-0 ${zIndex} flex items-end justify-center bg-black/50 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] sm:items-center sm:pb-4 ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
       onClick={fermer}

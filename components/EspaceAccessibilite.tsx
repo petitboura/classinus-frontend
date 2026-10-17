@@ -5,7 +5,7 @@ import { ShieldCheck, Settings2, Plus, X, ScrollText } from "lucide-react";
 import { usePluginNatif, messageErreurPlugin } from "@/lib/usePluginNatif";
 import { Skeleton } from "./Skeleton";
 import { BandeauTelechargerApp } from "./BandeauTelechargerApp";
-import { BoutonInfoSection } from "./BoutonInfoSection";
+import { useInfoSection } from "./SectionPage";
 
 /**
  * Écran autonome pour le plugin natif Accessibilite (Lot 3B Partie 3 mobile,
@@ -54,6 +54,9 @@ function formaterHorodatage(ms: number): string {
 }
 
 export function EspaceAccessibilite() {
+  // Le titre et le bouton i sont ceux de la ligne du haut de SectionPage
+  // (refonte du 13/10/2026, un seul titre par page).
+  useInfoSection("accessibilite");
   const { natif, plugin } = usePluginNatif<PluginAccessibilite>("Accessibilite");
 
   const [chargementEtat, setChargementEtat] = useState(true);
@@ -224,14 +227,6 @@ export function EspaceAccessibilite() {
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4 p-4">
-      <div className="flex items-center gap-1.5">
-        <h2 className="font-display text-base font-bold text-dj-texte">Accessibilité</h2>
-        <BoutonInfoSection
-          rubriqueId="accessibilite"
-          texteCourt="Autorise Classinus à lire et agir dans les apps que tu choisis, une par une."
-        />
-      </div>
-
       {!serviceActif ? (
         <div className="flex flex-col gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
           <div className="flex items-start gap-3">

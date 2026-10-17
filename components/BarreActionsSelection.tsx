@@ -35,7 +35,7 @@ export function BarreActionsSelection({
   return (
     <div
       className="fixed inset-x-0 z-40 flex justify-center px-3"
-      style={{ bottom: "calc(1.25rem + var(--cap-native-navigation-bottom,0px) + var(--dj-barre-onglets-web,0px))" }}
+      style={{ bottom: "calc(1.25rem + var(--dj-barre-onglets-web,0px))" }}
     >
       <div className="flex max-w-full flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.35)] animate-dj-fade-in-rapide">
         <div className="flex items-center justify-between gap-4">

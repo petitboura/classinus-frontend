@@ -4,7 +4,7 @@
 // plan-canal-agent-applicatif-v1.md), chantier L. Groupe flottant en bas
 // à gauche (emplacement choisi par Bourama le 19/09/2026) :
 // - en bas, le bouton d'activation du canal (ce fichier), que
-//   ControlesInteractionCanal range sur sa ligne du bas avec le chevron et le « + » ;
+//   ControlesInteractionCanal range sur sa ligne du bas, à droite du chevron et d'Écrire ;
 // - au dessus, quand le canal est actif, les boutons d'interaction du
 //   chantier M et N (ControlesInteractionCanal.tsx).
 //
@@ -25,10 +25,9 @@
 // temps sur /chat est voulu, pas un doublon à masquer.
 //
 // Placement : l'écart du bas suit la convention des autres éléments
-// fixed ancrés en bas (ChatFlottant.tsx) : barre d'onglets web via
-// --dj-barre-onglets-web et barre native via
-// --cap-native-navigation-bottom, toutes deux à 0px quand elles ne
-// s'appliquent pas. Sur /chat mobile, la barre de saisie occupe toute la
+// fixed ancrés en bas (ChatFlottant.tsx) : barre d'onglets du bas via
+// --dj-barre-onglets-web (la même sur le site et dans l'appli native
+// depuis le 13/10/2026), à 0px sur PC. Sur /chat mobile, la barre de saisie occupe toute la
 // largeur en bas : le groupe est relevé pour ne pas la recouvrir.
 // Le côté gauche suit le rail latéral sur ordinateur, voir
 // lib/useDecalageRailLateral.ts.
@@ -46,9 +45,9 @@ import { estPageChat } from "@/lib/routesApp";
 // Classes écrites en toutes lettres : Tailwind ne génère que les classes
 // qu'il trouve telles quelles dans le code, jamais celles assemblées par
 // interpolation.
-const CLASSE_BAS_NORMAL = "bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px)+var(--cap-native-navigation-bottom,0px))]";
+const CLASSE_BAS_NORMAL = "bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))]";
 const CLASSE_BAS_CHAT =
-  "bottom-[calc(7rem+var(--dj-barre-onglets-web,0px)+var(--cap-native-navigation-bottom,0px))] md:bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px)+var(--cap-native-navigation-bottom,0px))]";
+  "bottom-[calc(7rem+var(--dj-barre-onglets-web,0px))] md:bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))]";
 
 export function CanalEnDirectFlottant() {
   const contexte = useContext(ContexteCanalEnDirect);

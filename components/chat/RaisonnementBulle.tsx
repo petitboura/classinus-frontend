@@ -15,20 +15,51 @@ import { ChevronDown, ChevronRight, ChevronUp, BrainCog } from "lucide-react";
 // l'agent affiché pendant la réflexion ("{nomAgent} réfléchit..."), bulle
 // qui se replie automatiquement (mais reste consultable) une fois la
 // réponse commencée, plutôt que d'être jetée.
+//
+// Règles d'ouverture (10/10/2026, demande Bourama) :
+// 1. Une fois que des outils ont commencé à être utilisés (outilsCommences),
+//    la bulle ne s'ouvre jamais seule : elle reste repliée et ne se déplie
+//    que si la personne clique.
+// 2. Si la personne ferme la bulle, elle ne se rouvre plus jamais seule.
+// 3. Dès que la réflexion se termine, la bulle se referme, même si la
+//    personne l'avait fermée puis rouverte pendant la réflexion. Elle reste
+//    ensuite consultable d'un clic.
 export function RaisonnementBulle({
   nomAgent,
   texte,
   enCours,
+  outilsCommences = false,
 }: {
   nomAgent: string;
   texte: string;
   enCours: boolean;
+  outilsCommences?: boolean;
 }) {
-  const [ouvertManuel, setOuvertManuel] = useState<boolean | null>(null);
-  // Se replie tout seul dès que la réflexion est terminée (enCours passe à
-  // false, càd la réponse a commencé à arriver) -- sauf si la personne a
-  // déjà manuellement changé l'état, auquel cas on respecte son choix.
-  const ouvert = ouvertManuel ?? enCours;
+  // Ouverte d'emblée seulement pour une première réflexion en direct, avant
+  // tout outil. Un message rechargé depuis l'historique démarre replié.
+  const [ouvert, setOuvert] = useState(enCours && !outilsCommences);
+  // Vrai dès que la personne a fermé la bulle elle même (clic sur l'en tête
+  // ou sur le bouton flottant). Ne repasse jamais à faux.
+  const fermeeParPersonneRef = useRef(false);
+  const enCoursPrecedentRef = useRef(enCours);
+
+  // Ouverture et fermeture automatiques, uniquement sur un changement de
+  // enCours : début de réflexion (ouvre si les règles 1 et 2 le permettent)
+  // ou fin de réflexion (referme, règle 3).
+  useEffect(() => {
+    const etaitEnCours = enCoursPrecedentRef.current;
+    enCoursPrecedentRef.current = enCours;
+    if (enCours && !etaitEnCours) {
+      if (!outilsCommences && !fermeeParPersonneRef.current) setOuvert(true);
+    } else if (!enCours && etaitEnCours) {
+      setOuvert(false);
+    }
+  }, [enCours, outilsCommences]);
+
+  function basculer() {
+    if (ouvert) fermeeParPersonneRef.current = true;
+    setOuvert(!ouvert);
+  }
 
   // Bouton flottant "replier" (04/10/2026, demande Bourama) : une réflexion
   // dépliée est souvent très longue, remonter tout en haut pour la fermer
@@ -63,17 +94,13 @@ export function RaisonnementBulle({
     return () => observateur.disconnect();
   }, [ouvert]);
 
-  useEffect(() => {
-    if (!enCours) return;
-    setOuvertManuel(null);
-  }, [enCours]);
-
   if (!texte) return null;
 
   const boutonFlottantVisible = ouvert && (peutSurvoler ? survol : enteteHorsEcran);
 
   function replierEtRevenirEnHaut() {
-    setOuvertManuel(false);
+    fermeeParPersonneRef.current = true;
+    setOuvert(false);
     setSurvol(false);
     // La ligne du haut est AU DESSUS de ce qui se replie : sa position ne
     // bouge pas pendant l'animation, on peut donc l'y ramener tout de suite
@@ -90,7 +117,7 @@ export function RaisonnementBulle({
     >
       <button
         ref={enteteRef}
-        onClick={() => setOuvertManuel(!ouvert)}
+        onClick={basculer}
         className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
         <BrainCog size={13} className={enCours ? "animate-pulse text-dj-texte-muet" : ""} />

@@ -6,6 +6,14 @@ import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { estCleSection } from "@/lib/cleSections";
 import type { CleFenetre } from "@/lib/contexteFenetres";
 import { sectionsVisiblesDuGroupe, type GroupeRail } from "@/lib/groupesRail";
+import {
+  CELLULE_ICONE_RAIL,
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_RAIL,
+  TAILLE_ICONE_BULLE,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Bouton de groupe du rail (Bureau, Bibliothèque, Concentration,
 // Personnaliser Classinus) : UN bouton qui montre la liste de ses
@@ -138,7 +146,7 @@ export function MenuGroupe({
   return (
     <div
       ref={ref}
-      className={`relative w-full ${mobile || plus ? "" : "mt-2"}`}
+      className={`relative w-full ${mobile || plus ? "" : ECART_ELEMENTS_RAIL}`}
       onMouseEnter={() => {
         if (mobile) return;
         annulerFermeture();
@@ -195,10 +203,10 @@ export function MenuGroupe({
           </>
         ) : (
           <>
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <groupe.Icone size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+            <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
+              <groupe.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             </span>
-            {mobile ? <span className="text-sm">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
+            {mobile ? <span className="text-sm font-semibold">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
           </>
         )}
       </Link>
@@ -207,9 +215,15 @@ export function MenuGroupe({
         // Le conteneur colle au bouton (aucun vide entre les deux) et porte
         // l'écart à l'intérieur de lui-même : la souris reste "dans" le
         // groupe pendant tout le trajet vers la liste.
-        <div className={`absolute z-50 w-56 ${CLASSE_POSITION_LISTE[variante]}`}>
+        // Sur PC (rail et "Plus"), la liste prend l'apparence compacte de la
+        // bulle du bouton Réglages de la barre de saisie : largeur du contenu,
+        // petit texte, lignes serrées. Le tiroir mobile garde des lignes de
+        // taille tactile, comme le bouton Réglages sur mobile.
+        <div className={`absolute z-50 ${mobile ? "w-56" : "w-max min-w-[9rem] max-w-[16rem]"} ${CLASSE_POSITION_LISTE[variante]}`}>
           <div
-            className={`${CLASSE_ECART_LISTE[variante]} animate-dj-fade-in-rapide overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-[0_8px_30px_rgba(0,0,0,0.35)]`}
+            className={`${CLASSE_ECART_LISTE[variante]} animate-dj-fade-in-rapide overflow-hidden border border-dj-bordure p-1 ${
+              mobile ? "rounded-cgpt-carte bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.35)]" : "rounded-cgpt-bouton bg-dj-rail shadow-xl"
+            }`}
           >
             {sections.map((s) => {
               const estActif = pathname === s.href;
@@ -233,11 +247,15 @@ export function MenuGroupe({
                       }
                     }
                   }}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                    estActif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-                  }`}
+                  className={`flex w-full items-center rounded-lg text-left transition-colors ${
+                    mobile ? "gap-2.5 px-2.5 py-2 text-sm font-semibold" : "gap-2 px-2 py-1 text-xs font-semibold"
+                  } ${estActif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
                 >
-                  <s.Icone size={16} className="flex-shrink-0" />
+                  <s.Icone
+                    size={mobile ? 16 : TAILLE_ICONE_BULLE}
+                    strokeWidth={TRAIT_ICONE_RAIL}
+                    className="flex-shrink-0"
+                  />
                   {s.label}
                 </Link>
               );

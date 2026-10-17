@@ -5,7 +5,7 @@ import { Bell, CalendarPlus, ExternalLink, Send, ShieldCheck } from "lucide-reac
 import { usePluginNatif, messageErreurPlugin } from "@/lib/usePluginNatif";
 import { Skeleton } from "./Skeleton";
 import { BandeauTelechargerApp } from "./BandeauTelechargerApp";
-import { BoutonInfoSection } from "./BoutonInfoSection";
+import { useInfoSection } from "./SectionPage";
 
 /**
  * Écran autonome pour le plugin Notifications : construit d'abord côté
@@ -36,6 +36,9 @@ function dateInputVersEpochMs(valeur: string): number | null {
 }
 
 export function EspaceRappels() {
+  // Le titre et le bouton i sont ceux de la ligne du haut de SectionPage
+  // (refonte du 13/10/2026, un seul titre par page).
+  useInfoSection("rappels");
   const { natif, plugin } = usePluginNatif<PluginNotifications>("Notifications");
 
   const [chargementPermission, setChargementPermission] = useState(true);
@@ -208,14 +211,6 @@ export function EspaceRappels() {
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4 p-4">
-      <div className="flex items-center gap-1.5">
-        <h2 className="font-display text-base font-bold text-dj-texte">Rappels</h2>
-        <BoutonInfoSection
-          rubriqueId="rappels"
-          texteCourt="Notifications, rappels programmés et événements de calendrier."
-        />
-      </div>
-
       {!accordee ? (
         <div className="flex flex-col gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
           <div className="flex items-start gap-3">
