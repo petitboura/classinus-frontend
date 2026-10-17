@@ -4,6 +4,7 @@ import { useContext, useState } from "react";
 import Link from "next/link";
 import { ListeSections } from "./ListeSections";
 import { Skeleton } from "./Skeleton";
+import { LIGNE_TRAIT_ICONE_18 } from "@/lib/styleLignes";
 import { messageErreur } from "@/lib/erreurs";
 import { sectionsBureauVisibles } from "@/lib/sectionsBureau";
 import { ROUTES_PARAMETRES } from "@/lib/routesParametres";
@@ -47,15 +48,26 @@ export function BureauAccueil() {
   }
 
   // Chargement (une seule fois par session d'appli, pas à chaque visite
-  // de cette page) : mêmes dimensions que la liste de sections en
-  // dessous, pour ne jamais montrer brièvement la mauvaise liste avant de
-  // la corriger (bug signalé par Bourama sur le premier jet).
+  // de cette page) : mêmes lignes à nu que la liste de sections en
+  // dessous (icône, titre, description, trait), pour ne jamais montrer
+  // brièvement la mauvaise liste avant de la corriger (bug signalé par
+  // Bourama sur le premier jet).
   if (chargement) {
     return (
-      <div className="space-y-2" aria-hidden>
-        <Skeleton className="h-[60px] w-full rounded-cgpt-carte" />
-        <Skeleton className="h-[60px] w-full rounded-cgpt-carte" />
-        <Skeleton className="h-[60px] w-full rounded-cgpt-carte" />
+      <div className="flex flex-col" aria-hidden>
+        {["w-1/3", "w-2/5", "w-1/4"].map((largeur, i) => (
+          <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
+            <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex h-5 items-center">
+                <Skeleton className={`h-3.5 ${largeur} rounded`} />
+              </div>
+              <div className="flex h-4 items-center">
+                <Skeleton className="h-3 w-2/3 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

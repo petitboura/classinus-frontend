@@ -9,6 +9,10 @@
 export const LIGNE_TRAIT_ICONE_18 =
   "relative after:absolute after:bottom-0 after:left-[46px] after:right-0 after:h-px after:bg-dj-bordure last:after:hidden";
 
+/** Ligne avec une icône de 16 px et un espace de 12 px avant le texte. */
+export const LIGNE_TRAIT_ICONE_16 =
+  "relative after:absolute after:bottom-0 after:left-[44px] after:right-0 after:h-px after:bg-dj-bordure last:after:hidden";
+
 /** Ligne avec une pastille d'icône de 28 px et un espace de 8 px avant le texte. */
 export const LIGNE_TRAIT_ICONE_28 =
   "relative after:absolute after:bottom-0 after:left-[52px] after:right-0 after:h-px after:bg-dj-bordure last:after:hidden";

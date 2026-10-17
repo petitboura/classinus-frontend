@@ -206,7 +206,7 @@ export function MenuGroupe({
             <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
               <groupe.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             </span>
-            {mobile ? <span className="text-sm">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
+            {mobile ? <span className="text-sm font-semibold">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
           </>
         )}
       </Link>
@@ -248,12 +248,12 @@ export function MenuGroupe({
                     }
                   }}
                   className={`flex w-full items-center rounded-lg text-left transition-colors ${
-                    mobile ? "gap-2.5 px-2.5 py-2 text-sm" : "gap-2 px-2 py-1 text-xs"
+                    mobile ? "gap-2.5 px-2.5 py-2 text-sm font-semibold" : "gap-2 px-2 py-1 text-xs font-semibold"
                   } ${estActif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
                 >
                   <s.Icone
                     size={mobile ? 16 : TAILLE_ICONE_BULLE}
-                    strokeWidth={mobile ? undefined : TRAIT_ICONE_RAIL}
+                    strokeWidth={TRAIT_ICONE_RAIL}
                     className="flex-shrink-0"
                   />
                   {s.label}

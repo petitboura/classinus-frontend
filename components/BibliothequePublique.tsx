@@ -60,6 +60,7 @@ import { telecharger } from "@/lib/telecharger";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { Skeleton } from "./Skeleton";
+import { LIGNE_TRAIT_ICONE_16 } from "@/lib/styleLignes";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { BoutonAvecIA } from "./BoutonAvecIA";
@@ -2013,7 +2014,7 @@ export function BibliothequePublique() {
               (suppression). 4 lignes pour remplir l'espace au lieu de 2
               fixes. */}
           {dossiers === undefined && (
-            <div className="flex flex-col gap-2" aria-hidden>
+            <div className="flex flex-col" aria-hidden>
               {[
                 { titre: "w-2/5", soustitre: "w-1/4", delai: "0ms" },
                 { titre: "w-1/2", soustitre: "w-1/3", delai: "100ms" },
@@ -2022,9 +2023,9 @@ export function BibliothequePublique() {
               ].map(({ titre, soustitre, delai }, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+                  className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_16}`}
                 >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: delai }} />
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <Skeleton className={`h-3.5 rounded ${titre}`} style={{ animationDelay: delai }} />
@@ -2038,14 +2039,14 @@ export function BibliothequePublique() {
           )}
 
           {dossiers !== undefined && sousDossiersAffiches.length > 0 && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col">
               {sousDossiersAffiches.map((d) => {
                 const selectionne = selectionMultiple.estSelectionne(d.id);
                 return (
                 <div
                   key={d.id}
-                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
-                    selectionne ? "border-dj-accent-1 bg-dj-accent-1-conteneur" : "border-dj-bordure bg-dj-surface"
+                  className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_16} ${
+                    selectionne ? "bg-dj-accent-1-conteneur" : ""
                   }`}
                 >
                   <button
@@ -2055,7 +2056,7 @@ export function BibliothequePublique() {
                         : setPileDossiers((p) => [...p, { id: d.id, nom: d.nom }])
                     }
                     title={d.statut === "contribution_libre" ? "Contribution libre : tout le monde peut y ajouter" : "Privé : seul le créateur peut y ajouter"}
-                    className="flex min-w-0 items-center gap-2 text-sm text-dj-texte hover:text-dj-texte"
+                    className="flex min-w-0 items-center gap-3 text-sm text-dj-texte hover:text-dj-texte"
                   >
                     {d.statut === "contribution_libre" ? (
                       <Globe size={16} className="flex-shrink-0 text-dj-texte-muet" />
@@ -2284,7 +2285,7 @@ export function BibliothequePublique() {
               pas représentés ici). 5 lignes pour remplir l'espace au lieu
               de 2 fixes. */}
           {liste === undefined && (
-            <div className="flex flex-col gap-2" aria-hidden>
+            <div className="flex flex-col" aria-hidden>
               {[
                 { titre: "w-1/2", soustitre: "w-1/3", delai: "0ms" },
                 { titre: "w-3/5", soustitre: "w-2/5", delai: "100ms" },
@@ -2294,7 +2295,7 @@ export function BibliothequePublique() {
               ].map(({ titre, soustitre, delai }, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+                  className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_16}`}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: delai }} />
@@ -2317,15 +2318,15 @@ export function BibliothequePublique() {
             </p>
           )}
           {listeAffichee && listeAffichee.length > 0 && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col">
               {listeAffichee.map((entree) => {
             const Icone = iconePourType(entree.type_mime);
             const selectionne = selectionMultiple.estSelectionne(entree.id);
             return (
               <div
                 key={entree.id}
-                className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors ${
-                  selectionne ? "border-dj-accent-1 bg-dj-accent-1-conteneur" : "border-dj-bordure bg-dj-surface"
+                className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_16} ${
+                  selectionne ? "bg-dj-accent-1-conteneur" : ""
                 }`}
               >
                 <button
@@ -2432,7 +2433,7 @@ export function BibliothequePublique() {
               lignes au lieu de 5, pour rester léger vu que c'est un lot
               suivant et pas le premier affichage. */}
           {listeAffichee && listeAffichee.length > 0 && plusDeResultats && (
-            <div ref={sentinelleRef} className="flex flex-col gap-2 py-1" aria-hidden>
+            <div ref={sentinelleRef} className="flex flex-col py-1" aria-hidden>
               {chargementPage &&
                 [
                   { titre: "w-2/5", soustitre: "w-1/4", delai: "0ms" },
@@ -2440,7 +2441,7 @@ export function BibliothequePublique() {
                 ].map(({ titre, soustitre, delai }, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+                    className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_16}`}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: delai }} />

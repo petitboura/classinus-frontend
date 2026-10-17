@@ -155,7 +155,7 @@ function LibelleRail({ ouverte, children, titre = false }: { ouverte: boolean; c
   return (
     <span
       className={`${RAPPROCHE_LIBELLE_RAIL} overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
-        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm"
+        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm font-semibold"
       } ${
         ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
       }`}
@@ -264,7 +264,7 @@ function MenuProfil({
         }`}
       >
         <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>{Avatar}</span>
-        {mobile ? <span className="text-sm">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
+        {mobile ? <span className="text-sm font-semibold">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
       </button>
 
       {(menuOuvert || enSortie) && (
@@ -657,7 +657,7 @@ export function AppSidebar({
         <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
           <onglet.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
-        {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
+        {mobile ? <span className="text-sm font-semibold">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
       </Link>
     );
   }

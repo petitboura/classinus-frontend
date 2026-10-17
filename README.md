@@ -309,8 +309,8 @@ retirée à la demande de Bourama, qui bloquait aussi le chat invité.
 Une section en groupe a une page d'accueil en liste (`components/ListeSections.tsx`)
 et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Les lignes de cette liste sont
 à nu, sans carte ni flèche : un trait les sépare et commence après l'icône. Ce trait, ainsi que le trait
-renforcé des icônes de section, viennent de `lib/styleLignes.ts`, lu aussi par les listes de la Bibliothèque
-et des Dossiers du téléphone. Chaque
+renforcé des icônes de section, viennent de `lib/styleLignes.ts`, lu aussi par les listes de la Bibliothèque,
+de la Bibliothèque publique et des Dossiers du téléphone. Chaque
 page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
 l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
 gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut
@@ -327,8 +327,8 @@ entre dans la page du groupe), au toucher dans le tiroir mobile (un toucher ouvr
 la referme, on entre dans une page en touchant sa ligne).
 Sur PC, cette liste a l'apparence compacte de la bulle du bouton Réglages de la barre de saisie
 (largeur du contenu, petit texte, lignes serrées) ; le tiroir mobile garde des lignes tactiles.
-La barre latérale a le même fond que la barre de saisie (`bg-dj-surface`) et des icônes fines et
-petites ; leur taille et leur trait viennent de `lib/styleBarreLaterale.ts`.
+La barre latérale a le même fond que la barre de saisie (`bg-dj-surface`) et des icônes
+petites au trait renforcé, avec des noms en semi-gras ; leur taille et leur trait viennent de `lib/styleBarreLaterale.ts`.
 Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
 et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
 les écrans ne les répètent pas dans leur carte.
