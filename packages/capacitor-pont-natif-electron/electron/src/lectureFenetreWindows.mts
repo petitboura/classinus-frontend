@@ -81,6 +81,13 @@ export function fenetreVoulueDepuisParametres(parametres: Record<string, unknown
   return typeof brute === "string" ? brute.trim().slice(0, LONGUEUR_MAX_FENETRE_VOULUE) : "";
 }
 
+// Lecture legere (16/10/2026, demande de Bourama : Classinus doit toujours savoir quelle fenetre
+// est au premier plan) : seulement le titre de la fenetre au premier plan, son application, les
+// autres fenetres ouvertes et si c'est le bureau qui est devant. Aucun contenu n'est lu.
+export function titresSeulsDepuisParametres(parametres: Record<string, unknown>): boolean {
+  return parametres.titres_seuls === true;
+}
+
 // Zone entouree au crayon, en pixels d'ecran (entiers).
 export interface ZoneEntouree {
   gauche: number;
@@ -154,6 +161,11 @@ export interface LectureFenetre {
   // Vrai si la fenetre lue a ete choisie par son titre (fenetre_cible) au lieu d'etre celle du
   // premier plan : elle peut etre derriere une autre, ses positions ne sont pas cliquables.
   fenetre_visee?: boolean;
+  // Vrai si le bureau est devant : aucune fenetre ouverte (tout est ferme ou reduit) ou clic sur le
+  // bureau. Dans ce cas titre_fenetre_active est vide et zone_lue vaut "bureau".
+  bureau_premier_plan?: boolean;
+  // Vrai si la lecture etait une lecture legere (titres seulement) : le contenu n'a PAS ete lu.
+  titres_seuls?: boolean;
 }
 
 // Echec de la lecture : plantage = le processus PowerShell s'est arrete
@@ -407,7 +419,7 @@ public static class LectureFenetres {
 `;
 
 // Exportee pour pouvoir verifier la syntaxe du script hors de Windows.
-export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true, zone: ZoneLecture = "fenetre", zonesEntourees: ZoneEntouree[] = [], fenetreVoulue = ""): string {
+export function construireScript(limites: LimitesLectureEcran, pidClassinus: number, handleSuperposition = "0", activerFenetre = false, lireTexteLong = true, zone: ZoneLecture = "fenetre", zonesEntourees: ZoneEntouree[] = [], fenetreVoulue = "", titresSeuls = false): string {
   if (zone !== "fenetre" && zone !== "barre_des_taches" && zone !== "bureau") throw new Error("Zone de lecture invalide");
   if (!/^\d+$/.test(handleSuperposition)) throw new Error("Handle de superposition invalide");
   if (fenetreVoulue && zone !== "fenetre") throw new Error("Une fenêtre précise ne se lit qu'avec la zone « fenetre »");
@@ -443,6 +455,7 @@ $pidClassinus = ${pidClassinus}
 $lireTexteLong = ${lireTexteLong ? "$true" : "$false"}
 $handleSuperposition = [IntPtr]([long]${handleSuperposition})
 $zoneDemandee = '${zone}'
+$titresSeuls = ${titresSeuls ? "$true" : "$false"}
 $zonesEntourees = New-Object System.Collections.Generic.List[object]
 ${ajoutsZones}
 $fenetreVoulue = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${fenetreVoulueBase64}'))
@@ -564,6 +577,7 @@ try {
       $bureauAuto = $true
     }
   }
+  if ($bureauAuto) { $resultat.bureau_premier_plan = $true }
   if ($bureauAuto -or ($zoneLue -ne 'fenetre' -and $fgEstClassinus)) { $resultat.titre_fenetre_active = $null }
   # Process.GetProcessById plutot que Get-Process : la commande Get-Process est lente a
   # chaque lancement de PowerShell.
@@ -583,6 +597,14 @@ try {
 
   if ($fgEstClassinus -and $zoneLue -eq 'fenetre') {
     $resultat.fenetre_classinus = $true
+    Sortir $resultat
+    exit 0
+  }
+
+  # Lecture legere (titres seulement) : on s'arrete ici, sans parcourir le contenu de la fenetre.
+  if ($titresSeuls -and -not $fenetreVisee) {
+    $resultat.zone_lue = $zoneLue
+    $resultat.titres_seuls = $true
     Sortir $resultat
     exit 0
   }
@@ -915,7 +937,7 @@ function lireUneFois(
   if (fenetreVoulue && zone !== "fenetre") {
     return Promise.resolve({ erreur: "Une fenêtre précise ne se lit qu'avec la zone « fenetre »." });
   }
-  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong, zone, zonesEntoureesDepuisParametres(parametres), fenetreVoulue);
+  const script = construireScript(limites, process.pid, handleSuperposition, activerFenetre, lireTexteLong, zone, zonesEntoureesDepuisParametres(parametres), fenetreVoulue, titresSeulsDepuisParametres(parametres));
 
   // Le script est ecrit dans un fichier temporaire plutot que passe en -EncodedCommand :
   // le script encode approche la limite de 32 767 caracteres d'une ligne de commande
@@ -1012,6 +1034,8 @@ function lireUneFois(
           mode: r.mode === "uia" ? "uia" : "titre_seul",
           zone_lue: r.zone_lue === "bureau" || r.zone_lue === "barre_des_taches" ? r.zone_lue : "fenetre",
           ...(r.fenetre_visee === true ? { fenetre_visee: true } : {}),
+          ...(r.bureau_premier_plan === true ? { bureau_premier_plan: true } : {}),
+          ...(r.titres_seuls === true ? { titres_seuls: true } : {}),
         });
       }
     );

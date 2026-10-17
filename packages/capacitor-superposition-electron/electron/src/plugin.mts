@@ -227,8 +227,31 @@ function diffuserMarques(): void {
   }
 }
 
+// Zone utile de l'ecran ou se trouve le curseur, dans le repere de la page de superposition
+// (pixels CSS, origine en haut a gauche de la fenetre). La bulle de la page s'en sert pour ne
+// jamais passer sur la barre des taches (voir lib/zoneUtileSuperposition.ts). Absente si la
+// fenetre ou le point du curseur ne sont pas encore connus : la page garde alors son comportement.
+function zoneUtilePourPage(): Record<string, number> | undefined {
+  try {
+    const fenetre = trouverFenetreSuperposition();
+    if (!fenetre || fenetre.isDestroyed() || !pointEcranAffiche) return undefined;
+    const origine = fenetre.getContentBounds();
+    const zoom = fenetre.webContents.getZoomFactor() || 1;
+    const z = zoneUtileProche(pointEcranAffiche);
+    return {
+      gauche: (z.x - origine.x) / zoom,
+      haut: (z.y - origine.y) / zoom,
+      droite: (z.x + z.width - origine.x) / zoom,
+      bas: (z.y + z.height - origine.y) / zoom,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 function avecInformationCurseur(etatBrut: EtatPousse): EtatPousse {
-  const etat: EtatPousse = { ...etatBrut, marques: marquesAffichees };
+  const zoneUtile = zoneUtilePourPage();
+  const etat: EtatPousse = { ...etatBrut, marques: marquesAffichees, ...(zoneUtile ? { zoneUtile } : {}) };
   if (!informationCurseur || performance.now() >= informationCurseur.jusqua) return etat;
   return { ...etat, informationId: informationCurseur.id, canal: {
     ...(etat.canal as Record<string, unknown>), dernierTexte: informationCurseur.texte, reponseVisible: false,
@@ -308,14 +331,48 @@ function estSurUnEcran(point: PointEcranLocal): boolean {
     point.x >= b.x && point.x < b.x + b.width && point.y >= b.y && point.y < b.y + b.height);
 }
 
+// Marges du curseur (16/10/2026, demande de Bourama) : le curseur se dessine vers le bas et la
+// droite depuis sa pointe ; ces valeurs sont celles deja utilisees pour le garder sur l'ecran.
+const MARGE_CURSEUR_HAUT_GAUCHE = 4;
+const MARGE_CURSEUR_BAS_DROITE = 28;
+
+/**
+ * Zone utile de l'ecran le plus proche du point : l'ecran moins la barre des taches (celle-ci
+ * peut etre en bas, en haut, a gauche ou a droite, c'est workArea qui le dit). Coordonnees DIP,
+ * comme tous les points de ce fichier.
+ */
+function zoneUtileProche(point: PointEcranLocal): { x: number; y: number; width: number; height: number } {
+  const ecran = screen.getDisplayNearestPoint({ x: Math.round(point.x), y: Math.round(point.y) });
+  return ecran.workArea;
+}
+
+/**
+ * Ramene le point dans la zone utile si il est sur la barre des taches (16/10/2026, demande de
+ * Bourama : le curseur et la bulle ne doivent jamais etre au niveau de la barre, elle les cache).
+ * Seul le cote ou la barre existe est touche : le reste de l'ecran, bords compris, reste
+ * atteignable (boutons de fenetre en haut a droite, par exemple). Un point qui vise la barre
+ * s'arrete donc juste au dessus d'elle ; le vrai clic, lui, part toujours des vraies coordonnees.
+ */
+function horsBarreDesTaches(point: PointEcranLocal): PointEcranLocal {
+  const ecran = screen.getDisplayNearestPoint({ x: Math.round(point.x), y: Math.round(point.y) });
+  const b = ecran.bounds;
+  const z = ecran.workArea;
+  let { x, y } = point;
+  if (z.y + z.height < b.y + b.height && y > z.y + z.height - MARGE_CURSEUR_BAS_DROITE) y = z.y + z.height - MARGE_CURSEUR_BAS_DROITE;
+  if (z.y > b.y && y < z.y + MARGE_CURSEUR_HAUT_GAUCHE) y = z.y + MARGE_CURSEUR_HAUT_GAUCHE;
+  if (z.x + z.width < b.x + b.width && x > z.x + z.width - MARGE_CURSEUR_BAS_DROITE) x = z.x + z.width - MARGE_CURSEUR_BAS_DROITE;
+  if (z.x > b.x && x < z.x + MARGE_CURSEUR_HAUT_GAUCHE) x = z.x + MARGE_CURSEUR_HAUT_GAUCHE;
+  return x === point.x && y === point.y ? point : { x, y };
+}
+
 function retenirSurUnEcran(point: PointEcranLocal): PointEcranLocal {
-  if (estSurUnEcran(point)) return point;
+  if (estSurUnEcran(point)) return horsBarreDesTaches(point);
   // La courbe peut déborder même si ses deux extrémités sont visibles.
   const candidats = screen.getAllDisplays().map(({ bounds: b }) => ({
     x: Math.max(b.x + 4, Math.min(point.x, b.x + b.width - 28)),
     y: Math.max(b.y + 4, Math.min(point.y, b.y + b.height - 28)),
   }));
-  return candidats.reduce((a, b) => Math.hypot(a.x - point.x, a.y - point.y) <= Math.hypot(b.x - point.x, b.y - point.y) ? a : b);
+  return horsBarreDesTaches(candidats.reduce((a, b) => Math.hypot(a.x - point.x, a.y - point.y) <= Math.hypot(b.x - point.x, b.y - point.y) ? a : b));
 }
 
 /** Trajectoire calculée dans Electron : aucun appel au pilote souris ni au RAF du renderer principal. */
@@ -554,7 +611,7 @@ class SuperpositionAgentImpl extends ElectronPlugin {
     const positionChangee = !dernierPointPrincipal || positionPrincipale.x !== dernierPointPrincipal.x || positionPrincipale.y !== dernierPointPrincipal.y || positionPrincipale.repere !== dernierPointPrincipal.repere;
     // Seul un déplacement du curseur change son ancrage écran. Bouger ou
     // minimiser Classinus, ou rafraîchir le journal, conserve le dernier point.
-    if (!pointageEnCours && positionChangee && estSurUnEcran(point)) pointEcranAffiche = { x: point.x, y: point.y };
+    if (!pointageEnCours && positionChangee && estSurUnEcran(point)) pointEcranAffiche = horsBarreDesTaches({ x: point.x, y: point.y });
     if (!pointEcranAffiche) {
       const b = screen.getAllDisplays()[0].bounds;
       pointEcranAffiche = { x: b.x + b.width / 2, y: b.y + b.height / 2 };

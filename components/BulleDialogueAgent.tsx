@@ -55,6 +55,7 @@ import { ContexteCurseurVirtuel } from "@/lib/contexteCurseurVirtuel";
 import { COUCHE_AGENT_BULLE } from "@/lib/couchesAgent";
 import { BandeauReponseInterrompue } from "@/components/chat/BandeauReponseInterrompue";
 import { BandeauAutorisationAgent } from "@/components/BandeauAutorisationAgent";
+import { lireZoneUtile } from "@/lib/zoneUtileSuperposition";
 
 // Chargé à la demande : le rendu complet (code, formules, schémas) est
 // lourd et la bulle vit au niveau du layout racine, donc sur toutes les pages. Ce code
@@ -157,13 +158,16 @@ export function BulleDialogueAgent() {
     const { largeur, hauteur } = dimensions.current;
     const x = posX.get();
     const y = posY.get();
-    gauche.set(limiter(x + DECALAGE_X, MARGE_BORD, window.innerWidth - largeur - MARGE_BORD));
+    // Zone utile (16/10/2026, demande de Bourama) : sur l'appli PC, la bulle ne passe jamais sur
+    // la barre des taches de Windows, qui la cacherait. Ailleurs, c'est la fenetre entiere.
+    const zone = lireZoneUtile();
+    gauche.set(limiter(x + DECALAGE_X, zone.gauche + MARGE_BORD, zone.droite - largeur - MARGE_BORD));
     let sommet = y + DECALAGE_Y;
-    if (sommet + hauteur > window.innerHeight - MARGE_BORD) {
+    if (sommet + hauteur > zone.bas - MARGE_BORD) {
       const auDessus = y - DECALAGE_Y - hauteur;
-      sommet = auDessus >= MARGE_BORD ? auDessus : window.innerHeight - hauteur - MARGE_BORD;
+      sommet = auDessus >= zone.haut + MARGE_BORD ? auDessus : zone.bas - hauteur - MARGE_BORD;
     }
-    haut.set(Math.max(MARGE_BORD, sommet));
+    haut.set(Math.max(zone.haut + MARGE_BORD, sommet));
   }, [posX, posY, gauche, haut]);
 
   useEffect(() => {
@@ -239,8 +243,9 @@ export function BulleDialogueAgent() {
   const redimensionner = (e: EvenementPointeur<HTMLDivElement>) => {
     const depart = redimensionnement.current;
     if (!depart) return;
-    const largeurMax = window.innerWidth - gauche.get() - MARGE_BORD;
-    const hauteurMax = window.innerHeight - haut.get() - MARGE_BORD - PADDING_VERTICAL_BULLE;
+    const zone = lireZoneUtile();
+    const largeurMax = zone.droite - gauche.get() - MARGE_BORD;
+    const hauteurMax = zone.bas - haut.get() - MARGE_BORD - PADDING_VERTICAL_BULLE;
     const nouvelle: TailleBulle = {
       largeur: limiter(depart.largeur + (e.clientX - depart.x), LARGEUR_MIN_REPONSE, largeurMax),
       hauteur: limiter(depart.hauteur + (e.clientY - depart.y), HAUTEUR_MIN_REPONSE, hauteurMax),
@@ -265,11 +270,12 @@ export function BulleDialogueAgent() {
 
   if (!contexte) return null;
 
+  const zoneTaille = lireZoneUtile();
   const tailleAppliquee =
     reponse && taille && typeof window !== "undefined"
       ? {
-          largeur: Math.min(taille.largeur, window.innerWidth - MARGE_BORD * 2),
-          hauteur: Math.min(taille.hauteur, window.innerHeight - MARGE_BORD * 2 - PADDING_VERTICAL_BULLE),
+          largeur: Math.min(taille.largeur, zoneTaille.droite - zoneTaille.gauche - MARGE_BORD * 2),
+          hauteur: Math.min(taille.hauteur, zoneTaille.bas - zoneTaille.haut - MARGE_BORD * 2 - PADDING_VERTICAL_BULLE),
         }
       : null;
 

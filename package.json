@@ -10,6 +10,8 @@
     "build:capacitor": "cross-env CAPACITOR_BUILD=true next build && npx cap sync",
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
+    "test:barre-des-taches": "node tests/verifier-barre-des-taches.mjs",
+    "test:premier-plan-bureau": "node tests/verifier-premier-plan-bureau.mjs",
     "test:touches-clavier": "node tests/verifier-touches-clavier.mjs",
     "test:garde-clavier": "node tests/verifier-garde-clavier.mjs",
     "test:arret-global": "node tests/verifier-arret-global.mjs",
