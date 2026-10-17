@@ -65,3 +65,27 @@ Garde-fou technique : le bloc contient un garde qui fait ÉCHOUER la
 construction (erreur volontaire) quand elle tourne pour `main` ou pour la
 production. Vercel garde alors la version précédente en ligne. Ne jamais
 retirer, contourner ou assouplir ce garde.
+
+## Menus, listes et bulles ancrés : toujours via FlottantAncre
+
+Règle voulue par Bourama (17/10/2026) : plus jamais de placement réglé au cas
+par cas pour un menu, une liste déroulante, une bulle ou un volet qui s'ouvre
+à côté d'un bouton. Tout passe par `components/FlottantAncre.tsx` (calcul dans
+`lib/placementFlottant.ts`).
+
+Ce que la règle garantit : le panneau s'ouvre du côté voulu s'il y a la place,
+sinon de l'autre côté (vers le haut ou vers la gauche), sinon il se réduit et
+défile à l'intérieur de lui-même. Il ne sort jamais de son contenant : la
+fenêtre ou le panneau qui le porte, sinon l'écran réellement visible (clavier
+du téléphone exclu). Il est rendu dans le corps de la page, donc aucun parent
+ne peut le rogner ni le pousser à déborder.
+
+Pour tout ajout :
+- Ne jamais écrire `absolute top-full`, `bottom-full`, `right-0` ou une mesure
+  `getBoundingClientRect` pour un panneau ancré. Utiliser `FlottantAncre`.
+- Toute fenêtre ou panneau qui peut contenir un menu porte l'attribut
+  `data-contenant-flottant` (déjà posé sur `PanneauFlottant` et les fenêtres de
+  section). Un nouveau conteneur de ce type doit le porter aussi.
+- Le clic à l'extérieur doit tester `innerRef.contains(cible)` en plus du
+  bouton, car le panneau n'est plus un descendant DOM de son bouton.
+- Le niveau (z-index) est géré par le composant, sous la couche de l'agent.
