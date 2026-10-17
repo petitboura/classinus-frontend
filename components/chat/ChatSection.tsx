@@ -215,10 +215,10 @@ export function ChatSection() {
           // largeur de référence ici aussi ; cette page occupe toujours
           // largement plus de 360px, donc la version desktop reste
           // affichée comme avant, aucun changement de comportement ici.
-          className="@container relative min-h-0 flex-1 bg-dj-surface"
+          className="@container relative min-h-0 flex-1"
         >
           {chargementFilConversation && (
-            <div className="absolute inset-0 z-10 overflow-hidden bg-dj-surface">
+            <div className="absolute inset-0 z-10 overflow-hidden bg-dj-fond">
               <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 px-4 py-6" aria-hidden>
                 <div className="flex flex-col items-end">
                   <Skeleton className="h-9 w-2/5 rounded-cgpt-carte" />
