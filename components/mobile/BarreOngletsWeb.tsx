@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Library, Hourglass, MessageCircle, Briefcase, Wand2, type LucideIcon } from "lucide-react";
 import { ROUTES_APP, correspondARoute, estPageChat } from "@/lib/routesApp";
+import { useClavierOuvert } from "@/lib/useClavierOuvert";
 // Créé le 28/08/2026, Bourama : chantier "web mobile façon appli",
 // remplace le menu hamburger + tiroir (AppSidebar en mode mobile, masqué
 // pour de bon désormais via masquerChromeMobile, voir AppShell.tsx) par
@@ -50,6 +51,9 @@ const ONGLETS_WEB: { href: string; label: string; Icone: LucideIcon }[] = [
 
 export function BarreOngletsWeb() {
   const pathname = usePathname();
+  // Clavier ouvert : la barre descend et sort de l'écran au lieu de remonter
+  // au dessus du clavier (voir lib/useClavierOuvert.ts).
+  const clavierOuvert = useClavierOuvert();
   // Correctif (07/09/2026, signalé Bourama : "la barre du bas ne doit
   // pas apparaître dans le chat plein écran") : avant l'étape 3 du
   // chantier "chat plein écran = vraie section", l'onglet Chat ouvrait
@@ -64,9 +68,12 @@ export function BarreOngletsWeb() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch justify-around border-t border-dj-bordure bg-dj-fond md:hidden"
+      className={`fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch justify-around border-t border-dj-bordure bg-dj-fond transition-transform duration-200 ease-out md:hidden ${
+        clavierOuvert ? "pointer-events-none translate-y-full" : ""
+      }`}
       style={{ paddingBottom: "var(--safe-bottom)" }}
       aria-label="Navigation principale"
+      aria-hidden={clavierOuvert}
       data-agent-zone="Barre du bas"
     >
       {ONGLETS_WEB.map((o) => {

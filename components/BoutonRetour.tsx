@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 // Bouton retour partagé (29/08/2026, demande Bourama : uniformiser les
 // boutons retour de toute l'app). Avant ce composant, deux
@@ -49,7 +50,7 @@ export function BoutonRetour(
   const classes = `flex flex-shrink-0 items-center gap-1 rounded-lg ${padding} text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${className}`;
   const contenu = (
     <>
-      <ChevronLeft size={taille} />
+      <ChevronLeft size={taille} strokeWidth={TRAIT_ICONE_SECTION} />
       {avecTexte && <span className="text-xs font-medium">Retour</span>}
     </>
   );

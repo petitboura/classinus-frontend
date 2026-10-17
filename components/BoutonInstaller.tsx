@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 // Porté de djiguigne-frontend/components/BoutonInstaller.tsx, texte
 // adapté à Classinus. app/manifest.ts + public/sw.js existent
@@ -45,9 +46,9 @@ export function BoutonInstaller() {
       <button
         type="button"
         onClick={estIOS ? () => setInstructionsIOS(true) : installer}
-        className="flex items-center gap-1.5 rounded-cgpt-bouton px-3 py-2 text-sm text-dj-texte-muet transition-colors hover:text-dj-texte"
+        className="flex items-center gap-1.5 rounded-cgpt-bouton px-3 py-2 text-sm font-semibold text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={TRAIT_ICONE_SECTION}>
           <path d="M12 3v13m0 0-4-4m4 4 4-4M5 19h14" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         <span className="hidden sm:inline">Télécharger</span>

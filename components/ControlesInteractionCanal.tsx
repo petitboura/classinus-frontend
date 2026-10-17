@@ -38,6 +38,7 @@ import { useDicteeVocale } from "@/lib/useDicteeVocale";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { conversationActive } from "@/lib/conversationPartagee";
 import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
+import { useClavierOuvert } from "@/lib/useClavierOuvert";
 
 const DUREE_ERREUR_MS = 6000;
 // Repli automatique des boutons (11/10/2026, demande Bourama) : délai sans aucune action avant que
@@ -100,6 +101,11 @@ export function ControlesInteractionCanal({
   const [texteSaisi, setTexteSaisi] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const champRef = useRef<HTMLTextAreaElement>(null);
+  // Sur téléphone, pendant qu'on écrit dans la zone d'écriture, seul ce champ
+  // reste affiché près du clavier : les autres boutons du canal et le journal
+  // se retirent, puis reviennent quand le clavier se ferme.
+  const [champActif, setChampActif] = useState(false);
+  const clavierOuvert = useClavierOuvert();
   const minuteurErreur = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function afficherErreur(message: string) {
@@ -284,6 +290,8 @@ export function ControlesInteractionCanal({
     }
   }
 
+  const saisieSeule = panneauOuvert && champActif && clavierOuvert;
+
   const classeBouton = (misEnAvant: boolean, occupe: boolean) =>
     `flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
       occupe
@@ -365,6 +373,8 @@ export function ControlesInteractionCanal({
                   value={texteSaisi}
                   onChange={(e) => setTexteSaisi(e.target.value)}
                   onKeyDown={surToucheChamp}
+                  onFocus={() => setChampActif(true)}
+                  onBlur={() => setChampActif(false)}
                   rows={1}
                   placeholder="Dis quelque chose à Classinus..."
                   aria-label="Message pour Classinus pendant qu'il travaille"
@@ -372,6 +382,9 @@ export function ControlesInteractionCanal({
                 />
                 <button
                   onClick={() => void envoyerTexte()}
+                  // Garde le focus dans le champ au toucher : sinon les autres boutons
+                  // réapparaissent avant le clic et déplacent le bouton Envoyer.
+                  onMouseDown={(e) => e.preventDefault()}
                   disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0)}
                   aria-label="Envoyer le message"
                   className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-[#1A0D02] transition-opacity disabled:opacity-40 ${
@@ -386,7 +399,7 @@ export function ControlesInteractionCanal({
         </AnimatePresence>
 
         <AnimatePresence initial={false}>
-          {actif && (contexte.tacheEnCours || groupeOuvert) && (
+          {actif && !saisieSeule && (contexte.tacheEnCours || groupeOuvert) && (
             <motion.div
               key="ligne-dictee"
               initial={{ opacity: 0, y: 8 }}
@@ -444,7 +457,7 @@ export function ControlesInteractionCanal({
         </AnimatePresence>
 
         <AnimatePresence initial={false}>
-          {actif && groupeOuvert && (
+          {actif && groupeOuvert && !saisieSeule && (
             <motion.div
               key="ligne-ecrire"
               initial={{ opacity: 0, y: 8 }}
@@ -489,7 +502,7 @@ export function ControlesInteractionCanal({
           <AnimatePresence initial={false}>
             {/* Ligne du bas : chevron tout à gauche, Écrire à sa droite, puis le bouton d'activation,
                 qui n'est visible que groupe déplié (c'est là qu'on désactive le canal). */}
-            {actif && (
+            {actif && !saisieSeule && (
               <ApparitionBoutonCanal key="chevron">
                 <button
                   onClick={() => setGroupeOuvert((v) => !v)}
@@ -502,8 +515,8 @@ export function ControlesInteractionCanal({
                 </button>
               </ApparitionBoutonCanal>
             )}
-            {actif && <ApparitionBoutonCanal key="ecrire">{boutonEcrire}</ApparitionBoutonCanal>}
-            {(!actif || groupeOuvert) && <ApparitionBoutonCanal key="activation">{boutonActivation}</ApparitionBoutonCanal>}
+            {actif && !saisieSeule && <ApparitionBoutonCanal key="ecrire">{boutonEcrire}</ApparitionBoutonCanal>}
+            {(!actif || groupeOuvert) && !saisieSeule && <ApparitionBoutonCanal key="activation">{boutonActivation}</ApparitionBoutonCanal>}
           </AnimatePresence>
         </div>
       </div>
@@ -511,7 +524,7 @@ export function ControlesInteractionCanal({
       {monte &&
         createPortal(
           <AnimatePresence>
-            {actif && groupeOuvert && (
+            {actif && groupeOuvert && !saisieSeule && (
               <motion.div
                 key="journal"
                 initial={{ opacity: 0 }}

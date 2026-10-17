@@ -83,10 +83,20 @@ export function useInfoSection(id: string | null) {
 // à chaque changement de sous-section. Sur
 // téléphone, pl-8 laisse la place du hamburger, et pr-20 laisse celle de
 // la cloche et du bouton minuteur sur toute la largeur.
+// En-tête qui reste en place quand la page défile (17/10/2026, demande
+// Bourama : les titres et boutons du haut ne doivent plus monter avec leur
+// section). Collé à la même hauteur que sa place d'origine (0.5rem + marge
+// haute de sécurité), avec le fond de la page pour que le contenu qui passe
+// dessous ne se voie pas. L'ombre pleine sans flou, décalée vers le haut,
+// couvre la bande au dessus de la ligne (encoche, barre d'état) où le
+// contenu passerait sinon.
+const ENTETE_FIXE =
+  "sticky top-[calc(0.5rem+var(--safe-top,0px))] z-30 bg-dj-fond shadow-[0_calc(-1_*_(0.5rem_+_var(--safe-top,0px)))_0_0_var(--dj-fond)]";
+
 function TitreSection({ title, infoRubriqueId, retour }: { title: string; infoRubriqueId: string | null; retour?: string }) {
   const rubrique = infoRubriqueId ? trouverRubriqueAide(infoRubriqueId) : undefined;
   return (
-    <div className="mt-[calc(0.5rem_-_var(--dj-hamburger-espace))] flex h-8 items-center gap-1.5 pl-8 pr-20 md:pl-0">
+    <div className={`mt-[calc(0.5rem_-_var(--dj-hamburger-espace))] flex h-8 items-center gap-1.5 pl-8 pr-20 md:pl-0 ${ENTETE_FIXE}`}>
       {retour && <BoutonRetour href={retour} padding="p-1" className="-ml-1" />}
       <h1 className="truncate font-display text-xl font-bold text-dj-texte">{title}</h1>
       {rubrique && (
@@ -167,7 +177,9 @@ export function SectionPage({
       <TitreSection title={groupe.label} infoRubriqueId={infoRubriqueId} retour={groupe.href} />
 
       <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
-        <div className="-mb-2 md:hidden">
+        {/* Les pastilles restent sous le titre pendant le défilement : la
+            ligne du titre fait 2rem de haut (h-8). */}
+        <div className="sticky top-[calc(2.5rem+var(--safe-top,0px))] z-30 -mb-2 bg-dj-fond md:hidden">
           <OngletsLiens
             ariaLabel={groupe.label}
             onglets={groupe.soeurs.map((s) => ({ href: s.href, libelle: s.label }))}

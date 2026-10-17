@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Info } from "lucide-react";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // Créé le 01/09/2026, correctif (Bourama : "les descriptions de section
@@ -65,7 +66,7 @@ export function BoutonInfoSection({
         aria-expanded={ouvert}
         className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
       >
-        <Info size={14} />
+        <Info size={14} strokeWidth={TRAIT_ICONE_SECTION} />
       </button>
 
       {(ouvert || enSortie) && (

@@ -8,6 +8,7 @@ import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
 import { LIGNE_TRAIT_ICONE_18_PANNEAU, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { ROUTES_APP } from "@/lib/routesApp";
+import { TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
 
 // Créé le 26/08/2026, Bourama : refonte navigation mobile native. Contenu
 // du menu "Plus", partagé entre l'appli native et le web mobile.
@@ -87,7 +88,7 @@ function LigneSection({
         className="group mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
       >
         <span className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <Icone size={18} />
+          <Icone size={18} strokeWidth={TRAIT_ICONE_RAIL} />
         </span>
         <span className="text-sm">{titre}</span>
       </button>

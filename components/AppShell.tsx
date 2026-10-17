@@ -7,7 +7,6 @@ import { lireMonProfil, mettreAJourMonProfil } from "@/lib/api";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
 import { FenetresSections } from "@/components/chat/FenetresSections";
-import { GuideFlottant } from "@/components/GuideFlottant";
 import { CatalogueClovis } from "@/components/CatalogueClovis";
 import { PaletteCommandes } from "@/components/PaletteCommandes";
 import { ContexteChat } from "@/lib/contexteChat";
@@ -26,6 +25,7 @@ import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs"
 import { ContexteStatutUtilisateur, useFournirStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { estPageChat } from "@/lib/routesApp";
 import { prechargerPython } from "@/lib/executionPython";
+import { useClavierOuvert } from "@/lib/useClavierOuvert";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -96,9 +96,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Sur /chat la barre du bas est masquée : on le signale à globals.css pour
   // que la marge réservée aux fenêtres et aux boutons flottants retombe à
   // la zone de sécurité seule (voir --dj-barre-onglets-web).
+  // Clavier ouvert : la barre du bas est descendue (BarreOngletsWeb), la place
+  // qu'elle réservait est rendue aussi.
+  const clavierOuvert = useClavierOuvert();
   useEffect(() => {
-    document.documentElement.setAttribute("data-sans-barre", estPageChat(pathname) ? "true" : "false");
-  }, [pathname]);
+    document.documentElement.setAttribute("data-sans-barre", estPageChat(pathname) || clavierOuvert ? "true" : "false");
+  }, [pathname, clavierOuvert]);
 
   useEffect(() => {
     if (!connecte) return;
@@ -227,11 +230,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               (un minuteur est enregistré sur le compte). */}
           {connecte && <DockMinuteurs />}
           <SyncTempsReelCache connecte={connecte} />
-          {/* Guide de decouverte, etape 4 (16/09/2026, demande Bourama) :
-              meme condition que AppSidebar juste en dessous -- masque sur
-              /chat, qui a deja son propre point d'entree du guide (menu
-              "+" du chat, etape 5). */}
-          {!estPageChat(pathname) && <GuideFlottant />}
           {/* 07/09/2026, décision Bourama (bug PC web signalé : profil et
               "..." affichés en double) : cette instance-ci d'AppSidebar
               (nav principale, hors chat) reste montée en permanence,
