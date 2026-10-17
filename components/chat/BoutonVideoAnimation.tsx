@@ -69,8 +69,6 @@ export function BoutonVideoAnimation({
 
   return (
     <MenuActionsCarte
-      portail
-      niveauPortail="z-[165]"
       ariaLabel={t.telecharger}
       desactive={desactive}
       classeDeclencheur={classe}

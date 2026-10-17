@@ -36,6 +36,7 @@ import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -1732,7 +1733,7 @@ export function BarreDeSaisie({
                     : "text-dj-texte-muet hover:text-dj-texte")
                 }
               >
-                <UserX size={18} />
+                <UserX size={18} strokeWidth={TRAIT_ICONE_SECTION} />
               </button>
             )}
           </div>
@@ -1774,7 +1775,7 @@ export function BarreDeSaisie({
                     : "text-dj-texte-muet hover:text-dj-texte")
                 }
               >
-                <SlidersHorizontal size={18} />
+                <SlidersHorizontal size={18} strokeWidth={TRAIT_ICONE_SECTION} />
               </button>
               <div
                 ref={menuUtilitairesRef}
@@ -1832,7 +1833,7 @@ export function BarreDeSaisie({
                 aria-label="Envoyer"
                 className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
               >
-                <ArrowUp size={16} />
+                <ArrowUp size={16} strokeWidth={TRAIT_ICONE_SECTION} />
               </button>
             ) : (
               <>
@@ -1847,7 +1848,7 @@ export function BarreDeSaisie({
                   aria-label="Dictée vocale"
                   className="text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
                 >
-                  <Mic size={18} />
+                  <Mic size={18} strokeWidth={TRAIT_ICONE_SECTION} />
                 </button>
               </>
             )}
@@ -1968,7 +1969,7 @@ export function BarreDeSaisie({
                 : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte")
             }
           >
-            <SlidersHorizontal size={18} />
+            <SlidersHorizontal size={18} strokeWidth={TRAIT_ICONE_SECTION} />
           </button>
         )}
         {dictant ? (
@@ -1994,7 +1995,7 @@ export function BarreDeSaisie({
             aria-label="Envoyer"
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
           >
-            <ArrowUp size={16} />
+            <ArrowUp size={16} strokeWidth={TRAIT_ICONE_SECTION} />
           </button>
         ) : (
           <>
@@ -2004,7 +2005,7 @@ export function BarreDeSaisie({
               aria-label="Dictée vocale"
               className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte disabled:opacity-60"
             >
-              <Mic size={16} />
+              <Mic size={16} strokeWidth={TRAIT_ICONE_SECTION} />
             </button>
           </>
         )}
@@ -2322,7 +2323,7 @@ export function BarreDeSaisie({
               aria-label="Envoyer"
               className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >
-              Envoyer <ArrowUp size={16} />
+              Envoyer <ArrowUp size={16} strokeWidth={TRAIT_ICONE_SECTION} />
             </button>
           </div>
         </PleinEcranApercu>

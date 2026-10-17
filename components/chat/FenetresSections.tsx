@@ -154,6 +154,7 @@ function FenetreSection({
   return (
     <div
       data-agent-zone={`Fenêtre ${label}`}
+      data-contenant-flottant=""
       onPointerDownCapture={() => monterAuPremierPlan(cle)}
       style={{ left: x, top: y, width, height, zIndex: 120 + z }}
       className={

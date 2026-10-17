@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 export type EntreeMenuPlus = {
   cle: string;
@@ -76,7 +77,7 @@ export function MenuPlus({
               : "text-dj-texte-muet hover:text-dj-texte")
         }
       >
-        <Plus size={18} className={"transition-transform duration-200 " + (menuOuvert ? "rotate-45" : "")} />
+        <Plus size={18} strokeWidth={TRAIT_ICONE_SECTION} className={"transition-transform duration-200 " + (menuOuvert ? "rotate-45" : "")} />
       </button>
 
       <div

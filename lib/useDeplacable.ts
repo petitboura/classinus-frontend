@@ -14,7 +14,7 @@
 // SEUIL_GLISSEMENT pixels reste un simple clic, jamais un déplacement. Le
 // clic qui suit un vrai glissement est ignoré (sinon relâcher le bouton
 // après l'avoir déplacé l'activerait). Le décalage n'est pas gardé après un
-// rechargement de la page, comme le bouton de découverte (GuideFlottant.tsx).
+// rechargement de la page.
 //
 // L'élément reste toujours entièrement visible : bornes à l'écran pendant le
 // glissement, et recadrage quand sa taille change (ouverture d'un panneau)
@@ -81,10 +81,13 @@ export function useDeplacable<T extends HTMLElement>(cleStockage?: string) {
   const arreterEcoute = useRef<(() => void) | null>(null);
 
   const appliquer = useCallback(
-    (valeur: Decalage) => {
+    (valeur: Decalage, persister = true) => {
       decalageRef.current = valeur;
       setDecalage(valeur);
-      if (cleStockage) {
+      // Pendant un glissement, la position n'est écrite qu'à la fin : une
+      // écriture dans le stockage à chaque mouvement du doigt fait saccader
+      // le déplacement.
+      if (cleStockage && persister) {
         try {
           window.localStorage.setItem(cleStockage, JSON.stringify(valeur));
         } catch {
@@ -120,7 +123,7 @@ export function useDeplacable<T extends HTMLElement>(cleStockage?: string) {
           document.body.style.userSelect = "none";
         }
         const borne = bornerDeplacement(rectDepart, dx, dy, window.innerWidth, window.innerHeight);
-        appliquer({ x: decalageDepart.x + borne.x, y: decalageDepart.y + borne.y });
+        appliquer({ x: decalageDepart.x + borne.x, y: decalageDepart.y + borne.y }, false);
       };
 
       const terminer = () => {
@@ -129,6 +132,7 @@ export function useDeplacable<T extends HTMLElement>(cleStockage?: string) {
         window.removeEventListener("pointercancel", terminer);
         arreterEcoute.current = null;
         document.body.style.userSelect = selectionAvant;
+        if (aGlisse.current) appliquer(decalageRef.current);
         // Le clic qui suit le relâchement est dispatché avant ce délai : il
         // est donc ignoré, mais un clic ultérieur reste normal même si le
         // relâchement a eu lieu hors de l'élément (aucun clic dans ce cas).

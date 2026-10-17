@@ -4,7 +4,12 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { LogOut, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { FlottantAncre } from "@/components/FlottantAncre";
+import type { CoteFlottant } from "@/lib/placementFlottant";
 import { CELLULE_ICONE_RAIL, CELLULE_ICONE_TACTILE, ECART_ELEMENTS_RAIL } from "@/lib/styleBarreLaterale";
+
+// Côtés essayés pour le panneau de l'en-tête : en dessous, puis au dessus.
+const COTES_MENU: CoteFlottant[] = ["bas", "haut"];
 
 // Libellé simple du menu profil quand il n'est pas dans le rail (panneau Plus
 // du téléphone) : pas de repli animé, le texte est toujours visible.
@@ -81,6 +86,9 @@ export function MenuProfil({
   pointRouge?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Panneau du mode en-tête, rendu dans le corps de la page : il n'est plus un
+  // descendant de ref, le clic à l'extérieur doit le connaître.
+  const popupRef = useRef<HTMLDivElement | null>(null);
   const libelle = nomAffiche || "Mon compte";
   const fermer = onFermerMenu;
   const enSortie = enSortieMenu;
@@ -88,7 +96,8 @@ export function MenuProfil({
   useEffect(() => {
     if (!menuOuvert) return;
     function onClicExterieur(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) fermer();
+      const cible = e.target as Node;
+      if (ref.current && !ref.current.contains(cible) && !popupRef.current?.contains(cible)) fermer();
     }
     document.addEventListener("mousedown", onClicExterieur);
     return () => document.removeEventListener("mousedown", onClicExterieur);
@@ -109,6 +118,74 @@ export function MenuProfil({
         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-dj-surface bg-[var(--dj-erreur)]" />
       )}
     </span>
+  );
+
+  const contenuPopup = (
+    <>
+      {/* 07/09/2026, demande Bourama : "Paramètres" doit être une
+          section normale comme les autres, accessible par un vrai
+          lien Next.js (comme Bibliothèque/Notes/Chat, voir Link plus
+          haut dans ce fichier) au lieu d'un bouton qui navigue par
+          code : seule façon d'obtenir le préchargement automatique
+          de Next.js et éviter le délai au premier clic (bug signalé :
+          "rien ne se passe" la première fois qu'on ouvre
+          Paramètres). Les effets de bord (fermeture du menu/tiroir,
+          marquage historique) restent dans onNaviguerVersProfil/
+          onNaviguerVersParametres (AppSidebar), qui ne font plus
+          eux-mêmes de router.push : la navigation vient maintenant
+          du href du Link. */}
+      <Link
+        href="/parametres/profil"
+        onClick={(e) => {
+          if (onNaviguer) {
+            e.preventDefault();
+            onNaviguer("/parametres/profil");
+          }
+          fermer();
+          onNaviguerVersProfil();
+        }}
+        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-dj-surface-haute"
+      >
+        {Avatar}
+        <div className="flex flex-col overflow-hidden">
+          <span className="truncate text-sm font-medium text-dj-texte">{libelle}</span>
+          <span className="text-xs text-dj-texte-muet">Voir le profil</span>
+        </div>
+      </Link>
+
+      <div className="border-t border-dj-bordure" />
+
+      <Link
+        href="/parametres"
+        onClick={(e) => {
+          if (onNaviguer) {
+            e.preventDefault();
+            onNaviguer("/parametres");
+          }
+          fermer();
+          onNaviguerVersParametres();
+        }}
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+      >
+        <Settings size={16} className="text-dj-texte-muet" />
+        Paramètres
+      </Link>
+
+      <ThemeToggle LibelleRail={LibelleRail} ouverte />
+
+      <div className="border-t border-dj-bordure" />
+
+      <button
+        onClick={() => {
+          fermer();
+          onSeDeconnecter();
+        }}
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--dj-erreur)] transition-colors hover:bg-dj-surface-haute"
+      >
+        <LogOut size={16} />
+        Se déconnecter
+      </button>
+    </>
   );
 
   return (
@@ -135,77 +212,32 @@ export function MenuProfil({
         </button>
       )}
 
-      {(menuOuvert || enSortie) && (
-        <div
-          className={`absolute z-50 w-56 overflow-hidden rounded-cgpt-carte border border-dj-bordure shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
-            entete ? "left-0 top-full mt-2 bg-dj-surface" : mobile ? "bottom-full left-2 mb-2 bg-dj-surface" : "bottom-full left-0 mb-2 bg-dj-rail"
-          } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
-        >
-          {/* 07/09/2026, demande Bourama : "Paramètres" doit être une
-              section normale comme les autres, accessible par un vrai
-              lien Next.js (comme Bibliothèque/Notes/Chat, voir Link plus
-              haut dans ce fichier) au lieu d'un bouton qui navigue par
-              code : seule façon d'obtenir le préchargement automatique
-              de Next.js et éviter le délai au premier clic (bug signalé :
-              "rien ne se passe" la première fois qu'on ouvre
-              Paramètres). Les effets de bord (fermeture du menu/tiroir,
-              marquage historique) restent dans onNaviguerVersProfil/
-              onNaviguerVersParametres (AppSidebar), qui ne font plus
-              eux-mêmes de router.push : la navigation vient maintenant
-              du href du Link. */}
-          <Link
-            href="/parametres/profil"
-            onClick={(e) => {
-              if (onNaviguer) {
-                e.preventDefault();
-                onNaviguer("/parametres/profil");
-              }
-              fermer();
-              onNaviguerVersProfil();
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-dj-surface-haute"
+      {(menuOuvert || enSortie) &&
+        (entete ? (
+          // En-tête du panneau Plus : placé par la règle commune des menus ancrés
+          // (voir FlottantAncre.tsx), qui le garde dans le panneau et au dessus du
+          // clavier. Le clic à l'extérieur doit donc aussi regarder popupRef.
+          <FlottantAncre
+            ancreRef={ref}
+            innerRef={popupRef}
+            role="menu"
+            cotes={COTES_MENU}
+            alignement="debut"
+            className={`w-56 rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
+              enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
+            }`}
           >
-            {Avatar}
-            <div className="flex flex-col overflow-hidden">
-              <span className="truncate text-sm font-medium text-dj-texte">{libelle}</span>
-              <span className="text-xs text-dj-texte-muet">Voir le profil</span>
-            </div>
-          </Link>
-
-          <div className="border-t border-dj-bordure" />
-
-          <Link
-            href="/parametres"
-            onClick={(e) => {
-              if (onNaviguer) {
-                e.preventDefault();
-                onNaviguer("/parametres");
-              }
-              fermer();
-              onNaviguerVersParametres();
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+            {contenuPopup}
+          </FlottantAncre>
+        ) : (
+          <div
+            className={`absolute bottom-full z-50 mb-2 w-56 overflow-hidden rounded-cgpt-carte border border-dj-bordure shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
+              mobile ? "left-2 bg-dj-surface" : "left-0 bg-dj-rail"
+            } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
           >
-            <Settings size={16} className="text-dj-texte-muet" />
-            Paramètres
-          </Link>
-
-          <ThemeToggle LibelleRail={LibelleRail} ouverte />
-
-          <div className="border-t border-dj-bordure" />
-
-          <button
-            onClick={() => {
-              fermer();
-              onSeDeconnecter();
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--dj-erreur)] transition-colors hover:bg-dj-surface-haute"
-          >
-            <LogOut size={16} />
-            Se déconnecter
-          </button>
-        </div>
-      )}
+            {contenuPopup}
+          </div>
+        ))}
     </div>
   );
 }

@@ -189,7 +189,7 @@ export function MenuElementConfiguration({
           <Users size={13} />
         </span>
       )}
-      <MenuActionsCarte actions={actions} ariaLabel={texteConfiguration("menu.aria")} contraste portail />
+      <MenuActionsCarte actions={actions} ariaLabel={texteConfiguration("menu.aria")} contraste />
 
       {(porteeOuverte || porteeEnSortie) &&
         createPortal(

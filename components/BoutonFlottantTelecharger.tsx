@@ -59,10 +59,11 @@ export function BoutonFlottantTelecharger() {
       ref={deplacement.ref}
       style={deplacement.style}
       {...deplacement.poignee}
-      className="fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] left-5 z-40 flex animate-dj-fade-in-rapide cursor-grab items-center rounded-cgpt-bouton border border-dj-bordure bg-dj-surface shadow-[0_4px_20px_rgba(0,0,0,0.35)] active:cursor-grabbing"
+      className="fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] left-5 z-40 flex touch-none select-none animate-dj-fade-in-rapide cursor-grab items-center will-change-transform rounded-cgpt-bouton border border-dj-bordure bg-dj-surface shadow-[0_4px_20px_rgba(0,0,0,0.35)] active:cursor-grabbing"
     >
       <Link
         href="/telecharger"
+        draggable={false}
         className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
       >
         <Download size={16} />

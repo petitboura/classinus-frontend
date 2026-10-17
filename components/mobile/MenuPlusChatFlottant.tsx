@@ -6,6 +6,7 @@ import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { BlocsMenuPlus, SECTIONS_BASE } from "@/components/EspacePlus";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { TAILLE_ICONE_RAIL, TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
 
 // Créé le 03/09/2026 (paramètre d'URL + router.push/back, même
 // technique que MenuHamburgerWeb.tsx/MenuHamburgerNatif.tsx), corrigé
@@ -67,7 +68,7 @@ function MenuPlusChatFlottant({ onNaviguer }: { onNaviguer: (href: string) => vo
         }`}
       >
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
+          <MoreHorizontal size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
         </span>
         <span className="text-sm">Plus</span>
       </button>

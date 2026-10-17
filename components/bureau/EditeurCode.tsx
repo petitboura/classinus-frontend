@@ -195,8 +195,6 @@ export function EditeurCode() {
       <MenuActionsCarte
         actions={actionsMenu}
         ariaLabel="Plus d'actions"
-        portail
-        niveauPortail="z-[170]"
         declencheur={<MoreHorizontal size={15} />}
         classeDeclencheur="flex items-center rounded-lg border border-dj-bordure bg-dj-surface-haute p-1.5 text-dj-texte-muet transition-colors hover:text-dj-texte md:px-2.5"
       />

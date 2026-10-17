@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MoreVertical } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import type { CoteFlottant } from "@/lib/placementFlottant";
+import { FlottantAncre } from "./FlottantAncre";
 import type { ActionSelection } from "./BarreActionsSelection";
 
 // 13/09/2026, demande Bourama : sur mobile (et mobile installé), les
@@ -19,15 +20,18 @@ import type { ActionSelection } from "./BarreActionsSelection";
 // calqué sur SelectPersonnalise.tsx pour rester cohérent avec le reste du
 // dépôt plutôt que d'inventer un nouveau pattern.
 
+// Côtés essayés, dans l'ordre : en dessous, puis au dessus (règle commune,
+// voir lib/placementFlottant.ts). Constante pour ne pas relancer le placement
+// à chaque rendu.
+const COTES_MENU: CoteFlottant[] = ["bas", "haut"];
+
 export function MenuActionsCarte({
   actions,
   ariaLabel = "Actions",
   contraste = false,
-  portail = false,
   declencheur,
   classeDeclencheur = "",
   desactive = false,
-  niveauPortail = "z-[130]",
 }: {
   actions: ActionSelection[];
   ariaLabel?: string;
@@ -35,10 +39,6 @@ export function MenuActionsCarte({
    * et ombre marquée, pour un menu posé sur une carte de même couleur que lui.
    * Absent : rendu inchangé pour les autres écrans. */
   contraste?: boolean;
-  /** 02/10/2026 : rend le menu dans document.body, en position fixe. Une carte
-   * désactivée est à demi transparente, ce qui crée une couche qui passerait
-   * sous les cartes suivantes. Absent : rendu inchangé. */
-  portail?: boolean;
   /** 07/10/2026 : contenu du bouton d'ouverture, a la place de l'icone "...".
    * Sert au bouton Telecharger du bloc animation (choix du format). Absent :
    * rendu inchange pour les autres ecrans. */
@@ -47,25 +47,10 @@ export function MenuActionsCarte({
   classeDeclencheur?: string;
   /** Bouton d'ouverture non cliquable. Absent : cliquable. */
   desactive?: boolean;
-  /** Classe de niveau (z-index) du menu en mode `portail`. Le plein ecran des
-   * blocs du chat est a z-[160] : un menu ouvert depuis son en-tete doit etre
-   * au dessus. Absent : z-[130], inchange. */
-  niveauPortail?: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
-  const [ouvrirVersHaut, setOuvrirVersHaut] = useState(false);
-  const [alignerAGauche, setAlignerAGauche] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [positionFixe, setPositionFixe] = useState<CSSProperties>({});
-  // Hauteur estimée du menu (nombre d'actions * hauteur d'une ligne),
-  // utilisée pour savoir s'il reste assez de place en dessous du bouton.
-  const hauteurMenuEstimee = actions.length * 36 + 16;
-  // Largeur max réelle du menu (cf. max-w-[16rem] plus bas) : sert à
-  // savoir, avant même que le menu soit affiché, s'il tiendra en
-  // s'alignant sur le bord droit du bouton (le comportement par défaut)
-  // ou s'il déborderait de l'écran à gauche et doit s'aligner à gauche.
-  const LARGEUR_MENU_MAX = 256;
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(() => setOuvert(false));
 
@@ -85,57 +70,23 @@ export function MenuActionsCarte({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fermer recrée une fonction stable via demarrerFermeture (useCallback), l'état ouvert est lu via ouvertRef
   }, []);
 
-  useEffect(() => {
-    if (!portail || !ouvert) return;
-    // Le menu est en position fixe : il ne suit pas la page qui défile.
-    const surDeplacement = () => fermer();
-    window.addEventListener("scroll", surDeplacement, true);
-    window.addEventListener("resize", surDeplacement);
-    return () => {
-      window.removeEventListener("scroll", surDeplacement, true);
-      window.removeEventListener("resize", surDeplacement);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fermer est stable via demarrerFermeture
-  }, [portail, ouvert]);
-
   function ouvrirMenu() {
-    if (ref.current) {
-      const rect = ref.current.getBoundingClientRect();
-      const placeEnDessous = window.innerHeight - rect.bottom;
-      const placeAuDessus = rect.top;
-      const versHaut = placeEnDessous < hauteurMenuEstimee && placeAuDessus > placeEnDessous;
-      const aGauche = rect.right - LARGEUR_MENU_MAX < 0;
-      if (portail) {
-        setPositionFixe({
-          position: "fixed",
-          ...(versHaut ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
-          ...(aGauche ? { left: Math.max(8, rect.left) } : { right: Math.max(8, window.innerWidth - rect.right) }),
-        });
-      }
-      setOuvrirVersHaut(versHaut);
-      // Par défaut le menu s'aligne sur le bord droit du bouton (s'étend
-      // vers la gauche) -- sûr tant que le bouton est proche du bord
-      // droit de l'écran (cas normal, "..." toujours en fin de ligne).
-      // S'il n'y a pas assez de place à gauche du bouton, on aligne à
-      // gauche à la place (le menu s'étend alors vers la droite).
-      setAlignerAGauche(rect.right - LARGEUR_MENU_MAX < 0);
-    }
     setOuvert(true);
   }
 
   const panneau = () => (
-    <div
-          ref={menuRef}
-          role={portail ? "menu" : undefined}
-          style={portail ? positionFixe : undefined}
-          className={`${portail ? niveauPortail : "absolute z-20"} max-w-[min(16rem,85vw)] min-w-[10rem] overflow-hidden rounded-lg border p-1 ${
-            contraste
-              ? "border-dj-bordure-forte bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
-              : "border-dj-bordure bg-dj-surface-haute shadow-lg"
-          } ${portail ? "" : `${alignerAGauche ? "left-0" : "right-0"} ${ouvrirVersHaut ? "bottom-full mb-1" : "top-full mt-1"}`} ${
-            enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
-          }`}
-        >
+    <FlottantAncre
+      ancreRef={ref}
+      innerRef={menuRef}
+      role="menu"
+      cotes={COTES_MENU}
+      alignement="fin"
+      className={`max-w-[min(16rem,85vw)] min-w-[10rem] rounded-lg border p-1 ${
+        contraste
+          ? "border-dj-bordure-forte bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+          : "border-dj-bordure bg-dj-surface-haute shadow-lg"
+      } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
+    >
           {actions.map((a) => (
             <button
               key={a.cle}
@@ -153,7 +104,7 @@ export function MenuActionsCarte({
               <span className="min-w-0 flex-1 truncate">{a.label}</span>
             </button>
           ))}
-        </div>
+    </FlottantAncre>
   );
 
   if (actions.length === 0) return null;
@@ -179,9 +130,7 @@ export function MenuActionsCarte({
         {declencheur ?? <MoreVertical size={16} />}
       </button>
 
-      {(ouvert || enSortie) && portail && typeof document !== "undefined"
-        ? createPortal(panneau(), document.body)
-        : (ouvert || enSortie) && panneau()}
+      {(ouvert || enSortie) && panneau()}
     </div>
   );
 }

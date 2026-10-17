@@ -103,6 +103,7 @@ export function PanneauFlottant({
       onClick={onFerme}
     >
       <div
+        data-contenant-flottant=""
         onClick={(e) => e.stopPropagation()}
         className={`flex w-full ${
           pleine ? "max-w-6xl max-h-[94vh]" : large ? "max-w-4xl max-h-[88vh]" : "max-w-2xl max-h-[88vh]"

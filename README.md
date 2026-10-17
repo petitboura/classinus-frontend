@@ -77,7 +77,9 @@ components/
     BarreOngletsNative.tsx  vraie barre d'onglets système (plugin Capgo, pas une barre CSS/React) :
                              Bibliothèque, Contrôle de session, Chat (au milieu), Notes, Personnaliser
                              Clovis ; masquée automatiquement pendant le chat plein écran
-    BarreOngletsWeb.tsx     équivalent affiché quand l'app tourne dans un navigateur mobile classique
+    BarreOngletsWeb.tsx     équivalent affiché quand l'app tourne dans un navigateur mobile classique ;
+                            elle descend hors de l'écran quand le clavier s'ouvre au lieu de remonter au
+                            dessus de lui (lib/useClavierOuvert.ts, partagé avec le canal en direct)
     MenuHamburgerNatif.tsx  menu "Plus" en natif : bouton haut gauche (icône 3 barres décroissantes) +
                             panneau flottant, reprend le contenu de l'ancien onglet Plus
     MenuHamburgerWeb.tsx    même menu, variante web
@@ -334,6 +336,7 @@ l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un men
 gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut
 sous forme de pastilles (`OngletsLiens` dans `components/OngletsSegment.tsx`).
 Les deux se branchent via la prop `groupe` de `components/SectionPage.tsx`.
+La ligne du titre (avec le retour et le « i ») et, sur téléphone, les pastilles restent en place quand la page défile.
 Bibliothèque : la liste est dans `lib/sectionsBibliotheque.tsx`, les adresses dans
 `lib/routesBibliotheque.ts`. Bureau : `lib/sectionsBureau.tsx` et `lib/routesBureau.ts`. Concentration :
 `lib/sectionsConcentration.tsx` et `lib/routesConcentration.ts`. Personnaliser Clovis :
