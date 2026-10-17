@@ -626,7 +626,7 @@ select:focus-visible {
    titres, éléments de liste sans sous-liste), jamais les blocs de code. Les
    paragraphes à l'intérieur d'une liste ne sont pas floutés une seconde fois. */
 :root {
-  --dj-flou-texte: 0.4px;
+  --dj-flou-texte: 0.25px;
 }
 .dj-markdown :is(p, h1, h2, h3, h4, li:not(:has(ul, ol))) {
   filter: blur(var(--dj-flou-texte));
