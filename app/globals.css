@@ -620,3 +620,17 @@ select:focus-visible {
     clip-path: inset(0 0% 0 0);
   }
 }
+
+/* Texte des réponses de Classinus : léger flou permanent. L'intensité se règle
+   avec la variable dj-flou-texte. Seuls les textes sont touchés (paragraphes,
+   titres, éléments de liste sans sous-liste), jamais les blocs de code. Les
+   paragraphes à l'intérieur d'une liste ne sont pas floutés une seconde fois. */
+:root {
+  --dj-flou-texte: 0.4px;
+}
+.dj-markdown :is(p, h1, h2, h3, h4, li:not(:has(ul, ol))) {
+  filter: blur(var(--dj-flou-texte));
+}
+.dj-markdown li > p {
+  filter: none;
+}
