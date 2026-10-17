@@ -79,6 +79,7 @@ function LecteurYoutubeInline({ idVideo, onFermer }: { idVideo: string; onFermer
         title="Lecteur YouTube"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
         className="h-full w-full"
       />
       <button

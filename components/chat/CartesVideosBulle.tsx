@@ -40,6 +40,7 @@ function LecteurSurPlace({ idVideo, titre, onFermer }: { idVideo: string; titre:
         title={titre}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
         className="h-full w-full"
       />
       <button

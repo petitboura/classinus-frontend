@@ -25,6 +25,7 @@
     "test:zones-crayon": "node tests/verifier-zones-crayon.mjs",
     "test:phrase-crayon": "node tests/verifier-phrase-crayon.mjs",
     "test:traits-crayon": "node tests/verifier-traits-crayon.mjs",
+    "test:lecteur-youtube": "node tests/verifier-lecteur-youtube.mjs",
     "postinstall": "node scripts/appliquer-correctif-lector.mjs"
   },
   "dependencies": {

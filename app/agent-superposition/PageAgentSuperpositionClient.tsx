@@ -205,11 +205,24 @@ export default function PageAgentSuperposition() {
       if (estZoneDeTexte(e.relatedTarget instanceof Element ? e.relatedTarget : null)) return;
       definirSaisieTexteSuperposition(false);
     }
+    // Apres chaque clic (17/10/2026, demande de Bourama) : sur n'importe quel element de la
+    // superposition (Envoyer, bouton, bulle, fond), la fenetre du dessous reprend la main des
+    // que l'etudiant n'est plus en train d'ecrire. Filet de securite pour les cas ou le focus
+    // du texte ne bouge pas (bouton qui garde le champ), ou ou l'etat "ecriture" est reste
+    // allume sans champ actif. Tant qu'un champ de texte a le focus, rien ne change : la
+    // frappe reste immediate a l'ouverture de la zone d'ecriture.
+    function surRelacheClic() {
+      const actif = document.activeElement;
+      if (estZoneDeTexte(actif instanceof Element ? actif : null)) return;
+      definirSaisieTexteSuperposition(false);
+    }
     document.addEventListener("pointerdown", surAppuiTexte, true);
+    document.addEventListener("pointerup", surRelacheClic, true);
     document.addEventListener("focusin", surFocusTexte, true);
     document.addEventListener("focusout", surPerteFocusTexte, true);
     return () => {
       document.removeEventListener("pointerdown", surAppuiTexte, true);
+      document.removeEventListener("pointerup", surRelacheClic, true);
       document.removeEventListener("focusin", surFocusTexte, true);
       document.removeEventListener("focusout", surPerteFocusTexte, true);
     };
