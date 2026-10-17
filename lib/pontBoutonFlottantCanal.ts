@@ -25,14 +25,17 @@ import {
 } from "./contexteCanalEnDirect";
 import {
   accuserBasculeBouton,
+  accuserTexteBouton,
   boutonFlottantDisponible,
   definirEtatCanalBouton,
   demarrerBoutonFlottant,
   ecouterBasculeBouton,
+  ecouterTexteBouton,
   etatBoutonFlottant,
   reculerAppli,
   signalerBoutonPret,
   type DemandeBasculeBouton,
+  type TexteEcritBouton,
 } from "./boutonFlottantAndroid";
 import { attendreOperationsVision } from "./pontVisionEcranCanal";
 import { textesBoutonFlottant } from "./textesBoutonFlottant";
@@ -100,6 +103,32 @@ async function traiterBascule(demande: DemandeBasculeBouton) {
   }
 }
 
+// Meme risque de doublon que pour l'appui : evenement mis en file puis rejeu a l'ouverture.
+let dernierTexteTraite = "";
+let derniereHeureTexte = 0;
+
+async function traiterTexte(donnees: TexteEcritBouton, envoyerTexte: (texte: string) => void) {
+  // L'accuse d'abord : sans lui le natif garde le texte et lance l'appli au bout de 1,5 seconde.
+  try {
+    await accuserTexteBouton(donnees.numero);
+  } catch (e) {
+    signaler("accuse de reception du texte", e);
+  }
+
+  const texte = donnees.texte.trim();
+  if (!texte) return;
+  const maintenant = Date.now();
+  if (texte === dernierTexteTraite && maintenant - derniereHeureTexte < DELAI_ANTI_DOUBLON_MS) return;
+  dernierTexteTraite = texte;
+  derniereHeureTexte = maintenant;
+
+  // Texte recu pendant le demarrage de l'appli : le canal n'est pas encore monte.
+  if (!(await attendreCondition(canalEnDirectEstPret, ATTENTE_CANAL_PRET_MS))) return;
+  // Le canal a ete coupe entre-temps : le champ du PC n'existe pas non plus canal coupe.
+  if (!canalEnDirectEstActif()) return;
+  envoyerTexte(texte);
+}
+
 async function demarrerParDefaut() {
   try {
     const etat = await etatBoutonFlottant();
@@ -117,8 +146,12 @@ async function demarrerParDefaut() {
   }
 }
 
-/** A appeler une seule fois, depuis initialiserCanalAgentApplicatif. */
-export function initialiserBoutonFlottantCanal() {
+/**
+ * A appeler une seule fois, depuis initialiserCanalAgentApplicatif.
+ * envoyerTexte envoie un message de l'etudiant a Classinus (envoyerMessageEtudiant) :
+ * passe en parametre plutot qu'importe, pour ne pas creer d'import circulaire.
+ */
+export function initialiserBoutonFlottantCanal(envoyerTexte: (texte: string) => void) {
   if (dejaInitialise || typeof window === "undefined" || !boutonFlottantDisponible()) return;
   dejaInitialise = true;
 
@@ -135,6 +168,11 @@ export function initialiserBoutonFlottantCanal() {
   })
     .then(() => signalerBoutonPret())
     .catch((e) => signaler("ecoute des appuis", e));
+
+  // Lot 2 : les messages ecrits dans le champ du bouton Ecrire.
+  ecouterTexteBouton((donnees) => {
+    void traiterTexte(donnees, envoyerTexte);
+  }).catch((e) => signaler("ecoute des textes", e));
 
   void demarrerParDefaut();
 }

@@ -303,15 +303,19 @@ Petit bouton affiché par-dessus toutes les autres applications, même Classinus
 fermé et après un redémarrage du téléphone. Un appui sur le bouton rond bascule
 le canal en direct exactement comme le bouton rond de l'appli. Une fois le canal
 actif, un chevron déplie ou replie le groupe de boutons, qui se replie seul après
-2 secondes sans toucher. Il suit le modèle du groupe du PC et sera complété
-lot par lot. Commun aux deux versions de l'appli (`src/main`), aucune
+2 secondes sans toucher, et un bouton crayon (Écrire, lot 2) ouvre un champ de
+saisie collé en bas de l'écran, au dessus du clavier. Il suit le modèle du groupe
+du PC et sera complété lot par lot. Commun aux deux versions de l'appli (`src/main`), aucune
 accessibilité utilisée.
 
 - Natif : `android/app/src/main/java/com/classinus/app/boutonflottant/`.
   `VueBoutonRond` (un bouton rond : dessin et appui), `GroupeBoutonsFlottant` (le
-  groupe : chevron, bouton d'activation, repli automatique, glissement du groupe
-  entier), `BoutonFlottantManager` (fenêtre de superposition touchable qui suit la
-  taille du groupe, collage au bord, position gardée), `BoutonFlottantService`
+  groupe : chevron, Écrire, bouton d'activation, repli automatique, glissement du
+  groupe entier), `ChampEcritureFlottant` (le champ de saisie d'Écrire, dans sa
+  propre fenêtre posée par dessus : le groupe reste derrière, jamais poussé),
+  `BoutonFlottantManager` (fenêtre de superposition touchable qui suit la
+  taille du groupe, collage au bord, position gardée, fenêtre du champ de
+  saisie), `BoutonFlottantService`
   (service au premier plan de type `specialUse` : porte le bouton et garde
   l'appli en vie pour que la page qui tient la connexion du canal ne soit pas
   gelée), `DemarrageBoutonFlottantReceiver` (retour après redémarrage ou mise à
@@ -323,7 +327,10 @@ accessibilité utilisée.
 - La connexion du canal reste dans la page : le natif ne parle jamais au backend,
   donc pas de clé ni d'adresse à configurer côté Kotlin. Si la page ne répond pas
   à un appui dans les 1,5 secondes (appli fermée, page gelée), l'appli est lancée
-  et l'appui est rejoué dès que la page est prête.
+  et l'appui est rejoué dès que la page est prête. Même principe pour un message
+  écrit dans le champ d'Écrire (événement `texteEcrit`, accusé `accuserTexte`) : le
+  texte est gardé moins d'une minute sur l'appareil et envoyé à Classinus dès que
+  la page est prête, jamais perdu en silence.
 - Affiché par défaut dès que la permission « Afficher par-dessus les autres
   applications » est accordée, sauf si l'étudiant l'a masqué dans les réglages ou
   depuis la notification.

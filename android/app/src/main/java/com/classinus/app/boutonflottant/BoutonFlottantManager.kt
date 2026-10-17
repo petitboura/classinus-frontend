@@ -1,7 +1,8 @@
 // Cree le 13/10/2026, demande Bourama : bouton flottant natif du canal en
 // direct sur Android. Code COMMUN aux deux flavors (src/main).
 // Mis a jour le 17/10/2026 : la fenetre porte maintenant le groupe de boutons
-// (GroupeBoutonsFlottant) et non plus un rond seul.
+// (GroupeBoutonsFlottant) et non plus un rond seul. Lot 2 : une seconde fenetre,
+// posee par dessus, porte le champ de saisie du bouton Ecrire (ChampEcritureFlottant).
 //
 // Gere UNE fenetre de superposition (permission "Afficher par-dessus les
 // autres applications", la meme que les marques de SuperpositionManager) qui
@@ -35,6 +36,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import android.view.inputmethod.InputMethodManager
 
 object BoutonFlottantManager {
 
@@ -46,6 +48,10 @@ object BoutonFlottantManager {
     private var parametres: WindowManager.LayoutParams? = null
     private var animateurCollage: ValueAnimator? = null
 
+    // Lot 2 (Ecrire) : le champ de saisie est dans une SECONDE fenetre, ajoutee apres celle
+    // du groupe, donc posee par dessus. Le groupe reste derriere, a sa place, sans etre pousse.
+    private var champ: ChampEcritureFlottant? = null
+
     // Vrai quand la fenetre est ancree au bord droit : x est alors la distance a ce
     // bord. Faux : ancree au bord gauche, x est la distance au bord gauche. Pendant
     // un glissement x est toujours compte depuis la gauche.
@@ -53,6 +59,9 @@ object BoutonFlottantManager {
 
     /** Appui sur le bouton qui active ou coupe le canal. Branche par le service. */
     var surAppui: (() -> Unit)? = null
+
+    /** Texte ecrit dans le champ de saisie, a transmettre a la page. Branche par le service. */
+    var surTexteEcrit: ((texte: String) -> Unit)? = null
 
     fun estAffiche(): Boolean = vue != null
 
@@ -73,6 +82,7 @@ object BoutonFlottantManager {
         // Invisible au depart : le groupe apparait en fondu juste apres.
         nouvelle.alpha = 0f
         nouvelle.surAppuiActivation = { surAppui?.invoke() }
+        nouvelle.surAppuiEcrire = { basculerChamp() }
         nouvelle.surDeplacement = { dx, dy -> deplacer(dx, dy) }
         nouvelle.surRelachement = { coller() }
 
@@ -94,6 +104,7 @@ object BoutonFlottantManager {
     fun retirer() {
         animateurCollage?.cancel()
         animateurCollage = null
+        retirerChampImmediatement()
         val aRetirer = vue ?: return
         vue = null
         parametres = null
@@ -110,7 +121,69 @@ object BoutonFlottantManager {
 
     /** Dessine le groupe selon l'etat du canal en direct. */
     fun definirEtatCanal(actif: Boolean) {
+        // Canal coupe : plus rien a ecrire a Classinus, le champ se referme (comme le panneau du PC).
+        if (!actif) fermerChamp()
         vue?.definirActif(actif)
+    }
+
+    /** Ouvre le champ de saisie s'il est ferme, le ferme sinon. */
+    private fun basculerChamp() {
+        if (champ != null) fermerChamp() else ouvrirChamp()
+    }
+
+    private fun ouvrirChamp() {
+        val c = contexte ?: return
+        if (champ != null || vue == null) return
+        val nouveau = ChampEcritureFlottant(c)
+        nouveau.surEnvoi = { texte ->
+            surTexteEcrit?.invoke(texte)
+            // Le clavier cacherait l'ecran : apres l'envoi le champ se referme.
+            fermerChamp()
+        }
+        nouveau.surFermeture = { fermerChamp() }
+        try {
+            c.getSystemService(WindowManager::class.java).addView(nouveau, creerParametresChamp())
+        } catch (e: Exception) {
+            return
+        }
+        champ = nouveau
+        vue?.definirChampOuvert(true)
+        nouveau.apparaitre()
+        // Le clavier s'ouvre sur le champ des que la fenetre a le focus.
+        nouveau.post {
+            val saisie = nouveau.champDeSaisie()
+            saisie.requestFocus()
+            c.getSystemService(InputMethodManager::class.java)?.showSoftInput(saisie, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    /** Referme le champ en fondu. Sans effet s'il est deja ferme. */
+    private fun fermerChamp() {
+        val aRetirer = champ ?: return
+        champ = null
+        vue?.definirChampOuvert(false)
+        val c = contexte
+        c?.getSystemService(InputMethodManager::class.java)
+            ?.hideSoftInputFromWindow(aRetirer.windowToken, 0)
+        aRetirer.disparaitre {
+            try {
+                c?.getSystemService(WindowManager::class.java)?.removeView(aRetirer)
+            } catch (e: Exception) {
+                // Deja retire : rien a faire.
+            }
+        }
+    }
+
+    /** Retrait sans animation (arret du service) : la fenetre ne doit jamais survivre au gestionnaire. */
+    private fun retirerChampImmediatement() {
+        val aRetirer = champ ?: return
+        champ = null
+        aRetirer.animate().cancel()
+        try {
+            contexte?.getSystemService(WindowManager::class.java)?.removeView(aRetirer)
+        } catch (e: Exception) {
+            // Deja retire : rien a faire.
+        }
     }
 
     /** A rappeler apres une rotation ou un changement de taille d'ecran. */
@@ -224,6 +297,28 @@ object BoutonFlottantManager {
                 }
             }
             start()
+        }
+    }
+
+    /**
+     * Fenetre du champ de saisie : pleine largeur, collee en bas, au dessus du clavier.
+     * Contrairement a celle du groupe, elle prend le focus (sinon le clavier ne
+     * s'ouvrirait pas) et se redimensionne avec le clavier pour rester juste au dessus.
+     */
+    private fun creerParametresChamp(): WindowManager.LayoutParams {
+        val drapeaux = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        return WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            drapeaux,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.LEFT
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+            title = "ClassinusChampEcriture"
         }
     }
 

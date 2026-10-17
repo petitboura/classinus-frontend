@@ -924,7 +924,7 @@ export function initialiserCanalAgentApplicatif() {
   // Android : le canal en direct démarre et arrête la vision de l'écran.
   initialiserVisionEcranCanal();
   // Android : le bouton flottant bascule le canal depuis n'importe quelle appli.
-  initialiserBoutonFlottantCanal();
+  initialiserBoutonFlottantCanal(envoyerMessageEtudiant);
 
   // Langage, fichier ou plein écran de l'éditeur de code modifiés : repousser
   // l'état sans attendre un autre changement de l'écran.

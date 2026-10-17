@@ -26,4 +26,10 @@
     <!-- 17/10/2026 : chevron du groupe flottant (libelles repris du bouton du PC). -->
     <string name="bouton_flottant_chevron_replier">Replier les boutons du canal</string>
     <string name="bouton_flottant_chevron_deplier">Déplier les boutons du canal</string>
+    <!-- 17/10/2026, lot 2 : bouton Ecrire et champ de saisie flottant (libelles repris du PC). -->
+    <string name="bouton_flottant_ecrire_ouvrir">Écrire un message</string>
+    <string name="bouton_flottant_ecrire_fermer">Fermer la zone d\'écriture</string>
+    <string name="bouton_flottant_champ_indication">Dis quelque chose à Classinus...</string>
+    <string name="bouton_flottant_champ_description">Message pour Classinus pendant qu\'il travaille</string>
+    <string name="bouton_flottant_champ_envoyer">Envoyer le message</string>
 </resources>

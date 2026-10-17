@@ -2,10 +2,12 @@
 // direct sur Android. Code COMMUN aux deux flavors (src/main).
 //
 // Un bouton rond du groupe flottant, dessine comme les boutons ronds du bouton
-// du PC : un rond avec une icone au centre. Trois icones pour l'instant : le
+// du PC : un rond avec une icone au centre. Quatre icones pour l'instant : le
 // symbole "radio" (un point et deux arcs de chaque cote) du bouton qui active
-// le canal, et le chevron (vers le haut ou vers le bas) qui deplie et replie le
-// groupe. Au repos le rond est sombre, canal actif il est or. Le passage d'un
+// le canal, le chevron (vers le haut ou vers le bas) qui deplie et replie le
+// groupe, le crayon du bouton Ecrire et la fleche d'envoi du champ de saisie.
+// Au repos le rond est sombre, actif (canal en direct, ou champ Ecrire ouvert)
+// il est or. Le passage d'un
 // etat a l'autre est anime (jamais de changement brut).
 //
 // Cette vue ne sait RIEN du canal ni du groupe : elle signale seulement un appui
@@ -30,7 +32,7 @@ import com.classinus.app.R
 
 class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
 
-    enum class Icone { RADIO, CHEVRON_HAUT, CHEVRON_BAS }
+    enum class Icone { RADIO, CHEVRON_HAUT, CHEVRON_BAS, CRAYON, ENVOYER }
 
     companion object {
         const val TAILLE_DP = 52f
@@ -75,6 +77,7 @@ class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
     private val pinceauPoint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val zoneArc = RectF()
     private val traceChevron = Path()
+    private val traceIcone = Path()
     private val evaluateurCouleur = ArgbEvaluator()
 
     // 0 = repos, 1 = canal actif. Anime entre les deux.
@@ -137,7 +140,34 @@ class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
             Icone.RADIO -> dessinerRadio(canvas, centreX, centreY)
             Icone.CHEVRON_HAUT -> dessinerChevron(canvas, centreX, centreY, versLeHaut = true)
             Icone.CHEVRON_BAS -> dessinerChevron(canvas, centreX, centreY, versLeHaut = false)
+            Icone.CRAYON -> dessinerCrayon(canvas, centreX, centreY)
+            Icone.ENVOYER -> dessinerFlecheEnvoi(canvas, centreX, centreY)
         }
+    }
+
+    /** Crayon (comme le PenLine du bouton Ecrire du PC) : le corps en biais, sa pointe, et un trait dessous. */
+    private fun dessinerCrayon(canvas: Canvas, centreX: Float, centreY: Float) {
+        val d = densite
+        traceIcone.reset()
+        traceIcone.moveTo(centreX + 4.5f * d, centreY - 7.5f * d)
+        traceIcone.lineTo(centreX + 7.5f * d, centreY - 4.5f * d)
+        traceIcone.lineTo(centreX - 2f * d, centreY + 5f * d)
+        traceIcone.lineTo(centreX - 6.5f * d, centreY + 6.5f * d)
+        traceIcone.lineTo(centreX - 5f * d, centreY + 2f * d)
+        traceIcone.close()
+        canvas.drawPath(traceIcone, pinceauTrait)
+        canvas.drawLine(centreX + 1.5f * d, centreY + 8f * d, centreX + 8f * d, centreY + 8f * d, pinceauTrait)
+    }
+
+    /** Fleche vers le haut (comme le ArrowUp du bouton d'envoi du PC). */
+    private fun dessinerFlecheEnvoi(canvas: Canvas, centreX: Float, centreY: Float) {
+        val d = densite
+        canvas.drawLine(centreX, centreY + 7f * d, centreX, centreY - 7f * d, pinceauTrait)
+        traceIcone.reset()
+        traceIcone.moveTo(centreX - 5.5f * d, centreY - 1.5f * d)
+        traceIcone.lineTo(centreX, centreY - 7f * d)
+        traceIcone.lineTo(centreX + 5.5f * d, centreY - 1.5f * d)
+        canvas.drawPath(traceIcone, pinceauTrait)
     }
 
     /** Symbole radio : un point au centre, deux arcs de chaque cote. */

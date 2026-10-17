@@ -16,11 +16,14 @@
 //   signalerPret()            : la page ecoute les appuis
 //   accuserBascule({numero})  : la page a pris en compte un appui
 //   reculerAppli()            : renvoie l'appli en arriere-plan (retour a l'appli d'avant)
+//   accuserTexte({numero})    : la page a recu un texte ecrit dans le champ Ecrire (lot 2)
 //
-// Evenement vers le JS :
+// Evenements vers le JS :
 //   basculeDemande {numero, reculerApres} : l'eleve a touche le bouton.
 //   reculerApres est vrai si l'appli n'etait pas a l'ecran : une fois le canal
 //   bascule, la page doit rendre la main a l'appli d'avant.
+//   texteEcrit {numero, texte} : l'eleve a envoye un message depuis le champ du
+//   bouton Ecrire. La page l'envoie a Classinus comme le champ du PC.
 //
 // Si la page ne repond pas dans les 1,5 secondes (WebView gelee ou rechargee,
 // appli fermee), l'appli est lancee et la bascule est rejouee des que la page
@@ -76,8 +79,36 @@ class BoutonFlottantPlugin : Plugin() {
             }, DELAI_ACCUSE_MS)
         }
 
-        private fun lancerAppli(context: Context) {
-            PreferencesBoutonFlottant.definirBasculeEnAttente(context, true)
+        @Volatile
+        private var dernierNumeroTexteAccuse = 0
+        private var numeroTexte = 0
+
+        /**
+         * Texte ecrit dans le champ du bouton Ecrire (lot 2). Thread principal. Meme principe
+         * que l'appui : si la page ecoute on le lui transmet et on attend son accuse ; sinon,
+         * ou sans accuse, le texte est garde et l'appli est lancee (sans basculer le canal),
+         * la page le recoit des qu'elle est prete. Le texte n'est jamais perdu en silence.
+         */
+        fun demanderEnvoiTexte(context: Context, texte: String) {
+            val app = context.applicationContext
+            val plugin = instance
+            if (plugin == null || !plugin.pageALEcoute) {
+                PreferencesBoutonFlottant.definirTexteEnAttente(app, texte)
+                lancerAppli(app, avecBascule = false)
+                return
+            }
+            val numero = ++numeroTexte
+            plugin.envoyerTexte(numero, texte)
+            principal.postDelayed({
+                if (dernierNumeroTexteAccuse < numero) {
+                    PreferencesBoutonFlottant.definirTexteEnAttente(app, texte)
+                    lancerAppli(app, avecBascule = false)
+                }
+            }, DELAI_ACCUSE_MS)
+        }
+
+        private fun lancerAppli(context: Context, avecBascule: Boolean = true) {
+            if (avecBascule) PreferencesBoutonFlottant.definirBasculeEnAttente(context, true)
             val intention = Intent(context, MainActivity::class.java).addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
             )
@@ -85,7 +116,7 @@ class BoutonFlottantPlugin : Plugin() {
                 context.startActivity(intention)
             } catch (e: Exception) {
                 // Lancement refuse par le systeme : on n'invente pas une bascule pour plus tard.
-                PreferencesBoutonFlottant.definirBasculeEnAttente(context, false)
+                if (avecBascule) PreferencesBoutonFlottant.definirBasculeEnAttente(context, false)
                 Log.w("BoutonFlottant", "Lancement de l'appli refuse par le systeme.", e)
             }
         }
@@ -104,6 +135,7 @@ class BoutonFlottantPlugin : Plugin() {
     override fun handleOnResume() {
         appliVisible = true
         rejouerBasculeEnAttente()
+        rejouerTexteEnAttente()
     }
 
     override fun handleOnPause() {
@@ -123,6 +155,21 @@ class BoutonFlottantPlugin : Plugin() {
         evenement.put("numero", numero)
         evenement.put("reculerApres", reculerApres)
         notifyListeners("basculeDemande", evenement)
+    }
+
+    private fun envoyerTexte(numero: Int, texte: String) {
+        val evenement = JSObject()
+        evenement.put("numero", numero)
+        evenement.put("texte", texte)
+        notifyListeners("texteEcrit", evenement)
+    }
+
+    /** Rejoue un texte ecrit pendant que la page ne pouvait pas le recevoir. */
+    private fun rejouerTexteEnAttente() {
+        if (!pageALEcoute) return
+        val texte = PreferencesBoutonFlottant.prendreTexteEnAttente(context) ?: return
+        // Numero 0 : pas d'accuse a attendre, l'appli est deja a l'ecran.
+        envoyerTexte(0, texte)
     }
 
     /** Rejoue un appui fait pendant que la page ne pouvait pas repondre. */
@@ -191,6 +238,16 @@ class BoutonFlottantPlugin : Plugin() {
         call.resolve()
         // Appui fait appli fermee : l'appli vient de se lancer, on le rejoue maintenant.
         rejouerBasculeEnAttente()
+        rejouerTexteEnAttente()
+    }
+
+    @PluginMethod
+    fun accuserTexte(call: PluginCall) {
+        val numero = call.getInt("numero") ?: 0
+        if (numero > dernierNumeroTexteAccuse) dernierNumeroTexteAccuse = numero
+        // La page a recu le texte : aucun rejeu a prevoir.
+        PreferencesBoutonFlottant.effacerTexteEnAttente(context)
+        call.resolve()
     }
 
     @PluginMethod

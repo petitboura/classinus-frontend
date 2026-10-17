@@ -10,4 +10,10 @@
     <color name="bouton_flottant_actif_fond">#D9A438</color>
     <color name="bouton_flottant_actif_trait">#1A0D02</color>
     <color name="bouton_flottant_actif_contour">#F0C56A</color>
+    <!-- 17/10/2026, lot 2 (Ecrire) : champ de saisie flottant, meme surface sombre
+         que le repos du bouton, texte clair, indication discrete. -->
+    <color name="bouton_flottant_champ_fond">#F21A1714</color>
+    <color name="bouton_flottant_champ_contour">#4D4638</color>
+    <color name="bouton_flottant_champ_texte">#F2EDE3</color>
+    <color name="bouton_flottant_champ_indication">#8E8576</color>
 </resources>

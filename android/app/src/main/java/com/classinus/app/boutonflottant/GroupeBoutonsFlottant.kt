@@ -3,11 +3,13 @@
 //
 // Le groupe de boutons flottant, construit sur le modele du groupe du PC
 // (components/ControlesInteractionCanal.tsx). Il tient dans UNE seule fenetre de
-// superposition, posee par BoutonFlottantManager. Pour l'instant sa ligne du bas
-// porte le chevron puis le bouton qui active le canal, comme sur le PC :
+// superposition, posee par BoutonFlottantManager. Pour l'instant sa ligne porte le
+// chevron, le crayon Ecrire (lot 2) puis le bouton qui active le canal, comme sur le PC :
 //   - canal eteint : seul le bouton d'activation est visible ;
-//   - canal actif, groupe deplie : le chevron (qui replie) et le bouton d'activation ;
-//   - canal actif, groupe replie : seul le chevron (qui deplie) reste visible.
+//   - canal actif, groupe deplie : le chevron (qui replie), Ecrire et le bouton d'activation ;
+//   - canal actif, groupe replie : le chevron (qui deplie) et Ecrire restent visibles.
+// Ecrire n'agrandit jamais ce groupe : le champ de saisie vit dans une autre fenetre,
+// posee par dessus (voir ChampEcritureFlottant), et le groupe reste derriere lui.
 // Le groupe se deplie des que le canal devient actif, puis se replie seul apres
 // DELAI_REPLI_AUTO_MS sans aucun toucher. Les boutons apparaissent et disparaissent
 // en fondu avec un leger zoom (jamais de changement brut).
@@ -47,6 +49,9 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
     /** Appui sur le bouton qui active ou coupe le canal. */
     var surAppuiActivation: (() -> Unit)? = null
 
+    /** Appui sur le bouton Ecrire (ouvre ou ferme le champ de saisie). */
+    var surAppuiEcrire: (() -> Unit)? = null
+
     /** Glissement en cours : deplacement en pixels depuis le dernier evenement. */
     var surDeplacement: ((dx: Float, dy: Float) -> Unit)? = null
 
@@ -63,10 +68,13 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
 
     private val boutonChevron = VueBoutonRond(context, VueBoutonRond.Icone.CHEVRON_BAS)
     private val boutonActivation = VueBoutonRond(context, VueBoutonRond.Icone.RADIO)
+    private val boutonEcrire = VueBoutonRond(context, VueBoutonRond.Icone.CRAYON)
     private val emplacementChevron = creerEmplacement(boutonChevron)
+    private val emplacementEcrire = creerEmplacement(boutonEcrire)
     private val emplacementActivation = creerEmplacement(boutonActivation)
 
     private var canalActif = false
+    private var champOuvert = false
     private var groupeOuvert = true
     private var toucheEnCours = false
     private var glissement = false
@@ -94,13 +102,26 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
                 setSize((ESPACE_ENTRE_BOUTONS_DP * densite).toInt(), 1)
             }
             addView(emplacementChevron)
+            addView(emplacementEcrire)
             addView(emplacementActivation)
         }
         addView(ligneBas)
 
         boutonChevron.surAppui = { basculerGroupe() }
+        boutonEcrire.surAppui = { surAppuiEcrire?.invoke() }
         boutonActivation.surAppui = { surAppuiActivation?.invoke() }
+        boutonEcrire.contentDescription = context.getString(R.string.bouton_flottant_ecrire_ouvrir)
         appliquerEtat(animer = false)
+    }
+
+    /** Le crayon passe a l'or quand le champ de saisie est ouvert, comme sur le PC. */
+    fun definirChampOuvert(ouvert: Boolean) {
+        if (ouvert == champOuvert) return
+        champOuvert = ouvert
+        boutonEcrire.definirActif(ouvert)
+        boutonEcrire.contentDescription = context.getString(
+            if (ouvert) R.string.bouton_flottant_ecrire_fermer else R.string.bouton_flottant_ecrire_ouvrir,
+        )
     }
 
     /**
@@ -133,6 +154,8 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
 
     private fun appliquerEtat(animer: Boolean) {
         afficherEmplacement(emplacementChevron, canalActif, animer)
+        // Ecrire reste visible groupe replie, comme sur le PC.
+        afficherEmplacement(emplacementEcrire, canalActif, animer)
         afficherEmplacement(emplacementActivation, !canalActif || groupeOuvert, animer)
         boutonChevron.icone = if (groupeOuvert) VueBoutonRond.Icone.CHEVRON_BAS else VueBoutonRond.Icone.CHEVRON_HAUT
         boutonChevron.contentDescription = context.getString(

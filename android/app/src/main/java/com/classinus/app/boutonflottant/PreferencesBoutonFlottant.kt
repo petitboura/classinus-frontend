@@ -19,6 +19,9 @@ object PreferencesBoutonFlottant {
     // Une bascule demandee mais jamais executee (lancement de l'appli bloque par
     // le systeme) ne doit pas se declencher des heures plus tard a l'improviste.
     private const val VALIDITE_BASCULE_MS = 20_000L
+    private const val CLE_TEXTE_EN_ATTENTE = "texte_en_attente"
+    private const val CLE_TEXTE_EN_ATTENTE_DEPUIS = "texte_en_attente_depuis"
+    private const val VALIDITE_TEXTE_MS = 60_000L
     private const val CLE_COTE_DROIT = "cote_droit"
     private const val CLE_POSITION_VERTICALE = "position_verticale"
     private const val CLE_TITRE = "titre"
@@ -66,6 +69,32 @@ object PreferencesBoutonFlottant {
         prefs(context).edit()
             .putLong(CLE_BASCULE_EN_ATTENTE, if (enAttente) System.currentTimeMillis() else 0L)
             .apply()
+    }
+
+    /**
+     * Texte ecrit dans le champ du bouton Ecrire (lot 2) alors que la page de
+     * l'appli ne pouvait pas le recevoir. Garde moins d'une minute : le JS le lit
+     * des qu'il est pret, une seule fois. Au dela, il est abandonne plutot que
+     * d'arriver a l'improviste longtemps apres.
+     */
+    fun prendreTexteEnAttente(context: Context): String? {
+        val p = prefs(context)
+        val texte = p.getString(CLE_TEXTE_EN_ATTENTE, null)
+        val depuis = p.getLong(CLE_TEXTE_EN_ATTENTE_DEPUIS, 0L)
+        p.edit().remove(CLE_TEXTE_EN_ATTENTE).remove(CLE_TEXTE_EN_ATTENTE_DEPUIS).apply()
+        if (texte.isNullOrBlank() || depuis <= 0L) return null
+        return if (System.currentTimeMillis() - depuis < VALIDITE_TEXTE_MS) texte else null
+    }
+
+    fun definirTexteEnAttente(context: Context, texte: String) {
+        prefs(context).edit()
+            .putString(CLE_TEXTE_EN_ATTENTE, texte)
+            .putLong(CLE_TEXTE_EN_ATTENTE_DEPUIS, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun effacerTexteEnAttente(context: Context) {
+        prefs(context).edit().remove(CLE_TEXTE_EN_ATTENTE).remove(CLE_TEXTE_EN_ATTENTE_DEPUIS).apply()
     }
 
     /**

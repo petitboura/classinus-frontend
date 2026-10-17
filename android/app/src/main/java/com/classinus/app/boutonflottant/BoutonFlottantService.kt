@@ -82,6 +82,7 @@ class BoutonFlottantService : Service() {
         if (!BoutonFlottantPlugin.pageVivante()) PreferencesBoutonFlottant.definirCanalActif(this, false)
 
         BoutonFlottantManager.surAppui = { BoutonFlottantPlugin.demanderBascule(applicationContext) }
+        BoutonFlottantManager.surTexteEcrit = { texte -> BoutonFlottantPlugin.demanderEnvoiTexte(applicationContext, texte) }
         if (!BoutonFlottantManager.afficher(this)) {
             // Permission retiree entre-temps ou fenetre refusee : un service sans
             // bouton ne sert a rien, on s'arrete sans oublier le choix de l'eleve.
@@ -100,6 +101,7 @@ class BoutonFlottantService : Service() {
     override fun onDestroy() {
         actif = false
         BoutonFlottantManager.surAppui = null
+        BoutonFlottantManager.surTexteEcrit = null
         BoutonFlottantManager.retirer()
         super.onDestroy()
     }

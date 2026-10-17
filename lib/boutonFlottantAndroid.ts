@@ -42,6 +42,13 @@ export type DemandeBasculeBouton = {
   reculerApres: boolean;
 };
 
+export type TexteEcritBouton = {
+  /** Numero de l'envoi, a renvoyer a accuserTexte. 0 pour un texte rejoue a l'ouverture de l'appli. */
+  numero: number;
+  /** Message ecrit dans le champ du bouton Ecrire (lot 2), deja nettoye des espaces autour. */
+  texte: string;
+};
+
 export type CodeErreurBoutonFlottant = "PERMISSION_REFUSEE" | "ECHEC";
 
 type PluginBoutonFlottant = {
@@ -51,10 +58,15 @@ type PluginBoutonFlottant = {
   definirEtatCanal(options: { actif: boolean }): Promise<void>;
   signalerPret(): Promise<void>;
   accuserBascule(options: { numero: number }): Promise<void>;
+  accuserTexte(options: { numero: number }): Promise<void>;
   reculerAppli(): Promise<void>;
   addListener(
     evenement: "basculeDemande",
     ecouteur: (demande: DemandeBasculeBouton) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    evenement: "texteEcrit",
+    ecouteur: (texte: TexteEcritBouton) => void,
   ): Promise<PluginListenerHandle>;
 };
 
@@ -101,6 +113,18 @@ export function signalerBoutonPret(): Promise<void> {
 /** Dit au natif que l'appui est pris en compte (sinon il lance l'appli apres 1,5 seconde). */
 export function accuserBasculeBouton(numero: number): Promise<void> {
   return BoutonFlottant.accuserBascule({ numero });
+}
+
+/** Dit au natif que le texte ecrit est recu (sinon il le garde et lance l'appli apres 1,5 seconde). */
+export function accuserTexteBouton(numero: number): Promise<void> {
+  return BoutonFlottant.accuserTexte({ numero });
+}
+
+/** Ecoute les messages ecrits dans le champ du bouton Ecrire. Appeler remove() sur le resultat pour se desabonner. */
+export function ecouterTexteBouton(
+  ecouteur: (texte: TexteEcritBouton) => void,
+): Promise<PluginListenerHandle> {
+  return BoutonFlottant.addListener("texteEcrit", ecouteur);
 }
 
 /** Renvoie l'appli en arriere-plan, l'etudiant retrouve l'application d'avant. */
