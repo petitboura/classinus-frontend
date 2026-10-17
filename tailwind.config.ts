@@ -85,12 +85,13 @@ const config: Config = {
         // Corps des réponses de l'IA uniquement (09/08, façon Claude) --
         // voir commentaire dans app/layout.tsx. Non concerné par le
         // changement de palette/typo UI du 17/08.
-        // 17/10/2026 (appli PC) : si le navigateur ne retrouve pas la variable,
-        // toute la ligne était ignorée et les réponses de l'IA prenaient la police
-        // du texte autour (police simple, comme les messages de l'étudiant). Une
-        // valeur de secours dans la variable garde la police à empattements dans
-        // ce cas.
-        lecture: ["var(--font-lecture, Georgia, serif)", "Georgia", "serif"],
+        // 17/10/2026 (appli PC) : "Classinus Lecture" est la même police
+        // (Source Serif 4) servie par l'application elle-même, voir
+        // app/polices-lecture.css ; elle passe en premier car la police de
+        // next/font n'arrivait pas jusqu'à l'affichage dans l'appli PC. Si la
+        // variable de next/font est introuvable, la valeur de secours dans
+        // var() garde une police à empattements au lieu de la police simple.
+        lecture: ["\"Classinus Lecture\"", "var(--font-lecture, Georgia, serif)", "Georgia", "serif"],
       },
       transitionTimingFunction: {
         // Apparitions (fade-in, entrée d'un message, ouverture d'un

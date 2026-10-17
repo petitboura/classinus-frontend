@@ -1,0 +1,31 @@
+/* Police de lecture (corps des réponses de l'IA) embarquée dans l'application.
+   17/10/2026, appli PC : la police chargée par next/font n'arrivait pas jusqu'à
+   l'affichage (réponses en police simple, puis en police de secours trop fine).
+   Ces fichiers sont servis par l'application elle-même, comme
+   dj-anti-flash-theme.js, donc la politique de sécurité de l'appli PC les laisse
+   passer. Même police (Source Serif 4, latin) et mêmes graisses (400, 500, 600)
+   que celles déclarées dans app/layout.tsx : le rendu est identique sur le site,
+   le mobile natif et le PC. Licence : public/fonts/source-serif-4-LICENSE.txt. */
+@font-face {
+  font-family: "Classinus Lecture";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/source-serif-4-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Classinus Lecture";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/source-serif-4-latin-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Classinus Lecture";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/source-serif-4-latin-600.woff2") format("woff2");
+}

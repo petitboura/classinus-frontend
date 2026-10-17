@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Work_Sans, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import "./polices-lecture.css";
 // KaTeX/MathLive (rendu de formules dans BulleMessage.tsx et
 // EditeurMathsRiche.tsx) : dans djiguigne-frontend ce CSS est scopé à la
 // seule route /agent/[id]/chat (audit vitesse du 01/08, voir globals.css).
