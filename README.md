@@ -405,7 +405,9 @@ fermé et après un redémarrage du téléphone. Un appui sur le bouton rond bas
 le canal en direct exactement comme le bouton rond de l'appli. Une fois le canal
 actif, un chevron déplie ou replie le groupe de boutons, qui se replie seul après
 2 secondes sans toucher, et un bouton crayon (Écrire, lot 2) ouvre un champ de
-saisie collé en bas de l'écran, au dessus du clavier. Il suit le modèle du groupe
+saisie collé en bas de l'écran, au dessus du clavier. Lot 3 : une flèche dorée
+glissable (le curseur de Classinus) et une bulle posée près de sa pointe montrent
+ce que Classinus dit, comme la bulle du PC mais dessinées à la main. Il suit le modèle du groupe
 du PC et sera complété lot par lot. Commun aux deux versions de l'appli (`src/main`), aucune
 accessibilité utilisée.
 
@@ -416,13 +418,21 @@ accessibilité utilisée.
   propre fenêtre posée par dessus : le groupe reste derrière, jamais poussé),
   `BoutonFlottantManager` (fenêtre de superposition touchable qui suit la
   taille du groupe, collage au bord, position gardée, fenêtre du champ de
-  saisie), `BoutonFlottantService`
+  saisie), `CurseurFlottant` (la flèche glissable, appui court = afficher ou
+  masquer la dernière réponse), `BulleReponseFlottante` (la bulle : un petit
+  message ou la réponse, qui défile), `TexteSimplifie` (markdown de la réponse
+  réduit à du texte : titres, gras, listes, code ; le reste est signalé) et
+  `BulleEtCurseurManager` (leurs deux fenêtres : la bulle se place au dessus ou
+  en dessous de la flèche selon la place, dans la zone utilisable de l'écran),
+  `BoutonFlottantService`
   (service au premier plan de type `specialUse` : porte le bouton et garde
   l'appli en vie pour que la page qui tient la connexion du canal ne soit pas
   gelée), `DemarrageBoutonFlottantReceiver` (retour après redémarrage ou mise à
   jour), `BoutonFlottantPlugin` (pont JS) et `PreferencesBoutonFlottant`.
 - Page : `lib/boutonFlottantAndroid.ts` (plugin), `lib/pontBoutonFlottantCanal.ts`
-  (appui, canal, retour à l'appli d'avant), `lib/textesBoutonFlottant.ts` (textes),
+  (appui, canal, retour à l'appli d'avant), `lib/pontBulleReponseAndroid.ts`
+  (recopie l'état de la bulle du PC vers la bulle native, ramène les gestes sur la
+  flèche et la bulle : événement `bulleAction`), `lib/textesBoutonFlottant.ts` (textes),
   `components/ReglageBoutonFlottantAndroid.tsx` (réglage dans Paramètres,
   Préférences).
 - La connexion du canal reste dans la page : le natif ne parle jamais au backend,

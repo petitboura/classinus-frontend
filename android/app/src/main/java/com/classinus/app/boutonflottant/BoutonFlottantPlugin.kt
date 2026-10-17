@@ -17,6 +17,8 @@
 //   accuserBascule({numero})  : la page a pris en compte un appui
 //   reculerAppli()            : renvoie l'appli en arriere-plan (retour a l'appli d'avant)
 //   accuserTexte({numero})    : la page a recu un texte ecrit dans le champ Ecrire (lot 2)
+//   definirBulle({mode, texte, proposerOuvrir}) : montre, met a jour ou ferme la bulle de
+//   Classinus pres de sa fleche (lot 3). mode : "aucune", "information" ou "reponse".
 //
 // Evenements vers le JS :
 //   basculeDemande {numero, reculerApres} : l'eleve a touche le bouton.
@@ -24,6 +26,9 @@
 //   bascule, la page doit rendre la main a l'appli d'avant.
 //   texteEcrit {numero, texte} : l'eleve a envoye un message depuis le champ du
 //   bouton Ecrire. La page l'envoie a Classinus comme le champ du PC.
+//   bulleAction {action} : geste de l'eleve sur la fleche ou la bulle (lot 3). action :
+//   "basculer" (toucher la fleche : rouvrir ou fermer la derniere reponse), "suspendre"
+//   (un doigt sur la reponse : la garder ouverte), "reprendre" (le doigt la quitte).
 //
 // Si la page ne repond pas dans les 1,5 secondes (WebView gelee ou rechargee,
 // appli fermee), l'appli est lancee et la bascule est rejouee des que la page
@@ -107,6 +112,16 @@ class BoutonFlottantPlugin : Plugin() {
             }, DELAI_ACCUSE_MS)
         }
 
+        /** Ouvre l'appli sans toucher au canal (ligne "Ouvrir Classinus" de la bulle). */
+        fun ouvrirAppli(context: Context) {
+            lancerAppli(context.applicationContext, avecBascule = false)
+        }
+
+        /** Geste de l'eleve sur la fleche ou la bulle (lot 3), transmis a la page si elle existe. */
+        fun transmettreActionBulle(action: String) {
+            instance?.envoyerActionBulle(action)
+        }
+
         private fun lancerAppli(context: Context, avecBascule: Boolean = true) {
             if (avecBascule) PreferencesBoutonFlottant.definirBasculeEnAttente(context, true)
             val intention = Intent(context, MainActivity::class.java).addFlags(
@@ -162,6 +177,13 @@ class BoutonFlottantPlugin : Plugin() {
         evenement.put("numero", numero)
         evenement.put("texte", texte)
         notifyListeners("texteEcrit", evenement)
+    }
+
+    private fun envoyerActionBulle(action: String) {
+        if (!pageALEcoute) return
+        val evenement = JSObject()
+        evenement.put("action", action)
+        notifyListeners("bulleAction", evenement)
     }
 
     /** Rejoue un texte ecrit pendant que la page ne pouvait pas le recevoir. */
@@ -229,6 +251,15 @@ class BoutonFlottantPlugin : Plugin() {
         val actif = call.getBoolean("actif") ?: false
         PreferencesBoutonFlottant.definirCanalActif(context, actif)
         principal.post { BoutonFlottantManager.definirEtatCanal(actif) }
+        call.resolve()
+    }
+
+    @PluginMethod
+    fun definirBulle(call: PluginCall) {
+        val mode = call.getString("mode") ?: BulleEtCurseurManager.MODE_AUCUNE
+        val texte = call.getString("texte")
+        val proposerOuvrir = call.getBoolean("proposerOuvrir") ?: false
+        principal.post { BulleEtCurseurManager.definirBulle(mode, texte, proposerOuvrir) }
         call.resolve()
     }
 

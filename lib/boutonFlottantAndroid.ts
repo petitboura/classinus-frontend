@@ -49,6 +49,24 @@ export type TexteEcritBouton = {
   texte: string;
 };
 
+/** Ce que la bulle native montre (lot 3) : rien, une information (petit message) ou la reponse de Classinus. */
+export type ModeBulleNative = "aucune" | "information" | "reponse";
+
+export type EtatBulleNative = {
+  mode: ModeBulleNative;
+  /** Texte a afficher. Pour une reponse, du markdown : le natif le met en forme de facon simplifiee. */
+  texte?: string;
+  /** Vrai si la reponse contient ce que le natif ne sait pas dessiner (images) : la bulle propose d'ouvrir Classinus. */
+  proposerOuvrir?: boolean;
+};
+
+/** Geste de l'etudiant sur la fleche ou la bulle native. */
+export type ActionBulle = "basculer" | "suspendre" | "reprendre";
+
+export type ActionBulleDemandee = {
+  action: ActionBulle;
+};
+
 export type CodeErreurBoutonFlottant = "PERMISSION_REFUSEE" | "ECHEC";
 
 type PluginBoutonFlottant = {
@@ -59,6 +77,7 @@ type PluginBoutonFlottant = {
   signalerPret(): Promise<void>;
   accuserBascule(options: { numero: number }): Promise<void>;
   accuserTexte(options: { numero: number }): Promise<void>;
+  definirBulle(options: EtatBulleNative): Promise<void>;
   reculerAppli(): Promise<void>;
   addListener(
     evenement: "basculeDemande",
@@ -67,6 +86,10 @@ type PluginBoutonFlottant = {
   addListener(
     evenement: "texteEcrit",
     ecouteur: (texte: TexteEcritBouton) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    evenement: "bulleAction",
+    ecouteur: (geste: ActionBulleDemandee) => void,
   ): Promise<PluginListenerHandle>;
 };
 
@@ -125,6 +148,18 @@ export function ecouterTexteBouton(
   ecouteur: (texte: TexteEcritBouton) => void,
 ): Promise<PluginListenerHandle> {
   return BoutonFlottant.addListener("texteEcrit", ecouteur);
+}
+
+/** Dessine la bulle native pres de la fleche de Classinus (sans effet canal coupe). */
+export function definirBulleNative(etat: EtatBulleNative): Promise<void> {
+  return BoutonFlottant.definirBulle(etat);
+}
+
+/** Ecoute les gestes sur la fleche et la bulle natives. Appeler remove() sur le resultat pour se desabonner. */
+export function ecouterActionBulle(
+  ecouteur: (geste: ActionBulleDemandee) => void,
+): Promise<PluginListenerHandle> {
+  return BoutonFlottant.addListener("bulleAction", ecouteur);
 }
 
 /** Renvoie l'appli en arriere-plan, l'etudiant retrouve l'application d'avant. */

@@ -32,4 +32,8 @@
     <string name="bouton_flottant_champ_indication">Dis quelque chose à Classinus...</string>
     <string name="bouton_flottant_champ_description">Message pour Classinus pendant qu\'il travaille</string>
     <string name="bouton_flottant_champ_envoyer">Envoyer le message</string>
+    <!-- 17/10/2026, lot 3 : fleche de Classinus et bulle de reponse. -->
+    <string name="bouton_flottant_curseur_description">Flèche de Classinus. Touche pour afficher ou masquer sa dernière réponse, fais glisser pour la déplacer.</string>
+    <string name="bouton_flottant_bulle_description">Message de Classinus</string>
+    <string name="bouton_flottant_bulle_ouvrir">Ouvrir Classinus pour voir le reste</string>
 </resources>

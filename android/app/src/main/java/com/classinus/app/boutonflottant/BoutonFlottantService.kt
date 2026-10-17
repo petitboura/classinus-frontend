@@ -83,6 +83,9 @@ class BoutonFlottantService : Service() {
 
         BoutonFlottantManager.surAppui = { BoutonFlottantPlugin.demanderBascule(applicationContext) }
         BoutonFlottantManager.surTexteEcrit = { texte -> BoutonFlottantPlugin.demanderEnvoiTexte(applicationContext, texte) }
+        // Lot 3 : gestes sur la fleche et la bulle, remis a la page ; ligne "Ouvrir Classinus" de la bulle.
+        BulleEtCurseurManager.surAction = { action -> BoutonFlottantPlugin.transmettreActionBulle(action) }
+        BulleEtCurseurManager.surOuvrirAppli = { BoutonFlottantPlugin.ouvrirAppli(applicationContext) }
         if (!BoutonFlottantManager.afficher(this)) {
             // Permission retiree entre-temps ou fenetre refusee : un service sans
             // bouton ne sert a rien, on s'arrete sans oublier le choix de l'eleve.
@@ -102,6 +105,8 @@ class BoutonFlottantService : Service() {
         actif = false
         BoutonFlottantManager.surAppui = null
         BoutonFlottantManager.surTexteEcrit = null
+        BulleEtCurseurManager.surAction = null
+        BulleEtCurseurManager.surOuvrirAppli = null
         BoutonFlottantManager.retirer()
         super.onDestroy()
     }

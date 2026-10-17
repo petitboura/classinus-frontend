@@ -37,6 +37,7 @@ import {
   type DemandeBasculeBouton,
   type TexteEcritBouton,
 } from "./boutonFlottantAndroid";
+import { initialiserBulleReponseAndroid } from "./pontBulleReponseAndroid";
 import { attendreOperationsVision } from "./pontVisionEcranCanal";
 import { textesBoutonFlottant } from "./textesBoutonFlottant";
 
@@ -173,6 +174,9 @@ export function initialiserBoutonFlottantCanal(envoyerTexte: (texte: string) => 
   ecouterTexteBouton((donnees) => {
     void traiterTexte(donnees, envoyerTexte);
   }).catch((e) => signaler("ecoute des textes", e));
+
+  // Lot 3 : la bulle de reponse et la fleche de Classinus.
+  initialiserBulleReponseAndroid();
 
   void demarrerParDefaut();
 }

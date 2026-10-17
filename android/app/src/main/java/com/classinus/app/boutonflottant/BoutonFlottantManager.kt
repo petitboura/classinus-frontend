@@ -3,6 +3,8 @@
 // Mis a jour le 17/10/2026 : la fenetre porte maintenant le groupe de boutons
 // (GroupeBoutonsFlottant) et non plus un rond seul. Lot 2 : une seconde fenetre,
 // posee par dessus, porte le champ de saisie du bouton Ecrire (ChampEcritureFlottant).
+// Lot 3 : la fleche et la bulle de reponse vivent dans BulleEtCurseurManager, que ce
+// gestionnaire montre et retire avec le canal.
 //
 // Gere UNE fenetre de superposition (permission "Afficher par-dessus les
 // autres applications", la meme que les marques de SuperpositionManager) qui
@@ -97,6 +99,8 @@ object BoutonFlottantManager {
         parametres = reglages
         // Apparition en fondu : le groupe ne surgit jamais d'un coup.
         nouvelle.apparaitre()
+        // Canal deja actif au demarrage du bouton : la fleche est la aussi.
+        BulleEtCurseurManager.definirCanalActif(c, PreferencesBoutonFlottant.canalActif(c))
         return true
     }
 
@@ -105,6 +109,7 @@ object BoutonFlottantManager {
         animateurCollage?.cancel()
         animateurCollage = null
         retirerChampImmediatement()
+        BulleEtCurseurManager.retirerTout()
         val aRetirer = vue ?: return
         vue = null
         parametres = null
@@ -124,6 +129,9 @@ object BoutonFlottantManager {
         // Canal coupe : plus rien a ecrire a Classinus, le champ se referme (comme le panneau du PC).
         if (!actif) fermerChamp()
         vue?.definirActif(actif)
+        // La fleche de Classinus et sa bulle suivent le canal : visibles tant qu'il est actif.
+        val c = contexte
+        if (c != null && vue != null) BulleEtCurseurManager.definirCanalActif(c, actif)
     }
 
     /** Ouvre le champ de saisie s'il est ferme, le ferme sinon. */
@@ -200,6 +208,7 @@ object BoutonFlottantManager {
         } catch (e: Exception) {
             // La fenetre a disparu entre-temps : rien a replacer.
         }
+        BulleEtCurseurManager.replacer()
     }
 
     private fun marge(): Int = (MARGE_BORD_DP * (contexte?.resources?.displayMetrics?.density ?: 1f)).toInt()

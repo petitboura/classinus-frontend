@@ -178,11 +178,42 @@ let canalGlobal: ValeurCanalEnDirect | null = null;
 let dernierEtatActifConnu = false;
 const ecouteursActivation = new Set<(actif: boolean) => void>();
 
+// Bulle de reponse du bouton flottant Android (17/10/2026, demande Bourama, lot 3) : la bulle
+// native dessine ce que dessine la bulle du PC, a partir du meme etat. Les modules hors React
+// sont prevenus quand l'un des trois elements de la bulle change (voir
+// lib/pontBulleReponseAndroid.ts). `actif` en fait partie : canal coupe, plus de bulle.
+export type EtatBulleCanal = {
+  actif: boolean;
+  dernierTexte: string | null;
+  reponseVisible: boolean;
+  derniereReponse: ReponseCanal | null;
+};
+let signatureBulleConnue = "";
+const ecouteursEtatBulle = new Set<(etat: EtatBulleCanal) => void>();
+
+export function abonnerEtatBulleCanal(ecouteur: (etat: EtatBulleCanal) => void): () => void {
+  ecouteursEtatBulle.add(ecouteur);
+  return () => {
+    ecouteursEtatBulle.delete(ecouteur);
+  };
+}
+
 export function enregistrerCanalEnDirect(valeur: ValeurCanalEnDirect) {
   canalGlobal = valeur;
   if (valeur.actif !== dernierEtatActifConnu) {
     dernierEtatActifConnu = valeur.actif;
     ecouteursActivation.forEach((ecouteur) => ecouteur(valeur.actif));
+  }
+  const signatureBulle = `${valeur.actif}|${valeur.reponseVisible}|${valeur.derniereReponse?.id ?? ""}|${valeur.dernierTexte ?? ""}`;
+  if (signatureBulle !== signatureBulleConnue) {
+    signatureBulleConnue = signatureBulle;
+    const etat: EtatBulleCanal = {
+      actif: valeur.actif,
+      dernierTexte: valeur.dernierTexte,
+      reponseVisible: valeur.reponseVisible,
+      derniereReponse: valeur.derniereReponse,
+    };
+    ecouteursEtatBulle.forEach((ecouteur) => ecouteur(etat));
   }
 }
 
@@ -264,6 +295,20 @@ export function afficherTexteDepuisAgent(texte: string, options?: OptionsAffiche
 
 export function afficherReponseDepuisAgent(reponse: Omit<ReponseCanal, "id">) {
   canalGlobal?.afficherReponse(reponse);
+}
+
+// Gestes de l'etudiant sur la bulle native du bouton flottant Android (lot 3) : memes actions
+// que le curseur et la bulle du PC. Sans effet si aucun Provider n'est monte.
+export function basculerReponseDepuisAgent() {
+  canalGlobal?.basculerReponse();
+}
+
+export function suspendreMasquageReponseDepuisAgent() {
+  canalGlobal?.suspendreMasquageReponse();
+}
+
+export function reprendreMasquageReponseDepuisAgent() {
+  canalGlobal?.reprendreMasquageReponse();
 }
 
 /**

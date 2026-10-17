@@ -16,4 +16,7 @@
     <color name="bouton_flottant_champ_contour">#4D4638</color>
     <color name="bouton_flottant_champ_texte">#F2EDE3</color>
     <color name="bouton_flottant_champ_indication">#8E8576</color>
+    <!-- 17/10/2026, lot 3 (bulle de reponse) : fond des blocs de code dans la bulle, un voile
+         clair sur la surface sombre. -->
+    <color name="bouton_flottant_bulle_code_fond">#33FFFFFF</color>
 </resources>
