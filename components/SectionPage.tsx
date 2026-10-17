@@ -90,7 +90,7 @@ export function useInfoSection(id: string | null) {
 // dessous ne se voie pas. L'ombre pleine sans flou, décalée vers le haut,
 // couvre la bande au dessus de la ligne (encoche, barre d'état) où le
 // contenu passerait sinon.
-const ENTETE_FIXE = "sticky top-0 z-30 bg-dj-fond";
+const ENTETE_FIXE = "sticky top-[calc((var(--safe-top,0px)_+_var(--dj-hamburger-espace))_*_-1)] z-30 bg-dj-fond";
 
 function TitreSection({ title, infoRubriqueId, retour }: { title: string; infoRubriqueId: string | null; retour?: string }) {
   const rubrique = infoRubriqueId ? trouverRubriqueAide(infoRubriqueId) : undefined;
@@ -178,7 +178,7 @@ export function SectionPage({
       <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
         {/* Les pastilles restent sous le titre pendant le défilement : la
             ligne du titre fait 2rem de haut (h-8). */}
-        <div className="sticky top-[calc(2.5rem+var(--safe-top,0px))] z-30 -mb-2 bg-dj-fond md:hidden">
+        <div className="sticky top-[calc(2.5rem_-_var(--dj-hamburger-espace))] z-30 -mb-2 bg-dj-fond md:hidden">
           <OngletsLiens
             ariaLabel={groupe.label}
             onglets={groupe.soeurs.map((s) => ({ href: s.href, libelle: s.label }))}
