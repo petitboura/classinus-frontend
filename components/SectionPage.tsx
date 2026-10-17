@@ -90,13 +90,12 @@ export function useInfoSection(id: string | null) {
 // dessous ne se voie pas. L'ombre pleine sans flou, décalée vers le haut,
 // couvre la bande au dessus de la ligne (encoche, barre d'état) où le
 // contenu passerait sinon.
-const ENTETE_FIXE =
-  "sticky top-[calc(0.5rem+var(--safe-top,0px))] z-30 bg-dj-fond shadow-[0_calc(-1_*_(0.5rem_+_var(--safe-top,0px)))_0_0_var(--dj-fond)]";
+const ENTETE_FIXE = "sticky top-0 z-30 bg-dj-fond";
 
 function TitreSection({ title, infoRubriqueId, retour }: { title: string; infoRubriqueId: string | null; retour?: string }) {
   const rubrique = infoRubriqueId ? trouverRubriqueAide(infoRubriqueId) : undefined;
   return (
-    <div className={`mt-[calc(0.5rem_-_var(--dj-hamburger-espace))] flex h-8 items-center gap-1.5 pl-8 pr-20 md:pl-0 ${ENTETE_FIXE}`}>
+    <div className={`-mt-[calc(var(--safe-top,0px)_+_var(--dj-hamburger-espace))] flex h-[calc(2.5rem_+_var(--safe-top,0px))] items-center gap-1.5 pt-[calc(0.5rem_+_var(--safe-top,0px))] pl-8 pr-20 md:pl-0 ${ENTETE_FIXE}`}>
       {retour && <BoutonRetour href={retour} padding="p-1" className="-ml-1" />}
       <h1 className="truncate font-display text-xl font-bold text-dj-texte">{title}</h1>
       {rubrique && (
