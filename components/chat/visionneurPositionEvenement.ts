@@ -24,6 +24,10 @@ export type DetailOuverturePosition = {
   // site + bouton explicite pour sortir de l'app (voir LinkPreview.tsx,
   // même principe déjà en place pour les liens classiques du chat).
   typeMime?: string | null;
+  // 12/10/2026 : pour un lien de site, ce que le modèle a écrit (titre du lien et
+  // description) afin que l'aperçu les montre comme la carte du chat.
+  titreDuModele?: string;
+  descriptionLien?: string;
 };
 
 export const EVENEMENT_OUVRIR_POSITION = "clovis:ouvrir-position";

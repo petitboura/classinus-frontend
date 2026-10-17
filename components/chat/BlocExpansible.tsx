@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState, ReactNode } from "react";
-import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Check, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
 import { PleinEcranApercu } from "./PleinEcranApercu";
 import { BlocLarge } from "./BlocLarge";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
+import {
+  BarreProgressionTelechargement,
+  IconeTelechargement,
+  LibelleTelechargement,
+  MessageEchecTelechargement,
+  classeEtatTelechargement,
+} from "@/components/EtatTelechargement";
+import { useEtatTelechargement } from "@/lib/etatTelechargements";
 import { copierVersBibliothequePersonnelle } from "@/lib/api";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 import { GardeApercu } from "./GardeApercu";
@@ -42,6 +50,7 @@ export function BlocExpansible({
   texteACopier,
   hrefTelechargement,
   idBibliothequePublique,
+  surCopie,
   enfant,
   chargement,
   onPremiereOuverture,
@@ -61,6 +70,11 @@ export function BlocExpansible({
   // téléchargement réel, via TelechargerCopierModal, au lieu du
   // téléchargement direct.
   idBibliothequePublique?: string | null;
+  // 10/10/2026, demande Bourama : action "ajouter à ma bibliothèque" pour un
+  // fichier de site externe (voir FichierChip.tsx). Prioritaire sur
+  // idBibliothequePublique. Fait apparaître le même bouton unique
+  // Télécharger avec le choix télécharger / bibliothèque / les deux.
+  surCopie?: () => Promise<void>;
   enfant: ReactNode;
   chargement?: boolean;
   onPremiereOuverture?: () => void;
@@ -104,6 +118,10 @@ export function BlocExpansible({
   const [pleinEcran, setPleinEcran] = useState(false);
   const [copie, setCopie] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
+  // Action "ajouter à ma bibliothèque" : fournie par l'appelant (fichier de site
+  // externe) ou déduite de la bibliothèque publique. Absente = téléchargement seul.
+  const copieDisponible =
+    surCopie ?? (idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined);
   const [premiereOuvertureFaite, setPremiereOuvertureFaite] = useState(false);
 
   // 11/09/2026, demande Bourama : le rail d'icônes sticky (sans texte) et
@@ -113,6 +131,7 @@ export function BlocExpansible({
   // sur `topRowRef` (rangée du haut, mode non-plein-écran uniquement --
   // l'en-tête du mode plein écran est fixe dans PleinEcranApercu, donc
   // hors sujet ici).
+  const etatTelechargement = useEtatTelechargement(hrefTelechargement);
   const topRowRef = useRef<HTMLDivElement | null>(null);
   const [hautVisible, setHautVisible] = useState(true);
 
@@ -200,13 +219,13 @@ export function BlocExpansible({
         {hrefTelechargement && (
           <button
             onClick={() =>
-              idBibliothequePublique ? setModalTelechargementOuverte(true) : telecharger(hrefTelechargement, titre)
+              copieDisponible ? setModalTelechargementOuverte(true) : void telecharger(hrefTelechargement, titre)
             }
-            className={classe}
+            className={`${classe} ${classeEtatTelechargement(etatTelechargement)}`}
             aria-label="Télécharger"
           >
-            <Download size={14} />
-            {avecTexte && "Télécharger"}
+            <IconeTelechargement href={hrefTelechargement} size={14} />
+            {avecTexte && <LibelleTelechargement href={hrefTelechargement} defaut="Télécharger" />}
           </button>
         )}
         <button onClick={surAgrandir} className={classe} aria-label={pleinEcran ? "Rétrécir" : "Agrandir"}>
@@ -267,7 +286,7 @@ export function BlocExpansible({
         </div>
       </div>
 
-      <div className="group/rail relative" onClick={basculerRailTactile}>
+      <div className="group/rail relative" data-apercu-inline="" onClick={basculerRailTactile}>
         {/* Rail d'icônes sticky, en overlay HORS FLUX (absolute inset-0
             plutôt que float-right) -- le float précédent réservait de la
             largeur dans le flux normal et écrasait/compressait le
@@ -288,7 +307,7 @@ export function BlocExpansible({
             </button>
           </div>
         </div>
-        <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+        <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique} surCopie={copieDisponible}>
           {enfant}
         </GardeApercu>
       </div>
@@ -307,8 +326,9 @@ export function BlocExpansible({
   const modaleTelechargement = modalTelechargementOuverte && hrefTelechargement && (
     <TelechargerCopierModal
       titre={titre}
-      surCopie={idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined}
+      surCopie={copieDisponible}
       surTelechargement={() => telecharger(hrefTelechargement, titre)}
+      hrefTelechargement={hrefTelechargement}
       onFermer={() => setModalTelechargementOuverte(false)}
     />
   );
@@ -362,7 +382,7 @@ export function BlocExpansible({
               contenuEnIframe ? "[&_iframe]:!h-full [&_iframe]:!min-h-0" : ""
             }`}
           >
-            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique} surCopie={copieDisponible}>
               {enfant}
             </GardeApercu>
           </div>
@@ -407,13 +427,13 @@ export function BlocExpansible({
               <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
             </div>
           </div>
-          <div className="group/rail relative">
+          <div className="group/rail relative" data-apercu-inline="">
             <div className="pointer-events-none absolute inset-0 z-10 flex justify-end">
               <div className={`sticky top-2 mr-2 self-start ${classeRailDirect}`}>
                 <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran(true)} />
               </div>
             </div>
-            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique}>
+            <GardeApercu hrefTelechargement={hrefTelechargement} nomTelechargement={titre} idBibliothequePublique={idBibliothequePublique} surCopie={copieDisponible}>
               {enfant}
             </GardeApercu>
           </div>

@@ -1,40 +1,30 @@
 import Link from "next/link";
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { LIGNE_TRAIT_ICONE_18, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
-// Reprend exactement le motif visuel de la liste de Paramètres (Liste +
-// LigneLien dans components/ParametresAccueil.tsx) pour que les pages
-// d'atterrissage de groupe ("Personnaliser Classinus", "Scolarité") soient
-// visuellement reconnaissables comme la même famille de composant
-// (refonte sidebar, 22/08/2026, demande Bourama : "ça doit exister comme
-// pour Paramètres"). 19/09/2026 : Paramètres utilise lui aussi de vraies
-// routes désormais (ex-EspaceParametres.tsx, état `vue` interne,
-// supprimé) -- ce composant-ci reste séparé plutôt que réutilisé tel
-// quel par Paramètres, qui mélange des lignes de navigation avec une
-// carte de profil différente et des lignes d'action (voir
-// ParametresAccueil.tsx).
+// Liste des sous-sections d'une section (Bureau, Bibliothèque, Concentration,
+// Personnaliser Classinus). Lignes à nu, sans carte ni flèche, séparées par un
+// trait qui commence après l'icône (voir lib/styleLignes.ts).
 export function ListeSections({
   sections,
 }: {
   sections: { href: string; label: string; description: string; Icone: LucideIcon }[];
 }) {
   return (
-    <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-      <div className="divide-y divide-dj-bordure">
-        {sections.map((s) => (
-          <Link
-            key={s.href}
-            href={s.href}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute"
-          >
-            <s.Icone size={18} className="flex-shrink-0 text-dj-texte-muet" />
-            <div className="flex-1 overflow-hidden">
-              <div className="truncate text-sm text-dj-texte">{s.label}</div>
-              <div className="truncate text-xs text-dj-texte-muet">{s.description}</div>
-            </div>
-            <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />
-          </Link>
-        ))}
-      </div>
+    <div className="flex flex-col">
+      {sections.map((s) => (
+        <Link
+          key={s.href}
+          href={s.href}
+          className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
+        >
+          <s.Icone size={18} strokeWidth={TRAIT_ICONE_SECTION} className="flex-shrink-0 text-dj-texte-muet" />
+          <div className="flex-1 overflow-hidden">
+            <div className="truncate text-sm font-semibold text-dj-texte">{s.label}</div>
+            <div className="truncate text-xs text-dj-texte-muet">{s.description}</div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }

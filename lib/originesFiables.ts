@@ -1,6 +1,10 @@
-// Origines dont les fichiers peuvent recevoir un aperçu intégré dans l'appli
-// (PDF, Word, texte, code...). Une seule règle partagée, au lieu d'une copie
-// par composant qui se désynchronisait à chaque changement d'adresse.
+// Origines de notre propre stockage de fichiers. Une seule règle partagée, au
+// lieu d'une copie par composant qui se désynchronisait à chaque changement
+// d'adresse. Elle ne bloque plus l'aperçu des documents (FichierChip ouvre
+// tout document depuis le 09/10/2026, avec la mention "fichier externe") ;
+// elle sert encore à NoteTexteChip et FichierCode, qui ne doivent prendre en
+// charge que nos propres fichiers, et à la recherche dans la bibliothèque
+// publique.
 //
 // Le stockage des fichiers est servi par le backend (NEXT_PUBLIC_API_URL) ou
 // par Supabase pour les anciens fichiers. Le 22/09/2026 le backend est passé

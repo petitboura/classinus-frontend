@@ -41,8 +41,9 @@ export function PageContenuLegal({ cle }: { cle: "cgu" | "copyright" | "confiden
       <div className="mx-auto flex max-w-2xl flex-col gap-6">
         <div className="flex items-center gap-2">
           <BoutonRetour onClick={() => router.back()} padding="p-1" className="-ml-1" />
-          <Link href="/">
+          <Link href="/" className="flex items-center gap-2.5">
             <Logo taille={28} sansFond />
+            <span className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
           </Link>
         </div>
 
@@ -71,11 +72,11 @@ export function PageContenuLegal({ cle }: { cle: "cgu" | "copyright" | "confiden
         {contenu === null && <p className="text-sm text-dj-texte-muet">Ce contenu n&apos;est pas disponible pour l&apos;instant.</p>}
         {contenu && (
           <article className="flex flex-col gap-3">
-            <h1 className="text-xl font-semibold text-dj-texte">{contenu.titre}</h1>
+            <h1 className="font-display text-2xl font-bold text-dj-texte">{contenu.titre}</h1>
             <div className="flex flex-col gap-3 text-sm leading-relaxed text-dj-texte-muet">
               <ReactMarkdown
                 components={{
-                  h2: ({ children }) => <h2 className="mt-2 text-base font-semibold text-dj-texte">{children}</h2>,
+                  h2: ({ children }) => <h2 className="mt-2 font-display text-lg font-semibold text-dj-texte">{children}</h2>,
                   p: ({ children }) => <p>{children}</p>,
                   ul: ({ children }) => <ul className="list-disc pl-5">{children}</ul>,
                   ol: ({ children }) => <ol className="list-decimal pl-5">{children}</ol>,

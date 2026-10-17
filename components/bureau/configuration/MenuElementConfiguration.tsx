@@ -279,7 +279,7 @@ export function MenuElementConfiguration({
           <div
             role="status"
             className="fixed inset-x-0 z-[120] flex justify-center px-3"
-            style={{ bottom: "calc(1.25rem + var(--cap-native-navigation-bottom,0px) + var(--dj-barre-onglets-web,0px))" }}
+            style={{ bottom: "calc(1.25rem + var(--dj-barre-onglets-web,0px))" }}
           >
             <p
               className={`max-w-full animate-dj-fade-in-rapide rounded-xl border border-dj-bordure-forte bg-dj-surface px-4 py-2.5 text-sm shadow-[0_8px_30px_rgba(0,0,0,0.5)] ${

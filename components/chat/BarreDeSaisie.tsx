@@ -171,7 +171,7 @@ export function BarreDeSaisie({
   // onEnvoyer (deja tres charge), voir ChatIA.tsx:modeleSelectionne.
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleSelectionne?: string | null;
-  onModeleChange?: (modeleId: string | null) => void;
+  onModeleChange?: (modeleId: string) => void;
   // Agent "Classinus" / contenu dynamique par matière (06/08/2026, demande
   // Bourama) -- affiche le bouton "Sans enseignant" (voir sansEnseignant
   // plus bas), qui force le prompt généraliste pour le prochain message,
@@ -1740,6 +1740,7 @@ export function BarreDeSaisie({
           <div className="flex items-center gap-3">
             <BoutonReglages
               variante="bureau"
+              afficherChoixModele={false}
               modelesDisponibles={modelesDisponibles}
               modeleSelectionne={modeleSelectionne}
               onModeleChange={onModeleChange}
@@ -1941,6 +1942,7 @@ export function BarreDeSaisie({
         <div className="flex items-center gap-1">
         <BoutonReglages
           variante="mobile"
+          afficherChoixModele={false}
           modelesDisponibles={modelesDisponibles}
           modeleSelectionne={modeleSelectionne}
           onModeleChange={onModeleChange}

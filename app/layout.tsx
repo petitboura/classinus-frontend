@@ -10,13 +10,18 @@ import "./polices-lecture.css";
 import "katex/dist/katex.min.css";
 import "mathlive/fonts.css";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { MiseAJourOta } from "@/components/MiseAJourOta";
 import { ReveilBackend } from "@/components/ReveilBackend";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
 import { VisionneurGlobalRacine } from "@/components/VisionneurGlobalRacine";
 import { InteractionGlobale } from "@/components/InteractionGlobale";
+import { IndicateurTelechargements } from "@/components/IndicateurTelechargements";
 import { FournisseurRequetes } from "@/lib/reactQuery";
+import { DonneesStructurees } from "@/components/DonneesStructurees";
+import { donneesApplication, donneesOrganisation } from "@/lib/donneesApplication";
+import { RESUME_CLASSINUS } from "@/lib/usagesDecouvrir";
 
 // CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
 // Djiguignè (jugée trop générique "IA" -- palette + paire de polices
@@ -79,7 +84,7 @@ const sourceSerif = Source_Serif_4({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Classinus",
-  description: "Le coin des étudiants.",
+  description: RESUME_CLASSINUS.description,
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Classinus" },
   // Correctif (02/09/2026) : Next.js (appleWebApp ci-dessus) ne génère
   // que la balise préfixée "apple-", dépréciée par Chrome/Android au
@@ -97,7 +102,7 @@ export const metadata: Metadata = {
   // URL en dur ici).
   openGraph: {
     title: "Classinus",
-    description: "Le coin des étudiants.",
+    description: RESUME_CLASSINUS.description,
     siteName: "Classinus",
     locale: "fr_FR",
     type: "website",
@@ -105,7 +110,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Classinus",
-    description: "Le coin des étudiants.",
+    description: RESUME_CLASSINUS.description,
   },
   // Icône d'onglet (favicon) et icône iOS "ajouter à l'écran d'accueil"
   // (12/08) : désormais générées automatiquement par Next.js depuis
@@ -143,6 +148,12 @@ export default function RacineLayout({
       className={`${fraunces.variable} ${workSans.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
       <head>
+        {/* Fiche d'identité de Classinus pour les moteurs de recherche et les
+            IA (11/10/2026, chantier "visibilité auprès des IA") : voir
+            lib/donneesApplication.ts. Dans le HTML du serveur, donc lue
+            même par un robot qui n'exécute pas de JavaScript. */}
+        <DonneesStructurees donnees={donneesOrganisation()} />
+        <DonneesStructurees donnees={donneesApplication()} />
         {/* Script anti-flash (17/08, thème clair/sombre) : doit s'exécuter
             de façon SYNCHRONE avant le premier rendu de <body>, sinon
             l'utilisateur voit une fraction de seconde du thème par défaut
@@ -177,6 +188,7 @@ export default function RacineLayout({
             Electron. Ne JAMAIS le remettre, même si un jour la branche est
             réalignée avec main : garder cette suppression. */}
         <ServiceWorkerRegistration />
+        <MiseAJourOta />
         <ReveilBackend />
         <FournisseurRequetes>
           <InteractionGlobale>{children}</InteractionGlobale>
@@ -184,6 +196,7 @@ export default function RacineLayout({
         <BoutonFlottantTelecharger />
         <PopupExplorationDossier />
         <GardienLiensSortants />
+        <IndicateurTelechargements />
         <VisionneurGlobalRacine />
       </body>
     </html>

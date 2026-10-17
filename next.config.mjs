@@ -57,6 +57,14 @@ const redirectionsWeb =
 const nextConfig = {
   ...(process.env.CAPACITOR_BUILD === "true" ? { output: "export" } : {}),
   ...redirectionsWeb,
+  // Heure de construction (millisecondes), lue par lib/miseAJourOta.ts pour
+  // savoir si un bundle OTA publié est plus récent que le code qui tourne.
+  // Le workflow .github/workflows/ota.yml la fixe lui-même pour qu'elle soit
+  // identique dans le bundle et dans latest.json ; à défaut (build local de
+  // l'APK), on prend l'heure du build.
+  env: {
+    NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME || String(Date.now()),
+  },
   images: {
     // image_vitrine_url (agents.image_vitrine_url, voir PIVOT_SOCIAL.md)
     // est hébergée sur Supabase Storage — next/image refuse par défaut

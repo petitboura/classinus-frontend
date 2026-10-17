@@ -15,7 +15,6 @@ import { ContexteCatalogue } from "@/lib/contexteCatalogue";
 import { ContexteFenetres, useFournirFenetres } from "@/lib/contexteFenetres";
 import { ContexteRetour } from "@/lib/contexteRetour";
 import { ContexteDossiersCataloguePublic, useFournirDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
-import { BarreOngletsNative } from "@/components/mobile/BarreOngletsNative";
 import { BarreOngletsWeb } from "@/components/mobile/BarreOngletsWeb";
 import { MenuHamburgerNatif } from "@/components/mobile/MenuHamburgerNatif";
 import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
@@ -94,6 +93,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // fois avec le nom que Google a fourni. Ne fait rien pour un compte deja
   // nomme (email/telephone ou reconnexion Google), ni si Google n'a donne
   // aucun nom.
+  // Sur /chat la barre du bas est masquée : on le signale à globals.css pour
+  // que la marge réservée aux fenêtres et aux boutons flottants retombe à
+  // la zone de sécurité seule (voir --dj-barre-onglets-web).
+  useEffect(() => {
+    document.documentElement.setAttribute("data-sans-barre", estPageChat(pathname) ? "true" : "false");
+  }, [pathname]);
+
   useEffect(() => {
     if (!connecte) return;
     (async () => {
@@ -182,12 +188,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     import("@capacitor/core").then(({ Capacitor }) => {
       const estNatif = Capacitor.isNativePlatform();
       if (!annule) setNatif(estNatif);
-      // Chantier "web mobile façon appli" (28/08/2026) : attribut lu par
-      // --dj-barre-onglets-web dans app/globals.css, pour que cette
-      // variable CSS (marge réservée par la nouvelle barre du bas web)
-      // reste à 0 dans l'appli native, qui a déjà sa propre marge via
-      // --cap-native-navigation-bottom -- sans cet attribut, les deux
-      // marges se seraient additionnées dans l'appli native.
+      // Attribut lu par ChatSection.tsx (qui ne recalcule jamais la
+      // détection native lui-même). Depuis le 13/10/2026 il ne sert plus à
+      // la marge du bas : l'appli native a la même barre que le site.
       if (!annule) document.documentElement.setAttribute("data-natif", estNatif ? "true" : "false");
     });
     return () => {
@@ -202,7 +205,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
         <div className="flex h-dvh">
-          {natif && <BarreOngletsNative />}
           {/* 30/08/2026, menu hamburger : reprend Accueil/Connecter
               Claude/Paramètres/Partager/Avis/Pourquoi Classinus, tout ce qui
               n'a pas de place dans les 5 onglets directs. Étape 1 de
@@ -210,9 +212,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               propre déclencheur (MenuHamburgerWeb), même mécanique que le
               natif -- BarreOngletsWeb ci-dessous n'a plus d'onglet Plus,
               l'ancienne page /plus est devenue une redirection. */}
-          {natif && <MenuHamburgerNatif />}
-          {!natif && <BarreOngletsWeb />}
-          {!natif && <MenuHamburgerWeb />}
+          {natif && <MenuHamburgerNatif connecte={connecte} />}
+          <BarreOngletsWeb />
+          {!natif && <MenuHamburgerWeb connecte={connecte} />}
           {/* 02/09/2026, centre de notifications (bouton cloche) :
               contrairement au hamburger (mobile uniquement, md:hidden),
               visible mobile ET desktop -- pas de barre du haut dédiée
@@ -280,55 +282,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main
             data-agent-zone="Page"
             className="flex-1 overflow-y-auto"
-            style={
-              natif
-                ? {
-                    // Correctif (31/08/2026, Bourama : "l'appli deborde
-                    // du haut") : --cap-native-navigation-top, pose par
-                    // @capgo/capacitor-native-navigation (voir
-                    // BarreOngletsNative.tsx), avait ete souponne de ne
-                    // jamais se declencher tant que le plugin n'etait pas
-                    // synchronise cote Android.
-                    // Correctif (05/09/2026, meme symptome revenu) :
-                    // cause reelle trouvee dans le code source Android du
-                    // plugin -- cette variable vaut TOUJOURS 0px (jamais
-                    // absente) tant qu'aucun "navbar" natif du plugin
-                    // n'est active, ce que ce projet ne fait jamais (voir
-                    // explication complete dans app/globals.css). Elle
-                    // est donc abandonnee pour le haut : --safe-top seul,
-                    // fiable (plugin SystemBars natif de @capacitor/core,
-                    // independant de native-navigation). --dj-hamburger-
-                    // espace : voir commentaire dans app/globals.css
-                    // (reserve la hauteur du bouton hamburger flottant).
-                    // paddingBottom inchange : --cap-native-navigation-
-                    // bottom reste correct ici, la barre d'onglets native
-                    // est reellement visible hors chat et ce plugin est
-                    // seul a connaitre sa vraie hauteur.
-                    paddingTop: "calc(var(--safe-top) + var(--dj-hamburger-espace))",
-                    paddingBottom: "var(--cap-native-navigation-bottom, var(--safe-bottom))",
-                  }
-                : {
-                    paddingTop: "calc(var(--safe-top) + var(--dj-hamburger-espace))",
-                    // Réserve l'espace de BarreOngletsWeb (0px sur
-                    // desktop et hors mobile, voir --dj-barre-onglets-web
-                    // dans app/globals.css) pour que le bas de chaque
-                    // page ne se retrouve pas caché derrière la barre.
-                    //
-                    // Correctif (07/09/2026, signalé Bourama : "la barre
-                    // de saisie est emmenée si haut") : --dj-barre-
-                    // onglets-web est une variable CSS globale (calculée
-                    // sur la largeur d'écran, pas sur la route) -- sur
-                    // /chat, BarreOngletsWeb.tsx est désormais masquée
-                    // (voir son propre correctif du même jour) mais
-                    // continuait de réserver ses ~4rem+safe-bottom sous
-                    // ChatIA, qui ajoute déjà son propre padding de
-                    // sécurité pour le clavier/safe-bottom (voir
-                    // ChatIA.tsx) -- les deux s'additionnaient et
-                    // poussaient la barre de saisie bien plus haut que
-                    // nécessaire. /chat n'a plus cette barre à réserver.
-                    paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
-                  }
-            }
+            style={{
+              // Refonte du 13/10/2026 (demande Bourama) : la capsule native
+              // flottante est supprimée, l'appli native et le site utilisent
+              // la même barre du bas (BarreOngletsWeb) et donc les mêmes
+              // marges, une seule branche. --dj-hamburger-espace réserve
+              // la hauteur du bouton hamburger flottant (voir
+              // app/globals.css). --dj-barre-onglets-web réserve la barre du
+              // bas (0px sur PC, voir app/globals.css) pour que le bas de
+              // chaque page ne soit pas caché derrière elle. Sur /chat la
+              // barre est masquée et ChatIA ajoute déjà son propre padding de
+              // sécurité (clavier, safe-bottom), rien à réserver.
+              paddingTop: "calc(var(--safe-top) + var(--dj-hamburger-espace))",
+              paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
+            }}
           >
             <TransitionPage>{children}</TransitionPage>
           </main>

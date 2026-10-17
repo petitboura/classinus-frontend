@@ -35,7 +35,7 @@ export function PopupProposerProfilPublic({ onFermer }: { onFermer: () => void }
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-6 ${
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 pb-[var(--dj-barre-onglets-web,0px)] backdrop-blur-sm sm:items-center sm:p-6 sm:pb-6 ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
       onClick={fermer}

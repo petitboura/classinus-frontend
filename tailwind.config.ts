@@ -45,6 +45,7 @@ const config: Config = {
           fond: "var(--dj-fond)",
           surface: "var(--dj-surface)",
           "surface-haute": "var(--dj-surface-haute)",
+          rail: "var(--dj-rail)",
           bordure: "var(--dj-bordure)",
           "bordure-forte": "var(--dj-bordure-forte)",
           "accent-1": "var(--dj-accent-1)",

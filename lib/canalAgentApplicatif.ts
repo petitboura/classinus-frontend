@@ -102,6 +102,7 @@ import {
 } from "./contexteCanalEnDirect";
 import { abonnerArretTache, arreterToutLocalEtServeur, mettreAJourSourceTache, signalerArretTache } from "./tacheCanal";
 import { consommerReglagesUniquesProchainMessage, lireReglagesProchainMessage } from "./reglagesProchainMessage";
+import { modeleActifProchainMessage } from "./modeleActif";
 import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
@@ -282,7 +283,7 @@ async function envoyerTourCanalDirect(texte: string, options?: { automatique?: b
         // l'envoi : ce que l'étudiant a choisi dans les Réglages du canal ou du chat.
         longueur_reponse: reglages.longueur,
         sans_enseignant: reglages.sansEnseignant,
-        modele: reglages.modeleId,
+        modele: modeleActifProchainMessage(),
         // Reglage Effort (04/10/2026), meme valeur que dans la barre de saisie du chat.
         effort_reflexion: reglages.effort,
         fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,

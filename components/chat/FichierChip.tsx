@@ -2,14 +2,26 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, Download, ImageOff, Loader2, Eye, Code2 } from "lucide-react";
+import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, ImageOff, Loader2, Eye, Code2, BookOpen, Film, Music } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuTexte, ContenuMarkdown, ContenuOffice } from "../VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
-import { copierVersBibliothequePersonnelle } from "@/lib/api";
+import {
+  BarreProgressionTelechargement,
+  IconeTelechargement,
+  LibelleTelechargement,
+  MessageEchecTelechargement,
+  classeEtatTelechargement,
+} from "@/components/EtatTelechargement";
+import { useEtatTelechargement } from "@/lib/etatTelechargements";
+import { ajouterFichierExterneABibliotheque, copierVersBibliothequePersonnelle } from "@/lib/api";
 import { useEntreePubliqueParUrl } from "@/lib/useEntreePubliqueParUrl";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
+import { useLienRelaisExterne } from "@/lib/useLienRelaisExterne";
+import { Skeleton } from "../Skeleton";
+import { FichierConnexionRequise } from "./FichierConnexionRequise";
+import { extensionDepuisTexte } from "@/lib/extensionDepuisTexte";
 import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 
 // CORRECTIF 2026-09-10 (demande Bourama : le nouveau lecteur -- PDF
@@ -28,6 +40,19 @@ import { TelechargerCopierModal } from "@/components/TelechargerCopierModal";
 // donc VisionneurPdf doit rester chargé en dynamic({ssr:false}), même
 // raison que VisionneuseBibliotheque.tsx et VisionneurPositionGlobal.tsx.
 const VisionneurPdf = dynamic(() => import("../VisionneurPdf").then((m) => m.VisionneurPdf), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[70vh] items-center justify-center">
+      <Loader2 size={20} className="animate-spin text-dj-texte-muet" />
+    </div>
+  ),
+});
+
+// 11/10/2026, demande Bourama : liseuse des livres numériques (EPUB, MOBI),
+// dépliée dans le fil comme le PDF. Chargée à la demande (ssr:false) : elle
+// touche des API du navigateur dès son ouverture, et ce fichier est importé
+// statiquement par le chat.
+const VisionneurLivre = dynamic(() => import("../VisionneurLivre").then((m) => m.VisionneurLivre), {
   ssr: false,
   loading: () => (
     <div className="flex h-[70vh] items-center justify-center">
@@ -96,9 +121,53 @@ const EXTENSIONS_FICHIER: Record<string, { icone: typeof File; libelle: string }
   // 18/08) -- même famille que .tex : sans cette entrée, retombe dans le
   // rendu générique cassé.
   md: { icone: FileText, libelle: "Markdown" },
+  // 11/10/2026, demande Bourama : le relais (clovis-backend, core/relais_fichier_externe.py)
+  // accepte maintenant tous les formats sauf le code exécutable. Sans ces
+  // entrées, ces fichiers ne seraient pas reconnus comme fichiers par le chat.
+  //
+  // Livres numériques : EPUB et MOBI s'ouvrent dans la liseuse (VisionneurLivre),
+  // DjVu n'a pas de lecteur léger dans un navigateur (carte téléchargement).
+  epub: { icone: BookOpen, libelle: "EPUB" },
+  mobi: { icone: BookOpen, libelle: "MOBI" },
+  djvu: { icone: BookOpen, libelle: "DjVu" },
+  // Documents OpenDocument et RTF : le lecteur Office intégré (Microsoft) ne
+  // les lit pas de façon fiable, carte téléchargement.
+  odt: { icone: FileText, libelle: "OpenDocument texte" },
+  ods: { icone: FileSpreadsheet, libelle: "OpenDocument tableur" },
+  odp: { icone: Presentation, libelle: "OpenDocument présentation" },
+  rtf: { icone: FileText, libelle: "RTF" },
+  // Archives : carte téléchargement, comme le zip.
+  "7z": { icone: FileArchive, libelle: "Archive 7z" },
+  rar: { icone: FileArchive, libelle: "Archive RAR" },
+  gz: { icone: FileArchive, libelle: "Archive gzip" },
+  // Images que les navigateurs affichent (aperçu, voir EXTENSIONS_IMAGE) ou non
+  // (TIFF, HEIC : carte téléchargement).
+  gif: { icone: IconeImage, libelle: "Image" },
+  bmp: { icone: IconeImage, libelle: "Image" },
+  avif: { icone: IconeImage, libelle: "Image" },
+  tiff: { icone: IconeImage, libelle: "Image TIFF" },
+  heic: { icone: IconeImage, libelle: "Image HEIC" },
+  // Audio et vidéo que les navigateurs ne lisent pas : LecteurMedia.tsx ne les
+  // prend pas (voir typeMedia), ils arrivent donc ici en carte téléchargement.
+  avi: { icone: Film, libelle: "Vidéo AVI" },
+  flv: { icone: Film, libelle: "Vidéo FLV" },
+  asf: { icone: Film, libelle: "Vidéo ASF" },
+  mpeg: { icone: Film, libelle: "Vidéo MPEG" },
+  aiff: { icone: Music, libelle: "Audio AIFF" },
+  mid: { icone: Music, libelle: "Audio MIDI" },
 };
 
-const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp"]);
+const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp", "gif", "bmp", "avif"]);
+
+// Types que l'import dans la bibliothèque personnelle accepte (backend,
+// api/bibliotheque_utilisateur.py, _TYPES_IMPORT_DEPUIS_URL : pdf, docx, xlsx,
+// pptx, anciens formats Office, png, jpg, gif, webp, texte brut). À garder
+// alignée avec cette liste.
+const TYPES_IMPORTABLES_EXTERNES = new Set([
+  "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+  "png", "jpg", "jpeg", "gif", "webp",
+  "csv", "json", "md", "tex",
+]);
 
 // CORRECTIF 2026-07-31 (audit sécurité, alternative après l'échec du
 // correctif sandbox="" du 31/07 -- voir plus bas, ça cassait le rendu
@@ -131,10 +200,14 @@ const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp"]);
 // composant `a` custom dans BulleMessage.tsx appelle `extensionFichier()`
 // et bascule vers ce composant quand elle correspond, sinon rend le lien
 // normal -- pas de régression sur les liens web classiques.
-export function extensionFichier(href: string): string | null {
+export function extensionFichier(href: string, texteLien?: string): string | null {
   const match = href.split("?")[0].match(/\.([a-zA-Z0-9]+)$/);
   const ext = match?.[1]?.toLowerCase();
-  return ext && ext in EXTENSIONS_FICHIER ? ext : null;
+  if (ext && ext in EXTENSIONS_FICHIER) return ext;
+  // 09/10/2026, demande Bourama : adresse sans extension (lien de
+  // téléchargement du type ?download=12725), le texte du lien annonce le type.
+  const extTexte = extensionDepuisTexte(href, texteLien);
+  return extTexte && extTexte in EXTENSIONS_FICHIER ? extTexte : null;
 }
 
 // 12/09/2026, Bourama : vrai téléchargement système sur Android (au lieu
@@ -147,7 +220,19 @@ const telechargerFichier = telecharger;
 // carte téléchargement générique utilisée jusqu'ici pour toute extension
 // non-PDF, qui faisait quitter l'appli pour une simple image (31/07,
 // signalé par Bourama : "les images générées ne restent pas dans l'appli").
-function ImageGenereeChip({ href, nom, idBibliothequePublique }: { href: string; nom: string; idBibliothequePublique: string | null }) {
+function ImageGenereeChip({
+  href,
+  nom,
+  idBibliothequePublique,
+  surCopie,
+}: {
+  href: string;
+  nom: string;
+  idBibliothequePublique: string | null;
+  surCopie?: () => Promise<void>;
+}) {
+  const copieDisponible =
+    surCopie ?? (idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined);
   const [ouverte, setOuverte] = useState(false);
   const [enErreur, setEnErreur] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
@@ -185,7 +270,7 @@ function ImageGenereeChip({ href, nom, idBibliothequePublique }: { href: string;
           alt={nom}
           onFermer={() => setOuverte(false)}
           onTelecharger={() =>
-            idBibliothequePublique ? setModalTelechargementOuverte(true) : telechargerFichier(href, nom)
+            copieDisponible ? setModalTelechargementOuverte(true) : telechargerFichier(href, nom)
           }
         />
       )}
@@ -193,8 +278,9 @@ function ImageGenereeChip({ href, nom, idBibliothequePublique }: { href: string;
       {modalTelechargementOuverte && (
         <TelechargerCopierModal
           titre={nom}
-          surCopie={idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined}
+          surCopie={copieDisponible}
           surTelechargement={() => telechargerFichier(href, nom)}
+          hrefTelechargement={href}
           onFermer={() => setModalTelechargementOuverte(false)}
         />
       )}
@@ -232,16 +318,29 @@ function BoutonsFormatBrut({ avecTexte, vueBrute, onChanger }: { avecTexte: bool
   );
 }
 
-export function FichierChip({ href, nom }: { href: string; nom: string }) {
-  const infos = extensionFichier(href);
+// Nom de domaine affiché dans la mention "fichier externe" (sans "www.").
+function hoteDe(href: string): string | null {
+  try {
+    return new URL(href).hostname.replace(/^www\./, "") || null;
+  } catch {
+    return null;
+  }
+}
+
+// extensionForcee : type connu par un autre moyen que l'adresse (le backend a
+// lu le type réel du fichier, voir LinkPreview.tsx).
+export function FichierChip({ href, nom, extensionForcee }: { href: string; nom: string; extensionForcee?: string }) {
+  const infos = extensionForcee && extensionForcee in EXTENSIONS_FICHIER ? extensionForcee : extensionFichier(href, nom);
   const { icone: Icone, libelle } = infos ? EXTENSIONS_FICHIER[infos] : { icone: File, libelle: "Fichier" };
 
-  // L'aperçu intégré (PDF, Office, Markdown, texte) n'est proposé que si
-  // l'URL vient de notre propre stockage Supabase (voir
-  // estOrigineDeConfiance ci-dessus, même garde-fou qu'avant le correctif
-  // du 09/10) -- n'importe quelle autre origine retombe sur la carte
-  // téléchargement générique plus bas.
+  // 09/10/2026, demande Bourama : l'aperçu intégré (PDF, Office, Markdown,
+  // texte) s'ouvre pour n'importe quel document, quelle que soit l'origine
+  // du lien. L'origine ne sert plus qu'à deux choses : afficher la mention
+  // "fichier externe" sur la carte, et savoir si le fichier peut être une
+  // entrée de la bibliothèque publique (voir plus bas).
   const origineFiable = estOrigineDeConfiance(href);
+  const hoteExterne = origineFiable ? null : hoteDe(href);
+  const sousTitre = origineFiable ? libelle : `${libelle} · fichier externe${hoteExterne ? ` (${hoteExterne})` : ""}`;
 
   // 13/09/2026, demande Bourama : si l'IA a retrouvé ce fichier dans la
   // bibliothèque publique (et pas, par ex., un fichier fraîchement généré),
@@ -251,16 +350,39 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
   // ne peut pas être une entrée publiée, inutile d'appeler le serveur.
   const idBibliothequePublique = useEntreePubliqueParUrl(href, origineFiable);
 
+  // 10/10/2026, demande Bourama : un fichier de site externe passe par le relais
+  // du backend (le navigateur ne peut pas le charger lui-même, CORS). En cas
+  // d'échec du relais, le lien d'origine est gardé, comme avant.
+  const relais = useLienRelaisExterne(href, !origineFiable && !!infos);
+
+  // 10/10/2026, demande Bourama : pour un fichier de site externe, le bouton
+  // unique Télécharger propose aussi "Ajouter à ma bibliothèque" (télécharger,
+  // ajouter, ou les deux). Le backend télécharge lui-même le fichier depuis son
+  // adresse d'origine (pas le lien de relais). 11/10/2026 : seulement pour les
+  // types que l'import accepte (TYPES_IMPORTABLES_EXTERNES), le backend refuse
+  // les vidéos, sons, livres numériques et archives.
+  const surCopieExterne =
+    !origineFiable && infos && TYPES_IMPORTABLES_EXTERNES.has(infos)
+      ? () => ajouterFichierExterneABibliotheque(href, nom).then(() => undefined)
+      : undefined;
+
   // 20/09/2026, demande Bourama, voir BoutonsFormatBrut ci-dessus --
   // déclarés sans condition (règle des Hooks) même si seule la branche
   // markdown plus bas les utilise réellement.
   const [texteMarkdown, setTexteMarkdown] = useState<string | null>(null);
   const [vueBruteMarkdown, setVueBruteMarkdown] = useState(false);
 
+  if (relais.enAttente) {
+    return <Skeleton className="h-14 w-full max-w-xl rounded-xl" />;
+  }
+  if (relais.connexionRequise) {
+    return <FichierConnexionRequise nom={nom} sousTitre={sousTitre} Icone={Icone} />;
+  }
+
   // Image (png/jpg/jpeg/webp) : vignette + zoom, voir ImageGenereeChip
   // ci-dessus. Inchangé par le correctif du 09/10 -- déjà un bon aperçu.
   if (infos && EXTENSIONS_IMAGE.has(infos)) {
-    return <ImageGenereeChip href={href} nom={nom} idBibliothequePublique={idBibliothequePublique} />;
+    return <ImageGenereeChip href={relais.href} nom={nom} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} />;
   }
 
   // PDF : déroulé dans le fil comme le code et les widgets (voir
@@ -268,9 +390,16 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
   // change : le nouveau lecteur (VisionneurPdf, @anaralabs/lector, voir
   // clovis-skills-mobile-pdf) remplace l'ancienne iframe native du
   // navigateur (illisible sur mobile, cause du correctif du 09/10).
-  if (infos === "pdf" && origineFiable) {
+  if (infos === "pdf") {
     return (
-      <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<VisionneurPdf url={href} page={1} />} />
+      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} enfant={<VisionneurPdf url={relais.href} page={1} />} />
+    );
+  }
+
+  // Livre numérique (EPUB, MOBI) : liseuse dépliée dans le fil, comme le PDF.
+  if (infos === "epub" || infos === "mobi") {
+    return (
+      <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} enfant={<VisionneurLivre url={relais.href} nom={nom} extension={infos} />} />
     );
   }
 
@@ -280,43 +409,44 @@ export function FichierChip({ href, nom }: { href: string; nom: string }) {
   // BlocExpansible que le PDF ci-dessus -- avant le 09/10, ces types
   // tombaient tous sur la carte téléchargement générique plus bas, sans
   // aucun aperçu (signalé par Bourama, ex. les .md).
-  if (origineFiable && infos && infos in TYPE_MIME_PAR_EXTENSION) {
+  if (infos && infos in TYPE_MIME_PAR_EXTENSION) {
     const typeMime = TYPE_MIME_PAR_EXTENSION[infos];
     if (estFichierMarkdown(nom, typeMime)) {
       return (
         <BlocExpansible
           titre={nom}
           icone={Icone}
-          sousTitre={libelle}
-          hrefTelechargement={href}
+          sousTitre={sousTitre}
+          hrefTelechargement={relais.href}
           idBibliothequePublique={idBibliothequePublique}
+          surCopie={surCopieExterne}
           texteACopier={texteMarkdown ?? undefined}
           elargissable
           actionsSupplementaires={(avecTexte) => (
             <BoutonsFormatBrut avecTexte={avecTexte} vueBrute={vueBruteMarkdown} onChanger={setVueBruteMarkdown} />
           )}
           enfant={
-            <ContenuMarkdown href={href} masquerEntete vueBrute={vueBruteMarkdown} onTexteCharge={setTexteMarkdown} />
+            <ContenuMarkdown href={relais.href} masquerEntete vueBrute={vueBruteMarkdown} onTexteCharge={setTexteMarkdown} />
           }
         />
       );
     }
     if (TYPES_MIME_OFFICE.has(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} contenuEnIframe enfant={<ContenuOffice href={href} titre={nom} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} contenuEnIframe enfant={<ContenuOffice href={relais.href} titre={nom} />} />;
     }
     if (estTypeTexteLisible(typeMime)) {
-      return <BlocExpansible titre={nom} icone={Icone} sousTitre={libelle} hrefTelechargement={href} idBibliothequePublique={idBibliothequePublique} enfant={<ContenuTexte href={href} />} />;
+      return <BlocExpansible titre={nom} icone={Icone} sousTitre={sousTitre} hrefTelechargement={relais.href} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} enfant={<ContenuTexte href={relais.href} />} />;
     }
   }
 
   // Repli : archive ZIP, modèle 3D (aucun aperçu possible dans un
-  // navigateur), origine non fiable, ou extension inconnue -- carte
+  // navigateur), ou extension inconnue -- carte
   // téléchargement, le clic force un vrai téléchargement (blob) au lieu
   // d'ouvrir un nouvel onglet (31/07, demande Bourama : "tous les liens
   // de téléchargement restent dans l'appli"). 13/09/2026 : si connu comme
   // entrée de la bibliothèque publique, ouvre TelechargerCopierModal au
   // lieu de lancer directement le téléchargement.
-  return <FichierGeneriqueChip href={href} nom={nom} libelle={libelle} Icone={Icone} idBibliothequePublique={idBibliothequePublique} />;
+  return <FichierGeneriqueChip href={relais.href} nom={nom} libelle={libelle} Icone={Icone} idBibliothequePublique={idBibliothequePublique} />;
 }
 
 function FichierGeneriqueChip({
@@ -333,26 +463,32 @@ function FichierGeneriqueChip({
   idBibliothequePublique: string | null;
 }) {
   const [modalOuverte, setModalOuverte] = useState(false);
+  const etat = useEtatTelechargement(href);
   return (
     <>
       <button
-        onClick={() => (idBibliothequePublique ? setModalOuverte(true) : telechargerFichier(href, nom))}
-        className="my-2 flex w-fit max-w-full animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-left transition-colors hover:border-dj-bordure-forte"
+        onClick={() => (idBibliothequePublique ? setModalOuverte(true) : void telechargerFichier(href, nom))}
+        className={`my-2 flex w-fit max-w-full animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-left transition-colors hover:border-dj-bordure-forte ${classeEtatTelechargement(etat)}`}
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte">
           <Icone size={16} />
         </span>
         <span className="min-w-0">
           <span className="block truncate text-sm text-dj-texte">{nom}</span>
-          <span className="block text-[11px] text-dj-texte-muet">{libelle}</span>
+          <span className="block text-[11px] text-dj-texte-muet">
+            <LibelleTelechargement href={href} defaut={libelle} />
+          </span>
+          <BarreProgressionTelechargement href={href} className="mt-1" />
         </span>
-        <Download size={14} className="ml-1 shrink-0 text-dj-texte-muet" />
+        <IconeTelechargement href={href} size={14} className="ml-1 shrink-0 text-dj-texte-muet" />
       </button>
+      <MessageEchecTelechargement href={href} className="-mt-1 mb-2" />
       {modalOuverte && (
         <TelechargerCopierModal
           titre={nom}
           surCopie={idBibliothequePublique ? () => copierVersBibliothequePersonnelle(idBibliothequePublique) : undefined}
           surTelechargement={() => telechargerFichier(href, nom)}
+          hrefTelechargement={href}
           onFermer={() => setModalOuverte(false)}
         />
       )}

@@ -9,7 +9,7 @@ import { useOuvrirChat, useOuvrirConversation } from "@/lib/contexteChat";
 import { texteAccueilTableauDeBordSelonHeure } from "@/lib/salutations";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/Skeleton";
-import { Carte } from "@/components/Carte";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { ONGLETS } from "@/components/AppSidebar";
 import { BandeauMiseAJour } from "@/components/BandeauMiseAJour";
 import { BoutonsCompteVisiteur } from "@/components/BoutonsCompteVisiteur";
@@ -187,13 +187,9 @@ export function EcranAccueil() {
         </div>
       </div>
 
-      {/* Raccourcis vers chaque section : utilise désormais le composant
-          Carte partagé (rayon signature cgpt-carte, easing cgpt-doux,
-          bordure qui se renforce au survol) au lieu de div ad hoc en
-          rounded-xl : c'était la seule zone de l'app à ne pas suivre ce
-          standard déjà en place partout ailleurs. Icône dans une puce
-          teintée pour donner du poids visuel à chaque raccourci plutôt
-          qu'une icône flottant seule dans la carte. */}
+      {/* Raccourcis vers chaque section : à nu, sans carte ni trait. Seul le
+          fond change au survol (rayon signature cgpt-carte, easing
+          cgpt-doux). */}
       {/* Hiérarchie du texte (26/08/2026, demande Bourama : le gris
           discret dj-texte-muet était réutilisé partout de façon uniforme,
           sur les titres de section comme sur les icônes et labels de
@@ -209,13 +205,14 @@ export function EcranAccueil() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {ONGLETS.map((o) => (
             <Link key={o.id} href={o.href} className="group">
-              <Carte className="flex h-full flex-col items-start gap-3 !p-4 hover:bg-dj-surface-haute">
+              <div className="flex h-full flex-col items-start gap-3 rounded-cgpt-carte p-4 transition-colors duration-300 ease-cgpt-doux hover:bg-dj-surface-haute">
                 <o.Icone
                   size={20}
+                  strokeWidth={TRAIT_ICONE_SECTION}
                   className={`flex-shrink-0 text-dj-texte transition-transform duration-200 ${MOUVEMENT_CARTE}`}
                 />
                 <span className="text-sm font-semibold text-dj-texte">{o.label}</span>
-              </Carte>
+              </div>
             </Link>
           ))}
         </div>

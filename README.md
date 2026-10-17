@@ -27,7 +27,19 @@ app/
   mon-espace/            section publique "Mon espace" (bibliothèque publique, portfolio)
   telecharger/           page qui sert le dernier APK publié (GitHub Releases)
   cgu/, copyright/       contenu légal
-  layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG
+  decouvrir/             pages publiques de présentation (SEO/AEO), sans compte : accueil, bibliothèque,
+                          personnaliser, concentration, et usages/ (11/10/2026) : une page par question
+                          d'étudiant (trouver des PDF, apprendre à coder, trouver des vidéos, étudier),
+                          avec questions fréquentes. Les textes des usages vivent dans lib/usagesDecouvrir.ts,
+                          source unique partagée avec llms.txt et les données structurées ; adresses dans
+                          lib/routesDecouvrir.ts ; une fonction qui change dans l'appli se corrige là
+  layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG, porte la
+                          description de l'appli (RESUME_CLASSINUS) et la fiche WebApplication en
+                          données structurées (lib/donneesApplication.ts, components/DonneesStructurees.tsx)
+  llms.txt/route.ts      fiche /llms.txt pour les IA, fabriquée à partir des mêmes listes que les pages
+                          /decouvrir (rien d'écrit à la main)
+  robots.ts, sitemap.ts  autorisations des robots (robots des IA nommés un par un, avec la liste des pages
+                          privées répétée pour chacun, voir le commentaire du fichier) et plan du site
 
 components/
   InteractionGlobale.tsx  couche montée une seule fois au niveau du layout racine : fournisseurs du chat,
@@ -44,6 +56,9 @@ components/
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
                           components/mobile/ à la place
+  MenuProfil.tsx          bouton profil et son panneau (profil, Paramètres, thème, déconnexion), utilisé par
+                          AppSidebar (rail et tiroir du chat) et par l'en-tête du menu Plus du téléphone ;
+                          photo et nom viennent de lib/useMonProfilAffiche.ts
   AppSidebar.tsx          sidebar desktop (Bureau/Bibliothèque/Notes en direct, groupes
                           "Personnaliser Clovis" et "Scolarité") ; repliée par défaut, elle se
                           déplie au survol du bouton "Classinus" par-dessus la page, sans la décaler.
@@ -66,6 +81,9 @@ components/
     MenuHamburgerNatif.tsx  menu "Plus" en natif : bouton haut gauche (icône 3 barres décroissantes) +
                             panneau flottant, reprend le contenu de l'ancien onglet Plus
     MenuHamburgerWeb.tsx    même menu, variante web
+    ProfilEnteteMenuPlus.tsx  en tête du menu Plus (natif et web), à la place du titre : le bouton profil
+                            de la barre latérale du chat (photo, nom, puis profil, Paramètres, thème,
+                            déconnexion) ou "Se connecter" sans compte. Paramètres n'est donc plus dans la liste
     GestionRetourNatif.tsx  gestion du bouton retour matériel Android
   chat/                  composants du chat (ChatIA.tsx, ChatFlottant.tsx, BarreDeSaisie.tsx...) ;
                           ChatSection.tsx (07/09/2026) : version "page normale" du chat plein écran
@@ -78,6 +96,16 @@ components/
                           pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
                           useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
                           de réglages partagées (reglagesReponse.ts) ;
+                          SelecteurModeleHaut.tsx (14/10/2026) : bouton du modèle en haut au milieu du chat,
+                          nom et icône du fournisseur du modèle actif, liste dépliante groupée par fournisseur. Les modèles pas encore
+                          ouverts (modeles_bientot, envoyés par le backend) y sont grisés avec la mention Bientôt.
+                          Il remplace la ligne Modèle de Réglages dans la barre de saisie (BoutonReglages garde
+                          cette ligne seulement pour le canal en direct, prop afficherChoixModele).
+                          Plus de choix "Auto" (15/10/2026) : le modèle actif est le dernier choix de l'élève
+                          (gardé sur son compte, profiles.modele_prefere, donc le même sur tous ses appareils),
+                          sinon DeepSeek Flash, sinon le premier de la liste (lib/modeleActif.ts). Sur
+                          téléphone (chat plein écran) le bouton est posé tout en haut, sur la ligne du hamburger ;
+                          IconeFournisseur.tsx : icône d'un fournisseur de modèles, depuis public/icones-fournisseurs/ ;
                           LigneApercuPieces.tsx (02/10/2026) : ligne unique défilable des pièces jointes,
                           avant envoi (BarreDeSaisie.tsx) et après envoi (BulleMessage.tsx) ; carrés pour
                           images et vidéos, pilules empilées par deux pour le reste ; FenetreTexteColle.tsx
@@ -124,8 +152,8 @@ components/
                           progression p (0 à 1), rejouée dans l'ordre à chaque image (animer peut être écrit après installer ou à l'intérieur) ; titres cliquables et
                           légende facultatifs. Pause et retour en arrière sont donc exacts. Textes dans lib/textesAnimation.ts. Consignes données au modèle
                           dans clovis-backend, core/profils_agents.py (INSTRUCTIONS_FORMATS_AFFICHAGE)
-    BoutonVideoAnimation.tsx  boutons 16:9 et 9:16 de la barre d'actions du bloc animation (07/10/2026) : téléchargent
-                          l'animation en vidéo MP4, fabriquée par le serveur (classinus-backend, api/rendu_animation.py),
+    BoutonVideoAnimation.tsx  bouton Télécharger de la barre d'actions du bloc animation (07/10/2026) : il ouvre un petit menu
+                          (MenuActionsCarte) pour choisir le format, 16:9 ou 9:16, puis télécharge l'animation en vidéo MP4, fabriquée par le serveur (classinus-backend, api/rendu_animation.py),
                           donc aussi sur téléphone. Sans état : tout vit dans lib/useVideoAnimation.ts (envoi, suivi de
                           l'avancement, annulation, téléchargement). Appels dans lib/apiRenduVideoAnimation.ts, textes dans
                           lib/textesVideoAnimation.ts. Le document envoyé est celui du lecteur, mis en page au format de la
@@ -134,10 +162,46 @@ components/
                           piloté par animation/runtimeRenduVideo.ts (dessiner l'animation à un instant donné). three.js
                           est aussi copié côté serveur : changer sa version ici impose de changer cette copie
   icones/, icons/        icônes du produit
+  VisionneurLivre.tsx     liseuse des livres numériques EPUB et MOBI (11/10/2026), dépliée dans le fil comme le PDF
+                          (components/chat/FichierChip.tsx). Charge le moteur public/foliate-js à l'ouverture
+                          seulement, lit le fichier en suivant l'avancement (refus au-delà de
+                          NEXT_PUBLIC_LIVRE_TAILLE_MAX_MO, 100 par défaut), sommaire, flèches du clavier, thème
+                          clair ou sombre. Chaque page du livre passe par lib/neutraliserPageLivre.ts avant
+                          d'être affichée
+  chat/LecteurMedia.tsx   lecteur audio et vidéo du chat. Un fichier d'un site externe passe par le relais
+                          (lib/useLienRelaisExterne.ts) ; si la lecture échoue, il retente avec l'adresse
+                          d'origine puis affiche une carte de téléchargement
+  chat/LinkPreview.tsx    carte d'un lien du chat (aperçu du site, vignette YouTube). Depuis le 12/10/2026, le texte
+                          du lien markdown écrit par le modèle devient le titre de la carte et l'attribut title
+                          ([Titre](url "Description")) sa description (2 lignes sur la carte, en entier dans l'aperçu
+                          ouvert au clic) ; le titre du site ne sert que de repli (les vignettes YouTube gardent le titre de la vidéo et
+                          la ligne de la chaîne). La carte porte data-titre-lien et
+                          data-description-lien, que GardienLiensSortants.tsx relit pour les passer à l'aperçu
+  chat/BoutonCopierLien.tsx  bouton qui copie l'adresse d'un lien (11/10/2026). Icône nue (sans cadre ni
+                          texte). Variante survol : posée à côté d'une carte de LinkPreview, visible seulement au
+                          survol de CETTE carte (groupe nommé group/lien) et à la souris, cachée sur téléphone ;
+                          variante texte : même icône dans l'en-tête de l'aperçu (VisionneurPositionGlobal), pour
+                          tous les types sauf la carte de site, qui a la sienne sous la carte
   lib/arretServeur.ts     appel POST /api/chat/arreter : demande au serveur d'arrêter les outils et la boucle d'agent du tour (12/10/2026)
   lib/tacheCanal.ts       état de la tâche du canal et signal d'arrêt commun : le bouton Arrêter (chat ou canal) coupe aussi la
                           voix, le commentaire affiché et la frappe simulée, et prévient le serveur (abonnerArretTache,
                           arreterToutLocalEtServeur)
+  lib/copierMarkdown.ts   copie "formatée" d'un markdown : HTML rendu + markdown brut dans le presse-papiers
+                          (boutons "Copier formaté" / "Copier brut" de ContenuMarkdown, VisionneuseBibliotheque.tsx).
+                          FenetreTexteColle.tsx (aperçu d'un long texte collé) affiche le texte formaté par défaut,
+                          avec un bouton Brut ; code et LaTeX gardent leur rendu
+
+public/
+  icones-fournisseurs/    icônes SVG des fournisseurs de modèles (claude, gpt, gemini, deepseek, grok), nommées comme la clé
+                          "distributeur" du backend, tirées de @lobehub/icons-static-svg (licence MIT). Pour ajouter
+                          un fournisseur : déposer son SVG ici et l'ajouter dans components/chat/IconeFournisseur.tsx
+  foliate-js/             moteur de lecture EPUB et MOBI (foliate-js, licence MIT), copié sans modification
+                          (voir ORIGINE.txt dans le dossier : commit repris, fichiers gardés). Servi tel quel,
+                          jamais intégré au bundle (chargé par import dynamique depuis VisionneurLivre.tsx) ;
+                          pour le mettre à jour, remplacer les fichiers par ceux du dépôt d'origine puis
+                          rouvrir un livre dont une page contient un script, pour vérifier que rien ne s'exécute
+  pdf-worker/             worker pdf.js du lecteur PDF
+  pyodide-worker.mjs      worker Python (voir lib/executionPython.ts)
 
 lib/
   api.ts                 client HTTP vers clovis-backend (NEXT_PUBLIC_API_URL)
@@ -172,11 +236,23 @@ lib/
                           le chargement de Pyodide dès l'ouverture de l'appli (AppShell.tsx, au repos du
                           navigateur) et après toute coupure du worker, pour que l'exécution soit instantanée ;
                           useExecutionPython.ts gère l'état d'un bloc (sortie, input(), sys.argv)
+  telecharger.ts          téléchargement réel d'un fichier par adresse (10/10/2026) : lecture au fil de l'eau
+                          avec pourcentage (Content-Length exposé par le backend), échec signalé avec un message
+                          clair, jamais d'exception. L'état de chaque téléchargement vit dans etatTelechargements.ts ;
+                          les boutons l'affichent via components/EtatTelechargement.tsx (icône, pourcentage, rouge
+                          + "Réessayer" en cas d'échec) et components/IndicateurTelechargements.tsx (carte globale,
+                          layout racine) couvre les téléchargements sans bouton (lien du chat, sélection). Textes
+                          dans textesTelechargement.ts
   liensSortants.ts        règle unique des liens qui veulent sortir de l'appli (20/09/2026) : un fichier se
                           télécharge vraiment (lib/telecharger.ts), tout autre lien passe par l'aperçu interne
                           (VisionneurPositionGlobal) qui demande ensuite d'ouvrir le site ; appliquée à tous les
                           clics par components/GardienLiensSortants.tsx (layout racine). data-lien-libre sur un
                           lien = garde son comportement natif. Seul ouvrirSiteExterieur quitte réellement l'appli
+  neutraliserPageLivre.ts filtre de sécurité des livres numériques (11/10/2026) : retire scripts, gestionnaires
+                          on*, liens javascript:, iframes, objets et redirections de chaque page d'un livre, et
+                          pose une règle Content-Security-Policy qui interdit le reste. Un livre venu d'un site
+                          externe est un contenu non fiable, ses pages tournent avec les mêmes droits que
+                          l'appli (limite de WebKit sur le bac à sable des iframes)
   useHauteurWidget.ts     hauteur du cadre d'un widget interactif (03/10/2026) : suit la hauteur du contenu entre
                           120 et 1200 px, repart de 384 px (l'ancienne hauteur fixe) ; garde contre un widget
                           qui dépend de la hauteur de la fenêtre (retour à 384 px après 5 agrandissements de
@@ -246,7 +322,13 @@ retirée à la demande de Bourama, qui bloquait aussi le chat invité.
 ## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau, Concentration)
 
 Une section en groupe a une page d'accueil en liste (`components/ListeSections.tsx`)
-et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Chaque
+et des pages filles qui sont de vraies routes, pas des onglets en mémoire. Les lignes de cette liste sont
+à nu, sans carte ni flèche : un trait les sépare et commence après l'icône. Ce trait, ainsi que le trait
+renforcé des icônes de section, viennent de `lib/styleLignes.ts`, lu aussi par les listes de la Bibliothèque,
+de la Bibliothèque publique et des Dossiers du téléphone.
+La page Paramètres (`components/ParametresAccueil.tsx`) suit le même visuel et s'affiche tout de suite, sans écran de
+chargement : seule sa ligne de profil montre un squelette le temps de recevoir sa donnée. Skills publics, Entrer un code,
+Ma mémoire et l'écran d'accueil sont aussi à nu, sans carte, de même que la liste du menu Plus du téléphone et celle de Mes skills (une ligne par skill, plus de pastilles). Dans Ma mémoire, chaque catégorie est repliée par défaut. Chaque
 page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
 l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
 gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut
@@ -261,6 +343,10 @@ Dans le chat, chaque groupe devient un bouton qui déplie la liste de ses pages
 (`components/MenuGroupeRail.tsx`) : au survol sur PC (le premier clic ne change rien, le second
 entre dans la page du groupe), au toucher dans le tiroir mobile (un toucher ouvre la liste, un autre
 la referme, on entre dans une page en touchant sa ligne).
+Sur PC, cette liste a l'apparence compacte de la bulle du bouton Réglages de la barre de saisie
+(largeur du contenu, petit texte, lignes serrées) ; le tiroir mobile garde des lignes tactiles.
+La barre latérale a le même fond que la barre de saisie (`bg-dj-surface`) et des icônes
+petites au trait renforcé, avec des noms en semi-gras ; leur taille et leur trait viennent de `lib/styleBarreLaterale.ts`.
 Le prop `groupe` se fabrique avec `construireGroupe` (`lib/groupeSections.tsx`). Le titre
 et le bouton "i" d'une page fille sont portés par la page (`components/DefinirInfoSection.tsx`),
 les écrans ne les répètent pas dans leur carte.
@@ -297,6 +383,8 @@ tous ont désormais un point d'entrée dans la nav web/TypeScript.
 |---|---|
 | `NEXT_PUBLIC_API_URL` | URL de `clovis-backend` |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client Supabase (auth + DB) |
+| `NEXT_PUBLIC_LIVRE_TAILLE_MAX_MO` | taille maximale, en Mo, d'un livre numérique ouvert dans la liseuse (100 si absente ou invalide) ; au-delà, carte de téléchargement. Optionnelle |
+| `NEXT_PUBLIC_OTA_LATEST_URL` | adresse de `latest.json` pour les mises à jour OTA de l'appli installée (voir "Mises à jour OTA") ; adresse du dépôt `classinus-updates` par défaut. Optionnelle |
 | `NEXT_PUBLIC_APP_URL` | URL publique du déploiement, utilisée par `app/layout.tsx` (balises OG) et le bouton partager (lien de téléchargement de l'app) ; sur Vercel, doit être créée en type "Configuration", jamais "Secrète" (incompatible avec un préfixe `NEXT_PUBLIC_`) |
 
 Voir `.env.local.example`.
@@ -318,3 +406,33 @@ Build statique Next.js vers `out/`, puis `npx cap sync`. Nécessite
 Android Studio/Xcode installés localement pour ouvrir et compiler les
 projets `android/`/`ios/` ensuite (hors de portée d'un sandbox sans ces
 outils).
+
+## Mises à jour OTA (sans réinstaller l'APK)
+
+Le code web de l'appli installée se met à jour tout seul : à l'ouverture,
+l'appli télécharge en arrière-plan le dernier bundle, et il s'active à
+l'ouverture suivante. Seuls les changements natifs (nouveau plugin, permission,
+manifest Android, mise à jour de Capacitor) exigent un nouvel APK.
+
+- **Publication automatique** : chaque push sur `main` lance
+  `.github/workflows/ota.yml` (jamais depuis `staging`). Il construit l'export
+  statique, publie `bundle.zip` en release du dépôt `classinus-updates`, puis met
+  à jour `latest.json` dans ce même dépôt. Les 5 dernières versions sont gardées
+  (variable `OTA_VERSIONS_GARDEES` pour changer).
+- **Côté appli** : `lib/miseAJourOta.ts`, lancé par `components/MiseAJourOta.tsx`
+  (monté dans `app/layout.tsx`). Plugin `@capgo/capacitor-updater` en mode
+  manuel, aucun service Capgo n'est utilisé. Si un bundle ne démarre pas, le
+  plugin revient à la version précédente et cette version n'est plus retentée.
+- **Compatibilité native** : `ota.config.json` contient `versionNativeMin`, le
+  `versionCode` (`android/app/build.gradle`) minimal d'un APK pour recevoir les
+  bundles. À relever dès qu'un changement natif rend les anciens APK
+  incompatibles avec le nouveau code web.
+- **Réglages GitHub à faire une fois** dans ce dépôt (Settings, Secrets and
+  variables, Actions) : secret `UPDATES_TOKEN` (jeton avec droit d'écriture sur
+  `classinus-updates`), variables `OTA_DEPOT` (`petitboura/classinus-updates`),
+  `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`. Le workflow s'arrête
+  avec un message clair si l'un d'eux manque.
+- **Première mise en place** : les APK déjà installés n'ont pas le plugin. Un
+  APK qui l'embarque doit d'abord être publié par le circuit habituel
+  (`/telecharger`), ensuite tout le code web passe en OTA.

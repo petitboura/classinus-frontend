@@ -14,6 +14,8 @@ export const FORMATS_VIDEO = {
 
 export type FormatVideo = keyof typeof FORMATS_VIDEO;
 
+// Sans légende, sa bande reste en place mais invisible : sinon la bande du titre
+// prendrait toute la place et l'animation se retrouverait en bas de l'image.
 // Règle de contenu voulue par Bourama : les textes dessinés DANS l'animation
 // portent l'explication. Le titre de la partie (en haut) et la légende (en
 // bas) ne servent qu'à suivre la progression, on fait comme si l'utilisateur
@@ -41,5 +43,6 @@ body.mode-3d #an-zone{aspect-ratio:4/5;}
 #an-legende{order:2;flex:3 1 0;display:block;margin:0;min-height:0;padding:36px 48px 0;text-align:center;font-size:36px;line-height:1.4;color:${p.texte};}
 body.sans-chapitres #an-titre-rendu{flex:1 1 0;}
 body.sans-legende #an-titre-rendu,body.sans-legende #an-legende{flex:1 1 0;}
+body.sans-legende #an-legende{display:block !important;visibility:hidden;}
 `;
 }

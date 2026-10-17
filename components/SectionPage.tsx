@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { BoutonRetour } from "./BoutonRetour";
 import { BoutonInfoSection } from "./BoutonInfoSection";
@@ -68,12 +67,28 @@ export function useInfoSection(id: string | null) {
   }, [definir, id]);
 }
 
-function TitreSection({ title, infoRubriqueId, className, retour }: { title: string; infoRubriqueId: string | null; className?: string; retour?: string }) {
+// Ligne d'en-tête unique de chaque page (refonte du 13/10/2026, demande
+// Bourama : un seul titre tout en haut, plus de fil d'Ariane ni de second
+// gros titre, plus d'espace vide au dessus). Elle se pose sur la même
+// ligne que les boutons flottants du haut (hamburger à gauche sur
+// téléphone, cloche et minuteurs à droite) : même décalage haut
+// (0.5rem + safe-top) et même hauteur (h-8) que ces boutons : la marge
+// négative remonte la ligne dans la bande que <main> réserve au
+// hamburger (--dj-hamburger-espace, voir app/globals.css), qui vaut 0px
+// sur PC. Les pages qui n'ont pas cette ligne (chat, tableau de bord)
+// gardent cette bande telle quelle. Les deux conteneurs de page sont en
+// flow-root : sans cela, cette marge négative remontait à travers les
+// couches de TransitionPage (la page entrante et la page sortante, en
+// position absolue, ne la traitaient pas pareil) et toute la page sautait
+// à chaque changement de sous-section. Sur
+// téléphone, pl-8 laisse la place du hamburger, et pr-20 laisse celle de
+// la cloche et du bouton minuteur sur toute la largeur.
+function TitreSection({ title, infoRubriqueId, retour }: { title: string; infoRubriqueId: string | null; retour?: string }) {
   const rubrique = infoRubriqueId ? trouverRubriqueAide(infoRubriqueId) : undefined;
   return (
-    <div className={`flex items-center gap-1.5 ${className ?? ""}`}>
+    <div className="mt-[calc(0.5rem_-_var(--dj-hamburger-espace))] flex h-8 items-center gap-1.5 pl-8 pr-20 md:pl-0">
       {retour && <BoutonRetour href={retour} padding="p-1" className="-ml-1" />}
-      <h1 className="font-display text-xl font-bold text-dj-texte">{title}</h1>
+      <h1 className="truncate font-display text-xl font-bold text-dj-texte">{title}</h1>
       {rubrique && (
         <BoutonInfoSection
           rubriqueId={rubrique.id}
@@ -130,7 +145,7 @@ export function SectionPage({
   if (!groupe) {
     return (
       <ContexteInfoSection.Provider value={setInfoRubriqueId}>
-        <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-24 pt-6 md:pt-8">
+        <div className="mx-auto flow-root w-full max-w-3xl space-y-4 px-4 pb-24">
           <TitreSection title={title} infoRubriqueId={infoRubriqueId} retour={retour} />
           {children}
         </div>
@@ -138,20 +153,20 @@ export function SectionPage({
     );
   }
 
+  // Page d'un groupe (Bibliothèque, Paramètres, Personnaliser Classinus) :
+  // le seul titre affiché est celui du groupe, en haut, par exemple
+  // "Bibliothèque". La page voisine active se lit dans les pastilles
+  // (téléphone) ou dans le menu de gauche (PC), plus de fil d'Ariane ni de
+  // second titre. `title` n'est donc plus affiché ici, il reste dans la
+  // signature pour ne pas toucher les pages qui l'envoient. Le bouton
+  // retour vers la page mère du groupe reste, à gauche du titre (retour de
+  // Bourama le 13/10/2026 : il doit toujours y en avoir un).
   return (
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
-    <div className="mx-auto w-full max-w-5xl px-4 pb-24 pt-6 md:pt-8">
-      <div className="mb-1 flex items-center gap-1.5 text-sm text-dj-texte-muet">
-        <BoutonRetour href={groupe.href} padding="p-0.5" className="-ml-0.5" />
-        <Link href={groupe.href} className="transition-colors hover:text-dj-texte">
-          {groupe.label}
-        </Link>
-        <ChevronRight size={14} className="flex-shrink-0" />
-        <span className="text-dj-texte">{title}</span>
-      </div>
-      <TitreSection title={title} infoRubriqueId={infoRubriqueId} className="mb-4" />
+    <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
+      <TitreSection title={groupe.label} infoRubriqueId={infoRubriqueId} retour={groupe.href} />
 
-      <div className="flex flex-col gap-6 md:flex-row md:items-start">
+      <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
         <div className="-mb-2 md:hidden">
           <OngletsLiens
             ariaLabel={groupe.label}

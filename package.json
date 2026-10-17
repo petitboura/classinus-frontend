@@ -24,10 +24,11 @@
     "test:raccourcis-crayon": "node tests/verifier-raccourcis-crayon.mjs",
     "test:zones-crayon": "node tests/verifier-zones-crayon.mjs",
     "test:phrase-crayon": "node tests/verifier-phrase-crayon.mjs",
-    "test:traits-crayon": "node tests/verifier-traits-crayon.mjs"
+    "test:traits-crayon": "node tests/verifier-traits-crayon.mjs",
+    "postinstall": "node scripts/appliquer-correctif-lector.mjs"
   },
   "dependencies": {
-    "@anaralabs/lector": "^3.7.1",
+    "@anaralabs/lector": "3.7.1",
     "@capacitor/android": "^8.4.2",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
@@ -38,6 +39,7 @@
     "@capawesome/capacitor-electron": "^0.1.1",
     "@capgo/capacitor-native-navigation": "^8.3.1",
     "@capgo/capacitor-transitions": "^8.1.9",
+    "@capgo/capacitor-updater": "^8.52.1",
     "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-go": "^6.0.1",

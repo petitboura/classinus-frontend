@@ -20,7 +20,8 @@ import { ContexteChat } from "@/lib/contexteChat";
 import { conversationActive } from "@/lib/conversationPartagee";
 import { useOutilsRegistre } from "@/lib/outils";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
-import { definirEffortProchainMessage, definirLongueurProchainMessage, definirModeleProchainMessage } from "@/lib/reglagesProchainMessage";
+import { definirEffortProchainMessage, definirLongueurProchainMessage } from "@/lib/reglagesProchainMessage";
+import { choisirModele, useModeleActif } from "@/lib/modeleActif";
 
 const CLASSE_ROND =
   "flex h-10 w-10 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet shadow-lg";
@@ -28,6 +29,8 @@ const CLASSE_ROND =
 export function BoutonReglagesCanal({ conversationId }: { conversationId: string | null }) {
   const ctxChat = useContext(ContexteChat);
   const reglages = useReglagesProchainMessage();
+  const modelesDuCanal = ctxChat?.agent?.modeles_disponibles ?? [];
+  const modeleActif = useModeleActif(modelesDuCanal);
   // Les messages du canal partent sur la conversation active (celle du chat quand il est à
   // l'écran, voir lib/conversationPartagee.ts), pas sur l'identifiant propre du canal. Les
   // réglages enregistrés côté serveur doivent viser cette même conversation. L'identifiant
@@ -40,9 +43,9 @@ export function BoutonReglagesCanal({ conversationId }: { conversationId: string
       <BoutonReglages
         variante="bureau"
         ancrage="gauche"
-        modelesDisponibles={ctxChat?.agent?.modeles_disponibles ?? []}
-        modeleSelectionne={reglages.modeleId}
-        onModeleChange={definirModeleProchainMessage}
+        modelesDisponibles={modelesDuCanal}
+        modeleSelectionne={modeleActif}
+        onModeleChange={choisirModele}
         longueur={reglages.longueur}
         onLongueurChange={definirLongueurProchainMessage}
         effort={reglages.effort}

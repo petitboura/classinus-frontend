@@ -270,7 +270,7 @@ export function ChatSection() {
               texteInitial={texteInitialConversation ?? undefined}
               onMessagesChange={setNbMessages}
               modelesDisponibles={agent.modeles_disponibles}
-              modeleChoisi={agent.modele_choisi}
+              modelesBientot={agent.modeles_bientot}
               outilsActifsAgent={outilsActifsAgent}
               boutonSansEnseignant={false}
               avantEnvoi={verifierLimiteInvite}

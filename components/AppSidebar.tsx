@@ -10,10 +10,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useFenetres } from "@/lib/contexteFenetres";
 import { MenuGroupe } from "@/components/MenuGroupeRail";
 import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Logo } from "@/components/Logo";
 import {
-  LogOut,
   UserRound,
   Home,
   Briefcase,
@@ -30,11 +28,11 @@ import {
   History,
   PanelLeft,
   ArrowUpRight,
-  Settings,
   Hourglass,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { lireMonProfil } from "@/lib/api";
+import { useMonProfilAffiche } from "@/lib/useMonProfilAffiche";
+import { MenuProfil } from "@/components/MenuProfil";
 import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { BoutonInstaller } from "@/components/BoutonInstaller";
@@ -46,6 +44,14 @@ import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 import { ROUTES_APP } from "@/lib/routesApp";
+import {
+  CELLULE_ICONE_RAIL,
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_RAIL,
+  RAPPROCHE_LIBELLE_RAIL,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Nav principale de l'app (refonte "Mon espace = l'app", 15/08/2026,
 // demande Bourama : "faut changer l'affichage même de mon espace, son
@@ -147,183 +153,14 @@ const MOUVEMENT_NAV = "group-hover:translate-x-0.5";
 function LibelleRail({ ouverte, children, titre = false }: { ouverte: boolean; children: React.ReactNode; titre?: boolean }) {
   return (
     <span
-      className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
-        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm"
+      className={`${RAPPROCHE_LIBELLE_RAIL} overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
+        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm font-semibold"
       } ${
         ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
       }`}
     >
       {children}
     </span>
-  );
-}
-
-// Menu déroulant ouvert au clic sur la photo de profil, en bas de la
-// sidebar (22/08/2026, correctif demande Bourama : un clic sur la photo
-// ne doit PAS naviguer directement, il doit ouvrir un petit menu -- même
-// pattern que Slack/Discord/Notion, et même mécanique de popover que le
-// menu "Actions" juste au dessus dans ce fichier : ref + état booléen +
-// fermeture au clic extérieur, popover ancré juste au dessus du bouton).
-function MenuProfil({
-  avatarUrl,
-  nomAffiche,
-  ouverte,
-  LibelleRail,
-  mobile = false,
-  menuOuvert,
-  onBasculerMenu,
-  onFermerMenu,
-  enSortieMenu,
-  onNaviguerVersParametres,
-  onNaviguerVersProfil,
-  onSeDeconnecter,
-  pointRouge = false,
-}: {
-  avatarUrl: string | null;
-  nomAffiche: string | null;
-  ouverte: boolean;
-  LibelleRail: React.ComponentType<{ ouverte: boolean; children: React.ReactNode }>;
-  mobile?: boolean;
-  // État du popup remonté à AppSidebar (24/08/2026, correctif demande
-  // Bourama : le popup s'affichait masqué/coupé) -- avant, ce menu
-  // gérait son ouverture tout seul en interne (useState local), donc
-  // AppSidebar ne savait jamais qu'il fallait repasser le rail en
-  // overflow-visible pendant que ce popup est ouvert. Même mécanique
-  // que le menu "Actions" un peu plus haut dans ce fichier, qui avait
-  // eu exactement ce problème le 20/08.
-  menuOuvert: boolean;
-  onBasculerMenu: () => void;
-  // 01/09/2026 : onFermerMenu passé par AppSidebar route déjà par
-  // demarrerFermeture (voir profilEnSortie/fermerProfilMenu côté
-  // AppSidebar) -- ce composant n'a plus sa propre instance du hook,
-  // enSortieMenu lui est passé en prop pour rester en phase avec le
-  // bouton retour matériel (même raisonnement que tiroirEnSortie).
-  onFermerMenu: () => void;
-  enSortieMenu: boolean;
-  onNaviguerVersParametres: () => void;
-  // 04/09/2026 : "Voir le profil" ouvrait Paramètres tout court, comme le
-  // bouton "Paramètres" juste en dessous, au lieu d'aller directement sur
-  // la section Profil (photo/nom/bio) à l'intérieur de Paramètres. Prop
-  // séparée, même principe que onNaviguerVersParametres, mais vers
-  // "/parametres/profil" (19/09/2026 : devenue une vraie page, voir
-  // lib/sectionsParametres.tsx -- avant, paramètre de requête
-  // "/parametres?vue=profil" lu par l'ancien EspaceParametres.tsx).
-  onNaviguerVersProfil: () => void;
-  onSeDeconnecter: () => void;
-  // 09/09/2026, demande Bourama : petit point rouge sur l'avatar tant
-  // qu'une mise à jour n'a pas été installée -- couvre en un seul endroit
-  // le rail desktop ET le tiroir mobile du chat plein écran, puisque
-  // MenuProfil est le même composant pour les deux (voir les deux appels
-  // plus bas dans ce fichier).
-  pointRouge?: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const libelle = nomAffiche || "Mon compte";
-  const fermer = onFermerMenu;
-  const enSortie = enSortieMenu;
-
-  useEffect(() => {
-    if (!menuOuvert) return;
-    function onClicExterieur(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) fermer();
-    }
-    document.addEventListener("mousedown", onClicExterieur);
-    return () => document.removeEventListener("mousedown", onClicExterieur);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fermer recrée une fonction stable via demarrerFermeture (useCallback) + onFermerMenu du parent
-  }, [menuOuvert, onFermerMenu]);
-
-  const Avatar = (
-    <span className="relative h-6 w-6 flex-shrink-0 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute">
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage, hôte dynamique
-        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-dj-texte-muet">
-          {libelle.trim().charAt(0).toUpperCase()}
-        </span>
-      )}
-      {pointRouge && (
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-dj-surface bg-[var(--dj-erreur)]" />
-      )}
-    </span>
-  );
-
-  return (
-    <div ref={ref} className={`relative w-full ${mobile ? "" : "mt-2"}`}>
-      <button
-        onClick={onBasculerMenu}
-        className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-          mobile ? "px-2" : ""
-        }`}
-      >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">{Avatar}</span>
-        {mobile ? <span className="text-sm">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
-      </button>
-
-      {(menuOuvert || enSortie) && (
-        <div
-          className={`absolute bottom-full z-50 mb-2 w-56 overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
-            mobile ? "left-2" : "left-0"
-          } ${enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"}`}
-        >
-          {/* 07/09/2026, demande Bourama : "Paramètres" doit être une
-              section normale comme les autres, accessible par un vrai
-              lien Next.js (comme Bibliothèque/Notes/Chat, voir Link plus
-              haut dans ce fichier) au lieu d'un bouton qui navigue par
-              code -- seule façon d'obtenir le préchargement automatique
-              de Next.js et éviter le délai au premier clic (bug signalé :
-              "rien ne se passe" la première fois qu'on ouvre
-              Paramètres). Les effets de bord (fermeture du menu/tiroir,
-              marquage historique) restent dans onNaviguerVersProfil/
-              onNaviguerVersParametres (AppSidebar), qui ne font plus
-              eux-mêmes de router.push -- la navigation vient maintenant
-              du href du Link. */}
-          <Link
-            href="/parametres/profil"
-            onClick={() => {
-              fermer();
-              onNaviguerVersProfil();
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-dj-surface-haute"
-          >
-            {Avatar}
-            <div className="flex flex-col overflow-hidden">
-              <span className="truncate text-sm font-medium text-dj-texte">{libelle}</span>
-              <span className="text-xs text-dj-texte-muet">Voir le profil</span>
-            </div>
-          </Link>
-
-          <div className="border-t border-dj-bordure" />
-
-          <Link
-            href="/parametres"
-            onClick={() => {
-              fermer();
-              onNaviguerVersParametres();
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-          >
-            <Settings size={16} className="text-dj-texte-muet" />
-            Paramètres
-          </Link>
-
-          <ThemeToggle LibelleRail={LibelleRail} ouverte />
-
-          <div className="border-t border-dj-bordure" />
-
-          <button
-            onClick={() => {
-              fermer();
-              onSeDeconnecter();
-            }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--dj-erreur)] transition-colors hover:bg-dj-surface-haute"
-          >
-            <LogOut size={16} />
-            Se déconnecter
-          </button>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -505,30 +342,7 @@ export function AppSidebar({
   // afficher pour un visiteur, voir rendu plus bas). Chargé ici (jamais
   // remonté à AppShell, qui ne connaît que le booléen `connecte`) car
   // c'est le seul endroit de l'app qui en a besoin.
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [nomAffiche, setNomAffiche] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!connecte) {
-      setAvatarUrl(null);
-      setNomAffiche(null);
-      return;
-    }
-    let annule = false;
-    lireMonProfil()
-      .then((p: { avatar_url: string | null; nom_affiche: string }) => {
-        if (annule) return;
-        setAvatarUrl(p.avatar_url || null);
-        setNomAffiche(p.nom_affiche || null);
-      })
-      .catch(() => {
-        // Best-effort : l'initiale de repli ("Mon compte") suffit si ce
-        // chargement échoue, pas la peine d'afficher une erreur ici.
-      });
-    return () => {
-      annule = true;
-    };
-  }, [connecte]);
+  const { avatarUrl, nomAffiche } = useMonProfilAffiche(connecte);
 
   function basculerActions() {
     setActionsDeplie((v) => !v);
@@ -657,14 +471,14 @@ export function AppSidebar({
             }
           }
         }}
-        className={`group relative mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
+        className={`group relative ${mobile ? "mt-2" : ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
       >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <onglet.Icone size={18} className={`transition-transform duration-200 ${mouvement}`} />
+        <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
+          <onglet.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
-        {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
+        {mobile ? <span className="text-sm font-semibold">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
       </Link>
     );
   }
@@ -793,7 +607,7 @@ export function AppSidebar({
           sourisSurRail.current = false;
           if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
         }}
-        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width,box-shadow] duration-300 ease-out md:flex ${
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 py-3 transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
           railOuvert ? "shadow-xl" : ""
         } ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
@@ -806,8 +620,24 @@ export function AppSidebar({
           aria-label={railOuvert ? "Replier le panneau" : "Déplier le panneau"}
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <PanelLeft size={18} className="transition-transform duration-200 group-hover:scale-95" />
+          {/* Barre repliée : l'icône qui déplie. Barre dépliée : la plume de
+              Classinus prend sa place, à gauche du nom (16/10/2026, demande de
+              Bourama). Les deux se fondent l'une dans l'autre. */}
+          <span className={`relative ${CELLULE_ICONE_RAIL}`}>
+            <PanelLeft
+              size={TAILLE_ICONE_RAIL}
+              strokeWidth={TRAIT_ICONE_RAIL}
+              className={`absolute transition-opacity duration-200 ${railOuvert ? "opacity-0" : "opacity-100"}`}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-classinus-sans-fond.webp"
+              alt=""
+              aria-hidden="true"
+              width={22}
+              height={22}
+              className={`absolute h-[22px] w-[22px] object-contain transition-opacity duration-200 ${railOuvert ? "opacity-100" : "opacity-0"}`}
+            />
           </span>
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
@@ -821,8 +651,8 @@ export function AppSidebar({
                 onClick={onNouvelleConversation}
                 className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
               >
-                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                  <MessageSquarePlus size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
+                <span className={CELLULE_ICONE_RAIL}>
+                  <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
                 </span>
                 <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
               </button>
@@ -836,13 +666,13 @@ export function AppSidebar({
                     historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
                   }`}
                 >
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                    <History size={18} className="transition-transform duration-300 group-hover:rotate-45" />
+                  <span className={CELLULE_ICONE_RAIL}>
+                    <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-300 group-hover:rotate-45" />
                   </span>
                   <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
                 </button>
                 {historiqueDeplie && (
-                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
+                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-rail shadow-lg">
                     {/* Plein écran : même style que celui de la barre de saisie, posé
                         dehors, collé juste au-dessus du coin haut droit du panneau. */}
                     <button
@@ -905,13 +735,13 @@ export function AppSidebar({
               actionsDeplie ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
             }`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
+            <span className={CELLULE_ICONE_RAIL}>
+              <MoreHorizontal size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
             </span>
             <LibelleRail ouverte={railOuvert}>Plus</LibelleRail>
           </button>
           {actionsDeplie && (
-            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-rail p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-2">
                 {ongletsDansActions.map((o) => {
                     const actif = pathname === o.href;
@@ -1064,9 +894,9 @@ export function AppSidebar({
             onClick={seDeconnecter}
             aria-label="Se connecter"
             title="Se connecter"
-            className="group mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            className={`group ${ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte`}
           >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <span className={CELLULE_ICONE_RAIL}>
               <span className="flex h-6 w-6 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface-haute">
                 <UserRound size={13} className="text-dj-texte-muet" />
               </span>
@@ -1103,7 +933,7 @@ export function AppSidebar({
         <div
           data-agent-zone="Menu latéral"
           className={
-            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-fond px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
+            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-surface px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
               // 07/09/2026, correctif Bourama (bug "sous-sections de
               // Personnaliser Classinus ne marchent pas") : groupeOuvertId
               // manquait ici, contrairement au rail desktop juste plus
@@ -1134,7 +964,7 @@ export function AppSidebar({
                     onClick={onNouvelleConversation}
                     className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
-                    <MessageSquarePlus size={18} className="flex-shrink-0" />
+                    <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
                     <span className="text-sm">Nouvelle conversation</span>
                   </button>
                 )}
@@ -1147,7 +977,7 @@ export function AppSidebar({
                         historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet"
                       }`}
                     >
-                      <History size={18} className="flex-shrink-0" />
+                      <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
                       Historique
                     </button>
                     {historiqueDeplie && (

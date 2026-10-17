@@ -46,8 +46,13 @@ export function GardienLiensSortants() {
       }
 
       const texte = (lien.textContent || "").trim();
+      // Carte du chat : le titre et la description écrits par le modèle sont
+      // portés par la carte (data-titre-lien, data-description-lien).
+      const titreDuModele = lien.getAttribute("data-titre-lien") || undefined;
       traiterLienSortant(href, {
-        titre: texte && texte !== href ? texte : undefined,
+        titre: titreDuModele || (texte && texte !== href ? texte : undefined),
+        titreDuModele,
+        descriptionLien: lien.getAttribute("data-description-lien") || undefined,
         nomFichier: lien.getAttribute("download") || undefined,
         aAttributDownload,
       });

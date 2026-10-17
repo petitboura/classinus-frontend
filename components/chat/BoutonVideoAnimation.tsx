@@ -1,16 +1,17 @@
 "use client";
 
-import { AlertCircle, Check, Loader2, RectangleHorizontal, RectangleVertical } from "lucide-react";
+import { AlertCircle, Check, Download, Loader2, RectangleHorizontal, RectangleVertical } from "lucide-react";
+import { MenuActionsCarte } from "@/components/MenuActionsCarte";
 import type { FormatVideo } from "./animation/styleRenduVideo";
 import type { EtatVideoAnimation } from "@/lib/useVideoAnimation";
 import { textesVideoAnimation } from "@/lib/textesVideoAnimation";
 
-// Boutons "télécharger en vidéo" du bloc animation, rendus dans la rangée
-// d'actions de BlocExpansible (voir actionsSupplementaires). Aucun état ici,
-// pour la même raison que BoutonFilmerWidget : tout vit dans
-// lib/useVideoAnimation.ts.
+// Bouton "Télécharger" du bloc animation, rendu dans la rangée d'actions de
+// BlocExpansible (voir actionsSupplementaires). Aucun état ici, pour la même
+// raison que BoutonFilmerWidget : tout vit dans lib/useVideoAnimation.ts.
 //
-// Au repos : deux boutons, 16:9 (horizontal) et 9:16 (vertical). Pendant la
+// Au repos : un seul bouton Télécharger, qui ouvre un petit menu pour choisir
+// le format de la vidéo, 16:9 (horizontal) ou 9:16 (vertical). Pendant la
 // création : un seul bouton avec l'avancement, qui annule au clic.
 export function BoutonVideoAnimation({
   etat,
@@ -67,29 +68,22 @@ export function BoutonVideoAnimation({
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => surChoix("16:9")}
-        disabled={desactive}
-        aria-label={t.horizontal}
-        title={t.horizontal}
-        className={classe}
-      >
-        <RectangleHorizontal size={14} />
-        {avecTexte && t.horizontalCourt}
-      </button>
-      <button
-        type="button"
-        onClick={() => surChoix("9:16")}
-        disabled={desactive}
-        aria-label={t.vertical}
-        title={t.vertical}
-        className={classe}
-      >
-        <RectangleVertical size={14} />
-        {avecTexte && t.verticalCourt}
-      </button>
-    </>
+    <MenuActionsCarte
+      portail
+      niveauPortail="z-[165]"
+      ariaLabel={t.telecharger}
+      desactive={desactive}
+      classeDeclencheur={classe}
+      declencheur={
+        <>
+          <Download size={14} />
+          {avecTexte && t.telecharger}
+        </>
+      }
+      actions={[
+        { cle: "16:9", label: t.horizontal, icone: <RectangleHorizontal size={14} />, onClick: () => surChoix("16:9") },
+        { cle: "9:16", label: t.vertical, icone: <RectangleVertical size={14} />, onClick: () => surChoix("9:16") },
+      ]}
+    />
   );
 }

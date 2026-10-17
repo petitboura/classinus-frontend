@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { MoreVertical } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
@@ -24,6 +24,10 @@ export function MenuActionsCarte({
   ariaLabel = "Actions",
   contraste = false,
   portail = false,
+  declencheur,
+  classeDeclencheur = "",
+  desactive = false,
+  niveauPortail = "z-[130]",
 }: {
   actions: ActionSelection[];
   ariaLabel?: string;
@@ -35,6 +39,18 @@ export function MenuActionsCarte({
    * désactivée est à demi transparente, ce qui crée une couche qui passerait
    * sous les cartes suivantes. Absent : rendu inchangé. */
   portail?: boolean;
+  /** 07/10/2026 : contenu du bouton d'ouverture, a la place de l'icone "...".
+   * Sert au bouton Telecharger du bloc animation (choix du format). Absent :
+   * rendu inchange pour les autres ecrans. */
+  declencheur?: ReactNode;
+  /** Classes du bouton d'ouverture quand `declencheur` est fourni. */
+  classeDeclencheur?: string;
+  /** Bouton d'ouverture non cliquable. Absent : cliquable. */
+  desactive?: boolean;
+  /** Classe de niveau (z-index) du menu en mode `portail`. Le plein ecran des
+   * blocs du chat est a z-[160] : un menu ouvert depuis son en-tete doit etre
+   * au dessus. Absent : z-[130], inchange. */
+  niveauPortail?: string;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const [ouvrirVersHaut, setOuvrirVersHaut] = useState(false);
@@ -112,7 +128,7 @@ export function MenuActionsCarte({
           ref={menuRef}
           role={portail ? "menu" : undefined}
           style={portail ? positionFixe : undefined}
-          className={`${portail ? "z-[130]" : "absolute z-20"} max-w-[min(16rem,85vw)] min-w-[10rem] overflow-hidden rounded-lg border p-1 ${
+          className={`${portail ? niveauPortail : "absolute z-20"} max-w-[min(16rem,85vw)] min-w-[10rem] overflow-hidden rounded-lg border p-1 ${
             contraste
               ? "border-dj-bordure-forte bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
               : "border-dj-bordure bg-dj-surface-haute shadow-lg"
@@ -146,14 +162,21 @@ export function MenuActionsCarte({
     <div ref={ref} className="relative flex-shrink-0">
       <button
         type="button"
+        disabled={desactive}
         onClick={(e) => {
           e.stopPropagation();
           ouvert ? fermer() : ouvrirMenu();
         }}
         aria-label={ariaLabel}
-        className="flex flex-shrink-0 items-center rounded-full p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        aria-haspopup={declencheur ? "menu" : undefined}
+        aria-expanded={declencheur ? ouvert : undefined}
+        className={
+          declencheur
+            ? classeDeclencheur
+            : "flex flex-shrink-0 items-center rounded-full p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        }
       >
-        <MoreVertical size={16} />
+        {declencheur ?? <MoreVertical size={16} />}
       </button>
 
       {(ouvert || enSortie) && portail && typeof document !== "undefined"

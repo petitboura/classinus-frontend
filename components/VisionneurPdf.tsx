@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasLayer,
   CurrentZoom,
@@ -10,14 +10,16 @@ import {
   TextLayer,
   ZoomIn,
   ZoomOut,
+  usePdf,
   usePdfJump,
 } from "@anaralabs/lector";
 import "pdfjs-dist/web/pdf_viewer.css";
-import { Download, RotateCw, ZoomIn as IconZoomIn, ZoomOut as IconZoomOut } from "lucide-react";
+import { RotateCw, ZoomIn as IconZoomIn, ZoomOut as IconZoomOut } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { Skeleton } from "./Skeleton";
 import { AvisPdfLent } from "./AvisPdfLent";
 import { telecharger } from "@/lib/telecharger";
+import { IconeTelechargement, LibelleTelechargement, MessageEchecTelechargement } from "@/components/EtatTelechargement";
 
 // 10/09, remplacement du lecteur PDF -- l'ancien (react-pdf/pdfjs custom,
 // avec bascule orientation/mode page-par-page codée à la main) posait trop
@@ -45,6 +47,11 @@ GlobalWorkerOptions.workerSrc = "/pdf-worker/pdf.worker.min.mjs";
 // bloqué (lector n'expose aucun callback d'erreur de chargement, vérifié
 // dans son code source : un échec de getDocument() est seulement loggé).
 const DELAI_AVIS_MS = 15000;
+
+// Taille des tranches demandées au serveur quand pdf.js lit un PDF par morceaux
+// (voir VisionneurPdfCharge). Le défaut de pdf.js est 64 Ko, trop petit pour un
+// gros livre dont chaque page oblige à lire un endroit différent du fichier.
+const TAILLE_TRANCHE_PDF_OCTETS = 4 * 1024 * 1024;
 const DELAI_ERREUR_MS = 120000;
 
 // Composant interne : une fois le document chargé (donc à l'intérieur du
@@ -60,6 +67,78 @@ function SautInitial({ page }: { page: number }) {
     jumpToPage(page - 1, { behavior: "auto" });
   }, [page, jumpToPage]);
   return null;
+}
+
+// 10/10/2026, demande Bourama : un gros livre PDF ne doit jamais être préparé
+// en entier. La bibliothèque lector a été corrigée (voir patches/, patch-package) :
+// à l'ouverture elle ne lit que la page 1 et suppose que les autres ont la même
+// taille. Ce composant charge chaque page seulement quand le défilement l'amène à
+// l'écran (lector n'affiche que les pages visibles et deux de chaque côté), puis
+// corrige sa vraie taille. Le squelette garde la place pendant le chargement.
+function PageALaDemande({ pageNumber = 1 }: { pageNumber?: number }) {
+  const pdf = usePdf((s) => s.pdfDocumentProxy);
+  const proxies = usePdf((s) => s.pageProxies);
+  const viewports = usePdf((s) => s.viewports);
+  const virtualizer = usePdf((s) => s.virtualizer);
+  const [pret, setPret] = useState(Boolean(proxies[pageNumber - 1]));
+
+  useEffect(() => {
+    if (proxies[pageNumber - 1]) {
+      setPret(true);
+      return;
+    }
+    let annule = false;
+    pdf
+      .getPage(pageNumber)
+      .then((page) => {
+        // Rangée même si l'utilisateur a déjà défilé plus loin : la page reste prête
+        // s'il revient.
+        if (!proxies[pageNumber - 1]) {
+          proxies[pageNumber - 1] = page;
+          const reel = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
+          const estime = viewports[pageNumber - 1];
+          viewports[pageNumber - 1] = reel;
+          if (!estime || estime.width !== reel.width || estime.height !== reel.height) {
+            virtualizer?.measure();
+          }
+        }
+        if (!annule) setPret(true);
+      })
+      .catch(() => {
+        // Page illisible : le squelette reste, sans interrompre les autres pages.
+      });
+    return () => {
+      annule = true;
+    };
+  }, [pdf, proxies, viewports, virtualizer, pageNumber]);
+
+  // Page sortie de la zone affichée (lector ne garde montées que les pages proches) :
+  // on libère ce que pdf.js a gardé pour elle (image décodée, instructions de dessin).
+  // Sur un livre scanné, une page décodée pèse plusieurs dizaines de Mo, et sans cette
+  // libération la mémoire grossit à chaque page vue. Si la page revient à l'écran,
+  // pdf.js la relit simplement.
+  useEffect(() => {
+    return () => {
+      proxies[pageNumber - 1]?.cleanup();
+    };
+  }, [proxies, pageNumber]);
+
+  if (!pret) {
+    const estime = viewports[pageNumber - 1];
+    return (
+      <Skeleton
+        className="rounded-sm"
+        style={{ width: estime?.width ?? 600, height: estime?.height ?? 800 }}
+      />
+    );
+  }
+
+  return (
+    <Page pageNumber={pageNumber}>
+      <CanvasLayer />
+      <TextLayer />
+    </Page>
+  );
 }
 
 export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number }) {
@@ -164,11 +243,12 @@ export function VisionneurPdf({ url, page = 1 }: { url: string; page?: number })
           </button>
           <button
             type="button"
-            onClick={() => telecharger(url, "document.pdf")}
+            onClick={() => void telecharger(url, "document.pdf")}
             className="flex items-center gap-1 text-dj-accent-1-texte hover:underline"
           >
-            <Download size={14} /> Télécharger
+            <IconeTelechargement href={url} size={14} /> <LibelleTelechargement href={url} defaut="Télécharger" />
           </button>
+          <MessageEchecTelechargement href={url} />
         </div>
       </div>
     );
@@ -211,6 +291,17 @@ function VisionneurPdfCharge({
   const delaiAvisRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [lent, setLent] = useState(false);
 
+  // 10/10/2026, demande Bourama (ouvrir un gros livre PDF bloquait le
+  // navigateur puis le PC) : le lecteur demande d'un coup les infos de TOUTES
+  // les pages, et pdf.js lit alors le fichier par tranches de 64 Ko. Pour un
+  // livre de plusieurs centaines de pages, cela donnait plus de 150 demandes en
+  // 45 secondes (vu dans les journaux du serveur, une demande de relais chacune).
+  // Des tranches de 4 Mo ramènent ce nombre à quelques dizaines au plus. Seules
+  // les adresses réseau sont concernées (un fichier local blob: ou data: reste
+  // lu tel quel). L'objet est mémorisé : lector recharge le document dès que
+  // sa valeur change, un nouvel objet à chaque rendu relancerait tout.
+  const source = useMemo(() => (/^https?:/i.test(url) ? { url, rangeChunkSize: TAILLE_TRANCHE_PDF_OCTETS } : url), [url]);
+
   useEffect(() => {
     delaiAvisRef.current = setTimeout(() => setLent(true), DELAI_AVIS_MS);
     delaiErreurRef.current = setTimeout(onErreur, DELAI_ERREUR_MS);
@@ -230,10 +321,17 @@ function VisionneurPdfCharge({
   // PDF, Bibliothèque comme chat). <Root> devient ici le conteneur flex
   // englobant (au lieu de n'entourer que la zone de pages), la barre de
   // zoom passe dans ses children, en dessous de <Pages>.
+  // 10/10/2026 : dans le fil du chat (BlocExpansible, repère data-apercu-inline),
+  // rien ne donne de hauteur au lecteur : "h-full" d'un parent sans hauteur ne vaut
+  // rien, la zone de pages s'agrandit alors jusqu'à la taille du livre entier et
+  // lector croit que TOUTES les pages sont à l'écran (il les monte toutes d'un
+  // coup : blocage du PC, fin du livre en squelette). Dans le fil, le lecteur
+  // prend donc une hauteur fixe de 70vh. En plein écran (Agrandir), en
+  // bibliothèque et dans le panneau de position, le parent a une hauteur : h-full.
   return (
-    <div className="relative h-full">
+    <div className="relative h-full [[data-apercu-inline]_&]:h-[70vh]">
     <Root
-      source={url}
+      source={source}
       className="flex h-full flex-col overflow-hidden"
       loader={
         <div className="flex h-full justify-center p-4" aria-hidden>
@@ -251,10 +349,7 @@ function VisionneurPdfCharge({
     >
       <SautInitial page={page} />
       <Pages className="flex-1 overflow-auto p-3">
-        <Page>
-          <CanvasLayer />
-          <TextLayer />
-        </Page>
+        <PageALaDemande />
       </Pages>
 
       <div className="flex items-center justify-center gap-2 border-t border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet">

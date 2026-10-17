@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, SlidersHorizontal, Lock, HelpCircle, Info, Trash2, Download, Smartphone, Accessibility, LogOut, Eraser, type LucideIcon } from "lucide-react";
+import { SlidersHorizontal, Lock, HelpCircle, Info, Trash2, Download, Smartphone, Accessibility, LogOut, Eraser, type LucideIcon } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { lireMonProfil, supprimerMonCompte, exporterMesDonnees, appelerApi } from "@/lib/api";
@@ -14,6 +14,7 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { ROUTES_PARAMETRES } from "@/lib/routesParametres";
+import { LIGNE_TRAIT_ICONE_18, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 // 19/09/2026, demande Bourama : Paramètres fonctionne maintenant comme
 // Personnaliser Classinus/Bibliothèque/Bureau/Concentration -- cette page
@@ -26,9 +27,14 @@ import { ROUTES_PARAMETRES } from "@/lib/routesParametres";
 // interne (ancien composant EspaceParametres.tsx, supprimé).
 //
 // Pas de ListeSections.tsx générique ici : cette page mélange des lignes
-// de navigation avec une carte de profil différente et des lignes
-// d'action -- LigneLien/LigneAction ci-dessous reprennent exactement le
-// même visuel (mêmes classes) que l'ancien LigneListe.
+// de navigation avec une ligne de profil différente et des lignes
+// d'action. LigneLien/LigneAction ci-dessous ont le même visuel que
+// ListeSections.tsx : lignes à nu, sans carte ni flèche, séparées par un
+// trait qui commence après l'icône (voir lib/styleLignes.ts).
+//
+// La page ne passe plus par un écran de chargement : toutes ses lignes sont
+// fixes et s'affichent tout de suite, seule la ligne de profil attend sa
+// donnée et montre son propre squelette.
 
 type ProfilMoi = {
   user_id: string;
@@ -39,21 +45,21 @@ type ProfilMoi = {
 
 function Liste({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-      <div className="divide-y divide-dj-bordure">{children}</div>
-    </div>
+    <div className="flex flex-col">{children}</div>
   );
 }
 
 function LigneLien({ icone: Icone, titre, sousTitre, href }: { icone: LucideIcon; titre: string; sousTitre?: string; href: string }) {
   return (
-    <Link href={href} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute">
-      <Icone size={18} className="flex-shrink-0 text-dj-texte-muet" />
+    <Link
+      href={href}
+      className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
+    >
+      <Icone size={18} strokeWidth={TRAIT_ICONE_SECTION} className="flex-shrink-0 text-dj-texte-muet" />
       <div className="flex-1 overflow-hidden">
-        <div className="truncate text-sm text-dj-texte">{titre}</div>
+        <div className="truncate text-sm font-semibold text-dj-texte">{titre}</div>
         {sousTitre && <div className="truncate text-xs text-dj-texte-muet">{sousTitre}</div>}
       </div>
-      <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />
     </Link>
   );
 }
@@ -72,13 +78,19 @@ function LigneAction({
   danger?: boolean;
 }) {
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute">
-      <Icone size={18} className={danger ? "flex-shrink-0 text-[var(--dj-erreur)]" : "flex-shrink-0 text-dj-texte-muet"} />
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
+    >
+      <Icone
+        size={18}
+        strokeWidth={TRAIT_ICONE_SECTION}
+        className={danger ? "flex-shrink-0 text-[var(--dj-erreur)]" : "flex-shrink-0 text-dj-texte-muet"}
+      />
       <div className="flex-1 overflow-hidden">
-        <div className={`truncate text-sm ${danger ? "text-[var(--dj-erreur)]" : "text-dj-texte"}`}>{titre}</div>
+        <div className={`truncate text-sm font-semibold ${danger ? "text-[var(--dj-erreur)]" : "text-dj-texte"}`}>{titre}</div>
         {sousTitre && <div className="truncate text-xs text-dj-texte-muet">{sousTitre}</div>}
       </div>
-      {!danger && <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />}
     </button>
   );
 }
@@ -210,92 +222,19 @@ export function ParametresAccueil() {
     return <CTACompteRequis texte="Crée un compte pour gérer ton profil et tes préférences." />;
   }
 
-  if (chargement) {
-    return (
-      <div className="flex flex-col gap-4" aria-hidden>
-        <div className="flex w-full items-center gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3.5">
-          <Skeleton className="h-11 w-11 flex-shrink-0 rounded-full border border-dj-bordure" />
-          <div className="flex-1 overflow-hidden">
-            <div className="flex flex-col gap-1.5">
-              <Skeleton className="h-3.5 w-28 rounded" />
-              <Skeleton className="h-2.5 w-20 rounded" />
-            </div>
-          </div>
-          <Skeleton className="h-4 w-4 flex-shrink-0 rounded" />
-        </div>
-
-        <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-          <div className="divide-y divide-dj-bordure">
-            {["w-24", "w-44", "w-28", "w-16"].map((largeur, i) => (
-              <div key={i} className="flex w-full items-center gap-3 px-4 py-3">
-                <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
-                <div className="flex-1 overflow-hidden">
-                  <Skeleton className={`h-3.5 ${largeur} rounded`} />
-                </div>
-                <Skeleton className="h-4 w-4 flex-shrink-0 rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-          <div className="divide-y divide-dj-bordure">
-            <div className="flex w-full items-center gap-3 px-4 py-3">
-              <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
-              <div className="flex-1 overflow-hidden">
-                <div className="flex flex-col gap-1.5">
-                  <Skeleton className="h-3.5 w-36 rounded" />
-                  <Skeleton className="h-2.5 w-32 rounded" />
-                </div>
-              </div>
-              <Skeleton className="h-4 w-4 flex-shrink-0 rounded" />
-            </div>
-            <div className="flex w-full items-center gap-3 px-4 py-3">
-              <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
-              <div className="flex-1 overflow-hidden">
-                <Skeleton className="h-3.5 w-24 rounded" />
-              </div>
-              <Skeleton className="h-4 w-4 flex-shrink-0 rounded" />
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-          <div className="flex w-full items-center gap-3 px-4 py-3">
-            <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
-            <div className="flex-1 overflow-hidden">
-              <Skeleton className="h-3.5 w-28 rounded" />
-            </div>
-            <Skeleton className="h-4 w-4 flex-shrink-0 rounded" />
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-          <div className="flex w-full items-center gap-3 px-4 py-3">
-            <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
-            <div className="flex-1 overflow-hidden">
-              <Skeleton className="h-3.5 w-32 rounded" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (erreurChargement) {
-    return <p className="text-sm text-[var(--dj-erreur)]">{erreurChargement}</p>;
-  }
-
   const libelleProfil = profil?.nom_affiche || "Mon compte";
 
   return (
     <div className="flex flex-col gap-4">
+      {erreurChargement && <p className="px-4 text-sm text-[var(--dj-erreur)]">{erreurChargement}</p>}
       <Link
         href={ROUTES_PARAMETRES.profil}
-        className="flex w-full items-center gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3.5 text-left transition-colors hover:bg-dj-surface-haute"
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-dj-surface-haute"
       >
         <span className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute">
-          {profil?.avatar_url ? (
+          {chargement ? (
+            <Skeleton className="h-full w-full rounded-full" />
+          ) : profil?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage
             <img src={profil.avatar_url} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -305,10 +244,18 @@ export function ParametresAccueil() {
           )}
         </span>
         <div className="flex-1 overflow-hidden">
-          <div className="truncate text-sm font-medium text-dj-texte">{libelleProfil}</div>
-          <div className="truncate text-xs text-dj-texte-muet">Photo, nom, bio</div>
+          {chargement ? (
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-3.5 w-28 rounded" />
+              <Skeleton className="h-2.5 w-20 rounded" />
+            </div>
+          ) : (
+            <>
+              <div className="truncate text-sm font-semibold text-dj-texte">{libelleProfil}</div>
+              <div className="truncate text-xs text-dj-texte-muet">Photo, nom, bio</div>
+            </>
+          )}
         </div>
-        <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />
       </Link>
 
       <Liste>
