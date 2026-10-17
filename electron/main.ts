@@ -92,6 +92,19 @@ function brancherDiagnosticSuperposition(fenetre: BrowserWindow, urlDemandee: st
   }, 3000);
   fenetre.on('closed', () => clearInterval(minuteur));
   fenetre.on('show', () => journalDiagnostic('fenetre : show'));
+  // Diagnostic du focus (18/10/2026, demande de Bourama) : noter chaque prise et perte de focus,
+  // avec le nom de la fenetre de l'appli concernee, dans le terminal et dans le journal. Ne change
+  // aucun comportement. A RETIRER des que la cause est trouvee.
+  const noterFocus = (texte: string) => {
+    const ligne = `FOCUS ${new Date().toISOString()} ${texte}`;
+    console.log(ligne);
+    journalDiagnostic(ligne);
+  };
+  fenetre.on('focus', () => noterFocus('la superposition a pris le focus'));
+  fenetre.on('blur', () => noterFocus('la superposition a perdu le focus'));
+  app.on('browser-window-focus', (_evenement, f) => {
+    if (f !== fenetre) noterFocus(`une autre fenetre de l'appli a pris le focus : \"${f.getTitle()}\"`);
+  });
   fenetre.on('hide', () => journalDiagnostic('fenetre : hide'));
   fenetre.on('closed', () => journalDiagnostic('fenetre : closed'));
   wc.on('did-finish-load', () => {

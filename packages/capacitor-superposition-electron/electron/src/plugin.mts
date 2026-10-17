@@ -444,6 +444,8 @@ let saisieTexteActive = false;
 
 function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
   if (fenetre.isDestroyed()) return;
+  // Diagnostic du focus (18/10/2026) : trace de chaque demande d'ecriture, a retirer avec le reste.
+  console.log(`FOCUS ${new Date().toISOString()} saisie de texte demandee : ${actif ? "oui" : "non"} (deja ${saisieTexteActive ? "oui" : "non"})`);
   if (process.platform !== "win32") {
     if (actif && !fenetre.isFocused()) fenetre.focus();
     return;
