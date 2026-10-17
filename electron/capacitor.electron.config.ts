@@ -37,17 +37,23 @@ export default defineConfig({
   // Le reste de la politique reprend le DEFAULT_CSP du runtime tel quel
   // (voir node_modules/@capawesome/capacitor-electron/dist/runtime/index.js),
   // seul script-src change.
+  // Correctif (17/10/2026, demande Bourama) : images et videos trouvees par
+  // Classinus ne s'affichaient pas dans l'appli PC (miniatures et galerie
+  // d'images en https, lecteur YouTube en iframe, videos en https), car la
+  // politique ci-dessous n'autorisait que les fichiers de l'appli (images,
+  // videos) et aucune iframe. On autorise donc les images et videos en
+  // https, et seulement les iframes YouTube, rien d'autre.
   csp: {
     policy: [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "media-src 'self' blob:",
+      "media-src 'self' blob: https:",
       "connect-src 'self' https: wss:",
       "object-src 'none'",
-      "frame-src 'none'",
+      "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
       "base-uri 'self'",
       "form-action 'self'",
     ].join('; '),
