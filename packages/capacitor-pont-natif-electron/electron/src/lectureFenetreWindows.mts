@@ -164,6 +164,9 @@ export interface LectureFenetre {
   // Vrai si le bureau est devant : aucune fenetre ouverte (tout est ferme ou reduit) ou clic sur le
   // bureau. Dans ce cas titre_fenetre_active est vide et zone_lue vaut "bureau".
   bureau_premier_plan?: boolean;
+  // Titre de la fenetre vraiment devant l'etudiant (ou "Bureau"), donne meme quand une autre
+  // fenetre ou le bureau est lu a sa place.
+  fenetre_premier_plan?: string;
   // Vrai si la lecture etait une lecture legere (titres seulement) : le contenu n'a PAS ete lu.
   titres_seuls?: boolean;
 }
@@ -345,6 +348,101 @@ public static class LectureTexteCom {
     } catch (Exception) { return null; }
   }
 }
+public class IconeBureau { public string Nom; public int G; public int H; public int L; public int A; }
+// Icones du bureau (17/10/2026) : la liste native du bureau (SysListView32) n'expose aucun
+// element a UI Automation, qui ne voit alors que le fond d'ecran. Les icones sont donc lues par les
+// messages de la liste elle-meme (nombre, rectangle, texte), comme le fait l'Explorateur.
+public static class BureauNatif {
+  delegate bool EnumProcBureau(IntPtr h, IntPtr l);
+  [DllImport(\"user32.dll\")] static extern bool EnumWindows(EnumProcBureau cb, IntPtr l);
+  [DllImport(\"user32.dll\", CharSet = CharSet.Unicode)] static extern IntPtr FindWindowEx(IntPtr p, IntPtr a, string cls, string title);
+  [DllImport(\"user32.dll\")] static extern IntPtr SendMessageTimeout(IntPtr h, uint m, IntPtr w, IntPtr l, uint flags, uint delai, out IntPtr resultat);
+  [DllImport(\"user32.dll\")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint p);
+  [DllImport(\"user32.dll\")] static extern bool ClientToScreen(IntPtr h, ref PtUia pt);
+  [DllImport(\"user32.dll\", CharSet = CharSet.Unicode)] static extern int GetClassNameW(IntPtr h, StringBuilder s, int m);
+  [DllImport(\"kernel32.dll\")] static extern IntPtr OpenProcess(uint a, bool i, uint pid);
+  [DllImport(\"kernel32.dll\")] static extern IntPtr VirtualAllocEx(IntPtr p, IntPtr a, UIntPtr s, uint t, uint pr);
+  [DllImport(\"kernel32.dll\")] static extern bool VirtualFreeEx(IntPtr p, IntPtr a, UIntPtr s, uint t);
+  [DllImport(\"kernel32.dll\")] static extern bool ReadProcessMemory(IntPtr p, IntPtr a, byte[] b, int n, out IntPtr r);
+  [DllImport(\"kernel32.dll\")] static extern bool WriteProcessMemory(IntPtr p, IntPtr a, byte[] b, int n, out IntPtr w);
+  [DllImport(\"kernel32.dll\")] static extern bool CloseHandle(IntPtr h);
+  static long Envoyer(IntPtr h, int m, int w, IntPtr l) {
+    IntPtr r;
+    IntPtr ok = SendMessageTimeout(h, (uint)m, (IntPtr)w, l, 2, 800, out r);
+    return ok == IntPtr.Zero ? -1 : r.ToInt64();
+  }
+  static IntPtr Liste() {
+    IntPtr res = IntPtr.Zero;
+    EnumWindows(delegate(IntPtr h, IntPtr x) {
+      StringBuilder sb = new StringBuilder(64);
+      GetClassNameW(h, sb, 64);
+      string c = sb.ToString();
+      if (c == \"Progman\" || c == \"WorkerW\") {
+        IntPtr def = FindWindowEx(h, IntPtr.Zero, \"SHELLDLL_DefView\", null);
+        if (def != IntPtr.Zero) {
+          IntPtr lv = FindWindowEx(def, IntPtr.Zero, \"SysListView32\", null);
+          if (lv != IntPtr.Zero) { res = lv; return false; }
+        }
+      }
+      return true;
+    }, IntPtr.Zero);
+    return res;
+  }
+  public static List<IconeBureau> Icones(int max) {
+    List<IconeBureau> sortie = new List<IconeBureau>();
+    IntPtr lv = Liste();
+    if (lv == IntPtr.Zero) return sortie;
+    uint pid;
+    GetWindowThreadProcessId(lv, out pid);
+    IntPtr proc = OpenProcess(0x0008 | 0x0010 | 0x0020, false, pid);
+    if (proc == IntPtr.Zero) return sortie;
+    try {
+      long n = Envoyer(lv, 0x1004, 0, IntPtr.Zero);
+      if (n <= 0) return sortie;
+      IntPtr dist = VirtualAllocEx(proc, IntPtr.Zero, (UIntPtr)1024, 0x3000, 0x04);
+      if (dist == IntPtr.Zero) return sortie;
+      bool x64 = Environment.Is64BitOperatingSystem;
+      int posTexte = x64 ? 24 : 20;
+      int posTaille = x64 ? 32 : 24;
+      for (int i = 0; i < n && i < max; i++) {
+        IntPtr w;
+        IntPtr r;
+        byte[] rc = new byte[16];
+        WriteProcessMemory(proc, dist, rc, 16, out w);
+        if (Envoyer(lv, 0x100E, i, dist) <= 0) continue;
+        byte[] lu = new byte[16];
+        ReadProcessMemory(proc, dist, lu, 16, out r);
+        int g = BitConverter.ToInt32(lu, 0);
+        int h = BitConverter.ToInt32(lu, 4);
+        int largeur = BitConverter.ToInt32(lu, 8) - g;
+        int hauteur = BitConverter.ToInt32(lu, 12) - h;
+        if (largeur <= 0 || hauteur <= 0) continue;
+        byte[] it = new byte[88];
+        BitConverter.GetBytes(1).CopyTo(it, 0);
+        BitConverter.GetBytes(i).CopyTo(it, 4);
+        if (x64) BitConverter.GetBytes(dist.ToInt64() + 256).CopyTo(it, posTexte);
+        else BitConverter.GetBytes((int)(dist.ToInt64() + 256)).CopyTo(it, posTexte);
+        BitConverter.GetBytes(260).CopyTo(it, posTaille);
+        WriteProcessMemory(proc, (IntPtr)(dist.ToInt64() + 64), it, 88, out w);
+        Envoyer(lv, 0x1073, i, (IntPtr)(dist.ToInt64() + 64));
+        byte[] tx = new byte[520];
+        ReadProcessMemory(proc, (IntPtr)(dist.ToInt64() + 256), tx, 520, out r);
+        string nom = Encoding.Unicode.GetString(tx);
+        int fin = nom.IndexOf((char)0);
+        if (fin >= 0) nom = nom.Substring(0, fin);
+        PtUia pt = new PtUia();
+        pt.X = g;
+        pt.Y = h;
+        ClientToScreen(lv, ref pt);
+        IconeBureau ic = new IconeBureau();
+        ic.Nom = nom; ic.G = pt.X; ic.H = pt.Y; ic.L = largeur; ic.A = hauteur;
+        sortie.Add(ic);
+      }
+      VirtualFreeEx(proc, dist, UIntPtr.Zero, 0x8000);
+    } finally { CloseHandle(proc); }
+    return sortie;
+  }
+}
 public static class LectureFenetres {
   delegate bool EnumProc(IntPtr h, IntPtr l);
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr l);
@@ -502,6 +600,30 @@ try {
   $bureauAuto = $false
 
   $fg = [LectureFenetres]::GetForegroundWindow()
+  # Fenetre reellement devant l'etudiant (17/10/2026, demande de Bourama : Classinus doit toujours
+  # le savoir, meme quand il lit une autre fenetre par son titre ou le bureau). Classinus et sa
+  # barre flottante sont ignorees : c'est la premiere fenetre d'un autre programme dans l'ordre Z.
+  function PremierPlanReel($h0) {
+    if ($h0 -eq [IntPtr]::Zero) { return $null }
+    $estClassinus = (($handleSuperposition -ne [IntPtr]::Zero -and $h0 -eq $handleSuperposition) -or [LectureFenetres]::Pid($h0) -eq $pidClassinus)
+    if ($estClassinus) {
+      $classinusVisible = $false
+      foreach ($h in [LectureFenetres]::Ouvertes()) {
+        if ($h -eq $handleSuperposition) { continue }
+        if ([LectureFenetres]::Pid($h) -ne $pidClassinus) { return [LectureFenetres]::Titre($h) }
+        $classinusVisible = $true
+      }
+      if ($classinusVisible) { return 'Classinus' }
+      return 'Bureau'
+    }
+    $t = [LectureFenetres]::Titre($h0)
+    if ($t -eq '' -or $t -eq 'Program Manager') {
+      $c = [LectureFenetres]::Classe($h0)
+      if ($c -eq 'Progman' -or $c -eq 'WorkerW' -or $c -eq 'SHELLDLL_DefView') { return 'Bureau' }
+    }
+    return $t
+  }
+  $resultat.fenetre_premier_plan = PremierPlanReel $fg
   # Fenetre choisie par son titre (peut etre derriere les autres) : jamais devinee, une seule
   # fenetre doit correspondre, sinon la lecture s'arrete avec la liste des fenetres lisibles.
   $fenetreVisee = $false
@@ -858,6 +980,35 @@ try {
         }
       }
     } catch { } finally { $script:zoneCourante = $null }
+    # Le bureau : sa liste d'icones n'est pas lisible par UI Automation (il ne reste que le fond
+    # d'ecran). Si aucune icone n'a ete vue, elles sont lues par la liste native de Windows.
+    if ($zone -ne 'barre_des_taches' -and -not $script:coupe) {
+      $nbIcones = 0
+      foreach ($vu in $script:elements) { if ($vu.type -eq "élément de liste") { $nbIcones++ } }
+      if ($nbIcones -eq 0) {
+        try {
+          foreach ($ic in [BureauNatif]::Icones($nbMaxElements)) {
+            if ($script:nbInteractifs -ge $nbMaxElements) { $script:coupe = $true; break }
+            $script:elements.Add([ordered]@{
+              type = "élément de liste"
+              nom = (Couper $ic.Nom $longueurMaxNom)
+              valeur = $null
+              valeur_masquee = $false
+              etats = @()
+              x = [int]($ic.G + $ic.L / 2)
+              y = [int]($ic.H + $ic.A / 2)
+              gauche = [int]$ic.G
+              haut = [int]$ic.H
+              largeur = [int]$ic.L
+              hauteur = [int]$ic.A
+              panneau = 'icônes du bureau'
+              zone = 'bureau'
+            })
+            $script:nbInteractifs++
+          }
+        } catch { }
+      }
+    }
   }
 
   # Menus et listes ouverts par la fenetre : lus en premier, car ils sont au-dessus et ce sont
@@ -1035,6 +1186,7 @@ function lireUneFois(
           zone_lue: r.zone_lue === "bureau" || r.zone_lue === "barre_des_taches" ? r.zone_lue : "fenetre",
           ...(r.fenetre_visee === true ? { fenetre_visee: true } : {}),
           ...(r.bureau_premier_plan === true ? { bureau_premier_plan: true } : {}),
+          ...(typeof r.fenetre_premier_plan === "string" && r.fenetre_premier_plan ? { fenetre_premier_plan: r.fenetre_premier_plan.slice(0, 200) } : {}),
           ...(r.titres_seuls === true ? { titres_seuls: true } : {}),
         });
       }
