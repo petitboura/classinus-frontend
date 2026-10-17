@@ -1,0 +1,19 @@
+name: Diagnostic focus superposition
+on:
+  push:
+    branches: [diag/focus2-temp]
+  workflow_dispatch:
+jobs:
+  focus:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node node_modules/electron/install.js
+      - run: node tests/verifier-focus-superposition-windows.mjs
+        continue-on-error: true
