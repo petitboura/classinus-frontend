@@ -212,9 +212,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               propre déclencheur (MenuHamburgerWeb), même mécanique que le
               natif -- BarreOngletsWeb ci-dessous n'a plus d'onglet Plus,
               l'ancienne page /plus est devenue une redirection. */}
-          {natif && <MenuHamburgerNatif />}
+          {natif && <MenuHamburgerNatif connecte={connecte} />}
           <BarreOngletsWeb />
-          {!natif && <MenuHamburgerWeb />}
+          {!natif && <MenuHamburgerWeb connecte={connecte} />}
           {/* 02/09/2026, centre de notifications (bouton cloche) :
               contrairement au hamburger (mobile uniquement, md:hidden),
               visible mobile ET desktop -- pas de barre du haut dédiée

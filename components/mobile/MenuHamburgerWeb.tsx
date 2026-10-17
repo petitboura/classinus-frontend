@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { BlocsMenuPlus, SECTIONS_BASE } from "@/components/EspacePlus";
+import { ProfilEnteteMenuPlus } from "@/components/mobile/ProfilEnteteMenuPlus";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermerChat } from "@/lib/contexteChat";
 import { estPageChat } from "@/lib/routesApp";
@@ -63,15 +64,15 @@ function IconeMenu() {
 // Capacitor). Wrapper sans logique propre, juste pour isoler ce
 // pré-requis technique ; toute la logique reste dans la fonction
 // interne ci-dessous.
-export function MenuHamburgerWeb() {
+export function MenuHamburgerWeb({ connecte }: { connecte: boolean }) {
   return (
     <Suspense fallback={null}>
-      <MenuHamburgerWebInterne />
+      <MenuHamburgerWebInterne connecte={connecte} />
     </Suspense>
   );
 }
 
-function MenuHamburgerWebInterne() {
+function MenuHamburgerWebInterne({ connecte }: { connecte: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -147,7 +148,7 @@ function MenuHamburgerWebInterne() {
       {monte && (
         <PanneauFlottant
           onFerme={fermerMenu}
-          entete={<span className="text-sm font-medium text-dj-texte">Plus</span>}
+          entete={<ProfilEnteteMenuPlus connecte={connecte} onNaviguer={naviguerDepuisPlus} />}
           enSortie={enSortie}
           gererRetour={false}
         >

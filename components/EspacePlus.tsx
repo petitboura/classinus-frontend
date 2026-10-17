@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Home, Plug, Settings, Bell, Share2, Star, Compass, ChevronRight, type LucideIcon } from "lucide-react";
+import { Home, Plug, Bell, Share2, Star, Compass, type LucideIcon } from "lucide-react";
 import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
-import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
-import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
+import { LIGNE_TRAIT_ICONE_18_PANNEAU, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { ROUTES_APP } from "@/lib/routesApp";
 
 // Créé le 26/08/2026, Bourama : refonte navigation mobile native. Contenu
@@ -58,7 +57,6 @@ import { ROUTES_APP } from "@/lib/routesApp";
 export const SECTIONS_BASE: { icone: LucideIcon; titre: string; sousTitre?: string; href: string }[] = [
   { icone: Home, titre: "Tableau de bord", sousTitre: "Mon espace", href: ROUTES_APP.tableauDeBord },
   { icone: Plug, titre: "Connecter Claude", sousTitre: "Utiliser Classinus dans Claude", href: "/connecter-claude" },
-  { icone: Settings, titre: "Paramètres", sousTitre: "Profil, confidentialité, capacités du téléphone...", href: "/parametres" },
   { icone: Bell, titre: "Rappels", sousTitre: "Notifications programmées", href: "/rappels" },
 ];
 
@@ -68,26 +66,18 @@ function LigneSection({
   sousTitre,
   onClick,
   plat = false,
-  pointRouge = false,
 }: {
   icone: LucideIcon;
   titre: string;
   sousTitre?: string;
   onClick: () => void;
-  // 09/09/2026, demande Bourama : petit point rouge sur "Paramètres" tant
-  // qu'une mise à jour n'a pas été installée (voir BlocsMenuPlus, qui
-  // décide QUAND le passer à true -- ce composant se contente de
-  // l'afficher, sans connaître la raison).
-  pointRouge?: boolean;
   // 30/08/2026, audit "bouton Plus mal aligné" (tiroir mobile du chat
   // plein écran, AppSidebar.tsx) : ce tiroir a déjà son propre style de
-  // ligne (rendreLienOnglet dans AppSidebar.tsx), le style carte pensé pour le
-  // menu hamburger natif/web (bordure/fond/coins arrondis, sous-titre,
-  // chevron) y fait doublon visuel. `plat` retire tout ça et aligne la
-  // ligne comme rendreLienOnglet (même hauteur h-10 w-10 pour l'icône, mêmes
-  // marges px-2 py-2, pas de sous-titre ni de chevron). Uniquement activé
-  // par ce troisième appelant (AppSidebar.tsx) -- MenuHamburgerNatif.tsx
-  // et MenuHamburgerWeb.tsx gardent le style carte par défaut.
+  // ligne (rendreLienOnglet dans AppSidebar.tsx). `plat` aligne la ligne
+  // comme rendreLienOnglet (même hauteur h-10 w-10 pour l'icône, mêmes
+  // marges px-2 py-2, pas de sous-titre). Uniquement activé par
+  // AppSidebar.tsx, les deux menus Plus du téléphone (MenuHamburgerNatif.tsx
+  // et MenuHamburgerWeb.tsx) gardent le style par défaut.
   plat?: boolean;
 }) {
   if (plat) {
@@ -98,36 +88,23 @@ function LigneSection({
       >
         <span className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center">
           <Icone size={18} />
-          {pointRouge && (
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--dj-erreur)]" />
-          )}
         </span>
         <span className="text-sm">{titre}</span>
       </button>
     );
   }
+  // Ligne à nu : pas de carte, pas de flèche, un trait qui commence après
+  // l'icône (voir lib/styleLignes.ts).
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute"
+      className={`flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18_PANNEAU}`}
     >
-      {/* Conteneur tonal (30/08/2026, tâche 3, Material 3 Expressive) :
-          l'icône avait juste une couleur atténuée sur fond transparent,
-          sans "containment" -- remplacé par un vrai fond coloré (voir
-          --dj-accent-1-conteneur, globals.css) pour signaler visuellement
-          que chaque ligne est une action, sans changer la structure de la
-          liste ni son comportement. */}
-      <span className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur">
-        <Icone size={17} strokeWidth={TRAIT_ICONE_SECTION} className="text-dj-accent-1-texte" />
-        {pointRouge && (
-          <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-[var(--dj-erreur)]" />
-        )}
-      </span>
+      <Icone size={18} strokeWidth={TRAIT_ICONE_SECTION} className="flex-shrink-0 text-dj-texte-muet" />
       <div className="flex-1 overflow-hidden">
         <div className="truncate text-sm font-semibold text-dj-texte">{titre}</div>
         {sousTitre && <div className="truncate text-xs text-dj-texte-muet">{sousTitre}</div>}
       </div>
-      <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />
     </button>
   );
 }
@@ -166,10 +143,6 @@ export function BlocsMenuPlus({
   const [avisDeplie, setAvisDeplie] = useState(false);
   const ouvrirCatalogue = useOuvrirCatalogue();
   const naviguer = onNaviguer ?? ((href: string) => router.push(href));
-  // 09/09/2026, demande Bourama : point rouge sur "Paramètres" tant
-  // qu'une mise à jour n'a pas été installée.
-  const { misAJourDisponible } = useMiseAJourDisponible();
-
   // Repris à l'identique de la fonction `partager` d'AppSidebar.tsx.
   // Corrigé le 31/08/2026 (même raison qu'AppSidebar.tsx) : partage
   // maintenant le vrai lien de téléchargement (/telecharger) construit
@@ -202,7 +175,6 @@ export function BlocsMenuPlus({
       sousTitre={s.sousTitre}
       onClick={() => naviguer(s.href)}
       plat={plat}
-      pointRouge={s.href === "/parametres" && misAJourDisponible}
     />
   ));
 
@@ -232,13 +204,8 @@ export function BlocsMenuPlus({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-        <div className="divide-y divide-dj-bordure">{lignesNavigation}</div>
-      </div>
-
-      <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-        <div className="divide-y divide-dj-bordure">{lignesActions}</div>
-      </div>
+      <div className="flex flex-col">{lignesNavigation}</div>
+      <div className="flex flex-col">{lignesActions}</div>
     </div>
   );
 }

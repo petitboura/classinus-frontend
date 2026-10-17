@@ -56,6 +56,9 @@ components/
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
                           components/mobile/ à la place
+  MenuProfil.tsx          bouton profil et son panneau (profil, Paramètres, thème, déconnexion), utilisé par
+                          AppSidebar (rail et tiroir du chat) et par l'en-tête du menu Plus du téléphone ;
+                          photo et nom viennent de lib/useMonProfilAffiche.ts
   AppSidebar.tsx          sidebar desktop (Bureau/Bibliothèque/Notes en direct, groupes
                           "Personnaliser Clovis" et "Scolarité") ; repliée par défaut, elle se
                           déplie au survol du bouton "Classinus" par-dessus la page, sans la décaler.
@@ -78,6 +81,9 @@ components/
     MenuHamburgerNatif.tsx  menu "Plus" en natif : bouton haut gauche (icône 3 barres décroissantes) +
                             panneau flottant, reprend le contenu de l'ancien onglet Plus
     MenuHamburgerWeb.tsx    même menu, variante web
+    ProfilEnteteMenuPlus.tsx  en tête du menu Plus (natif et web), à la place du titre : le bouton profil
+                            de la barre latérale du chat (photo, nom, puis profil, Paramètres, thème,
+                            déconnexion) ou "Se connecter" sans compte. Paramètres n'est donc plus dans la liste
     GestionRetourNatif.tsx  gestion du bouton retour matériel Android
   chat/                  composants du chat (ChatIA.tsx, ChatFlottant.tsx, BarreDeSaisie.tsx...) ;
                           ChatSection.tsx (07/09/2026) : version "page normale" du chat plein écran
@@ -313,7 +319,7 @@ renforcé des icônes de section, viennent de `lib/styleLignes.ts`, lu aussi par
 de la Bibliothèque publique et des Dossiers du téléphone.
 La page Paramètres (`components/ParametresAccueil.tsx`) suit le même visuel et s'affiche tout de suite, sans écran de
 chargement : seule sa ligne de profil montre un squelette le temps de recevoir sa donnée. Skills publics, Entrer un code,
-Ma mémoire et l'écran d'accueil sont aussi à nu, sans carte. Dans Ma mémoire, chaque catégorie est repliée par défaut. Chaque
+Ma mémoire et l'écran d'accueil sont aussi à nu, sans carte, de même que la liste du menu Plus du téléphone et celle de Mes skills (une ligne par skill, plus de pastilles). Dans Ma mémoire, chaque catégorie est repliée par défaut. Chaque
 page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
 l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
 gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut

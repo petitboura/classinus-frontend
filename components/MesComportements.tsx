@@ -18,6 +18,7 @@ import { useInfoSection } from "./SectionPage";
 import { BulleSurvol } from "./BulleSurvol";
 import { ZoneCliquable } from "./ZoneCliquable";
 import { MenuElementConfiguration } from "@/components/bureau/configuration/MenuElementConfiguration";
+import { LIGNE_TRAIT_ICONE_18_PANNEAU, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 // Section "Mes comportements" (06/08/2026, demande Bourama : "on peut en
 // mettre plusieurs hein, pas juste un") : PLUSIEURS instructions perso
@@ -86,12 +87,12 @@ function extraireCorpsSkill(skillMd: string): string {
   return correspondance ? correspondance[1].trim() : skillMd;
 }
 
-// Puce d'un skill dans la liste (extrait le 22/08/2026 pour être réutilisé
+// Ligne d'un skill dans la liste (extraite le 22/08/2026 pour être réutilisée
 // à la fois dans la liste plate normale et dans les groupes par matière de
-// l'onglet "Audits" -- même rendu, une seule source de vérité). Exportée le
-// 28/09/2026 pour être réutilisée telle quelle par les 4 onglets de
-// Configuration (Bureau) -- "tous suivent comme les skill" (demande
-// Bourama), même pilule, aucun nouveau style inventé pour Règle.
+// l'onglet "Audits", même rendu, une seule source de vérité). Posée à nu, sans
+// pastille ni bordure : un trait la sépare de la suivante, il commence après
+// l'icône (voir lib/styleLignes.ts). Chaque ligne doit être un enfant direct de
+// sa liste pour que le dernier trait disparaisse.
 export function ChipComportement({
   c,
   onOuvrir,
@@ -107,22 +108,20 @@ export function ChipComportement({
     <ZoneCliquable
       onClick={() => onOuvrir(c)}
       title="Ouvrir et modifier"
-      className={`group flex max-w-[280px] flex-col gap-1 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute ${
+      className={`group -mx-2 flex flex-col gap-1 rounded-xl px-2 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18_PANNEAU} ${
         c.actif ? "" : "opacity-50"
       }`}
     >
-      <div className="flex min-w-0 items-center gap-2">
-        <ScrollText size={14} className="flex-shrink-0 text-dj-texte-muet" />
-        {/* Nom = déclencheur direct de la bulle de description au survol/clic
+      <div className="flex min-w-0 items-center gap-3">
+        <ScrollText size={18} strokeWidth={TRAIT_ICONE_SECTION} className="flex-shrink-0 text-dj-texte-muet" />
+        {/* Le nom déclenche directement la bulle de description au survol
             (09/09/2026, retour final Bourama : "les skill reste inchangé
             avec description qui s'affiche au survol pas de i à côté de
-            lui" -- annule le passage par un bouton "i" dédié essayé entre
-            temps). revelerAuClic=false : le clic sur cette pilule ouvre
-            déjà l'édition du skill (onOuvrir sur le bouton parent), la
-            bulle ne doit pas lui voler ce clic -- seul le survol la révèle
-            ici (le clic reste géré par le bouton parent). */}
+            lui"). revelerAuClic=false : le clic sur cette ligne ouvre déjà
+            l'édition du skill (onOuvrir sur la zone parente), la bulle ne
+            doit pas lui voler ce clic, seul le survol la révèle ici. */}
         <div className="min-w-0 flex-1">
-          <BulleSurvol texte={c.description || "(pas de description)"} className="block truncate text-sm text-dj-texte" revelerAuClic={false}>
+          <BulleSurvol texte={c.description || "(pas de description)"} className="block truncate text-sm font-semibold text-dj-texte" revelerAuClic={false}>
             {c.nom || c.description}
           </BulleSurvol>
         </div>
@@ -138,13 +137,11 @@ export function ChipComportement({
         {menu}
       </div>
       {/* Badge de rattachement (lien_libelle) sur sa propre ligne, sous le
-          nom -- CORRECTIF 22/08/2026 (Bourama : "le texte des sources
-          déborde, on ne voit plus les noms") : avant, ce badge partageait
-          la ligne du nom en flex-shrink-0, donc un chapitre au nom long
-          écrasait le nom du skill au lieu de se réduire lui-même. Ici il a
-          sa propre largeur (celle du chip) et sa propre troncature. */}
+          nom (correctif 22/08/2026, Bourama : "le texte des sources
+          déborde, on ne voit plus les noms") : il a sa propre largeur et sa
+          propre troncature, et ne comprime jamais le nom du skill. */}
       {c.lien_libelle && (
-        <span className="ml-[22px] flex min-w-0 items-center gap-1 self-start rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
+        <span className="ml-[30px] flex min-w-0 items-center gap-1 self-start rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
           <Link2 size={9} className="flex-shrink-0" />
           <span className="min-w-0 truncate">{c.lien_libelle}</span>
         </span>
@@ -324,42 +321,29 @@ export function MesComportements({
       {!sansOnglets && vue === "public" ? (
         <ComportementsPublics onActive={charger} />
       ) : liste === undefined ? (
-        /* Skeleton précis (30/08, audit) : le vrai contenu n'est pas une
-           liste de lignes pleine largeur mais des PILULES qui s'enroulent
-           (flex-wrap) -- rounded-full, icône 14px + nom + interrupteur
-           18px -- précédées du texte d'intro et du bouton "Nouveau
-           comportement". L'ancien skeleton (2 blocs rectangulaires
-           pleins) ne ressemblait à aucun des deux. */
+        /* Skeleton aligné sur le vrai contenu : texte d'intro, bouton
+           "Nouveau comportement", puis des lignes à nu (icône 18px, nom,
+           interrupteur 18px) séparées par le même trait que la vraie
+           liste. */
         <div className="flex flex-col gap-4" aria-hidden>
           <div className="flex flex-col gap-1.5">
             <Skeleton className="h-3.5 w-full rounded" />
             <Skeleton className="h-3.5 w-4/5 rounded" style={{ animationDelay: "80ms" }} />
           </div>
           <Skeleton className="h-9 w-44 rounded-full border border-dj-bordure" style={{ animationDelay: "160ms" }} />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col">
             {[
-              { largeur: 128, delai: "0ms" },
-              { largeur: 176, delai: "60ms" },
-              { largeur: 96, delai: "120ms" },
-              { largeur: 224, delai: "180ms" },
-              { largeur: 144, delai: "240ms" },
-              { largeur: 112, delai: "300ms" },
-              { largeur: 152, delai: "360ms" },
-              { largeur: 88, delai: "420ms" },
-              { largeur: 208, delai: "480ms" },
-              { largeur: 120, delai: "540ms" },
-              { largeur: 168, delai: "600ms" },
-              { largeur: 104, delai: "660ms" },
-              { largeur: 184, delai: "720ms" },
-              { largeur: 136, delai: "780ms" },
+              { largeur: "55%", delai: "0ms" },
+              { largeur: "70%", delai: "80ms" },
+              { largeur: "40%", delai: "160ms" },
+              { largeur: "62%", delai: "240ms" },
+              { largeur: "48%", delai: "320ms" },
+              { largeur: "66%", delai: "400ms" },
             ].map(({ largeur, delai }, i) => (
-              <div
-                key={i}
-                style={{ width: `${largeur}px` }}
-                className="flex items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2"
-              >
-                <Skeleton className="h-3.5 w-3.5 flex-shrink-0 rounded-full" style={{ animationDelay: delai }} />
-                <Skeleton className="h-3.5 flex-1 rounded" style={{ animationDelay: delai }} />
+              <div key={i} className={`-mx-2 flex items-center gap-3 px-2 py-3 ${LIGNE_TRAIT_ICONE_18_PANNEAU}`}>
+                <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded-full" style={{ animationDelay: delai }} />
+                <Skeleton className="h-3.5 rounded" style={{ width: largeur, animationDelay: delai }} />
+                <span className="flex-1" />
                 <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded-full" style={{ animationDelay: delai }} />
               </div>
             ))}
@@ -415,7 +399,7 @@ export function MesComportements({
       )}
 
       {liste.length > 0 && (
-        <div key={filtreOrigine} className="flex animate-dj-fade-in-rapide flex-wrap gap-2">
+        <div key={filtreOrigine} className="flex animate-dj-fade-in-rapide flex-col">
           {liste.filter((c) => correspondFiltre(c, filtreOrigine)).map((c) => (
             <ChipComportement
               key={c.id}
