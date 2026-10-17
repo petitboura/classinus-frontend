@@ -15,6 +15,7 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { telechargerTexte, nomFichierDepuis } from "@/lib/telechargerTexte";
 import { Skeleton } from "./Skeleton";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { VoirSkillRecuModal } from "@/components/VoirSkillRecuModal";
 import { ProfilPublicModal } from "@/components/ProfilPublicModal";
 import { MenuActionsCarte } from "@/components/MenuActionsCarte";
@@ -344,7 +345,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
           + nombre d'activations, 2 lignes) + 2 boutons à droite (Activer,
           Télécharger). 5 lignes au lieu de 2 fixes. */}
       {liste === undefined && (
-        <div className="flex flex-col gap-2" aria-hidden>
+        <div className="flex flex-col" aria-hidden>
           {[
             { titre: "w-1/2", soustitre: "w-2/5", delai: "0ms" },
             { titre: "w-3/5", soustitre: "w-1/3", delai: "100ms" },
@@ -354,7 +355,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
           ].map(({ titre, soustitre, delai }, i) => (
             <div
               key={i}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: delai }} />
@@ -379,7 +380,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
       )}
 
       {liste && liste.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           {liste.map((c) => {
             const dejaActive = actives.has(c.id);
             const descriptionComplete = c.description || c.texte;
@@ -387,12 +388,12 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
               <div
                 key={c.id}
                 onClick={() => setApercu(c)}
-                className="flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
+                className="flex cursor-pointer flex-wrap items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-dj-surface-haute"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <ScrollText size={16} className="mt-0.5 flex-shrink-0 self-start text-dj-texte-muet" />
+                  <ScrollText size={16} strokeWidth={TRAIT_ICONE_SECTION} className="mt-0.5 flex-shrink-0 self-start text-dj-texte-muet" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-dj-texte">{c.nom}</p>
+                    <p className="truncate text-sm font-semibold text-dj-texte">{c.nom}</p>
                     <BulleSurvol texte={descriptionComplete} className="line-clamp-2 text-xs text-dj-texte-muet">
                       {descriptionComplete} · {c.activations_count} activation(s)
                     </BulleSurvol>
