@@ -674,6 +674,12 @@ export function BarreDeSaisie({
       if (!el) continue;
       el.style.height = "auto";
       el.style.height = `${el.scrollHeight}px`;
+      // Barre de défilement visible seulement quand le texte atteint vraiment
+      // la hauteur maximale. Sinon un demi-pixel d'arrondi (interligne à
+      // virgule) la faisait apparaître sous Windows même zone vide.
+      const hauteurMax = parseFloat(getComputedStyle(el).maxHeight);
+      el.style.overflowY =
+        Number.isFinite(hauteurMax) && el.scrollHeight > hauteurMax + 1 ? "auto" : "hidden";
     }
   }
 
