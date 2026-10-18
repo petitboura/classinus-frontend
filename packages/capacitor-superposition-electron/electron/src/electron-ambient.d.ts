@@ -28,6 +28,8 @@ declare module "electron" {
     setSkipTaskbar(skip: boolean): void;
     focus(): void;
     isFocused(): boolean;
+    // Ajoute le 18/10/2026 : poignee Windows de la fenetre, pour lui rendre le focus (focusPrecedent.mts).
+    getNativeWindowHandle(): Buffer;
     on(evenement: "blur", ecouteur: () => void): this;
   }
 }

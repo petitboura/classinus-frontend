@@ -56,6 +56,7 @@ import { app, BrowserWindow, globalShortcut, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 import { creerRaccourcisCrayon } from "./raccourcisCrayon.mjs";
+import { creerFocusPrecedent, creerSystemeWindows, poigneeDe } from "./focusPrecedent.mjs";
 
 // Identification des deux fenetres par leur titre plutot que par un pont
 // d'export entre paquets (electron/main.ts et ce plugin sont deux projets
@@ -438,9 +439,13 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
 // Saisie au clavier dans la superposition (12/10/2026, demande de Bourama). Sous Windows la
 // superposition nait NON activable (electron/main.ts) : un clic sur elle n'active plus sa
 // fenetre, donc la fenetre qui est derriere ne se fige plus. Elle ne devient activable que le
-// temps que l'etudiant ecrit dans une de ses zones de texte ; setFocusable(false) rend alors
-// aussi l'activation a la fenetre du dessous. Ailleurs qu'a Windows, rien ne change.
+// temps que l'etudiant ecrit dans une de ses zones de texte.
+// Correctif du 18/10/2026 : setFocusable(false) empeche seulement la superposition de le
+// redevenir, il ne rend PAS l'activation a la fenetre du dessous (le journal de diagnostic ne
+// montrait jamais de perte de focus). On note donc la fenetre active avant la saisie et on la
+// reactive a la fin (voir focusPrecedent.mts). Ailleurs qu'a Windows, rien ne change.
 let saisieTexteActive = false;
+const focusPrecedent = creerFocusPrecedent(creerSystemeWindows());
 
 function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
   if (fenetre.isDestroyed()) return;
@@ -456,6 +461,8 @@ function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
   }
   saisieTexteActive = actif;
   if (actif) {
+    // Avant de prendre le focus : noter la fenetre qui est active, pour la lui rendre ensuite.
+    focusPrecedent.memoriser(poigneeDe(fenetre.getNativeWindowHandle()));
     fenetre.setFocusable(true);
     // setFocusable remet la fenetre dans la barre des taches : on l'en retire de nouveau.
     fenetre.setSkipTaskbar(true);
@@ -463,6 +470,8 @@ function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
   } else {
     fenetre.setFocusable(false);
     fenetre.setSkipTaskbar(true);
+    const rendu = focusPrecedent.rendre(poigneeDe(fenetre.getNativeWindowHandle()));
+    console.log(`FOCUS ${new Date().toISOString()} focus rendu a la fenetre precedente : ${rendu ? "oui" : "non"}`);
   }
 }
 

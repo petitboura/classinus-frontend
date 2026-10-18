@@ -66,6 +66,13 @@ normalement mais n'active pas la superposition, donc la fenetre qui est derriere
 ne se fige plus. `definirSaisieTexte({ actif })` la rend activable seulement
 pendant que l'etudiant ecrit dans une de ses zones de texte (la page l'appelle
 depuis `PageAgentSuperpositionClient.tsx` et `ControlesInteractionCanal.tsx`),
-puis la rend non activable, ce qui redonne aussi l'activation a la fenetre du
-dessous. Perte de focus de la superposition : elle redevient non activable seule.
-Hors Windows, rien ne change.
+puis la rend non activable. Rendre la fenetre non activable n'a jamais suffi a
+rendre l'activation a la fenetre du dessous (le journal de diagnostic du
+18/10/2026 ne montrait aucune perte de focus) : avant la saisie, le plugin note
+donc la fenetre active et, a la fin, la reactive avec `SetForegroundWindow`
+(`electron/src/focusPrecedent.mts`, appels Windows par le module natif `koffi`).
+Si l'etudiant a clique dans une autre fenetre entre temps, rien n'est reactive.
+Si `koffi` ne se charge pas, la raison est ecrite dans le journal (ligne `FOCUS`)
+et la superposition fonctionne comme avant. Perte de focus de la superposition :
+elle redevient non activable seule. Hors Windows, rien ne change. Test :
+`npm run test:focus-precedent`.

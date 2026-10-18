@@ -15,5 +15,8 @@
   },
   "peerDependencies": {
     "@capawesome/capacitor-electron": "^0.1.1"
+  },
+  "dependencies": {
+    "koffi": "^2.16.3"
   }
 }
