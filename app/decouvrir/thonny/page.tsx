@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ChevronLeft, ExternalLink } from "lucide-react";
+import { ChevronLeft, Download, ExternalLink } from "lucide-react";
 import { DonneesStructurees } from "@/components/DonneesStructurees";
 import { ListeQuestionsReponses, donneesFaq } from "@/components/PageUsageDecouvrir";
+import { URL_TELECHARGEMENT_THONNY } from "@/lib/ctaDecouvrir";
 import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
 import type { QuestionReponse } from "@/lib/usagesDecouvrir";
 
@@ -91,6 +92,19 @@ export default function PageDecouvrirThonny() {
         explications sur les erreurs, sans copier manuellement ton programme dans le site web. Le plugin utilise
         ton compte Classinus et le même historique de conversations que le site.
       </p>
+
+      <div className="mt-5">
+        <a
+          href={URL_TELECHARGEMENT_THONNY}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent-1 px-5 py-3 text-sm font-semibold text-[#1A0D02] transition-all duration-200 hover:bg-dj-accent-2 active:scale-[.98]"
+        >
+          <Download size={16} aria-hidden="true" />
+          Télécharger Thonny
+          <ExternalLink size={14} aria-hidden="true" />
+        </a>
+      </div>
 
       <section className="mt-8">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Installer le plugin</h2>

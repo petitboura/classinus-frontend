@@ -76,6 +76,19 @@ export function PageUsageDecouvrir({ usage }: { usage: UsageDecouvrir }) {
             <article key={point.titre} className="border-l-2 border-dj-bordure pl-4">
               <h3 className="font-display text-base font-semibold text-dj-texte">{point.titre}</h3>
               <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">{point.texte}</p>
+              {point.lien && (
+                <Link
+                  href={point.lien.href}
+                  className="group mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-dj-texte underline decoration-dj-bordure underline-offset-4 transition-colors hover:decoration-current"
+                >
+                  {point.lien.libelle}
+                  <ChevronRight
+                    size={15}
+                    className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </Link>
+              )}
             </article>
           ))}
         </div>

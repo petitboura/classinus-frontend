@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { ROUTES_APP } from "./routesApp";
 import { ROUTES_BIBLIOTHEQUE } from "./routesBibliotheque";
 import { ROUTES_BUREAU } from "./routesBureau";
@@ -28,7 +29,10 @@ export const CTA_CHAT_DECOUVRIR = {
   libelle: "Essayer Classinus dans le chat",
 } as const;
 
-export type CtaSectionDecouvrir = { href: string; libelle: string };
+/** Page de téléchargement de Thonny (bouton de la page /decouvrir/thonny). */
+export const URL_TELECHARGEMENT_THONNY = "https://thonny.org/";
+
+export type CtaSectionDecouvrir = { href: string; libelle: string; Icone: LucideIcon };
 
 // Page /decouvrir -> adresse de la section de l'appli dont elle parle.
 const APPLI_PAR_PAGE_DECOUVRIR: Record<string, string> = {
@@ -54,6 +58,8 @@ const APPLI_PAR_PAGE_DECOUVRIR: Record<string, string> = {
   // Trouver des PDF : la page parle de la bibliothèque personnelle et du
   // catalogue partagé, une seule section de l'appli.
   [ROUTES_DECOUVRIR.usages.pdf]: ROUTES_BIBLIOTHEQUE.accueil,
+  // Apprendre à coder : le bouton mène à l'éditeur de code de l'appli.
+  [ROUTES_DECOUVRIR.usages.coder]: ROUTES_BUREAU.editeur,
 };
 
 function sansSlashFinal(chemin: string): string {
@@ -69,10 +75,10 @@ export function ctaSectionDecouvrir(chemin: string): CtaSectionDecouvrir | null 
   if (!href) return null;
 
   const groupe = GROUPES_RAIL.find((g) => g.href === href);
-  if (groupe) return { href, libelle: `Ouvrir ${groupe.label}` };
+  if (groupe) return { href, libelle: `Ouvrir ${groupe.label}`, Icone: groupe.Icone };
 
   const section = trouverSection(href);
-  if (section) return { href, libelle: `Ouvrir ${section.label} dans ${section.groupe.label}` };
+  if (section) return { href, libelle: `Ouvrir ${section.label} dans ${section.groupe.label}`, Icone: section.Icone };
 
   return null;
 }

@@ -8,6 +8,8 @@ export type QuestionReponse = {
 export type PointUsage = {
   titre: string;
   texte: string;
+  /** Lien facultatif affiché sous le texte (vers une page /decouvrir qui détaille le point). */
+  lien?: { href: string; libelle: string };
 };
 
 export type UsageDecouvrir = {
@@ -116,6 +118,7 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
         titre: "Travailler directement dans Thonny",
         texte:
           "Le plugin thonny-classinus ajoute un panneau Classinus à droite de l'éditeur Thonny. Tu peux demander une analyse, une correction ou une explication d'erreur, et choisir parmi les modèles d'IA disponibles dans le panneau. Le code et les informations d'exécution ne sont transmis que lorsque tu déclenches une action qui les envoie.",
+        lien: { href: ROUTES_DECOUVRIR.thonny, libelle: "Voir le guide Thonny-Classinus" },
       },
       {
         titre: "Adapter les explications à ta manière d'apprendre",

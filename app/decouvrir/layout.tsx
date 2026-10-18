@@ -7,6 +7,7 @@ import { BoutonRetour } from "@/components/BoutonRetour";
 import { BoutonRetourDecouvrir } from "@/components/BoutonRetourDecouvrir";
 import { DonneesPageDecouvrir } from "@/components/DonneesPageDecouvrir";
 import { CtaDecouvrir } from "@/components/CtaDecouvrir";
+import { CtaDecouvrirIcones } from "@/components/CtaDecouvrirIcones";
 
 // Chantier SEO/AEO de Classinus (26/09/2026, demande Bourama). En tête
 // partagé par toute la famille de pages publiques de présentation
@@ -30,20 +31,24 @@ import { CtaDecouvrir } from "@/components/CtaDecouvrir";
 //
 // CtaDecouvrir (18/10/2026) : boutons vers le chat et, quand la page parle
 // d'une section, vers cette section de l'appli, sous le contenu de chaque
-// page (lib/ctaDecouvrir.ts).
+// page (lib/ctaDecouvrir.ts), et les mêmes en icônes seules en haut à droite
+// (CtaDecouvrirIcones).
 export default function LayoutDecouvrir({ children }: { children: ReactNode }) {
   return (
     <EcranAutonome className="min-h-screen bg-dj-fond">
       <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8">
         <DonneesPageDecouvrir />
-        <div className="flex w-fit items-center gap-2">
-          <Suspense fallback={<BoutonRetour href="/" avecTexte />}>
-            <BoutonRetourDecouvrir />
-          </Suspense>
-          <Link href="/" className="flex items-center gap-2.5">
-            <Logo taille={28} sansFond />
-            <span className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
-          </Link>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Suspense fallback={<BoutonRetour href="/" avecTexte />}>
+              <BoutonRetourDecouvrir />
+            </Suspense>
+            <Link href="/" className="flex items-center gap-2.5">
+              <Logo taille={28} sansFond />
+              <span className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
+            </Link>
+          </div>
+          <CtaDecouvrirIcones />
         </div>
         <div className="mt-8 animate-dj-fade-up">
           {children}
