@@ -256,7 +256,8 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "skills-publics",
     titre: "Skills publics",
-    texteCourt: "Découvre les skills partagées par d’autres utilisateurs, consulte leur contenu puis ajoute une copie à tes propres skills si tu veux les réutiliser.",
+    texteCourt:
+      "Des comportements publiés par d'autres étudiants. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi.",
     texteComplet:
       "Des comportements publiés par d'autres étudiants. Clique sur l'un d'eux pour voir son contenu complet avant de l'activer. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi. Si c'est toi qui l'as publié, tu peux le retirer du catalogue à tout moment.",
     lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
