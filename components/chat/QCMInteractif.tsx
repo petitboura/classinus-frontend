@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { enregistrerReponseQCM } from "@/lib/api";
+import { TexteMath } from "./TexteMath";
 
 // Rend un bloc ```qcm du markdown -- même famille que ```chart
 // (GraphiqueDonnees.tsx), ```carte (CarteMessage.tsx) et ```geometrie
@@ -134,7 +135,7 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
 
   return (
     <div className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
-      <p className="text-sm font-semibold text-dj-texte">{qcm.question}</p>
+      <p className="text-sm font-semibold text-dj-texte"><TexteMath texte={qcm.question} /></p>
 
       <div className="mt-3 flex flex-col gap-2">
         {qcm.choix.map((option, index) => {
@@ -163,7 +164,7 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
                 aRepondu ? "cursor-default" : "cursor-pointer"
               }`}
             >
-              <span>{option}</span>
+              <span><TexteMath texte={String(option)} /></span>
               {aRepondu && estLaBonneReponse && (
                 <CheckCircle2 size={16} className="shrink-0 text-dj-succes" />
               )}
@@ -177,7 +178,7 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
 
       {aRepondu && qcm.explication && (
         <div className="mt-3 animate-dj-fade-in-rapide rounded-cgpt-carte bg-dj-surface-haute p-3 text-xs text-dj-texte-muet">
-          {qcm.explication}
+          <TexteMath texte={qcm.explication} />
         </div>
       )}
     </div>
