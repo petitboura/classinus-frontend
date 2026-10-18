@@ -207,25 +207,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteMinuteurs.Provider value={minuteursValeur}>
     <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
-        <div
-          // 18/10/2026, demande de Bourama : la page entière (pas la zone des
-          // messages) avait sa propre barre de défilement vers le haut et vers
-          // les côtés, et la barre latérale ne touchait plus le bas de la
-          // fenêtre. Cette coque fait exactement la taille de la fenêtre et
-          // chaque zone à l'intérieur défile toute seule : ce marqueur
-          // permet à app/globals.css de bloquer le défilement de la page
-          // entière, uniquement ici (les pages publiques n'ont pas cette
-          // coque et gardent leur défilement normal). "relative" et
-          // "overflow-clip" font de la coque le repère et la limite de tout
-          // ce qui est posé à l'intérieur : rien ne peut plus agrandir la
-          // page au delà de la fenêtre.
-          // TEST TEMPORAIRE du 18/10/2026, demande de Bourama : "mx-10"
-          // réduit la page de 40 px de chaque côté (gauche et droite) pour
-          // voir si les barres de défilement viennent de la page elle même.
-          // À retirer dès que le test est fini.
-          data-coque-appli
-          className="relative mx-10 flex h-dvh overflow-clip"
-        >
+        <div className="flex h-dvh">
           {/* 30/08/2026, menu hamburger : reprend Accueil/Connecter
               Claude/Paramètres/Partager/Avis/Pourquoi Classinus, tout ce qui
               n'a pas de place dans les 5 onglets directs. Étape 1 de

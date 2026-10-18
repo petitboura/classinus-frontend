@@ -301,24 +301,6 @@ body {
   overscroll-behavior: none;
 }
 
-/* 18/10/2026, demande de Bourama : la page entière avait une barre de
-   défilement vers le haut et vers les côtés (hors zone des messages), et la
-   barre latérale s'arrêtait avant le bas de la fenêtre. Dans la coque de
-   l'appli (AppShell.tsx, marqueur data-coque-appli) la page fait exactement
-   la taille de la fenêtre et chaque zone défile toute seule : on bloque donc
-   le défilement de la page entière, ce qui supprime aussi les deux barres.
-   html en hidden empêche de faire glisser la page, body en clip empêche en
-   plus qu'un appel de défilement automatique (scrollIntoView) la décale, et
-   fait que rien de ce qui dépasse ne compte dans la taille de la page.
-   Aucun effet hors de la coque : les pages publiques (Découvrir, conditions,
-   connexion...) n'ont pas ce marqueur et défilent comme avant. */
-html:has([data-coque-appli]) {
-  overflow: hidden;
-}
-html:has([data-coque-appli]) body {
-  overflow: clip;
-}
-
 /* Chantier "web mobile façon appli" (28/08/2026) -- retour tactile
    immédiat au tap, qui manquait partout (aucun état "pressé" sur les
    boutons/liens, brief 2026 : "immediate visual feedback"). Portée
