@@ -47,13 +47,14 @@ $f.Add_Shown({ $f.TopMost=$true; $f.Activate(); $t.Focus(); [System.IO.File]::Wr
     await pause(1500);
     r.fgDepart = ps('fg');
     enfant = spawn(electronExe, [join(racine, 'focus-superposition/main.cjs')], { env, stdio: 'inherit' });
-    const { cx, cy } = JSON.parse(await attendre('pret.json'));
+    const { cx, cy, tx, ty } = JSON.parse(await attendre('pret.json'));
     await pause(2500);
     ps('clic', Math.round(cx) + ',' + Math.round(cy));
     await pause(800);
     r.fgApresClic = ps('fg');
     ps('touches', 'abc'); await pause(500);
     r.clavierApresClic = (await lire()).includes('abc');
+    ps('clic', Math.round(tx) + ',' + Math.round(ty)); await pause(300);
     await writeFile(join(dossier, 'commande'), 'saisie-on'); await attendre('fait-saisie-on'); await pause(1200);
     r.fgPendantSaisie = ps('fg');
     await writeFile(join(dossier, 'commande'), 'saisie-off'); await attendre('fait-saisie-off'); await pause(1500);
