@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -10,6 +10,9 @@ export const LARGEUR_VOLET_REM = 14;
 
 // Marge minimale gardée entre le volet et le bord de l'écran, en pixels.
 const MARGE_ECRAN_PX = 8;
+
+// Durée de l'animation de fermeture du volet (la même que sa transition).
+const DUREE_FERMETURE_MS = 170;
 
 /**
  * Une ligne du bouton Réglages : un titre avec son icône, qui montre ses
@@ -59,8 +62,37 @@ export function LigneReglage({
   // Décalage vertical (px) appliqué au volet pour qu'il reste dans l'écran.
   const [decalage, setDecalage] = useState(0);
 
+  // 18/10/2026, demande de Bourama : les volets fermés restaient dans la
+  // page, simplement invisibles, et dépassaient de la zone centrale (jusqu'à
+  // 75 px sur le côté et 14 px en bas), ce qui faisait apparaître une barre de
+  // défilement en bas et à droite de tout le chat. Un volet fermé n'existe
+  // donc plus dans la page : "monte" le garde présent pendant l'ouverture et
+  // pendant la fermeture (pour que l'animation reste fluide), "affiche"
+  // pilote l'animation elle même. Le volet est d'abord posé fermé, puis
+  // ouvert à l'image suivante, pour que l'apparition glisse comme avant.
+  const [monte, setMonte] = useState(false);
+  const [affiche, setAffiche] = useState(false);
+
+  useEffect(() => {
+    if (!lateral) return;
+    if (ouverte) {
+      setMonte(true);
+      let suite = 0;
+      const premiere = requestAnimationFrame(() => {
+        suite = requestAnimationFrame(() => setAffiche(true));
+      });
+      return () => {
+        cancelAnimationFrame(premiere);
+        cancelAnimationFrame(suite);
+      };
+    }
+    setAffiche(false);
+    const minuteur = window.setTimeout(() => setMonte(false), DUREE_FERMETURE_MS);
+    return () => window.clearTimeout(minuteur);
+  }, [lateral, ouverte]);
+
   useLayoutEffect(() => {
-    if (!lateral || !ouverte) return;
+    if (!lateral || !monte) return;
     const ligne = ligneRef.current;
     const volet = voletRef.current;
     if (!ligne || !volet) return;
@@ -71,7 +103,7 @@ export function LigneReglage({
     if (bas > limiteBas) valeur = limiteBas - bas;
     if (haut + valeur < MARGE_ECRAN_PX) valeur = MARGE_ECRAN_PX - haut;
     setDecalage(valeur);
-  }, [lateral, ouverte, children]);
+  }, [lateral, monte, children]);
 
   const tailleFleche = grand ? 14 : 12;
   const classeFleche = "flex-shrink-0 transition-transform duration-200 ";
@@ -106,6 +138,7 @@ export function LigneReglage({
       </button>
 
       {lateral ? (
+        monte && (
         <div
           ref={voletRef}
           role="menu"
@@ -116,13 +149,14 @@ export function LigneReglage({
             (cote === "droite"
               ? "left-[calc(100%+0.5rem)] origin-left "
               : "right-[calc(100%+0.5rem)] origin-right ") +
-            (ouverte
+            (affiche
               ? "visible translate-x-0 scale-100 opacity-100"
               : "invisible scale-95 opacity-0 " + (cote === "droite" ? "-translate-x-1" : "translate-x-1"))
           }
         >
           {children}
         </div>
+        )
       ) : (
         <div
           aria-hidden={!ouverte}
