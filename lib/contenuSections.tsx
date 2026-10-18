@@ -80,7 +80,12 @@ const CONTENU_SECTIONS: Record<CleSection, () => ReactNode> = {
       <EditeurCode />
     </>
   ),
-  [ROUTES_BUREAU.configuration]: () => (\n    <>\n      <DefinirInfoSection id="configuration-bureau" />\n      <ConfigurationBureau />\n    </>\n  ),
+  [ROUTES_BUREAU.configuration]: () => (
+    <>
+      <DefinirInfoSection id="configuration-bureau" />
+      <ConfigurationBureau />
+    </>
+  ),
 
   [ROUTES_BIBLIOTHEQUE.perso]: () => <EspaceBibliotheque sansOnglets />,
   [ROUTES_BIBLIOTHEQUE.publique]: () => (
@@ -107,7 +112,12 @@ const CONTENU_SECTIONS: Record<CleSection, () => ReactNode> = {
   ),
 
   [ROUTES_PERSONNALISER.comportements]: () => <MesComportements agentId={AGENT_ID} sansOnglets />,
-  [ROUTES_PERSONNALISER.skillsPublics]: () => (\n    <>\n      <DefinirInfoSection id="skills-publics" />\n      <SkillsPublics />\n    </>\n  ),
+  [ROUTES_PERSONNALISER.skillsPublics]: () => (
+    <>
+      <DefinirInfoSection id="skills-publics" />
+      <SkillsPublics />
+    </>
+  ),
   [ROUTES_PERSONNALISER.memoire]: () => <MaMemoire />,
 };
 
