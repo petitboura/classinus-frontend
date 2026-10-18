@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
 import { FenetresSections } from "@/components/chat/FenetresSections";
 import { CatalogueClovis } from "@/components/CatalogueClovis";
+import { DiagnosticDefilementTemporaire } from "@/components/DiagnosticDefilementTemporaire";
 import { PaletteCommandes } from "@/components/PaletteCommandes";
 import { ContexteChat } from "@/lib/contexteChat";
 import { ContexteCatalogue } from "@/lib/contexteCatalogue";
@@ -230,6 +231,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               (un minuteur est enregistré sur le compte). */}
           {connecte && <DockMinuteurs />}
           <SyncTempsReelCache connecte={connecte} />
+          {/* OUTIL TEMPORAIRE du 18/10/2026 (demande de Bourama) : cadre de mesure
+              des barres de défilement. À supprimer avec son fichier. */}
+          <DiagnosticDefilementTemporaire />
           {/* 07/09/2026, décision Bourama (bug PC web signalé : profil et
               "..." affichés en double) : cette instance-ci d'AppSidebar
               (nav principale, hors chat) reste montée en permanence,
