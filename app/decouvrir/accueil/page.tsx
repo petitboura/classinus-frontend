@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronLeft } from "lucide-react";
 import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
+import { QUESTIONS_DECOUVRIR_ACCUEIL } from "@/lib/questionsDecouvrir";
+import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDecouvrir";
 
 // Chantier SEO/AEO de Classinus (26/09/2026). Titre, description et
 // contenu validés par Bourama, revus une première fois : la phrase
@@ -38,6 +40,8 @@ export default function PageDecouvrirAccueil() {
         téléphone et à ton temps d&apos;écran sur mobile. Dans le tableau de bord, tu retrouves aussi tes raccourcis
         vers chaque partie de Classinus et ton activité récente.
       </p>
+
+      <AccordeonQuestionsDecouvrir groupes={QUESTIONS_DECOUVRIR_ACCUEIL} />
     </main>
   );
 }
