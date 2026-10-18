@@ -1,4 +1,4 @@
-param([string]$Action, [int]$X = 0, [int]$Y = 0)
+param([string]$Action, [string]$A = '', [int]$X = 0, [int]$Y = 0)
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Text;
 public class W {
@@ -13,8 +13,9 @@ if ($Action -eq 'fg') {
   [void][W]::GetWindowText($h, $s, 256); Write-Output $s.ToString()
 } elseif ($Action -eq 'touches') {
   Add-Type -AssemblyName System.Windows.Forms
-  [System.Windows.Forms.SendKeys]::SendWait('abc')
+  [System.Windows.Forms.SendKeys]::SendWait($A)
 } elseif ($Action -eq 'clic') {
+  $X = [int]$A.Split(',')[0]; $Y = [int]$A.Split(',')[1]
   [void][W]::SetCursorPos($X, $Y); Start-Sleep -Milliseconds 150
   [W]::mouse_event(0x2, 0, 0, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 60
   [W]::mouse_event(0x4, 0, 0, 0, [UIntPtr]::Zero)

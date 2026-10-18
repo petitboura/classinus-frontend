@@ -7,6 +7,11 @@ const dossier = process.env.DOSSIER_TEST;
 const variante = process.env.VARIANTE || 'actuel';
 const noter = (nom) => fs.writeFileSync(path.join(dossier, nom), String(Date.now()));
 let saisie = false;
+let garde = null;
+let poignee = null;
+if (variante === 'garde') {
+  import(require('node:url').pathToFileURL(process.env.MODULE_GARDE).href).then((m) => { garde = m.creerGardePremierPlan(); poignee = m.poigneeFenetre; garde.demarrer(); });
+}
 app.whenReady().then(() => {
   const zone = screen.getPrimaryDisplay().workArea;
   const x = zone.x, y = zone.y, largeur = zone.width, hauteur = zone.height;
@@ -24,7 +29,7 @@ app.whenReady().then(() => {
   fenetre.on('page-title-updated', (e, titre) => { e.preventDefault(); if (titre.startsWith('CLIC')) noter('clic-' + titre); });
   fenetre.on('focus', () => {
     noter('focus-' + Date.now());
-    if (variante === 'blur' && !saisie) fenetre.blur();
+    
   });
   const html = '<body style="margin:0;background:transparent"><button style="position:fixed;right:20px;bottom:20px;width:300px;height:200px;font-size:30px" onclick="window.n=(window.n||0)+1;document.title=\'CLIC\'+window.n">Bouton</button><input id="t" style="position:fixed;right:20px;top:20px;width:300px;height:60px" onfocus="document.title=\'SAISIE-ON\'+Date.now()"></body>';
   fenetre.webContents.once('did-finish-load', () => {
@@ -46,10 +51,13 @@ app.whenReady().then(() => {
     const texte = fs.readFileSync(cmd, 'utf8').trim();
     fs.rmSync(cmd);
     if (texte === 'saisie-on') {
-      saisie = true; fenetre.setFocusable(true); fenetre.setSkipTaskbar(true); fenetre.focus();
+      saisie = true;
+      const prendre = () => { if (!saisie) return; fenetre.setFocusable(true); fenetre.setSkipTaskbar(true); fenetre.focus(); };
+      if (garde) void garde.memoriser(poignee(fenetre.getNativeWindowHandle())).finally(prendre); else prendre();
     } else if (texte === 'saisie-off') {
+      const encore = fenetre.isFocused();
       saisie = false; fenetre.setFocusable(false); fenetre.setSkipTaskbar(true);
-      if (variante === 'blur') fenetre.blur();
+      if (garde && encore) void garde.restaurer();
     } else if (texte === 'fin') app.quit();
     noter('fait-' + texte);
   }, 100);

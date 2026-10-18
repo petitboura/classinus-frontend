@@ -15,5 +15,6 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node node_modules/electron/install.js
+      - run: npm --prefix packages/capacitor-superposition-electron run build
       - run: node tests/verifier-focus-superposition-windows.mjs
         continue-on-error: true

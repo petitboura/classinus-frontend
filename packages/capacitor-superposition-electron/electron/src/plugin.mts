@@ -56,6 +56,7 @@ import { app, BrowserWindow, globalShortcut, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 import { creerRaccourcisCrayon } from "./raccourcisCrayon.mjs";
+import { creerGardePremierPlan, poigneeFenetre } from "./premierPlanWindows.mjs";
 
 // Identification des deux fenetres par leur titre plutot que par un pont
 // d'export entre paquets (electron/main.ts et ce plugin sont deux projets
@@ -441,6 +442,8 @@ export async function pointerCurseurEcran(p: { x: number; y: number }): Promise<
 // temps que l'etudiant ecrit dans une de ses zones de texte ; setFocusable(false) rend alors
 // aussi l'activation a la fenetre du dessous. Ailleurs qu'a Windows, rien ne change.
 let saisieTexteActive = false;
+const gardePremierPlan = creerGardePremierPlan();
+app.on("will-quit", () => gardePremierPlan.arreter());
 
 function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
   if (fenetre.isDestroyed()) return;
@@ -456,13 +459,21 @@ function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
   }
   saisieTexteActive = actif;
   if (actif) {
-    fenetre.setFocusable(true);
-    // setFocusable remet la fenetre dans la barre des taches : on l'en retire de nouveau.
-    fenetre.setSkipTaskbar(true);
-    fenetre.focus();
+    // On note la fenetre qui est devant AVANT de prendre le clavier, pour la lui rendre ensuite.
+    void gardePremierPlan.memoriser(poigneeFenetre(fenetre.getNativeWindowHandle())).finally(() => {
+      if (!saisieTexteActive || fenetre.isDestroyed()) return;
+      fenetre.setFocusable(true);
+      // setFocusable remet la fenetre dans la barre des taches : on l'en retire de nouveau.
+      fenetre.setSkipTaskbar(true);
+      fenetre.focus();
+    });
   } else {
+    // Si la superposition est encore devant (l'etudiant n'a pas cliqué ailleurs), la fenetre qui
+    // etait devant doit reprendre la main pour de bon.
+    const encoreDevant = fenetre.isFocused();
     fenetre.setFocusable(false);
     fenetre.setSkipTaskbar(true);
+    if (encoreDevant) void gardePremierPlan.restaurer();
   }
 }
 
@@ -497,6 +508,7 @@ function essayerAffichageSuperposition(essai: number) {
   if (superposition && !superposition.isDestroyed()) {
     superpositionAffichee = true;
     superposition.showInactive();
+    gardePremierPlan.demarrer();
     // L'etudiant clique dans une autre fenetre : la superposition perd le focus, elle redevient
     // non activable (rien a rendre : c'est deja l'autre fenetre qui est active).
     superposition.on("blur", () => {
