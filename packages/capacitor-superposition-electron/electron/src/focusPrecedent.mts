@@ -8,8 +8,11 @@
 // l'écran voyait Classinus au premier plan.
 //
 // Ce module note la fenêtre qui était active juste avant la saisie, puis la réactive à la fin,
-// mais seulement si la superposition est encore la fenêtre active. Si l'étudiant a cliqué
-// ailleurs entre temps, Windows a déjà fait son choix et on n'y touche pas.
+// mais seulement si la superposition était encore la fenêtre active. Ce test se fait AVANT
+// setFocusable(false) (second journal du 18/10/2026 : setFocusable(false) donne lui même
+// l'activation à une troisième fenêtre, le test fait après le croyait à tort que l'étudiant
+// avait cliqué ailleurs). Si l'étudiant a cliqué ailleurs pendant la saisie, la superposition
+// n'était plus active avant, Windows a déjà fait son choix et on n'y touche pas.
 //
 // Logique pure : le système (Windows) est injecté, ce qui permet de la tester partout. La
 // partie Windows est creerSystemeWindows, chargée seulement sous Windows et sans jamais faire
@@ -33,8 +36,12 @@ export type SystemeFenetres = {
 export type FocusPrecedent = {
   // À appeler juste AVANT que la superposition prenne le focus.
   memoriser(propre: Poignee): void;
-  // À appeler quand la saisie se termine. Renvoie vrai si la fenêtre précédente a été réactivée.
-  rendre(propre: Poignee): boolean;
+  // La superposition est la fenêtre active à cet instant (faux si on ne sait pas). À appeler
+  // juste AVANT setFocusable(false), car ce dernier peut déplacer l'activation lui même.
+  estActive(propre: Poignee): boolean;
+  // À appeler quand la saisie se termine, APRÈS setFocusable(false). `etaitActive` est le
+  // résultat de estActive pris AVANT. Renvoie vrai si la fenêtre précédente a été réactivée.
+  rendre(propre: Poignee, etaitActive: boolean): boolean;
   // Fenêtre active à cet instant, en texte lisible pour le journal de diagnostic.
   apercuPremierPlan(): string;
   // Ce qui s'est passé lors du dernier memoriser et du dernier rendre, en une ligne de journal
@@ -88,7 +95,15 @@ export function creerFocusPrecedent(systeme: SystemeFenetres | null): FocusPrece
         traceNote = `erreur en notant : ${erreur instanceof Error ? erreur.message : String(erreur)}`;
       }
     },
-    rendre(propre) {
+    estActive(propre) {
+      if (!systeme) return false;
+      try {
+        return egales(systeme.premierPlan(), propre);
+      } catch {
+        return false;
+      }
+    },
+    rendre(propre, etaitActive) {
       const cible = precedente;
       precedente = null;
       if (!systeme) {
@@ -100,10 +115,10 @@ export function creerFocusPrecedent(systeme: SystemeFenetres | null): FocusPrece
         return false;
       }
       try {
-        const active = systeme.premierPlan();
         // L'étudiant a cliqué dans une autre fenêtre pendant la saisie : elle est déjà active.
-        if (!egales(active, propre)) {
-          traceRendu = `la superposition (${texte(propre)}) n'est plus la fenêtre active (${texte(active)}), rien réactivé, fenêtre notée ${texte(cible)}`;
+        // Le test est celui pris avant setFocusable(false), pas un nouveau test d'ici.
+        if (!etaitActive) {
+          traceRendu = `la superposition (${texte(propre)}) n'était plus la fenêtre active avant la fin de la saisie (actuellement ${texte(systeme.premierPlan())}), rien réactivé, fenêtre notée ${texte(cible)}`;
           return false;
         }
         if (!systeme.existe(cible)) {

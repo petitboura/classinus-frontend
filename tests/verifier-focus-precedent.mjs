@@ -34,7 +34,10 @@ try {
     const f = creerFocusPrecedent(s);
     f.memoriser(PROPRE);
     s.etat.active = PROPRE; // Windows donne le focus à la superposition
-    assert.equal(f.rendre(PROPRE), true);
+    const etaitActive = f.estActive(PROPRE);
+    assert.equal(etaitActive, true);
+    s.etat.active = 333; // setFocusable(false) donne l'activation à une fenêtre système (second journal)
+    assert.equal(f.rendre(PROPRE, etaitActive), true);
     assert.deepEqual(s.etat.activations, [BLOC_NOTES]);
     assert.equal(s.etat.active, BLOC_NOTES);
   }
@@ -46,7 +49,9 @@ try {
     f.memoriser(PROPRE);
     s.etat.active = 202; // il a cliqué ailleurs, cette fenêtre est déjà active
     s.etat.existantes.add(202);
-    assert.equal(f.rendre(PROPRE), false);
+    const etaitActive = f.estActive(PROPRE);
+    assert.equal(etaitActive, false);
+    assert.equal(f.rendre(PROPRE, etaitActive), false);
     assert.deepEqual(s.etat.activations, []);
   }
 
@@ -57,7 +62,7 @@ try {
     f.memoriser(PROPRE);
     s.etat.active = PROPRE;
     s.etat.existantes.delete(BLOC_NOTES);
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
     assert.deepEqual(s.etat.activations, []);
   }
 
@@ -67,7 +72,7 @@ try {
     const f = creerFocusPrecedent(s);
     f.memoriser(PROPRE);
     s.etat.active = PROPRE;
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
   }
 
   // 5. La superposition est déjà la fenêtre active au moment de noter : rien à noter, et une
@@ -76,7 +81,7 @@ try {
     const s = fauxSysteme({ active: PROPRE });
     const f = creerFocusPrecedent(s);
     f.memoriser(PROPRE);
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
     assert.deepEqual(s.etat.activations, []);
   }
   {
@@ -85,7 +90,7 @@ try {
     f.memoriser(PROPRE); // note le Bloc-notes
     s.etat.active = PROPRE;
     f.memoriser(PROPRE); // deuxième demande pendant la saisie : ne doit pas perdre la note
-    assert.equal(f.rendre(PROPRE), true);
+    assert.equal(f.rendre(PROPRE, true), true);
     assert.deepEqual(s.etat.activations, [BLOC_NOTES]);
   }
 
@@ -94,7 +99,7 @@ try {
     const s = fauxSysteme({ active: 0 });
     const f = creerFocusPrecedent(s);
     f.memoriser(PROPRE);
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
   }
 
   // 7. La note ne sert qu'une fois : une deuxième fin de saisie ne réactive rien.
@@ -103,9 +108,9 @@ try {
     const f = creerFocusPrecedent(s);
     f.memoriser(PROPRE);
     s.etat.active = PROPRE;
-    assert.equal(f.rendre(PROPRE), true);
+    assert.equal(f.rendre(PROPRE, true), true);
     s.etat.active = PROPRE;
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
     assert.equal(s.etat.activations.length, 1);
   }
 
@@ -114,7 +119,7 @@ try {
     const s = fauxSysteme({ lever: true });
     const f = creerFocusPrecedent(s);
     assert.doesNotThrow(() => f.memoriser(PROPRE));
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
   }
 
   // 9. Poignées de formes différentes (nombre ou grand entier) : comparées sans erreur.
@@ -124,14 +129,14 @@ try {
     f.memoriser(PROPRE);
     s.etat.active = BigInt(PROPRE);
     s.etat.existantes.add(101n);
-    assert.equal(f.rendre(PROPRE), true);
+    assert.equal(f.rendre(PROPRE, true), true);
   }
 
   // 10. Sans système (hors Windows, ou module natif absent) : tout est sans effet.
   {
     const f = creerFocusPrecedent(null);
     assert.doesNotThrow(() => f.memoriser(PROPRE));
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
     if (process.platform !== 'win32') assert.equal(creerSystemeWindows(), null);
   }
 
@@ -151,13 +156,13 @@ try {
     f.memoriser(PROPRE);
     assert.match(f.trace(), /noté 0x65/);
     s.etat.active = 202; // une autre fenêtre est devenue active avant la fin de la saisie
-    assert.equal(f.rendre(PROPRE), false);
-    assert.match(f.trace(), /n'est plus la fenêtre active \(0xca\)/);
+    assert.equal(f.rendre(PROPRE, f.estActive(PROPRE)), false);
+    assert.match(f.trace(), /n'était plus la fenêtre active avant la fin de la saisie \(actuellement 0xca\)/);
     assert.match(f.trace(), /fenêtre notée 0x65/);
   }
   {
     const f = creerFocusPrecedent(fauxSysteme());
-    assert.equal(f.rendre(PROPRE), false);
+    assert.equal(f.rendre(PROPRE, true), false);
     assert.match(f.trace(), /aucune fenêtre notée avant la saisie/);
   }
   {
@@ -169,6 +174,12 @@ try {
   {
     const f = creerFocusPrecedent(null);
     assert.equal(f.apercuPremierPlan(), 'inconnu');
+    assert.equal(f.estActive(PROPRE), false);
+  }
+  {
+    const f = creerFocusPrecedent(fauxSysteme({ lever: true }));
+    assert.doesNotThrow(() => f.estActive(PROPRE));
+    assert.equal(f.estActive(PROPRE), false);
   }
 
   console.log('Focus précédent : tout est bon.');
