@@ -46,6 +46,7 @@ export async function metadonneesBibliothequePublique(parametres: ParametresPage
         title: `${entree.nom} · Bibliothèque Classinus`,
         description: entree.description || `Document partagé sur la bibliothèque publique de Classinus : ${entree.nom}.`,
         openGraph: { title: entree.nom, description: entree.description || undefined, type: "article" },
+        twitter: { title: entree.nom, description: entree.description || undefined },
       };
     }
     if (idDossier) {
@@ -54,6 +55,7 @@ export async function metadonneesBibliothequePublique(parametres: ParametresPage
         title: `${dossier.nom} · Bibliothèque Classinus`,
         description: dossier.description || `Dossier de la bibliothèque publique Classinus : ${dossier.nom}.`,
         openGraph: { title: dossier.nom, description: dossier.description || undefined, type: "article" },
+        twitter: { title: dossier.nom, description: dossier.description || undefined },
       };
     }
   } catch (e) {
@@ -75,6 +77,7 @@ export async function metadonneesSkillsPublics(parametres: ParametresPage): Prom
       title: `${skill.nom} · Skills Classinus`,
       description: skill.description || `Skill publique partagée sur Classinus : ${skill.nom}.`,
       openGraph: { title: skill.nom, description: skill.description || undefined, type: "article" },
+      twitter: { title: skill.nom, description: skill.description || undefined },
     };
   } catch (e) {
     if (e instanceof ErreurApi && e.statusCode === 404) {
