@@ -9,12 +9,6 @@ export type CarteDecouvrir = {
 
 export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
-    slug: "accueil",
-    href: ROUTES_DECOUVRIR.accueilClassinus,
-    titre: "Le coin des étudiants",
-    description: "Pose tes questions, travaille à partir de tes cours et prépare des fiches, des QCM ou des animations pour réviser.",
-  },
-  {
     slug: "bibliotheque",
     href: ROUTES_DECOUVRIR.bibliotheque.accueil,
     titre: "Bibliothèque",
@@ -35,8 +29,8 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
     slug: "usages",
     href: ROUTES_DECOUVRIR.usages.accueil,
-    titre: "Que faire avec Classinus ?",
-    description: "Découvre comment rechercher des documents, apprendre à programmer, trouver des vidéos et réviser.",
+    titre: "Ce que tu peux faire avec Classinus",
+    description: "Explore les usages de l’assistant, les outils d’étude, la programmation, les documents et les fonctions qui complètent le chat.",
   },
   {
     slug: "thonny",
