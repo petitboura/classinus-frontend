@@ -22,8 +22,33 @@ public class PremierPlan {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int c);
+  [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint depuis, uint vers, bool attacher);
+  [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
 }
 "@
+function Remettre($h) {
+  if (-not ([PremierPlan]::IsWindow($h) -and [PremierPlan]::IsWindowVisible($h))) { return 'invalide' }
+  if ([PremierPlan]::IsIconic($h)) { [void][PremierPlan]::ShowWindow($h, 9) }
+  [void][PremierPlan]::SetForegroundWindow($h)
+  if ([PremierPlan]::GetForegroundWindow() -eq $h) { return 'direct' }
+  $pidFg = [uint32]0
+  $pidCible = [uint32]0
+  $threadFg = [PremierPlan]::GetWindowThreadProcessId([PremierPlan]::GetForegroundWindow(), [ref]$pidFg)
+  $threadCible = [PremierPlan]::GetWindowThreadProcessId($h, [ref]$pidCible)
+  $moi = [PremierPlan]::GetCurrentThreadId()
+  [void][PremierPlan]::AttachThreadInput($moi, $threadCible, $true)
+  if ($threadFg -ne 0) { [void][PremierPlan]::AttachThreadInput($moi, $threadFg, $true) }
+  [void][PremierPlan]::BringWindowToTop($h)
+  [void][PremierPlan]::SetForegroundWindow($h)
+  [void][PremierPlan]::AttachThreadInput($moi, $threadCible, $false)
+  if ($threadFg -ne 0) { [void][PremierPlan]::AttachThreadInput($moi, $threadFg, $false) }
+  if ([PremierPlan]::GetForegroundWindow() -eq $h) { return 'attache' }
+  return 'echec'
+}
 [Console]::Out.WriteLine('pret')
 while (($ligne = [Console]::In.ReadLine()) -ne $null) {
   $morceaux = $ligne.Split(' ')
@@ -31,9 +56,7 @@ while (($ligne = [Console]::In.ReadLine()) -ne $null) {
     [Console]::Out.WriteLine('devant ' + [PremierPlan]::GetForegroundWindow().ToInt64())
   } elseif ($morceaux[0] -eq 'remettre') {
     $h = [IntPtr][int64]$morceaux[1]
-    $ok = $false
-    if ([PremierPlan]::IsWindow($h) -and [PremierPlan]::IsWindowVisible($h)) { $ok = [PremierPlan]::SetForegroundWindow($h) }
-    [Console]::Out.WriteLine('remis ' + $ok)
+    [Console]::Out.WriteLine('remis ' + (Remettre $h))
   }
 }
 `;
@@ -45,6 +68,7 @@ export interface GardePremierPlan {
   demarrer(): void;
   memoriser(poigneeSuperposition: number): Promise<void>;
   restaurer(): Promise<boolean>;
+  dernierResultat(): string;
   fenetreMemorisee(): number;
   arreter(): void;
 }
@@ -58,6 +82,7 @@ export function creerGardePremierPlan(plateforme: string = process.platform): Ga
   let pret = false;
   let tampon = "";
   let memorisee = 0;
+  let dernierResultat = "aucun";
   // Reponses attendues dans l'ordre : chaque ligne recue sert la plus ancienne demande.
   const attentes: Array<{ prefixe: string; resoudre: (ligne: string | null) => void; minuteur: ReturnType<typeof setTimeout> }> = [];
 
@@ -113,12 +138,14 @@ export function creerGardePremierPlan(plateforme: string = process.platform): Ga
       if (Number.isFinite(poignee) && poignee > 0 && poignee !== poigneeSuperposition) memorisee = poignee;
     },
     fenetreMemorisee() { return memorisee; },
+    dernierResultat() { return dernierResultat; },
     async restaurer() {
       const cible = memorisee;
       memorisee = 0;
       if (!cible) return false;
       const reponse = await demander(`remettre ${cible}`, "remis ");
-      return reponse === "remis True";
+      dernierResultat = reponse ?? "sans reponse";
+      return reponse === "remis direct" || reponse === "remis attache";
     },
     arreter() {
       try { processus?.stdin.end(); processus?.kill(); } catch { /* deja arrete */ }

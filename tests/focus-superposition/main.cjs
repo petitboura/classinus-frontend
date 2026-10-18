@@ -58,7 +58,7 @@ app.whenReady().then(() => {
       const encore = fenetre.isFocused();
       saisie = false; fenetre.setFocusable(false); fenetre.setSkipTaskbar(true);
       noter('debug-encore-' + encore + '-memo-' + (garde ? garde.fenetreMemorisee() : 'sans'));
-      if (garde && encore) void garde.restaurer().then((ok) => noter('debug-restaure-' + ok));
+      if (garde && encore) void garde.restaurer().then((ok) => noter('debug-restaure-' + ok + '-' + garde.dernierResultat().replaceAll(' ', '_')));
     } else if (texte === 'fin') app.quit();
     noter('fait-' + texte);
   }, 100);
