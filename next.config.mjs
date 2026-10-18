@@ -29,7 +29,10 @@ const redirectionsWeb =
     ? {}
     : {
         async redirects() {
-          return [{ source: "/chat", destination: "/", permanent: true }];
+          return [
+            { source: "/chat", destination: "/", permanent: true },
+            { source: "/decouvrir/accueil", destination: "/decouvrir/usages", permanent: true },
+          ];
         },
       };
 
