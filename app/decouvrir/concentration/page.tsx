@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
 import { SOUS_PAGES_DECOUVRIR_CONCENTRATION } from "@/lib/sectionsDecouvrir";
+import { QUESTIONS_DECOUVRIR_CONCENTRATION } from "@/lib/questionsDecouvrir";
+import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDecouvrir";
 
 // Chantier SEO/AEO de Classinus (27/09/2026). Titre, description et
 // texte validés par Bourama.
@@ -47,6 +49,8 @@ export default function PageDecouvrirConcentration() {
           </li>
         ))}
       </ul>
+
+      <AccordeonQuestionsDecouvrir groupes={QUESTIONS_DECOUVRIR_CONCENTRATION} />
     </main>
   );
 }
