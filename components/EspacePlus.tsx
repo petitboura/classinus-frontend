@@ -8,7 +8,13 @@ import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
 import { LIGNE_TRAIT_ICONE_18_PANNEAU, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { ROUTES_APP } from "@/lib/routesApp";
-import { TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
+import {
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_TIROIR,
+  ECART_LIBELLE_TIROIR,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Créé le 26/08/2026, Bourama : refonte navigation mobile native. Contenu
 // du menu "Plus", partagé entre l'appli native et le web mobile.
@@ -85,12 +91,12 @@ function LigneSection({
     return (
       <button
         onClick={onClick}
-        className="group mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        className={`group ${ECART_ELEMENTS_TIROIR} flex w-full items-center ${ECART_LIBELLE_TIROIR} rounded-xl px-2 text-left text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte`}
       >
-        <span className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <Icone size={18} strokeWidth={TRAIT_ICONE_RAIL} />
+        <span className={`relative ${CELLULE_ICONE_TACTILE}`}>
+          <Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} />
         </span>
-        <span className="text-sm">{titre}</span>
+        <span className="text-sm font-semibold">{titre}</span>
       </button>
     );
   }

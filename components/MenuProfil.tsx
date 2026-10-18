@@ -6,7 +6,7 @@ import { LogOut, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { FlottantAncre } from "@/components/FlottantAncre";
 import type { CoteFlottant } from "@/lib/placementFlottant";
-import { CELLULE_ICONE_RAIL, CELLULE_ICONE_TACTILE, ECART_ELEMENTS_RAIL } from "@/lib/styleBarreLaterale";
+import { CELLULE_ICONE_RAIL, CELLULE_ICONE_TACTILE, ECART_ELEMENTS_RAIL, ECART_LIBELLE_TIROIR } from "@/lib/styleBarreLaterale";
 
 // Côtés essayés pour le panneau de l'en-tête : en dessous, puis au dessus.
 const COTES_MENU: CoteFlottant[] = ["bas", "haut"];
@@ -203,8 +203,8 @@ export function MenuProfil({
       ) : (
         <button
           onClick={onBasculerMenu}
-          className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-            mobile ? "px-2" : ""
+          className={`group flex w-full items-center rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+            mobile ? `${ECART_LIBELLE_TIROIR} px-2` : "gap-2"
           }`}
         >
           <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>{Avatar}</span>

@@ -46,6 +46,8 @@ import { ROUTES_APP } from "@/lib/routesApp";
 import {
   CELLULE_ICONE_RAIL,
   CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_TIROIR,
+  ECART_LIBELLE_TIROIR,
   ECART_ELEMENTS_RAIL,
   RAPPROCHE_LIBELLE_RAIL,
   TAILLE_ICONE_RAIL,
@@ -456,7 +458,7 @@ export function AppSidebar({
             }
           }
         }}
-        className={`group relative ${mobile ? "mt-2" : ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl transition-colors ${
+        className={`group relative ${mobile ? ECART_ELEMENTS_TIROIR : ECART_ELEMENTS_RAIL} flex w-full items-center ${mobile ? ECART_LIBELLE_TIROIR : "gap-2"} rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
       >

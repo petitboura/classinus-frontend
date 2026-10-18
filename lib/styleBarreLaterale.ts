@@ -16,13 +16,21 @@ export const TAILLE_ICONE_BULLE = 12;
 // centrée quand le rail est replié) mais perd en hauteur, la marge entre deux
 // éléments se réduit presque à zéro, et le texte se rapproche de l'icône, pour
 // que les icônes fines ne paraissent pas éloignées.
-// Le tiroir mobile garde la cellule tactile de 40 px de haut.
+// Le tiroir mobile a une cellule tactile de 36 px de haut, des lignes à 4 px
+// l'une de l'autre et un libellé près de son icône (retour de Bourama le
+// 18/10/2026 : lignes et icônes trop éloignées).
 
 /** Cellule d'une icône dans le rail PC. */
 export const CELLULE_ICONE_RAIL = "flex h-7 w-10 flex-shrink-0 items-center justify-center";
 
 /** Cellule d'une icône dans le tiroir mobile (taille tactile). */
-export const CELLULE_ICONE_TACTILE = "flex h-10 w-10 flex-shrink-0 items-center justify-center";
+export const CELLULE_ICONE_TACTILE = "flex h-9 w-8 flex-shrink-0 items-center justify-center";
+
+/** Marge au dessus de chaque ligne du tiroir mobile. */
+export const ECART_ELEMENTS_TIROIR = "mt-1";
+
+/** Écart entre l'icône et le libellé dans le tiroir mobile. */
+export const ECART_LIBELLE_TIROIR = "gap-1";
 
 /** Marge au dessus de chaque élément du rail PC. */
 export const ECART_ELEMENTS_RAIL = "mt-0.5";
