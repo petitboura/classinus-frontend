@@ -55,7 +55,7 @@ const AUTRES_PARCOURS: {
   {
     titre: "Adapter l'assistant à ta façon de travailler",
     description:
-      "Prépare des consignes personnelles avec les skills, découvre celles partagées par d'autres élèves et consulte les informations enregistrées dans ta mémoire.",
+      "Choisis un modèle d'IA parmi ceux activés, prépare tes consignes avec les skills et consulte les informations enregistrées dans ta mémoire.",
     href: ROUTES_DECOUVRIR.personnaliser.accueil,
     lien: "Découvrir la personnalisation",
     Icone: SlidersHorizontal,
@@ -133,8 +133,9 @@ export default function PageDecouvrirUsages() {
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-dj-texte">
           Tu peux partir d'une question, d'un cours, d'une image ou d'un problème à résoudre.
           Classinus t'aide à chercher des ressources, comprendre une notion, préparer tes révisions,
-          programmer et produire des supports de travail. Choisis ton objectif pour voir comment
-          commencer et quelles limites garder en tête.
+          programmer et produire des supports de travail. Tu peux aussi reprendre une conversation,
+          choisir un modèle d'IA activé et personnaliser tes échanges. Choisis ton objectif pour
+          voir comment commencer et quelles limites garder en tête.
         </p>
       </header>
 
