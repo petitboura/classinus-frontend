@@ -108,6 +108,7 @@ interface PluginSuperpositionAgent {
   definirModeCrayon(parametres: { actif: boolean }): Promise<void>;
   definirSaisieTexte(parametres: { actif: boolean }): Promise<void>;
   definirRaccourcisCrayon(touches: Record<string, string>): Promise<void>;
+  definirForme(parametres: { rects: Array<{ x: number; y: number; largeur: number; hauteur: number }> }): Promise<void>;
   lireDemarrageAutomatique(): Promise<{ disponible: boolean; actif: boolean }>;
   definirDemarrageAutomatique(parametres: { actif: boolean }): Promise<void>;
   addListener(
@@ -147,6 +148,15 @@ export function maintenirCaptureSuperposition(maintenir: boolean) {
 export function definirModeCrayonSuperposition(actif: boolean) {
   SuperpositionAgent.definirModeCrayon({ actif }).catch(() => {
     // Hors Electron, ou superposition pas prête : rien à capter, rien à relâcher.
+  });
+}
+
+// Forme de la superposition (18/10/2026, demande de Bourama) : la fenetre n'occupe que les
+// zones que la page affiche (voir lib/formeSuperposition.ts), le reste de l'ecran n'a plus
+// aucune fenetre Classinus dessus. Les zones sont en pixels de la page de superposition.
+export function definirFormeSuperposition(rects: Array<{ x: number; y: number; largeur: number; hauteur: number }>) {
+  SuperpositionAgent.definirForme({ rects }).catch(() => {
+    // Hors Electron, ou superposition pas prete : la fenetre garde sa taille entiere.
   });
 }
 

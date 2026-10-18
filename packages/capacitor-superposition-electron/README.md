@@ -76,3 +76,26 @@ Si `koffi` ne se charge pas, la raison est ecrite dans le journal (ligne `FOCUS`
 et la superposition fonctionne comme avant. Perte de focus de la superposition :
 elle redevient non activable seule. Hors Windows, rien ne change. Test :
 `npm run test:focus-precedent`.
+
+## Forme de la fenetre (18/10/2026)
+
+La fenetre de superposition couvre toujours tous les ecrans, mais elle est decoupee
+(`BrowserWindow.setShape`, Windows et Linux) a la forme exacte de ce que la page affiche :
+curseur, bulle, boutons, journal, menus ouverts, marques, traits du crayon. En dehors de ces
+zones, Windows ne voit aucune fenetre Classinus : rien n'est peint et les clics traversent
+vers l'application dessous. Raison : une fenetre transparente plein ecran peut prendre le
+focus, figer la fenetre du dessous et cacher des choses.
+
+- Page : `lib/formeSuperposition.ts` mesure les elements `position: fixed` visibles (avec tout
+  ce qui en depasse), plus les elements marques `data-agent-forme="inclure"`, sans les
+  conteneurs marques `data-agent-forme="exclure"` (marques et couche du crayon, plein ecran
+  mais presque vides). Une marge de 40 px entoure chaque zone. Tout nouvel element visible de
+  la superposition doit etre `fixed` (ou marque `inclure`), sinon il serait coupe.
+- Processus principal : `definirForme` (plugin.mts) valide, convertit et borne les zones
+  (`electron/src/forme.mts`). Une liste vide remet la fenetre entiere dans `setShape` : une page
+  vide donne donc un point de 1 pixel, jamais une liste vide. Crayon sorti : fenetre entiere.
+- Si `setShape` echoue, la fenetre redevient entiere et l'ancien comportement continue.
+- Le passe-clic (`setIgnoreMouseEvents`, suivi de la souris) n'a pas change : la forme reduit la
+  surface occupee, elle ne remplace pas encore le passe-clic.
+
+Test : `npm run test:forme-superposition` (module pur, puis mesure de la page dans Chromium).

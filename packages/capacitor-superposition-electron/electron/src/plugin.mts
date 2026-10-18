@@ -46,6 +46,11 @@
 // - definirRaccourcisCrayon : appele par la page de superposition avec les trois
 //   touches du crayon. Elles ne sont prises (raccourcis systeme) que canal actif, et
 //   relayees a la page par l'evenement "crayon" (voir raccourcisCrayon.mts).
+// - definirForme : appele par la page de superposition a chaque changement de ce qu'elle
+//   affiche (lib/formeSuperposition.ts). La fenetre garde sa taille mais est decoupee a cette
+//   forme (BrowserWindow.setShape, voir forme.mts) : en dehors, rien n'est peint et tout
+//   traverse vers l'application dessous. Crayon sorti, toute la fenetre est gardee. Le
+//   passe-clic ci dessus reste inchange, la forme ne fait que reduire la surface occupee.
 //
 // Sciemment un pont "bete" (unknown des deux cotes) : la forme exacte de
 // l'etat/des interactions est definie et versionnee cote TypeScript
@@ -56,6 +61,7 @@ import { app, BrowserWindow, globalShortcut, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
 import { creerRaccourcisCrayon } from "./raccourcisCrayon.mjs";
+import { creerGestionnaireForme } from "./forme.mjs";
 import { creerFocusPrecedent, creerSystemeWindows, poigneeDe } from "./focusPrecedent.mjs";
 
 // Identification des deux fenetres par leur titre plutot que par un pont
@@ -100,6 +106,29 @@ let passeClicApplique: boolean | null = null;
 // ses elements, pour que l'etudiant puisse dessiner n'importe ou. Un clic reel de
 // Clovis (clicTraversant) reste prioritaire.
 let crayonActif = false;
+
+// Forme de la fenetre (18/10/2026, demande de Bourama) : la fenetre garde sa taille mais est
+// decoupee (setShape) a la forme de ce que la page affiche. Hors de ces zones, rien n'est peint
+// et les clics traversent vers l'application dessous sans passer par le passe-clic. Crayon
+// sorti, toute la fenetre est gardee. Voir forme.mts, et lib/formeSuperposition.ts cote page.
+const formeSuperposition = creerGestionnaireForme({
+  plateformeSupportee: process.platform === "win32" || process.platform === "linux",
+  fenetre: () => {
+    const fenetre = trouverFenetreSuperposition();
+    if (!fenetre || fenetre.isDestroyed()) return null;
+    const [largeur, hauteur] = fenetre.getContentSize();
+    return { largeur, hauteur, zoom: fenetre.webContents.getZoomFactor() };
+  },
+  appliquer: (rects) => {
+    const fenetre = trouverFenetreSuperposition();
+    if (fenetre && !fenetre.isDestroyed()) fenetre.setShape(rects);
+  },
+  reinitialiser: () => {
+    const fenetre = trouverFenetreSuperposition();
+    if (fenetre && !fenetre.isDestroyed()) fenetre.setShape([]);
+  },
+  surErreur: (erreur) => console.warn("SuperpositionAgent : decoupe de la fenetre indisponible, la fenetre garde sa taille entiere :", erreur),
+});
 
 // Raccourcis du crayon (voir raccourcisCrayon.mts) : pris seulement canal actif, relayes a la
 // page de superposition par l'evenement "crayon". Les touches viennent de la page
@@ -206,6 +235,7 @@ function arreterSuiviSouris(): void {
   maintienCapture = false;
   captureDemandee = false;
   crayonActif = false;
+  formeSuperposition.definirPleinEcran(false);
   dernierPointSouris = null;
   const fenetre = trouverFenetreSuperposition();
   if (fenetre) appliquerPasseClic(fenetre);
@@ -699,8 +729,16 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 
   async definirModeCrayon(parametres: { actif: boolean }): Promise<void> {
     crayonActif = parametres.actif === true;
+    // Crayon sorti : toute la fenetre doit capter la souris, pas seulement les zones affichees.
+    formeSuperposition.definirPleinEcran(crayonActif);
     const superposition = trouverFenetreSuperposition();
     if (superposition && !superposition.isDestroyed()) appliquerPasseClic(superposition);
+  }
+
+  // Appelee par la page de superposition a chaque changement de ce qu'elle affiche (voir
+  // lib/formeSuperposition.ts) : zones occupees, en pixels de la page.
+  async definirForme(parametres: { rects: unknown }): Promise<void> {
+    formeSuperposition.definirRects(parametres?.rects);
   }
 
   async maintenirCapture(parametres: { maintenir: boolean }): Promise<void> {
@@ -729,6 +767,6 @@ class SuperpositionAgentImpl extends ElectronPlugin {
 }
 
 export const SuperpositionAgent = defineElectronPlugin(
-  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "definirSaisieTexte", "definirModeCrayon", "definirRaccourcisCrayon", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
+  { name: "SuperpositionAgent", methods: ["preparerDeplacement", "accuserPointage", "accuserInformation", "pousserEtat", "envoyerInteraction", "maintenirCapture", "definirSaisieTexte", "definirModeCrayon", "definirForme", "definirRaccourcisCrayon", "lireDemarrageAutomatique", "definirDemarrageAutomatique"] },
   SuperpositionAgentImpl
 );

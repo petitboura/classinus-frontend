@@ -5,7 +5,10 @@
 // Ne capte jamais la souris : les clics traversent vers l'application dessous.
 // Chaque marque apparaît, reste le temps voulu par Clovis, puis s'efface ; le
 // plugin de superposition la retire de la liste à la fin de sa durée.
+// Forme de la fenêtre (18/10/2026) : le conteneur plein écran est exclu de la découpe de la
+// fenêtre (il ne peint presque rien) et chaque marque est ajoutée, voir lib/formeSuperposition.ts.
 
+import { PROPS_FORME_EXCLURE, PROPS_FORME_INCLURE } from "@/lib/formeSuperposition";
 import type { MarqueEcranAffichee } from "@/lib/superpositionElectron";
 
 const COULEUR_TRAIT = "#ef4444";
@@ -16,6 +19,7 @@ export function MarquesEcranAgent({ marques }: { marques: MarqueEcranAffichee[] 
   return (
     <svg
       aria-hidden="true"
+      {...PROPS_FORME_EXCLURE}
       style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 2147483000 }}
     >
       <style>{`
@@ -29,6 +33,7 @@ export function MarquesEcranAgent({ marques }: { marques: MarqueEcranAffichee[] 
           return (
             <rect
               key={m.id}
+              {...PROPS_FORME_INCLURE}
               x={m.x - 3}
               y={m.y - 2}
               width={m.largeur + 6}
@@ -42,7 +47,7 @@ export function MarquesEcranAgent({ marques }: { marques: MarqueEcranAffichee[] 
         if (m.forme === "souligner") {
           const yLigne = m.y + m.hauteur + 3;
           return (
-            <g key={m.id} style={{ animation: vie }}>
+            <g key={m.id} {...PROPS_FORME_INCLURE} style={{ animation: vie }}>
               <line
                 x1={m.x}
                 y1={yLigne}
@@ -59,7 +64,7 @@ export function MarquesEcranAgent({ marques }: { marques: MarqueEcranAffichee[] 
           );
         }
         return (
-          <g key={m.id} style={{ animation: vie }}>
+          <g key={m.id} {...PROPS_FORME_INCLURE} style={{ animation: vie }}>
             <ellipse
               cx={m.x + m.largeur / 2}
               cy={m.y + m.hauteur / 2}

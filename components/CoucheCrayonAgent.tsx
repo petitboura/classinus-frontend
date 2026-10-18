@@ -9,9 +9,14 @@
 // L'état des traits est dans lib/crayonEcran.ts. Les traits sont dessinés en
 // pixels de la page de superposition (même repère que les marques de
 // MarquesEcranAgent).
+//
+// Forme de la fenêtre (18/10/2026) : la couche plein écran est exclue de la découpe de la
+// fenêtre, seuls les traits sont ajoutés (voir lib/formeSuperposition.ts). Crayon sorti, le
+// processus principal garde toute la fenêtre (definirModeCrayonSuperposition).
 
 import { useEffect, type PointerEvent } from "react";
 import { COUCHE_VOIX_PLEIN_ECRAN } from "@/lib/couchesAgent";
+import { PROPS_FORME_EXCLURE, PROPS_FORME_INCLURE } from "@/lib/formeSuperposition";
 import {
   ACCELERATEURS_CRAYON,
   DUREE_FONDU_TRAITS_MS,
@@ -79,6 +84,7 @@ export function CoucheCrayonAgent() {
   return (
     <svg
       data-agent-superposition={actif ? "true" : undefined}
+      {...PROPS_FORME_EXCLURE}
       aria-hidden="true"
       onPointerDown={actif ? surAppui : undefined}
       onPointerMove={actif ? surMouvement : undefined}
@@ -96,6 +102,7 @@ export function CoucheCrayonAgent() {
       }}
     >
       <g
+        {...PROPS_FORME_INCLURE}
         style={{
           opacity: visibles ? 1 : 0,
           transition: `opacity ${DUREE_FONDU_TRAITS_MS}ms ease`,

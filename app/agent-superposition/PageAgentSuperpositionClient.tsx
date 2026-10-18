@@ -34,12 +34,17 @@
 // site pour le canal, c'est à dire une petite bulle d'onde qui suit le curseur
 // (components/voix/VoixDirecteSuperposition.tsx). La session reste dans la
 // fenêtre principale, cette page n'en reçoit que l'état et les niveaux.
+//
+// Forme de la fenêtre (18/10/2026, demande Bourama) : la fenêtre ne couvre plus tout l'écran. Cette
+// page mesure ce qu'elle affiche et le processus principal découpe la fenêtre à cette forme
+// (lib/formeSuperposition.ts), le reste de l'écran n'a plus aucune fenêtre Classinus dessus.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { definirZoneUtile } from "@/lib/zoneUtileSuperposition";
+import { demarrerSuiviForme } from "@/lib/formeSuperposition";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { MarquesEcranAgent } from "@/components/MarquesEcranAgent";
 import { CoucheCrayonAgent } from "@/components/CoucheCrayonAgent";
@@ -113,6 +118,9 @@ export default function PageAgentSuperposition() {
   const niveauxAfficheRef = useRef({ entree: 0, sortie: 0 });
   // Dernière position reçue : ne relayer que les vrais glissements.
   const dernierePositionRecue = useRef({ x: 0, y: 0 });
+
+  // Forme de la fenêtre : dès que la page est montée, et jusqu'à sa fermeture.
+  useEffect(() => demarrerSuiviForme(document), []);
 
   useEffect(() => {
     marquerFenetreSuperposition();
