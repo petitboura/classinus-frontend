@@ -14,7 +14,7 @@ export const ROUTES_DECOUVRIR = {
   // Page de présentation de la section Accueil de l'appli elle même (le
   // chat + tableau de bord) -- à ne pas confondre avec `accueil`
   // ci dessus, qui est la racine de toute la famille /decouvrir.
-  accueilClassinus: "/decouvrir/accueil",
+  accueilClassinus: "/decouvrir/usages",
   thonny: "/decouvrir/thonny",
   // Page de présentation du plugin Classinus intégré à l'éditeur Thonny.
   bibliotheque: {
