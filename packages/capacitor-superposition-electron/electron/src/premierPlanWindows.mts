@@ -45,6 +45,7 @@ export interface GardePremierPlan {
   demarrer(): void;
   memoriser(poigneeSuperposition: number): Promise<void>;
   restaurer(): Promise<boolean>;
+  fenetreMemorisee(): number;
   arreter(): void;
 }
 
@@ -111,6 +112,7 @@ export function creerGardePremierPlan(plateforme: string = process.platform): Ga
       const poignee = Number(reponse.slice("devant ".length));
       if (Number.isFinite(poignee) && poignee > 0 && poignee !== poigneeSuperposition) memorisee = poignee;
     },
+    fenetreMemorisee() { return memorisee; },
     async restaurer() {
       const cible = memorisee;
       memorisee = 0;

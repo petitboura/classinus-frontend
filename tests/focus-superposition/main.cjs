@@ -53,11 +53,12 @@ app.whenReady().then(() => {
     if (texte === 'saisie-on') {
       saisie = true;
       const prendre = () => { if (!saisie) return; fenetre.setFocusable(true); fenetre.setSkipTaskbar(true); fenetre.focus(); };
-      if (garde) void garde.memoriser(poignee(fenetre.getNativeWindowHandle())).finally(prendre); else prendre();
+      if (garde) void garde.memoriser(poignee(fenetre.getNativeWindowHandle())).finally(() => { noter('debug-memo-' + garde.fenetreMemorisee()); prendre(); }); else prendre();
     } else if (texte === 'saisie-off') {
       const encore = fenetre.isFocused();
       saisie = false; fenetre.setFocusable(false); fenetre.setSkipTaskbar(true);
-      if (garde && encore) void garde.restaurer();
+      noter('debug-encore-' + encore + '-memo-' + (garde ? garde.fenetreMemorisee() : 'sans'));
+      if (garde && encore) void garde.restaurer().then((ok) => noter('debug-restaure-' + ok));
     } else if (texte === 'fin') app.quit();
     noter('fait-' + texte);
   }, 100);

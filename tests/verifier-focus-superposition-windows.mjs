@@ -62,6 +62,7 @@ $f.Add_Shown({ $f.TopMost=$true; $f.Activate(); $t.Focus(); [System.IO.File]::Wr
     ps('touches', 'xyz'); await pause(500);
     r.clavierApresSaisie = (await lire()).includes('xyz');
     r.statutFinal = await lire();
+    r.debug = (await readdir(dossier)).filter((n) => n.startsWith('debug-'));
   } catch (e) {
     r.erreur = String(e);
   } finally {
@@ -77,5 +78,5 @@ $f.Add_Shown({ $f.TopMost=$true; $f.Activate(); $t.Focus(); [System.IO.File]::Wr
   if (variante === 'garde' && !r.ok) echec = true;
 }
 
-for (const v of ['actuel', 'garde']) for (const t of ['winforms', 'chromium', 'tk']) await essai(v, t);
+for (const v of (process.env.VARIANTES || 'actuel,garde').split(',')) for (const t of (process.env.EXTERNES || 'winforms,chromium,tk').split(',')) await essai(v, t);
 process.exit(echec ? 1 : 0);
