@@ -1,23 +1,22 @@
 import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
-// Chantier SEO/AEO de Classinus (26/09/2026). Titre, description et
-// contenu validés par Bourama, revus une première fois pour préciser le
-// rôle de l'IA (créer/modifier une skill).
 export const metadata: Metadata = {
-  title: "Mes skills Classinus : donne tes propres consignes à l'IA",
-  description:
-    "Crée et modifie tes propres consignes pour Classinus avec l'aide de l'IA, en plus de celles données par ton enseignant. Autant de skills que tu veux, modifiables à tout moment.",
+  title: "Mes skills Classinus : créer des consignes adaptées à ta façon d'apprendre",
+  description: "Crée et ajuste des skills personnelles pour guider les réponses de Classinus, par exemple sur le niveau de détail, la méthode d'explication ou le format attendu.",
 };
 
 export default function PageDecouvrirPersonnaliserMesSkills() {
   return (
     <MiseEnPageDecouvrirPersonnaliser>
       <h1 className="font-display text-2xl font-bold text-dj-texte">Mes skills</h1>
-      <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
-        Une skill est une consigne personnelle que tu donnes à Classinus, en plus de ce que ton enseignant a déjà mis
-        en place. Tu peux en créer et en modifier à tout moment, avec l&apos;aide de l&apos;IA.
+      <p className="mt-4 text-base leading-relaxed text-dj-texte">
+        Une skill est un ensemble de consignes personnelles qui aide Classinus à répondre d'une manière adaptée à ton travail. Tu peux, par exemple, demander des explications progressives, des exemples avant une définition formelle ou une correction qui commence par des indices.
       </p>
+      <section className="mt-6">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Créer et faire évoluer une skill</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux créer une skill ou modifier une consigne existante, avec l'aide de l'IA si tu le souhaites. Ajuste-la lorsque tes besoins changent et désactive-la lorsqu'elle n'est pas utile. Les skills personnelles complètent les consignes de ton enseignant ; elles ne les remplacent pas.</p>
+      </section>
     </MiseEnPageDecouvrirPersonnaliser>
   );
 }

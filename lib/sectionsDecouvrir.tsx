@@ -1,12 +1,5 @@
 import { ROUTES_DECOUVRIR } from "./routesDecouvrir";
 
-// Chantier SEO/AEO de Classinus (26/09/2026, demande Bourama). Contenu
-// des cartes affichées sur la page mère générale (/decouvrir) et sur la
-// page mère Bibliothèque (/decouvrir/bibliotheque) : chacune liste et
-// pointe vers ses pages filles, pour que Google puisse construire des
-// sous liens (comme pour le concurrent Softriver, déclencheur du
-// chantier). Textes factuels, jamais commerciaux (refus explicite de
-// Bourama d'un ton "page de vente").
 export type CarteDecouvrir = {
   slug: string;
   href: string;
@@ -14,164 +7,143 @@ export type CarteDecouvrir = {
   description: string;
 };
 
-// Une seule section traitée pour l'instant (Bibliothèque, choisie par
-// Bourama comme "la plus attirante"). Les prochaines sections
-// (Bureau, Personnaliser Classinus, Concentration, Établissements,
-// Utiliser Classinus dans Claude) rejoindront cette liste au fil des
-// prochains chantiers, sans changer la page qui l'affiche.
 export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
-    slug: "accueil",
-    href: ROUTES_DECOUVRIR.accueilClassinus,
-    titre: "Le coin des étudiants",
-    description: "Ta bibliothèque, des fiches de révision, des QCM et des animations pour t'aider à réviser.",
+    slug: "usages",
+    href: ROUTES_DECOUVRIR.usages.accueil,
+    titre: "Ce que tu peux faire avec Classinus",
+    description: "Explore les usages de l’assistant, les outils d’étude, la programmation, les documents et les fonctions qui complètent le chat.",
   },
   {
     slug: "bibliotheque",
     href: ROUTES_DECOUVRIR.bibliotheque.accueil,
     titre: "Bibliothèque",
-    description: "Tes documents personnels, le catalogue partagé par tous les élèves, et les dossiers de ton téléphone.",
+    description: "Retrouve tes documents personnels, explore les ressources partagées et accède aux dossiers que tu désignes sur mobile.",
   },
   {
     slug: "personnaliser",
     href: ROUTES_DECOUVRIR.personnaliser.accueil,
     titre: "Personnaliser Classinus",
-    description: "Tes propres consignes, les skills partagés par les élèves, et ce que l'IA retient de vos échanges.",
+    description: "Crée tes propres consignes, découvre les skills partagées et gère les informations conservées dans la mémoire.",
   },
   {
     slug: "concentration",
     href: ROUTES_DECOUVRIR.concentration.accueil,
-    titre: "Concentration",
-    description: "Coupe les distractions pendant tes sessions de travail, et suis le temps passé sur chaque application.",
+    titre: "Concentration et temps d'écran",
+    description: "Limite les interruptions pendant une session et consulte le temps passé dans les applications sur Android.",
   },
   {
-    slug: "usages",
-    href: ROUTES_DECOUVRIR.usages.accueil,
-    titre: "Ce que tu peux faire",
-    description: "Trouver des PDF, apprendre à coder, trouver des vidéos et étudier avec l'IA de Classinus.",
+    slug: "thonny",
+    href: ROUTES_DECOUVRIR.thonny,
+    titre: "Classinus dans Thonny",
+    description: "Installe le plugin pour demander des analyses et des corrections de code Python dans l'éditeur Thonny.",
   },
   {
     slug: "bureau",
     href: ROUTES_DECOUVRIR.bureau.accueil,
-    titre: "Bureau",
-    description: "Le programme à enseigner, les codes à partager, et le suivi des signalements de tes élèves.",
+    titre: "Bureau et outils de classe",
+    description: "Partage des ressources par code, organise le programme pédagogique et consulte les outils réservés aux enseignants.",
   },
 ];
 
-// Les trois volets de la Bibliothèque, textes validés par Bourama le
-// 25/09/2026 (description = celle du document de contexte remis à cette
-// date, texteComplet reprise mot pour mot dans le contenu de chaque page
-// fille, voir app/decouvrir/bibliotheque/*/page.tsx).
 export const SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE: CarteDecouvrir[] = [
   {
     slug: "perso",
     href: ROUTES_DECOUVRIR.bibliotheque.perso,
     titre: "Bibliothèque personnelle",
-    description: "Reste dans ton programme : Classinus y navigue et agit comme toi, toujours dans le cadre de tes documents.",
+    description: "Range tes cours et tes fichiers par dossier, puis demande à Classinus de travailler à partir de tes documents.",
   },
   {
     slug: "publique",
     href: ROUTES_DECOUVRIR.bibliotheque.publique,
     titre: "Bibliothèque publique",
-    description: "Le catalogue partagé par tous les élèves : fouille, partage, note les ressources et consulte les profils.",
+    description: "Explore les ressources partagées par la communauté, consulte leurs informations et note celles que tu as utilisées.",
   },
   {
     slug: "telephone",
     href: ROUTES_DECOUVRIR.bibliotheque.telephone,
     titre: "Dossiers du téléphone",
-    description: "Sur l'appli mobile, plus besoin d'uploader tes fichiers un par un : Classinus explore tes dossiers directement.",
+    description: "Sur mobile, désigne les dossiers auxquels Classinus peut accéder pour retrouver et organiser tes fichiers.",
   },
 ];
 
-// Les trois volets de Personnaliser Classinus, textes validés par
-// Bourama le 26/09/2026 (revus une première fois pour préciser le rôle
-// de l'IA : créer/modifier une skill perso, chercher/trouver une skill
-// publique).
 export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
   {
     slug: "mes-skills",
     href: ROUTES_DECOUVRIR.personnaliser.mesSkills,
     titre: "Mes skills",
-    description: "Crée et modifie tes propres consignes pour Classinus avec l'aide de l'IA, en plus de celles de ton enseignant.",
+    description: "Crée et ajuste des consignes personnelles pour orienter les réponses de Classinus selon tes besoins.",
   },
   {
     slug: "skills-publics",
     href: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
     titre: "Skills publics",
-    description: "Cherche et trouve avec l'IA les skills publiées par d'autres élèves, active celle qui t'intéresse.",
+    description: "Parcours les consignes publiées par d'autres élèves, consulte leur contenu et active une copie si elle te convient.",
   },
   {
     slug: "memoire",
     href: ROUTES_DECOUVRIR.personnaliser.memoire,
     titre: "Ma mémoire",
-    description: "Ce que Classinus retient de vos échanges passés, à consulter, corriger ou effacer à tout moment.",
+    description: "Consulte les informations retenues par Classinus et gère celles que tu souhaites conserver ou supprimer.",
   },
 ];
 
-// Les deux volets de Concentration, textes validés par Bourama le
-// 27/09/2026.
 export const SOUS_PAGES_DECOUVRIR_CONCENTRATION: CarteDecouvrir[] = [
   {
     slug: "session",
     href: ROUTES_DECOUVRIR.concentration.session,
     titre: "Contrôle de session",
-    description: "Coupe les sonneries et notifications, et active Ne pas déranger pendant toute la durée de ta session.",
+    description: "Active Ne pas déranger et limite les sonneries et notifications pendant la durée choisie.",
   },
   {
     slug: "temps-ecran",
     href: ROUTES_DECOUVRIR.concentration.tempsEcran,
     titre: "Temps d'écran",
-    description: "Le temps passé aujourd'hui dans chaque application, avec un historique sur les 7 derniers jours.",
+    description: "Consulte le temps d'utilisation des applications aujourd'hui et sur les sept derniers jours, sur Android.",
   },
 ];
 
-// Les sept volets de Bureau traités ici, textes validés par Bourama le
-// 27/09/2026 (cinq premiers) et le 12/10/2026 (Éditeur de code et
-// Configuration). Établissements (6e carte de Bureau) volontairement exclu :
-// c'est exactement le même écran que la future section publique
-// Établissements (components/EspaceEtablissements.tsx, partagé entre
-// /bureau/etablissements et /etablissements), pas une page à part.
 export const SOUS_PAGES_DECOUVRIR_BUREAU: CarteDecouvrir[] = [
   {
     slug: "programme",
     href: ROUTES_DECOUVRIR.bureau.programme,
-    titre: "Programme",
-    description: "Organise le programme d'un code et suis l'avancement de tes élèves, notion par notion. Réservé aux enseignants.",
+    titre: "Programme pédagogique",
+    description: "Structure les matières, chapitres et notions d'un code et suis leur état d'avancement. Réservé aux enseignants.",
   },
   {
     slug: "codes",
     href: ROUTES_DECOUVRIR.bureau.codes,
     titre: "Mes codes",
-    description: "Crée un code et partage-le : tous ceux qui l'entrent reçoivent ce que tu y mets.",
+    description: "Crée un code pour partager les éléments que tu lui associes avec les personnes qui le saisiront.",
   },
   {
     slug: "entrer-code",
     href: ROUTES_DECOUVRIR.bureau.entrerCode,
     titre: "Entrer un code",
-    description: "Quelqu'un t'a donné un code ? Entre-le pour recevoir tout ce qu'il partage.",
+    description: "Saisis un code reçu pour récupérer le contenu que son auteur a choisi de partager.",
   },
   {
     slug: "audit",
     href: ROUTES_DECOUVRIR.bureau.audit,
     titre: "Audit hebdomadaire",
-    description: "Un résumé chaque semaine des signalements de tes élèves. Réservé aux enseignants.",
+    description: "Consulte le récapitulatif hebdomadaire des signalements et repère ceux qui attendent une correction. Réservé aux enseignants.",
   },
   {
     slug: "signalements",
     href: ROUTES_DECOUVRIR.bureau.signalements,
     titre: "Signalements",
-    description: "Discute avec Classinus de chaque signalement reçu de tes élèves. Réservé aux enseignants.",
+    description: "Examine les problèmes signalés par les élèves et échange avec Classinus pour les analyser. Réservé aux enseignants.",
   },
   {
     slug: "editeur",
     href: ROUTES_DECOUVRIR.bureau.editeur,
     titre: "Éditeur de code",
-    description: "Écris et exécute du code, et enregistre tes fichiers dans ta bibliothèque.",
+    description: "Écris du code, exécute les programmes Python pris en charge et enregistre tes fichiers dans ta bibliothèque.",
   },
   {
     slug: "configuration",
     href: ROUTES_DECOUVRIR.bureau.configuration,
     titre: "Configuration",
-    description: "Des procédures, règles, comportements et styles pour guider les réponses de Classinus.",
+    description: "Définis des procédures, règles, comportements et styles pour guider les réponses de Classinus.",
   },
 ];

@@ -4,15 +4,6 @@ import { DonneesStructurees } from "@/components/DonneesStructurees";
 import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
 import { USAGES_DECOUVRIR, type QuestionReponse, type UsageDecouvrir } from "@/lib/usagesDecouvrir";
 
-// Chantier "visibilité auprès des IA" (11/10/2026, demande Bourama). Mise en
-// page commune aux quatre pages d'usage (trouver des PDF, apprendre à coder,
-// trouver des vidéos, étudier), pour que chacune ait exactement la même
-// structure : un titre, une introduction, des points précis, des questions
-// fréquentes, puis les autres usages. Une structure régulière et du texte
-// visible tout de suite (aucun chargement, tout est dans le HTML du serveur)
-// est ce qui permet à une IA de retrouver et de citer chaque réponse.
-
-// Données structurées d'une liste de questions (schema.org, FAQPage).
 export function donneesFaq(questions: QuestionReponse[]): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
@@ -25,16 +16,33 @@ export function donneesFaq(questions: QuestionReponse[]): Record<string, unknown
   };
 }
 
+/** FAQ accessible : toutes les réponses sont repliées au chargement et s'ouvrent à la demande. */
 export function ListeQuestionsReponses({ questions }: { questions: QuestionReponse[] }) {
+  if (questions.length === 0) return null;
+
   return (
-    <section className="mt-10">
-      <h2 className="font-display text-lg font-semibold text-dj-texte">Questions fréquentes</h2>
-      <div className="mt-4 flex flex-col gap-3">
+    <section className="mt-10" aria-labelledby="questions-frequentes">
+      <h2 id="questions-frequentes" className="font-display text-lg font-semibold text-dj-texte">
+        Questions fréquentes
+      </h2>
+      <div className="mt-4 flex flex-col gap-2">
         {questions.map((q) => (
-          <div key={q.question} className="rounded-2xl border border-dj-bordure bg-dj-surface p-4">
-            <h3 className="font-display text-base font-semibold text-dj-texte">{q.question}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">{q.reponse}</p>
-          </div>
+          <details
+            key={q.question}
+            className="group rounded-2xl border border-dj-bordure bg-dj-surface transition-colors open:bg-dj-surface-haute"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
+              <span className="font-display text-base font-semibold text-dj-texte">{q.question}</span>
+              <ChevronRight
+                size={18}
+                className="flex-shrink-0 text-dj-texte-muet transition-transform duration-200 group-open:rotate-90"
+                aria-hidden="true"
+              />
+            </summary>
+            <div className="px-4 pb-4">
+              <p className="text-sm leading-relaxed text-dj-texte-muet">{q.reponse}</p>
+            </div>
+          </details>
         ))}
       </div>
     </section>
@@ -53,25 +61,30 @@ export function PageUsageDecouvrir({ usage }: { usage: UsageDecouvrir }) {
         className="flex items-center gap-1 text-xs font-medium text-dj-texte-muet hover:text-dj-texte hover:underline"
       >
         <ChevronLeft size={14} />
-        Ce que tu peux faire avec Classinus
+        Tous les usages
       </Link>
 
-      <h1 className="mt-4 font-display text-2xl font-bold text-dj-texte">{usage.titreH1}</h1>
-      <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">{usage.introduction}</p>
+      <header className="mt-4">
+        <h1 className="font-display text-2xl font-bold text-dj-texte">{usage.titreH1}</h1>
+        <p className="mt-3 text-base leading-relaxed text-dj-texte">{usage.introduction}</p>
+      </header>
 
-      <section className="mt-8 flex flex-col gap-6">
-        {usage.points.map((point) => (
-          <div key={point.titre}>
-            <h2 className="font-display text-lg font-semibold text-dj-texte">{point.titre}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">{point.texte}</p>
-          </div>
-        ))}
+      <section className="mt-8" aria-label="Comment utiliser Classinus">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Comment Classinus peut t'aider</h2>
+        <div className="mt-4 flex flex-col gap-6">
+          {usage.points.map((point) => (
+            <article key={point.titre} className="border-l-2 border-dj-bordure pl-4">
+              <h3 className="font-display text-base font-semibold text-dj-texte">{point.titre}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">{point.texte}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <ListeQuestionsReponses questions={usage.questions} />
 
-      <section className="mt-10">
-        <h2 className="font-display text-lg font-semibold text-dj-texte">Autres usages</h2>
+      <nav className="mt-10" aria-label="Autres usages de Classinus">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Explorer les autres usages</h2>
         <ul className="mt-4 flex flex-col gap-3">
           {autresUsages.map((autre) => (
             <li key={autre.slug}>
@@ -79,16 +92,16 @@ export function PageUsageDecouvrir({ usage }: { usage: UsageDecouvrir }) {
                 href={autre.href}
                 className="flex items-center justify-between gap-3 rounded-2xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute"
               >
-                <div>
-                  <p className="font-display text-base font-semibold text-dj-texte">{autre.titreCarte}</p>
-                  <p className="mt-1 text-sm text-dj-texte-muet">{autre.description}</p>
-                </div>
-                <ChevronRight size={18} className="flex-shrink-0 text-dj-texte-muet" />
+                <span className="min-w-0">
+                  <span className="block font-display text-base font-semibold text-dj-texte">{autre.titreCarte}</span>
+                  <span className="mt-1 block text-sm leading-relaxed text-dj-texte-muet">{autre.resumeCarte}</span>
+                </span>
+                <ChevronRight size={18} className="flex-shrink-0 text-dj-texte-muet" aria-hidden="true" />
               </Link>
             </li>
           ))}
         </ul>
-      </section>
+      </nav>
     </main>
   );
 }
