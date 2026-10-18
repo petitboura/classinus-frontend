@@ -47,6 +47,9 @@ export type FocusPrecedent = {
   rendre(propre: Poignee, etaitActive: boolean): boolean;
   // Fenêtre active à cet instant, en texte lisible pour le journal de diagnostic.
   apercuPremierPlan(): string;
+  // Comme apercuPremierPlan, avec la description de la fenêtre (titre, programme). Sert aux
+  // relectures retardées après la réactivation (Chrome, 18/10/2026).
+  apercuDetaille(): string;
   // Ce qui s'est passé lors du dernier memoriser et du dernier rendre, en une ligne de journal
   // (poignées notées, fenêtre active, raison d'un refus). Sert à comprendre un « non ».
   trace(): string;
@@ -159,6 +162,15 @@ export function creerFocusPrecedent(systeme: SystemeFenetres | null): FocusPrece
       if (!systeme) return "inconnu";
       try {
         return texte(systeme.premierPlan());
+      } catch {
+        return "erreur";
+      }
+    },
+    apercuDetaille() {
+      if (!systeme) return "inconnu";
+      try {
+        const active = systeme.premierPlan();
+        return `${texte(active)}${decrireSure(systeme, active)}`;
       } catch {
         return "erreur";
       }

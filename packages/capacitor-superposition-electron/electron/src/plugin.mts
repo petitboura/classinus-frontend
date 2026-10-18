@@ -480,6 +480,17 @@ function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
     const apres = focusPrecedent.apercuPremierPlan();
     const rendu = focusPrecedent.rendre(propre, etaitActive);
     console.log(`FOCUS ${new Date().toISOString()} focus rendu a la fenetre precedente : ${rendu ? "oui" : "non"} (superposition active avant : ${etaitActive ? "oui" : "non"}, fenetre active avant setFocusable(false) : ${avant}, apres : ${apres} ; ${focusPrecedent.trace()})`);
+    // Diagnostic Chrome (18/10/2026) : la fenetre active juste apres la reactivation a souvent
+    // ete lue comme « aucune » (0x0). On la relit un peu plus tard pour savoir si c'etait un
+    // simple instant de transition ou si la fenetre ne prend vraiment pas le focus. Lecture
+    // seule : rien n'est active ni modifie. A retirer avec le reste des traces FOCUS.
+    if (rendu) {
+      for (const delai of [100, 500]) {
+        setTimeout(() => {
+          console.log(`FOCUS ${new Date().toISOString()} fenetre active ${delai} ms apres la reactivation : ${focusPrecedent.apercuDetaille()}`);
+        }, delai);
+      }
+    }
   }
 }
 

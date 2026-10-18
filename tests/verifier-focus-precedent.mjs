@@ -205,6 +205,18 @@ try {
     assert.match(f.trace(), /description impossible : pas de description/);
   }
 
+  // 14. Relecture détaillée de la fenêtre active (diagnostic Chrome) : poignée et description.
+  {
+    const s = fauxSysteme();
+    s.decrire = () => 'programme chrome.exe';
+    const f = creerFocusPrecedent(s);
+    assert.equal(f.apercuDetaille(), '0x65 [programme chrome.exe]');
+    s.etat.active = 0;
+    assert.equal(f.apercuDetaille(), '0x0 [programme chrome.exe]');
+    assert.equal(creerFocusPrecedent(null).apercuDetaille(), 'inconnu');
+    assert.equal(creerFocusPrecedent(fauxSysteme({ lever: true })).apercuDetaille(), 'erreur');
+  }
+
   console.log('Focus précédent : tout est bon.');
 } finally {
   await rm(dossier, { recursive: true, force: true });
