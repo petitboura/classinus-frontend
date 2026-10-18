@@ -69,7 +69,7 @@ export default async function PageSkillPublique({ params }: { params: { id: stri
 
   return (
     <SectionPage title={skill.nom} retour="/comportements">
-      <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
+      <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-5">
         <div className="flex items-center gap-2">
           <ScrollText size={18} className="flex-shrink-0 text-dj-accent-1" />
           <h2 className="font-display text-base font-semibold text-dj-texte">{skill.nom}</h2>
@@ -84,7 +84,7 @@ export default async function PageSkillPublique({ params }: { params: { id: stri
         </div>
       </section>
 
-      <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-5 py-4">
+      <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-3 py-4">
         <div className="dj-markdown [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 last:[&_p]:mb-0 [&_hr]:my-4 [&_hr]:border-dj-bordure [&_strong]:text-dj-texte [&_h1]:font-lecture [&_h1]:font-semibold [&_h1]:tracking-[-0.01em] [&_h1]:text-dj-texte [&_h1]:text-xl [&_h1]:mb-2 [&_h1]:mt-3 [&_h2]:font-lecture [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-dj-texte [&_h2]:text-lg [&_h2]:mb-2 [&_h2]:mt-3 [&_h3]:font-lecture [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] [&_h3]:text-dj-texte [&_h3]:text-base [&_h3]:mb-1.5 [&_h3]:mt-2">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[[rehypeSanitize, defaultSchema]]}>
             {extraireCorpsSkill(skill.skill_md || skill.texte)}

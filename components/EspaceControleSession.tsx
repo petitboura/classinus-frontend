@@ -133,7 +133,7 @@ export function EspaceControleSession({ sansEnTete = false }: { sansEnTete?: boo
 
   if (natif === null) {
     return (
-      <div className="flex flex-col gap-4 p-4" aria-hidden>
+      <div className="flex flex-col gap-4" aria-hidden>
         {!sansEnTete && (
           <div>
             <Skeleton className="h-4 w-44 rounded" />
@@ -161,7 +161,7 @@ export function EspaceControleSession({ sansEnTete = false }: { sansEnTete?: boo
   }
 
   return (
-    <div className="flex animate-dj-fade-in-rapide flex-col gap-4 p-4">
+    <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       {!sansEnTete && (
         <div className="flex items-center gap-1.5">
           <h2 className="font-display text-base font-bold text-dj-texte">Contrôle de session</h2>

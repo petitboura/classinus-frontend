@@ -117,7 +117,7 @@ export function EspaceTempsEcran({ sansEnTete = false }: { sansEnTete?: boolean 
 
   if (natif === null) {
     return (
-      <div className="flex flex-col gap-4 p-4" aria-hidden>
+      <div className="flex flex-col gap-4" aria-hidden>
         {!sansEnTete && (
           <div>
             <Skeleton className="h-4 w-32 rounded" />
@@ -185,7 +185,7 @@ export function EspaceTempsEcran({ sansEnTete = false }: { sansEnTete?: boolean 
   }, {});
 
   return (
-    <div className="flex animate-dj-fade-in-rapide flex-col gap-4 p-4">
+    <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       {!sansEnTete && (
         <div className="flex items-center gap-1.5">
           <h2 className="font-display text-base font-bold text-dj-texte">Temps d&apos;écran</h2>
@@ -300,9 +300,9 @@ export function EspaceTempsEcran({ sansEnTete = false }: { sansEnTete?: boolean 
 
           {(appsAujourdhui ?? []).length > 0 && (
             <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-              <div className="divide-y divide-dj-bordure">
+              <div className="flex flex-col">
                 {(appsAujourdhui ?? []).map((a) => (
-                  <div key={a.nomPaquet} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <div key={a.nomPaquet} className="flex items-center justify-between gap-3 px-4 py-4 relative after:absolute after:bottom-0 after:left-[50px] after:right-0 after:h-px after:bg-dj-bordure last:after:hidden">
                     <div className="flex min-w-0 items-center gap-2.5">
                       {a.icone ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -323,11 +323,11 @@ export function EspaceTempsEcran({ sansEnTete = false }: { sansEnTete?: boolean 
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-dj-texte-muet">7 derniers jours</span>
               <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
-                <div className="divide-y divide-dj-bordure">
+                <div className="flex flex-col">
                   {Object.entries(totauxParJour)
                     .sort(([a], [b]) => (a < b ? 1 : -1))
                     .map(([jour, total]) => (
-                      <div key={jour} className="flex items-center justify-between gap-3 px-4 py-2">
+                      <div key={jour} className="flex items-center justify-between gap-3 px-4 py-4 relative after:absolute after:bottom-0 after:left-4 after:right-0 after:h-px after:bg-dj-bordure last:after:hidden">
                         <span className="text-sm text-dj-texte">{jour}</span>
                         <span className="text-xs text-dj-texte-muet">{formaterDuree(total)}</span>
                       </div>

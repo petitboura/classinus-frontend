@@ -101,8 +101,8 @@ export function PanneauFlottant({
 
   return (
     <div
-      className={`fixed inset-0 ${zIndex} flex justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6 ${
-        enHaut ? "items-start pt-[calc(0.75rem+var(--safe-top,0px))] sm:items-center sm:pt-6" : "items-center"
+      className={`fixed inset-0 ${zIndex} flex justify-center bg-black/60 p-2 backdrop-blur-sm sm:p-6 ${
+        enHaut ? "items-start pt-[calc(0.5rem+var(--safe-top,0px))] sm:items-center sm:pt-6" : "items-center"
       } ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
@@ -118,7 +118,7 @@ export function PanneauFlottant({
         }`}
       >
         {entete && <div className="flex-shrink-0 border-b border-dj-bordure px-5 py-3 sm:px-6">{entete}</div>}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3 sm:p-6">{children}</div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { appelerApi } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -10,18 +10,19 @@ import { CTACompteRequis } from "./CTACompteRequis";
 import { useInfoSection } from "./SectionPage";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { dateRelative } from "@/lib/dateRelative";
-import { oublierCategorieMemoire, titreCategorieMemoire } from "@/lib/categoriesMemoire";
+import { modifierLigneMemoire, oublierCategorieMemoire, titreCategorieMemoire } from "@/lib/categoriesMemoire";
+import { MenuActionsCarte } from "./MenuActionsCarte";
 import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 // Écran "Ma mémoire" (29/09/2026, demande Bourama : un seul système de
 // mémoire). Il lit la mémoire structurée de l'élève (table memoire_eleve,
 // voir api/memoire_eleve.py côté backend), classée en 4 catégories fixes.
-// Lecture seule : le contenu est un JSON libre écrit par le modèle, pas un
-// texte pensé pour être édité à la main. On peut en revanche oublier une
-// catégorie entière ici (comme dans Paramètres, voir
-// lib/categoriesMemoire.ts) ; effacer TOUTE la mémoire se fait dans
-// Paramètres (components/ParametresAccueil.tsx). Dans tous les cas,
-// double confirmation (lib/confirmationOubliMemoire.ts).
+// Chaque catégorie a une flèche (vers la droite repliée, vers le bas
+// dépliée) puis un menu à trois points : Éditer (18/10/2026, demande de
+// Bourama, remplace la lecture seule du 29/09) et Oublier la catégorie
+// entière (comme avant, voir lib/categoriesMemoire.ts). Effacer TOUTE la
+// mémoire se fait dans Paramètres (components/ParametresAccueil.tsx). Oublier
+// garde la double confirmation (lib/confirmationOubliMemoire.ts).
 //
 // Le contenu d'une ligne est libre (décidé par le modèle pour chaque élève),
 // donc rendu de façon générique : les listes deviennent des pastilles, les
@@ -124,6 +125,132 @@ function ChampContenu({ cle, valeur }: { cle: string; valeur: unknown }) {
   );
 }
 
+// Édition d'une valeur du contenu (18/10/2026) : chaque champ garde son type
+// d'origine (texte, nombre, oui/non, liste), l'élève ne voit jamais de JSON.
+const CLASSE_CHAMP =
+  "w-full min-w-0 resize-y rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1";
+
+function versNombreOuTexte(texte: string, original: unknown): unknown {
+  if (typeof original !== "number") return texte;
+  const n = Number(texte.replace(",", "."));
+  return texte.trim() !== "" && Number.isFinite(n) ? n : texte;
+}
+
+function ChampEditable({ cle, valeur, onChange }: { cle: string; valeur: unknown; onChange: (v: unknown) => void }) {
+  if (estVide(valeur)) return null;
+  const etiquette = <span className="text-xs font-medium text-dj-texte-muet">{libelleCle(cle)}</span>;
+
+  if (typeof valeur === "boolean") {
+    return (
+      <label className="flex min-w-0 items-center gap-2 text-sm text-dj-texte">
+        <input type="checkbox" checked={valeur} onChange={(e) => onChange(e.target.checked)} />
+        {libelleCle(cle)}
+      </label>
+    );
+  }
+
+  if (Array.isArray(valeur)) {
+    const tousSimples = valeur.every((v) => typeof v !== "object" || v === null);
+    if (tousSimples) {
+      return (
+        <label className="flex min-w-0 flex-col gap-1.5">
+          {etiquette}
+          <textarea
+            className={CLASSE_CHAMP}
+            rows={Math.min(8, Math.max(2, valeur.length))}
+            value={valeur.map(texteDe).join("\n")}
+            onChange={(e) =>
+              onChange(
+                e.target.value
+                  .split("\n")
+                  .filter((l) => l.trim() !== "")
+                  .map((l, i) => versNombreOuTexte(l, valeur[i]))
+              )
+            }
+          />
+          <span className="text-[11px] text-dj-texte-muet">Un élément par ligne.</span>
+        </label>
+      );
+    }
+    return (
+      <div className="flex min-w-0 flex-col gap-1.5">
+        {etiquette}
+        <div className="flex flex-col gap-3 border-l border-dj-bordure pl-3">
+          {valeur.map((v, i) =>
+            typeof v === "object" && v !== null && !Array.isArray(v) ? (
+              <div key={i} className="flex min-w-0 flex-col gap-2">
+                {Object.entries(v as Record<string, unknown>).map(([k, val]) => (
+                  <ChampEditable
+                    key={k}
+                    cle={k}
+                    valeur={val}
+                    onChange={(nv) => onChange(valeur.map((x, j) => (j === i ? { ...(x as Record<string, unknown>), [k]: nv } : x)))}
+                  />
+                ))}
+              </div>
+            ) : (
+              <span key={i} className="break-words text-sm text-dj-texte">
+                {texteDe(v)}
+              </span>
+            )
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (typeof valeur === "object") {
+    return (
+      <div className="flex min-w-0 flex-col gap-1.5">
+        {etiquette}
+        <div className="flex flex-col gap-2 border-l border-dj-bordure pl-3">
+          {Object.entries(valeur as Record<string, unknown>).map(([k, val]) => (
+            <ChampEditable
+              key={k}
+              cle={k}
+              valeur={val}
+              onChange={(nv) => onChange({ ...(valeur as Record<string, unknown>), [k]: nv })}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <label className="flex min-w-0 flex-col gap-1.5">
+      {etiquette}
+      <textarea
+        className={CLASSE_CHAMP}
+        rows={typeof valeur === "string" && valeur.length > 80 ? 3 : 1}
+        value={texteDe(valeur)}
+        onChange={(e) => onChange(versNombreOuTexte(e.target.value, valeur))}
+      />
+    </label>
+  );
+}
+
+function BlocLigneEditable({
+  ligne,
+  contenu,
+  onChange,
+}: {
+  ligne: Ligne;
+  contenu: Record<string, unknown>;
+  onChange: (c: Record<string, unknown>) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      {ligne.sous_categorie && (
+        <h4 className="break-words text-sm font-bold text-dj-texte">{titreSousCategorie(ligne.sous_categorie)}</h4>
+      )}
+      {Object.entries(contenu).map(([cle, valeur]) => (
+        <ChampEditable key={cle} cle={cle} valeur={valeur} onChange={(nv) => onChange({ ...contenu, [cle]: nv })} />
+      ))}
+    </div>
+  );
+}
+
 function BlocLigne({ ligne }: { ligne: Ligne }) {
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -147,6 +274,10 @@ export function MaMemoire() {
   const [message, setMessage] = useState<string | null>(null);
   // Catégorie en cours d'effacement, ou null.
   const [efface, setEfface] = useState<string | null>(null);
+  // Catégorie en cours d'édition, brouillons par ligne, enregistrement en cours.
+  const [enEdition, setEnEdition] = useState<string | null>(null);
+  const [brouillons, setBrouillons] = useState<Record<string, Record<string, unknown>>>({});
+  const [enregistrement, setEnregistrement] = useState(false);
   // Catégories dépliées : aucune au départ, tout est replié par défaut.
   const [ouvertes, setOuvertes] = useState<Set<string>>(new Set());
 
@@ -191,6 +322,38 @@ export function MaMemoire() {
     }
   }
 
+  function cleLigne(l: Ligne) {
+    return l.sous_categorie ?? "racine";
+  }
+
+  function commencerEdition(c: Categorie) {
+    setBrouillons(Object.fromEntries(c.lignes.map((l) => [cleLigne(l), structuredClone(l.contenu)])));
+    setEnEdition(c.categorie);
+    setOuvertes((prec) => new Set(prec).add(c.categorie));
+    setErreur(null);
+    setMessage(null);
+  }
+
+  async function enregistrerEdition(c: Categorie) {
+    if (enregistrement) return;
+    setEnregistrement(true);
+    setErreur(null);
+    try {
+      for (const l of c.lignes) {
+        const nouveau = brouillons[cleLigne(l)];
+        if (nouveau && JSON.stringify(nouveau) !== JSON.stringify(l.contenu)) {
+          await modifierLigneMemoire(c.categorie, l.sous_categorie, nouveau, queryClient);
+        }
+      }
+      setEnEdition(null);
+      setMessage("Modifications enregistrées.");
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setEnregistrement(false);
+    }
+  }
+
   if (sansCompte) {
     return <CTACompteRequis texte="Crée un compte pour que Classinus se souvienne de toi." />;
   }
@@ -201,20 +364,22 @@ export function MaMemoire() {
   return (
     <div className="flex flex-col gap-2">
       {/* Skeleton fidèle à la forme réelle : 4 catégories repliées, chacune
-          avec sa flèche, son titre, sa date de mise à jour et le bouton
-          Oublier à droite. */}
+          avec son titre, sa date de mise à jour, puis à droite la flèche et
+          le menu à trois points. */}
       {chargement && (
         <div className="flex flex-col gap-2" aria-hidden>
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="flex items-center justify-between gap-3 py-2">
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: `${i * 80}ms` }} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <Skeleton className="h-4 w-1/3 rounded" style={{ animationDelay: `${i * 80}ms` }} />
                   <Skeleton className="h-3 w-1/4 rounded" style={{ animationDelay: `${i * 80 + 60}ms` }} />
                 </div>
               </div>
-              <Skeleton className="h-6 w-16 flex-shrink-0 rounded-cgpt-bouton" style={{ animationDelay: `${i * 80 + 100}ms` }} />
+              <div className="flex flex-shrink-0 items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded" style={{ animationDelay: `${i * 80 + 100}ms` }} />
+                <Skeleton className="h-4 w-4 rounded" style={{ animationDelay: `${i * 80 + 140}ms` }} />
+              </div>
             </div>
           ))}
         </div>
@@ -244,13 +409,8 @@ export function MaMemoire() {
                     type="button"
                     onClick={() => basculerCategorie(c.categorie)}
                     aria-expanded={ouverte}
-                    className="flex w-full min-w-0 items-center gap-2 text-left"
+                    className="flex w-full min-w-0 items-center text-left"
                   >
-                    <ChevronDown
-                      size={16}
-                      strokeWidth={TRAIT_ICONE_SECTION}
-                      className={`flex-shrink-0 text-dj-texte-muet transition-transform duration-300 ${ouverte ? "rotate-180" : ""}`}
-                    />
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="break-words text-sm font-bold text-dj-texte">{titreCategorieMemoire(c.categorie)}</span>
                       {derniereMaj && (
@@ -259,15 +419,37 @@ export function MaMemoire() {
                     </span>
                   </button>
                 </h3>
-                {c.lignes.length > 0 && (
+                <div className="flex flex-shrink-0 items-center gap-1">
                   <button
-                    onClick={() => oublierCategorie(c.categorie)}
-                    disabled={efface !== null}
-                    className="flex-shrink-0 rounded-cgpt-bouton border border-[var(--dj-erreur)] px-3 py-1 text-xs text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
+                    type="button"
+                    onClick={() => basculerCategorie(c.categorie)}
+                    aria-expanded={ouverte}
+                    aria-label={ouverte ? "Replier" : "Déplier"}
+                    className="flex flex-shrink-0 items-center rounded-full p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
-                    {efface === c.categorie ? "Suppression…" : "Oublier"}
+                    <ChevronRight
+                      size={16}
+                      strokeWidth={TRAIT_ICONE_SECTION}
+                      className={`transition-transform duration-300 ${ouverte ? "rotate-90" : ""}`}
+                    />
                   </button>
-                )}
+                  {c.lignes.length > 0 && (
+                    <MenuActionsCarte
+                      ariaLabel={`Actions pour ${titreCategorieMemoire(c.categorie)}`}
+                      desactive={efface !== null || enregistrement}
+                      actions={[
+                        { cle: "editer", label: "Éditer", icone: <Pencil size={14} />, onClick: () => commencerEdition(c) },
+                        {
+                          cle: "oublier",
+                          label: efface === c.categorie ? "Suppression…" : "Oublier",
+                          icone: <Trash2 size={14} />,
+                          onClick: () => oublierCategorie(c.categorie),
+                          destructif: true,
+                        },
+                      ]}
+                    />
+                  )}
+                </div>
               </div>
 
               <div
@@ -276,14 +458,43 @@ export function MaMemoire() {
                 }`}
               >
                 <div className="overflow-hidden">
-                  <div className="pb-2 pl-6 pt-2">
+                  <div className="pb-2 pt-2">
                     {c.lignes.length === 0 ? (
                       <p className="text-sm text-dj-texte-muet">Rien de retenu ici pour l&apos;instant.</p>
                     ) : (
                       <div className="flex min-w-0 flex-col gap-4">
-                        {c.lignes.map((ligne) => (
-                          <BlocLigne key={ligne.sous_categorie ?? "racine"} ligne={ligne} />
-                        ))}
+                        {c.lignes.map((ligne) =>
+                          enEdition === c.categorie && brouillons[cleLigne(ligne)] ? (
+                            <BlocLigneEditable
+                              key={cleLigne(ligne)}
+                              ligne={ligne}
+                              contenu={brouillons[cleLigne(ligne)]}
+                              onChange={(nc) => setBrouillons((prec) => ({ ...prec, [cleLigne(ligne)]: nc }))}
+                            />
+                          ) : (
+                            <BlocLigne key={cleLigne(ligne)} ligne={ligne} />
+                          )
+                        )}
+                        {enEdition === c.categorie && (
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEnEdition(null)}
+                              disabled={enregistrement}
+                              className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+                            >
+                              Annuler
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => enregistrerEdition(c)}
+                              disabled={enregistrement}
+                              className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                            >
+                              {enregistrement ? "Enregistrement…" : "Enregistrer"}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

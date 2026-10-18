@@ -57,3 +57,40 @@ export async function oublierCategorieMemoire(categorie: string, queryClient: Qu
   );
   return `Catégorie « ${titre} » oubliée.`;
 }
+
+/**
+ * Enregistre le nouveau contenu d'UNE ligne de la mémoire (18/10/2026, demande
+ * de Bourama : "Éditer" dans le menu de chaque catégorie de Ma mémoire).
+ * Laisse remonter l'erreur du serveur ; met à jour le cache déjà chargé pour
+ * que l'écran n'affiche jamais l'ancien contenu après l'enregistrement.
+ */
+export async function modifierLigneMemoire(
+  categorie: string,
+  sousCategorie: string | null,
+  contenu: Record<string, unknown>,
+  queryClient: QueryClient
+): Promise<void> {
+  await appelerApi(`/api/memoire-eleve/${encodeURIComponent(categorie)}`, {
+    method: "PUT",
+    body: JSON.stringify({ sous_categorie: sousCategorie, contenu }),
+  });
+  const maintenant = new Date().toISOString();
+  queryClient.setQueryData<{
+    categories: { categorie: string; lignes: { sous_categorie: string | null; contenu: Record<string, unknown>; updated_at: string }[] }[];
+  }>(clesRequetes.memoire, (ancien) =>
+    ancien
+      ? {
+          categories: ancien.categories.map((c) =>
+            c.categorie === categorie
+              ? {
+                  ...c,
+                  lignes: c.lignes.map((l) =>
+                    (l.sous_categorie ?? null) === (sousCategorie ?? null) ? { ...l, contenu, updated_at: maintenant } : l
+                  ),
+                }
+              : c
+          ),
+        }
+      : ancien
+  );
+}

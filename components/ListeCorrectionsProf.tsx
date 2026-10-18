@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
-import { MessageSquareText, Copy, Trash2, Tag } from "lucide-react";
+import dynamic from "next/dynamic";
+import { MessageSquareText, Copy, Trash2, Tag, ChevronRight, ChevronDown } from "lucide-react";
 import {
   listerSignalementsRecus,
   demanderVisibiliteSignalement,
@@ -20,6 +21,24 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
+
+// Même rendu markdown que les réponses du chat (titres, listes, code, formules),
+// chargé à la demande : il est lourd et ne sert qu'à l'ouverture d'un signalement.
+const RenduMarkdownAutonome = dynamic(
+  () => import("./chat/RenduMarkdownAutonome").then((m) => m.RenduMarkdownAutonome),
+  { ssr: false }
+);
+
+function ChampMarkdown({ libelle, texte, attenue = true }: { libelle: string; texte: string; attenue?: boolean }) {
+  return (
+    <div className="mt-2 first:mt-0">
+      <div className="text-xs font-medium text-dj-texte">{libelle}</div>
+      <div className={`text-sm ${attenue ? "text-dj-texte-muet" : "text-dj-texte"}`}>
+        <RenduMarkdownAutonome texte={texte} />
+      </div>
+    </div>
+  );
+}
 
 const CHAMPS: { id: "question" | "reponse" | "conversation"; label: string }[] = [
   { id: "question", label: "la question" },
@@ -47,6 +66,16 @@ const CHAMPS: { id: "question" | "reponse" | "conversation"; label: string }[] =
 export function ListeCorrectionsProf() {
   const queryClient = useQueryClient();
   const [ongletActif, setOngletActif] = useState<"nouveau" | "discute">("nouveau");
+  // Signalements repliés par défaut, dépliés un par un au toucher.
+  const [deplies, setDeplies] = useState<Set<string>>(new Set());
+  function basculer(id: string) {
+    setDeplies((prec) => {
+      const suivant = new Set(prec);
+      if (suivant.has(id)) suivant.delete(id);
+      else suivant.add(id);
+      return suivant;
+    });
+  }
   const { data: signalements } = useQuery({
     queryKey: clesRequetes.correctionsProf(ongletActif),
     queryFn: async () => {
@@ -170,7 +199,7 @@ export function ListeCorrectionsProf() {
   }
 
   return (
-    <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
+    <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-5">
       <div className="flex gap-1 rounded-cgpt-bouton bg-dj-surface-haute p-1">
         {[
           { id: "nouveau" as const, label: "Nouveaux" },
@@ -208,32 +237,36 @@ export function ListeCorrectionsProf() {
         {signalements?.map((s, i) => {
           const manquants = CHAMPS.filter((c) => !(s as any)[`visible_${c.id}`]);
           const demandeEnCours = manquants.some((c) => (s as any)[`demande_prof_${c.id}`]);
+          const ouvert = deplies.has(s.id);
+          const apercu = s.visible_question ? (s.question_texte || "—") : "Question non partagée par l'élève";
           return (
             <div
               key={s.id}
-              className="animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface-haute p-3"
+              className="animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface-haute"
               style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
             >
-              <p className="text-sm text-dj-texte-muet">
-                <span className="font-medium text-dj-texte">Question : </span>
-                {s.visible_question ? s.question_texte || "—" : "non partagée par l'élève"}
-              </p>
-              <p className="mt-1 text-sm text-dj-texte-muet">
-                <span className="font-medium text-dj-texte">Réponse mise en cause : </span>
-                {s.visible_reponse ? s.reponse_texte || "—" : "non partagée par l'élève"}
-              </p>
-              {s.probleme_observe && (
-                <p className="mt-1 text-sm text-dj-texte-muet">
-                  <span className="font-medium text-dj-texte">Problème observé : </span>
-                  {s.probleme_observe}
-                </p>
-              )}
-              {s.correction_texte && (
-                <p className="mt-1.5 text-sm text-dj-texte">
-                  <span className="font-medium">Note actuelle : </span>
-                  {s.correction_texte}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={() => basculer(s.id)}
+                aria-expanded={ouvert}
+                className="flex w-full items-center gap-2 px-3 py-3 text-left"
+              >
+                {ouvert ? (
+                  <ChevronDown size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                ) : (
+                  <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                )}
+                <span className={`min-w-0 flex-1 text-sm text-dj-texte ${ouvert ? "font-medium" : "truncate"}`}>
+                  {ouvert ? "Signalement" : apercu}
+                </span>
+              </button>
+
+              {ouvert && (
+              <div className="px-3 pb-3">
+              <ChampMarkdown libelle="Question" texte={s.visible_question ? s.question_texte || "—" : "non partagée par l'élève"} />
+              <ChampMarkdown libelle="Réponse mise en cause" texte={s.visible_reponse ? s.reponse_texte || "—" : "non partagée par l'élève"} />
+              {s.probleme_observe && <ChampMarkdown libelle="Problème observé" texte={s.probleme_observe} />}
+              {s.correction_texte && <ChampMarkdown libelle="Note actuelle" texte={s.correction_texte} attenue={false} />}
 
               {manquants.length > 0 && (
                 <button
@@ -299,6 +332,8 @@ export function ListeCorrectionsProf() {
                     </select>
                   )}
                 </div>
+              )}
+              </div>
               )}
             </div>
           );

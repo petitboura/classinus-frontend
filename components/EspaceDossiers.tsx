@@ -409,7 +409,7 @@ export function EspaceDossiers() {
 
   if (natif === null) {
     return (
-      <div className="flex flex-col gap-3 p-4" aria-hidden>
+      <div className="flex flex-col gap-3" aria-hidden>
         <div className="flex items-center justify-between gap-3">
           <Skeleton className="h-3.5 w-36 rounded" />
           <Skeleton className="h-7 w-20 flex-shrink-0 rounded-lg" />
@@ -439,7 +439,7 @@ export function EspaceDossiers() {
   }
 
   return (
-    <div className="flex animate-dj-fade-in-rapide flex-col gap-3 p-4">
+    <div className="flex animate-dj-fade-in-rapide flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-1 text-sm text-dj-texte-muet">
           {pile.length > 0 && (
