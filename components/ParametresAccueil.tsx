@@ -286,15 +286,6 @@ export function ParametresAccueil() {
       {erreurExport && <p className="text-sm text-[var(--dj-erreur)]">{erreurExport}</p>}
 
       <Liste enferme>
-        {CATEGORIES_MEMOIRE.map((categorie) => (
-          <LigneAction
-            key={categorie}
-            icone={Eraser}
-            titre={memoireEnCours === categorie ? "Effacement…" : `Oublier : ${titreCategorieMemoire(categorie)}`}
-            onClick={() => oublierUneCategorie(categorie)}
-            danger
-          />
-        ))}
         <LigneAction
           icone={Eraser}
           titre={memoireEnCours === "tout" ? "Effacement…" : "Effacer toute ma mémoire"}

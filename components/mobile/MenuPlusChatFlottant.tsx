@@ -86,7 +86,6 @@ function MenuPlusChatFlottant({ onNaviguer }: { onNaviguer: (href: string) => vo
           enSortie={enSortie}
           zIndex="z-[150]"
           gererRetour={false}
-          enHaut
         >
           <BlocsMenuPlus sectionsNavigation={SECTIONS_BASE} onNaviguer={naviguerEtFermer} />
         </PanneauFlottant>
