@@ -17,6 +17,7 @@ import {
 } from "./reglagesReponse";
 import type { EtatModeActif } from "./useModeActif";
 import type { EtatReglagesPedagogiques } from "./useReglagesPedagogiques";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 
 type LigneId = "modele" | "longueur" | "effort" | "persona" | "source" | "code";
 
@@ -258,13 +259,13 @@ export function BoutonReglages({
         }}
         onPointerLeave={() => setSurvolBouton(false)}
         className={
-          "flex items-center gap-1 rounded-cgpt-bouton transition-colors " +
+          "flex items-center gap-1 rounded-cgpt-bouton font-semibold transition-colors " +
           (mobile ? "h-11 px-2.5 text-sm " : "px-1.5 py-1 text-xs ") +
           (ouvert ? "text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
         }
       >
         Réglages
-        <ChevronDown size={12} className={"transition-transform duration-200 " + (ouvert ? "rotate-180" : "")} />
+        <ChevronDown size={12} strokeWidth={TRAIT_ICONE_SECTION} className={"transition-transform duration-200 " + (ouvert ? "rotate-180" : "")} />
       </button>
 
       {!mobile && (

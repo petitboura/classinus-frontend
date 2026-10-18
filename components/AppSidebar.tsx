@@ -952,7 +952,7 @@ export function AppSidebar({
                     className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
                     <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
-                    <span className="text-sm">Nouvelle conversation</span>
+                    <span className="text-sm font-semibold">Nouvelle conversation</span>
                   </button>
                 )}
 
@@ -960,7 +960,7 @@ export function AppSidebar({
                   <div className="relative mt-1">
                     <button
                       onClick={() => setHistoriqueDeplie((v) => !v)}
-                      className={`group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm transition-colors ${
+                      className={`group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold transition-colors ${
                         historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet"
                       }`}
                     >
