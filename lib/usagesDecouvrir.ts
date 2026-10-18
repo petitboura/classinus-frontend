@@ -297,6 +297,11 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
       "Commence dans le chat : pose une question sur ton cours, demande une explication ou indique le document sur lequel tu veux travailler. Les raccourcis donnent accès aux autres outils.",
   },
   {
+    question: "Que retrouve-t-on dans l'activité récente ?",
+    reponse:
+      "L'accueil peut afficher les conversations récentes et les fichiers récemment ajoutés à ta bibliothèque personnelle, afin que tu puisses reprendre rapidement un travail en cours.",
+  },
+  {
     question: "Puis-je retrouver mes conversations précédentes ?",
     reponse:
       "Oui. Ouvre l'historique ou une conversation récente pour reprendre le fil et continuer ton travail. L'accueil peut aussi afficher les fichiers récemment ajoutés à ta bibliothèque personnelle.",
