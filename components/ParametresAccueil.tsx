@@ -275,7 +275,7 @@ export function ParametresAccueil() {
         <LigneLien icone={Accessibility} titre="Accessibilité" href={ROUTES_PARAMETRES.accessibilite} />
       </Liste>
 
-      <Liste>
+      <Liste enferme>
         <LigneAction
           icone={Download}
           titre={exportEnCours ? "Export en cours…" : "Exporter mes données"}
@@ -306,11 +306,11 @@ export function ParametresAccueil() {
       {erreurMemoire && <p className="text-sm text-[var(--dj-erreur)]">{erreurMemoire}</p>}
       {messageMemoire && <p className="text-sm text-dj-texte-muet">{messageMemoire}</p>}
 
-      <Liste>
+      <Liste enferme>
         <LigneAction icone={LogOut} titre="Se déconnecter" onClick={seDeconnecter} />
       </Liste>
 
-      <Liste>
+      <Liste enferme>
         <LigneAction
           icone={Trash2}
           titre={suppressionEnCours ? "Suppression…" : "Supprimer mon compte"}
