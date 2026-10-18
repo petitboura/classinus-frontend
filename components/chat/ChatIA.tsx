@@ -2021,6 +2021,12 @@ export function ChatIA({
           les boutons globaux (z-40). Il ne reçoit aucun clic. */}
       {pleinEcran && <div aria-hidden className="voile-chat-haut absolute inset-x-0 top-0 z-10" />}
 
+      {/* Voile du bas (19/10/2026, demande Bourama) : sur téléphone, le texte s'estompe
+          doucement en descendant vers la barre de saisie, sans aucun flou. Posé juste avant
+          la barre (même niveau, la barre passe donc par-dessus) et sans recevoir de clic ni
+          de geste. Masqué sur PC par la feuille de style. */}
+      {pleinEcran && <div aria-hidden className="voile-chat-bas absolute inset-x-0 bottom-0 z-10" />}
+
       {/* pb via var(--safe-bottom) (2026-07-30, durci tâche 4 le
           30/08/2026) : marge pour la barre d'accueil iOS (encoche du bas)
           en plus du pb-6 existant -- s'additionne, ne le remplace pas

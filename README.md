@@ -102,10 +102,12 @@ components/
                           de réglages partagées (reglagesReponse.ts) ;
                           Chat plein écran (18/10/2026) : après le premier message, le texte des messages passe
                           derrière la rangée du haut (modèle, hamburger, cloche, minuteur) sur PC et téléphone,
-                          adouci par un fondu très léger (classe voile-chat-haut dans app/globals.css, réglable
-                          par --dj-voile-opacite et --dj-voile-flou). Sur téléphone seulement, la barre de saisie
+                          adouci par un fondu sans aucun flou (classe voile-chat-haut dans app/globals.css, réglable
+                          par --dj-voile-opacite). Sur téléphone seulement, la barre de saisie
                           est posée par-dessus la liste, comme une carte qui flotte (prop flotteSurListe de
-                          BarreDeSaisie.tsx), le texte se voit tout autour et en dessous. ChatIA.tsx pose la
+                          BarreDeSaisie.tsx), pleine et non transparente, et le texte s'estompe doucement en
+                          descendant vers elle (classe voile-chat-bas, réglable par --dj-voile-bas-opacite, aucun
+                          flou). ChatIA.tsx pose la
                           rangée du modèle et la barre par-dessus la liste (chat plein écran seulement, la popup
                           est inchangée), réserve en haut --dj-chat-haut et en bas la hauteur mesurée de la
                           barre (--hauteur-saisie-chat) ;
