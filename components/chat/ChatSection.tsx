@@ -14,9 +14,6 @@ import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
 import { texteAccueilSelonHeure } from "@/lib/salutations";
 import { Skeleton } from "@/components/Skeleton";
 
-// TEST TEMPORAIRE du 18/10/2026 : true retire la barre latérale du chat.
-const TEST_SANS_BARRE_LATERALE = true;
-
 // Étape 2 (07/09/2026, chantier "chat plein écran = vraie section",
 // demande Bourama : "je veux que le chat plein écran soit une vraie
 // section, une vraie comme les autres"). Rendu du chat pensé pour vivre
@@ -193,11 +190,6 @@ export function ChatSection() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1">
-        {/* TEST TEMPORAIRE du 18/10/2026, demande de Bourama : barre
-            latérale retirée pour voir si c'est elle qui fait défiler la
-            page entière. À remettre (passer cette constante à false)
-            dès que le test est fini. */}
-        {!TEST_SANS_BARRE_LATERALE && (
         <AppSidebar
           connecte={connecte}
           onOuvrirCatalogue={ouvrirCatalogue}
@@ -214,7 +206,6 @@ export function ChatSection() {
             if (fil.conversation_id === cle) nouvelleConversation();
           }}
         />
-        )}
 
         <div
           onMouseDownCapture={fermerFenetresAuClic}
