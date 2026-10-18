@@ -302,6 +302,11 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
       "L'accueil peut afficher les conversations récentes et les fichiers récemment ajoutés à ta bibliothèque personnelle, afin que tu puisses reprendre rapidement un travail en cours.",
   },
   {
+    question: "Comment rouvrir une conversation précédente ?",
+    reponse:
+      "Ouvre une conversation dans l'historique ou sélectionne-la dans l'activité récente pour revenir à son fil et poursuivre l'échange.",
+  },
+  {
     question: "Puis-je retrouver mes conversations précédentes ?",
     reponse:
       "Oui. Ouvre l'historique ou une conversation récente pour reprendre le fil et continuer ton travail. L'accueil peut aussi afficher les fichiers récemment ajoutés à ta bibliothèque personnelle.",
