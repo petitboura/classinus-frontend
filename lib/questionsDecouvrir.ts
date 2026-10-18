@@ -106,44 +106,6 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
   },
 ];
 
-export const QUESTIONS_DECOUVRIR_ACCUEIL: GroupeQuestionsDecouvrir[] = [
-  {
-    titre: "Le coin des étudiants",
-    questions: [
-      {
-        question: "Par où commencer dans Classinus ?",
-        reponse:
-          "Commence dans le chat : pose une question sur ton cours, demande une explication ou indique le document sur lequel tu veux travailler. Les raccourcis de l'accueil permettent ensuite d'ouvrir les autres outils.",
-      },
-      {
-        question: "Que retrouve-t-on dans l'activité récente ?",
-        reponse:
-          "L'accueil affiche les conversations récentes et les fichiers récemment ajoutés à ta bibliothèque personnelle, afin que tu puisses reprendre rapidement un travail en cours.",
-      },
-      {
-        question: "Comment rouvrir une conversation précédente ?",
-        reponse:
-          "Sélectionne une conversation dans l'activité récente ou dans l'historique pour revenir à son fil et poursuivre l'échange.",
-      },
-      {
-        question: "Comment choisir un modèle d'IA ?",
-        reponse:
-          "Dans le chat, ouvre le menu du modèle affiché en haut de la conversation. Les options sont regroupées par fournisseur et seules les options activées peuvent être sélectionnées.",
-      },
-      {
-        question: "Pourquoi certains modèles portent-ils la mention « Bientôt » ?",
-        reponse:
-          "Cette mention indique que le modèle est présenté dans l'interface mais n'est pas encore activé pour être utilisé. Il reste donc indisponible à la sélection.",
-      },
-      {
-        question: "Puis-je faire analyser mon code Python dans Thonny ?",
-        reponse:
-          "Oui. Le plugin thonny-classinus ajoute un panneau Classinus à l'éditeur Thonny. Tu peux demander une analyse ou une correction, faire expliquer une erreur et choisir un modèle parmi ceux proposés. Le code n'est envoyé que lorsque tu déclenches une action qui le transmet.",
-      },
-    ],
-  },
-];
-
 export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
   {
     titre: "Skills personnelles et publiques",
