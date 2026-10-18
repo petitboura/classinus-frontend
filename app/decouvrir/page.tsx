@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight } from "lucide-react";
 import { SECTIONS_DECOUVRIR } from "@/lib/sectionsDecouvrir";
+import { QUESTIONS_DECOUVRIR_GENERAL } from "@/lib/questionsDecouvrir";
+import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDecouvrir";
 
 // Chantier SEO/AEO de Classinus (26/09/2026, demande Bourama). Page mère
 // de toute la famille /decouvrir : point d'entrée public qui liste les
@@ -43,6 +45,8 @@ export default function PageDecouvrir() {
           </li>
         ))}
       </ul>
+
+      <AccordeonQuestionsDecouvrir groupes={QUESTIONS_DECOUVRIR_GENERAL} />
     </main>
   );
 }
