@@ -1152,7 +1152,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           ].map(({ largeur, delai }, i) => (
             <div
               key={i}
-              className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_28}`}
+              className={`flex items-center justify-between gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_28}`}
             >
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Skeleton className="h-7 w-7 flex-shrink-0 rounded-full" style={{ animationDelay: delai }} />
@@ -1495,7 +1495,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                 key={f.id}
                 draggable={!selectionMultiple.actif}
                 onDragStart={(e) => e.dataTransfer.setData("text/fichier-bibliotheque-id", f.id)}
-                className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
+                className={`flex items-center justify-between gap-3 px-4 py-4 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
                   selectionMultiple.actif ? "" : "cursor-grab active:cursor-grabbing"
                 } ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
               >
@@ -1882,7 +1882,7 @@ function CarteDossier({
         const fichierId = e.dataTransfer.getData("text/fichier-bibliotheque-id");
         if (fichierId) deposerFichierDansDossier(d.id, fichierId);
       }}
-      className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
+      className={`flex items-center justify-between gap-3 px-4 py-4 transition-colors ${LIGNE_TRAIT_ICONE_28} ${
         selectionne
           ? "bg-dj-accent-1-conteneur"
           : dossierSurvole === d.id

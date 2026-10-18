@@ -2023,7 +2023,7 @@ export function BibliothequePublique() {
               ].map(({ titre, soustitre, delai }, i) => (
                 <div
                   key={i}
-                  className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_16}`}
+                  className={`flex items-center justify-between gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_16}`}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: delai }} />
@@ -2045,7 +2045,7 @@ export function BibliothequePublique() {
                 return (
                 <div
                   key={d.id}
-                  className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_16} ${
+                  className={`flex items-center justify-between gap-3 px-4 py-4 transition-colors ${LIGNE_TRAIT_ICONE_16} ${
                     selectionne ? "bg-dj-accent-1-conteneur" : ""
                   }`}
                 >
@@ -2295,7 +2295,7 @@ export function BibliothequePublique() {
               ].map(({ titre, soustitre, delai }, i) => (
                 <div
                   key={i}
-                  className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_16}`}
+                  className={`flex items-center justify-between gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_16}`}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: delai }} />
@@ -2325,7 +2325,7 @@ export function BibliothequePublique() {
             return (
               <div
                 key={entree.id}
-                className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${LIGNE_TRAIT_ICONE_16} ${
+                className={`flex items-center justify-between gap-3 px-4 py-4 transition-colors ${LIGNE_TRAIT_ICONE_16} ${
                   selectionne ? "bg-dj-accent-1-conteneur" : ""
                 }`}
               >
@@ -2441,7 +2441,7 @@ export function BibliothequePublique() {
                 ].map(({ titre, soustitre, delai }, i) => (
                   <div
                     key={i}
-                    className={`flex items-center justify-between gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_16}`}
+                    className={`flex items-center justify-between gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_16}`}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <Skeleton className="h-4 w-4 flex-shrink-0 rounded" style={{ animationDelay: delai }} />

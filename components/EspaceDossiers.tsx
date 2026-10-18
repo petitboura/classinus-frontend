@@ -416,7 +416,7 @@ export function EspaceDossiers() {
         </div>
         <div>
             {["w-32", "w-44", "w-28", "w-36"].map((largeur, i) => (
-              <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
+              <div key={i} className={`flex items-center gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_18}`}>
                 <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
                 <div className="flex-1 overflow-hidden">
                   <Skeleton className={`h-3.5 ${largeur} rounded`} />
@@ -507,7 +507,7 @@ export function EspaceDossiers() {
         !dossierCourant ? (
           <div aria-hidden>
               {["w-32", "w-44", "w-28", "w-36"].map((largeur, i) => (
-                <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
+                <div key={i} className={`flex items-center gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_18}`}>
                   <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
                   <div className="flex-1 overflow-hidden">
                     <Skeleton className={`h-3.5 ${largeur} rounded`} />
@@ -524,7 +524,7 @@ export function EspaceDossiers() {
                 { largeur: "w-44", taille: false },
                 { largeur: "w-32", taille: true },
               ].map((el, i) => (
-                <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
+                <div key={i} className={`flex items-center gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_18}`}>
                   <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <Skeleton className={`h-3.5 ${el.largeur} rounded`} />
@@ -546,7 +546,7 @@ export function EspaceDossiers() {
                 return (
                   <div
                     key={d.uri}
-                    className={`flex flex-col gap-1.5 px-4 py-3 ${LIGNE_TRAIT_ICONE_18} ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
+                    className={`flex flex-col gap-1.5 px-4 py-4 ${LIGNE_TRAIT_ICONE_18} ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       <button
@@ -611,7 +611,7 @@ export function EspaceDossiers() {
               return (
               <div
                 key={el.uri}
-                className={`flex items-center gap-2 px-4 py-3 ${LIGNE_TRAIT_ICONE_18} ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
+                className={`flex items-center gap-2 px-4 py-4 ${LIGNE_TRAIT_ICONE_18} ${selectionne ? "bg-dj-accent-1-conteneur" : ""}`}
               >
                 <button
                   onClick={(e) =>
