@@ -289,13 +289,43 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
   {
     question: "Classinus est-il uniquement destiné aux étudiants ?",
     reponse:
-      "L'espace étudiant propose des outils pour apprendre et réviser. Classinus comprend aussi un Bureau avec des fonctions de partage et de gestion de classe, dont certaines sont réservées aux enseignants.",
+      "Classinus propose des outils pour apprendre et réviser, mais comprend aussi un Bureau avec des fonctions de partage et de gestion de classe, dont certaines sont réservées aux enseignants.",
+  },
+  {
+    question: "Par où commencer dans Classinus ?",
+    reponse:
+      "Commence dans le chat : pose une question sur ton cours, demande une explication ou indique le document sur lequel tu veux travailler. Les raccourcis donnent accès aux autres outils.",
+  },
+  {
+    question: "Puis-je retrouver mes conversations précédentes ?",
+    reponse:
+      "Oui. Ouvre l'historique ou une conversation récente pour reprendre le fil et continuer ton travail. L'accueil peut aussi afficher les fichiers récemment ajoutés à ta bibliothèque personnelle.",
+  },
+  {
+    question: "Comment choisir un modèle d'IA ?",
+    reponse:
+      "Dans le chat, ouvre le menu du modèle affiché en haut de la conversation. Les modèles disponibles sont regroupés par fournisseur ; seuls ceux qui sont activés peuvent être sélectionnés.",
+  },
+  {
+    question: "Pourquoi certains modèles portent-ils la mention « Bientôt » ?",
+    reponse:
+      "Cette mention indique qu'un modèle est présenté dans l'interface, mais qu'il n'est pas encore activé pour être utilisé. Il reste indisponible à la sélection.",
+  },
+  {
+    question: "Puis-je faire analyser mon code Python dans Thonny ?",
+    reponse:
+      "Oui. Le plugin thonny-classinus ajoute un panneau Classinus à Thonny. Tu peux demander une analyse, une correction ou une explication d'erreur. Le code n'est transmis que lorsque tu déclenches une action qui l'envoie.",
+  },
+  {
+    question: "Classinus crée-t-il des fiches, des QCM et des animations ?",
+    reponse:
+      "Tu peux demander des fiches de révision, des QCM interactifs avec correction expliquée ou des animations explicatives. Certaines animations peuvent être téléchargées en MP4, selon les outils disponibles.",
   },
 ];
 
 export const RESUME_CLASSINUS = {
   nom: "Classinus",
-  accroche: "Le coin des étudiants.",
+  accroche: "Un espace pour apprendre, créer et progresser.",
   description:
     "Classinus est une application d'étude avec IA : pose des questions, recherche des documents et des vidéos, révise avec des fiches, des QCM et des animations, exécute du Python dans le chat ou utilise le plugin Thonny-Classinus pour obtenir de l'aide dans l'éditeur.",
   fonctions: [
@@ -307,6 +337,6 @@ export const RESUME_CLASSINUS = {
     "Exécution de code Python directement dans le chat",
     "Plugin Thonny-Classinus : panneau intégré à Thonny pour analyser ou corriger du code Python et expliquer les erreurs ; l'envoi du code nécessite une action explicite",
     "Fiches de révision, QCM interactifs et animations téléchargeables en vidéo MP4",
-    "Mémoire consultable et modifiable, skills personnalisés et outils de concentration",
+    "Mémoire consultable et gérable, skills personnalisés et outils de concentration",
   ],
 } as const;
