@@ -100,14 +100,15 @@ components/
                           pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
                           useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
                           de réglages partagées (reglagesReponse.ts) ;
-                          Voile du chat plein écran (18/10/2026) : après le premier message, le texte des
-                          messages passe derrière la rangée du haut (modèle, hamburger, cloche, minuteur) sur PC
-                          et téléphone, et derrière la barre de saisie sur téléphone seulement. Un fondu doux avec
-                          léger flou (classes voile-chat-haut, voile-chat-bas, saisie-voile-mobile dans
-                          app/globals.css, réglables par les variables --dj-voile-*, --dj-saisie-*) garde les
-                          boutons lisibles. ChatIA.tsx pose la rangée du modèle et la barre par-dessus la liste
-                          (chat plein écran seulement, la popup est inchangée), réserve en haut --dj-chat-haut et
-                          en bas la hauteur mesurée de la barre (--hauteur-saisie-chat) ;
+                          Chat plein écran (18/10/2026) : après le premier message, le texte des messages passe
+                          derrière la rangée du haut (modèle, hamburger, cloche, minuteur) sur PC et téléphone,
+                          adouci par un fondu très léger (classe voile-chat-haut dans app/globals.css, réglable
+                          par --dj-voile-opacite et --dj-voile-flou). Sur téléphone seulement, la barre de saisie
+                          est posée par-dessus la liste, comme une carte qui flotte (prop flotteSurListe de
+                          BarreDeSaisie.tsx), le texte se voit tout autour et en dessous. ChatIA.tsx pose la
+                          rangée du modèle et la barre par-dessus la liste (chat plein écran seulement, la popup
+                          est inchangée), réserve en haut --dj-chat-haut et en bas la hauteur mesurée de la
+                          barre (--hauteur-saisie-chat) ;
                           SelecteurModeleHaut.tsx (14/10/2026) : bouton du modèle en haut au milieu du chat,
                           nom et icône du fournisseur du modèle actif, liste dépliante groupée par fournisseur. Les modèles pas encore
                           ouverts (modeles_bientot, envoyés par le backend) y sont grisés avec la mention Bientôt.

@@ -210,20 +210,19 @@ math-field {
 
 /* 18/10/2026, demande Bourama : dans le chat plein ecran, apres le premier
    message, le texte des messages passe derriere la rangee du haut (modele,
-   hamburger, cloche, minuteur) et, sur telephone, derriere la barre de saisie.
-   Un voile en fondu doux (degrade du fond de page vers transparent, avec un
-   leger flou) garde les boutons et ce qu'on tape lisibles.
+   hamburger, cloche, minuteur) sur PC et telephone. Un voile en fondu doux
+   (degrade du fond de page vers transparent, tres leger flou) garde ces boutons
+   lisibles. Sur telephone, la barre de saisie est posee par-dessus la liste (le
+   texte se voit tout autour et en dessous), sans voile ni transparence.
    --dj-chat-haut : hauteur reservee en haut du chat. Sur telephone, la place du
    bouton hamburger flottant (voir --dj-hamburger-espace). Sur PC et tablette,
    la rangee du modele (2.75rem) apres la zone de securite du haut.
-   Reglages du voile : --dj-voile-opacite (force du fondu), --dj-voile-flou,
-   --dj-saisie-opacite et --dj-saisie-flou (la barre de saisie sur telephone). */
+   Reglages du voile du haut : --dj-voile-opacite (force du fondu) et
+   --dj-voile-flou (mettre 0px pour supprimer le flou). */
 :root {
   --dj-chat-haut: calc(var(--safe-top) + var(--dj-hamburger-espace));
   --dj-voile-opacite: 88%;
-  --dj-voile-flou: 8px;
-  --dj-saisie-opacite: 55%;
-  --dj-saisie-flou: 12px;
+  --dj-voile-flou: 2px;
 }
 @media (min-width: 768px) {
   :root {
@@ -231,20 +230,12 @@ math-field {
   }
 }
 
-.voile-chat-haut,
-.voile-chat-bas {
+.voile-chat-haut {
   pointer-events: none;
+  height: calc(var(--dj-chat-haut) + 1.25rem);
   background: linear-gradient(to bottom, var(--dj-fond), transparent);
   -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
   mask-image: linear-gradient(to bottom, #000 55%, transparent);
-}
-.voile-chat-haut {
-  height: calc(var(--dj-chat-haut) + 1.25rem);
-}
-.voile-chat-bas {
-  background: linear-gradient(to top, var(--dj-fond), transparent);
-  -webkit-mask-image: linear-gradient(to top, #000 55%, transparent);
-  mask-image: linear-gradient(to top, #000 55%, transparent);
 }
 @supports (background: color-mix(in srgb, red 50%, transparent)) {
   .voile-chat-haut {
@@ -254,37 +245,11 @@ math-field {
       transparent
     );
   }
-  .voile-chat-bas {
-    background: linear-gradient(
-      to top,
-      color-mix(in srgb, var(--dj-fond) var(--dj-voile-opacite), transparent),
-      transparent
-    );
-  }
 }
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .voile-chat-haut,
-  .voile-chat-bas {
+  .voile-chat-haut {
     -webkit-backdrop-filter: blur(var(--dj-voile-flou));
     backdrop-filter: blur(var(--dj-voile-flou));
-  }
-}
-
-/* Barre de saisie du telephone dans le chat plein ecran : fond de carte a demi
-   transparent et flou, le texte des messages se devine derriere. Sans support
-   de color-mix, on garde le fond de carte plein habituel. */
-.saisie-voile-mobile {
-  background-color: var(--dj-surface);
-}
-@supports (background: color-mix(in srgb, red 50%, transparent)) {
-  .saisie-voile-mobile {
-    background-color: color-mix(in srgb, var(--dj-surface) var(--dj-saisie-opacite), transparent);
-  }
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .saisie-voile-mobile {
-    -webkit-backdrop-filter: blur(var(--dj-saisie-flou));
-    backdrop-filter: blur(var(--dj-saisie-flou));
   }
 }
 

@@ -2037,32 +2037,33 @@ export function ChatIA({
           app/globals.css). Retiré : --safe-bottom seul couvre le vrai
           besoin (la zone système du bas). */}
       {/* 18/10/2026, demande Bourama : en chat plein écran, sur téléphone seulement, la barre
-          est posée par-dessus la liste, collée en bas, avec un voile en fondu derrière elle (le
-          texte des messages passe derrière). Sur PC elle reste sous la liste, comme avant. */}
+          est posée par-dessus la liste, collée en bas, comme une carte qui flotte : le texte des
+          messages se voit tout autour d'elle et en dessous. Sur PC elle reste sous la liste,
+          comme avant. L'enveloppe laisse passer les gestes (le défilement de la liste continue
+          sous la zone vide autour de la barre), seule la barre les reçoit. */}
       <div
         ref={saisieSuperposeeRef}
         className={
           "mx-auto w-full max-w-3xl px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]" +
-          (pleinEcran ? " max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-10" : "")
+          (pleinEcran ? " max-md:pointer-events-none max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-10" : "")
         }>
-        {pleinEcran && (
-          <div aria-hidden className="voile-chat-bas pointer-events-none absolute inset-x-0 -top-6 bottom-0 -z-10 md:hidden" />
-        )}
-        <BarreDeSaisie
-          onEnvoyer={envoyerMessage}
-          desactive={genEnCours || affichageEnCours || accesBloqueMineur}
-          genererEnCours={genEnCours}
-          onArreter={arreterGeneration}
-          agentId={agentId}
-          modelesDisponibles={modelesDisponibles}
-          modeleSelectionne={modeleSelectionne}
-          onModeleChange={setModeleSelectionne}
-          boutonSansEnseignant={boutonSansEnseignant}
-          outilsActifsAgent={outilsActifsAgent}
-          conversationId={conversationId}
-          onAccesBloqueChange={setAccesBloqueMineur}
-          voileMobile={pleinEcran}
-        />
+        <div className={pleinEcran ? "max-md:pointer-events-auto" : undefined}>
+          <BarreDeSaisie
+            onEnvoyer={envoyerMessage}
+            desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+            genererEnCours={genEnCours}
+            onArreter={arreterGeneration}
+            agentId={agentId}
+            modelesDisponibles={modelesDisponibles}
+            modeleSelectionne={modeleSelectionne}
+            onModeleChange={setModeleSelectionne}
+            boutonSansEnseignant={boutonSansEnseignant}
+            outilsActifsAgent={outilsActifsAgent}
+            conversationId={conversationId}
+            onAccesBloqueChange={setAccesBloqueMineur}
+            flotteSurListe={pleinEcran}
+          />
+        </div>
       </div>
 
       {popupFeedback && (
