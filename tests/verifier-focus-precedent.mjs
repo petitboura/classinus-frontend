@@ -143,6 +143,34 @@ try {
     assert.equal(BigInt(poigneeDe(quatre)), 0x1234abcdn);
   }
 
+  // 12. La trace dit pourquoi le focus n'a pas été rendu (sert à lire le journal de diagnostic).
+  {
+    const s = fauxSysteme();
+    const f = creerFocusPrecedent(s);
+    assert.equal(f.apercuPremierPlan(), '0x65');
+    f.memoriser(PROPRE);
+    assert.match(f.trace(), /noté 0x65/);
+    s.etat.active = 202; // une autre fenêtre est devenue active avant la fin de la saisie
+    assert.equal(f.rendre(PROPRE), false);
+    assert.match(f.trace(), /n'est plus la fenêtre active \(0xca\)/);
+    assert.match(f.trace(), /fenêtre notée 0x65/);
+  }
+  {
+    const f = creerFocusPrecedent(fauxSysteme());
+    assert.equal(f.rendre(PROPRE), false);
+    assert.match(f.trace(), /aucune fenêtre notée avant la saisie/);
+  }
+  {
+    const s = fauxSysteme({ active: PROPRE });
+    const f = creerFocusPrecedent(s);
+    f.memoriser(PROPRE);
+    assert.match(f.trace(), /déjà active, rien noté/);
+  }
+  {
+    const f = creerFocusPrecedent(null);
+    assert.equal(f.apercuPremierPlan(), 'inconnu');
+  }
+
   console.log('Focus précédent : tout est bon.');
 } finally {
   await rm(dossier, { recursive: true, force: true });

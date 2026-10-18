@@ -468,10 +468,14 @@ function definirSaisieTexte(fenetre: BrowserWindow, actif: boolean): void {
     fenetre.setSkipTaskbar(true);
     fenetre.focus();
   } else {
+    // Diagnostic (18/10/2026) : fenetre active juste avant et juste apres setFocusable(false),
+    // pour savoir si c'est lui qui deplace l'activation. A retirer avec le reste des traces FOCUS.
+    const avant = focusPrecedent.apercuPremierPlan();
     fenetre.setFocusable(false);
     fenetre.setSkipTaskbar(true);
+    const apres = focusPrecedent.apercuPremierPlan();
     const rendu = focusPrecedent.rendre(poigneeDe(fenetre.getNativeWindowHandle()));
-    console.log(`FOCUS ${new Date().toISOString()} focus rendu a la fenetre precedente : ${rendu ? "oui" : "non"}`);
+    console.log(`FOCUS ${new Date().toISOString()} focus rendu a la fenetre precedente : ${rendu ? "oui" : "non"} (fenetre active avant setFocusable(false) : ${avant}, apres : ${apres} ; ${focusPrecedent.trace()})`);
   }
 }
 

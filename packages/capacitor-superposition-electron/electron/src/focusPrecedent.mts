@@ -35,7 +35,16 @@ export type FocusPrecedent = {
   memoriser(propre: Poignee): void;
   // À appeler quand la saisie se termine. Renvoie vrai si la fenêtre précédente a été réactivée.
   rendre(propre: Poignee): boolean;
+  // Fenêtre active à cet instant, en texte lisible pour le journal de diagnostic.
+  apercuPremierPlan(): string;
+  // Ce qui s'est passé lors du dernier memoriser et du dernier rendre, en une ligne de journal
+  // (poignées notées, fenêtre active, raison d'un refus). Sert à comprendre un « non ».
+  trace(): string;
 };
+
+function texte(poignee: Poignee): string {
+  return `0x${BigInt(poignee).toString(16)}`;
+}
 
 function egales(a: Poignee, b: Poignee): boolean {
   return BigInt(a) === BigInt(b);
@@ -52,31 +61,73 @@ export function poigneeDe(tampon: Buffer): Poignee {
 
 export function creerFocusPrecedent(systeme: SystemeFenetres | null): FocusPrecedent {
   let precedente: Poignee | null = null;
+  let traceNote = "rien noté";
+  let traceRendu = "rien rendu";
   return {
     memoriser(propre) {
-      if (!systeme) return;
+      if (!systeme) {
+        traceNote = "pas de système Windows";
+        return;
+      }
       try {
         const active = systeme.premierPlan();
         // Si la superposition est déjà la fenêtre active, on garde ce qui était noté : il n'y a
         // rien de plus juste à retenir.
-        if (estNulle(active) || egales(active, propre)) return;
+        if (estNulle(active)) {
+          traceNote = "aucune fenêtre active, rien noté";
+          return;
+        }
+        if (egales(active, propre)) {
+          traceNote = `la superposition (${texte(propre)}) était déjà active, rien noté`;
+          return;
+        }
         precedente = active;
-      } catch {
+        traceNote = `noté ${texte(active)} (superposition ${texte(propre)})`;
+      } catch (erreur) {
         precedente = null;
+        traceNote = `erreur en notant : ${erreur instanceof Error ? erreur.message : String(erreur)}`;
       }
     },
     rendre(propre) {
       const cible = precedente;
       precedente = null;
-      if (!systeme || cible === null) return false;
-      try {
-        // L'étudiant a cliqué dans une autre fenêtre pendant la saisie : elle est déjà active.
-        if (!egales(systeme.premierPlan(), propre)) return false;
-        if (!systeme.existe(cible)) return false;
-        return systeme.activer(cible);
-      } catch {
+      if (!systeme) {
+        traceRendu = "pas de système Windows";
         return false;
       }
+      if (cible === null) {
+        traceRendu = "aucune fenêtre notée avant la saisie";
+        return false;
+      }
+      try {
+        const active = systeme.premierPlan();
+        // L'étudiant a cliqué dans une autre fenêtre pendant la saisie : elle est déjà active.
+        if (!egales(active, propre)) {
+          traceRendu = `la superposition (${texte(propre)}) n'est plus la fenêtre active (${texte(active)}), rien réactivé, fenêtre notée ${texte(cible)}`;
+          return false;
+        }
+        if (!systeme.existe(cible)) {
+          traceRendu = `la fenêtre notée ${texte(cible)} n'existe plus`;
+          return false;
+        }
+        const ok = systeme.activer(cible);
+        traceRendu = ok ? `fenêtre ${texte(cible)} réactivée` : `Windows a refusé d'activer ${texte(cible)}`;
+        return ok;
+      } catch (erreur) {
+        traceRendu = `erreur en rendant : ${erreur instanceof Error ? erreur.message : String(erreur)}`;
+        return false;
+      }
+    },
+    apercuPremierPlan() {
+      if (!systeme) return "inconnu";
+      try {
+        return texte(systeme.premierPlan());
+      } catch {
+        return "erreur";
+      }
+    },
+    trace() {
+      return `${traceNote} ; ${traceRendu}`;
     },
   };
 }
