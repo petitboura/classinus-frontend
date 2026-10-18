@@ -43,9 +43,13 @@ type ProfilMoi = {
   avatar_url: string | null;
 };
 
-function Liste({ children }: { children: React.ReactNode }) {
+// `enferme` : un groupe de plusieurs lignes est enfermé dans un cadre arrondi,
+// ses lignes gardent leur trait de séparation. Une ligne seule reste à nu.
+function Liste({ children, enferme = false }: { children: React.ReactNode; enferme?: boolean }) {
   return (
-    <div className="flex flex-col">{children}</div>
+    <div className={enferme ? "flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface" : "flex flex-col"}>
+      {children}
+    </div>
   );
 }
 
@@ -254,7 +258,7 @@ export function ParametresAccueil() {
         </div>
       </Link>
 
-      <Liste>
+      <Liste enferme>
         <LigneLien icone={SlidersHorizontal} titre="Préférences" href={ROUTES_PARAMETRES.preferences} />
         <LigneLien icone={Lock} titre="Confidentialité et sécurité" href={ROUTES_PARAMETRES.confidentialite} />
         <LigneLien icone={HelpCircle} titre="Aide et support" href={ROUTES_PARAMETRES.aide} />
@@ -266,7 +270,7 @@ export function ParametresAccueil() {
           Capacitor sans écran jusqu'ici. Chaque carte/écran gère déjà son
           propre état "disponible seulement sur mobile" (usePluginNatif),
           donc rien à faire ici pour le web. */}
-      <Liste>
+      <Liste enferme>
         <LigneLien icone={Smartphone} titre="Capacités du téléphone" sousTitre="Connecteurs, mise à jour, nom de l'appareil" href={ROUTES_PARAMETRES.capacitesTelephone} />
         <LigneLien icone={Accessibility} titre="Accessibilité" href={ROUTES_PARAMETRES.accessibilite} />
       </Liste>
@@ -281,7 +285,7 @@ export function ParametresAccueil() {
       </Liste>
       {erreurExport && <p className="text-sm text-[var(--dj-erreur)]">{erreurExport}</p>}
 
-      <Liste>
+      <Liste enferme>
         {CATEGORIES_MEMOIRE.map((categorie) => (
           <LigneAction
             key={categorie}

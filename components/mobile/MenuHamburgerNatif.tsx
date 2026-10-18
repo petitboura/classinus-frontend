@@ -168,6 +168,7 @@ function MenuHamburgerNatifInterne({ connecte }: { connecte: boolean }) {
           entete={<ProfilEnteteMenuPlus connecte={connecte} onNaviguer={naviguerDepuisPlus} />}
           enSortie={enSortie}
           gererRetour={false}
+          enHaut
         >
           <BlocsMenuPlus sectionsNavigation={SECTIONS_BASE} onNaviguer={naviguerDepuisPlus} />
         </PanneauFlottant>

@@ -55,6 +55,7 @@ export function PanneauFlottant({
   // doit flotter par-dessus le chat plein écran (z-[110], voir
   // ChatFlottant.tsx) passe explicitement une valeur plus haute.
   zIndex = "z-50",
+  enHaut = false,
 }: {
   children: ReactNode;
   onFerme?: () => void;
@@ -72,6 +73,9 @@ export function PanneauFlottant({
    * le history.back() parasite qui en découle à la fermeture. */
   gererRetour?: boolean;
   zIndex?: string;
+  /** Carte collée en haut de l'écran (sous la marge de sécurité) au lieu d'être centrée : le
+   * titre de l'en-tête occupe alors le haut de l'écran, sans grand vide au dessus. */
+  enHaut?: boolean;
 }) {
   // Bouton retour matériel Android / popstate web mobile (31/08/2026,
   // suite de lib/contexteRetour.tsx -- même raisonnement que
@@ -97,7 +101,9 @@ export function PanneauFlottant({
 
   return (
     <div
-      className={`fixed inset-0 ${zIndex} flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6 ${
+      className={`fixed inset-0 ${zIndex} flex justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6 ${
+        enHaut ? "items-start pt-[calc(0.75rem+var(--safe-top,0px))] sm:items-center sm:pt-6" : "items-center"
+      } ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
       }`}
       onClick={onFerme}

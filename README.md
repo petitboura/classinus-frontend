@@ -321,7 +321,7 @@ renforcé des icônes de section, viennent de `lib/styleLignes.ts`, lu aussi par
 de la Bibliothèque publique et des Dossiers du téléphone.
 La page Paramètres (`components/ParametresAccueil.tsx`) suit le même visuel et s'affiche tout de suite, sans écran de
 chargement : seule sa ligne de profil montre un squelette le temps de recevoir sa donnée. Skills publics, Entrer un code,
-Ma mémoire et l'écran d'accueil sont aussi à nu, sans carte, de même que la liste du menu Plus du téléphone et celle de Mes skills (une ligne par skill, plus de pastilles). Dans Ma mémoire, chaque catégorie est repliée par défaut. Chaque
+Ma mémoire et l'écran d'accueil sont aussi à nu, sans carte, de même que la liste de Mes skills (une ligne par skill, plus de pastilles). Dans Paramètres et dans le panneau Plus du téléphone, les groupes de plusieurs lignes sont enfermés dans un cadre arrondi, avec les mêmes lignes de séparation à l'intérieur. Le panneau Plus s'ouvre collé en haut de l'écran (option `enHaut` de `components/PanneauFlottant.tsx`), son titre en haut. Dans Ma mémoire, chaque catégorie est repliée par défaut. Chaque
 page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
 l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
 gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut
