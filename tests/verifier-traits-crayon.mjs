@@ -66,6 +66,25 @@ try {
   c.commencerTrait(1, 1);
   c.basculerCrayon();
   ok('crayon rangé en plein trait : plus dessine', c.lireEtatCrayon().dessine === false);
+  // Échec de lecture à l'envoi (18/10/2026) : le dessin marqué envoyé revient à l'écran, à joindre.
+  c.reinitialiserCrayon();
+  c.basculerCrayon();
+  tracer();
+  c.marquerTraitsEnvoyes();
+  ok('envoyé : plus à joindre', c.traitsAJoindre(c.lireEtatCrayon()) === false);
+  c.annulerEnvoiTraits();
+  ok('envoi annulé : à joindre de nouveau, affiché', c.traitsAJoindre(c.lireEtatCrayon()) === true && c.lireEtatCrayon().visibles === true && c.lireEtatCrayon().envoyes === false);
+  mock.timers.tick(60000);
+  ok('envoi annulé : plus d\'estompage programmé', c.lireEtatCrayon().visibles === true);
+  // Sans effet si l'étudiant a effacé les traits lui même pendant la lecture.
+  c.marquerTraitsEnvoyes();
+  c.effacerTraits();
+  c.annulerEnvoiTraits();
+  ok('effacé à la main pendant la lecture : on ne les remet pas', c.lireEtatCrayon().visibles === false && c.traitsAJoindre(c.lireEtatCrayon()) === false);
+  // Sans effet s'il n'y a rien d'envoyé.
+  c.reinitialiserCrayon();
+  c.annulerEnvoiTraits();
+  ok('rien à annuler : état inchangé', c.lireEtatCrayon().traits.length === 0);
   console.log(`traits du crayon : ${n} verifications ok`);
 } finally {
   mock.timers.reset();

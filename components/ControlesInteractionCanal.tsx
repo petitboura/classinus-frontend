@@ -30,7 +30,7 @@ import { traiterFichiersJoints } from "@/lib/preparerPiecesJointes";
 import { useFichiersJointsCanal } from "@/lib/useFichiersJointsCanal";
 import { BoutonReglagesCanal, BoutonUtilitairesCanal } from "@/components/BoutonsReglagesCanal";
 import { BoutonCrayonCanal, BoutonTraitsCanal, peutAfficherBoutonTraits } from "@/components/BoutonsCrayonCanal";
-import { lireEtatCrayon, marquerTraitsEnvoyes, reinitialiserCrayon, traitsAJoindre, useCrayonEcran } from "@/lib/crayonEcran";
+import { annulerEnvoiTraits, lireEtatCrayon, marquerTraitsEnvoyes, reinitialiserCrayon, traitsAJoindre, useCrayonEcran } from "@/lib/crayonEcran";
 import { envoyerCeQuiEstEntoure } from "@/lib/envoiCrayon";
 import { CanvasDessin } from "@/components/chat/CanvasDessin";
 import { EditeurMathsRiche } from "@/components/chat/EditeurMathsRiche";
@@ -45,6 +45,9 @@ import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 import { useClavierOuvert } from "@/lib/useClavierOuvert";
 
 const DUREE_ERREUR_MS = 6000;
+// Textes du crayon à l'envoi (18/10/2026) : posés ici pour être faciles à traduire ensuite.
+const TEXTE_LECTURE_DESSIN = "Classinus regarde ce que tu as entouré...";
+const TEXTE_ECHEC_LECTURE_DESSIN = "Je n'ai pas pu lire ce que tu as entouré. Ton dessin est remis à l'écran, tu peux réessayer.";
 // Repli automatique des boutons (11/10/2026, demande Bourama) : délai sans aucune action avant que
 // le groupe se replie tout seul.
 const DELAI_REPLI_AUTO_MS = 2000;
@@ -99,6 +102,9 @@ export function ControlesInteractionCanal({
   // dans une ligne défilable à gauche et à droite, comme dans la barre de saisie du chat.
   const piecesJointes = useFichiersJointsCanal();
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  // Lecture de ce qui est entouré, après l'envoi (18/10/2026) : l'envoi se voit tout de suite,
+  // la lecture de l'écran (plusieurs secondes) se fait derrière avec un signe d'attente.
+  const [lectureDessinEnCours, setLectureDessinEnCours] = useState(false);
   // Utilitaires du canal (03/10/2026, demande Bourama) : dessin, éditeur de maths live et
   // position, comme dans la barre de saisie du chat. Le dessin rejoint les pièces jointes,
   // l'éditeur de maths et la position s'ajoutent au texte du message.
@@ -148,6 +154,7 @@ export function ControlesInteractionCanal({
     setDessinOuvert(false);
     setMathsOuvert(false);
     setErreur(null);
+    setLectureDessinEnCours(false);
     piecesJointes.vider();
     reinitialiserCrayon();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- vider est stable (useCallback sans dépendance).
@@ -275,10 +282,40 @@ export function ControlesInteractionCanal({
     const question = texteFinal.trim();
     // Un dessin attend (crayon) : l'écran est lu et Classinus reçoit ce qui est entouré, avec
     // le texte écrit s'il y en a un, sinon seul. Le bouton Envoyer est le même qu'avant.
-    let parti = false;
-    if (crayonDisponible && traitsAJoindre(lireEtatCrayon())) parti = await envoyerCeQuiEstEntoure(question);
-    if (parti) marquerTraitsEnvoyes();
-    else if (question) envoyerMessageEtudiant(question);
+    if (crayonDisponible && traitsAJoindre(lireEtatCrayon())) {
+      // Retour immédiat (18/10/2026, demande de Bourama : tout doit bouger tout de suite) : le
+      // champ se vide, la zone se ferme et le dessin passe en « envoyé » dès l'appui. Le signe
+      // d'attente couvre la lecture de l'écran, qui se fait derrière.
+      marquerTraitsEnvoyes();
+      setTexteSaisi("");
+      piecesJointes.vider();
+      setPanneauOuvert(false);
+      setErreur(null);
+      setLectureDessinEnCours(true);
+      let parti = false;
+      try {
+        parti = await envoyerCeQuiEstEntoure(question);
+      } catch {
+        parti = false;
+      } finally {
+        setLectureDessinEnCours(false);
+      }
+      if (!parti) {
+        // La lecture n'a rien donné : le dessin revient à l'écran, prêt à repartir. Le texte
+        // écrit, s'il y en a un, part seul comme avant.
+        annulerEnvoiTraits();
+        if (question) envoyerMessageEtudiant(question);
+        // Zone rouverte sans prendre le clavier (sinon la fenêtre entourée se figerait), pour
+        // que le bouton Envoyer soit là pour réessayer.
+        if (lireEtatCrayon().visibles && traitsAJoindre(lireEtatCrayon())) {
+          panneauOuvertParCrayon.current = true;
+          setPanneauOuvert(true);
+        }
+        afficherErreur(TEXTE_ECHEC_LECTURE_DESSIN);
+      }
+      return true;
+    }
+    if (question) envoyerMessageEtudiant(question);
     else return false;
     setTexteSaisi("");
     piecesJointes.vider();
@@ -379,6 +416,25 @@ export function ControlesInteractionCanal({
         onPointerLeave={() => setPointeurSurGroupe(false)}
         onPointerDown={() => setActiviteGroupe((v) => v + 1)}
       >
+        {/* Signe d'attente pendant la lecture de ce qui est entouré : apparition et sortie en
+            fondu, balayage lumineux du texte comme pour la réflexion de Classinus. */}
+        <AnimatePresence>
+          {actif && lectureDessinEnCours && (
+            <motion.p
+              key="lecture-dessin"
+              role="status"
+              aria-live="polite"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="max-w-[min(18rem,calc(100vw-2rem))] rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs shadow-lg"
+            >
+              <span className="animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent">{TEXTE_LECTURE_DESSIN}</span>
+            </motion.p>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {actif && erreur && (
             <motion.p

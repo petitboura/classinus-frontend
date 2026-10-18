@@ -159,6 +159,17 @@ export function marquerTraitsEnvoyes() {
   programmerEstompage();
 }
 
+/**
+ * L'envoi du dessin a échoué (la lecture de l'écran n'a rien donné) : les traits redeviennent
+ * à joindre et restent à l'écran, pour réessayer. Sans effet si l'étudiant a déjà effacé les
+ * traits lui-même ou commencé un nouveau dessin entre temps.
+ */
+export function annulerEnvoiTraits() {
+  if (etat.traits.length === 0 || !etat.envoyes || etat.ecartes) return;
+  annulerMinuteurs();
+  changer({ envoyes: false, visibles: true, restaurable: false });
+}
+
 /** Fait réapparaître des traits estompés ou effacés. Ils restent jusqu'au prochain envoi ou effacement. */
 export function rappelerTraits() {
   if (etat.visibles || !etat.restaurable) return;
