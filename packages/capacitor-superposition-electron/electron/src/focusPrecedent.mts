@@ -31,6 +31,9 @@ export type SystemeFenetres = {
   existe(poignee: Poignee): boolean;
   // Rend la fenêtre active ; renvoie faux si Windows refuse.
   activer(poignee: Poignee): boolean;
+  // Diagnostic seulement (18/10/2026, Chrome reste figé) : titre, type de fenêtre et programme,
+  // en texte lisible pour le journal. Optionnel : sans lui le journal n'affiche que les poignées.
+  decrire?(poignee: Poignee): string;
 };
 
 export type FocusPrecedent = {
@@ -61,6 +64,17 @@ function estNulle(poignee: Poignee): boolean {
   return BigInt(poignee) === 0n;
 }
 
+// Description d'une fenêtre pour le journal, jamais bloquante : une erreur donne un texte, pas
+// une exception.
+function decrireSure(systeme: SystemeFenetres, poignee: Poignee): string {
+  if (!systeme.decrire) return "";
+  try {
+    return ` [${systeme.decrire(poignee)}]`;
+  } catch (erreur) {
+    return ` [description impossible : ${erreur instanceof Error ? erreur.message : String(erreur)}]`;
+  }
+}
+
 // getNativeWindowHandle() d'Electron renvoie la poignée dans un Buffer (4 ou 8 octets).
 export function poigneeDe(tampon: Buffer): Poignee {
   return tampon.length >= 8 ? tampon.readBigUInt64LE(0) : tampon.readUInt32LE(0);
@@ -89,7 +103,7 @@ export function creerFocusPrecedent(systeme: SystemeFenetres | null): FocusPrece
           return;
         }
         precedente = active;
-        traceNote = `noté ${texte(active)} (superposition ${texte(propre)})`;
+        traceNote = `noté ${texte(active)}${decrireSure(systeme, active)} (superposition ${texte(propre)})`;
       } catch (erreur) {
         precedente = null;
         traceNote = `erreur en notant : ${erreur instanceof Error ? erreur.message : String(erreur)}`;
@@ -126,7 +140,15 @@ export function creerFocusPrecedent(systeme: SystemeFenetres | null): FocusPrece
           return false;
         }
         const ok = systeme.activer(cible);
-        traceRendu = ok ? `fenêtre ${texte(cible)} réactivée` : `Windows a refusé d'activer ${texte(cible)}`;
+        // Diagnostic : qui est vraiment au premier plan juste après la réactivation.
+        let apres = "";
+        try {
+          const active = systeme.premierPlan();
+          apres = ` ; après réactivation, fenêtre active : ${texte(active)}${decrireSure(systeme, active)}`;
+        } catch {
+          apres = " ; après réactivation, fenêtre active illisible";
+        }
+        traceRendu = (ok ? `fenêtre ${texte(cible)}${decrireSure(systeme, cible)} réactivée` : `Windows a refusé d'activer ${texte(cible)}${decrireSure(systeme, cible)}`) + apres;
         return ok;
       } catch (erreur) {
         traceRendu = `erreur en rendant : ${erreur instanceof Error ? erreur.message : String(erreur)}`;
@@ -158,10 +180,51 @@ export function creerSystemeWindows(): SystemeFenetres | null {
     const GetForegroundWindow = user32.func("uintptr_t __stdcall GetForegroundWindow()");
     const IsWindow = user32.func("int __stdcall IsWindow(uintptr_t hWnd)");
     const SetForegroundWindow = user32.func("int __stdcall SetForegroundWindow(uintptr_t hWnd)");
+    // Appels de description, pour le journal de diagnostic seulement. Chargés à part : s'ils
+    // échouent, le focus continue de fonctionner, seule la description manque.
+    let decrire: SystemeFenetres["decrire"];
+    try {
+      const GetWindowTextW = user32.func("int __stdcall GetWindowTextW(uintptr_t hWnd, void *lpString, int nMaxCount)");
+      const GetClassNameW = user32.func("int __stdcall GetClassNameW(uintptr_t hWnd, void *lpClassName, int nMaxCount)");
+      const GetWindowThreadProcessId = user32.func("uint32_t __stdcall GetWindowThreadProcessId(uintptr_t hWnd, void *lpdwProcessId)");
+      const kernel32 = koffi.load("kernel32.dll");
+      const OpenProcess = kernel32.func("uintptr_t __stdcall OpenProcess(uint32_t dwDesiredAccess, int bInheritHandle, uint32_t dwProcessId)");
+      const QueryFullProcessImageNameW = kernel32.func("int __stdcall QueryFullProcessImageNameW(uintptr_t hProcess, uint32_t dwFlags, void *lpExeName, void *lpdwSize)");
+      const CloseHandle = kernel32.func("int __stdcall CloseHandle(uintptr_t hObject)");
+      const lireTexte = (tampon: Buffer, longueur: number) => tampon.toString("utf16le", 0, Math.max(0, Math.min(longueur, tampon.length / 2)) * 2);
+      decrire = (poignee) => {
+        const titre = Buffer.alloc(1024);
+        const nbTitre = GetWindowTextW(poignee, titre, 512) as number;
+        const classe = Buffer.alloc(512);
+        const nbClasse = GetClassNameW(poignee, classe, 256) as number;
+        const pid = Buffer.alloc(4);
+        GetWindowThreadProcessId(poignee, pid);
+        const numero = pid.readUInt32LE(0);
+        let programme = "inconnu";
+        const processus = numero ? (OpenProcess(0x1000, 0, numero) as number | bigint) : 0;
+        if (processus && BigInt(processus) !== 0n) {
+          try {
+            const chemin = Buffer.alloc(2048);
+            const taille = Buffer.alloc(4);
+            taille.writeUInt32LE(1024, 0);
+            if ((QueryFullProcessImageNameW(processus, 0, chemin, taille) as number) !== 0) {
+              const complet = lireTexte(chemin, taille.readUInt32LE(0));
+              programme = complet.split(/[\\/]/).pop() || complet;
+            }
+          } finally {
+            CloseHandle(processus);
+          }
+        }
+        return `titre « ${lireTexte(titre, nbTitre)} », classe ${lireTexte(classe, nbClasse)}, programme ${programme}, pid ${numero}`;
+      };
+    } catch (erreur) {
+      console.log(`FOCUS ${new Date().toISOString()} description des fenêtres indisponible : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
+    }
     return {
       premierPlan: () => GetForegroundWindow() as Poignee,
       existe: (poignee) => IsWindow(poignee) !== 0,
       activer: (poignee) => SetForegroundWindow(poignee) !== 0,
+      decrire,
     };
   } catch (erreur) {
     console.log(`FOCUS ${new Date().toISOString()} module natif koffi indisponible, le focus ne sera pas rendu : ${erreur instanceof Error ? erreur.message : String(erreur)}`);

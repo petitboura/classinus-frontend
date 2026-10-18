@@ -182,6 +182,29 @@ try {
     assert.equal(f.estActive(PROPRE), false);
   }
 
+  // 13. Diagnostic de Chrome : la trace décrit la fenêtre notée et la fenêtre active juste après la
+  //     réactivation (titre, programme). Une description qui plante ne casse rien.
+  {
+    const s = fauxSysteme();
+    s.decrire = (h) => (h === BLOC_NOTES ? 'titre « Page », programme chrome.exe' : 'titre « autre », programme explorer.exe');
+    const f = creerFocusPrecedent(s);
+    f.memoriser(PROPRE);
+    assert.match(f.trace(), /noté 0x65 \[titre « Page », programme chrome\.exe\]/);
+    s.etat.active = PROPRE;
+    assert.equal(f.rendre(PROPRE, true), true);
+    assert.match(f.trace(), /réactivée/);
+    assert.match(f.trace(), /après réactivation, fenêtre active : 0x65 \[titre « Page », programme chrome\.exe\]/);
+  }
+  {
+    const s = fauxSysteme();
+    s.decrire = () => { throw new Error('pas de description'); };
+    const f = creerFocusPrecedent(s);
+    assert.doesNotThrow(() => f.memoriser(PROPRE));
+    s.etat.active = PROPRE;
+    assert.equal(f.rendre(PROPRE, true), true);
+    assert.match(f.trace(), /description impossible : pas de description/);
+  }
+
   console.log('Focus précédent : tout est bon.');
 } finally {
   await rm(dossier, { recursive: true, force: true });
