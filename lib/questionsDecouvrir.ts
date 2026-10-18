@@ -1,26 +1,8 @@
 import type { QuestionReponse } from "./usagesDecouvrir";
 
-// Chantier SEO/AEO de Classinus, phase questions et réponses (12/10/2026,
-// demande Bourama). Les questions que se pose vraiment quelqu'un sur une
-// section, affichées en accordéon sur la page mère de cette section
-// (components/AccordeonQuestionsDecouvrir.tsx) et reprises dans le balisage
-// Google "FAQPage".
-//
-// Règles d'écriture, validées par Bourama : une vraie question (jamais un
-// simple nom de section), une réponse qui commence tout de suite par la
-// réponse, et rien qui ne décrive pas une fonction réelle de l'appli. Les
-// textes viennent des pages /decouvrir et des aides de l'appli
-// (lib/aideSections.tsx), déjà validés. Une fonction modifiée dans l'appli se
-// corrige ici dans le même geste (voir CLAUDE.md).
-//
-// Une section n'ajoute son jeu de questions ici qu'APRÈS son SEO (ses pages
-// /decouvrir existent déjà).
-
 export type LienQuestion = { texte: string; href: string };
 
 export type QuestionDecouvrir = QuestionReponse & {
-  // Liens affichés sous la réponse. Absents du texte du balisage Google, qui
-  // ne garde que la réponse en texte simple.
   liens?: LienQuestion[];
 };
 
@@ -29,54 +11,53 @@ export type GroupeQuestionsDecouvrir = {
   questions: QuestionDecouvrir[];
 };
 
-// Bibliothèque : jeu validé par Bourama le 12/10/2026.
 export const QUESTIONS_DECOUVRIR_BIBLIOTHEQUE: GroupeQuestionsDecouvrir[] = [
   {
     titre: "Documents personnels",
     questions: [
       {
-        question: "Qui peut voir les documents de ma bibliothèque personnelle ?",
+        question: "Qui peut accéder aux documents de ma bibliothèque personnelle ?",
         reponse:
-          "Toi seul. Les documents que tu ajoutes dans ta bibliothèque personnelle sont personnels, et Classinus peut les consulter pendant une conversation.",
+          "La bibliothèque personnelle est réservée à ton compte. Classinus peut s'appuyer sur les documents que tu y ranges lorsque tu lui demandes de travailler à partir de tes ressources.",
       },
       {
-        question: "À quoi sert la bibliothèque personnelle ?",
+        question: "Pourquoi utiliser une bibliothèque personnelle ?",
         reponse:
-          "Elle sert surtout à rester dans ton programme : en s'appuyant dessus, Classinus reste sur ce que tu étudies vraiment, plutôt que d'aller chercher ailleurs.",
+          "Elle te permet de réunir tes cours, exercices et autres fichiers dans des dossiers. Tu peux ensuite demander à Classinus de retrouver ou d'exploiter ces documents au lieu de repartir de zéro à chaque question.",
       },
       {
-        question: "Ce que j'envoie dans le chat est-il gardé ?",
+        question: "Les fichiers que j'envoie dans le chat sont-ils ajoutés à ma bibliothèque ?",
         reponse:
-          "Oui, tout ce que tu envoies dans le chat se retrouve automatiquement dans ta bibliothèque personnelle.",
+          "Les fichiers envoyés dans le chat sont ajoutés à ta bibliothèque personnelle selon le fonctionnement de l'application. Tu peux ensuite les retrouver dans tes documents.",
       },
       {
-        question: "Que se passe-t-il si j'envoie un fichier .zip ?",
+        question: "Comment Classinus traite-t-il un fichier ZIP ?",
         reponse:
-          "Il est déplié automatiquement : chaque fichier à l'intérieur est ajouté séparément, dans un dossier créé pour l'occasion.",
+          "Lorsqu'un fichier ZIP est pris en charge, Classinus en extrait les fichiers et les ajoute séparément dans un dossier dédié, afin que tu puisses les retrouver plus facilement.",
       },
     ],
   },
   {
-    titre: "Bibliothèque publique",
+    titre: "Catalogue public",
     questions: [
       {
-        question: "Qu'est-ce que la bibliothèque publique ?",
+        question: "Qu'est-ce que la bibliothèque publique de Classinus ?",
         reponse:
-          "Un catalogue de documents partagé par tous les élèves de Classinus, que l'IA peut aussi fouiller pour toi.",
+          "C'est un catalogue de ressources que les utilisateurs partagent avec la communauté. Tu peux rechercher des documents, consulter les informations sur la ressource et découvrir le profil de la personne qui l'a publiée.",
       },
       {
         question: "Puis-je partager un document avec les autres élèves ?",
         reponse:
-          "Oui, en ajoutant un fichier, un lien ou une note, avec un nom et une description pour que les autres le retrouvent. En publiant, tu garantis détenir les droits sur le contenu.",
+          "Oui, à condition de disposer des droits nécessaires pour le partager. Ajoute une ressource avec un titre et les informations utiles pour permettre aux autres de la retrouver. Avant toute publication, vérifie les conditions d'utilisation et les droits d'auteur.",
         liens: [
-          { texte: "CGU", href: "/cgu" },
+          { texte: "Conditions générales d'utilisation", href: "/cgu" },
           { texte: "Politique de copyright", href: "/copyright" },
         ],
       },
       {
-        question: "Comment savoir quelle ressource est la meilleure ?",
+        question: "Comment évaluer une ressource partagée ?",
         reponse:
-          "Les élèves notent chaque ressource, et tu peux consulter le profil de la personne qui l'a partagée.",
+          "Tu peux consulter les informations de la ressource, noter le document et ouvrir le profil de la personne qui l'a partagé. Ces éléments t'aident à apprécier la ressource, sans remplacer la vérification de sa qualité et de sa pertinence pour ton cours.",
       },
     ],
   },
@@ -84,106 +65,103 @@ export const QUESTIONS_DECOUVRIR_BIBLIOTHEQUE: GroupeQuestionsDecouvrir[] = [
     titre: "Dossiers du téléphone",
     questions: [
       {
-        question: "Dois-je envoyer mes PDF un par un ?",
+        question: "Dois-je importer mes PDF un par un depuis mon téléphone ?",
         reponse:
-          "Non, sur l'appli mobile tu peux désigner des dossiers de ton téléphone, et Classinus les explore sans copier tes fichiers.",
+          "Sur l'application mobile, tu peux désigner des dossiers du téléphone pour que Classinus les explore. Cette fonction évite d'avoir à sélectionner chaque fichier individuellement ; elle dépend des autorisations que tu accordes à l'application.",
       },
       {
-        question: "Classinus peut-il ranger les dossiers de mon téléphone ?",
+        question: "Classinus peut-il réorganiser les dossiers de mon téléphone ?",
         reponse:
-          "Oui, il peut les réorganiser en sous dossiers, uniquement ceux que tu lui as désignés.",
+          "La fonction de bibliothèque mobile peut réorganiser les dossiers que tu as explicitement désignés, notamment en créant des sous-dossiers. Vérifie le dossier sélectionné avant de lancer une opération de rangement.",
       },
     ],
   },
 ];
 
-// Page générale /decouvrir : uniquement les fonctions décrites dans les pages publiques.
 export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
   {
-    titre: "Découvrir Classinus",
+    titre: "Comprendre Classinus",
     questions: [
       {
         question: "Qu'est-ce que Classinus ?",
         reponse:
-          "Classinus est une application d'études avec IA. Tu peux poser tes questions dans le chat, travailler à partir de tes documents, rechercher des ressources et préparer des supports de révision comme des fiches, des QCM et des animations.",
+          "Classinus est une application d'étude avec IA. Elle réunit un chat, une bibliothèque de documents, des outils de recherche, des supports de révision et des fonctions pour apprendre à programmer.",
       },
       {
-        question: "Quelles fonctionnalités puis-je découvrir ?",
+        question: "Que peut-on faire avec Classinus au-delà du chat ?",
         reponse:
-          "Les pages Découvrir présentent le chat et l'accueil étudiant, la bibliothèque personnelle et publique, la personnalisation par skills et mémoire, les outils de concentration, les usages pour trouver des PDF ou des vidéos et apprendre à coder, ainsi que le Bureau.",
+          "Tu peux rechercher des livres, des PDF et des vidéos, travailler à partir de tes documents, créer des fiches de révision et des QCM, générer des animations, exécuter du Python dans le chat et personnaliser certaines réponses avec des skills.",
       },
       {
-        question: "Classinus sert-il uniquement à discuter avec une IA ?",
+        question: "Puis-je choisir le modèle d'IA utilisé par Classinus ?",
         reponse:
-          "Non. En plus du chat, Classinus propose une bibliothèque de documents, des recherches de ressources, des fiches de révision, des QCM interactifs, des animations, l'exécution de Python dans le chat et des outils pour personnaliser les réponses de l'IA.",
+          "Oui. Le chat présente les modèles disponibles, regroupés par fournisseur. Les modèles qui ne sont pas encore activés sont indiqués « Bientôt » et ne peuvent pas être sélectionnés.",
+      },
+      {
+        question: "Classinus est-il destiné uniquement aux élèves ?",
+        reponse:
+          "Classinus propose un espace d'étude pour les élèves ainsi qu'un Bureau avec des outils de partage et de gestion de classe. Certaines fonctions du Bureau, notamment le programme et le suivi des signalements, sont réservées aux enseignants.",
       },
     ],
   },
 ];
 
-// Accueil : aligné sur EcranAccueil, qui affiche les raccourcis et l'activité récente réelle.
 export const QUESTIONS_DECOUVRIR_ACCUEIL: GroupeQuestionsDecouvrir[] = [
   {
     titre: "Le coin des étudiants",
     questions: [
       {
-        question: "À quoi sert l'écran d'accueil de Classinus ?",
+        question: "Par où commencer dans Classinus ?",
         reponse:
-          "Il permet d'ouvrir le chat, d'accéder aux sections de Classinus depuis les raccourcis et de retrouver une activité récente.",
+          "Commence dans le chat : pose une question sur ton cours, demande une explication ou indique le document sur lequel tu veux travailler. Les raccourcis de l'accueil permettent ensuite d'ouvrir les autres outils.",
       },
       {
-        question: "Que contient l'activité récente de l'accueil ?",
+        question: "Que retrouve-t-on dans l'activité récente ?",
         reponse:
-          "Elle rassemble les conversations récentes et les fichiers récemment ajoutés à ta bibliothèque personnelle. L'accueil affiche jusqu'à huit éléments, classés du plus récent au plus ancien.",
+          "L'accueil affiche les conversations récentes et les fichiers récemment ajoutés à ta bibliothèque personnelle, afin que tu puisses reprendre rapidement un travail en cours.",
       },
       {
-        question: "Puis-je rouvrir une conversation depuis l'accueil ?",
+        question: "Comment rouvrir une conversation précédente ?",
         reponse:
-          "Oui. Sélectionne une conversation dans l'activité récente pour la rouvrir dans le chat.",
+          "Sélectionne une conversation dans l'activité récente ou dans l'historique pour revenir à son fil et poursuivre l'échange.",
       },
       {
-        question: "Comment choisir un modèle d'IA dans Classinus ?",
+        question: "Comment choisir un modèle d'IA ?",
         reponse:
-          "Clique sur le nom du modèle en haut du chat. Le menu regroupe les modèles disponibles par fournisseur ; ton choix sert aux prochains messages selon les modèles proposés par le serveur.",
+          "Dans le chat, ouvre le menu du modèle affiché en haut de la conversation. Les options sont regroupées par fournisseur et seules les options activées peuvent être sélectionnées.",
       },
       {
-        question: "Que signifie la mention « Bientôt » à côté d'un modèle ?",
+        question: "Pourquoi certains modèles portent-ils la mention « Bientôt » ?",
         reponse:
-          "Ce modèle n'est pas encore disponible dans Classinus. Il apparaît grisé et ne peut pas être sélectionné tant qu'il n'est pas activé.",
+          "Cette mention indique que le modèle est présenté dans l'interface mais n'est pas encore activé pour être utilisé. Il reste donc indisponible à la sélection.",
       },
       {
-        question: "Classinus peut-il analyser mon code directement dans Thonny ?",
+        question: "Puis-je faire analyser mon code Python dans Thonny ?",
         reponse:
-          "Oui. Installe le plugin thonny-classinus pour afficher un panneau Classinus à droite de l'éditeur Thonny. Tu peux lui demander d'analyser ou de corriger ton code Python, d'expliquer une erreur ou une sélection, et de tenir compte de la sortie du programme. Rien n'est envoyé sans action de ta part.",
-      },
-      {
-        question: "Puis-je choisir le modèle d'IA dans le panneau Classinus de Thonny ?",
-        reponse:
-          "Oui. Le bouton Modèle du panneau affiche les modèles disponibles, regroupés par fournisseur. Dans Réglages, tu peux aussi choisir la longueur de réponse, l'effort, le mode pédagogique et les modes ressources.",
+          "Oui. Le plugin thonny-classinus ajoute un panneau Classinus à l'éditeur Thonny. Tu peux demander une analyse ou une correction, faire expliquer une erreur et choisir un modèle parmi ceux proposés. Le code n'est envoyé que lorsque tu déclenches une action qui le transmet.",
       },
     ],
   },
 ];
 
-// Personnalisation : alignée sur les pages Mes skills, Skills publics et Ma mémoire.
 export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
   {
     titre: "Skills personnelles et publiques",
     questions: [
       {
-        question: "Que puis-je personnaliser dans Classinus ?",
+        question: "Qu'est-ce qu'une skill dans Classinus ?",
         reponse:
-          "Tu peux créer tes propres skills, reprendre des skills publiées par d'autres élèves et consulter ou effacer la mémoire que Classinus construit au fil de vos conversations.",
+          "Une skill est un ensemble de consignes qui aide à orienter les réponses de Classinus. Tu peux créer ou modifier tes propres skills, par exemple pour demander des explications plus progressives ou un format de réponse particulier.",
       },
       {
-        question: "À quoi servent Mes skills ?",
+        question: "Puis-je utiliser une skill créée par un autre élève ?",
         reponse:
-          "Une skill est une consigne personnelle donnée à Classinus, en plus de celles que ton enseignant a déjà mises en place. Tu peux en créer et en modifier à tout moment, avec l'aide de l'IA.",
+          "Oui. Parcours le catalogue des skills publiques, consulte celle qui t'intéresse puis active-la. Une copie est ajoutée à tes skills personnelles ; tu peux ainsi l'adapter à tes besoins sans modifier l'original publié par son auteur.",
       },
       {
-        question: "Comment utiliser une skill publiée par un autre élève ?",
+        question: "Les skills remplacent-elles les consignes de mon enseignant ?",
         reponse:
-          "Tu peux chercher des skills dans le catalogue public avec l'aide de l'IA, consulter le contenu complet d'une skill puis l'activer. Une copie est alors ajoutée à tes propres skills. Si tu as publié une skill, tu peux la retirer du catalogue public.",
+          "Non. Tes skills personnalisent tes échanges, mais elles ne remplacent pas les consignes ou règles de travail mises en place par ton enseignant.",
       },
     ],
   },
@@ -191,20 +169,19 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
     titre: "Mémoire",
     questions: [
       {
-        question: "Quelles informations contient la mémoire de Classinus ?",
+        question: "À quoi sert la mémoire de Classinus ?",
         reponse:
-          "Elle organise les informations retenues au fil des conversations en quatre catégories : identité, scolarité, apprentissage et préférences, afin de personnaliser les échanges.",
+          "La mémoire regroupe certaines informations retenues au fil des conversations afin de mieux adapter les échanges, notamment sur ton parcours, ta façon d'apprendre et tes préférences.",
       },
       {
-        question: "Puis-je consulter ou effacer la mémoire de Classinus ?",
+        question: "Puis-je consulter ou supprimer les informations de la mémoire ?",
         reponse:
-          "Oui. Tu peux consulter la mémoire, effacer une catégorie entière ou tout effacer, depuis la page Mémoire ou les Paramètres. Chaque effacement demande une double confirmation.",
+          "Oui. Depuis la page Mémoire ou les paramètres prévus à cet effet, tu peux consulter les informations enregistrées, effacer une catégorie ou vider la mémoire. Lis les éléments affichés avant de confirmer une suppression.",
       },
     ],
   },
 ];
 
-// Concentration : alignée sur les pages Contrôle de session et Temps d'écran.
 export const QUESTIONS_DECOUVRIR_CONCENTRATION: GroupeQuestionsDecouvrir[] = [
   {
     titre: "Contrôle de session",
@@ -212,12 +189,12 @@ export const QUESTIONS_DECOUVRIR_CONCENTRATION: GroupeQuestionsDecouvrir[] = [
       {
         question: "Que fait le contrôle de session ?",
         reponse:
-          "Pendant la durée choisie, il coupe les sonneries et les notifications et active Ne pas déranger. Son activation doit être autorisée dans les réglages système du téléphone, dans Accessibilité, en dehors de Classinus.",
+          "Pendant la durée que tu choisis, le contrôle de session active Ne pas déranger et limite les sonneries et notifications. Pour l'utiliser, tu dois d'abord autoriser l'accès nécessaire dans les réglages système du téléphone.",
       },
       {
-        question: "Le contrôle de session bloque-t-il les applications ?",
+        question: "Le contrôle de session bloque-t-il les applications distrayantes ?",
         reponse:
-          "Non. La fonction décrite par Classinus coupe les sonneries et notifications et active Ne pas déranger ; elle ne bloque pas l'ouverture des applications.",
+          "Non. Il agit sur les interruptions et les notifications ; il ne bloque pas l'ouverture des applications. Tu gardes la responsabilité de ne pas ouvrir les applications qui te distraient.",
       },
     ],
   },
@@ -225,33 +202,32 @@ export const QUESTIONS_DECOUVRIR_CONCENTRATION: GroupeQuestionsDecouvrir[] = [
     titre: "Temps d'écran",
     questions: [
       {
-        question: "Que montre le temps d'écran ?",
+        question: "Que permet de voir l'outil Temps d'écran ?",
         reponse:
-          "Il affiche le temps passé aujourd'hui dans chaque application installée sur ton téléphone et l'historique des sept derniers jours. Cette fonction nécessite l'application mobile Classinus et est actuellement disponible sur Android uniquement.",
+          "Sur Android, il affiche le temps passé dans les applications pour la journée en cours et l'historique des sept derniers jours. Il faut accorder l'autorisation système demandée pour que les données d'utilisation puissent être consultées.",
       },
     ],
   },
 ];
 
-// Bureau : réponses vérifiées contre les pages publiques des sept outils et le registre d'aide.
 export const QUESTIONS_DECOUVRIR_BUREAU: GroupeQuestionsDecouvrir[] = [
   {
     titre: "Codes et programme",
     questions: [
       {
-        question: "À quoi servent les codes Classinus ?",
+        question: "À quoi sert un code Classinus ?",
         reponse:
-          "Un code permet de partager un comportement, du contenu de bibliothèque ou un texte. Les personnes qui entrent le code reçoivent ce qui y est associé, et les changements faits ensuite sont partagés avec elles.",
+          "Un code permet de partager certains éléments de Classinus, comme un comportement, du contenu de bibliothèque ou un texte. Les personnes qui saisissent le code reçoivent les éléments associés à ce partage.",
       },
       {
-        question: "Que se passe-t-il quand j'entre un code reçu ?",
+        question: "Que se passe-t-il lorsque je saisis un code reçu ?",
         reponse:
-          "Tu reçois ce que la personne a associé au code : un comportement, du contenu de bibliothèque ou un texte, selon ce qu'elle a partagé.",
+          "Classinus récupère les éléments que la personne a associés au code. Le contenu reçu dépend donc du type de partage créé par son auteur.",
       },
       {
-        question: "À quoi sert le programme d'un code ?",
+        question: "À quoi sert le programme pédagogique ?",
         reponse:
-          "Réservé aux enseignants, le programme organise les notions à enseigner pour un code, avec une structure matière, chapitre, partie et notion. Tu peux ajouter des sous-notions, définir chaque statut comme à venir, en cours ou acquis, et importer un document pour proposer une structure à valider.",
+          "Réservé aux enseignants, le programme organise les notions à enseigner en matières, chapitres, parties et notions. L'enseignant peut préciser l'avancement, ajouter des sous-notions ou importer un document pour proposer une structure qu'il pourra vérifier et valider.",
       },
     ],
   },
@@ -259,24 +235,34 @@ export const QUESTIONS_DECOUVRIR_BUREAU: GroupeQuestionsDecouvrir[] = [
     titre: "Signalements et audit",
     questions: [
       {
-        question: "Quelle est la différence entre Signalements et Audit hebdomadaire ?",
+        question: "Quelle différence entre Signalements et Audit hebdomadaire ?",
         reponse:
-          "Dans Signalements, l'enseignant ouvre une conversation avec Classinus pour discuter d'un problème signalé par un élève ; rien n'est traité automatiquement sans lui. L'Audit hebdomadaire envoie chaque semaine un résumé des signalements, même s'il n'y en a aucun, en mettant en avant ceux qui attendent une correction. Il permet aussi d'ouvrir le tableau de bord détaillé d'un code. Ces outils sont réservés aux enseignants.",
+          "Signalements permet à l'enseignant d'examiner un problème remonté par un élève et d'en discuter avec Classinus. L'Audit hebdomadaire fournit un résumé périodique des signalements et met en évidence ceux qui demandent encore une correction. Ces outils sont réservés aux enseignants.",
+      },
+      {
+        question: "Les signalements sont-ils traités automatiquement ?",
+        reponse:
+          "Non. L'enseignant peut ouvrir un signalement et utiliser Classinus pour l'examiner. La présence d'un signalement ne signifie pas qu'une correction a été décidée ou appliquée automatiquement.",
       },
     ],
   },
   {
-    titre: "Éditeur et Configuration",
+    titre: "Éditeur et configuration",
     questions: [
       {
-        question: "Que peut-on faire dans l'éditeur de code ?",
+        question: "Quels langages peut-on exécuter dans l'éditeur de code ?",
         reponse:
-          "Tu peux écrire du code dans différents langages, mais le bouton Exécuter ne prend en charge que Python pour l'instant. Tu peux ouvrir et enregistrer des fichiers dans ta bibliothèque personnelle. Quand le canal en direct est activé, Classinus peut voir le code, te conseiller et écrire directement dans l'éditeur.",
+          "Tu peux écrire du code dans plusieurs langages, mais l'exécution intégrée est actuellement prévue pour Python. L'éditeur permet aussi d'ouvrir et d'enregistrer des fichiers dans ta bibliothèque personnelle.",
       },
       {
-        question: "Que permet la Configuration de Classinus ?",
+        question: "Que peut faire le canal en direct dans l'éditeur ?",
         reponse:
-          "Elle sert à créer et modifier quatre types d'éléments : des procédures (étapes à suivre), des règles (consignes courtes), des comportements (réaction à un cas précis) et des styles (ton à reproduire). Tu peux les activer ou les désactiver, les partager avec un code ou les publier dans le catalogue public.",
+          "Lorsque le canal en direct est activé, Classinus peut recevoir le contexte du code affiché et proposer des modifications dans l'éditeur. Vérifie les changements avant de les conserver.",
+      },
+      {
+        question: "Que peut-on configurer dans Classinus ?",
+        reponse:
+          "La configuration permet de créer et modifier des procédures, des règles, des comportements et des styles. Ces éléments servent à guider la manière dont Classinus répond dans les situations prévues ; ils peuvent être activés, désactivés ou partagés selon les options disponibles.",
       },
     ],
   },
