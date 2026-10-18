@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo,
@@ -16,6 +16,7 @@ import {
   supprimerDeBibliothequePublique,
   reessayerVectorisationBibliothequePublique,
   copierVersBibliothequePersonnelle,
+  obtenirEntreeBibliothequePublique,
   creerDossierCataloguePublic,
   modifierFiltresDossierCataloguePublic,
   filtresDossierVides,
@@ -46,6 +47,9 @@ import {
 } from "@/lib/api";
 import { useDossiersCataloguePublic } from "@/lib/contexteDossiersCataloguePublic";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
+import { SynchroUrlElement } from "@/components/SynchroUrlElement";
+import { PARAMETRES_OUVERTURE, construirePileDossierPublic } from "@/lib/ouvertureParUrl";
+import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { SignalerContenuModal } from "@/components/SignalerContenuModal";
@@ -568,6 +572,13 @@ export function BibliothequePublique() {
   } = usePremierePublicationCatalogue();
   const [analytiqueCatalogue, setAnalytiqueCatalogue] = useState<Record<string, CompteursCatalogue>>({});
   const [entreeOuverte, setEntreeOuverte] = useState<EntreeBibliothequePublique | null>(null);
+  // 18/10/2026, demande Bourama : ouverture d'un fichier ou d'un dossier
+  // depuis l'adresse (lien de partage, bouton retour du navigateur), voir
+  // SynchroUrlElement.tsx et lib/ouvertureParUrl.ts. Le message s'affiche
+  // quand l'élément du lien n'existe plus ou ne peut pas s'ouvrir.
+  const [avisOuvertureUrl, setAvisOuvertureUrl] = useState<string | null>(null);
+  const numeroFichierUrlRef = useRef(0);
+  const numeroDossierUrlRef = useRef(0);
   const [compteRequisPourCopie, setCompteRequisPourCopie] = useState(false);
   // 13/09/2026, demande Bourama : "Copier dans ma bibliothèque" et
   // "Télécharger" avaient la même icône -- remplacés par un bouton
@@ -1278,6 +1289,57 @@ export function BibliothequePublique() {
   // composant) continue de conditionner "Gérer les dossiers de ce
   // fichier"/"Retirer de ce dossier" : ces deux actions n'ont de sens
   // que si un dossier est actuellement ouvert.
+  // 18/10/2026, demande Bourama : adresse -> écran. Ouvre le fichier du
+  // lien comme le ferait un clic sur sa ligne (même condition : il faut
+  // une url_publique, sinon rien ne s'ouvrirait non plus au clic).
+  async function ouvrirFichierDepuisUrl(id: string | null) {
+    const numero = ++numeroFichierUrlRef.current;
+    if (!id) {
+      setEntreeOuverte(null);
+      return;
+    }
+    setAvisOuvertureUrl(null);
+    try {
+      const entree = liste?.find((e) => e.id === id) ?? (await obtenirEntreeBibliothequePublique(id));
+      if (numero !== numeroFichierUrlRef.current) return;
+      if (!entree.url_publique) {
+        setAvisOuvertureUrl("Ce document ne peut pas être ouvert.");
+        return;
+      }
+      setEntreeOuverte(entree);
+    } catch (e) {
+      if (numero !== numeroFichierUrlRef.current) return;
+      setAvisOuvertureUrl(
+        e instanceof ErreurApi && e.statusCode === 404
+          ? "Ce document est introuvable, ou n'est plus publié sur la bibliothèque publique."
+          : messageErreur(e)
+      );
+    }
+  }
+
+  // Idem pour un dossier : entre dedans avec tout son fil d'ariane, comme
+  // si la personne avait cliqué de dossier en dossier jusque-là.
+  async function ouvrirDossierDepuisUrl(id: string | null) {
+    const numero = ++numeroDossierUrlRef.current;
+    if (!id) {
+      setPileDossiers([]);
+      return;
+    }
+    setAvisOuvertureUrl(null);
+    try {
+      const pile = await construirePileDossierPublic(id, dossiers);
+      if (numero !== numeroDossierUrlRef.current) return;
+      setPileDossiers(pile);
+    } catch (e) {
+      if (numero !== numeroDossierUrlRef.current) return;
+      setAvisOuvertureUrl(
+        e instanceof ErreurApi && e.statusCode === 404
+          ? "Ce dossier est introuvable, ou n'est plus publié sur la bibliothèque publique."
+          : messageErreur(e)
+      );
+    }
+  }
+
   function actionsPourEntree(entree: EntreeBibliothequePublique) {
     return [
       {
@@ -1757,6 +1819,41 @@ export function BibliothequePublique() {
   // rappel légal.
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
+      {/* 18/10/2026, demande Bourama : l'adresse suit le fichier et le
+          dossier ouverts, et ouvrir une adresse de partage refait le même
+          aperçu (voir SynchroUrlElement.tsx). */}
+      <Suspense fallback={null}>
+        <SynchroUrlElement
+          parametre={PARAMETRES_OUVERTURE.fichier}
+          route={ROUTES_BIBLIOTHEQUE.publique}
+          idActuel={entreeOuverte?.id ?? null}
+          onChangementUrl={ouvrirFichierDepuisUrl}
+        />
+        <SynchroUrlElement
+          parametre={PARAMETRES_OUVERTURE.dossier}
+          route={ROUTES_BIBLIOTHEQUE.publique}
+          idActuel={dossierCourantId}
+          onChangementUrl={ouvrirDossierDepuisUrl}
+          mode="navigation"
+        />
+      </Suspense>
+
+      {avisOuvertureUrl && (
+        <div
+          role="status"
+          className="flex animate-dj-fade-in-rapide items-start justify-between gap-2 rounded-cgpt-bouton border border-dashed border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet"
+        >
+          <p className="min-w-0">{avisOuvertureUrl}</p>
+          <button
+            onClick={() => setAvisOuvertureUrl(null)}
+            aria-label="Fermer ce message"
+            className="flex-shrink-0 text-dj-texte-muet transition-colors hover:text-dj-texte"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dj-texte-muet" />
         <input

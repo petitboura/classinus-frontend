@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { Share2 } from "lucide-react";
 import { incrementerPartageCatalogue, type TypeElementCataloguePublic } from "@/lib/api";
+import {
+  adresseOuvertureDossierPublic,
+  adresseOuvertureFichierPublic,
+  adresseOuvertureSkillPublic,
+} from "@/lib/ouvertureParUrl";
 
 /**
  * 11/09/2026, demande Bourama : bouton "Partager" commun, réutilisé
@@ -126,7 +131,14 @@ export function ButtonPartager({
   );
 }
 
-/** Construit le lien public d'un élément à partir de son type et de son id. */
+/**
+ * Construit le lien public d'un élément à partir de son type et de son id.
+ *
+ * 18/10/2026, demande Bourama : les liens des éléments PUBLICS (fichier,
+ * dossier, skill) n'ouvrent plus une page dédiée, ils ouvrent l'appli sur
+ * l'écran de l'élément avec l'aperçu déjà ouvert (voir
+ * lib/ouvertureParUrl.ts). Les liens des éléments perso sont inchangés.
+ */
 export function lienPartage(
   type: "fichier-perso" | "dossier-perso" | "skill-perso" | "fichier-public" | "dossier-public" | "skill-public",
   id: string
@@ -140,10 +152,10 @@ export function lienPartage(
     case "skill-perso":
       return `${base}/skills/perso/${id}`;
     case "fichier-public":
-      return `${base}/bibliotheque/${id}`;
+      return `${base}${adresseOuvertureFichierPublic(id)}`;
     case "dossier-public":
-      return `${base}/dossiers/${id}`;
+      return `${base}${adresseOuvertureDossierPublic(id)}`;
     case "skill-public":
-      return `${base}/skills/${id}`;
+      return `${base}${adresseOuvertureSkillPublic(id)}`;
   }
 }

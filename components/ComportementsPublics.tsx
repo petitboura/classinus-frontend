@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Search, ScrollText, Download, Check, Upload, Plus, Trash2, Activity, Pencil } from "lucide-react";
 import {
   rechercherComportementsPublics,
@@ -8,10 +8,14 @@ import {
   uploaderSkillPublic,
   retirerSkillPublic,
   analytiqueCatalogueEnLot,
+  obtenirComportementPublic,
   type ComportementPublic,
   type CompteursCatalogue,
 } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
+import { SynchroUrlElement } from "@/components/SynchroUrlElement";
+import { PARAMETRES_OUVERTURE } from "@/lib/ouvertureParUrl";
+import { ROUTES_PERSONNALISER } from "@/lib/routesPersonnaliser";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { telechargerTexte, nomFichierDepuis } from "@/lib/telechargerTexte";
 import { Skeleton } from "./Skeleton";
@@ -52,6 +56,10 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   // 07/09/2026, demande Bourama : aperçu du skill au clic sur la ligne, et
   // retrait possible pour son propre auteur (aucun des deux n'existait).
   const [apercu, setApercu] = useState<ComportementPublic | null>(null);
+  // 18/10/2026, demande Bourama : ouverture de l'aperçu d'un skill depuis
+  // l'adresse (lien de partage, bouton retour du navigateur), voir
+  // SynchroUrlElement.tsx et lib/ouvertureParUrl.ts.
+  const numeroSkillUrlRef = useRef(0);
   const [retraitEnCours, setRetraitEnCours] = useState<string | null>(null);
   // 19/09/2026 (correctif, demande Bourama) : même principe "Détails"
   // (analytiques + profil contributeur + commentaires) déjà appliqué aux
@@ -66,6 +74,30 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
     compteurs?: CompteursCatalogue;
     element: { typeElement: "skill"; elementId: string };
   } | null>(null);
+
+  // Adresse -> écran : ouvre l'aperçu du skill du lien comme le ferait un
+  // clic sur sa ligne. Réutilise la liste déjà chargée quand le skill y
+  // est, sinon le détail public d'un skill (aucune connexion requise).
+  async function ouvrirSkillDepuisUrl(id: string | null) {
+    const numero = ++numeroSkillUrlRef.current;
+    if (!id) {
+      setApercu(null);
+      return;
+    }
+    setErreur(null);
+    try {
+      const skill = liste?.find((c) => c.id === id) ?? (await obtenirComportementPublic(id));
+      if (numero !== numeroSkillUrlRef.current) return;
+      setApercu(skill);
+    } catch (e) {
+      if (numero !== numeroSkillUrlRef.current) return;
+      setErreur(
+        e instanceof ErreurApi && e.statusCode === 404
+          ? "Ce skill est introuvable, ou a été retiré par son auteur."
+          : messageErreur(e)
+      );
+    }
+  }
 
   function charger(q?: string) {
     rechercherComportementsPublics(q)
@@ -233,6 +265,17 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   // 02/09/2026, suite audit Bourama.
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
+      {/* 18/10/2026, demande Bourama : l'adresse suit l'aperçu ouvert, et
+          ouvrir une adresse de partage refait le même aperçu (voir
+          SynchroUrlElement.tsx). */}
+      <Suspense fallback={null}>
+        <SynchroUrlElement
+          parametre={PARAMETRES_OUVERTURE.skill}
+          route={ROUTES_PERSONNALISER.skillsPublics}
+          idActuel={apercu?.id ?? null}
+          onChangementUrl={ouvrirSkillDepuisUrl}
+        />
+      </Suspense>
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dj-texte-muet" />
         <input
