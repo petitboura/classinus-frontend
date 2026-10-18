@@ -33,6 +33,9 @@ app/
                           avec questions fréquentes. Les textes des usages vivent dans lib/usagesDecouvrir.ts,
                           source unique partagée avec llms.txt et les données structurées ; adresses dans
                           lib/routesDecouvrir.ts ; une fonction qui change dans l'appli se corrige là
+                          Chaque page se termine par un bouton vers le chat et, quand elle parle d'une section,
+                          par un bouton vers cette section de l'appli (components/CtaDecouvrir.tsx, posé une
+                          fois dans le layout ; la table page vers section est dans lib/ctaDecouvrir.ts)
   layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG, porte la
                           description de l'appli (RESUME_CLASSINUS) et la fiche WebApplication en
                           données structurées (lib/donneesApplication.ts, components/DonneesStructurees.tsx)

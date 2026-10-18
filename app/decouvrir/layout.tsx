@@ -6,6 +6,7 @@ import { EcranAutonome } from "@/components/EcranAutonome";
 import { BoutonRetour } from "@/components/BoutonRetour";
 import { BoutonRetourDecouvrir } from "@/components/BoutonRetourDecouvrir";
 import { DonneesPageDecouvrir } from "@/components/DonneesPageDecouvrir";
+import { CtaDecouvrir } from "@/components/CtaDecouvrir";
 
 // Chantier SEO/AEO de Classinus (26/09/2026, demande Bourama). En tête
 // partagé par toute la famille de pages publiques de présentation
@@ -26,6 +27,10 @@ import { DonneesPageDecouvrir } from "@/components/DonneesPageDecouvrir";
 // /decouvrir doit rester visible tout de suite, y compris avant
 // hydratation, pas caché derrière un repli le temps que le bouton
 // retour se calcule.
+//
+// CtaDecouvrir (18/10/2026) : boutons vers le chat et, quand la page parle
+// d'une section, vers cette section de l'appli, sous le contenu de chaque
+// page (lib/ctaDecouvrir.ts).
 export default function LayoutDecouvrir({ children }: { children: ReactNode }) {
   return (
     <EcranAutonome className="min-h-screen bg-dj-fond">
@@ -40,7 +45,10 @@ export default function LayoutDecouvrir({ children }: { children: ReactNode }) {
             <span className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
           </Link>
         </div>
-        <div className="mt-8 animate-dj-fade-up">{children}</div>
+        <div className="mt-8 animate-dj-fade-up">
+          {children}
+          <CtaDecouvrir />
+        </div>
       </div>
     </EcranAutonome>
   );
