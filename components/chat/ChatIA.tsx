@@ -1699,13 +1699,15 @@ export function ChatIA({
   if (messages.length === 0) {
     return (
       <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0">
-        {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
+        {/* Sur téléphone, le bouton du modèle reste sous le voile du tiroir (z-30) et le tiroir
+            lui même (z-40, AppSidebar.tsx) : à z-40 il restait visible par dessus le tiroir ouvert.
+            14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
             15/10/2026 : sur téléphone (chat plein écran), il est posé tout en haut de l'écran,
             sur la ligne du bouton hamburger (même décalage, voir AppSidebar.tsx). */}
         <div
           className={
             "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center" +
-            (pleinEcran ? " max-md:fixed max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-40 max-md:h-8" : "")
+            (pleinEcran ? " max-md:fixed max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-[25] max-md:h-8" : "")
           }>
           <SelecteurModeleHaut
             modelesDisponibles={modelesDisponibles}
@@ -1828,7 +1830,7 @@ export function ChatIA({
           className={
             "relative z-20 flex h-11 flex-shrink-0 items-center justify-center" +
             (pleinEcran
-              ? " max-md:pointer-events-none max-md:fixed max-md:inset-x-0 max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-40 max-md:h-8"
+              ? " max-md:pointer-events-none max-md:fixed max-md:inset-x-0 max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-[25] max-md:h-8"
               : "")
           }>
           <SelecteurModeleHaut
