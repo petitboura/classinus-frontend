@@ -9,6 +9,12 @@ export type CarteDecouvrir = {
 
 export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
+    slug: "usages",
+    href: ROUTES_DECOUVRIR.usages.accueil,
+    titre: "Ce que tu peux faire avec Classinus",
+    description: "Explore les usages de l’assistant, les outils d’étude, la programmation, les documents et les fonctions qui complètent le chat.",
+  },
+  {
     slug: "bibliotheque",
     href: ROUTES_DECOUVRIR.bibliotheque.accueil,
     titre: "Bibliothèque",
@@ -25,12 +31,6 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     href: ROUTES_DECOUVRIR.concentration.accueil,
     titre: "Concentration et temps d'écran",
     description: "Limite les interruptions pendant une session et consulte le temps passé dans les applications sur Android.",
-  },
-  {
-    slug: "usages",
-    href: ROUTES_DECOUVRIR.usages.accueil,
-    titre: "Ce que tu peux faire avec Classinus",
-    description: "Explore les usages de l’assistant, les outils d’étude, la programmation, les documents et les fonctions qui complètent le chat.",
   },
   {
     slug: "thonny",
