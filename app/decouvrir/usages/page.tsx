@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowRight,
+  Bell,
   BookOpen,
   Brain,
   ChevronLeft,
@@ -10,6 +11,7 @@ import {
   FileText,
   Image as IconImage,
   Library,
+  Plug,
   Search,
   SlidersHorizontal,
   Smartphone,
@@ -69,7 +71,7 @@ const AUTRES_PARCOURS: {
   {
     titre: "Partager des ressources et travailler en classe",
     description:
-      "Utilise des codes de partage pour transmettre des contenus. Le Bureau rassemble aussi des outils de programme pédagogique et de suivi destinés aux enseignants.",
+      "Utilise des codes de partage pour transmettre des contenus, consulte les établissements et demande l'accès aux ressources auxquelles tu es autorisé. Le Bureau comprend aussi des outils réservés aux enseignants.",
     href: ROUTES_DECOUVRIR.bureau.accueil,
     lien: "Explorer le Bureau",
     Icone: Users,
@@ -81,6 +83,22 @@ const AUTRES_PARCOURS: {
     href: ROUTES_DECOUVRIR.concentration.accueil,
     lien: "Découvrir les outils de concentration",
     Icone: Timer,
+  },
+  {
+    titre: "Connecter Classinus à Claude et à des outils",
+    description:
+      "Le connecteur dédié permet d'utiliser Classinus depuis Claude. Dans le chat, certains outils peuvent aussi agir sur des services compatibles, comme GitHub, Notion ou Google Drive, après configuration et autorisation.",
+    href: "/connecter-claude",
+    lien: "Voir le guide de connexion",
+    Icone: Plug,
+  },
+  {
+    titre: "Programmer des rappels et des événements",
+    description:
+      "Dans l'application native compatible, programme une notification ou ajoute un événement à ton calendrier. Ces fonctions dépendent de l'appareil et des autorisations accordées.",
+    href: "/rappels",
+    lien: "Découvrir les rappels",
+    Icone: Bell,
   },
   {
     titre: "Travailler avec différents formats",
