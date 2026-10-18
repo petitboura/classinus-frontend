@@ -48,6 +48,14 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Autorise Classinus à lire et agir dans les apps que tu choisis, une par une. Le service d'accessibilité de Classinus doit être activé dans les réglages système du téléphone pour que ça fonctionne. Tu contrôles précisément quelles apps sont autorisées, et un journal garde la trace de ce que Classinus y a lu ou fait.",
   },
   {
+    id: "configuration-bureau",
+    titre: "Configuration",
+    texteCourt: "Crée des procédures, règles, comportements et styles pour guider les réponses de Classinus. Chaque type a son propre format ; active les éléments utiles et partage-les selon les options disponibles.",
+    texteComplet:
+      "La Configuration regroupe quatre types d'éléments : une procédure décrit une suite d'étapes ; une règle formule une consigne courte ; un comportement décrit comment Classinus doit réagir dans une situation précise ; un style définit le ton ou la manière d'écrire à reproduire. Tu peux créer ou modifier ces éléments, activer ceux dont tu as besoin et, selon les options disponibles, les partager avec un code ou les publier dans le catalogue public.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.configuration,
+  },
+  {
     id: "audit-corrections",
     titre: "Audit hebdomadaire",
     texteCourt: "Une fois par semaine, un résumé des signalements de tes élèves, même s'il n'y en a aucun.",
@@ -257,9 +265,10 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     id: "skills-publics",
     titre: "Skills publics",
     texteCourt:
-      "Des comportements publiés par d'autres étudiants. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi.",
+      "Parcours les skills que d'autres élèves ont publiées. Consulte leur contenu avant de les activer : Classinus ajoute alors une copie à tes skills personnelles, que tu peux ensuite adapter.",
     texteComplet:
-      "Des comportements publiés par d'autres étudiants. Clique sur l'un d'eux pour voir son contenu complet avant de l'activer. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi. Si c'est toi qui l'as publié, tu peux le retirer du catalogue à tout moment.",
+      "Le catalogue public rassemble des skills que d'autres élèves ont choisi de partager. Ouvre une skill pour consulter son contenu complet avant de l'activer. Si elle te convient, Classinus en ajoute une copie à tes skills personnelles, que tu peux ensuite modifier. Si tu as publié une skill, tu peux aussi la retirer du catalogue.",
+
     lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
   },
   {
