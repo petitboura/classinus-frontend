@@ -55,7 +55,9 @@ components/
                           SplashOuverture.tsx (écran d'ouverture) utilise la plume seule sur le fond du thème
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
-                          components/mobile/ à la place
+                          components/mobile/ à la place. Sur le chat (estPageChat), la page ne réserve
+                          aucune place en haut : le chat va jusqu'au bord de l'écran (voir le voile du chat
+                          plus bas)
   MenuProfil.tsx          bouton profil et son panneau (profil, Paramètres, thème, déconnexion), utilisé par
                           AppSidebar (rail et tiroir du chat) et par l'en-tête du menu Plus du téléphone ;
                           photo et nom viennent de lib/useMonProfilAffiche.ts
@@ -98,6 +100,14 @@ components/
                           pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
                           useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
                           de réglages partagées (reglagesReponse.ts) ;
+                          Voile du chat plein écran (18/10/2026) : après le premier message, le texte des
+                          messages passe derrière la rangée du haut (modèle, hamburger, cloche, minuteur) sur PC
+                          et téléphone, et derrière la barre de saisie sur téléphone seulement. Un fondu doux avec
+                          léger flou (classes voile-chat-haut, voile-chat-bas, saisie-voile-mobile dans
+                          app/globals.css, réglables par les variables --dj-voile-*, --dj-saisie-*) garde les
+                          boutons lisibles. ChatIA.tsx pose la rangée du modèle et la barre par-dessus la liste
+                          (chat plein écran seulement, la popup est inchangée), réserve en haut --dj-chat-haut et
+                          en bas la hauteur mesurée de la barre (--hauteur-saisie-chat) ;
                           SelecteurModeleHaut.tsx (14/10/2026) : bouton du modèle en haut au milieu du chat,
                           nom et icône du fournisseur du modèle actif, liste dépliante groupée par fournisseur. Les modèles pas encore
                           ouverts (modeles_bientot, envoyés par le backend) y sont grisés avec la mention Bientôt.

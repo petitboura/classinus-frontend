@@ -137,6 +137,7 @@ export function BarreDeSaisie({
   texteInitial,
   conversationId,
   onAccesBloqueChange,
+  voileMobile = false,
 }: {
   onEnvoyer: (
     texte: string,
@@ -202,6 +203,12 @@ export function BarreDeSaisie({
   // Remonte à ChatIA qu'un mineur sans aucun code est bloqué (voir
   // useModeActif), pour que la barre de saisie soit désactivée.
   onAccesBloqueChange?: (bloque: boolean) => void;
+  // 18/10/2026, demande Bourama : chat plein écran, après le premier message. Sur téléphone,
+  // la barre est posée par-dessus la liste des messages (voir ChatIA.tsx) : son cadre devient
+  // à demi transparent avec un léger flou, pour deviner le texte derrière tout en gardant ce
+  // qu'on tape lisible (réglages dans app/globals.css, classe saisie-voile-mobile).
+  // Sans effet sur PC ni dans la popup.
+  voileMobile?: boolean;
 }) {
   const [texte, setTexte] = useState(() => texteInitial ?? "");
   // Longueur et « Sans enseignant » vivent dans lib/reglagesProchainMessage.ts (03/10/2026,
@@ -1879,7 +1886,10 @@ export function BarreDeSaisie({
       {texte.includes("$") && (
         <div
           ref={apercuFormulesMobileRef}
-          className="mb-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2 text-[15px] leading-relaxed text-dj-texte md:hidden"
+          className={
+            "mb-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-dj-bordure px-3 py-2 text-[15px] leading-relaxed text-dj-texte md:hidden " +
+            (voileMobile ? "saisie-voile-mobile" : "bg-dj-surface")
+          }
         >
           {segmenterTexteAvecFormules(texte).map((s, i) =>
             s.formule ? (
@@ -1890,7 +1900,11 @@ export function BarreDeSaisie({
           )}
         </div>
       )}
-      <div className="relative flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
+      <div
+        className={
+          "relative flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden " +
+          (voileMobile ? "saisie-voile-mobile" : "bg-dj-surface")
+        }>
         {/* Plein écran (01/10/2026) : posé dehors, collé juste au-dessus du coin haut
             droit de la barre, petite flèche sans bulle. Ouvre la même
             zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}

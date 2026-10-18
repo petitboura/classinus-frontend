@@ -219,7 +219,10 @@ export function ChatSection() {
         >
           {chargementFilConversation && (
             <div className="absolute inset-0 z-10 overflow-hidden bg-dj-fond">
-              <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 px-4 py-6" aria-hidden>
+              <div
+                className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 px-4 pb-6 pt-[calc(var(--dj-chat-haut)+1.5rem)]"
+                aria-hidden
+              >
                 <div className="flex flex-col items-end">
                   <Skeleton className="h-9 w-2/5 rounded-cgpt-carte" />
                 </div>
@@ -240,13 +243,13 @@ export function ChatSection() {
           )}
 
           {chargement === "chargement" && (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full items-center justify-center pt-[calc(var(--safe-top)+var(--dj-hamburger-espace))]">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-dj-bordure border-t-dj-texte-muet" />
             </div>
           )}
 
           {chargement === "erreur" && (
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-4 pt-[calc(var(--safe-top)+var(--dj-hamburger-espace))] text-center">
               <p className="text-sm text-dj-texte">{erreur ?? "Une erreur est survenue."}</p>
               <button
                 onClick={() => window.location.reload()}
