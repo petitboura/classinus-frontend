@@ -16,7 +16,10 @@
 // - si setShape echoue ou n'existe pas (plateforme, version), la fenetre redevient entiere
 //   et on n'insiste plus : l'ancien comportement (fenetre pleine, passe-clic) continue.
 
-export type RectPage = { x: number; y: number; largeur: number; hauteur: number };
+// `interactif` : la zone contient un element qui doit recevoir la souris (bouton, bulle, menu).
+// Une zone qui ne fait que s'afficher (marque, trait) n'est pas interactive : tant que le
+// pointeur est dessus, elle est retiree de la forme pour que le clic traverse (voir definirPointeur).
+export type RectPage = { x: number; y: number; largeur: number; hauteur: number; interactif?: boolean };
 export type RectFenetre = { x: number; y: number; width: number; height: number };
 
 // Plafond de zones (la page en envoie deja moins, voir lib/formeSuperposition.ts).
@@ -72,6 +75,23 @@ export function creerGestionnaireForme(deps: DependancesForme) {
   let pleinEcran = false;
   let derniereCle: string | null = null;
   let indisponible = false;
+  let pointeur: { x: number; y: number } | null = null;
+
+  // Zones a utiliser : celles de la page, sans les zones d'affichage seul qui sont sous le pointeur
+  // (sauf si une zone interactive y est aussi : le clic doit alors arriver sur elle).
+  function rectsUtiles(): unknown {
+    if (!Array.isArray(rectsPage) || !pointeur) return rectsPage;
+    const p = pointeur;
+    const dedans = (r: unknown): boolean => {
+      if (typeof r !== "object" || r === null) return false;
+      const { x, y, largeur, hauteur } = r as Record<string, unknown>;
+      return nombreFini(x) && nombreFini(y) && nombreFini(largeur) && nombreFini(hauteur)
+        && p.x >= x && p.x <= x + largeur && p.y >= y && p.y <= y + hauteur;
+    };
+    const interactifDessous = rectsPage.some((r) => dedans(r) && (r as RectPage).interactif === true);
+    if (interactifDessous) return rectsPage;
+    return rectsPage.filter((r) => !(dedans(r) && (r as RectPage).interactif !== true));
+  }
 
   function reappliquer(): void {
     if (!deps.plateformeSupportee || indisponible) return;
@@ -83,7 +103,7 @@ export function creerGestionnaireForme(deps: DependancesForme) {
     } else if (rectsPage === null) {
       return;
     } else {
-      rects = construireForme(rectsPage, fenetre.zoom, fenetre.largeur, fenetre.hauteur);
+      rects = construireForme(rectsUtiles(), fenetre.zoom, fenetre.largeur, fenetre.hauteur);
       if (rects.length === 0) rects = FORME_VIDE;
     }
     const cle = JSON.stringify(rects);
@@ -104,6 +124,15 @@ export function creerGestionnaireForme(deps: DependancesForme) {
       rectsPage = rects;
       reappliquer();
     },
+    /** Pointeur, en pixels de la page, ou null s'il est hors de la fenetre. */
+    definirPointeur(point: { x: number; y: number } | null): void {
+      if (point === null && pointeur === null) return;
+      if (point && pointeur && point.x === pointeur.x && point.y === pointeur.y) return;
+      pointeur = point;
+      reappliquer();
+    },
+    /** La forme decoupe la fenetre (donc le passe-clic par setIgnoreMouseEvents est inutile). */
+    estActif: () => deps.plateformeSupportee && !indisponible && rectsPage !== null,
     /** Crayon sorti : toute la fenetre capte la souris. */
     definirPleinEcran(actif: boolean): void {
       if (pleinEcran === actif) return;

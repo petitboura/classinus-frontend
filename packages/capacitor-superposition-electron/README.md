@@ -99,3 +99,12 @@ focus, figer la fenetre du dessous et cacher des choses.
   surface occupee, elle ne remplace pas encore le passe-clic.
 
 Test : `npm run test:forme-superposition` (module pur, puis mesure de la page dans Chromium).
+
+### Fin du basculement de souris ignoree (18/10/2026, soir)
+
+Quand la forme est active (Windows et Linux), la fenetre ne passe plus jamais en "souris ignoree"
+(setIgnoreMouseEvents) : le systeme laisse deja passer tout ce qui est hors des zones. Le
+basculement, lie a WS_EX_LAYERED, figeait la fenetre du dessous apres un clic. Exception : un clic
+que l'agent fait lui meme (avecSourisTraversante). Une zone d'affichage seul (marque, trait) est
+retiree de la forme tant que le pointeur est dessus, pour que le clic la traverse. Sans setShape
+(autre systeme, erreur), l'ancien passe-clic reste en place.

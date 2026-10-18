@@ -151,7 +151,11 @@ app.on("will-quit", () => raccourcisCrayon.definirActif(false));
 // enchainer sans necessite etait la source du tremblement du pointeur.
 function appliquerPasseClic(fenetre: BrowserWindow): void {
   if (fenetre.isDestroyed()) return;
-  const traversant = clicTraversant || !(captureDemandee || crayonActif);
+  // Fenetre decoupee (forme.mts) : le systeme laisse deja passer tout ce qui est hors des zones,
+  // la fenetre ne bascule plus en « souris ignoree » (c'est ce basculement, lie a WS_EX_LAYERED,
+  // qui figeait la fenetre du dessous apres un clic). Seule exception : un clic que l'agent fait
+  // lui meme a travers la superposition.
+  const traversant = formeSuperposition.estActif() ? clicTraversant : clicTraversant || !(captureDemandee || crayonActif);
   if (passeClicApplique === traversant) return;
   passeClicApplique = traversant;
   fenetre.setIgnoreMouseEvents(traversant);
@@ -200,6 +204,11 @@ async function suivreSouris(): Promise<void> {
   const x = (point.x - origine.x) / zoom;
   const y = (point.y - origine.y) / zoom;
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  formeSuperposition.definirPointeur({ x, y });
+  if (formeSuperposition.estActif()) {
+    appliquerPasseClic(fenetre);
+    return;
+  }
   verificationSourisEnCours = true;
   try {
     const dessus = await fenetre.webContents.executeJavaScript(

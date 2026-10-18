@@ -93,6 +93,22 @@ try {
   assert.equal(etat.resets, 1);
   assert.equal(etat.erreurs.length, 1);
   assert.equal(g.estIndisponible(), true);
+  // 13b. Zone d'affichage seul sous le pointeur : retiree (le clic traverse), sauf si une zone
+  // interactive est aussi dessous. estActif : faux avant la premiere mesure, vrai ensuite.
+  ({ g, etat } = creer());
+  assert.equal(g.estActif(), false);
+  g.definirRects([{ x: 0, y: 0, largeur: 50, hauteur: 50, interactif: true }, { x: 100, y: 100, largeur: 50, hauteur: 50, interactif: false }]);
+  assert.equal(g.estActif(), true);
+  assert.equal(etat.appels.at(-1).length, 2);
+  g.definirPointeur({ x: 120, y: 120 });
+  assert.deepEqual(etat.appels.at(-1), [{ x: 0, y: 0, width: 50, height: 50 }]);
+  g.definirPointeur({ x: 10, y: 10 });
+  assert.equal(etat.appels.at(-1).length, 2);
+  g.definirRects([{ x: 0, y: 0, largeur: 50, hauteur: 50, interactif: true }, { x: 0, y: 0, largeur: 90, hauteur: 90, interactif: false }]);
+  assert.equal(etat.appels.at(-1).length, 2, 'interactif dessous : rien n est retire');
+  ({ g, etat } = creer({ supportee: false }));
+  g.definirRects(bouton);
+  assert.equal(g.estActif(), false);
   // 14. Fenetre redimensionnee ou recreee : reposer() reapplique la forme.
   ({ g, etat } = creer());
   g.definirRects(bouton);
