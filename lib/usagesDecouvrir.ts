@@ -114,9 +114,9 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
     titrePage: "Apprendre à coder avec Classinus : code généré et Python exécutable dans le chat",
     titreH1: "Apprendre à coder avec Classinus",
     description:
-      "Pose tes questions de programmation à l'IA de Classinus, génère du code, et exécute du Python directement dans le chat, sur ton appareil, sans rien installer.",
+      "Pose tes questions de programmation à l'IA de Classinus, génère du code, exécute du Python dans le chat et utilise le plugin Thonny-Classinus pour analyser et corriger ton code directement dans l’éditeur Thonny.",
     introduction:
-      "Classinus est une application d'études avec IA. Pour apprendre à programmer, tu poses tes questions dans le chat, l'IA écrit et explique le code, et tu peux exécuter les programmes Python au même endroit.",
+      "Classinus est une application d'études avec IA. Pour apprendre à programmer, tu peux poser tes questions dans le chat, générer et exécuter du Python, ou installer le plugin Thonny-Classinus pour demander des analyses et corrections directement dans Thonny.",
     points: [
       {
         titre: "Poser tes questions de programmation",
@@ -139,6 +139,11 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
           "Pour un concept difficile, l'IA peut créer une animation en deux ou trois dimensions que tu regardes comme une vidéo, avec lecture, pause et barre de progression.",
       },
       {
+        titre: "Classinus directement dans Thonny",
+        texte:
+          "Le plugin thonny-classinus ajoute un panneau Classinus à droite de l’éditeur. À ta demande, il peut transmettre le fichier ouvert, une sélection, la dernière erreur et la sortie du programme pour analyser ou corriger le code, expliquer une erreur et proposer des changements. Tu peux choisir le modèle d’IA dans le panneau ; rien n’est envoyé sans clic.",
+      },
+      {
         titre: "Tes propres consignes",
         texte:
           "Avec les skills, tu crées tes propres consignes pour Classinus, avec l'aide de l'IA, par exemple pour qu'elle t'explique le code à ta manière.",
@@ -159,6 +164,11 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
         question: "Faut-il installer Python pour exécuter un programme dans Classinus ?",
         reponse:
           "Non, l'exécution se fait directement dans l'application, sur ton appareil, sans installation.",
+      },
+      {
+        question: "Comment utiliser Classinus directement dans Thonny ?",
+        reponse:
+          "Installe le plugin thonny-classinus depuis Outils > Gérer les plugins dans Thonny 5.0 ou ultérieur, puis redémarre Thonny et connecte ton compte Classinus dans le panneau qui apparaît à droite de l’éditeur. Tu peux alors demander une analyse ou une correction du code, expliquer une erreur ou une sélection, et choisir un modèle d’IA. Le code n’est transmis qu’après une action explicite.",
       },
     ],
   },
@@ -313,13 +323,15 @@ export const RESUME_CLASSINUS = {
   nom: "Classinus",
   accroche: "Le coin des étudiants.",
   description:
-    "Classinus est une application d'études avec IA : pose tes questions, trouve des PDF et des vidéos, apprends à coder avec du Python exécutable dans le chat, et révise avec des fiches, des QCM et des animations.",
+    "Classinus est une application d'études avec IA : pose tes questions, choisis parmi les modèles d'IA disponibles, trouve des PDF et des vidéos, apprends à coder avec du Python exécutable dans le chat, et révise avec des fiches, des QCM et des animations.",
   fonctions: [
     "Chat avec une IA pour poser ses questions de cours",
+    "Choix du modèle d'IA parmi les modèles disponibles, regroupés par fournisseur ; les modèles non activés sont signalés « Bientôt ».",
     "Bibliothèque personnelle et catalogue public de documents partagés par les élèves",
     "Recherche de livres et de PDF dans Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg, et recherche de vidéos et de pages web par l'IA",
     "Mode vocal pour parler à Classinus, qui répond à voix haute",
     "Exécution de code Python directement dans le chat",
+    "Plugin Thonny-Classinus : panneau intégré à Thonny pour analyser ou corriger le code Python, expliquer les erreurs et choisir un modèle d’IA ; le code n’est transmis qu’après une action explicite.",
     "Fiches de révision, QCM interactifs et animations téléchargeables en vidéo MP4",
     "Mémoire consultable et modifiable, skills personnalisés, mode concentration",
   ],

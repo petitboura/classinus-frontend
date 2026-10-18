@@ -51,6 +51,12 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     description: "Trouver des PDF, apprendre à coder, trouver des vidéos et étudier avec l'IA de Classinus.",
   },
   {
+    slug: "thonny",
+    href: ROUTES_DECOUVRIR.thonny,
+    titre: "Classinus dans Thonny",
+    description: "Intègre Classinus à l’éditeur Thonny : analyse et correction du code Python, explication des erreurs et choix du modèle d’IA.",
+  },
+  {
     slug: "bureau",
     href: ROUTES_DECOUVRIR.bureau.accueil,
     titre: "Bureau",

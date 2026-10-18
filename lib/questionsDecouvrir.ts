@@ -141,6 +141,26 @@ export const QUESTIONS_DECOUVRIR_ACCUEIL: GroupeQuestionsDecouvrir[] = [
         reponse:
           "Oui. Sélectionne une conversation dans l'activité récente pour la rouvrir dans le chat.",
       },
+      {
+        question: "Comment choisir un modèle d'IA dans Classinus ?",
+        reponse:
+          "Clique sur le nom du modèle en haut du chat. Le menu regroupe les modèles disponibles par fournisseur ; ton choix sert aux prochains messages selon les modèles proposés par le serveur.",
+      },
+      {
+        question: "Que signifie la mention « Bientôt » à côté d'un modèle ?",
+        reponse:
+          "Ce modèle n'est pas encore disponible dans Classinus. Il apparaît grisé et ne peut pas être sélectionné tant qu'il n'est pas activé.",
+      },
+      {
+        question: "Classinus peut-il analyser mon code directement dans Thonny ?",
+        reponse:
+          "Oui. Installe le plugin thonny-classinus pour afficher un panneau Classinus à droite de l'éditeur Thonny. Tu peux lui demander d'analyser ou de corriger ton code Python, d'expliquer une erreur ou une sélection, et de tenir compte de la sortie du programme. Rien n'est envoyé sans action de ta part.",
+      },
+      {
+        question: "Puis-je choisir le modèle d'IA dans le panneau Classinus de Thonny ?",
+        reponse:
+          "Oui. Le bouton Modèle du panneau affiche les modèles disponibles, regroupés par fournisseur. Dans Réglages, tu peux aussi choisir la longueur de réponse, l'effort, le mode pédagogique et les modes ressources.",
+      },
     ],
   },
 ];

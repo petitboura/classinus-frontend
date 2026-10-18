@@ -15,7 +15,7 @@ import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDeco
 export const metadata: Metadata = {
   title: "Classinus : le coin des étudiants",
   description:
-    "Classinus est une IA à qui poser tes questions, avec ta bibliothèque personnelle et le catalogue partagé par les élèves, des fiches de révision, des QCM et des animations, téléchargeables en vidéo, pour t'aider à réviser.",
+    "Classinus est une application d'études avec IA : pose tes questions, utilise ta bibliothèque personnelle et le catalogue partagé par les élèves, prépare des fiches de révision, des QCM et des animations téléchargeables en vidéo, et choisis parmi les modèles d'IA disponibles.",
 };
 
 export default function PageDecouvrirAccueil() {
@@ -38,7 +38,7 @@ export default function PageDecouvrirAccueil() {
         un cours. Sur l&apos;écran vide du chat, des raccourcis te mènent directement à la configuration, à l&apos;éditeur,
         à ta mémoire et à tes skills, ainsi qu&apos;à ta bibliothèque perso sur ordinateur, ou au dossier de ton
         téléphone et à ton temps d&apos;écran sur mobile. Dans le tableau de bord, tu retrouves aussi tes raccourcis
-        vers chaque partie de Classinus et ton activité récente.
+        vers chaque partie de Classinus et ton activité récente. En haut du chat, tu peux choisir parmi les modèles d’IA disponibles, regroupés par fournisseur ; les modèles pas encore activés sont signalés « Bientôt ». Pour programmer, Classinus s’intègre aussi directement à Thonny grâce au plugin thonny-classinus : il peut analyser ou corriger ton code Python, expliquer les erreurs et utiliser le modèle d’IA que tu choisis dans son panneau.
       </p>
 
       <AccordeonQuestionsDecouvrir groupes={QUESTIONS_DECOUVRIR_ACCUEIL} />
