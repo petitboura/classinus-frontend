@@ -36,4 +36,18 @@
     <string name="bouton_flottant_curseur_description">Flèche de Classinus. Touche pour afficher ou masquer sa dernière réponse, fais glisser pour la déplacer.</string>
     <string name="bouton_flottant_bulle_description">Message de Classinus</string>
     <string name="bouton_flottant_bulle_ouvrir">Ouvrir Classinus pour voir le reste</string>
+    <!-- 17/10/2026, lot 4 : micro de dictee, mode vocal, bulle de la voix et cartes de la reponse. -->
+    <string name="micro_canal_nom">Micro de Classinus</string>
+    <string name="micro_canal_description">Affiché tant que le micro de Classinus est utilisé en dehors de l\'appli.</string>
+    <string name="micro_notif_titre">Classinus écoute</string>
+    <string name="micro_notif_texte">Le micro est utilisé pour dicter ou parler à Classinus. Touchez Arrêter pour le couper.</string>
+    <string name="micro_notif_arreter">Arrêter</string>
+    <string name="bouton_flottant_micro_ouvrir">Dicter un message</string>
+    <string name="bouton_flottant_micro_arreter">Arrêter la dictée et envoyer</string>
+    <string name="bouton_flottant_voix_ouvrir">Parler à Classinus</string>
+    <string name="bouton_flottant_voix_fermer">Arrêter la conversation vocale</string>
+    <string name="bouton_flottant_voix_bulle_description">Classinus parle</string>
+    <string name="bouton_flottant_bulle_image_description">Image de la réponse de Classinus</string>
+    <string name="bouton_flottant_bulle_lien_description">Ouvrir le lien</string>
+    <string name="bouton_flottant_carte_video">Vidéo</string>
 </resources>

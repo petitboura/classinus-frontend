@@ -28,6 +28,7 @@
 // Tout ce qui touche aux fenetres se fait sur le thread principal.
 package com.classinus.app.boutonflottant
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.PixelFormat
 import android.graphics.Rect
@@ -37,6 +38,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
+import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
 import com.classinus.app.R
 
@@ -50,6 +52,15 @@ object BulleEtCurseurManager {
     // ferme la bulle, "information" un petit message, "reponse" la reponse de Classinus.
     const val MODE_AUCUNE = "aucune"
     const val MODE_REPONSE = "reponse"
+
+    // Memes valeurs que la bulle de voix du PC : distance entre la pointe et le centre de la bulle,
+    // deplacement minimal avant de considerer un changement de direction, direction de depart
+    // (la bulle est en haut a gauche de la pointe).
+    private const val DISTANCE_VOIX_DP = 40f
+    private const val SEUIL_DIRECTION_PX = 8f
+    private const val ANGLE_DEPART = 0.7853982f // pi / 4
+    private const val DUREE_ROTATION_VOIX_MS = 350L
+    private const val MARGE_VOIX_DP = 8f
 
     private const val MARGE_ECRAN_DP = 12f
     private const val ECART_BULLE_DP = 8f
@@ -78,6 +89,32 @@ object BulleEtCurseurManager {
     /** L'etudiant demande d'ouvrir Classinus depuis la bulle. Branche par le service. */
     var surOuvrirAppli: (() -> Unit)? = null
 
+    /** L'etudiant touche une image ou une carte de la bulle : ouvrir l'adresse. Branche par le service. */
+    var surOuvrirLien: ((url: String) -> Unit)? = null
+
+    // Bulle de la voix (lot 4) : un rond qui accompagne la fleche pendant la conversation vocale,
+    // comme celui du PC (components/voix/VoixDirecteSuperposition.tsx). Il reste du cote d'ou la
+    // fleche vient et tourne autour d'elle quand elle change de direction.
+    private var voix: BulleVoixFlottante? = null
+    private var reglagesVoix: WindowManager.LayoutParams? = null
+    private var voixActive = false
+    private var angleVoix = ANGLE_DEPART
+    private var animateurAngle: ValueAnimator? = null
+    private var ancreDirectionX = Float.NaN
+    private var ancreDirectionY = Float.NaN
+
+    /** La voix en direct est ouverte ou fermee : montre ou retire la bulle de la voix. Sans fleche, rien. */
+    fun definirVoixActive(context: Context, actif: Boolean) {
+        contexte = context.applicationContext
+        voixActive = actif
+        if (actif) afficherVoix() else retirerVoix()
+    }
+
+    /** Etat de la voix et niveaux sonores (0 a 1), envoyes par la page une quinzaine de fois par seconde. */
+    fun definirNiveauxVoix(etat: String, entree: Float, sortie: Float) {
+        voix?.definirEtat(etat, entree, sortie)
+    }
+
     /** Montre ou retire la fleche selon l'etat du canal en direct. Retire aussi la bulle quand le canal se coupe. */
     fun definirCanalActif(context: Context, actif: Boolean) {
         contexte = context.applicationContext
@@ -88,18 +125,31 @@ object BulleEtCurseurManager {
      * Dessine l'etat de la bulle. Sans fleche (canal coupe) rien ne s'affiche : la bulle n'existe
      * que canal actif, comme celle du PC.
      */
-    fun definirBulle(mode: String, texte: String?, proposerOuvrir: Boolean) {
+    fun definirBulle(
+        mode: String,
+        texte: String?,
+        proposerOuvrir: Boolean,
+        images: List<String> = emptyList(),
+        cartes: List<CarteBulle> = emptyList(),
+    ) {
         val c = contexte ?: return
         if (curseur == null) return
-        if (mode == MODE_AUCUNE || texte.isNullOrBlank()) {
+        // Une reponse peut n'avoir que des images ou des cartes : elle s'affiche quand meme.
+        val aDesMedias = images.isNotEmpty() || cartes.isNotEmpty()
+        if (mode == MODE_AUCUNE || (texte.isNullOrBlank() && !(mode == MODE_REPONSE && aDesMedias))) {
             masquerBulle()
             return
         }
         val reponse = mode == MODE_REPONSE
-        val simplifie = TexteSimplifie.simplifier(texte, ContextCompat.getColor(c, R.color.bouton_flottant_bulle_code_fond))
+        val simplifie = TexteSimplifie.simplifier(texte ?: "", ContextCompat.getColor(c, R.color.bouton_flottant_bulle_code_fond))
         val vue = bulle ?: creerBulle(c) ?: return
         modeBulle = mode
-        vue.definir(simplifie.texte, reponse && (proposerOuvrir || simplifie.contenuIgnore))
+        vue.definir(
+            simplifie.texte,
+            reponse && (proposerOuvrir || simplifie.contenuIgnore),
+            if (reponse) images else emptyList(),
+            if (reponse) cartes else emptyList(),
+        )
         reglerToucheBulle(reponse)
         placerBulle()
     }
@@ -116,6 +166,7 @@ object BulleEtCurseurManager {
             // La fenetre a disparu entre-temps : rien a replacer.
         }
         placerBulle()
+        placerVoix()
     }
 
     /** Retrait sans animation (arret du service) : aucune fenetre ne doit survivre au gestionnaire. */
@@ -138,6 +189,22 @@ object BulleEtCurseurManager {
                 // Deja retiree : rien a faire.
             }
         }
+        voix?.let {
+            it.animate().cancel()
+            try {
+                gestionnaire?.removeView(it)
+            } catch (e: Exception) {
+                // Deja retiree : rien a faire.
+            }
+        }
+        animateurAngle?.cancel()
+        animateurAngle = null
+        voix = null
+        reglagesVoix = null
+        voixActive = false
+        angleVoix = ANGLE_DEPART
+        ancreDirectionX = Float.NaN
+        ancreDirectionY = Float.NaN
         bulle = null
         reglagesBulle = null
         curseur = null
@@ -167,12 +234,141 @@ object BulleEtCurseurManager {
         curseur = nouveau
         reglagesCurseur = reglages
         nouveau.apparaitre()
+        // Voix deja ouverte quand la fleche apparait : sa bulle l'accompagne.
+        if (voixActive) afficherVoix()
+    }
+
+    private fun afficherVoix() {
+        val c = contexte ?: return
+        if (voix != null || curseur == null) return
+        val gestionnaire = c.getSystemService(WindowManager::class.java)
+        val nouvelle = BulleVoixFlottante(c)
+        nouvelle.alpha = 0f
+        val reglages = creerReglagesVoix()
+        reglagesVoix = reglages
+        voix = nouvelle
+        placerVoix()
+        try {
+            gestionnaire.addView(nouvelle, reglages)
+        } catch (e: Exception) {
+            voix = null
+            reglagesVoix = null
+            return
+        }
+        // La fleche doit rester devant la bulle de la voix (comme sur le PC).
+        remettreCurseurAuDessus(gestionnaire)
+        nouvelle.apparaitre()
+    }
+
+    private fun retirerVoix() {
+        val aRetirer = voix ?: return
+        voix = null
+        reglagesVoix = null
+        animateurAngle?.cancel()
+        animateurAngle = null
+        angleVoix = ANGLE_DEPART
+        ancreDirectionX = Float.NaN
+        ancreDirectionY = Float.NaN
+        val c = contexte
+        aRetirer.disparaitre {
+            try {
+                c?.getSystemService(WindowManager::class.java)?.removeView(aRetirer)
+            } catch (e: Exception) {
+                // Deja retiree : rien a faire.
+            }
+        }
+    }
+
+    /** La fleche a bouge de (dx, dy) : si elle a change de direction, la bulle de la voix tourne autour d'elle. */
+    private fun suivreDirectionVoix() {
+        val reglages = reglagesCurseur ?: return
+        val x = reglages.x.toFloat()
+        val y = reglages.y.toFloat()
+        if (ancreDirectionX.isNaN()) {
+            ancreDirectionX = x
+            ancreDirectionY = y
+            return
+        }
+        val dx = x - ancreDirectionX
+        val dy = y - ancreDirectionY
+        if (Math.hypot(dx.toDouble(), dy.toDouble()) < SEUIL_DIRECTION_PX) return
+        ancreDirectionX = x
+        ancreDirectionY = y
+        // Chemin le plus court : jamais presque un tour complet quand l'angle passe de 179 a -179 degres.
+        val cible = Math.atan2(dy.toDouble(), dx.toDouble())
+        val delta = cible - angleVoix
+        val unTour = 2 * Math.PI
+        val courtChemin = ((((delta + Math.PI) % unTour) + unTour) % unTour) - Math.PI
+        val angleFinal = (angleVoix + courtChemin).toFloat()
+        animateurAngle?.cancel()
+        animateurAngle = ValueAnimator.ofFloat(angleVoix, angleFinal).apply {
+            duration = DUREE_ROTATION_VOIX_MS
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                angleVoix = it.animatedValue as Float
+                placerVoix()
+            }
+            start()
+        }
+    }
+
+    /** Pose la bulle de la voix derriere la pointe de la fleche, selon l'angle courant. Reste dans la zone utilisable. */
+    private fun placerVoix() {
+        val c = contexte ?: return
+        val vue = voix ?: return
+        val reglages = reglagesVoix ?: return
+        val fleche = curseur ?: return
+        val reglagesFleche = reglagesCurseur ?: return
+        val densite = c.resources.displayMetrics.density
+        val zone = zoneUtilisable(c)
+        val taille = (BulleVoixFlottante.TAILLE_DP * densite).toInt()
+        val marge = (MARGE_VOIX_DP * densite).toInt()
+        val distance = DISTANCE_VOIX_DP * densite
+        val pointeX = reglagesFleche.x + fleche.decalagePointePx
+        val pointeY = reglagesFleche.y + fleche.decalagePointePx
+        val centreX = pointeX - Math.cos(angleVoix.toDouble()).toFloat() * distance
+        val centreY = pointeY - Math.sin(angleVoix.toDouble()).toFloat() * distance
+        val x = (centreX - taille / 2f).toInt()
+            .coerceIn(zone.left + marge, (zone.right - taille - marge).coerceAtLeast(zone.left + marge))
+        val y = (centreY - taille / 2f).toInt()
+            .coerceIn(zone.top + marge, (zone.bottom - taille - marge).coerceAtLeast(zone.top + marge))
+        if (reglages.x == x && reglages.y == y && reglages.width == taille) return
+        reglages.x = x
+        reglages.y = y
+        reglages.width = taille
+        reglages.height = taille
+        if (!vue.isAttachedToWindow) return
+        try {
+            c.getSystemService(WindowManager::class.java).updateViewLayout(vue, reglages)
+        } catch (e: Exception) {
+            // Fenetre disparue : ignore.
+        }
+    }
+
+    private fun creerReglagesVoix(): WindowManager.LayoutParams {
+        val drapeaux = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        return WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            drapeaux,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.LEFT
+            title = "ClassinusBulleVoixFlottante"
+        }
     }
 
     private fun retirerCurseurEtBulle() {
         val c = contexte
         val gestionnaire = c?.getSystemService(WindowManager::class.java)
         masquerBulle()
+        retirerVoix()
         val aRetirer = curseur ?: return
         curseur = null
         reglagesCurseur = null
@@ -193,6 +389,8 @@ object BulleEtCurseurManager {
         nouvelle.surToucheDebut = { surAction?.invoke(ACTION_SUSPENDRE) }
         nouvelle.surToucheFin = { surAction?.invoke(ACTION_REPRENDRE) }
         nouvelle.surOuvrirAppli = { surOuvrirAppli?.invoke() }
+        nouvelle.surOuvrirLien = { adresse -> surOuvrirLien?.invoke(adresse) }
+        nouvelle.surContenuChange = { placerBulle() }
         nouvelle.alpha = 0f
         val reglages = creerReglagesBulle()
         try {
@@ -268,6 +466,8 @@ object BulleEtCurseurManager {
         }
         // La bulle suit la fleche pendant le glissement.
         placerBulle()
+        suivreDirectionVoix()
+        placerVoix()
     }
 
     /** Garde la position de la pointe en proportion de la zone utilisable. */

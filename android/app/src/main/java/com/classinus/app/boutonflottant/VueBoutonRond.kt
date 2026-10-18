@@ -2,13 +2,15 @@
 // direct sur Android. Code COMMUN aux deux flavors (src/main).
 //
 // Un bouton rond du groupe flottant, dessine comme les boutons ronds du bouton
-// du PC : un rond avec une icone au centre. Quatre icones pour l'instant : le
-// symbole "radio" (un point et deux arcs de chaque cote) du bouton qui active
-// le canal, le chevron (vers le haut ou vers le bas) qui deplie et replie le
-// groupe, le crayon du bouton Ecrire et la fleche d'envoi du champ de saisie.
-// Au repos le rond est sombre, actif (canal en direct, ou champ Ecrire ouvert)
-// il est or. Le passage d'un
-// etat a l'autre est anime (jamais de changement brut).
+// du PC : un rond avec une icone au centre. Les icones : le symbole "radio" (un
+// point et deux arcs de chaque cote) du bouton qui active le canal, le chevron
+// (vers le haut ou vers le bas) qui deplie et replie le groupe, le crayon du
+// bouton Ecrire, la fleche d'envoi du champ de saisie, le micro de la dictee
+// (et le carre qui l'arrete) et les barres du mode vocal (lot 4).
+// Au repos le rond est sombre, actif (canal en direct, champ Ecrire ouvert,
+// dictee ou voix en cours) il est or. Le passage d'un etat a l'autre est anime
+// (jamais de changement brut). Le bouton peut aussi pulser doucement (dictee ou
+// reponse en cours, comme animate-pulse du PC) et etre grise (non touchable).
 //
 // Cette vue ne sait RIEN du canal ni du groupe : elle signale seulement un appui
 // (surAppui). Le glissement du groupe entier est gere par GroupeBoutonsFlottant,
@@ -32,13 +34,16 @@ import com.classinus.app.R
 
 class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
 
-    enum class Icone { RADIO, CHEVRON_HAUT, CHEVRON_BAS, CRAYON, ENVOYER }
+    enum class Icone { RADIO, CHEVRON_HAUT, CHEVRON_BAS, CRAYON, ENVOYER, MICRO, CARRE, BARRES }
 
     companion object {
         const val TAILLE_DP = 52f
         private const val DUREE_TRANSITION_MS = 200L
         private const val ECHELLE_APPUI = 0.92f
         private const val DUREE_APPUI_MS = 90L
+        private const val DUREE_PULSATION_MS = 900L
+        private const val ALPHA_PULSATION_BAS = 0.5f
+        private const val ALPHA_GRISE = 0.5f
     }
 
     /** Appui court sans glissement. */
@@ -88,8 +93,43 @@ class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
     private var departY = 0f
     private var deplace = false
 
+    private var animateurPulsation: ValueAnimator? = null
+    private var grise = false
+
+    private val zoneCapsule = RectF()
+
     init {
         isClickable = true
+    }
+
+    /** Pulsation douce de l'opacite (dictee en cours, reponse en cours). Thread principal. */
+    fun definirPulsation(actif: Boolean) {
+        if (actif == (animateurPulsation != null)) return
+        if (!actif) {
+            arreterPulsation()
+            alpha = if (grise) ALPHA_GRISE else 1f
+            return
+        }
+        animateurPulsation = ValueAnimator.ofFloat(1f, ALPHA_PULSATION_BAS).apply {
+            duration = DUREE_PULSATION_MS
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { alpha = it.animatedValue as Float }
+            start()
+        }
+    }
+
+    /** Bouton grise : l'appui ne fait rien (transcription ou connexion en cours). */
+    fun definirGrise(valeur: Boolean) {
+        if (valeur == grise) return
+        grise = valeur
+        isEnabled = !valeur
+        if (animateurPulsation == null) alpha = if (valeur) ALPHA_GRISE else 1f
+    }
+
+    private fun arreterPulsation() {
+        animateurPulsation?.cancel()
+        animateurPulsation = null
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -118,6 +158,7 @@ class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
 
     override fun onDetachedFromWindow() {
         animateurProgression?.cancel()
+        arreterPulsation()
         animate().cancel()
         super.onDetachedFromWindow()
     }
@@ -142,6 +183,39 @@ class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
             Icone.CHEVRON_BAS -> dessinerChevron(canvas, centreX, centreY, versLeHaut = false)
             Icone.CRAYON -> dessinerCrayon(canvas, centreX, centreY)
             Icone.ENVOYER -> dessinerFlecheEnvoi(canvas, centreX, centreY)
+            Icone.MICRO -> dessinerMicro(canvas, centreX, centreY)
+            Icone.CARRE -> dessinerCarre(canvas, centreX, centreY)
+            Icone.BARRES -> dessinerBarres(canvas, centreX, centreY)
+        }
+    }
+
+    /** Micro (comme le Mic du PC) : la capsule, le U qui l'entoure, le pied et sa base. */
+    private fun dessinerMicro(canvas: Canvas, centreX: Float, centreY: Float) {
+        val d = densite
+        zoneCapsule.set(centreX - 3.2f * d, centreY - 8.5f * d, centreX + 3.2f * d, centreY + 2.5f * d)
+        canvas.drawRoundRect(zoneCapsule, 3.2f * d, 3.2f * d, pinceauTrait)
+        val rayonU = 6.5f * d
+        zoneArc.set(centreX - rayonU, centreY - 1f * d - rayonU, centreX + rayonU, centreY - 1f * d + rayonU)
+        canvas.drawArc(zoneArc, 0f, 180f, false, pinceauTrait)
+        canvas.drawLine(centreX, centreY + 5.5f * d, centreX, centreY + 9f * d, pinceauTrait)
+        canvas.drawLine(centreX - 3f * d, centreY + 9f * d, centreX + 3f * d, centreY + 9f * d, pinceauTrait)
+    }
+
+    /** Carre (comme le Square qui arrete la dictee sur le PC). */
+    private fun dessinerCarre(canvas: Canvas, centreX: Float, centreY: Float) {
+        val d = densite
+        zoneCapsule.set(centreX - 5f * d, centreY - 5f * d, centreX + 5f * d, centreY + 5f * d)
+        canvas.drawRoundRect(zoneCapsule, 1.5f * d, 1.5f * d, pinceauTrait)
+    }
+
+    /** Barres verticales de hauteurs differentes (comme le AudioLines du mode vocal du PC). */
+    private fun dessinerBarres(canvas: Canvas, centreX: Float, centreY: Float) {
+        val d = densite
+        val decalages = floatArrayOf(-8f, -4f, 0f, 4f, 8f)
+        val demiHauteurs = floatArrayOf(2.5f, 6f, 9f, 5.5f, 2.5f)
+        for (i in decalages.indices) {
+            val x = centreX + decalages[i] * d
+            canvas.drawLine(x, centreY - demiHauteurs[i] * d, x, centreY + demiHauteurs[i] * d, pinceauTrait)
         }
     }
 
@@ -212,7 +286,7 @@ class VueBoutonRond(context: Context, iconeInitiale: Icone) : View(context) {
             }
             MotionEvent.ACTION_UP -> {
                 rendreEchelle()
-                if (!deplace) {
+                if (!deplace && isEnabled) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     performClick()
                     surAppui?.invoke()

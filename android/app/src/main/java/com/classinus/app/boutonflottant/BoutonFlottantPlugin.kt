@@ -37,8 +37,10 @@ package com.classinus.app.boutonflottant
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
 import android.util.Log
 import com.classinus.app.MainActivity
 import com.getcapacitor.JSObject
@@ -122,6 +124,52 @@ class BoutonFlottantPlugin : Plugin() {
             instance?.envoyerActionBulle(action)
         }
 
+        /** Ouvre une adresse web dans le navigateur (image ou carte de la bulle). http et https seulement. */
+        fun ouvrirLien(context: Context, adresse: String) {
+            val uri = try {
+                Uri.parse(adresse)
+            } catch (e: Exception) {
+                return
+            }
+            val schema = uri.scheme?.lowercase()
+            if (schema != "https" && schema != "http") return
+            try {
+                context.applicationContext.startActivity(
+                    Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            } catch (e: Exception) {
+                Log.w("BoutonFlottant", "Ouverture du lien refusee ou aucun navigateur.", e)
+            }
+        }
+
+        // Lot 4 : evenements du micro natif remis a la page (dictee et flux de la voix).
+
+        fun transmettreEtatDictee(ecoute: Boolean) {
+            instance?.emettre("dicteeEtat", JSObject().put("ecoute", ecoute))
+        }
+
+        fun transmettreDicteeTerminee(audio: ByteArray, typeMime: String) {
+            val evenement = JSObject().put("audio", Base64.encodeToString(audio, Base64.NO_WRAP)).put("typeMime", typeMime)
+            instance?.emettre("dicteeTerminee", evenement)
+        }
+
+        fun transmettreVoixDemandee() {
+            instance?.emettre("voixDemandee", JSObject())
+        }
+
+        /** Appele depuis le fil de lecture du micro, tous les 100 ms pendant la voix. */
+        fun transmettreMorceauFlux(pcm: ByteArray) {
+            instance?.emettre("fluxMorceau", JSObject().put("pcm", Base64.encodeToString(pcm, Base64.NO_WRAP)))
+        }
+
+        fun transmettreFluxInterrompu() {
+            instance?.emettre("fluxInterrompu", JSObject())
+        }
+
+        fun transmettreErreurMicro(code: String) {
+            instance?.emettre("erreurMicro", JSObject().put("code", code))
+        }
+
         private fun lancerAppli(context: Context, avecBascule: Boolean = true) {
             if (avecBascule) PreferencesBoutonFlottant.definirBasculeEnAttente(context, true)
             val intention = Intent(context, MainActivity::class.java).addFlags(
@@ -160,6 +208,8 @@ class BoutonFlottantPlugin : Plugin() {
     override fun handleOnDestroy() {
         if (instance === this) instance = null
         pageALEcoute = false
+        // La page n'existe plus : plus personne pour recevoir le son, le micro est libere.
+        principal.post { MicroNatif.arreterTout() }
         // La page n'existe plus, le canal en direct non plus : le bouton redevient sombre.
         PreferencesBoutonFlottant.definirCanalActif(context, false)
         principal.post { BoutonFlottantManager.definirEtatCanal(false) }
@@ -177,6 +227,11 @@ class BoutonFlottantPlugin : Plugin() {
         evenement.put("numero", numero)
         evenement.put("texte", texte)
         notifyListeners("texteEcrit", evenement)
+    }
+
+    private fun emettre(nom: String, evenement: JSObject) {
+        if (!pageALEcoute) return
+        notifyListeners(nom, evenement)
     }
 
     private fun envoyerActionBulle(action: String) {
@@ -259,8 +314,103 @@ class BoutonFlottantPlugin : Plugin() {
         val mode = call.getString("mode") ?: BulleEtCurseurManager.MODE_AUCUNE
         val texte = call.getString("texte")
         val proposerOuvrir = call.getBoolean("proposerOuvrir") ?: false
-        principal.post { BulleEtCurseurManager.definirBulle(mode, texte, proposerOuvrir) }
+        // Lot 4 : images (adresses) et cartes d'apercu (liens, videos) de la reponse.
+        val images = ArrayList<String>()
+        call.getArray("images")?.let { liste ->
+            for (i in 0 until liste.length()) liste.optString(i, "").takeIf { it.isNotEmpty() }?.let { images.add(it) }
+        }
+        val cartes = ArrayList<CarteBulle>()
+        call.getArray("cartes")?.let { liste ->
+            for (i in 0 until liste.length()) {
+                val o = liste.optJSONObject(i) ?: continue
+                val url = o.optString("url", "")
+                val titre = o.optString("titre", "")
+                if (url.isEmpty() || titre.isEmpty()) continue
+                cartes.add(
+                    CarteBulle(
+                        url = url,
+                        titre = titre,
+                        description = o.optString("description", "").ifEmpty { null },
+                        site = o.optString("site", "").ifEmpty { null },
+                        image = o.optString("image", "").ifEmpty { null },
+                        video = o.optBoolean("video", false),
+                    ),
+                )
+            }
+        }
+        principal.post { BulleEtCurseurManager.definirBulle(mode, texte, proposerOuvrir, images, cartes) }
         call.resolve()
+    }
+
+    /** Etat du micro et de la voix, pousse par la page (lot 4) : transcription en cours, etat de la voix. */
+    @PluginMethod
+    fun definirEtatMicroVoix(call: PluginCall) {
+        val transcription = call.getBoolean("transcription") ?: false
+        val voixEtat = call.getString("voix") ?: "inactif"
+        principal.post { BoutonFlottantManager.definirEtatMicroVoix(transcription, voixEtat) }
+        call.resolve()
+    }
+
+    /** Etat et niveaux sonores de la voix pour l'onde de la bulle (lot 4), environ 15 fois par seconde. */
+    @PluginMethod
+    fun definirNiveauxVoix(call: PluginCall) {
+        val etat = call.getString("etat") ?: "inactif"
+        val entree = (call.getFloat("entree") ?: 0f)
+        val sortie = (call.getFloat("sortie") ?: 0f)
+        principal.post { BulleEtCurseurManager.definirNiveauxVoix(etat, entree, sortie) }
+        call.resolve()
+    }
+
+    /** La page demande le flux du micro pour la voix en direct (lot 4). Renvoie faux si le micro est indisponible. */
+    @PluginMethod
+    fun demarrerFluxMicro(call: PluginCall) {
+        principal.post {
+            val reponse = JSObject()
+            reponse.put("demarre", MicroNatif.demarrerFlux())
+            call.resolve(reponse)
+        }
+    }
+
+    @PluginMethod
+    fun arreterFluxMicro(call: PluginCall) {
+        principal.post { MicroNatif.arreterFlux() }
+        call.resolve()
+    }
+
+    /** Abandonne la dictee en cours sans rien envoyer (champ Ecrire ouvert, canal coupe). */
+    @PluginMethod
+    fun annulerDictee(call: PluginCall) {
+        principal.post { MicroNatif.annulerDictee() }
+        call.resolve()
+    }
+
+    /** La page ouvre le service du micro elle-meme quand l'appli est visible (voix lancee depuis l'appli). */
+    @PluginMethod
+    fun armerMicro(call: PluginCall) {
+        principal.post {
+            if (MicroNatifService.estArme()) {
+                val reponse = JSObject()
+                reponse.put("arme", true)
+                call.resolve(reponse)
+            } else if (!MicroNatif.autorisationAccordee(context)) {
+                val reponse = JSObject()
+                reponse.put("arme", false)
+                call.resolve(reponse)
+            } else {
+                try {
+                    MicroNatifService.armer(context)
+                    principal.postDelayed({
+                        val reponse = JSObject()
+                        reponse.put("arme", MicroNatifService.estArme())
+                        call.resolve(reponse)
+                    }, 600L)
+                } catch (e: Exception) {
+                    val reponse = JSObject()
+                    reponse.put("arme", false)
+                    call.resolve(reponse)
+                }
+            }
+        }
     }
 
     @PluginMethod

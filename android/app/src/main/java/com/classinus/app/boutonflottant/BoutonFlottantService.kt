@@ -86,6 +86,19 @@ class BoutonFlottantService : Service() {
         // Lot 3 : gestes sur la fleche et la bulle, remis a la page ; ligne "Ouvrir Classinus" de la bulle.
         BulleEtCurseurManager.surAction = { action -> BoutonFlottantPlugin.transmettreActionBulle(action) }
         BulleEtCurseurManager.surOuvrirAppli = { BoutonFlottantPlugin.ouvrirAppli(applicationContext) }
+        BulleEtCurseurManager.surOuvrirLien = { adresse -> BoutonFlottantPlugin.ouvrirLien(applicationContext, adresse) }
+        // Lot 4 : micro de dictee et mode vocal. Les appuis vont au micro natif, ses resultats a la page.
+        BoutonFlottantManager.surMicro = { MicroNatif.basculerDictee(applicationContext) }
+        BoutonFlottantManager.surVoix = { MicroNatif.demanderVoix(applicationContext) }
+        MicroNatif.surEtatDictee = { ecoute ->
+            BoutonFlottantManager.definirEcouteNative(ecoute)
+            BoutonFlottantPlugin.transmettreEtatDictee(ecoute)
+        }
+        MicroNatif.surDicteeTerminee = { audio, typeMime -> BoutonFlottantPlugin.transmettreDicteeTerminee(audio, typeMime) }
+        MicroNatif.surVoixDemandee = { BoutonFlottantPlugin.transmettreVoixDemandee() }
+        MicroNatif.surMorceauFlux = { pcm -> BoutonFlottantPlugin.transmettreMorceauFlux(pcm) }
+        MicroNatif.surFluxInterrompu = { BoutonFlottantPlugin.transmettreFluxInterrompu() }
+        MicroNatif.surErreur = { code -> BoutonFlottantPlugin.transmettreErreurMicro(code) }
         if (!BoutonFlottantManager.afficher(this)) {
             // Permission retiree entre-temps ou fenetre refusee : un service sans
             // bouton ne sert a rien, on s'arrete sans oublier le choix de l'eleve.
@@ -107,6 +120,17 @@ class BoutonFlottantService : Service() {
         BoutonFlottantManager.surTexteEcrit = null
         BulleEtCurseurManager.surAction = null
         BulleEtCurseurManager.surOuvrirAppli = null
+        BulleEtCurseurManager.surOuvrirLien = null
+        BoutonFlottantManager.surMicro = null
+        BoutonFlottantManager.surVoix = null
+        // Le bouton disparait : plus de dictee ni de voix a tenir, puis les rappels sont debranches.
+        MicroNatif.arreterTout()
+        MicroNatif.surEtatDictee = null
+        MicroNatif.surDicteeTerminee = null
+        MicroNatif.surVoixDemandee = null
+        MicroNatif.surMorceauFlux = null
+        MicroNatif.surFluxInterrompu = null
+        MicroNatif.surErreur = null
         BoutonFlottantManager.retirer()
         super.onDestroy()
     }

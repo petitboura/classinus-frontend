@@ -65,6 +65,17 @@ object BoutonFlottantManager {
     /** Texte ecrit dans le champ de saisie, a transmettre a la page. Branche par le service. */
     var surTexteEcrit: ((texte: String) -> Unit)? = null
 
+    /** Appui sur le micro de dictee (lot 4). Branche par le service. */
+    var surMicro: (() -> Unit)? = null
+
+    /** Appui sur le bouton du mode vocal (lot 4). Branche par le service. */
+    var surVoix: (() -> Unit)? = null
+
+    // Etats du micro et de la voix, gardes ici pour redessiner un groupe recree.
+    private var ecouteNative = false
+    private var transcriptionEnCours = false
+    private var etatVoix = GroupeBoutonsFlottant.EtatVoix.INACTIF
+
     fun estAffiche(): Boolean = vue != null
 
     fun permissionAccordee(context: Context): Boolean = Settings.canDrawOverlays(context.applicationContext)
@@ -85,6 +96,15 @@ object BoutonFlottantManager {
         nouvelle.alpha = 0f
         nouvelle.surAppuiActivation = { surAppui?.invoke() }
         nouvelle.surAppuiEcrire = { basculerChamp() }
+        nouvelle.surAppuiMicro = { surMicro?.invoke() }
+        nouvelle.surAppuiVoix = { surVoix?.invoke() }
+        appliquerMicroVoix(nouvelle)
+        // Le groupe grandit ou retrecit quand les lignes du haut apparaissent : la ligne du bas reste en place.
+        nouvelle.addOnLayoutChangeListener { v, _, haut, _, bas, _, ancienHaut, _, ancienBas ->
+            val ancienne = ancienBas - ancienHaut
+            val nouvelleHauteur = bas - haut
+            if (ancienne > 0 && nouvelleHauteur != ancienne) v.post { garderLigneBas(ancienne - nouvelleHauteur) }
+        }
         nouvelle.surDeplacement = { dx, dy -> deplacer(dx, dy) }
         nouvelle.surRelachement = { coller() }
 
@@ -127,11 +147,73 @@ object BoutonFlottantManager {
     /** Dessine le groupe selon l'etat du canal en direct. */
     fun definirEtatCanal(actif: Boolean) {
         // Canal coupe : plus rien a ecrire a Classinus, le champ se referme (comme le panneau du PC).
-        if (!actif) fermerChamp()
+        if (!actif) {
+            fermerChamp()
+            // Canal coupe : une dictee en cours est abandonnee, et plus de transcription ni de voix a montrer.
+            MicroNatif.annulerDictee()
+            transcriptionEnCours = false
+            etatVoix = GroupeBoutonsFlottant.EtatVoix.INACTIF
+            vue?.let { appliquerMicroVoix(it) }
+            contexte?.let { BulleEtCurseurManager.definirVoixActive(it, false) }
+        }
         vue?.definirActif(actif)
         // La fleche de Classinus et sa bulle suivent le canal : visibles tant qu'il est actif.
         val c = contexte
         if (c != null && vue != null) BulleEtCurseurManager.definirCanalActif(c, actif)
+    }
+
+    /** Le micro natif ecoute ou non (appele par le service quand MicroNatif change d'etat). */
+    fun definirEcouteNative(ecoute: Boolean) {
+        ecouteNative = ecoute
+        vue?.let { appliquerMicroVoix(it) }
+    }
+
+    /** Etat envoye par la page : transcription de la dictee en cours, et etat de la voix en direct. */
+    fun definirEtatMicroVoix(transcription: Boolean, voix: String) {
+        transcriptionEnCours = transcription
+        etatVoix = when (voix) {
+            "connexion" -> GroupeBoutonsFlottant.EtatVoix.CONNEXION
+            "actif" -> GroupeBoutonsFlottant.EtatVoix.ACTIF
+            "reponse" -> GroupeBoutonsFlottant.EtatVoix.REPONSE
+            else -> GroupeBoutonsFlottant.EtatVoix.INACTIF
+        }
+        vue?.let { appliquerMicroVoix(it) }
+        val c = contexte
+        if (c != null) {
+            BulleEtCurseurManager.definirVoixActive(
+                c,
+                etatVoix == GroupeBoutonsFlottant.EtatVoix.ACTIF || etatVoix == GroupeBoutonsFlottant.EtatVoix.REPONSE,
+            )
+        }
+    }
+
+    private fun appliquerMicroVoix(groupe: GroupeBoutonsFlottant) {
+        groupe.definirDictee(
+            when {
+                ecouteNative -> GroupeBoutonsFlottant.EtatDictee.ECOUTE
+                transcriptionEnCours -> GroupeBoutonsFlottant.EtatDictee.TRANSCRIPTION
+                else -> GroupeBoutonsFlottant.EtatDictee.INACTIF
+            },
+        )
+        groupe.definirVoix(etatVoix)
+    }
+
+    /**
+     * La hauteur du groupe a change de `decalage` pixels (positif : il a retreci). La fenetre est
+     * ancree en haut : elle descend (ou remonte) d'autant pour que la ligne du bas ne bouge pas.
+     */
+    private fun garderLigneBas(decalage: Int) {
+        val c = contexte ?: return
+        val v = vue ?: return
+        val reglages = parametres ?: return
+        if (v.enGlissement) return
+        val ecran = limitesEcran(c)
+        reglages.y = (reglages.y + decalage).coerceIn(0, (ecran.height() - hauteur(v)).coerceAtLeast(0))
+        try {
+            c.getSystemService(WindowManager::class.java).updateViewLayout(v, reglages)
+        } catch (e: Exception) {
+            // Fenetre disparue : ignore.
+        }
     }
 
     /** Ouvre le champ de saisie s'il est ferme, le ferme sinon. */
@@ -142,6 +224,8 @@ object BoutonFlottantManager {
     private fun ouvrirChamp() {
         val c = contexte ?: return
         if (champ != null || vue == null) return
+        // Ecrire et dicter ne vont pas ensemble : le micro s'arrete sans rien envoyer.
+        MicroNatif.annulerDictee()
         val nouveau = ChampEcritureFlottant(c)
         nouveau.surEnvoi = { texte ->
             surTexteEcrit?.invoke(texte)
@@ -243,8 +327,13 @@ object BoutonFlottantManager {
         ancreADroite = PreferencesBoutonFlottant.coteDroit(c)
         reglages.gravity = Gravity.TOP or (if (ancreADroite) Gravity.RIGHT else Gravity.LEFT)
         reglages.x = marge()
-        val hauteurLibre = (ecran.height() - hauteur(v)).coerceAtLeast(0)
-        reglages.y = (PreferencesBoutonFlottant.positionVerticale(c) * hauteurLibre).toInt()
+        // La position gardee est celle de la ligne du bas, qui ne change pas de taille : le groupe
+        // revient au meme endroit que les lignes du haut soient visibles ou non.
+        val hauteurLigneBas = (v as? GroupeBoutonsFlottant)?.hauteurLigneBasPx ?: hauteur(v)
+        val hauteurLibre = (ecran.height() - hauteurLigneBas).coerceAtLeast(0)
+        val hautLigneBas = (PreferencesBoutonFlottant.positionVerticale(c) * hauteurLibre).toInt()
+        val maxY = (ecran.height() - hauteur(v)).coerceAtLeast(0)
+        reglages.y = (hautLigneBas - (hauteur(v) - hauteurLigneBas)).coerceIn(0, maxY)
     }
 
     /** Pendant un glissement x se compte depuis la gauche : convertit une fenetre ancree a droite. */
@@ -285,8 +374,10 @@ object BoutonFlottantManager {
         val l = largeur(v)
         compterDepuisLaGauche(reglages, ecran, l)
         val coteDroit = reglages.x + l / 2 > ecran.width() / 2
-        val hauteurLibre = (ecran.height() - hauteur(v)).coerceAtLeast(1)
-        PreferencesBoutonFlottant.definirPosition(c, coteDroit, reglages.y.toFloat() / hauteurLibre)
+        val hauteurLigneBas = (v as? GroupeBoutonsFlottant)?.hauteurLigneBasPx ?: hauteur(v)
+        val hauteurLibre = (ecran.height() - hauteurLigneBas).coerceAtLeast(1)
+        val hautLigneBas = reglages.y + hauteur(v) - hauteurLigneBas
+        PreferencesBoutonFlottant.definirPosition(c, coteDroit, (hautLigneBas.toFloat() / hauteurLibre).coerceIn(0f, 1f))
 
         val xDepart = if (coteDroit) (ecran.width() - l - reglages.x).coerceAtLeast(0) else reglages.x
         reglages.gravity = Gravity.TOP or (if (coteDroit) Gravity.RIGHT else Gravity.LEFT)

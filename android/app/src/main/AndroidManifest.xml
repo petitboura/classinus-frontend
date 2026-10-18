@@ -109,6 +109,25 @@
                 android:value="Bouton flottant choisi par l'etudiant, affiche par-dessus les autres applications pour activer ou couper le canal en direct de Classinus. Aucune action n'est lancee sans un appui de l'etudiant." />
         </service>
 
+        <!-- 17/10/2026, Bourama (bouton flottant, lot 4) : service au premier plan
+             de type microphone, qui permet de dicter ou de parler a Classinus depuis
+             une autre application (voir MicroNatifService.kt). Non exporte. -->
+        <service
+            android:name=".boutonflottant.MicroNatifService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- Activite transparente qui cree le service du micro pendant qu'elle est
+             visible (obligatoire depuis Android 14), puis se ferme seule. Invisible,
+             absente des applications recentes, non exportee. -->
+        <activity
+            android:name=".boutonflottant.DemarrageMicroActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:noHistory="true"
+            android:theme="@style/AppTheme.DemarrageMicro" />
+
         <!-- Ramene le bouton apres un redemarrage du telephone ou une mise a jour
              de l'appli, seulement si l'etudiant veut le bouton (voir
              DemarrageBoutonFlottantReceiver.kt). Diffusions systeme : non exporte. -->
@@ -178,4 +197,8 @@
          dans les reglages systeme. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 17/10/2026, Bourama (bouton flottant, lot 4) : variante de type du service
+         du micro (permission normale, aucune fenetre de demande). L'autorisation du
+         micro reste RECORD_AUDIO plus haut, demandee a l'etudiant au premier usage. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 </manifest>

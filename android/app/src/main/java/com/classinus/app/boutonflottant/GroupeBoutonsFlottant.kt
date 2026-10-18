@@ -3,19 +3,23 @@
 //
 // Le groupe de boutons flottant, construit sur le modele du groupe du PC
 // (components/ControlesInteractionCanal.tsx). Il tient dans UNE seule fenetre de
-// superposition, posee par BoutonFlottantManager. Pour l'instant sa ligne porte le
-// chevron, le crayon Ecrire (lot 2) puis le bouton qui active le canal, comme sur le PC :
-//   - canal eteint : seul le bouton d'activation est visible ;
-//   - canal actif, groupe deplie : le chevron (qui replie), Ecrire et le bouton d'activation ;
-//   - canal actif, groupe replie : le chevron (qui deplie) et Ecrire restent visibles.
+// superposition, posee par BoutonFlottantManager. Comme sur le PC, de haut en bas :
+//   - le micro de dictee (lot 4), visible canal actif et groupe deplie ;
+//   - le mode vocal (lot 4), visible canal actif et groupe deplie ;
+//   - la ligne du bas : le chevron, le crayon Ecrire (lot 2) puis le bouton qui active le canal :
+//       canal eteint : seul le bouton d'activation est visible ;
+//       canal actif, groupe deplie : le chevron (qui replie), Ecrire et le bouton d'activation ;
+//       canal actif, groupe replie : le chevron (qui deplie) et Ecrire restent visibles.
+// La ligne du bas ne bouge jamais : quand les deux lignes du haut apparaissent, le groupe
+// grandit vers le haut (le gestionnaire garde la ligne du bas en place).
 // Ecrire n'agrandit jamais ce groupe : le champ de saisie vit dans une autre fenetre,
 // posee par dessus (voir ChampEcritureFlottant), et le groupe reste derriere lui.
 // Le groupe se deplie des que le canal devient actif, puis se replie seul apres
 // DELAI_REPLI_AUTO_MS sans aucun toucher. Les boutons apparaissent et disparaissent
 // en fondu avec un leger zoom (jamais de changement brut).
 //
-// Ce groupe ne sait RIEN du canal : il signale un appui sur le bouton d'activation
-// (surAppuiActivation), un deplacement (surDeplacement) et la fin d'un glissement
+// Ce groupe ne sait RIEN du canal ni du micro : il signale un appui sur le bouton d'activation
+// (surAppuiActivation), sur le micro (surAppuiMicro), sur le mode vocal (surAppuiVoix), un deplacement (surDeplacement) et la fin d'un glissement
 // (surRelachement). C'est le gestionnaire qui decide quoi en faire. Un doigt qui
 // bouge au dela du seuil sur n'importe quel bouton deplace le groupe entier.
 //
@@ -52,6 +56,18 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
     /** Appui sur le bouton Ecrire (ouvre ou ferme le champ de saisie). */
     var surAppuiEcrire: (() -> Unit)? = null
 
+    /** Appui sur le micro de dictee (lot 4). */
+    var surAppuiMicro: (() -> Unit)? = null
+
+    /** Appui sur le bouton du mode vocal (lot 4). */
+    var surAppuiVoix: (() -> Unit)? = null
+
+    /** Etat de la dictee : rien, le micro ecoute, ou l'enregistrement est en cours de transcription. */
+    enum class EtatDictee { INACTIF, ECOUTE, TRANSCRIPTION }
+
+    /** Etat de la voix : rien, connexion en cours, l'etudiant parle, Classinus repond. */
+    enum class EtatVoix { INACTIF, CONNEXION, ACTIF, REPONSE }
+
     /** Glissement en cours : deplacement en pixels depuis le dernier evenement. */
     var surDeplacement: ((dx: Float, dy: Float) -> Unit)? = null
 
@@ -62,6 +78,9 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
     val enGlissement: Boolean
         get() = glissement
 
+    /** Hauteur de la ligne du bas, en pixels : la partie du groupe qui reste en place quand le groupe grandit. */
+    val hauteurLigneBasPx: Int = (VueBoutonRond.TAILLE_DP * context.resources.displayMetrics.density).toInt()
+
     private val densite = context.resources.displayMetrics.density
     private val seuilGlissement = ViewConfiguration.get(context).scaledTouchSlop
     private val principal = Handler(Looper.getMainLooper())
@@ -69,12 +88,18 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
     private val boutonChevron = VueBoutonRond(context, VueBoutonRond.Icone.CHEVRON_BAS)
     private val boutonActivation = VueBoutonRond(context, VueBoutonRond.Icone.RADIO)
     private val boutonEcrire = VueBoutonRond(context, VueBoutonRond.Icone.CRAYON)
+    private val boutonMicro = VueBoutonRond(context, VueBoutonRond.Icone.MICRO)
+    private val boutonVoix = VueBoutonRond(context, VueBoutonRond.Icone.BARRES)
+    private val emplacementMicro = creerEmplacement(boutonMicro)
+    private val emplacementVoix = creerEmplacement(boutonVoix)
     private val emplacementChevron = creerEmplacement(boutonChevron)
     private val emplacementEcrire = creerEmplacement(boutonEcrire)
     private val emplacementActivation = creerEmplacement(boutonActivation)
 
     private var canalActif = false
     private var champOuvert = false
+    private var etatDictee = EtatDictee.INACTIF
+    private var etatVoix = EtatVoix.INACTIF
     private var groupeOuvert = true
     private var toucheEnCours = false
     private var glissement = false
@@ -84,14 +109,28 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
     private var dernierY = 0f
 
     private val repliAutomatique = Runnable {
-        if (canalActif && groupeOuvert && !toucheEnCours) {
+        if (repliPossible()) {
             groupeOuvert = false
             appliquerEtat(animer = true)
         }
     }
 
+    // Le groupe ne se replie pas seul pendant une dictee ou une conversation vocale : le
+    // bouton qui l'arrete doit rester sous le doigt.
+    private fun repliPossible(): Boolean =
+        canalActif && groupeOuvert && !toucheEnCours && etatDictee == EtatDictee.INACTIF && etatVoix == EtatVoix.INACTIF
+
     init {
         orientation = LinearLayout.VERTICAL
+        showDividers = LinearLayout.SHOW_DIVIDER_MIDDLE
+        // Espace entre deux lignes visibles : il disparait avec la ligne qui disparait.
+        dividerDrawable = GradientDrawable().apply {
+            setColor(Color.TRANSPARENT)
+            setSize(1, (ESPACE_ENTRE_BOUTONS_DP * densite).toInt())
+        }
+        // Les deux lignes du haut (lot 4), hors de l'ecran tant que le canal est coupe ou le groupe replie.
+        addView(emplacementMicro)
+        addView(emplacementVoix)
         val ligneBas = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -109,6 +148,10 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
 
         boutonChevron.surAppui = { basculerGroupe() }
         boutonEcrire.surAppui = { surAppuiEcrire?.invoke() }
+        boutonMicro.surAppui = { surAppuiMicro?.invoke() }
+        boutonVoix.surAppui = { surAppuiVoix?.invoke() }
+        appliquerEtatMicro()
+        appliquerEtatVoix()
         boutonActivation.surAppui = { surAppuiActivation?.invoke() }
         boutonEcrire.contentDescription = context.getString(R.string.bouton_flottant_ecrire_ouvrir)
         appliquerEtat(animer = false)
@@ -121,6 +164,44 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
         boutonEcrire.definirActif(ouvert)
         boutonEcrire.contentDescription = context.getString(
             if (ouvert) R.string.bouton_flottant_ecrire_fermer else R.string.bouton_flottant_ecrire_ouvrir,
+        )
+    }
+
+    /** Le micro passe a l'or et devient un carre pendant la dictee, pulse pendant la transcription. */
+    fun definirDictee(etat: EtatDictee) {
+        if (etat == etatDictee) return
+        etatDictee = etat
+        appliquerEtatMicro()
+        replanifierRepli()
+    }
+
+    /** Le bouton du mode vocal passe a l'or quand la voix est ouverte, pulse quand Classinus repond. */
+    fun definirVoix(etat: EtatVoix) {
+        if (etat == etatVoix) return
+        etatVoix = etat
+        appliquerEtatVoix()
+        replanifierRepli()
+    }
+
+    private fun appliquerEtatMicro() {
+        val ecoute = etatDictee == EtatDictee.ECOUTE
+        val transcription = etatDictee == EtatDictee.TRANSCRIPTION
+        boutonMicro.icone = if (ecoute) VueBoutonRond.Icone.CARRE else VueBoutonRond.Icone.MICRO
+        boutonMicro.definirActif(ecoute)
+        boutonMicro.definirPulsation(ecoute || transcription)
+        boutonMicro.definirGrise(transcription)
+        boutonMicro.contentDescription = context.getString(
+            if (ecoute) R.string.bouton_flottant_micro_arreter else R.string.bouton_flottant_micro_ouvrir,
+        )
+    }
+
+    private fun appliquerEtatVoix() {
+        val ouverte = etatVoix == EtatVoix.ACTIF || etatVoix == EtatVoix.REPONSE
+        boutonVoix.definirActif(ouverte)
+        boutonVoix.definirPulsation(etatVoix == EtatVoix.REPONSE)
+        boutonVoix.definirGrise(etatVoix == EtatVoix.CONNEXION)
+        boutonVoix.contentDescription = context.getString(
+            if (ouverte) R.string.bouton_flottant_voix_fermer else R.string.bouton_flottant_voix_ouvrir,
         )
     }
 
@@ -153,6 +234,9 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
     }
 
     private fun appliquerEtat(animer: Boolean) {
+        // Micro et mode vocal : canal actif et groupe deplie, comme sur le PC.
+        afficherEmplacement(emplacementMicro, canalActif && groupeOuvert, animer)
+        afficherEmplacement(emplacementVoix, canalActif && groupeOuvert, animer)
         afficherEmplacement(emplacementChevron, canalActif, animer)
         // Ecrire reste visible groupe replie, comme sur le PC.
         afficherEmplacement(emplacementEcrire, canalActif, animer)
@@ -228,7 +312,7 @@ class GroupeBoutonsFlottant(context: Context) : LinearLayout(context) {
     /** Le groupe ne se replie jamais sous le doigt : le minuteur ne tourne que sans toucher. */
     private fun replanifierRepli() {
         principal.removeCallbacks(repliAutomatique)
-        if (canalActif && groupeOuvert && !toucheEnCours) {
+        if (repliPossible()) {
             principal.postDelayed(repliAutomatique, DELAI_REPLI_AUTO_MS)
         }
     }
