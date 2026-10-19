@@ -21,6 +21,24 @@ if (fichierKeystore.exists()) {
     fichierKeystore.withInputStream { proprietesKeystore.load(it) }
 }
 
+// 19/10/2026, correctif Bourama : le numéro de version vient du fichier
+// android/version-app.properties (un seul endroit à modifier avant chaque
+// APK, voir ce fichier). Les valeurs en dur restaient à 1.1 pendant les
+// releases 1.2 à 1.5.0, donc le bandeau "Version X disponible" s'affichait
+// pour toujours. Le build s'arrête avec un message clair si le fichier ou
+// une valeur manque, plutôt que de fabriquer un APK avec un mauvais numéro.
+def fichierVersion = rootProject.file('version-app.properties')
+if (!fichierVersion.exists()) {
+    throw new GradleException("android/version-app.properties est introuvable : il doit contenir versionName et versionCode.")
+}
+def proprietesVersion = new Properties()
+fichierVersion.withInputStream { proprietesVersion.load(it) }
+def versionNameApp = proprietesVersion.getProperty('versionName')
+def versionCodeApp = proprietesVersion.getProperty('versionCode')
+if (!versionNameApp || !versionCodeApp) {
+    throw new GradleException("android/version-app.properties doit contenir versionName et versionCode.")
+}
+
 android {
     namespace = "com.classinus.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -28,8 +46,8 @@ android {
         applicationId "com.classinus.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.1"
+        versionCode versionCodeApp.trim().toInteger()
+        versionName versionNameApp.trim()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

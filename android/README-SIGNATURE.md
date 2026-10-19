@@ -53,7 +53,10 @@ côté `clovis-mobile` si tu réutilises la même clé.
 
 Avant de générer un nouvel APK à publier sur GitHub Releases :
 1. Incrémenter `versionCode` **et** `versionName` dans
-   `android/app/build.gradle` (`defaultConfig`).
+   `android/version-app.properties` (le seul endroit : `build.gradle` les lit
+   dans ce fichier). `versionName` doit être identique à l'étiquette de la
+   release GitHub sans le "v" (étiquette `v1.6.0` = `versionName=1.6.0`), sinon
+   le bandeau "Version X disponible" se trompe.
 2. Générer l'APK signé (Android Studio → Build → Generate Signed APK, flavor
    `externe`).
 3. Créer une nouvelle Release GitHub sur `petitboura/classinus-frontend` (dépôt
