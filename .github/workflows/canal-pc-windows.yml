@@ -26,4 +26,6 @@ jobs:
       - run: npm --prefix packages/capacitor-dossiers-electron run build
       - run: npm --prefix packages/capacitor-pont-natif-electron run build
       - run: npm --prefix packages/capacitor-superposition-electron run build
+      - run: npm --prefix packages/capacitor-mise-a-jour-pc-electron run build
+      - run: node tests/verifier-mise-a-jour-pc.mjs
       - run: node tests/verifier-pont-electron.mjs

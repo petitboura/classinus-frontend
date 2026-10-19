@@ -1,0 +1,130 @@
+name: Publier l'appli PC (Windows)
+
+# Construit l'installeur Windows de Classinus (Electron) et le publie dans une
+# release du dépôt public petitboura/classinus-pc. L'appli installée lit ces
+# releases pour se mettre à jour toute seule (voir
+# packages/capacitor-mise-a-jour-pc-electron et la section "Appli PC" du README).
+#
+# Déclenchement : uniquement en poussant une étiquette de la forme pc-vX.Y.Z
+# (par exemple pc-v0.1.0). Jamais à chaque push sur main : la publication de
+# l'appli PC est un geste volontaire, séparé de l'OTA mobile (ota.yml).
+#
+# Garde-fous :
+# - l'étiquette doit pointer un commit déjà contenu dans main ;
+# - le build utilise les variables de PRODUCTION (les mêmes que ota.yml), et
+#   refuse une adresse de backend contenant "staging" ;
+# - CLASSINUS_CIBLE_TEST est neutralisé, donc la cible de test de
+#   next.config.mjs ne peut pas s'appliquer ici.
+
+on:
+  push:
+    tags:
+      - "pc-v*"
+
+# Une publication à la fois, sans en annuler en cours de route.
+concurrency:
+  group: pc-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publier:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    env:
+      CAPACITOR_BUILD: "true"
+      CLASSINUS_CIBLE_TEST: ""
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      PC_RELEASES_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Vérifier l'étiquette et la branche
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#pc-v}"
+          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Étiquette invalide : $GITHUB_REF_NAME. Forme attendue : pc-v1.2.3"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Le commit de l'étiquette n'est pas dans main. On ne publie l'appli PC que depuis main."
+            exit 1
+          fi
+          echo "VERSION_PC=$version" >> "$GITHUB_ENV"
+          echo "Version publiée : $version"
+
+      - name: Vérifier la configuration
+        shell: bash
+        run: |
+          manquantes=""
+          for nom in NEXT_PUBLIC_API_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_APP_URL PC_RELEASES_TOKEN; do
+            if [ -z "${!nom}" ]; then
+              manquantes="$manquantes $nom"
+            fi
+          done
+          if [ -n "$manquantes" ]; then
+            echo "Configuration incomplète. Variables ou secrets manquants :$manquantes"
+            echo "À renseigner dans Settings, Secrets and variables, Actions."
+            exit 1
+          fi
+          case "$NEXT_PUBLIC_API_URL" in
+            *staging*)
+              echo "NEXT_PUBLIC_API_URL vise le staging. Une publication PC doit viser la production."
+              exit 1
+              ;;
+          esac
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Construire le site pour l'appli PC (export statique)
+        run: npx next build
+
+      - name: Synchroniser le projet Electron
+        run: npx cap sync @capawesome/capacitor-electron
+
+      - name: Compiler les plugins Electron
+        shell: bash
+        run: |
+          npm --prefix packages/capacitor-dossiers-electron run build
+          npm --prefix packages/capacitor-pont-natif-electron run build
+          npm --prefix packages/capacitor-superposition-electron run build
+          npm --prefix packages/capacitor-mise-a-jour-pc-electron run build
+
+      - name: Installer les dépendances d'Electron
+        working-directory: electron
+        run: npm ci
+
+      - name: Compiler et préparer l'appli Electron
+        working-directory: electron
+        shell: bash
+        run: |
+          npm run build
+          npx capacitor-electron vendor
+
+      - name: Construire et publier l'installeur Windows
+        working-directory: electron
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
+        run: |
+          npx electron-builder --config electron-builder.config.js --win --publish always -c.extraMetadata.version="$VERSION_PC"
+          echo "Fichiers produits :"
+          ls -la dist

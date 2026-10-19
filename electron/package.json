@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "electron .",
-    "pack": "npm run build && capacitor-electron vendor && electron-builder --config electron-builder.config.js"
+    "pack": "npm run build && capacitor-electron vendor && electron-builder --config electron-builder.config.js --publish never"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
