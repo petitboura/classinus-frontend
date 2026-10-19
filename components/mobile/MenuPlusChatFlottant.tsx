@@ -6,7 +6,13 @@ import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { BlocsMenuPlus, SECTIONS_BASE } from "@/components/EspacePlus";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
-import { TAILLE_ICONE_RAIL, TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
+import {
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_TIROIR,
+  ECART_LIBELLE_TIROIR,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Créé le 03/09/2026 (paramètre d'URL + router.push/back, même
 // technique que MenuHamburgerWeb.tsx/MenuHamburgerNatif.tsx), corrigé
@@ -63,14 +69,14 @@ function MenuPlusChatFlottant({ onNaviguer }: { onNaviguer: (href: string) => vo
     <div>
       <button
         onClick={() => setOuvert(true)}
-        className={`group relative mt-2 flex w-full items-center gap-2 rounded-xl px-2 transition-colors ${
+        className={`group relative ${ECART_ELEMENTS_TIROIR} flex w-full items-center ${ECART_LIBELLE_TIROIR} rounded-xl px-2 transition-colors ${
           ouvert ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         }`}
       >
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+        <span className={CELLULE_ICONE_TACTILE}>
           <MoreHorizontal size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
         </span>
-        <span className="text-sm">Plus</span>
+        <span className="text-sm font-semibold">Plus</span>
       </button>
 
       {(ouvert || enSortie) && (

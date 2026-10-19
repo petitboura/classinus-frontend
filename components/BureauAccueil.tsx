@@ -56,7 +56,7 @@ export function BureauAccueil() {
     return (
       <div className="flex flex-col" aria-hidden>
         {["w-1/3", "w-2/5", "w-1/4"].map((largeur, i) => (
-          <div key={i} className={`flex items-center gap-3 px-4 py-3 ${LIGNE_TRAIT_ICONE_18}`}>
+          <div key={i} className={`flex items-center gap-3 px-4 py-4 ${LIGNE_TRAIT_ICONE_18}`}>
             <Skeleton className="h-[18px] w-[18px] flex-shrink-0 rounded" />
             <div className="flex min-w-0 flex-1 flex-col">
               <div className="flex h-5 items-center">

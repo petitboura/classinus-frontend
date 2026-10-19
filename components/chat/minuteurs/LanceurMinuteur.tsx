@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Timer } from "lucide-react";
 import { BoutonInfoSection } from "@/components/BoutonInfoSection";
 import { textesMinuteurs } from "@/lib/textesMinuteurs";
+import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import {
   DUREES_RAPIDES_MINUTES,
   LONGUEUR_MAX_SUITE,
@@ -67,7 +68,7 @@ export function LanceurMinuteur({
         aria-expanded={ouvert}
         className="relative flex h-7 w-7 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
       >
-        <Timer size={16} />
+        <Timer size={16} strokeWidth={TRAIT_ICONE_SECTION} />
         {masques.length > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-dj-accent-1 px-0.5 text-[9px] font-semibold text-[#1A0D02]">
             {masques.length}

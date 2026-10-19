@@ -33,6 +33,13 @@ app/
                           avec questions fréquentes. Les textes des usages vivent dans lib/usagesDecouvrir.ts,
                           source unique partagée avec llms.txt et les données structurées ; adresses dans
                           lib/routesDecouvrir.ts ; une fonction qui change dans l'appli se corrige là
+                          Chaque page se termine par un bouton vers le chat et, quand elle parle d'une section,
+                          par un bouton vers cette section de l'appli (components/CtaDecouvrir.tsx, posé une
+                          fois dans le layout ; la table page vers section est dans lib/ctaDecouvrir.ts) et les
+                          deux mêmes boutons en icônes seules en haut à droite (components/CtaDecouvrirIcones.tsx).
+                          La page Thonny a pour second bouton Télécharger Thonny (site externe). Dans l'appli, un
+                          bouton boussole (components/BoutonDecouvrir.tsx) mène à /decouvrir, à gauche de l'horloge
+                          des minuteurs, masqué dans le chat
   layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG, porte la
                           description de l'appli (RESUME_CLASSINUS) et la fiche WebApplication en
                           données structurées (lib/donneesApplication.ts, components/DonneesStructurees.tsx)
@@ -55,7 +62,9 @@ components/
                           SplashOuverture.tsx (écran d'ouverture) utilise la plume seule sur le fond du thème
   AppShell.tsx           coquille de toute l'app connectée : sidebar desktop classique (AppSidebar),
                           hamburger + tiroir coulissant sur web mobile ; en natif, la nav passe par
-                          components/mobile/ à la place
+                          components/mobile/ à la place. Sur le chat (estPageChat), la page ne réserve
+                          aucune place en haut : le chat va jusqu'au bord de l'écran (voir le voile du chat
+                          plus bas)
   MenuProfil.tsx          bouton profil et son panneau (profil, Paramètres, thème, déconnexion), utilisé par
                           AppSidebar (rail et tiroir du chat) et par l'en-tête du menu Plus du téléphone ;
                           photo et nom viennent de lib/useMonProfilAffiche.ts
@@ -98,6 +107,17 @@ components/
                           pédagogique, des modes ressources et du code enseignant (useReglagesPedagogiques.ts,
                           useModeActif.ts), le bandeau d'accès bloqué d'un mineur sans code, et les listes
                           de réglages partagées (reglagesReponse.ts) ;
+                          Chat plein écran (18/10/2026) : après le premier message, le texte des messages passe
+                          derrière la rangée du haut (modèle, hamburger, cloche, minuteur) sur PC et téléphone,
+                          adouci par un fondu sans aucun flou (classe voile-chat-haut dans app/globals.css, réglable
+                          par --dj-voile-opacite). Sur téléphone seulement, la barre de saisie
+                          est posée par-dessus la liste, comme une carte qui flotte (prop flotteSurListe de
+                          BarreDeSaisie.tsx), pleine et non transparente, et le texte s'estompe doucement en
+                          descendant vers elle (classe voile-chat-bas, réglable par --dj-voile-bas-opacite, aucun
+                          flou). ChatIA.tsx pose la
+                          rangée du modèle et la barre par-dessus la liste (chat plein écran seulement, la popup
+                          est inchangée), réserve en haut --dj-chat-haut et en bas la hauteur mesurée de la
+                          barre (--hauteur-saisie-chat) ;
                           SelecteurModeleHaut.tsx (14/10/2026) : bouton du modèle en haut au milieu du chat,
                           nom et icône du fournisseur du modèle actif, liste dépliante groupée par fournisseur. Les modèles pas encore
                           ouverts (modeles_bientot, envoyés par le backend) y sont grisés avec la mention Bientôt.
@@ -330,7 +350,7 @@ renforcé des icônes de section, viennent de `lib/styleLignes.ts`, lu aussi par
 de la Bibliothèque publique et des Dossiers du téléphone.
 La page Paramètres (`components/ParametresAccueil.tsx`) suit le même visuel et s'affiche tout de suite, sans écran de
 chargement : seule sa ligne de profil montre un squelette le temps de recevoir sa donnée. Skills publics, Entrer un code,
-Ma mémoire et l'écran d'accueil sont aussi à nu, sans carte, de même que la liste du menu Plus du téléphone et celle de Mes skills (une ligne par skill, plus de pastilles). Dans Ma mémoire, chaque catégorie est repliée par défaut. Chaque
+Ma mémoire et l'écran d'accueil sont aussi à nu, sans carte, de même que la liste de Mes skills (une ligne par skill, plus de pastilles). Dans Paramètres et dans le panneau Plus du téléphone, les groupes de plusieurs lignes sont enfermés dans un cadre arrondi, avec les mêmes lignes de séparation à l'intérieur. Le panneau Plus s'ouvre collé en haut de l'écran (option `enHaut` de `components/PanneauFlottant.tsx`), son titre en haut. Dans Ma mémoire, chaque catégorie est repliée par défaut. Chaque
 page fille affiche un fil d'Ariane avec retour, et le passage d'une page voisine à
 l'autre remplace l'entrée d'historique au lieu d'en ajouter une. Sur PC, un menu à
 gauche liste les pages voisines ; sur téléphone, la même liste s'affiche en haut

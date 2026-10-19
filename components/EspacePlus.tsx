@@ -6,9 +6,15 @@ import { Home, Plug, Bell, Share2, Star, Compass, type LucideIcon } from "lucide
 import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
-import { LIGNE_TRAIT_ICONE_18_PANNEAU, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
+import { LIGNE_TRAIT_ICONE_18, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import { ROUTES_APP } from "@/lib/routesApp";
-import { TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
+import {
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_TIROIR,
+  ECART_LIBELLE_TIROIR,
+  TAILLE_ICONE_RAIL,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Créé le 26/08/2026, Bourama : refonte navigation mobile native. Contenu
 // du menu "Plus", partagé entre l'appli native et le web mobile.
@@ -61,6 +67,10 @@ export const SECTIONS_BASE: { icone: LucideIcon; titre: string; sousTitre?: stri
   { icone: Bell, titre: "Rappels", sousTitre: "Notifications programmées", href: "/rappels" },
 ];
 
+// Un groupe de lignes du panneau Plus est enfermé dans un cadre arrondi ; les
+// lignes à l'intérieur gardent leur trait de séparation.
+const GROUPE_ENFERME = "flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface";
+
 function LigneSection({
   icone: Icone,
   titre,
@@ -85,21 +95,22 @@ function LigneSection({
     return (
       <button
         onClick={onClick}
-        className="group mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        className={`group ${ECART_ELEMENTS_TIROIR} flex w-full items-center ${ECART_LIBELLE_TIROIR} rounded-xl px-2 text-left text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte`}
       >
-        <span className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <Icone size={18} strokeWidth={TRAIT_ICONE_RAIL} />
+        <span className={`relative ${CELLULE_ICONE_TACTILE}`}>
+          <Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} />
         </span>
-        <span className="text-sm">{titre}</span>
+        <span className="text-sm font-semibold">{titre}</span>
       </button>
     );
   }
-  // Ligne à nu : pas de carte, pas de flèche, un trait qui commence après
-  // l'icône (voir lib/styleLignes.ts).
+  // Ligne sans flèche, avec un trait qui commence après l'icône, comme dans
+  // Paramètres (voir lib/styleLignes.ts). Le groupe qui la porte est enfermé
+  // (GROUPE_ENFERME).
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18_PANNEAU}`}
+      className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
     >
       <Icone size={18} strokeWidth={TRAIT_ICONE_SECTION} className="flex-shrink-0 text-dj-texte-muet" />
       <div className="flex-1 overflow-hidden">
@@ -205,8 +216,8 @@ export function BlocsMenuPlus({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col">{lignesNavigation}</div>
-      <div className="flex flex-col">{lignesActions}</div>
+      <div className={GROUPE_ENFERME}>{lignesNavigation}</div>
+      <div className={GROUPE_ENFERME}>{lignesActions}</div>
     </div>
   );
 }

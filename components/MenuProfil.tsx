@@ -6,7 +6,13 @@ import { LogOut, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { FlottantAncre } from "@/components/FlottantAncre";
 import type { CoteFlottant } from "@/lib/placementFlottant";
-import { CELLULE_ICONE_RAIL, CELLULE_ICONE_TACTILE, ECART_ELEMENTS_RAIL } from "@/lib/styleBarreLaterale";
+import {
+  CELLULE_ICONE_RAIL,
+  CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_RAIL,
+  ECART_LIBELLE_TIROIR,
+  TRAIT_ICONE_RAIL,
+} from "@/lib/styleBarreLaterale";
 
 // Côtés essayés pour le panneau de l'en-tête : en dessous, puis au dessus.
 const COTES_MENU: CoteFlottant[] = ["bas", "haut"];
@@ -165,9 +171,9 @@ export function MenuProfil({
           fermer();
           onNaviguerVersParametres();
         }}
-        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute"
       >
-        <Settings size={16} className="text-dj-texte-muet" />
+        <Settings size={16} strokeWidth={TRAIT_ICONE_RAIL} className="text-dj-texte-muet" />
         Paramètres
       </Link>
 
@@ -180,9 +186,9 @@ export function MenuProfil({
           fermer();
           onSeDeconnecter();
         }}
-        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--dj-erreur)] transition-colors hover:bg-dj-surface-haute"
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm font-semibold text-[var(--dj-erreur)] transition-colors hover:bg-dj-surface-haute"
       >
-        <LogOut size={16} />
+        <LogOut size={16} strokeWidth={TRAIT_ICONE_RAIL} />
         Se déconnecter
       </button>
     </>
@@ -203,8 +209,8 @@ export function MenuProfil({
       ) : (
         <button
           onClick={onBasculerMenu}
-          className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-            mobile ? "px-2" : ""
+          className={`group flex w-full items-center rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+            mobile ? `${ECART_LIBELLE_TIROIR} px-2` : "gap-2"
           }`}
         >
           <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>{Avatar}</span>

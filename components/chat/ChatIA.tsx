@@ -1685,6 +1685,26 @@ export function ChatIA({
     // la première ligne d'une réponse longue.
   }, [messages, statuts, raisonnementEnCours]);
 
+  // 18/10/2026, demande Bourama : sur téléphone, dans le chat plein écran, la
+  // barre de saisie est posée par-dessus la liste des messages. On mesure sa
+  // hauteur réelle (elle grandit quand on tape, quand une pièce jointe
+  // s'ajoute...) et on la publie dans --hauteur-saisie-chat : la liste s'en
+  // sert pour garder un vide en bas, de sorte que le dernier message peut
+  // toujours remonter au-dessus de la barre.
+  const racineMessagesRef = useRef<HTMLDivElement>(null);
+  const saisieSuperposeeRef = useRef<HTMLDivElement>(null);
+  const aucunMessage = messages.length === 0;
+  useEffect(() => {
+    const racine = racineMessagesRef.current;
+    const barre = saisieSuperposeeRef.current;
+    if (!pleinEcran || !racine || !barre) return;
+    const publier = () => racine.style.setProperty("--hauteur-saisie-chat", `${barre.offsetHeight}px`);
+    publier();
+    const observateur = new ResizeObserver(publier);
+    observateur.observe(barre);
+    return () => observateur.disconnect();
+  }, [pleinEcran, aucunMessage]);
+
   // Écran de démarrage centré (09/08, demande Bourama : "exact au
   // démarrage" par rapport à Claude -- pas le thème de couleurs, la
   // mise en page). Tant qu'il n'y a aucun message -- que ce soit au tout
@@ -1698,14 +1718,24 @@ export function ChatIA({
   // bas dans ce fichier.
   if (messages.length === 0) {
     return (
-      <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0">
-        {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
+      <div
+        className={
+          "relative mx-auto flex h-full w-full max-w-3xl flex-col items-center px-4 [padding-bottom:calc(var(--safe-bottom)+0.75rem)] md:pb-0" +
+          // Le chat plein écran va jusqu'au bord haut de l'écran (voir AppShell.tsx) :
+          // l'écran d'accueil garde ici la place qu'il avait avant, pour rester centré pareil.
+          (pleinEcran ? " pt-[calc(var(--safe-top)+var(--dj-hamburger-espace))]" : "")
+        }>
+        {/* Sur téléphone, le bouton du modèle reste sous le voile du tiroir (z-30) et le tiroir
+            lui même (z-40, AppSidebar.tsx) : à z-40 il restait visible par dessus le tiroir ouvert.
+            14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
             15/10/2026 : sur téléphone (chat plein écran), il est posé tout en haut de l'écran,
             sur la ligne du bouton hamburger (même décalage, voir AppSidebar.tsx). */}
         <div
           className={
             "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center" +
-            (pleinEcran ? " max-md:fixed max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-40 max-md:h-8" : "")
+            (pleinEcran
+              ? " md:top-[var(--safe-top)] max-md:fixed max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-[25] max-md:h-8"
+              : "")
           }>
           <SelecteurModeleHaut
             modelesDisponibles={modelesDisponibles}
@@ -1819,17 +1849,20 @@ export function ChatIA({
     // même résultat visuel qu'avant pour le texte. L'espace libre de chaque
     // côté sert aux tableaux et blocs de code plus larges que le texte. La
     // barre de saisie garde, elle, sa propre colonne de 48rem centrée.
-    <div className="relative flex h-full w-full flex-col">
+    <div ref={racineMessagesRef} className="relative flex h-full w-full flex-col">
       {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
           15/10/2026 : sur téléphone (chat plein écran), posé tout en haut de l'écran, sur la
-          ligne du bouton hamburger, et il ne prend plus de place au dessus des messages. */}
+          ligne du bouton hamburger, et il ne prend plus de place au dessus des messages.
+          18/10/2026 : en chat plein écran, sur PC aussi, la rangée est posée par-dessus la
+          liste (plus de ligne à part) : le texte des messages passe derrière, adouci par le
+          voile du haut (voir plus bas). Elle laisse passer les clics et la molette, seul le
+          bouton du modèle les reçoit. */}
       {modelesDisponibles.length > 0 && (
         <div
           className={
-            "relative z-20 flex h-11 flex-shrink-0 items-center justify-center" +
-            (pleinEcran
-              ? " max-md:pointer-events-none max-md:fixed max-md:inset-x-0 max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-40 max-md:h-8"
-              : "")
+            pleinEcran
+              ? "pointer-events-none flex items-center justify-center md:absolute md:inset-x-0 md:top-[var(--safe-top)] md:z-20 md:h-11 max-md:fixed max-md:inset-x-0 max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-[25] max-md:h-8"
+              : "relative z-20 flex h-11 flex-shrink-0 items-center justify-center"
           }>
           <SelecteurModeleHaut
             modelesDisponibles={modelesDisponibles}
@@ -1845,7 +1878,12 @@ export function ChatIA({
         onScroll={() => {
           collePresBasRef.current = estPresDuBas();
         }}
-        className="flex-1 space-y-5 overflow-y-auto py-6 [padding-inline:max(1rem,calc((100%_-_48rem)/2_+_1rem))]">
+        className={
+          "flex-1 space-y-5 overflow-y-auto [padding-inline:max(1rem,calc((100%_-_48rem)/2_+_1rem))] " +
+          // Chat plein écran : la liste va jusqu'au bord haut, le premier message démarre sous la
+          // rangée du modèle (même position qu'avant, via --dj-chat-haut).
+          (pleinEcran ? "pb-6 pt-[calc(var(--dj-chat-haut)+1.5rem)]" : "py-6")
+        }>
         {messages.map((message, index) => {
           const estDernier = index === messages.length - 1;
           // Message envoyé par l'appli (fin de minuteur), jamais montré comme
@@ -1968,8 +2006,26 @@ export function ChatIA({
             onAnnuler={() => repriseApresConfirmation(false)}
           />
         )}
-        <div ref={finDesMessagesRef} />
+        {/* Sur téléphone en chat plein écran, la barre de saisie est posée par-dessus la
+            liste : ce repère de fin réserve sa hauteur (mesurée, voir saisieSuperposeeRef),
+            donc le défilement vers le bas laisse le dernier message au-dessus de la barre. */}
+        <div
+          ref={finDesMessagesRef}
+          className={pleinEcran ? "max-md:h-[calc(var(--hauteur-saisie-chat,7rem)+0.75rem)]" : undefined}
+        />
       </div>
+
+      {/* Voile du haut (18/10/2026, demande Bourama) : fondu doux et léger flou derrière la
+          rangée du modèle, le hamburger, la cloche et le minuteur, sur PC comme sur téléphone.
+          Posé après la liste pour passer par-dessus, sous la rangée du modèle (z-20) et sous
+          les boutons globaux (z-40). Il ne reçoit aucun clic. */}
+      {pleinEcran && <div aria-hidden className="voile-chat-haut absolute inset-x-0 top-0 z-10" />}
+
+      {/* Voile du bas (19/10/2026, demande Bourama) : sur téléphone, le texte s'estompe
+          doucement en descendant vers la barre de saisie, sans aucun flou. Posé juste avant
+          la barre (même niveau, la barre passe donc par-dessus) et sans recevoir de clic ni
+          de geste. Masqué sur PC par la feuille de style. */}
+      {pleinEcran && <div aria-hidden className="voile-chat-bas absolute inset-x-0 bottom-0 z-10" />}
 
       {/* pb via var(--safe-bottom) (2026-07-30, durci tâche 4 le
           30/08/2026) : marge pour la barre d'accueil iOS (encoche du bas)
@@ -1986,21 +2042,34 @@ export function ChatIA({
           toute façon toujours 0px (voir explication complète dans
           app/globals.css). Retiré : --safe-bottom seul couvre le vrai
           besoin (la zone système du bas). */}
-      <div className="mx-auto w-full max-w-3xl px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]">
-        <BarreDeSaisie
-          onEnvoyer={envoyerMessage}
-          desactive={genEnCours || affichageEnCours || accesBloqueMineur}
-          genererEnCours={genEnCours}
-          onArreter={arreterGeneration}
-          agentId={agentId}
-          modelesDisponibles={modelesDisponibles}
-          modeleSelectionne={modeleSelectionne}
-          onModeleChange={setModeleSelectionne}
-          boutonSansEnseignant={boutonSansEnseignant}
-          outilsActifsAgent={outilsActifsAgent}
-          conversationId={conversationId}
-          onAccesBloqueChange={setAccesBloqueMineur}
-        />
+      {/* 18/10/2026, demande Bourama : en chat plein écran, sur téléphone seulement, la barre
+          est posée par-dessus la liste, collée en bas, comme une carte qui flotte : le texte des
+          messages se voit tout autour d'elle et en dessous. Sur PC elle reste sous la liste,
+          comme avant. L'enveloppe laisse passer les gestes (le défilement de la liste continue
+          sous la zone vide autour de la barre), seule la barre les reçoit. */}
+      <div
+        ref={saisieSuperposeeRef}
+        className={
+          "mx-auto w-full max-w-3xl px-4 [padding-bottom:calc(var(--safe-bottom)+1.5rem)]" +
+          (pleinEcran ? " max-md:pointer-events-none max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-10" : "")
+        }>
+        <div className={pleinEcran ? "max-md:pointer-events-auto" : undefined}>
+          <BarreDeSaisie
+            onEnvoyer={envoyerMessage}
+            desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+            genererEnCours={genEnCours}
+            onArreter={arreterGeneration}
+            agentId={agentId}
+            modelesDisponibles={modelesDisponibles}
+            modeleSelectionne={modeleSelectionne}
+            onModeleChange={setModeleSelectionne}
+            boutonSansEnseignant={boutonSansEnseignant}
+            outilsActifsAgent={outilsActifsAgent}
+            conversationId={conversationId}
+            onAccesBloqueChange={setAccesBloqueMineur}
+            flotteSurListe={pleinEcran}
+          />
+        </div>
       </div>
 
       {popupFeedback && (

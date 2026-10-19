@@ -6,32 +6,22 @@ import {
   listerDossiersCataloguePublic,
 } from "@/lib/api";
 import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
+import {
+  SECTIONS_DECOUVRIR,
+  SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE,
+  SOUS_PAGES_DECOUVRIR_PERSONNALISER,
+  SOUS_PAGES_DECOUVRIR_CONCENTRATION,
+  SOUS_PAGES_DECOUVRIR_BUREAU,
+} from "@/lib/sectionsDecouvrir";
+import { USAGES_DECOUVRIR } from "@/lib/usagesDecouvrir";
 
-// Chantier "Classinus ouvert" (10/09/2026, Lot F, dernier lot -- transverse
-// aux quatre précédents). Un seul fichier suffit : même avec 500+ PDF,
-// le nombre total d'URLs reste très en dessous des 50 000 entrées
-// qu'accepte un sitemap (au-delà, Next.js permettrait de le découper via
-// generateSitemaps, inutile ici). Route générée par Next.js à l'adresse
-// /sitemap.xml.
-//
-// NOTE POUR BOURAMA : la bibliothèque publique (Lot A) et les
-// établissements (Lot C) n'ont pas de plafond côté backend, tout est
-// listé ici. Les skills publiques (Lot B) sont, elles, plafonnées à 100
-// résultats par GET /api/comportements-publics (core/comportements_etudiants.py,
-// lister_comportements_publics, `.limit(100)`, pas de decalage/limite
-// exposés) -- ce sitemap ne peut donc lister que les 100 skills les plus
-// activées, pas au-delà, tant que cet endpoint n'a pas de pagination
-// comme la bibliothèque. Pas touché ici (hors périmètre du lot), je le
-// signale seulement.
 const URL_BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 async function urlsBibliothequePublique(): Promise<MetadataRoute.Sitemap> {
   const urls: MetadataRoute.Sitemap = [];
   const LIMITE_PAGE = 200;
   let decalage = 0;
-  // Pagination complète (Lot A expose decalage/limite pour ça, voir
-  // listerBibliothequePublique) : on avance tant qu'une page renvoie son
-  // plein, on s'arrête à la première page incomplète ou vide.
+
   for (;;) {
     let page: Awaited<ReturnType<typeof listerBibliothequePublique>>;
     try {
@@ -39,9 +29,7 @@ async function urlsBibliothequePublique(): Promise<MetadataRoute.Sitemap> {
     } catch {
       break;
     }
-    for (const entree of page) {
-      urls.push({ url: `${URL_BASE}/bibliotheque/${entree.id}` });
-    }
+    for (const entree of page) urls.push({ url: `${URL_BASE}/bibliotheque/${entree.id}` });
     if (page.length < LIMITE_PAGE) break;
     decalage += LIMITE_PAGE;
   }
@@ -75,6 +63,26 @@ async function urlsDossiers(): Promise<MetadataRoute.Sitemap> {
   }
 }
 
+// Toutes les pages /decouvrir sont dérivées des registres qui alimentent
+// directement le guide public : une nouvelle section ou sous-page n'a donc
+// plus besoin d'être ajoutée manuellement au sitemap.
+function urlsDecouvrir(): MetadataRoute.Sitemap {
+  const chemins = [
+    ROUTES_DECOUVRIR.accueil,
+    ...SECTIONS_DECOUVRIR.map((section) => section.href),
+    ...SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE.map((page) => page.href),
+    ...SOUS_PAGES_DECOUVRIR_PERSONNALISER.map((page) => page.href),
+    ...SOUS_PAGES_DECOUVRIR_CONCENTRATION.map((page) => page.href),
+    ...SOUS_PAGES_DECOUVRIR_BUREAU.map((page) => page.href),
+    ...USAGES_DECOUVRIR.map((usage) => usage.href),
+  ];
+
+  return [...new Set(chemins)].map((href) => ({
+    url: `${URL_BASE}${href}`,
+    priority: href === ROUTES_DECOUVRIR.accueil ? 0.9 : 0.7,
+  }));
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [bibliotheque, skills, etablissements, dossiers] = await Promise.all([
     urlsBibliothequePublique(),
@@ -83,44 +91,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     urlsDossiers(),
   ]);
 
-  return [
+  const urlsStatiques: MetadataRoute.Sitemap = [
     { url: URL_BASE, priority: 1 },
     { url: `${URL_BASE}/bibliotheque` },
     { url: `${URL_BASE}/comportements` },
     { url: `${URL_BASE}/etablissements` },
-    // Chantier SEO/AEO de Classinus (26/09/2026) : nouvelles pages
-    // publiques de présentation /decouvrir/... . Bibliothèque est la
-    // première section traitée, les prochaines rejoindront cette liste
-    // au fil des prochains chantiers.
-    { url: `${URL_BASE}/decouvrir` },
-    { url: `${URL_BASE}/decouvrir/accueil` },
-    { url: `${URL_BASE}/decouvrir/bibliotheque` },
-    { url: `${URL_BASE}/decouvrir/bibliotheque/perso` },
-    { url: `${URL_BASE}/decouvrir/bibliotheque/publique` },
-    { url: `${URL_BASE}/decouvrir/bibliotheque/telephone` },
-    { url: `${URL_BASE}/decouvrir/personnaliser` },
-    { url: `${URL_BASE}/decouvrir/personnaliser/mes-skills` },
-    { url: `${URL_BASE}/decouvrir/personnaliser/skills-publics` },
-    { url: `${URL_BASE}/decouvrir/personnaliser/memoire` },
-    { url: `${URL_BASE}/decouvrir/concentration` },
-    { url: `${URL_BASE}/decouvrir/concentration/session` },
-    { url: `${URL_BASE}/decouvrir/concentration/temps-ecran` },
-    // Pages d'usage (11/10/2026, chantier "visibilité auprès des IA") : les
-    // plus importantes pour qu'une IA ou un moteur trouve Classinus quand
-    // on cherche une appli pour trouver des PDF, apprendre à coder, trouver
-    // des vidéos ou étudier. Adresses prises dans ROUTES_DECOUVRIR.
-    ...Object.values(ROUTES_DECOUVRIR.usages).map((href) => ({ url: `${URL_BASE}${href}`, priority: 0.8 })),
-    { url: `${URL_BASE}/decouvrir/bureau` },
-    { url: `${URL_BASE}/decouvrir/bureau/programme` },
-    { url: `${URL_BASE}/decouvrir/bureau/codes` },
-    { url: `${URL_BASE}/decouvrir/bureau/entrer-code` },
-    { url: `${URL_BASE}/decouvrir/bureau/audit` },
-    { url: `${URL_BASE}/decouvrir/bureau/signalements` },
-    { url: `${URL_BASE}/decouvrir/bureau/editeur` },
-    { url: `${URL_BASE}/decouvrir/bureau/configuration` },
+    ...urlsDecouvrir(),
+  ];
+
+  // Évite les doublons entre les pages fixes et les listes issues des données
+  // publiques, tout en gardant la première entrée (et ses métadonnées).
+  const toutesLesUrls = [
+    ...urlsStatiques,
     ...bibliotheque,
     ...skills,
     ...etablissements,
     ...dossiers,
   ];
+  const uniques = new Map<string, MetadataRoute.Sitemap[number]>();
+  for (const entree of toutesLesUrls) {
+    uniques.set(entree.url, uniques.get(entree.url) ?? entree);
+  }
+  return [...uniques.values()];
 }

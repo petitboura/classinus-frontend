@@ -47,6 +47,8 @@ import { ROUTES_APP } from "@/lib/routesApp";
 import {
   CELLULE_ICONE_RAIL,
   CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_TIROIR,
+  ECART_LIBELLE_TIROIR,
   ECART_ELEMENTS_RAIL,
   RAPPROCHE_LIBELLE_RAIL,
   TAILLE_ICONE_RAIL,
@@ -471,7 +473,7 @@ export function AppSidebar({
             }
           }
         }}
-        className={`group relative ${mobile ? "mt-2" : ECART_ELEMENTS_RAIL} flex w-full items-center gap-2 rounded-xl transition-colors ${
+        className={`group relative ${mobile ? ECART_ELEMENTS_TIROIR : ECART_ELEMENTS_RAIL} flex w-full items-center ${mobile ? ECART_LIBELLE_TIROIR : "gap-2"} rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
       >
@@ -933,7 +935,7 @@ export function AppSidebar({
         <div
           data-agent-zone="Menu latéral"
           className={
-            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-surface px-2 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
+            `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-surface px-2 pt-2 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
               // 07/09/2026, correctif Bourama (bug "sous-sections de
               // Personnaliser Classinus ne marchent pas") : groupeOuvertId
               // manquait ici, contrairement au rail desktop juste plus
@@ -948,11 +950,12 @@ export function AppSidebar({
               : " animate-cgpt-entree-modal transition-all duration-200 ease-cgpt-doux")
           }
         >
-          <div className="mt-[calc(2rem+var(--safe-top))]">
+          <div className="mt-[var(--safe-top)]">
             {/* Identité en tête du panneau : même logo que le reste de l'appli,
                 suivi du nom, avec le même séparateur que le rail desktop. Le
-                pt-2 garde le logo sous le bouton hamburger flottant. */}
-            <div className="flex items-center gap-2 px-2 pt-2">
+                pl-10 garde le logo à droite du bouton hamburger flottant, sur la même
+                ligne : plus de grand vide en haut du tiroir. */}
+            <div className="flex h-8 items-center gap-2 pl-10 pr-2">
               <Logo taille={28} sansFond />
               <span className="text-base font-semibold text-dj-texte">Classinus</span>
             </div>
@@ -965,7 +968,7 @@ export function AppSidebar({
                     className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
                     <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
-                    <span className="text-sm">Nouvelle conversation</span>
+                    <span className="text-sm font-semibold">Nouvelle conversation</span>
                   </button>
                 )}
 
@@ -973,7 +976,7 @@ export function AppSidebar({
                   <div className="relative mt-1">
                     <button
                       onClick={() => setHistoriqueDeplie((v) => !v)}
-                      className={`group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm transition-colors ${
+                      className={`group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold transition-colors ${
                         historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet"
                       }`}
                     >

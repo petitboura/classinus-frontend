@@ -19,6 +19,7 @@ import { MenuHamburgerNatif } from "@/components/mobile/MenuHamburgerNatif";
 import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
+import { BoutonDecouvrir } from "@/components/BoutonDecouvrir";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { DockMinuteurs } from "@/components/chat/minuteurs/DockMinuteurs";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
@@ -229,6 +230,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               seule copie ici, plus une par chat. Réservé aux comptes connectés
               (un minuteur est enregistré sur le compte). */}
           {connecte && <DockMinuteurs />}
+          {/* 18/10/2026, demande Bourama : bouton vers la page générale
+              /decouvrir, à gauche de l'horloge des minuteurs, masqué dans le
+              chat (voir BoutonDecouvrir.tsx). */}
+          <BoutonDecouvrir connecte={connecte} />
           <SyncTempsReelCache connecte={connecte} />
           {/* 07/09/2026, décision Bourama (bug PC web signalé : profil et
               "..." affichés en double) : cette instance-ci d'AppSidebar
@@ -291,7 +296,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               // chaque page ne soit pas caché derrière elle. Sur /chat la
               // barre est masquée et ChatIA ajoute déjà son propre padding de
               // sécurité (clavier, safe-bottom), rien à réserver.
-              paddingTop: "calc(var(--safe-top) + var(--dj-hamburger-espace))",
+              // 18/10/2026, demande Bourama : sur le chat, rien n'est reserve en
+              // haut. Le chat va jusqu'au bord de l'ecran pour que le texte des
+              // messages passe derriere la rangee du haut (voile en fondu, voir
+              // ChatIA.tsx). Le chat reserve lui meme cette place avec
+              // --dj-chat-haut, et l'ecran d'accueil du chat la garde.
+              paddingTop: estPageChat(pathname) ? "0px" : "calc(var(--safe-top) + var(--dj-hamburger-espace))",
               paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
             }}
           >

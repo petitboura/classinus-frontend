@@ -48,12 +48,19 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Autorise Classinus à lire et agir dans les apps que tu choisis, une par une. Le service d'accessibilité de Classinus doit être activé dans les réglages système du téléphone pour que ça fonctionne. Tu contrôles précisément quelles apps sont autorisées, et un journal garde la trace de ce que Classinus y a lu ou fait.",
   },
   {
+    id: "configuration-bureau",
+    titre: "Configuration",
+    texteCourt: "Crée des procédures, règles, comportements et styles pour guider les réponses de Classinus. Chaque type a son propre format ; active les éléments utiles et partage-les selon les options disponibles.",
+    texteComplet:
+      "La Configuration regroupe quatre types d'éléments : une procédure décrit une suite d'étapes ; une règle formule une consigne courte ; un comportement décrit comment Classinus doit réagir dans une situation précise ; un style définit le ton ou la manière d'écrire à reproduire. Tu peux créer ou modifier ces éléments, activer ceux dont tu as besoin et, selon les options disponibles, les partager avec un code ou les publier dans le catalogue public.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.configuration,
+  },
+  {
     id: "audit-corrections",
     titre: "Audit hebdomadaire",
     texteCourt: "Une fois par semaine, un résumé des signalements de tes élèves, même s'il n'y en a aucun.",
     texteComplet:
       "Chaque semaine, Classinus t'envoie un résumé des signalements reçus de tes élèves, même s'il n'y en a aucun. Les signalements encore en attente sont listés en priorité, avec un accès direct pour les corriger.",
-    lienDecouvrir: ROUTES_DECOUVRIR.bureau.audit,
   },
   {
     // 20/09/2026, demande Bourama : tableau de bord par code, phase 1
@@ -63,9 +70,10 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     // tant qu'ils ne sont pas construits.
     id: "audit-complet-code",
     titre: "Audit complet",
-    texteCourt: "Le tableau de bord d'un de tes codes : activité, signalements, outils et affichages utilisés.",
+    texteCourt: "Consulte le tableau de bord d’un code : activité des élèves, conversations, questions, signalements et outils utilisés.",
     texteComplet:
       "Choisis un de tes codes pour voir son tableau de bord : combien d'élèves rattachés l'utilisent vraiment, le nombre de conversations et de questions, les heures où ils sont le plus actifs, les outils et affichages les plus utilisés, les modes pédagogiques (Socratique, Professeur, Tuteur, Examinateur) et les modes source (Recherche, Sur pièces) qu'ils choisissent le plus dans leurs échanges avec Classinus. Les chiffres se mettent à jour automatiquement.",
+    lienDecouvrir: ROUTES_DECOUVRIR.bureau.audit,
   },
   {
     // Chantier "canal en direct" (19/09/2026) : bouton flottant en bas à
@@ -82,7 +90,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     // 19/09/2026, demande Bourama : le bouton "i" passe de l'écran à la
     // page (Concentration fonctionne comme Personnaliser Clovis). Le texte
     // court est aligné sur celui que l'écran affichait jusqu'ici.
-    texteCourt: "Coupe les sonneries et notifications, et active Ne pas déranger pendant la durée choisie.",
+    texteCourt: "Choisis une durée de travail pour activer Ne pas déranger et réduire les interruptions. Une autorisation système est nécessaire.",
     texteComplet:
       "Coupe les sonneries et notifications, et active Ne pas déranger le temps de ta session de travail. L'activation se fait dans les réglages système (Accessibilité), en dehors de l'app.",
     lienDecouvrir: ROUTES_DECOUVRIR.concentration.session,
@@ -116,7 +124,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "entrer-code",
     titre: "Entrer un code",
-    texteCourt: "Quelqu'un t'a donné un code ? Entre-le ici pour recevoir tout ce qu'il partage.",
+    texteCourt: "Saisis un code reçu pour récupérer les consignes, dossiers de bibliothèque ou textes que son auteur a partagés.",
     texteComplet:
       "Si quelqu'un t'a donné un code, entre-le ici pour recevoir tout ce qu'il partage : comportement, bibliothèque, ou texte, selon ce que la personne y a mis.",
     lienDecouvrir: ROUTES_DECOUVRIR.bureau.entrerCode,
@@ -124,7 +132,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "editeur-code",
     titre: "Éditeur de code",
-    texteCourt: "Écris et exécute du code, ouvre ou enregistre-le dans ta bibliothèque.",
+    texteCourt: "Écris et modifie du code, ouvre ou enregistre tes fichiers dans ta bibliothèque et exécute Python. Le canal en direct peut aussi t’aider dans l’éditeur.",
     texteComplet:
       "Écris du code dans n'importe quel langage. Le bouton Exécuter (Python uniquement pour l'instant) lance le code directement dans le navigateur, comme dans le chat. Ouvrir et Enregistrer utilisent ta bibliothèque personnelle comme espace de fichiers : choisis un fichier existant à ouvrir, ou enregistre le code affiché sous un nom, avec ou sans dossier. Quand le canal en direct est actif, Classinus voit ton code : il peut te répondre, te montrer des lignes, te conseiller et écrire directement dans l'éditeur, en plein écran comme en petit. Tu peux annuler ce qu'il écrit avec Ctrl+Z (Cmd+Z sur Mac).",
     lienDecouvrir: ROUTES_DECOUVRIR.bureau.editeur,
@@ -155,7 +163,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "temps-ecran",
     titre: "Temps d'écran",
-    texteCourt: "Temps passé aujourd'hui dans chaque app, et les 7 derniers jours.",
+    texteCourt: "Consulte le temps passé dans chaque application aujourd’hui et sur les sept derniers jours. Disponible dans l’application Android avec l’autorisation d’utilisation.",
     texteComplet:
       "Affiche le temps passé aujourd'hui dans chaque app installée, avec un historique sur les 7 derniers jours. Nécessite l'app mobile Classinus (Android uniquement pour l'instant).",
     lienDecouvrir: ROUTES_DECOUVRIR.concentration.tempsEcran,
@@ -163,7 +171,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "mes-codes",
     titre: "Mes codes",
-    texteCourt: "Crée un code et partage-le : tous ceux qui l'entrent reçoivent ce que tu y mets.",
+    texteCourt: "Crée un code, associe-lui des consignes, des dossiers de bibliothèque ou un texte, puis partage-le. Tu peux modifier le contenu après coup.",
     texteComplet:
       "Crée un code et partage-le : tous ceux qui l'entrent reçoivent tout ce que tu y mets (comportement, bibliothèque, texte). Modifiable après coup, tout le monde voit la mise à jour dès qu'elle est faite.",
     lienDecouvrir: ROUTES_DECOUVRIR.bureau.codes,
@@ -175,7 +183,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     // page (Bureau fonctionne comme Personnaliser Clovis). Le texte court
     // est aligné sur celui que la carte affichait jusqu'ici, qui décrit
     // les quatre niveaux du programme (matière, chapitre, partie, notion).
-    texteCourt: "Organise le programme (matière > chapitre > partie > notion) et coche l'avancement.",
+    texteCourt: "Organise le programme d’un code en matières, chapitres, parties et notions, suis l’avancement et explore le catalogue public de programmes.",
     texteComplet:
       "Organise les notions à enseigner pour un code, avec des sous-notions si besoin (renommer, fusionner, réordonner, supprimer). Chaque notion a un statut que tu coches toi-même : à venir, en cours, ou acquis. Tu peux aussi importer un document (sommaire, plan de cours) pour proposer une structure de départ, à valider avant de l'appliquer.",
     lienDecouvrir: ROUTES_DECOUVRIR.bureau.programme,
@@ -189,8 +197,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "signalements-prof",
     titre: "Signalements",
-    texteCourt:
-      "Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme, rien n'est automatique, rien n'est traité sans toi.",
+    texteCourt: "Consulte les problèmes signalés par les élèves et discute de chaque cas avec Classinus pour décider de la suite. Rien n’est traité automatiquement.",
     texteComplet:
       "Un élève a signalé un problème sur une réponse de Classinus. Clique sur « Discuter » pour ouvrir une conversation avec Classinus et échanger sur ce cas, à ton rythme, rien n'est automatique, rien n'est traité sans toi.",
     lienDecouvrir: ROUTES_DECOUVRIR.bureau.signalements,
@@ -201,8 +208,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "bibliotheque-perso",
     titre: "Bibliothèque",
-    texteCourt:
-      "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
+    texteCourt: "Ajoute et classe tes fichiers, liens et textes dans une bibliothèque privée. Classinus peut consulter ces ressources pendant tes conversations ; les archives ZIP prises en charge peuvent être décompressées.",
     texteComplet:
       "Les documents ajoutés ici sont personnels : toi seul y as accès, et Classinus peut les consulter pendant une conversation. Un .zip envoyé est automatiquement déplié : chaque fichier à l'intérieur est ajouté individuellement, dans un dossier créé pour l'occasion.",
     lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.perso,
@@ -212,18 +218,9 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     titre: "Bibliothèque publique",
     texteCourt: (
       <>
-        Un catalogue de documents partagé par tout le monde : ajoute un fichier, un lien ou une note avec un nom et
-        une description pour que les autres le retrouvent facilement. Un .zip envoyé est automatiquement déplié dans
-        un nouveau dossier. En publiant, tu garantis détenir les droits sur
-        ce contenu, voir les{" "}
-        <Link href="/cgu" className="underline hover:text-dj-texte">
-          CGU
-        </Link>{" "}
-        et la{" "}
-        <Link href="/copyright" className="underline hover:text-dj-texte">
-          politique de copyright
-        </Link>
-        .
+        Recherche et évalue les ressources partagées par la communauté, consulte le profil des contributeurs et publie tes propres fichiers, liens ou notes. En publiant, tu confirmes détenir les droits : lis les{" "}
+        <Link href="/cgu" className="underline hover:text-dj-texte">CGU</Link>{" "}et la{" "}
+        <Link href="/copyright" className="underline hover:text-dj-texte">politique de copyright</Link>.
       </>
     ),
     texteComplet: (
@@ -251,8 +248,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     // 25/09/2026 pour /decouvrir/bibliotheque/telephone.
     id: "bibliotheque-telephone",
     titre: "Dossiers du téléphone",
-    texteCourt:
-      "Désigne des dossiers de ton téléphone, sans copier tes PDF ni documents. Classinus les explore et les réorganise pour toi.",
+    texteCourt: "Sur mobile, désigne les dossiers dont tu veux parcourir et gérer les fichiers, sans importer chaque document séparément.",
     texteComplet:
       "Disponible uniquement sur l'appli mobile. Si tu le décides, plus besoin d'ajouter tes PDF ou documents un par un : Classinus peut fouiller directement dans les dossiers de ton téléphone que tu lui désignes, et même les réorganiser en sous dossiers.",
     lienDecouvrir: ROUTES_DECOUVRIR.bibliotheque.telephone,
@@ -260,8 +256,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "mes-skills",
     titre: "Mes skills",
-    texteCourt:
-      "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
+    texteCourt: "Crée et modifie tes consignes personnelles pour adapter les réponses de Classinus. Elles complètent les consignes définies par ton enseignant.",
     texteComplet:
       "Tes consignes perso pour Classinus, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter plusieurs, clique sur l'une d'elles pour l'ouvrir en grand et la modifier tranquillement.",
     lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.mesSkills,
@@ -270,9 +265,10 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     id: "skills-publics",
     titre: "Skills publics",
     texteCourt:
-      "Des comportements publiés par d'autres étudiants. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi.",
+      "Parcours les skills que d'autres élèves ont publiées. Consulte leur contenu avant de les activer : Classinus ajoute alors une copie à tes skills personnelles, que tu peux ensuite adapter.",
     texteComplet:
-      "Des comportements publiés par d'autres étudiants. Clique sur l'un d'eux pour voir son contenu complet avant de l'activer. Active celui qui t'intéresse : une copie s'ajoute directement dans « Mes comportements », prête à l'emploi. Si c'est toi qui l'as publié, tu peux le retirer du catalogue à tout moment.",
+      "Le catalogue public rassemble des skills que d'autres élèves ont choisi de partager. Ouvre une skill pour consulter son contenu complet avant de l'activer. Si elle te convient, Classinus en ajoute une copie à tes skills personnelles, que tu peux ensuite modifier. Si tu as publié une skill, tu peux aussi la retirer du catalogue.",
+
     lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
   },
   {
@@ -286,8 +282,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
   {
     id: "memoire",
     titre: "Ma mémoire",
-    texteCourt:
-      "Ce que Classinus retient de toi pour personnaliser vos échanges, classé en quatre catégories : identité, scolarité, apprentissage et préférences. Ça se construit tout seul au fil de tes conversations. Tu peux tout consulter ici et oublier une catégorie. Les Paramètres te permettent aussi d'oublier une catégorie ou de tout effacer d'un coup.",
+    texteCourt: "Consulte les informations que Classinus retient au fil des échanges, classées en quatre catégories. Tu peux supprimer une catégorie ou vider la mémoire depuis les commandes prévues.",
     texteComplet:
       "Ce que Classinus retient de toi pour personnaliser vos échanges, classé en quatre catégories : identité, scolarité, apprentissage et préférences. Ça se construit tout seul au fil de tes conversations. Tu peux tout consulter ici et oublier une catégorie. Les Paramètres te permettent aussi d'oublier une catégorie ou de tout effacer d'un coup.",
     lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.memoire,

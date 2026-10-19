@@ -137,6 +137,7 @@ export function BarreDeSaisie({
   texteInitial,
   conversationId,
   onAccesBloqueChange,
+  flotteSurListe = false,
 }: {
   onEnvoyer: (
     texte: string,
@@ -202,6 +203,11 @@ export function BarreDeSaisie({
   // Remonte à ChatIA qu'un mineur sans aucun code est bloqué (voir
   // useModeActif), pour que la barre de saisie soit désactivée.
   onAccesBloqueChange?: (bloque: boolean) => void;
+  // 18/10/2026, demande Bourama : chat plein écran, après le premier message. Sur téléphone,
+  // la barre est posée par-dessus la liste des messages (voir ChatIA.tsx) : le texte défile
+  // tout autour et en dessous. Son cadre reste plein, avec une ombre douce pour montrer qu'elle
+  // flotte au-dessus. Sans effet sur PC ni dans la popup.
+  flotteSurListe?: boolean;
 }) {
   const [texte, setTexte] = useState(() => texteInitial ?? "");
   // Longueur et « Sans enseignant » vivent dans lib/reglagesProchainMessage.ts (03/10/2026,
@@ -1890,7 +1896,11 @@ export function BarreDeSaisie({
           )}
         </div>
       )}
-      <div className="relative flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
+      <div
+        className={
+          "relative flex flex-col gap-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden" +
+          (flotteSurListe ? " shadow-[0_4px_20px_rgba(0,0,0,0.12)]" : "")
+        }>
         {/* Plein écran (01/10/2026) : posé dehors, collé juste au-dessus du coin haut
             droit de la barre, petite flèche sans bulle. Ouvre la même
             zone d'écriture agrandie sur PC et mobile (pleinEcranSaisie). */}

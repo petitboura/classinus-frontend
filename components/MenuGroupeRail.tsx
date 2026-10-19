@@ -9,6 +9,8 @@ import { sectionsVisiblesDuGroupe, type GroupeRail } from "@/lib/groupesRail";
 import {
   CELLULE_ICONE_RAIL,
   CELLULE_ICONE_TACTILE,
+  ECART_ELEMENTS_TIROIR,
+  ECART_LIBELLE_TIROIR,
   ECART_ELEMENTS_RAIL,
   TAILLE_ICONE_BULLE,
   TAILLE_ICONE_RAIL,
@@ -139,14 +141,14 @@ export function MenuGroupe({
     ? `group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
         actif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
       } ${ouvert && !actif ? "bg-dj-surface-haute text-dj-texte" : ""}`
-    : `group flex w-full items-center gap-2 rounded-xl transition-colors ${
+    : `group flex w-full items-center ${mobile ? `${ECART_LIBELLE_TIROIR} px-2` : "gap-2"} rounded-xl transition-colors ${
         actif || ouvert ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-      } ${mobile ? "px-2 py-2" : ""}`;
+      }`;
 
   return (
     <div
       ref={ref}
-      className={`relative w-full ${mobile || plus ? "" : ECART_ELEMENTS_RAIL}`}
+      className={`relative w-full ${plus ? "" : mobile ? ECART_ELEMENTS_TIROIR : ECART_ELEMENTS_RAIL}`}
       onMouseEnter={() => {
         if (mobile) return;
         annulerFermeture();

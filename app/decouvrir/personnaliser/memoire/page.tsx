@@ -1,28 +1,27 @@
 import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
-// Chantier SEO/AEO de Classinus (26/09/2026). Titre, description et
-// contenu validés par Bourama.
 export const metadata: Metadata = {
-  title: "Ma mémoire dans Classinus : ce que l'IA retient de toi",
+  title: "Mémoire Classinus : consulter et gérer les informations retenues",
   description:
-    "Classinus retient ce qui compte pour toi (identité, scolarité, apprentissage, préférences) afin de personnaliser vos conversations. Tu peux tout consulter et l'effacer quand tu veux.",
+    "Consulte les informations que Classinus retient au fil des conversations, réparties en catégories, puis supprime celles que tu ne souhaites plus conserver selon les options disponibles.",
 };
 
 export default function PageDecouvrirPersonnaliserMemoire() {
   return (
     <MiseEnPageDecouvrirPersonnaliser>
       <h1 className="font-display text-2xl font-bold text-dj-texte">Ma mémoire</h1>
-      <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
-        Ce que Classinus retient de toi pour personnaliser vos échanges. Tout est classé en quatre catégories :
-        ton identité, ta scolarité, ce que tu apprends (matière par matière, avec les notions vues et les
-        difficultés repérées) et tes préférences.
+      <p className="mt-4 text-base leading-relaxed text-dj-texte">
+        La mémoire aide Classinus à tenir compte de certains éléments déjà évoqués dans vos conversations, plutôt que de repartir de zéro à chaque échange. Les informations sont organisées en quatre catégories : identité, scolarité, apprentissage et préférences.
       </p>
-      <p className="mt-4 text-sm leading-relaxed text-dj-texte-muet">
-        Cette mémoire se construit toute seule au fil de tes conversations. Tu peux tout consulter, oublier une
-        catégorie entière ou tout effacer d&apos;un coup, ici ou depuis les Paramètres. Chaque effacement demande une
-        double confirmation.
-      </p>
+      <section className="mt-6">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Consulter ce qui est retenu</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux parcourir les catégories pour voir les informations conservées, notamment les éléments liés à ton parcours scolaire, aux notions étudiées et à tes préférences de travail. Prends le temps de les vérifier si elles ne correspondent plus à ta situation.</p>
+      </section>
+      <section className="mt-6">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Supprimer des informations</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Depuis la page Mémoire ou les paramètres prévus à cet effet, tu peux supprimer une catégorie ou vider l'ensemble de la mémoire. Une confirmation supplémentaire est demandée avant l'effacement.</p>
+      </section>
     </MiseEnPageDecouvrirPersonnaliser>
   );
 }

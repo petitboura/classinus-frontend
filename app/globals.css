@@ -208,6 +208,71 @@ math-field {
   }
 }
 
+/* 18/10/2026, demande Bourama : dans le chat plein ecran, apres le premier
+   message, le texte des messages passe derriere la rangee du haut (modele,
+   hamburger, cloche, minuteur) sur PC et telephone. Un voile en fondu doux
+   (degrade du fond de page vers transparent, aucun flou) garde ces boutons
+   lisibles. Sur telephone, la barre de saisie est posee par-dessus la liste, la
+   barre elle-meme reste pleine, et le texte s'estompe doucement en descendant
+   vers elle (voile du bas, meme principe de fondu, aucun flou).
+   --dj-chat-haut : hauteur reservee en haut du chat. Sur telephone, la place du
+   bouton hamburger flottant (voir --dj-hamburger-espace). Sur PC et tablette,
+   la rangee du modele (2.75rem) apres la zone de securite du haut.
+   19/10/2026 : fondu du haut remonte a 88%, toujours sans flou.
+   Reglages : --dj-voile-opacite (force du fondu du haut) et
+   --dj-voile-bas-opacite (force du fondu du bas, atteinte tout en bas). */
+:root {
+  --dj-chat-haut: calc(var(--safe-top) + var(--dj-hamburger-espace));
+  --dj-voile-opacite: 88%;
+  --dj-voile-bas-opacite: 85%;
+}
+@media (min-width: 768px) {
+  :root {
+    --dj-chat-haut: calc(var(--safe-top) + 2.75rem);
+  }
+}
+
+.voile-chat-haut {
+  pointer-events: none;
+  height: calc(var(--dj-chat-haut) + 1.25rem);
+  background: linear-gradient(to bottom, var(--dj-fond), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+@supports (background: color-mix(in srgb, red 50%, transparent)) {
+  .voile-chat-haut {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--dj-fond) var(--dj-voile-opacite), transparent),
+      transparent
+    );
+  }
+}
+
+/* Voile du bas : telephone seulement (sur PC la barre est sous la liste, rien a
+   estomper). Pose sous la barre de saisie, au dessus de la liste. Le fondu va de
+   transparent (en haut du voile) vers le fond de page (tout en bas), sans flou.
+   Sa hauteur suit la barre mesuree (--hauteur-saisie-chat) plus une marge douce. */
+.voile-chat-bas {
+  pointer-events: none;
+  height: calc(var(--hauteur-saisie-chat, 7rem) + 1.5rem);
+  background: linear-gradient(to top, var(--dj-fond), transparent);
+}
+@supports (background: color-mix(in srgb, red 50%, transparent)) {
+  .voile-chat-bas {
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--dj-fond) var(--dj-voile-bas-opacite), transparent),
+      transparent
+    );
+  }
+}
+@media (min-width: 768px) {
+  .voile-chat-bas {
+    display: none;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --dj-fond: #0f0d0b;

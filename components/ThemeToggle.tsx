@@ -2,6 +2,7 @@
 
 import { Monitor, Sun, Moon } from "lucide-react";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
+import { TRAIT_ICONE_RAIL } from "@/lib/styleBarreLaterale";
 
 // 17/08 (v2, thème clair/sombre) -- un seul bouton qui cycle Système ->
 // Clair -> Sombre -> Système, plutôt qu'un sélecteur à 3 options séparées
@@ -38,7 +39,7 @@ export function ThemeToggle({
       }`}
     >
       <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-        <Icone size={18} className="transition-transform duration-200 group-hover:scale-110" />
+        <Icone size={18} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:scale-110" />
       </span>
       {mobile ? (
         <span className="text-sm">{LIBELLES[choix]}</span>

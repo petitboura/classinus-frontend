@@ -524,7 +524,7 @@ export function ProgrammeNotions() {
         <button
           type="button"
           onClick={() => ouvrirEdition(noeud)}
-          className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-dj-surface-haute"
+          className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-3 text-left hover:bg-dj-surface-haute"
         >
           <div className="min-w-0 flex-1">
             {chemin.length > 0 && (
@@ -565,7 +565,7 @@ export function ProgrammeNotions() {
     return (
       <div
         style={style}
-        className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-150 ${
+        className={`flex items-center gap-2 rounded-lg px-3 py-3 transition-all duration-150 ${
           enSortie ? "pointer-events-none scale-[0.98] opacity-0" : "animate-dj-fade-in-rapide opacity-100"
         }`}
       >
@@ -610,7 +610,7 @@ export function ProgrammeNotions() {
     const ouvert = ouverts.has(noeud.id);
     const lignes = aplatirSousChapitre(noeud);
     return (
-      <div className="ml-1">
+      <div>
         <EnteteGroupe
           noeud={noeud}
           ouvert={ouvert}
@@ -623,7 +623,7 @@ export function ProgrammeNotions() {
           style={{ color: "var(--dj-texte)", borderLeft: "2px solid var(--dj-bordure)" }}
         />
         {ouvert && (
-          <div className="ml-3 flex flex-col gap-0.5 border-l border-dj-bordure pl-2">
+          <div className="ml-2 flex flex-col gap-0.5 border-l border-dj-bordure pl-1.5">
             {lignes.length === 0 && ajoutParentId !== noeud.id && (
               <p className="px-2.5 py-1.5 text-xs text-dj-texte-muet">Aucun élément pour l&apos;instant.</p>
             )}
@@ -679,7 +679,7 @@ export function ProgrammeNotions() {
   const margeApresBouton = avecBoutonImporter ? "mt-4" : "";
 
   return (
-    <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5">
+    <section className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-2.5 py-5">
       {avecBoutonImporter && (
         <div className="flex justify-end">
           <button

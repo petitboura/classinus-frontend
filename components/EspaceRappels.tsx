@@ -154,7 +154,7 @@ export function EspaceRappels() {
 
   if (natif === null || chargementPermission) {
     return (
-      <div className="flex flex-col gap-4 p-4" aria-hidden>
+      <div className="flex flex-col gap-4" aria-hidden>
         <div>
           <Skeleton className="h-4 w-20 rounded" />
           <Skeleton className="mt-1 h-3 w-full rounded" style={{ animationDelay: "60ms" }} />
@@ -210,7 +210,7 @@ export function EspaceRappels() {
   }
 
   return (
-    <div className="flex animate-dj-fade-in-rapide flex-col gap-4 p-4">
+    <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       {!accordee ? (
         <div className="flex flex-col gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
           <div className="flex items-start gap-3">

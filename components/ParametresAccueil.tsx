@@ -43,9 +43,13 @@ type ProfilMoi = {
   avatar_url: string | null;
 };
 
-function Liste({ children }: { children: React.ReactNode }) {
+// `enferme` : un groupe de plusieurs lignes est enfermé dans un cadre arrondi,
+// ses lignes gardent leur trait de séparation. Une ligne seule reste à nu.
+function Liste({ children, enferme = false }: { children: React.ReactNode; enferme?: boolean }) {
   return (
-    <div className="flex flex-col">{children}</div>
+    <div className={enferme ? "flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface" : "flex flex-col"}>
+      {children}
+    </div>
   );
 }
 
@@ -53,7 +57,7 @@ function LigneLien({ icone: Icone, titre, sousTitre, href }: { icone: LucideIcon
   return (
     <Link
       href={href}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
+      className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
     >
       <Icone size={18} strokeWidth={TRAIT_ICONE_SECTION} className="flex-shrink-0 text-dj-texte-muet" />
       <div className="flex-1 overflow-hidden">
@@ -80,7 +84,7 @@ function LigneAction({
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
+      className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-dj-surface-haute ${LIGNE_TRAIT_ICONE_18}`}
     >
       <Icone
         size={18}
@@ -258,7 +262,7 @@ export function ParametresAccueil() {
         </div>
       </Link>
 
-      <Liste>
+      <Liste enferme>
         <LigneLien icone={SlidersHorizontal} titre="Préférences" href={ROUTES_PARAMETRES.preferences} />
         <LigneLien icone={Lock} titre="Confidentialité et sécurité" href={ROUTES_PARAMETRES.confidentialite} />
         <LigneLien icone={HelpCircle} titre="Aide et support" href={ROUTES_PARAMETRES.aide} />
@@ -270,12 +274,12 @@ export function ParametresAccueil() {
           Capacitor sans écran jusqu'ici. Chaque carte/écran gère déjà son
           propre état "disponible seulement sur mobile" (usePluginNatif),
           donc rien à faire ici pour le web. */}
-      <Liste>
+      <Liste enferme>
         <LigneLien icone={Smartphone} titre="Capacités du téléphone" sousTitre="Connecteurs, mise à jour, nom de l'appareil" href={ROUTES_PARAMETRES.capacitesTelephone} />
         <LigneLien icone={Accessibility} titre="Accessibilité" href={ROUTES_PARAMETRES.accessibilite} />
       </Liste>
 
-      <Liste>
+      <Liste enferme>
         <LigneAction
           icone={Download}
           titre={exportEnCours ? "Export en cours…" : "Exporter mes données"}
@@ -285,16 +289,7 @@ export function ParametresAccueil() {
       </Liste>
       {erreurExport && <p className="text-sm text-[var(--dj-erreur)]">{erreurExport}</p>}
 
-      <Liste>
-        {CATEGORIES_MEMOIRE.map((categorie) => (
-          <LigneAction
-            key={categorie}
-            icone={Eraser}
-            titre={memoireEnCours === categorie ? "Effacement…" : `Oublier : ${titreCategorieMemoire(categorie)}`}
-            onClick={() => oublierUneCategorie(categorie)}
-            danger
-          />
-        ))}
+      <Liste enferme>
         <LigneAction
           icone={Eraser}
           titre={memoireEnCours === "tout" ? "Effacement…" : "Effacer toute ma mémoire"}
@@ -306,11 +301,11 @@ export function ParametresAccueil() {
       {erreurMemoire && <p className="text-sm text-[var(--dj-erreur)]">{erreurMemoire}</p>}
       {messageMemoire && <p className="text-sm text-dj-texte-muet">{messageMemoire}</p>}
 
-      <Liste>
+      <Liste enferme>
         <LigneAction icone={LogOut} titre="Se déconnecter" onClick={seDeconnecter} />
       </Liste>
 
-      <Liste>
+      <Liste enferme>
         <LigneAction
           icone={Trash2}
           titre={suppressionEnCours ? "Suppression…" : "Supprimer mon compte"}
