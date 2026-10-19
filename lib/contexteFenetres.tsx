@@ -26,8 +26,9 @@ import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 //    depuis ChatFlottant.tsx.
 
 // Ce que peut ouvrir une fenêtre flottante : une sous-section (mêmes adresses
-// que les vraies pages, voir lib/contenuSections.tsx) ou le guide "claude".
-export type CleFenetre = CleSection | "claude";
+// que les vraies pages, voir lib/contenuSections.tsx) ou l'un des guides
+// "claude" et "thonny".
+export type CleFenetre = CleSection | "claude" | "thonny";
 
 export type FenetreSection = {
   cle: string;

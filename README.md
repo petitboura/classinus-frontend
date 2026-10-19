@@ -314,6 +314,7 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 | `/controle-session/temps-ecran` | Temps d'écran |
 | `/rappels` | Notes / rappels |
 | `/connecter-claude` | Connexion du serveur MCP public comme connecteur externe |
+| `/connecter-thonny` | Guide pas à pas pour installer le plugin Classinus dans Thonny (captures dans `public/guide-classinus-thonny/`) |
 | `/parametres` | Paramètres (profil, préférences, confidentialité, capacités du téléphone, accessibilité, aide, à propos, zone de danger) |
 | `/plus` | Menu "Plus" en version web (bureau, scolarité, connecter Claude, admin, paramètres) |
 | `/admin/signalements` | Modération des signalements de contenu public |

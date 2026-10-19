@@ -23,6 +23,7 @@ import {
   Star,
   Compass,
   Plug,
+  Code2,
   MessageSquarePlus,
   History,
   PanelLeft,
@@ -107,6 +108,7 @@ export type OngletId =
   | "bibliotheque"
   | "memoire"
   | "claude"
+  | "thonny"
   | "controle-session";
 
 // `routesFilles` (19/09/2026, demande Bourama : la Bibliothèque fonctionne
@@ -136,6 +138,9 @@ export const ONGLETS: {
   // icône Plug ("branchement", demande explicite Bourama) plutôt que le
   // logo Claude, propriété d'Anthropic.
   { id: "claude", href: "/connecter-claude", label: "Utiliser Classinus dans Claude", Icone: Plug },
+  // Guide "Utiliser Classinus dans Thonny" (19/10/2026, demande Bourama), placé
+  // juste à côté de celui pour Claude et ouvert de la même façon.
+  { id: "thonny", href: "/connecter-thonny", label: "Utiliser Classinus dans Thonny", Icone: Code2 },
   // 30/08/2026, audit navigation web mobile vs natif, étape 2 : Concentration
   // (Contrôle de session + Temps d'écran, voir EspaceConcentration.tsx)
   // était un onglet direct côté natif et web mobile mais totalement
@@ -451,8 +456,8 @@ export function AppSidebar({
           // la barre du bas.
           if (contexteChat && onglet.id) {
             e.preventDefault();
-            if (!mobile && onglet.id === "claude") {
-              ouvrirFenetre("claude");
+            if (!mobile && (onglet.id === "claude" || onglet.id === "thonny")) {
+              ouvrirFenetre(onglet.id);
             } else {
               naviguerVersSection(onglet.href);
             }
@@ -484,7 +489,7 @@ export function AppSidebar({
   // montrent leurs sous-sections au survol. Dans le chat, Bureau est dans
   // le rail comme les autres ; Concentration reste dans "Plus", avec sa
   // liste sur le côté.
-  const idsPlusFlat: OngletId[] = ["claude"];
+  const idsPlusFlat: OngletId[] = ["claude", "thonny"];
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
   const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
   const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
@@ -751,7 +756,7 @@ export function AppSidebar({
                           setActionsDeplie(false);
                           if (contexteChat) {
                             e.preventDefault();
-                            if (o.id === "claude") ouvrirFenetre("claude");
+                            if (o.id === "claude" || o.id === "thonny") ouvrirFenetre(o.id);
                             else naviguerVersSection(o.href);
                           }
                         }}

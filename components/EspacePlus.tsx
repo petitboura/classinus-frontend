@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Home, Plug, Bell, Share2, Star, Compass, type LucideIcon } from "lucide-react";
+import { Home, Plug, Code2, Bell, Share2, Star, Compass, type LucideIcon } from "lucide-react";
 import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
@@ -64,6 +64,7 @@ import {
 export const SECTIONS_BASE: { icone: LucideIcon; titre: string; sousTitre?: string; href: string }[] = [
   { icone: Home, titre: "Tableau de bord", sousTitre: "Mon espace", href: ROUTES_APP.tableauDeBord },
   { icone: Plug, titre: "Connecter Claude", sousTitre: "Utiliser Classinus dans Claude", href: "/connecter-claude" },
+  { icone: Code2, titre: "Connecter Thonny", sousTitre: "Utiliser Classinus dans Thonny", href: "/connecter-thonny" },
   { icone: Bell, titre: "Rappels", sousTitre: "Notifications programmées", href: "/rappels" },
 ];
 
