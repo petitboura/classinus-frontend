@@ -25,7 +25,8 @@ app/
   connexion/, inscription/  authentification
   oauth/, oauth/consent/  retour OAuth (Notion, connecteurs génériques)
   mon-espace/            section publique "Mon espace" (bibliothèque publique, portfolio)
-  telecharger/           page qui sert le dernier APK publié (GitHub Releases)
+  telecharger/           page de téléchargement : dernier APK Android (GitHub Releases), installeur
+                          Windows (releases de classinus-updates-pc), PWA iOS
   cgu/, copyright/       contenu légal
   decouvrir/             pages publiques de présentation (SEO/AEO), sans compte : accueil, bibliothèque,
                           personnaliser, concentration, et usages/ (11/10/2026) : une page par question

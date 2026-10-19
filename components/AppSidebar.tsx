@@ -30,6 +30,7 @@ import {
   PanelLeft,
   ArrowUpRight,
   Hourglass,
+  MonitorDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useMonProfilAffiche } from "@/lib/useMonProfilAffiche";
@@ -41,6 +42,7 @@ import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useEstDesktop } from "@/lib/useEstDesktop";
+import { useProposerTelechargementPc } from "@/lib/useProposerTelechargementPc";
 import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
@@ -232,6 +234,9 @@ export function AppSidebar({
   // l'un masque par CSS. Chacun a ses propres boutons de groupe, qui ecoutent
   // les appuis sur le document : seul celui qui est visible doit etre monte.
   const estDesktop = useEstDesktop();
+  // Bouton "Télécharger pour PC" du menu Plus : navigateur sur Windows
+  // seulement (voir lib/useProposerTelechargementPc.ts).
+  const proposerTelechargementPc = useProposerTelechargementPc();
   // 03/09/2026, demande Bourama, audit "clic sur une section ne fait
   // rien en plein écran mobile web/natif" : la fenêtre flottante
   // (ouvrirFenetre ci-dessus) ne fonctionne que sur desktop. Sur mobile
@@ -812,6 +817,23 @@ export function AppSidebar({
                   <Share2 size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:-rotate-12" />
                   {copie ? "Copié !" : "Partager"}
                 </button>
+
+                {proposerTelechargementPc && (
+                  <Link
+                    href="/telecharger"
+                    // Même précaution que les onglets plus haut : marquer avant
+                    // de fermer, sinon le démontage du menu consomme une
+                    // entrée d'historique et annule la navigation.
+                    onClick={() => {
+                      marquerActionsSansHistorique();
+                      setActionsDeplie(false);
+                    }}
+                    className="group flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                  >
+                    <MonitorDown size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:translate-y-0.5" />
+                    Télécharger pour PC
+                  </Link>
+                )}
 
                 <div className="rounded-lg">
                   <button

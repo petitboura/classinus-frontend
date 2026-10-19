@@ -100,8 +100,16 @@ grande qui corrige le problème, ou supprimer la release défectueuse dans
 - **Premier installeur à la main** : une appli déjà installée avant le plugin ne
   peut pas se mettre à jour toute seule. Le premier installeur à jour se télécharge
   dans les releases de `classinus-updates-pc`.
-- **La page Télécharger** ne propose pas encore l'installeur Windows (elle ne
-  propose que l'APK Android, le PWA iOS et un QR sur PC).
+- **La page Télécharger** (`/telecharger`) propose l'installeur Windows depuis le
+  19/10/2026. Sur Windows, elle lit la dernière release de `classinus-updates-pc`
+  (`lib/telechargementPc.ts`) et propose le fichier `.exe`, avec une note sur
+  l'avertissement SmartScreen. Tant qu'aucune version n'est publiée, elle affiche
+  un message d'indisponibilité. Mac et Linux voient un message « Windows
+  seulement » et un QR pour le téléphone. Le bouton « Télécharger pour PC » du
+  menu Plus de la barre latérale n'apparaît que dans un navigateur sur Windows
+  (`lib/useProposerTelechargementPc.ts`), jamais sur mobile ni dans l'appli
+  installée. La page est mise en cache environ une minute : une nouvelle version
+  publiée apparaît donc rapidement.
 - **Pas de pastille** de mise à jour dans la barre latérale pour l'appli PC (celle
   qui existe, `lib/useMiseAJourDisponible.ts`, ne concerne que l'APK Android).
 - **L'OTA mobile reste séparée** : elle se déclenche à chaque push sur `main`

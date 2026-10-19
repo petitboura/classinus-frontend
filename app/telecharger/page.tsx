@@ -4,6 +4,7 @@ import { Download, ShieldCheck, ExternalLink } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
 import { QrTelechargerPc } from "@/components/QrTelechargerPc";
+import { detecterAppareil, recupererDerniereReleasePc } from "@/lib/telechargementPc";
 
 // Page publique de téléchargement de l'APK "externe" (hors Play Store).
 // Créée le 29/08/2026, mission Bourama : combiner une page web dédiée +
@@ -39,6 +40,13 @@ import { QrTelechargerPc } from "@/components/QrTelechargerPc";
 //
 // Trois branches désormais, pas deux : Android (flux APK existant,
 // inchangé), iOS (PWA, nouveau), PC (QR, ajouté plus haut le même jour).
+//
+// Quatre branches depuis le 19/10/2026, demande Bourama : Windows (nouveau,
+// installeur de l'appli PC publié dans les releases de
+// classinus-updates-pc, voir lib/telechargementPc.ts), Android, iOS, et les
+// autres ordinateurs (Mac, Linux : pas d'installeur, message clair et QR
+// pour le téléphone). Chaque visite ne lit que la release dont elle a
+// besoin : celle de l'installeur sur Windows, celle de l'APK ailleurs.
 //
 // Pas de mécanisme i18n branché ici, comme MiseAJourCarte.tsx : textes en
 // dur en français, cohérent avec le reste du projet à ce stade.
@@ -80,10 +88,6 @@ function formatTaille(octets: number): string {
 }
 
 export default async function PageTelecharger() {
-  const release = await recupererDerniereRelease();
-  const apk = release?.assets.find((a) => a.name.endsWith(".apk")) ?? null;
-  const version = release?.tag_name.replace(/^v/, "") ?? null;
-
   // headers() est incompatible avec l'export statique (build:capacitor) :
   // son seul appel fait planter tout l'export, constaté le 11/09/2026,
   // malgré le commentaire plus haut qui supposait une exclusion via
@@ -92,8 +96,17 @@ export default async function PageTelecharger() {
   // de toute façon aucun sens depuis l'app native elle-même (c'est la
   // page qui explique comment télécharger l'app).
   const userAgent = process.env.CAPACITOR_BUILD === "true" ? "" : headers().get("user-agent") || "";
-  const estAndroid = /Android/i.test(userAgent);
-  const estIOS = /iPhone|iPad|iPod/i.test(userAgent);
+  const appareil = detecterAppareil(userAgent);
+  const estAndroid = appareil === "android";
+  const estIOS = appareil === "ios";
+  const estWindows = appareil === "windows";
+
+  const [release, releasePc] = await Promise.all([
+    estWindows ? Promise.resolve(null) : recupererDerniereRelease(),
+    estWindows ? recupererDerniereReleasePc() : Promise.resolve(null),
+  ]);
+  const apk = release?.assets.find((a) => a.name.endsWith(".apk")) ?? null;
+  const version = release?.tag_name.replace(/^v/, "") ?? null;
   const urlPage = `${process.env.NEXT_PUBLIC_APP_URL}/telecharger`;
 
   return (
@@ -113,6 +126,14 @@ export default async function PageTelecharger() {
                 fonctionnalités avancées de contrôle de l&apos;appareil (accessibilité).
               </p>
             </>
+          ) : estWindows ? (
+            <>
+              <h1 className="font-display text-xl font-bold text-dj-texte">Télécharger Classinus pour Windows</h1>
+              <p className="mt-2 text-sm text-dj-texte-muet">
+                L&apos;application de bureau s&apos;installe en un clic, sans droits administrateur, et se
+                met à jour toute seule ensuite.
+              </p>
+            </>
           ) : estIOS ? (
             <>
               <h1 className="font-display text-xl font-bold text-dj-texte">Installer Classinus sur iPhone / iPad</h1>
@@ -123,10 +144,11 @@ export default async function PageTelecharger() {
           ) : (
             <>
               <h1 className="font-display text-xl font-bold text-dj-texte">
-                Classinus n&apos;est pas installable depuis un PC
+                L&apos;application de bureau n&apos;existe que pour Windows
               </h1>
               <p className="mt-2 text-sm text-dj-texte-muet">
-                Scanne ce code avec ton téléphone pour accéder au téléchargement.
+                Pour l&apos;instant, Classinus s&apos;installe sur Windows, Android et iPhone. Scanne ce code
+                avec ton téléphone pour accéder au téléchargement.
               </p>
             </>
           )}
@@ -162,6 +184,39 @@ export default async function PageTelecharger() {
                   Aucune version n&apos;est disponible au téléchargement pour le moment.
                 </p>
               )
+            ) : estWindows ? (
+              releasePc ? (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-sm font-medium text-dj-texte">Version {releasePc.version}</span>
+                      <span className="block text-xs text-dj-texte-muet">
+                        Windows &middot; {formatTaille(releasePc.tailleOctets)}
+                      </span>
+                    </div>
+                  </div>
+                  <a href={releasePc.urlTelechargement} data-lien-libre className="mt-4 block">
+                    <Bouton className="flex w-full items-center justify-center gap-2">
+                      <Download size={16} />
+                      Télécharger pour Windows
+                    </Bouton>
+                  </a>
+                  {releasePc.urlNotes && (
+                    <Link
+                      href={releasePc.urlNotes}
+                      className="mt-3 flex items-center justify-center gap-1.5 text-xs text-dj-texte-muet hover:text-dj-texte hover:underline"
+                    >
+                      Voir les notes de version
+                      <ExternalLink size={12} />
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-dj-texte-muet">
+                  L&apos;installeur Windows n&apos;est pas disponible au téléchargement pour le moment.
+                  Réessaie dans quelques minutes.
+                </p>
+              )
             ) : estIOS ? (
               <ol className="list-decimal space-y-2 pl-5 text-sm text-dj-texte-muet">
                 <li>
@@ -182,6 +237,24 @@ export default async function PageTelecharger() {
               </>
             )}
           </div>
+
+          {estWindows && releasePc && (
+            <div className="mt-5 flex items-start gap-2.5 text-xs text-dj-texte-muet">
+              <ShieldCheck size={15} className="mt-0.5 flex-shrink-0" />
+              <div>
+                <p>
+                  Windows peut afficher un message{" "}
+                  <span className="text-dj-texte">« Windows a protégé votre ordinateur »</span> au premier
+                  lancement, parce que l&apos;installeur n&apos;est pas encore signé. C&apos;est normal : clique sur{" "}
+                  <span className="text-dj-texte">« Informations complémentaires »</span> puis sur{" "}
+                  <span className="text-dj-texte">« Exécuter quand même »</span> pour continuer.
+                </p>
+                <p className="mt-2">
+                  Une fois installée, l&apos;application vérifie elle-même si une mise à jour est disponible.
+                </p>
+              </div>
+            </div>
+          )}
 
           {estAndroid && apk && version && (
             <div className="mt-5 flex items-start gap-2.5 text-xs text-dj-texte-muet">

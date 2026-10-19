@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Smartphone, QrCode, Download, Share } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Smartphone, QrCode, Download, Share, MonitorDown } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
+import { detecterAppareil, type AppareilTelechargement } from "@/lib/telechargementPc";
 
 // Créé le 30/08/2026, audit navigation web mobile vs natif, étape 4.
 // Complété le 08/09/2026, demande Bourama : sur PC, /telecharger n'offre
@@ -29,21 +31,25 @@ import { Skeleton } from "@/components/Skeleton";
 // propre texte à la main (repéré comme source de divergence de ton lors
 // de l'audit) : un seul endroit désormais, avec en plus un vrai lien
 // vers /telecharger plutôt qu'une simple phrase informative.
-type Appareil = "android" | "ios" | "pc";
-
+//
+// Complété le 19/10/2026, demande Bourama : un navigateur sur Windows voit
+// maintenant "Télécharger pour Windows" (l'installeur de l'appli PC existe,
+// voir /telecharger). Dans l'appli PC déjà installée, on garde l'ancien
+// texte "pc" : proposer de télécharger ce qu'on est en train d'utiliser
+// serait trompeur. Mac et Linux restent sur le QR.
 export function BandeauTelechargerApp({ titre }: { titre: string }) {
-  const [appareil, setAppareil] = useState<Appareil | null>(null);
+  const [appareil, setAppareil] = useState<AppareilTelechargement | null>(null);
 
   useEffect(() => {
-    const ua = navigator.userAgent;
-    if (/Android/i.test(ua)) setAppareil("android");
-    else if (/iPhone|iPad|iPod/i.test(ua)) setAppareil("ios");
-    else setAppareil("pc");
+    const detecte = detecterAppareil(navigator.userAgent);
+    const dansUnNavigateur = Capacitor.getPlatform() === "web";
+    setAppareil(detecte === "windows" && !dansUnNavigateur ? "pc" : detecte);
   }, []);
 
-  const CTA: Record<Appareil, { icone: typeof Download; texte: string }> = {
+  const CTA: Record<AppareilTelechargement, { icone: typeof Download; texte: string }> = {
     android: { icone: Download, texte: "Télécharger l'app" },
     ios: { icone: Share, texte: "Installer l'app" },
+    windows: { icone: MonitorDown, texte: "Télécharger pour Windows" },
     pc: { icone: QrCode, texte: "Scanner avec ton téléphone" },
   };
 
