@@ -210,41 +210,22 @@ math-field {
 
 /* 18/10/2026, demande Bourama : dans le chat plein ecran, apres le premier
    message, le texte des messages passe derriere la rangee du haut (modele,
-   hamburger, cloche, minuteur) sur PC et telephone. Un voile en fondu doux
-   (degrade du fond de page vers transparent, aucun flou) garde ces boutons
-   lisibles. Sur telephone, la barre de saisie est posee par-dessus la liste, la
-   barre elle-meme reste pleine, et le texte s'estompe doucement en descendant
-   vers elle (voile du bas, meme principe de fondu, aucun flou).
+   hamburger, cloche, minuteur) sur PC et telephone. 19/10/2026 : aucun fondu ni
+   flou en haut, le texte passe simplement derriere les boutons. Sur telephone,
+   la barre de saisie est posee par-dessus la liste, la barre elle-meme reste
+   pleine, et le texte s'estompe doucement en descendant vers elle (voile du bas,
+   fondu sans flou).
    --dj-chat-haut : hauteur reservee en haut du chat. Sur telephone, la place du
    bouton hamburger flottant (voir --dj-hamburger-espace). Sur PC et tablette,
    la rangee du modele (2.75rem) apres la zone de securite du haut.
-   Reglages : --dj-voile-opacite (force du fondu du haut) et
-   --dj-voile-bas-opacite (force du fondu du bas, atteinte tout en bas). */
+   Reglage : --dj-voile-bas-opacite (force du fondu du bas, atteinte tout en bas). */
 :root {
   --dj-chat-haut: calc(var(--safe-top) + var(--dj-hamburger-espace));
-  --dj-voile-opacite: 88%;
   --dj-voile-bas-opacite: 85%;
 }
 @media (min-width: 768px) {
   :root {
     --dj-chat-haut: calc(var(--safe-top) + 2.75rem);
-  }
-}
-
-.voile-chat-haut {
-  pointer-events: none;
-  height: calc(var(--dj-chat-haut) + 1.25rem);
-  background: linear-gradient(to bottom, var(--dj-fond), transparent);
-  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
-  mask-image: linear-gradient(to bottom, #000 55%, transparent);
-}
-@supports (background: color-mix(in srgb, red 50%, transparent)) {
-  .voile-chat-haut {
-    background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--dj-fond) var(--dj-voile-opacite), transparent),
-      transparent
-    );
   }
 }
 
