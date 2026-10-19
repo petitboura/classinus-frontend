@@ -67,7 +67,7 @@ try {
   {
     const evts = []; const g = m.creerGestionnaireAutorisations({ envoyer: (e) => evts.push(e), creerId: () => 'a1' });
     const p = g.demander('Clovis veut écrire dans PowerShell. Autoriser cette fois ?', 1000);
-    assert.deepEqual(evts, [{ id: 'a1', phase: 'demande', texte: 'Clovis veut écrire dans PowerShell. Autoriser cette fois ?' }]);
+    assert.deepEqual(evts, [{ id: 'a1', phase: 'demande', texte: 'Clovis veut écrire dans PowerShell. Autoriser cette fois ?', boutons: ['cette_fois', 'refuser'], risque: null }]);
     assert.equal(g.nombreEnAttente(), 1);
     assert.equal(g.repondre('a1', true), true);
     assert.equal(await p, 'accepte');
@@ -130,7 +130,38 @@ try {
     assert.equal(g.nombreEnAttente(), 0);
   }
 
-  console.log('OK : applications protegees (reconnaissance, Win+R, accord accepte, refuse, delai, arret global, doublons).');
+
+  // 9. Trois boutons (18/10/2026) : « toujours » n'est compris que s'il était proposé.
+  {
+    const evts = []; let n = 0;
+    const g = m.creerGestionnaireAutorisations({ envoyer: (e) => evts.push(e), creerId: () => `c${++n}` });
+    // Trois boutons proposés : « toujours_appli » donne la décision « toujours ».
+    let p = g.demander('?', 1000, { boutons: ['cette_fois', 'toujours_appli', 'refuser'] });
+    assert.deepEqual(evts[0].boutons, ['cette_fois', 'toujours_appli', 'refuser']);
+    assert.equal(evts[0].risque, null);
+    assert.equal(g.repondre('c1', 'toujours_appli'), true);
+    assert.equal(await p, 'toujours');
+    // « cette_fois » donne « accepte », « refuser » donne « refuse ».
+    p = g.demander('?', 1000, { boutons: ['cette_fois', 'toujours_appli', 'refuser'] });
+    assert.equal(g.repondre('c2', 'cette_fois'), true);
+    assert.equal(await p, 'accepte');
+    p = g.demander('?', 1000, { boutons: ['cette_fois', 'toujours_appli', 'refuser'] });
+    assert.equal(g.repondre('c3', 'refuser'), true);
+    assert.equal(await p, 'refuse');
+    // Application sensible : deux boutons et un avertissement ; un « toujours » forcé est ignoré.
+    p = g.demander('?', 1000, { boutons: ['cette_fois', 'refuser'], risque: '  Attention, risqué.  ' });
+    assert.equal(evts.at(-1).risque, 'Attention, risqué.');
+    assert.equal(g.repondre('c4', 'toujours_appli'), false, 'toujours non proposé : ignoré');
+    assert.equal(g.nombreEnAttente(), 1, 'la demande reste ouverte');
+    assert.equal(g.repondre('c4', 'cette_fois'), true);
+    assert.equal(await p, 'accepte');
+    // Tout ce qui n'est pas un accord clair est un refus.
+    p = g.demander('?', 1000);
+    assert.equal(g.repondre('c5', 'nimporte quoi'), true);
+    assert.equal(await p, 'refuse');
+  }
+
+  console.log('OK : applications protegees (reconnaissance, Win+R, accord accepte, refuse, delai, arret global, doublons, trois boutons).');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }

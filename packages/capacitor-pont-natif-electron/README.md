@@ -178,6 +178,7 @@ UI Automation (ValuePattern), AJOUTE A LA FIN du champ, sans la mettre devant, s
 clavier et sans souris. Echecs surs : avant l'ecriture, tout echec renvoie "indisponible" ;
 des que le fichier marqueur est pose, tout echec renvoie "incertain" et rien n'est rejoue.
 Application protegee : l'accord de l'etudiant est demande avant d'ecrire.
+Depuis le 18/10/2026, une politique d'autorisation plus large (regarder, ecrire, ouvrir, cliquer, trois boutons) existe, eteinte tant que le serveur n'envoie pas parametres.autorisation : voir plan-canal-en-direct-pc.md, section Autorisations avant la publication.
 
 Si l'application ne le permet pas (champ absent, plusieurs champs sans focus, champ non
 modifiable par accessibilite), Classinus annonce, met la fenetre devant et ecrit au

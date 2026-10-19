@@ -38,15 +38,36 @@ try {
 
   // 4. La réponse est transmise au plugin, avec le bon id, et la bulle se ferme tout de suite.
   const reponses = [];
-  s.definirRepondeurAutorisation((id, accepte) => reponses.push([id, accepte]));
-  s.repondreAutorisationCanal('a1', true);
-  assert.deepEqual(reponses, [['a1', true]]);
+  s.definirRepondeurAutorisation((id, choix) => reponses.push([id, choix]));
+  s.repondreAutorisationCanal('a1', 'cette_fois');
+  assert.deepEqual(reponses, [['a1', 'cette_fois']]);
   assert.equal(s.lireDemandeAutorisation(), null);
 
   // 5. Un refus est transmis comme un refus.
   s.poserDemandeAutorisation({ id: 'a2', texte: '?' });
-  s.repondreAutorisationCanal('a2', false);
-  assert.deepEqual(reponses[1], ['a2', false]);
+  s.repondreAutorisationCanal('a2', 'refuser');
+  assert.deepEqual(reponses[1], ['a2', 'refuser']);
+
+  // 5 bis. Les trois choix passent tels quels ; true et false des anciennes versions restent compris ;
+  // tout le reste est un refus.
+  s.poserDemandeAutorisation({ id: 'a2b', texte: '?' });
+  s.repondreAutorisationCanal('a2b', 'toujours_appli');
+  assert.deepEqual(reponses[2], ['a2b', 'toujours_appli']);
+  s.poserDemandeAutorisation({ id: 'a2c', texte: '?' });
+  s.repondreAutorisationCanal('a2c', true);
+  assert.deepEqual(reponses[3], ['a2c', 'cette_fois']);
+  s.poserDemandeAutorisation({ id: 'a2d', texte: '?' });
+  s.repondreAutorisationCanal('a2d', false);
+  assert.deepEqual(reponses[4], ['a2d', 'refuser']);
+  s.poserDemandeAutorisation({ id: 'a2e', texte: '?' });
+  s.repondreAutorisationCanal('a2e', 'piege');
+  assert.deepEqual(reponses[5], ['a2e', 'refuser']);
+
+  // 5 ter. Les boutons venant du plugin sont filtrés : seuls les choix connus passent.
+  assert.deepEqual(s.boutonsAutorisationValides(['cette_fois', 'piege', 'refuser', 'cette_fois']), ['cette_fois', 'refuser']);
+  assert.equal(s.boutonsAutorisationValides(['piege']), undefined);
+  assert.equal(s.boutonsAutorisationValides('cette_fois'), undefined);
+  assert.equal(s.boutonsAutorisationValides(undefined), undefined);
 
   // 6. Sans transmetteur branché, répondre ne plante pas.
   s.definirRepondeurAutorisation(null);
@@ -78,7 +99,7 @@ try {
         import { createElement } from 'react';
         import { renderToStaticMarkup } from 'react-dom/server';
         import { BandeauAutorisationAgent } from './components/BandeauAutorisationAgent';
-        export const rendre = (texte) => renderToStaticMarkup(createElement(BandeauAutorisationAgent, { texte, onAutoriser: () => {}, onRefuser: () => {} }));
+        export const rendre = (texte, boutons, risque) => renderToStaticMarkup(createElement(BandeauAutorisationAgent, { texte, boutons, risque, onChoix: () => {} }));
       `,
       resolveDir: racine,
       loader: 'tsx',
@@ -91,15 +112,31 @@ try {
   const html = rendre('Clovis veut écrire dans Windows PowerShell. Autoriser cette fois ?');
   // 9. Le message, les deux boutons, et rien d'autre à cliquer.
   assert.match(html, /Clovis veut écrire dans Windows PowerShell\. Autoriser cette fois \?/);
-  assert.match(html, />Autoriser cette fois</);
+  assert.match(html, />Autoriser cette fois seulement</);
   assert.match(html, />Refuser</);
-  assert.equal((html.match(/<button/g) ?? []).length, 2);
+  assert.equal((html.match(/<button/g) ?? []).length, 2, 'sans boutons précisés : les deux boutons d\'origine');
+  assert.equal(html.includes('role="alert"'), false, 'pas d\'avertissement quand rien à signaler');
+  assert.equal(html.includes('Toujours autoriser'), false);
+  // 9 bis. Application normale : trois boutons, dans l'ordre reçu.
+  const normal = rendre('Classinus veut regarder Bloc-notes.', ['cette_fois', 'toujours_appli', 'refuser']);
+  assert.equal((normal.match(/<button/g) ?? []).length, 3);
+  assert.match(normal, />Toujours autoriser pour cette appli</);
+  assert.ok(normal.indexOf('Autoriser cette fois seulement') < normal.indexOf('Toujours autoriser pour cette appli'));
+  assert.ok(normal.indexOf('Toujours autoriser pour cette appli') < normal.indexOf('Refuser'));
+  // 9 ter. Application sensible : deux boutons seulement et l'avertissement au-dessus des boutons.
+  const sensible = rendre('Classinus veut écrire dans PowerShell.', ['cette_fois', 'refuser'], 'Cette application est sensible.');
+  assert.equal((sensible.match(/<button/g) ?? []).length, 2);
+  assert.equal(sensible.includes('Toujours autoriser'), false);
+  assert.match(sensible, /role="alert"[^>]*>.*Cette application est sensible\./);
+  assert.ok(sensible.indexOf('Cette application est sensible.') < sensible.indexOf('<button'));
+  // 9 quater. L'avertissement venant du système n'est jamais interprété comme du code HTML.
+  assert.equal(rendre('?', ['refuser'], '<img src=x onerror=alert(1)>').includes('<img'), false);
   // 10. Un texte venant du système n'est jamais interprété comme du code HTML.
   const piege = rendre('<img src=x onerror=alert(1)>');
   assert.equal(piege.includes('<img'), false);
   assert.match(piege, /&lt;img/);
 
-  console.log('OK : demande d\'accord (magasin, reponse transmise, fermeture) et bandeau Autoriser / Refuser.');
+  console.log('OK : demande d\'accord (magasin, reponse transmise, fermeture) et bandeau (cette fois seulement, toujours pour cette appli, refuser).');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }

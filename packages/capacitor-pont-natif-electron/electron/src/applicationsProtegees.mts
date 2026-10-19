@@ -8,11 +8,20 @@
 // d'applications : la liste et le délai viennent du serveur avec chaque demande
 // (core/outils_action_agent_pc.py).
 
-export type DecisionAutorisation = "accepte" | "refuse" | "delai";
+// "accepte" : autorisé cette fois seulement ; "toujours" : autorisé et à retenir pour cette appli
+// (18/10/2026, trois boutons) ; "refuse" ; "delai" : pas de réponse à temps.
+export type DecisionAutorisation = "accepte" | "toujours" | "refuse" | "delai";
+
+// Boutons possibles de la bulle. Même vocabulaire que politiqueAutorisation.mts.
+export type BoutonAutorisation = "cette_fois" | "toujours_appli" | "refuser";
+const BOUTONS_PAR_DEFAUT: readonly BoutonAutorisation[] = ["cette_fois", "refuser"];
 
 export type EvenementAutorisation =
-  | { id: string; phase: "demande"; texte: string }
+  | { id: string; phase: "demande"; texte: string; boutons: readonly BoutonAutorisation[]; risque: string | null }
   | { id: string; phase: "fin" };
+
+// Options d'une demande : quels boutons montrer, et l'avertissement de risque éventuel.
+export type OptionsDemande = { boutons?: readonly BoutonAutorisation[]; risque?: string | null };
 
 export const DELAI_AUTORISATION_PAR_DEFAUT_MS = 60_000;
 const DELAI_AUTORISATION_MIN_MS = 5_000;
@@ -62,6 +71,8 @@ export type OptionsGestionnaire = {
 
 export function creerGestionnaireAutorisations(options: OptionsGestionnaire) {
   const enAttente = new Map<string, (decision: DecisionAutorisation) => void>();
+  // Boutons réellement montrés pour chaque demande : une réponse qui n'en fait pas partie est ignorée.
+  const boutonsOfferts = new Map<string, readonly BoutonAutorisation[]>();
   let compteur = 0;
   const creerId = options.creerId ?? (() => `autorisation-${Date.now()}-${++compteur}`);
 
@@ -76,29 +87,41 @@ export function creerGestionnaireAutorisations(options: OptionsGestionnaire) {
 
   // Pose une question à l'étudiant et attend sa réponse, au plus delaiMs. Une seule
   // demande à la fois : une nouvelle demande refuse celle qui était encore ouverte.
-  function demander(texte: string, delaiMs: number): Promise<DecisionAutorisation> {
+  function demander(texte: string, delaiMs: number, demande: OptionsDemande = {}): Promise<DecisionAutorisation> {
     refuserTout();
     const id = creerId();
+    const boutons = demande.boutons && demande.boutons.length > 0 ? demande.boutons : BOUTONS_PAR_DEFAUT;
+    const risque = typeof demande.risque === "string" && demande.risque.trim() ? demande.risque.trim() : null;
     return new Promise<DecisionAutorisation>((resolve) => {
       const minuteur = setTimeout(() => terminer("delai"), delaiMs);
       function terminer(decision: DecisionAutorisation): void {
         if (!enAttente.has(id)) return;
         clearTimeout(minuteur);
         enAttente.delete(id);
+        boutonsOfferts.delete(id);
         prevenir({ id, phase: "fin" });
         resolve(decision);
       }
       enAttente.set(id, terminer);
-      prevenir({ id, phase: "demande", texte });
+      boutonsOfferts.set(id, boutons);
+      prevenir({ id, phase: "demande", texte, boutons, risque });
     });
   }
 
-  // Réponse de l'étudiant. Renvoie false pour une demande inconnue ou déjà terminée
-  // (réponse en double, ou arrivée après le délai) : elle est ignorée.
-  function repondre(id: unknown, accepte: unknown): boolean {
+  // Réponse de l'étudiant : un des boutons montrés (cette_fois, toujours_appli, refuser). Les
+  // anciennes réponses true et false (Autoriser, Refuser) restent comprises. Renvoie false pour
+  // une demande inconnue ou déjà terminée (réponse en double, ou arrivée après le délai) et
+  // pour un bouton « toujours » qui n'était pas proposé : elle est ignorée. Toute autre réponse
+  // qu'un accord clair est un refus.
+  function repondre(id: unknown, reponse: unknown): boolean {
     const terminer = typeof id === "string" ? enAttente.get(id) : undefined;
-    if (!terminer) return false;
-    terminer(accepte === true ? "accepte" : "refuse");
+    if (!terminer || typeof id !== "string") return false;
+    // Comme avant : tout ce qui n'est pas un accord clair est un refus.
+    const choix: BoutonAutorisation =
+      reponse === true || reponse === "cette_fois" ? "cette_fois" : reponse === "toujours_appli" ? "toujours_appli" : "refuser";
+    const offerts = boutonsOfferts.get(id) ?? BOUTONS_PAR_DEFAUT;
+    if (!offerts.includes(choix)) return false;
+    terminer(choix === "cette_fois" ? "accepte" : choix === "toujours_appli" ? "toujours" : "refuse");
     return true;
   }
 

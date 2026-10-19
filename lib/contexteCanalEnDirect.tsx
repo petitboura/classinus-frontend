@@ -31,6 +31,8 @@ import {
   demandeAutorisationRepos,
   lireDemandeAutorisation,
   repondreAutorisationCanal,
+  type ChoixAutorisation,
+  type DemandeAutorisation,
 } from "./autorisationCanal";
 import {
   abonnerArretTache,
@@ -164,8 +166,8 @@ export type ValeurCanalEnDirect = {
   // Accord de l'étudiant (08/10/2026, garde-fou 2 du canal PC) : une application protégée veut
   // recevoir le clavier ou être ouverte, la bulle affiche Autoriser ou Refuser (voir
   // lib/autorisationCanal.ts). Facultatifs : seule la version PC les fournit.
-  autorisationEnAttente?: { id: string; texte: string } | null;
-  repondreAutorisation?: (id: string, accepte: boolean) => void;
+  autorisationEnAttente?: DemandeAutorisation | null;
+  repondreAutorisation?: (id: string, choix: ChoixAutorisation) => void;
 };
 
 export const ContexteCanalEnDirect = createContext<ValeurCanalEnDirect | null>(null);

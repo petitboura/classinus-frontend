@@ -6,10 +6,34 @@
 // useSyncExternalStore. La demande vient du plugin PontNatif (événement "autorisation") et la
 // réponse repart vers lui, voir useAutorisationPc dans lib/superpositionElectron.ts.
 
-export type DemandeAutorisation = { id: string; texte: string };
+// Choix de l'étudiant (18/10/2026, décision de Bourama) : "cette_fois" (autoriser cette fois
+// seulement), "toujours_appli" (toujours autoriser pour cette appli), "refuser".
+export type ChoixAutorisation = "cette_fois" | "toujours_appli" | "refuser";
+
+const CHOIX_CONNUS: readonly ChoixAutorisation[] = ["cette_fois", "toujours_appli", "refuser"];
+
+// boutons : ceux que l'application PC propose pour CETTE demande (une application sensible n'a
+// jamais "toujours_appli"). risque : avertissement affiché avant les boutons, absent si rien à
+// signaler. Les deux sont facultatifs : une demande sans boutons garde les deux boutons d'origine.
+export type DemandeAutorisation = {
+  id: string;
+  texte: string;
+  boutons?: ChoixAutorisation[];
+  risque?: string | null;
+};
+
+// Boutons montrés quand la demande n'en précise pas.
+export const BOUTONS_AUTORISATION_PAR_DEFAUT: ChoixAutorisation[] = ["cette_fois", "refuser"];
+
+// Ce qui arrive du plugin n'est jamais cru tel quel : seuls les choix connus passent.
+export function boutonsAutorisationValides(brut: unknown): ChoixAutorisation[] | undefined {
+  if (!Array.isArray(brut)) return undefined;
+  const valides = brut.filter((b): b is ChoixAutorisation => CHOIX_CONNUS.includes(b as ChoixAutorisation));
+  return valides.length > 0 ? [...new Set(valides)] : undefined;
+}
 
 let demande: DemandeAutorisation | null = null;
-let repondeur: ((id: string, accepte: boolean) => void) | null = null;
+let repondeur: ((id: string, choix: ChoixAutorisation) => void) | null = null;
 const ecouteurs = new Set<() => void>();
 
 function prevenir() {
@@ -45,13 +69,16 @@ export function effacerDemandeAutorisation(id: string | null) {
   prevenir();
 }
 
-export function definirRepondeurAutorisation(fonction: ((id: string, accepte: boolean) => void) | null) {
+export function definirRepondeurAutorisation(fonction: ((id: string, choix: ChoixAutorisation) => void) | null) {
   repondeur = fonction;
 }
 
-// Réponse de l'étudiant (bouton Autoriser ou Refuser). La bulle se ferme tout de suite, sans
-// attendre la confirmation du plugin.
-export function repondreAutorisationCanal(id: string, accepte: boolean) {
-  repondeur?.(id, accepte);
+// Réponse de l'étudiant (un des boutons). La bulle se ferme tout de suite, sans attendre la
+// confirmation du plugin. true et false (anciens boutons Autoriser et Refuser) restent compris ;
+// tout ce qui n'est pas un choix clair est un refus.
+export function repondreAutorisationCanal(id: string, reponse: ChoixAutorisation | boolean) {
+  const choix: ChoixAutorisation =
+    reponse === true ? "cette_fois" : CHOIX_CONNUS.includes(reponse as ChoixAutorisation) ? (reponse as ChoixAutorisation) : "refuser";
+  repondeur?.(id, choix);
   effacerDemandeAutorisation(id);
 }

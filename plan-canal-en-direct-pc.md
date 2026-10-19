@@ -233,3 +233,76 @@ apparaissent (avec une transition) quand le canal est active.
 Limites connues : si l'etudiant n'est pas connecte, AppShell n'est pas monte
 donc le bouton n'apparait qu'apres la connexion ; quitter vraiment l'appli
 (Quitter dans l'icone pres de l'horloge) retire aussi le bouton.
+
+## Autorisations avant la publication (frontend fait le 18/10/2026, serveur à faire)
+
+Décisions de Bourama, toutes confirmées par lui le 18/10/2026 :
+
+- Classinus doit demander l'accord de l'étudiant pour regarder l'écran, écrire, ouvrir une
+  application et cliquer.
+- Application normale : trois boutons, « Autoriser cette fois seulement » (vaut pour toute la
+  tâche en cours dans cette application, clics compris, pas de question à chaque clic),
+  « Toujours autoriser pour cette appli » (retenu), « Refuser ». Jamais de « toujours » général.
+- Application sensible (ou non identifiée) : deux boutons seulement, « Autoriser cette fois
+  seulement » et « Refuser ». La question revient avant CHAQUE action, clics compris, et un
+  avertissement de risque est affiché au-dessus des boutons. Même si l'étudiant a mis « toujours »
+  pour cette appli ou son navigateur, une page sensible (titre) redemande.
+- Sensibles : argent et paiement, mots de passe, messages privés, réglages de l'ordinateur,
+  commandes de l'ordinateur, documents officiels et santé. Liste fournie par le serveur.
+- Classinus a l'OBLIGATION de demander lui-même une autorisation avant une action qu'il sent
+  sensible (payer, supprimer, envoyer) : action `demander_autorisation`, deux boutons, à chaque fois.
+- Les choix « toujours » se mémorisent sur le compte de l'étudiant.
+- On sépare le fonctionnement (application PC et site, cette partie) des conditions (serveur,
+  modifiables à distance sans nouvelle version).
+
+### Ce qui est fait (frontend, branche feature/canal-en-direct-pc)
+
+- `electron/src/politiqueAutorisation.mts` : le fonctionnement (décider, retenir, texte de la question).
+  Module pur, testé par `npm run test:politique-autorisation`.
+- `plugin.mts` : branchement sur lire_ecran, taper_clavier (y compris écriture derrière une autre
+  fenêtre), appuyer_touches (Win+R toujours sensible), ouvrir_application, cliquer_ecran, plus la
+  nouvelle action `demander_autorisation`. Les accords « cette fois » tombent au début et à la fin de
+  chaque tâche (armerArretGlobal, desarmerArretGlobal, arrêt).
+- `applicationsProtegees.mts` : la demande porte maintenant `boutons` et `risque`, la réponse est un
+  choix (cette_fois, toujours_appli, refuser). Les anciennes réponses true et false restent comprises.
+- Bulle : `BandeauAutorisationAgent.tsx` montre les boutons reçus et l'avertissement. Site et
+  application PC restent compatibles dans les deux sens (ancienne version de l'un avec nouvelle de l'autre).
+- Lecture automatique décidée par le serveur : ne pose jamais de question. Sans accord elle ne donne
+  rien et renvoie Classinus vers lire_ecran, qui demande.
+
+### Interrupteur : rien ne change tant que le serveur n'envoie pas ce bloc
+
+Sans `parametres.autorisation`, l'application PC garde son ancien comportement (seules les
+applications protégées de `applications_protegees` demandent un accord, deux boutons). Le serveur
+active la nouvelle politique en ajoutant dans les paramètres de chaque action PC :
+
+```
+autorisation: {
+  active: true,
+  applications_sensibles: ["powershell", "cmd", ...],      // noms de programmes
+  mots_titre_sensibles: ["banque", "paypal", ...],         // mots dans un titre de fenêtre (navigateur)
+  applications_toujours: ["notepad", ...],                 // choix « toujours » de l'étudiant (compte)
+  message_risque: "...",                                   // facultatif, remplace le texte par défaut
+  message_risque_action: "...",                            // facultatif, pour demander_autorisation
+  actions: ["lire", "ecrire", "ouvrir", "cliquer"]         // facultatif, tout par défaut
+}
+```
+
+### Reste à faire côté serveur (volontairement pas fait)
+
+1. Envoyer le bloc `autorisation` ci-dessus avec chaque action PC (listes modifiables à distance).
+2. Mémoriser les choix « toujours » sur le compte (table par étudiant et application, retrait possible)
+   et les renvoyer dans `applications_toujours`. Tant que ce n'est pas fait, un « toujours » ne dure que
+   jusqu'à la fermeture de l'application PC. L'application PC appelle déjà un point d'accroche
+   (`creerAccords({ surToujours })` dans `plugin.mts`), aujourd'hui vide : c'est là qu'il faudra
+   prévenir le serveur du nouveau choix.
+3. Donner à Classinus l'outil `demander_autorisation` ({ texte }) et, dans sa consigne, l'obligation de
+   s'en servir avant toute action sensible. Il doit s'arrêter si l'étudiant refuse.
+4. Prévoir le message que Classinus reçoit quand une lecture automatique n'est pas autorisée
+   (voir MESSAGE_LECTURE_NON_AUTORISEE dans `plugin.mts`).
+
+### Limites connues à regarder en production
+
+- Une banque ou une messagerie dans Chrome n'est reconnue que par le titre de la fenêtre.
+- Chaque clic lit un peu l'écran pour savoir dans quelle application il tombe : mesurer la lenteur.
+- La lecture se fait localement avant la question, mais rien n'est donné à Classinus avant l'accord.

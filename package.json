@@ -21,6 +21,7 @@
     "test:clic-sans-premier-plan": "node tests/verifier-clic-sans-premier-plan.mjs",
     "test:applications-protegees": "node tests/verifier-applications-protegees.mjs",
     "test:autorisation-canal": "node tests/verifier-autorisation-canal.mjs",
+    "test:politique-autorisation": "node tests/verifier-politique-autorisation.mjs",
     "test:raccourcis-crayon": "node tests/verifier-raccourcis-crayon.mjs",
     "test:focus-precedent": "node tests/verifier-focus-precedent.mjs",
     "test:zones-crayon": "node tests/verifier-zones-crayon.mjs",

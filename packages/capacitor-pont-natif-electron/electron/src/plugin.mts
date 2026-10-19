@@ -52,7 +52,20 @@ import {
   delaiAutorisationDepuisParametres,
   estApplicationProtegee,
   listeDepuisParametres,
+  type DecisionAutorisation,
+  type OptionsDemande,
 } from "./applicationsProtegees.mjs";
+import {
+  BOUTONS_SENSIBLE,
+  appliquerChoix,
+  creerAccords,
+  decider,
+  politiqueDepuisParametres,
+  texteDemande,
+  toujoursDepuisParametres,
+  type ActionControlee,
+  type Cible,
+} from "./politiqueAutorisation.mjs";
 
 /**
  * URL du backend clovis-backend (alias classinus-backend). Le
@@ -201,10 +214,17 @@ const autorisations = creerGestionnaireAutorisations({
   },
 });
 
+// Accords de l'étudiant (18/10/2026, voir politiqueAutorisation.mts) : "cette fois seulement" vaut
+// pour la tâche en cours dans l'application, "toujours pour cette appli" reste. Retenus ici, dans
+// l'application PC, tant qu'elle tourne : les conditions et la mémoire sur le compte de l'étudiant
+// viendront du serveur (parametres.autorisation.applications_toujours), sans changer ce code.
+const accords = creerAccords();
+
 const arretGlobal = creerArretGlobal(globalShortcut, {
   surArret: () => {
     // Une demande d'accord encore ouverte est refusée : l'étudiant vient d'arrêter Clovis.
     autorisations.refuserTout();
+    accords.reinitialiserTache();
     // Relâcher tout de suite les touches que Clovis tient enfoncées (Ctrl, Alt, Maj...).
     void gardeClavier?.relacherToutEnUrgence();
     // Le renderer principal coupe la tâche, comme le bouton d'arrêt de la superposition.
@@ -237,6 +257,8 @@ function decrireActionSysteme(type: string, parametres: Record<string, unknown>)
       const fenetre = fenetreVoulueDepuisParametres(parametres);
       return fenetre ? `Classinus regarde la fenêtre « ${fenetre} »` : "Classinus regarde l'écran";
     }
+    case "demander_autorisation":
+      return "Classinus te demande l'autorisation";
     default:
       return "Classinus agit sur l'ordinateur";
   }
@@ -346,7 +368,18 @@ async function ecrireDerriereOuBasculer(
   const mauvaiseCible = { fini: true as const, resultat: { erreur: messageMauvaiseCible(cible, titreDevant) } };
   if (process.platform !== "win32") return mauvaiseCible;
   const liste = listeDepuisParametres(parametres);
-  let arriere = await ecrireEnArrierePlanWindows({ cible, texte, applicationsProtegees: liste });
+  // Politique d'autorisation (18/10/2026) : l'application de la fenêtre visée est identifiée
+  // AVANT d'écrire (lecture légère de cette fenêtre), puis l'accord est demandé comme pour le
+  // clavier. Application illisible : traitée comme sensible (voir politiqueAutorisation.mts).
+  if (politiqueActive(parametres)) {
+    const lecture = await lireFenetreAuPremierPlan({ fenetre_cible: cible, nb_max_elements: 1, nb_max_fenetres: 0 }, handleSuperposition(), false);
+    const refus = await controlerAutorisation("ecrire", parametres, {
+      application: "erreur" in lecture ? null : lecture.application,
+      titre: "erreur" in lecture ? cible : (lecture.titre_fenetre_active ?? cible),
+    });
+    if (refus) return { fini: true, resultat: { erreur: refus } };
+  }
+  let arriere = await ecrireEnArrierePlanWindows({ cible, texte, applicationsProtegees: politiqueActive(parametres) ? [] : liste });
   if (arriere.statut === "protegee") {
     const refus = await demanderAccord(`Clovis veut écrire dans ${arriere.fenetre}. Autoriser cette fois ?`, arriere.fenetre, parametres);
     if (refus) return { fini: true, resultat: { erreur: refus } };
@@ -377,22 +410,116 @@ async function ecrireDerriereOuBasculer(
   return { fini: false };
 }
 
-// Pose la question à l'étudiant et attend. Renvoie null si l'action est autorisée, sinon le
-// message à donner à Clovis (action NON faite).
-async function demanderAccord(texte: string, nom: string, parametres: Record<string, unknown>): Promise<string | null> {
-  const decision = await autorisations.demander(texte, delaiAutorisationDepuisParametres(parametres));
-  if (decision === "accepte") return null;
-  if (arretGlobal.arretDemande()) return MESSAGE_ARRET_GLOBAL;
+// Pose la question à l'étudiant et attend. Renvoie la décision, et le message à donner à Clovis
+// quand l'action ne doit PAS être faite (null si elle est autorisée).
+async function poserQuestion(
+  texte: string,
+  nom: string,
+  parametres: Record<string, unknown>,
+  options?: OptionsDemande,
+): Promise<{ decision: DecisionAutorisation; refus: string | null }> {
+  const decision = await autorisations.demander(texte, delaiAutorisationDepuisParametres(parametres), options);
+  if (decision === "accepte" || decision === "toujours") return { decision, refus: null };
+  if (arretGlobal.arretDemande()) return { decision, refus: MESSAGE_ARRET_GLOBAL };
   if (decision === "delai") {
-    return `L'étudiant n'a pas répondu à temps à la demande d'autorisation (${nom}) : l'action n'a PAS été faite. Ne réessaie pas sans qu'il te le demande.`;
+    return {
+      decision,
+      refus: `L'étudiant n'a pas répondu à temps à la demande d'autorisation (${nom}) : l'action n'a PAS été faite. Ne réessaie pas sans qu'il te le demande.`,
+    };
   }
-  return `L'étudiant a refusé cette action (${nom}). Ne réessaie pas : explique-lui ce que tu voulais faire et propose une autre approche.`;
+  return {
+    decision,
+    refus: `L'étudiant a refusé cette action (${nom}). Ne réessaie pas : explique-lui ce que tu voulais faire et propose une autre approche.`,
+  };
+}
+
+// Renvoie null si l'action est autorisée, sinon le message à donner à Clovis (action NON faite).
+async function demanderAccord(texte: string, nom: string, parametres: Record<string, unknown>, options?: OptionsDemande): Promise<string | null> {
+  return (await poserQuestion(texte, nom, parametres, options)).refus;
+}
+
+// Politique d'autorisation du 18/10/2026 (voir politiqueAutorisation.mts) : regarder, écrire,
+// ouvrir et cliquer demandent l'accord de l'étudiant, application par application. Éteinte tant
+// que le serveur n'envoie pas parametres.autorisation : le plugin garde alors son comportement
+// d'avant (seules les applications protégées demandent un accord). Renvoie null si l'action est
+// autorisée, sinon le message à donner à Clovis.
+function politiqueActive(parametres: Record<string, unknown>): boolean {
+  return politiqueDepuisParametres(parametres).active;
+}
+
+function synchroniserAccords(parametres: Record<string, unknown>): void {
+  const toujours = toujoursDepuisParametres(parametres);
+  if (toujours) accords.remplacerToujours(toujours);
+}
+
+const MESSAGE_LECTURE_NON_AUTORISEE =
+  "Classinus n'a pas encore l'autorisation de regarder cette application. Appelle lire_ecran : l'étudiant choisira s'il t'autorise. Ne réessaie pas sans cela.";
+
+async function controlerAutorisation(
+  action: ActionControlee,
+  parametres: Record<string, unknown>,
+  cible: Cible,
+): Promise<string | null> {
+  const politique = politiqueDepuisParametres(parametres);
+  if (!politique.active) return null;
+  synchroniserAccords(parametres);
+  const decision = decider({ politique, action, cible, accords });
+  if (decision.type === "autorise") return null;
+  const nom = cible.titre?.trim() || cible.application?.trim() || "";
+  const { decision: reponse, refus } = await poserQuestion(texteDemande(action, nom), nom || "application non identifiée", parametres, {
+    boutons: decision.boutons,
+    risque: decision.risque,
+  });
+  if (refus) return refus;
+  appliquerChoix({ choix: reponse === "toujours" ? "toujours_appli" : "cette_fois", cible, sensible: decision.sensible, accords });
+  return null;
+}
+
+// Ce que la lecture vient de lire : peut-elle être donnée à Clovis ? Une lecture décidée par le
+// serveur (automatique) ne pose jamais de question : sans accord, elle ne donne rien et renvoie
+// Clovis vers lire_ecran, qui demande.
+async function controlerLecture(lecture: object, parametres: Record<string, unknown>): Promise<string | null> {
+  const politique = politiqueDepuisParametres(parametres);
+  if (!politique.active) return null;
+  const l = lecture as {
+    application?: unknown;
+    titre_fenetre_active?: unknown;
+    fenetre_classinus?: unknown;
+    zone_lue?: unknown;
+    bureau_premier_plan?: unknown;
+  };
+  if (l.fenetre_classinus === true) return null;
+  const application =
+    l.zone_lue === "bureau" || l.bureau_premier_plan === true
+      ? "bureau"
+      : l.zone_lue === "barre_des_taches"
+        ? "barre des taches"
+        : typeof l.application === "string" && l.application
+          ? l.application
+          : null;
+  const titre = typeof l.titre_fenetre_active === "string" ? l.titre_fenetre_active : null;
+  if (parametres.automatique === true) {
+    synchroniserAccords(parametres);
+    return decider({ politique, action: "lire", cible: { application, titre }, accords }).type === "autorise"
+      ? null
+      : MESSAGE_LECTURE_NON_AUTORISEE;
+  }
+  return controlerAutorisation("lire", parametres, { application, titre });
 }
 
 // Garde-fou 2 : le clavier va dans une application protégée ? Dans le doute (application non
 // identifiée), on demande aussi : mieux vaut une question de trop qu'une frappe dans un
-// terminal. Sans liste envoyée par le serveur, la protection n'est pas activée.
+// terminal. Sans liste envoyée par le serveur, la protection n'est pas activée. Avec la politique
+// d'autorisation du 18/10/2026 (parametres.autorisation), toute application demande un accord.
 async function verifierAccordClavier(parametres: Record<string, unknown>, verbe: string): Promise<string | null> {
+  if (politiqueActive(parametres)) {
+    const cible = await applicationAuPremierPlan();
+    if (cible.statut === "classinus") return null;
+    return controlerAutorisation("ecrire", parametres, {
+      application: cible.statut === "identifiee" ? cible.application : null,
+      titre: cible.titre,
+    });
+  }
   const liste = listeDepuisParametres(parametres);
   if (liste.length === 0) return null;
   const cible = await applicationAuPremierPlan();
@@ -436,6 +563,19 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
           return { erreur: "coordonnees x/y invalides" };
         }
         if (clicEnCours) return { erreur: "Un clic de Classinus est déjà en cours." };
+        // Politique d'autorisation (18/10/2026) : le clic va dans l'application au premier plan.
+        // Application normale déjà autorisée pour la tâche : pas de question à chaque clic.
+        // Application sensible : la question revient avant chaque clic.
+        if (politiqueActive(parametres)) {
+          const devant = await applicationAuPremierPlan();
+          if (devant.statut !== "classinus") {
+            const refusClic = await controlerAutorisation("cliquer", parametres, {
+              application: devant.statut === "identifiee" ? devant.application : null,
+              titre: devant.titre,
+            });
+            if (refusClic) return { erreur: refusClic };
+          }
+        }
         clicEnCours = true;
         try {
           return await cliquerEcran({ x, y }, {
@@ -583,8 +723,14 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         await restaurerFocusSousSuperposition();
         // Win+R (fenêtre Exécuter) demande toujours l'accord ; sinon on regarde où va le clavier.
         const refusTouches =
-          listeDepuisParametres(parametres).length > 0 && combinaisonsOuvrentExecuter(analyse.combinaisons)
-            ? await demanderAccord("Clovis veut ouvrir la fenêtre Exécuter de Windows (Win+R). Autoriser cette fois ?", "la fenêtre Exécuter", parametres)
+          (listeDepuisParametres(parametres).length > 0 || politiqueActive(parametres)) && combinaisonsOuvrentExecuter(analyse.combinaisons)
+            ? await demanderAccord(
+                "Clovis veut ouvrir la fenêtre Exécuter de Windows (Win+R). Autoriser cette fois ?",
+                "la fenêtre Exécuter",
+                parametres,
+                // La fenêtre Exécuter lance n'importe quel programme : toujours sensible, la question revient à chaque fois.
+                politiqueActive(parametres) ? { boutons: BOUTONS_SENSIBLE, risque: politiqueDepuisParametres(parametres).messageRisque } : undefined
+              )
             : await verifierAccordClavier(parametres, "utiliser le clavier");
         if (refusTouches) return { erreur: refusTouches };
         // Sans ce réglage, la bibliothèque attend 300 ms après chaque touche.
@@ -604,7 +750,11 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
       case "ouvrir_application": {
         const nom = String(parametres.nom ?? "").trim();
         if (!nom) return { erreur: "nom d'application vide" };
-        if (estApplicationProtegee(nom, listeDepuisParametres(parametres))) {
+        if (politiqueActive(parametres)) {
+          // Politique d'autorisation (18/10/2026) : toute ouverture demande l'accord de l'étudiant.
+          const refusOuverture = await controlerAutorisation("ouvrir", parametres, { application: nom, titre: null });
+          if (refusOuverture) return { erreur: refusOuverture };
+        } else if (estApplicationProtegee(nom, listeDepuisParametres(parametres))) {
           const refusOuverture = await demanderAccord(`Clovis veut ouvrir ${nom}. Autoriser cette fois ?`, nom, parametres);
           if (refusOuverture) return { erreur: refusOuverture };
         }
@@ -622,7 +772,12 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         // premier plan via UI Automation, voir lectureFenetreWindows.mts.
         // Les limites viennent du backend (parametres de la demande).
         const lecture = await lireFenetreAuPremierPlan(parametres, handleSuperposition());
-        if (!("erreur" in lecture)) return lecture;
+        if (!("erreur" in lecture)) {
+          // Politique d'autorisation (18/10/2026) : la lecture reste dans l'application PC tant que
+          // l'étudiant n'a pas autorisé cette application, rien n'est donné à Clovis avant.
+          const refusLecture = await controlerLecture(lecture, parametres);
+          return refusLecture ? { erreur: refusLecture } : lecture;
+        }
         // Fenetre choisie par son titre : en cas d'echec (introuvable, plusieurs, reduite), l'erreur
         // est rendue telle quelle. Le repli ci dessous donnerait le titre de la fenetre au premier
         // plan, qui n'est pas celle qu'on voulait lire.
@@ -647,6 +802,11 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
           .map(f => f.getTitle());
         const titreEstClassinus = titre !== null && titresClassinus.includes(titre);
         if (titreEstClassinus) titre = null;
+        // Même accord pour le titre seul : un titre de fenêtre peut déjà être sensible.
+        if (!titreEstClassinus) {
+          const refusTitre = await controlerLecture({ application: null, titre_fenetre_active: titre }, parametres);
+          if (refusTitre) return { erreur: refusTitre };
+        }
         return {
           titre_fenetre_active: titre,
           application: null,
@@ -660,6 +820,19 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
             ? `${lecture.erreur} (la fenetre active est une fenetre de Classinus, son titre est ignore)`
             : lecture.erreur,
         };
+      }
+      case "demander_autorisation": {
+        // Classinus a l'OBLIGATION (décision de Bourama, 18/10/2026) de demander lui-même une
+        // autorisation avant une action qu'il sent sensible (payer, supprimer, envoyer). Même
+        // bulle, deux choix seulement : la question revient à chaque fois, avec l'avertissement.
+        const texte = String(parametres.texte ?? "").trim().slice(0, 300);
+        if (!texte) return { erreur: "texte vide : dis à l'étudiant ce que tu veux faire et pourquoi." };
+        const politique = politiqueDepuisParametres(parametres);
+        const { refus } = await poserQuestion(texte, "cette action", parametres, {
+          boutons: BOUTONS_SENSIBLE,
+          risque: politique.messageRisqueAction,
+        });
+        return refus ? { erreur: refus } : { ok: true, autorise: true };
       }
       default:
         return { erreur: `type d'action systeme inconnu : ${type}` };
@@ -698,14 +871,18 @@ class PontNatifImpl extends ElectronPlugin {
 
   // Réponse de l'étudiant à une demande d'accord (bulle de la superposition). Une réponse
   // inconnue, en double ou tardive est ignorée.
-  async repondreAutorisation(options: { id: string; accepte: boolean }): Promise<void> {
-    autorisations.repondre(options.id, options.accepte);
+  // 18/10/2026 : choix (cette_fois, toujours_appli, refuser) ; accepte reste lu pour une
+  // interface plus ancienne qui n'envoie que Autoriser ou Refuser.
+  async repondreAutorisation(options: { id: string; choix?: string; accepte?: boolean }): Promise<void> {
+    autorisations.repondre(options.id, options.choix ?? options.accepte);
   }
 
   // Début d'une tâche de Clovis : Échap devient le raccourci d'arrêt. Renvoie arme=false
   // si une autre application avait déjà pris ce raccourci.
   async armerArretGlobal(): Promise<{ arme: boolean }> {
     notifierWeb = (evenement, donnees) => this.context.notifyListeners(evenement, donnees);
+    // Nouvelle demande de l'étudiant : les accords "cette fois seulement" de la précédente tombent.
+    accords.reinitialiserTache();
     if (!arretGlobalSurQuitEnregistre) {
       arretGlobalSurQuitEnregistre = true;
       app.on("will-quit", () => arretGlobal.desarmer());
@@ -716,6 +893,7 @@ class PontNatifImpl extends ElectronPlugin {
   // Fin de la tâche : Échap redevient normal dans toutes les applications.
   async desarmerArretGlobal(): Promise<void> {
     arretGlobal.desarmer();
+    accords.reinitialiserTache();
   }
 
   // Crayon, lot 3 : lit la fenetre au premier plan (meme lecture que lire_ecran, la fenetre de

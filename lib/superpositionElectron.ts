@@ -33,6 +33,9 @@ import {
   effacerDemandeAutorisation,
   poserDemandeAutorisation,
   repondreAutorisationCanal,
+  boutonsAutorisationValides,
+  type ChoixAutorisation,
+  type DemandeAutorisation,
 } from "@/lib/autorisationCanal";
 
 export interface MarqueEcranAffichee {
@@ -70,7 +73,7 @@ export interface EtatSuperposition {
     tacheEnCours?: boolean;
     interrompue?: boolean;
     // Demande d'accord pour une application protégée (08/10/2026), voir lib/autorisationCanal.ts.
-    autorisationEnAttente?: { id: string; texte: string } | null;
+    autorisationEnAttente?: DemandeAutorisation | null;
   };
 }
 
@@ -429,7 +432,11 @@ export function useEmetteurSuperposition(
         case "repondreAutorisation":
           // Réponse de l'étudiant à la bulle de la superposition : la demande vit dans la
           // fenêtre principale (magasin lib/autorisationCanal.ts), qui la transmet au plugin.
-          if (typeof action.args[0] === "string") repondreAutorisationCanal(action.args[0], action.args[1] === true);
+          // args[1] : le choix (cette_fois, toujours_appli, refuser) ; true et false des anciennes
+          // versions restent compris, tout le reste est un refus (voir lib/autorisationCanal.ts).
+          if (typeof action.args[0] === "string") {
+            repondreAutorisationCanal(action.args[0], action.args[1] as ChoixAutorisation | boolean);
+          }
           break;
         case "envoyerMessageEtudiant":
           // Import dynamique : évite un cycle statique avec
@@ -492,10 +499,15 @@ interface EvenementAutorisationPc {
   id: string;
   phase: "demande" | "fin";
   texte?: string;
+  // 18/10/2026 : boutons proposés et avertissement de risque. Absents avec une application PC
+  // plus ancienne : la bulle garde alors ses deux boutons d'origine.
+  boutons?: unknown;
+  risque?: unknown;
 }
 
 interface PluginPontNatifAutorisation {
-  repondreAutorisation(options: { id: string; accepte: boolean }): Promise<void>;
+  // accepte reste envoyé avec choix : une application PC plus ancienne ne lit que accepte.
+  repondreAutorisation(options: { id: string; choix: ChoixAutorisation; accepte: boolean }): Promise<void>;
   addListener(
     eventName: "autorisation",
     listenerFunc: (donnee: EvenementAutorisationPc) => void
@@ -510,8 +522,8 @@ function useAutorisationPc() {
   useEffect(() => {
     if (!surElectron()) return;
     const PontNatif = registerPlugin<PluginPontNatifAutorisation>("PontNatif");
-    definirRepondeurAutorisation((id, accepte) => {
-      PontNatif.repondreAutorisation({ id, accepte }).catch((e) =>
+    definirRepondeurAutorisation((id, choix) => {
+      PontNatif.repondreAutorisation({ id, choix, accepte: choix !== "refuser" }).catch((e) =>
         console.warn("PontNatif (JS): reponse d'autorisation non transmise", e)
       );
     });
@@ -519,7 +531,12 @@ function useAutorisationPc() {
     let annule = false;
     PontNatif.addListener("autorisation", (evenement) => {
       if (evenement.phase === "demande" && typeof evenement.texte === "string") {
-        poserDemandeAutorisation({ id: evenement.id, texte: evenement.texte });
+        poserDemandeAutorisation({
+          id: evenement.id,
+          texte: evenement.texte,
+          boutons: boutonsAutorisationValides(evenement.boutons),
+          risque: typeof evenement.risque === "string" && evenement.risque.trim() ? evenement.risque : null,
+        });
       } else {
         effacerDemandeAutorisation(evenement.id);
       }
@@ -649,5 +666,5 @@ export const interactionsSuperposition = {
   arreterTache: () => relayerInteraction("arreterTache"),
   continuerApresArret: () => relayerInteraction("continuerApresArret"),
   reessayerApresArret: () => relayerInteraction("reessayerApresArret"),
-  repondreAutorisation: (id: string, accepte: boolean) => relayerInteraction("repondreAutorisation", id, accepte),
+  repondreAutorisation: (id: string, choix: ChoixAutorisation) => relayerInteraction("repondreAutorisation", id, choix),
 };

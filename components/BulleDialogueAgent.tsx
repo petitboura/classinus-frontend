@@ -95,7 +95,8 @@ export function BulleDialogueAgent() {
   // Modifier. Elle reste là tant que l'étudiant n'a pas choisi (ou envoyé autre chose).
   const interrompue = actif && !!contexte?.interrompue;
   // Accord de l'étudiant (08/10/2026, garde-fou 2 du canal PC) : une application protégée veut
-  // recevoir le clavier ou être ouverte. Clovis attend, la bulle propose Autoriser ou Refuser.
+  // recevoir le clavier ou être ouverte. Clovis attend, la bulle propose les boutons envoyés par
+  // l'application PC (18/10/2026 : cette fois seulement, toujours pour cette appli, refuser).
   const autorisation = actif ? (contexte?.autorisationEnAttente ?? null) : null;
   const contenuPresent = !!(reponse || info || interrompue || autorisation);
   const largeurMax = reponse ? LARGEUR_MAX_REPONSE : LARGEUR_MAX_INFO;
@@ -345,8 +346,9 @@ export function BulleDialogueAgent() {
             {autorisation && contexte.repondreAutorisation && (
               <BandeauAutorisationAgent
                 texte={autorisation.texte}
-                onAutoriser={() => contexte.repondreAutorisation?.(autorisation.id, true)}
-                onRefuser={() => contexte.repondreAutorisation?.(autorisation.id, false)}
+                boutons={autorisation.boutons}
+                risque={autorisation.risque}
+                onChoix={(choix) => contexte.repondreAutorisation?.(autorisation.id, choix)}
               />
             )}
           </div>
