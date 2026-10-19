@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "build:capacitor": "cross-env CAPACITOR_BUILD=true next build && npx cap sync",
+    "build:capacitor:test": "cross-env CAPACITOR_BUILD=true CLASSINUS_CIBLE_TEST=true next build && npx cap sync",
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
     "test:barre-des-taches": "node tests/verifier-barre-des-taches.mjs",

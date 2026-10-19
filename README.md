@@ -430,6 +430,12 @@ Android Studio/Xcode installés localement pour ouvrir et compiler les
 projets `android/`/`ios/` ensuite (hors de portée d'un sandbox sans ces
 outils).
 
+Par défaut, ce build vise la production (variables de `.env.local`, ou celles
+du workflow OTA). Pour tester l'appli PC contre le backend de test Railway et
+la base Supabase de test, utiliser `npm run build:capacitor:test` : il ajoute
+`CLASSINUS_CIBLE_TEST=true`, et seul ce script déclenche la cible de test
+(voir `next.config.mjs`).
+
 ## Mises à jour OTA (sans réinstaller l'APK)
 
 Le code web de l'appli installée se met à jour tout seul : à l'ouverture,

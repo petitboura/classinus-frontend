@@ -19,20 +19,20 @@
 // par la doc Capacitor -- problemes de cookies/auth rapportes par la
 // communaute, et incertitude sur l'acceptation Play Store d'une app qui
 // se contente de charger un site distant).
-// Test canal en direct PC : les builds Capacitor/Electron de cette branche
-// parlent au backend de test Railway (environnement staging), pas a la
-// production. Adresse en dur volontairement, a retirer avant toute fusion.
+// Cible de TEST pour l'appli PC (canal en direct), uniquement sur demande.
+// Par defaut, un build Capacitor/Electron utilise les variables normales
+// (.env.local, ou celles du workflow OTA .github/workflows/ota.yml) : c'est
+// la production. Pour viser le backend de test Railway et la base Supabase de
+// test (projet Clovis-staging), lancer `npm run build:capacitor:test`, qui
+// ajoute CLASSINUS_CIBLE_TEST=true. Sans cette variable, rien ci dessous ne
+// s'applique, donc une publication OTA depuis main ne peut jamais viser le
+// staging. L'adresse et la cle "anon" Supabase sont publiques par conception
+// (elles sont deja dans chaque page web), rien de secret n'est ecrit ici.
 // Le web Vercel n'est pas touche (CAPACITOR_BUILD absent).
-//
-// 14/10/2026 : le backend de test verifie les jetons aupres de la base
-// Supabase de test (projet Clovis-staging). Sans les deux lignes Supabase
-// ci dessous, le build prenait l'adresse et la cle du .env.local (base de
-// production) : le backend de test refusait le jeton (cle de signature
-// inconnue), l'appli PC n'etait jamais enregistree et lire_ecran echouait
-// aussitot. L'adresse et la cle "anon" sont publiques par conception (elles
-// sont deja dans chaque page web), donc rien de secret n'est ecrit ici.
-// A retirer avant toute fusion, comme l'adresse du backend.
-if (process.env.CAPACITOR_BUILD === "true") {
+if (
+  process.env.CAPACITOR_BUILD === "true" &&
+  process.env.CLASSINUS_CIBLE_TEST === "true"
+) {
   process.env.NEXT_PUBLIC_API_URL =
     "https://classinus-staging.up.railway.app";
   process.env.NEXT_PUBLIC_SUPABASE_URL =
