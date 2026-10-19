@@ -102,7 +102,8 @@ components/
                           de réglages partagées (reglagesReponse.ts) ;
                           Chat plein écran (18/10/2026) : après le premier message, le texte des messages passe
                           derrière la rangée du haut (modèle, hamburger, cloche, minuteur) sur PC et téléphone,
-                          sans aucun fondu ni flou (19/10/2026). Sur téléphone seulement, la barre de saisie
+                          adouci par un fondu sans aucun flou (classe voile-chat-haut dans app/globals.css, réglable
+                          par --dj-voile-opacite). Sur téléphone seulement, la barre de saisie
                           est posée par-dessus la liste, comme une carte qui flotte (prop flotteSurListe de
                           BarreDeSaisie.tsx), pleine et non transparente, et le texte s'estompe doucement en
                           descendant vers elle (classe voile-chat-bas, réglable par --dj-voile-bas-opacite, aucun

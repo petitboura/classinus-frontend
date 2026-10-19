@@ -293,8 +293,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               // sécurité (clavier, safe-bottom), rien à réserver.
               // 18/10/2026, demande Bourama : sur le chat, rien n'est reserve en
               // haut. Le chat va jusqu'au bord de l'ecran pour que le texte des
-              // messages passe derriere la rangee du haut (sans fondu ni
-              // flou, voir ChatIA.tsx). Le chat reserve lui meme cette place avec
+              // messages passe derriere la rangee du haut (voile en fondu, voir
+              // ChatIA.tsx). Le chat reserve lui meme cette place avec
               // --dj-chat-haut, et l'ecran d'accueil du chat la garde.
               paddingTop: estPageChat(pathname) ? "0px" : "calc(var(--safe-top) + var(--dj-hamburger-espace))",
               paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",

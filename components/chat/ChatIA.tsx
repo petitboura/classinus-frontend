@@ -1854,8 +1854,8 @@ export function ChatIA({
           15/10/2026 : sur téléphone (chat plein écran), posé tout en haut de l'écran, sur la
           ligne du bouton hamburger, et il ne prend plus de place au dessus des messages.
           18/10/2026 : en chat plein écran, sur PC aussi, la rangée est posée par-dessus la
-          liste (plus de ligne à part) : le texte des messages passe derrière, sans fondu ni
-          flou (19/10/2026). Elle laisse passer les clics et la molette, seul le
+          liste (plus de ligne à part) : le texte des messages passe derrière, adouci par le
+          voile du haut (voir plus bas). Elle laisse passer les clics et la molette, seul le
           bouton du modèle les reçoit. */}
       {modelesDisponibles.length > 0 && (
         <div
@@ -2014,6 +2014,12 @@ export function ChatIA({
           className={pleinEcran ? "max-md:h-[calc(var(--hauteur-saisie-chat,7rem)+0.75rem)]" : undefined}
         />
       </div>
+
+      {/* Voile du haut (18/10/2026, demande Bourama) : fondu doux et léger flou derrière la
+          rangée du modèle, le hamburger, la cloche et le minuteur, sur PC comme sur téléphone.
+          Posé après la liste pour passer par-dessus, sous la rangée du modèle (z-20) et sous
+          les boutons globaux (z-40). Il ne reçoit aucun clic. */}
+      {pleinEcran && <div aria-hidden className="voile-chat-haut absolute inset-x-0 top-0 z-10" />}
 
       {/* Voile du bas (19/10/2026, demande Bourama) : sur téléphone, le texte s'estompe
           doucement en descendant vers la barre de saisie, sans aucun flou. Posé juste avant
