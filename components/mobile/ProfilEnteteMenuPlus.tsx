@@ -38,9 +38,9 @@ export function ProfilEnteteMenuPlus({
   if (!connecte) {
     return (
       <button
-        onClick={() => {
-          window.location.href = "/connexion";
-        }}
+        // 19/10/2026 : navigation normale de l'appli, plus de rechargement
+        // complet de la page (voir AppSidebar, seDeconnecter).
+        onClick={() => onNaviguer("/connexion")}
         aria-label="Se connecter"
         title="Se connecter"
         className="group flex items-center gap-2.5 rounded-xl py-1 pr-2 text-dj-texte transition-colors hover:bg-dj-surface-haute"

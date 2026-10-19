@@ -398,7 +398,11 @@ export function AppSidebar({
 
   async function seDeconnecter() {
     if (!connecte) {
-      window.location.href = "/connexion";
+      // 19/10/2026 : un visiteur qui touche "Se connecter" passe par la
+      // navigation normale de l'appli, plus par un rechargement complet de
+      // la page (qui relançait tout, y compris l'écran d'ouverture, et ne
+      // marche pas toujours dans l'appli installée).
+      router.push("/connexion");
       return;
     }
     await supabase.auth.signOut();
