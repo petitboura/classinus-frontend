@@ -18,6 +18,7 @@ import { SelecteurModeleHaut } from "./SelecteurModeleHaut";
 import { lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { RaccourcisChat } from "./RaccourcisChat";
+import { BoutonTestMiseAJour } from "./BoutonTestMiseAJour";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
@@ -1772,6 +1773,7 @@ export function ChatIA({
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
           )}
+          <BoutonTestMiseAJour />
           <div
             className={
               "shrink-0 basis-0 transition-[flex-grow] duration-300 ease-cgpt-doux " +
