@@ -376,6 +376,7 @@ tous ont désormais un point d'entrée dans la nav web/TypeScript.
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client Supabase (auth + DB) |
 | `NEXT_PUBLIC_LIVRE_TAILLE_MAX_MO` | taille maximale, en Mo, d'un livre numérique ouvert dans la liseuse (100 si absente ou invalide) ; au-delà, carte de téléchargement. Optionnelle |
 | `NEXT_PUBLIC_OTA_LATEST_URL` | adresse de `latest.json` pour les mises à jour OTA de l'appli installée (voir "Mises à jour OTA") ; adresse du dépôt `classinus-updates` par défaut. Optionnelle |
+| `NEXT_PUBLIC_OTA_ACTIF` | mettre `false` à la construction d'un APK de test pour qu'il ne remplace jamais son code web par un bundle publié depuis `main` (voir "Mises à jour OTA") ; absente ou autre valeur, la mise à jour reste active. Optionnelle |
 | `NEXT_PUBLIC_APP_URL` | URL publique du déploiement, utilisée par `app/layout.tsx` (balises OG) et le bouton partager (lien de téléchargement de l'app) ; sur Vercel, doit être créée en type "Configuration", jamais "Secrète" (incompatible avec un préfixe `NEXT_PUBLIC_`) |
 
 Voir `.env.local.example`.
@@ -466,6 +467,12 @@ manifest Android, mise à jour de Capacitor) exigent un nouvel APK.
   `versionCode` (`android/app/build.gradle`) minimal d'un APK pour recevoir les
   bundles. À relever dès qu'un changement natif rend les anciens APK
   incompatibles avec le nouveau code web.
+- **APK de test** : les bundles ne viennent que de `main`. Un APK construit depuis
+  une autre branche verrait donc son code web remplacé à l'ouverture suivante par
+  celui de `main`. Construit avec `NEXT_PUBLIC_OTA_ACTIF=false`, il garde le code de
+  sa branche. Variable absente ou autre valeur : mise à jour active, comme en
+  production. Par précaution, désinstaller l'appli avant d'installer un APK de test,
+  pour partir du code embarqué dans l'APK.
 - **Réglages GitHub à faire une fois** dans ce dépôt (Settings, Secrets and
   variables, Actions) : secret `UPDATES_TOKEN` (jeton avec droit d'écriture sur
   `classinus-updates`), variables `OTA_DEPOT` (`petitboura/classinus-updates`),

@@ -83,6 +83,13 @@ function retenirEchec(version: string): void {
 }
 
 async function preparerMiseAJour(CapacitorUpdater: CapacitorUpdaterApi): Promise<void> {
+  // APK de test construit avec NEXT_PUBLIC_OTA_ACTIF=false : le code web de l'APK
+  // n'est jamais remplacé par un bundle publié depuis main. Toute autre valeur, ou
+  // l'absence de la variable, laisse la mise à jour active. notifyAppReady a déjà
+  // été appelé par lancerMiseAJourOta, donc ce retour n'expose à aucun retour
+  // arrière automatique du plugin.
+  if (process.env.NEXT_PUBLIC_OTA_ACTIF === "false") return;
+
   // Heure de construction du code qui tourne en ce moment, injectée au build
   // (voir next.config.mjs). Sans elle, impossible de savoir si le bundle
   // publié est plus récent : on ne fait rien.
