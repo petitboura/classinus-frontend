@@ -13,7 +13,7 @@
 // electron-updater lit où chercher les mises à jour dans app-update.yml, que
 // electron-builder écrit tout seul dans l'installeur à partir de la section
 // "publish" de electron/electron-builder.config.js (dépôt public
-// petitboura/classinus-pc). Aucun jeton n'est nécessaire côté appli : le dépôt
+// petitboura/classinus-updates-pc). Aucun jeton n'est nécessaire côté appli : le dépôt
 // est public.
 //
 // "load" est attendu avant l'ouverture de la première fenêtre : il ne fait que

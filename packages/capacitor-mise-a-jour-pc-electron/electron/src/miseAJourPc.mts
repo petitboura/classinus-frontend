@@ -1,6 +1,6 @@
 // Créé le 19/10/2026, demande Bourama : mise à jour automatique de l'appli PC
 // (installée sous Windows), avec publication de l'installeur dans les releases
-// du dépôt public petitboura/classinus-pc.
+// du dépôt public petitboura/classinus-updates-pc.
 //
 // Noyau PUR : aucune importation d'Electron ni d'electron-updater ici. Le
 // "miseur" (electron-updater en vrai, un faux dans le test) et les minuteurs

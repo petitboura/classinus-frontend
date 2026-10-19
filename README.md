@@ -440,7 +440,7 @@ la base Supabase de test, utiliser `npm run build:capacitor:test` : il ajoute
 
 L'appli PC (Electron) se met à jour toute seule avec `electron-updater` et se
 publie par une étiquette `pc-vX.Y.Z` (workflow `.github/workflows/publier-pc.yml`,
-releases du dépôt public `petitboura/classinus-pc`). C'est indépendant de l'OTA
+releases du dépôt public `petitboura/classinus-updates-pc`). C'est indépendant de l'OTA
 mobile ci dessous. Mode d'emploi, réglages à faire une fois et limites :
 `docs/appli-pc-mise-a-jour-et-publication.md`.
 

@@ -1,7 +1,7 @@
 name: Publier l'appli PC (Windows)
 
 # Construit l'installeur Windows de Classinus (Electron) et le publie dans une
-# release du dépôt public petitboura/classinus-pc. L'appli installée lit ces
+# release du dépôt public petitboura/classinus-updates-pc. L'appli installée lit ces
 # releases pour se mettre à jour toute seule (voir
 # packages/capacitor-mise-a-jour-pc-electron et la section "Appli PC" du README).
 #

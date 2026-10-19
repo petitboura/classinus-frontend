@@ -20,16 +20,16 @@ de Classinus et la mettre à jour toute seule, et ce qu'il reste à faire à la 
 - **Installeur Windows** : NSIS, par utilisateur, sans droits administrateur
   (`electron/electron-builder.config.js`). Fichier : `Classinus-Setup-X.Y.Z.exe`.
 - **Publication** : le workflow `.github/workflows/publier-pc.yml` construit et
-  publie l'installeur dans les releases du dépôt public `petitboura/classinus-pc`.
+  publie l'installeur dans les releases du dépôt public `petitboura/classinus-updates-pc`.
   L'appli installée lit ces releases : aucun jeton n'est embarqué dans l'appli.
 - **Test** : `npm run test:mise-a-jour-pc` (noyau de mise à jour, sans Electron).
 
 ## À faire une seule fois (toi)
 
-1. **Créer le dépôt public `petitboura/classinus-pc`**, avec un fichier README (le
+1. **Créer le dépôt public `petitboura/classinus-updates-pc`**, avec un fichier README (le
    dépôt ne doit pas être vide). Il sert uniquement à héberger les releases.
 2. **Créer un jeton GitHub limité à ce seul dépôt** (jeton à granularité fine,
-   dépôt `classinus-pc`, permission « Contents : Read and write »).
+   dépôt `classinus-updates-pc`, permission « Contents : Read and write »).
 3. **Dans le dépôt `classinus-frontend`**, Settings, Secrets and variables, Actions :
    - ajouter le secret `PC_RELEASES_TOKEN` avec ce jeton ;
    - vérifier que les variables `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
@@ -47,7 +47,7 @@ git push origin pc-v0.1.0
 
 Le workflow vérifie que l'étiquette a la forme `pc-vX.Y.Z`, que le commit est dans
 `main`, que la configuration est complète et que le backend visé n'est pas le
-staging. Il construit ensuite l'installeur et crée la release dans `classinus-pc`.
+staging. Il construit ensuite l'installeur et crée la release dans `classinus-updates-pc`.
 La version de l'appli est prise dans l'étiquette : rien à modifier dans le code.
 
 Pour que la mise à jour automatique se déclenche, la nouvelle version doit être
@@ -90,7 +90,7 @@ npm run pack
 
 La mise à jour automatique ne revient jamais en arrière. Publier une version plus
 grande qui corrige le problème, ou supprimer la release défectueuse dans
-`classinus-pc` avant que les appareils ne la téléchargent.
+`classinus-updates-pc` avant que les appareils ne la téléchargent.
 
 ## Limites connues
 
@@ -99,7 +99,7 @@ grande qui corrige le problème, ou supprimer la release défectueuse dans
   signature dans `electron/electron-builder.config.js`, sans rien changer d'autre.
 - **Premier installeur à la main** : une appli déjà installée avant le plugin ne
   peut pas se mettre à jour toute seule. Le premier installeur à jour se télécharge
-  dans les releases de `classinus-pc`.
+  dans les releases de `classinus-updates-pc`.
 - **La page Télécharger** ne propose pas encore l'installeur Windows (elle ne
   propose que l'APK Android, le PWA iOS et un QR sur PC).
 - **Pas de pastille** de mise à jour dans la barre latérale pour l'appli PC (celle

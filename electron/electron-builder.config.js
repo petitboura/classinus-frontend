@@ -43,7 +43,7 @@ module.exports = {
     {
       provider: 'github',
       owner: 'petitboura',
-      repo: 'classinus-pc',
+      repo: 'classinus-updates-pc',
       releaseType: 'release',
     },
   ],

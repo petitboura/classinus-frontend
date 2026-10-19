@@ -2,7 +2,7 @@
   "name": "capacitor-mise-a-jour-pc-electron",
   "version": "0.1.0",
   "private": true,
-  "description": "Implementation Electron du plugin Capacitor \"MiseAJourPc\" : mise a jour automatique de l'appli Classinus installee sous Windows (electron-updater, releases publiques du depot petitboura/classinus-pc).",
+  "description": "Implementation Electron du plugin Capacitor \"MiseAJourPc\" : mise a jour automatique de l'appli Classinus installee sous Windows (electron-updater, releases publiques du depot petitboura/classinus-updates-pc).",
   "capacitor": {
     "electron": { "src": "electron" }
   },
