@@ -218,12 +218,12 @@ math-field {
    --dj-chat-haut : hauteur reservee en haut du chat. Sur telephone, la place du
    bouton hamburger flottant (voir --dj-hamburger-espace). Sur PC et tablette,
    la rangee du modele (2.75rem) apres la zone de securite du haut.
-   19/10/2026 : fondu du haut allege (45% au lieu de 88%), toujours sans flou.
+   19/10/2026 : fondu du haut remonte a 88%, toujours sans flou.
    Reglages : --dj-voile-opacite (force du fondu du haut) et
    --dj-voile-bas-opacite (force du fondu du bas, atteinte tout en bas). */
 :root {
   --dj-chat-haut: calc(var(--safe-top) + var(--dj-hamburger-espace));
-  --dj-voile-opacite: 45%;
+  --dj-voile-opacite: 88%;
   --dj-voile-bas-opacite: 85%;
 }
 @media (min-width: 768px) {
