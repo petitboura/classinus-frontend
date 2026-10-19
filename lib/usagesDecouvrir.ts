@@ -145,7 +145,7 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
       {
         question: "Comment utiliser Classinus dans Thonny ?",
         reponse:
-          "Dans Thonny 5.0 ou une version ultérieure, ouvre Outils puis Gérer les plugins, recherche thonny-classinus, installe-le et redémarre Thonny. Connecte ensuite ton compte Classinus dans le panneau ajouté à l'éditeur. Les actions d'analyse et de correction n'envoient le code que lorsque tu les déclenches.",
+          "Dans Thonny 5.0 ou une version ultérieure, ouvre Outils puis Gérer les plugins, recherche thonny-classinus, installe-le et redémarre Thonny. Connecte ensuite ton compte Classinus dans le panneau ajouté à l'éditeur. Un guide pas à pas avec captures d'écran est disponible dans l'application. Les actions d'analyse et de correction n'envoient le code que lorsque tu les déclenches.",
       },
     ],
   },

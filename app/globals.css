@@ -363,6 +363,15 @@ html[data-superposition] body {
   background: transparent !important;
 }
 
+/* 19/10/2026 (decision de Bourama) : pas d'ecran d'ouverture dans l'appli PC
+   (Electron). Il reste sur le site et sur l'appli mobile. L'attribut est pose
+   par public/dj-anti-flash-theme.js quand la page est servie en
+   capacitor-electron://. display:none et non un retrait par script : les
+   scripts en ligne sont bloques dans Electron, donc rien ne le retirerait. */
+html[data-appli-pc] #clovis-splash {
+  display: none !important;
+}
+
 body {
   background-color: var(--dj-fond);
   color: var(--dj-texte);
@@ -637,6 +646,26 @@ select:focus-visible {
 #clovis-splash.clovis-splash-sortie {
   opacity: 0;
   pointer-events: none;
+}
+/* Déjà vu pendant cette ouverture de l'appli : jamais rejoué (voir le script
+   dans app/layout.tsx). Ne jamais retirer cette règle. */
+html[data-ouverture-vue="1"] #clovis-splash {
+  display: none;
+}
+/* Filet de sécurité 100% CSS, indépendant de tout script et de React : quoi
+   qu'il arrive, l'écran d'ouverture devient invisible et ne bloque plus aucun
+   clic au bout de 7s. Un script qui retirait l'écran avant que React ne s'y
+   accroche (19/10/2026) cassait l'affichage de la page de connexion : ne
+   jamais retirer cet élément du DOM avant l'hydratation. */
+@keyframes cv-splash-secours {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+#clovis-splash {
+  animation: cv-splash-secours 0.01s linear 7s forwards;
 }
 /* Écran d'ouverture refait le 05/10/2026 : le logo est maintenant une
    vraie image (voir components/SplashOuverture.tsx). Entrée douce du

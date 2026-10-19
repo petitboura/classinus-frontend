@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Check, Copy } from "lucide-react";
 import { useInfoSection } from "./SectionPage";
+import { Capture, EtapeGuide } from "./GuideEtapes";
 
 // Guide "Utiliser Classinus dans Claude" (18/08, demande Bourama).
 //
@@ -128,33 +128,6 @@ export function EspaceConnecterClaude() {
   );
 }
 
-function EtapeGuide({
-  numero,
-  titre,
-  dernier = false,
-  children,
-}: {
-  numero: number;
-  titre: string;
-  dernier?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex gap-3 animate-dj-fade-in-rapide" style={{ animationDelay: `${(numero - 1) * 60}ms` }}>
-      <div className="flex flex-shrink-0 flex-col items-center">
-        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-surface-haute text-sm font-bold text-dj-texte">
-          {numero}
-        </span>
-        {!dernier && <span className="mt-1 w-px flex-1 bg-dj-bordure" />}
-      </div>
-      <div className={`flex-1 space-y-3 ${dernier ? "" : "pb-4"}`}>
-        <h2 className="font-display text-sm font-semibold text-dj-texte">{titre}</h2>
-        <div className="space-y-3 text-sm leading-relaxed text-dj-texte-muet">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 function UrlACopier() {
   const [copie, setCopie] = useState(false);
 
@@ -181,31 +154,6 @@ function UrlACopier() {
         {copie ? <Check size={14} /> : <Copy size={14} />}
         {copie ? "Copié !" : "Copier"}
       </button>
-    </div>
-  );
-}
-
-function Capture({
-  src,
-  largeur,
-  hauteur,
-  alt,
-}: {
-  src: string;
-  largeur: number;
-  hauteur: number;
-  alt: string;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface-haute">
-      <Image
-        src={src}
-        width={largeur}
-        height={hauteur}
-        alt={alt}
-        className="h-auto w-full"
-        sizes="(max-width: 640px) 100vw, 400px"
-      />
     </div>
   );
 }

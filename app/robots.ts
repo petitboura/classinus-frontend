@@ -20,6 +20,7 @@ const PAGES_PRIVEES = [
   "/rappels",
   "/memoire",
   "/connecter-claude",
+  "/connecter-thonny",
   "/controle-session",
 ];
 

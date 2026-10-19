@@ -21,7 +21,7 @@ const QUESTIONS_THONNY: QuestionReponse[] = [
   {
     question: "Comment installer Classinus dans Thonny ?",
     reponse:
-      "Installe d’abord Thonny 5.0 ou une version ultérieure. Dans Thonny, ouvre Outils > Gérer les plugins, recherche thonny-classinus, installe le plugin puis redémarre Thonny. Le panneau Classinus apparaîtra à droite de l’éditeur.",
+      "Installe d’abord Thonny 5.0 ou une version ultérieure. Dans Thonny, ouvre Outils > Gérer les plugins, recherche thonny-classinus, installe le plugin puis redémarre Thonny. Le panneau Classinus apparaîtra à droite de l’éditeur. Dans l’application Classinus, un guide pas à pas avec captures d’écran t’accompagne jusqu’à la connexion de ton compte.",
   },
   {
     question: "Est-ce que mon code est envoyé automatiquement ?",
@@ -94,6 +94,13 @@ export default function PageDecouvrirThonny() {
 
       <section className="mt-8">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Installer le plugin</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">
+          Dans l’application Classinus, un{" "}
+          <Link href="/connecter-thonny" className="font-medium text-dj-texte underline underline-offset-4">
+            guide pas à pas avec des captures d’écran
+          </Link>{" "}
+          t’accompagne de l’installation jusqu’à la connexion de ton compte.
+        </p>
         <ol className="mt-3 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-dj-texte-muet">
           <li>
             <strong className="text-dj-texte">Installer Thonny.</strong> Si Thonny n’est pas encore sur ton ordinateur,

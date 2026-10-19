@@ -280,6 +280,15 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
       "Connecte ton compte Classinus à Claude pour que Claude puisse utiliser ce que tu as dans Classinus (ta mémoire, tes skills, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.",
   },
   {
+    id: "connecter-thonny",
+    titre: "Utiliser Classinus dans Thonny",
+    texteCourt:
+      "Ajoute le plugin Classinus à Thonny pour demander de l'aide sur ton code Python dans un panneau à côté de ton éditeur. L'installation se fait une seule fois.",
+    texteComplet:
+      "Ajoute le plugin Classinus à Thonny pour demander de l'aide sur ton code Python dans un panneau à côté de ton éditeur : analyse, correction, explication d'une erreur. Ça demande Thonny 5.0 ou plus récent. Tu installes le plugin une seule fois, tu redémarres Thonny, puis tu connectes ton compte Classinus. Ton code n'est envoyé que lorsque tu cliques sur une action qui l'envoie.",
+    lienDecouvrir: ROUTES_DECOUVRIR.thonny,
+  },
+  {
     id: "memoire",
     titre: "Ma mémoire",
     texteCourt: "Consulte les informations que Classinus retient au fil des échanges, classées en quatre catégories. Tu peux supprimer une catégorie ou vider la mémoire depuis les commandes prévues.",

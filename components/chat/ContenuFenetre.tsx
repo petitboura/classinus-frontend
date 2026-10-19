@@ -1,6 +1,7 @@
 "use client";
 
 import { EspaceConnecterClaude } from "@/components/EspaceConnecterClaude";
+import { EspaceConnecterThonny } from "@/components/EspaceConnecterThonny";
 import { contenuSection } from "@/lib/contenuSections";
 import type { CleFenetre } from "@/lib/contexteFenetres";
 
@@ -9,5 +10,7 @@ import type { CleFenetre } from "@/lib/contexteFenetres";
 // sous-sections y sont importées, les mettre dans le chargement de départ
 // de l'appli l'alourdirait pour rien.
 export default function ContenuFenetre({ cle }: { cle: CleFenetre }) {
-  return <>{cle === "claude" ? <EspaceConnecterClaude /> : contenuSection(cle)}</>;
+  if (cle === "claude") return <EspaceConnecterClaude />;
+  if (cle === "thonny") return <EspaceConnecterThonny />;
+  return <>{contenuSection(cle)}</>;
 }

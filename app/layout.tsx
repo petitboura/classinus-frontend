@@ -12,6 +12,8 @@ import "mathlive/fonts.css";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { MiseAJourOta } from "@/components/MiseAJourOta";
 import { ReveilBackend } from "@/components/ReveilBackend";
+import { SplashOuverture } from "@/components/SplashOuverture";
+import { SplashPret } from "@/components/SplashPret";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
@@ -181,12 +183,43 @@ export default function RacineLayout({
             async/defer bloque le parseur exactement comme un script en
             ligne. */}
         <script src="/dj-anti-flash-theme.js" />
+        {/* Écran d'ouverture : une seule fois par ouverture de l'appli (19/10/2026,
+            demande de Bourama). Il se rejouait à chaque rechargement complet de
+            page. Ce repère est posé avant le premier affichage pour que
+            l'écran n'apparaisse même pas une fraction de seconde quand il a
+            déjà été vu. Ne jamais remettre un rejeu de l'écran d'ouverture
+            ailleurs que sur l'ouverture elle même. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(sessionStorage.getItem("classinus-ouverture-vue")==="1"){document.documentElement.setAttribute("data-ouverture-vue","1");}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
-        {/* Pas d'écran d'ouverture animé sur cette branche (05/10/2026,
-            décision de Bourama) : il bloquait la fenêtre de superposition
-            Electron. Ne JAMAIS le remettre, même si un jour la branche est
-            réalignée avec main : garder cette suppression. */}
+        {/* Écran d'ouverture (25/08, demande Bourama) -- voir
+            SplashOuverture.tsx pour le pourquoi du composant serveur.
+            Le script qui suit fait disparaître #clovis-splash une fois
+            SA CHORÉGRAPHIE COMPLÈTE terminée (~2,6s : entrée du
+            logo + mot) ET que l'app signale qu'elle est prête (événement
+            "clovis:pret", déclenché par SplashPret.tsx plus bas une fois
+            React monté) -- les deux conditions, pas juste la première
+            arrivée, sinon l'animation serait coupée en plein milieu sur
+            un hydratation rapide (28/08, Bourama : "ça doit se montrer
+            obligatoirement"). Filet de sécurité à 6s si le signal
+            "prêt" tarde trop (connexion lente) -- ne doit jamais
+            bloquer indéfiniment l'accès à l'appli (standards-dev #9).
+            L'attente de 2,6s est ignorée pour prefers-reduced-motion :
+            les animations CSS y sont déjà quasi instantanées (règle
+            globale dans globals.css), forcer l'attente reviendrait à
+            imposer un écran figé inutile à ces personnes. Doit rester
+            APRÈS le <div id="clovis-splash"> dans le HTML pour le
+            trouver dans le DOM au moment où il s'exécute. */}
+        <SplashOuverture />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var el=document.getElementById("clovis-splash");if(!el)return;var CLE="classinus-ouverture-vue";var dejaVu=false;try{dejaVu=sessionStorage.getItem(CLE)==="1";}catch(e){}if(dejaVu){return;}try{sessionStorage.setItem(CLE,"1");}catch(e){}var reduit=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var DUREE_MIN=reduit?0:2600;var pret=false,tempsEcoule=false,parti=false;function partir(){if(parti)return;parti=true;el.classList.add("clovis-splash-sortie");el.addEventListener("transitionend",function(){if(el.parentNode)el.parentNode.removeChild(el);},{once:true});}function tenter(){if(pret&&tempsEcoule)partir();}document.addEventListener("clovis:pret",function(){pret=true;tenter();},{once:true});setTimeout(function(){tempsEcoule=true;tenter();},DUREE_MIN);setTimeout(partir,6000);}catch(e){}})();`,
+          }}
+        />
         <ServiceWorkerRegistration />
         <MiseAJourOta />
         <ReveilBackend />
@@ -198,6 +231,7 @@ export default function RacineLayout({
         <GardienLiensSortants />
         <IndicateurTelechargements />
         <VisionneurGlobalRacine />
+        <SplashPret />
       </body>
     </html>
   );

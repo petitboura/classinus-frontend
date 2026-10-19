@@ -2,7 +2,7 @@
 
 import { useEffect, useContext, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, ExternalLink, Plug, type LucideIcon } from "lucide-react";
+import { X, ExternalLink, Plug, Code2, type LucideIcon } from "lucide-react";
 import { useFenetres, TAILLE_MIN, type CleFenetre } from "@/lib/contexteFenetres";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { ContexteRetour } from "@/lib/contexteRetour";
@@ -13,8 +13,8 @@ import { trouverSection } from "@/lib/groupesRail";
 
 // Le contenu d'une fenêtre vient de lib/contenuSections.tsx, le même que
 // celui de la vraie page : plus de copie à garder à jour ici. Seul le guide
-// "Utiliser Classinus dans Claude" (une page seule, sans sous-sections)
-// est décrit à part (ContenuFenetre.tsx). Chargé à l'ouverture seulement,
+// "Utiliser Classinus dans Claude" et celui pour Thonny (des pages seules,
+// sans sous-sections) sont décrits à part (ContenuFenetre.tsx). Chargé à l'ouverture seulement,
 // avec un squelette pendant ce temps.
 const ContenuFenetre = dynamic(() => import("./ContenuFenetre"), {
   ssr: false,
@@ -30,6 +30,9 @@ const ContenuFenetre = dynamic(() => import("./ContenuFenetre"), {
 function infosFenetre(cle: CleFenetre): { label: string; href: string; Icone: LucideIcon } {
   if (cle === "claude") {
     return { label: "Utiliser Classinus dans Claude", href: "/connecter-claude", Icone: Plug };
+  }
+  if (cle === "thonny") {
+    return { label: "Utiliser Classinus dans Thonny", href: "/connecter-thonny", Icone: Code2 };
   }
   const section = trouverSection(cle);
   return { label: section?.label ?? cle, href: cle, Icone: section?.Icone ?? Plug };
