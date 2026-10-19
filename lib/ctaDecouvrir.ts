@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import { Download, type LucideIcon } from "lucide-react";
 import { ROUTES_APP } from "./routesApp";
 import { ROUTES_BIBLIOTHEQUE } from "./routesBibliotheque";
 import { ROUTES_BUREAU } from "./routesBureau";
@@ -14,8 +14,9 @@ import { GROUPES_RAIL, trouverSection } from "./groupesRail";
 //   1. toujours un bouton vers le chat ;
 //   2. un bouton vers la section de l'appli dont parle la page, seulement
 //      quand la page parle d'une section. La page mère /decouvrir, la page des
-//      usages, Thonny et les pages d'usage qui touchent plusieurs sections
-//      n'ont donc que le bouton du chat.
+//      usages et les pages d'usage qui touchent plusieurs sections n'ont donc
+//      que le bouton du chat. La page Thonny a pour second bouton le
+//      téléchargement de Thonny.
 //
 // Les adresses viennent des fichiers de routes et les noms de section de
 // lib/groupesRail.ts (les mêmes listes que le rail de l'appli), jamais
@@ -29,10 +30,11 @@ export const CTA_CHAT_DECOUVRIR = {
   libelle: "Essayer Classinus dans le chat",
 } as const;
 
-/** Page de téléchargement de Thonny (bouton de la page /decouvrir/thonny). */
+/** Page de téléchargement de Thonny (bouton de la page /decouvrir/thonny, voir ctaSectionDecouvrir). */
 export const URL_TELECHARGEMENT_THONNY = "https://thonny.org/";
 
-export type CtaSectionDecouvrir = { href: string; libelle: string; Icone: LucideIcon };
+/** `externe` : lien vers un autre site, ouvert dans un nouvel onglet. */
+export type CtaSectionDecouvrir = { href: string; libelle: string; Icone: LucideIcon; externe?: boolean };
 
 // Page /decouvrir -> adresse de la section de l'appli dont elle parle.
 const APPLI_PAR_PAGE_DECOUVRIR: Record<string, string> = {
@@ -71,6 +73,12 @@ function sansSlashFinal(chemin: string): string {
  * ou null si la page ne parle pas d'une section (alors seul le chat est proposé).
  */
 export function ctaSectionDecouvrir(chemin: string): CtaSectionDecouvrir | null {
+  // Page Classinus dans Thonny : pas de section de l'appli, le bouton est le
+  // téléchargement de Thonny (site externe).
+  if (sansSlashFinal(chemin) === ROUTES_DECOUVRIR.thonny) {
+    return { href: URL_TELECHARGEMENT_THONNY, libelle: "Télécharger Thonny", Icone: Download, externe: true };
+  }
+
   const href = APPLI_PAR_PAGE_DECOUVRIR[sansSlashFinal(chemin)];
   if (!href) return null;
 

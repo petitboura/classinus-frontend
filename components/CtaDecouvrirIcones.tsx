@@ -25,6 +25,7 @@ export function CtaDecouvrirIcones() {
       {section && (
         <Link
           href={section.href}
+          {...(section.externe ? { target: "_blank", rel: "noreferrer" } : {})}
           aria-label={section.libelle}
           title={section.libelle}
           className={`${CLASSES_BOUTON} border border-dj-bordure bg-dj-surface text-dj-texte hover:border-dj-bordure-forte hover:bg-dj-surface-haute`}

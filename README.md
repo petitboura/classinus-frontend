@@ -37,7 +37,9 @@ app/
                           par un bouton vers cette section de l'appli (components/CtaDecouvrir.tsx, posé une
                           fois dans le layout ; la table page vers section est dans lib/ctaDecouvrir.ts) et les
                           deux mêmes boutons en icônes seules en haut à droite (components/CtaDecouvrirIcones.tsx).
-                          La page Thonny a un bouton Télécharger Thonny
+                          La page Thonny a pour second bouton Télécharger Thonny (site externe). Dans l'appli, un
+                          bouton boussole (components/BoutonDecouvrir.tsx) mène à /decouvrir, à gauche de l'horloge
+                          des minuteurs, masqué dans le chat
   layout.tsx             layout racine, résout NEXT_PUBLIC_APP_URL pour les balises OG, porte la
                           description de l'appli (RESUME_CLASSINUS) et la fiche WebApplication en
                           données structurées (lib/donneesApplication.ts, components/DonneesStructurees.tsx)

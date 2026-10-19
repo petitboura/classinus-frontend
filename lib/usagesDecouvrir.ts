@@ -334,6 +334,11 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
     reponse:
       "Tu peux demander des fiches de révision, des QCM interactifs avec correction expliquée ou des animations explicatives. Certaines animations peuvent être téléchargées en MP4, selon les outils disponibles.",
   },
+  {
+    question: "Où trouver les pages de présentation de Classinus ?",
+    reponse:
+      "Dans l'application, le bouton en forme de boussole, en haut à droite, à gauche de l'horloge des minuteurs, ouvre la page Découvrir Classinus. Il n'apparaît pas dans le chat plein écran. Chaque page de présentation propose des boutons pour revenir au chat ou ouvrir la section dont elle parle.",
+  },
 ];
 
 export const RESUME_CLASSINUS = {

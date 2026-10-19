@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, ExternalLink, MessageCircle } from "lucide-react";
 import { CTA_CHAT_DECOUVRIR, ctaSectionDecouvrir } from "@/lib/ctaDecouvrir";
 
 // Chantier SEO/AEO de Classinus (18/10/2026, demande Bourama). Boutons posés
@@ -39,14 +39,20 @@ export function CtaDecouvrir() {
       {section && (
         <Link
           href={section.href}
+          {...(section.externe ? { target: "_blank", rel: "noreferrer" } : {})}
           className="group inline-flex items-center justify-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-5 py-3 text-sm font-semibold text-dj-texte transition-all duration-200 hover:border-dj-bordure-forte hover:bg-dj-surface-haute active:scale-[.98]"
         >
+          {section.externe && <section.Icone size={16} aria-hidden="true" />}
           {section.libelle}
-          <ArrowRight
-            size={16}
-            className="transition-transform duration-200 group-hover:translate-x-0.5"
-            aria-hidden="true"
-          />
+          {section.externe ? (
+            <ExternalLink size={14} aria-hidden="true" />
+          ) : (
+            <ArrowRight
+              size={16}
+              className="transition-transform duration-200 group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          )}
         </Link>
       )}
     </nav>
