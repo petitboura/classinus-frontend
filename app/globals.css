@@ -628,6 +628,11 @@ select:focus-visible {
   opacity: 0;
   pointer-events: none;
 }
+/* Déjà vu pendant cette ouverture de l'appli : jamais rejoué (voir le script
+   dans app/layout.tsx). Ne jamais retirer cette règle. */
+html[data-ouverture-vue="1"] #clovis-splash {
+  display: none;
+}
 /* Écran d'ouverture refait le 05/10/2026 : le logo est maintenant une
    vraie image (voir components/SplashOuverture.tsx). Entrée douce du
    logo, lueur dorée, reflet en diagonale. */

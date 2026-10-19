@@ -169,6 +169,17 @@ export default function RacineLayout({
             __html: `(function(){try{var t=localStorage.getItem("clovis-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t;}}catch(e){}})();`,
           }}
         />
+        {/* Écran d'ouverture : une seule fois par ouverture de l'appli (19/10/2026,
+            demande de Bourama). Il se rejouait à chaque rechargement complet de
+            page. Ce repère est posé avant le premier affichage pour que
+            l'écran n'apparaisse même pas une fraction de seconde quand il a
+            déjà été vu. Ne jamais remettre un rejeu de l'écran d'ouverture
+            ailleurs que sur l'ouverture elle même. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(sessionStorage.getItem("classinus-ouverture-vue")==="1"){document.documentElement.setAttribute("data-ouverture-vue","1");}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
         {/* Écran d'ouverture (25/08, demande Bourama) -- voir
@@ -192,7 +203,7 @@ export default function RacineLayout({
         <SplashOuverture />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var el=document.getElementById("clovis-splash");if(!el)return;var reduit=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var DUREE_MIN=reduit?0:2600;var pret=false,tempsEcoule=false,parti=false;function partir(){if(parti)return;parti=true;el.classList.add("clovis-splash-sortie");el.addEventListener("transitionend",function(){if(el.parentNode)el.parentNode.removeChild(el);},{once:true});}function tenter(){if(pret&&tempsEcoule)partir();}document.addEventListener("clovis:pret",function(){pret=true;tenter();},{once:true});setTimeout(function(){tempsEcoule=true;tenter();},DUREE_MIN);setTimeout(partir,6000);}catch(e){}})();`,
+            __html: `(function(){try{var el=document.getElementById("clovis-splash");if(!el)return;var CLE="classinus-ouverture-vue";var dejaVu=false;try{dejaVu=sessionStorage.getItem(CLE)==="1";}catch(e){}if(dejaVu){if(el.parentNode)el.parentNode.removeChild(el);return;}try{sessionStorage.setItem(CLE,"1");}catch(e){}var reduit=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;var DUREE_MIN=reduit?0:2600;var pret=false,tempsEcoule=false,parti=false;function partir(){if(parti)return;parti=true;el.classList.add("clovis-splash-sortie");el.addEventListener("transitionend",function(){if(el.parentNode)el.parentNode.removeChild(el);},{once:true});}function tenter(){if(pret&&tempsEcoule)partir();}document.addEventListener("clovis:pret",function(){pret=true;tenter();},{once:true});setTimeout(function(){tempsEcoule=true;tenter();},DUREE_MIN);setTimeout(partir,6000);}catch(e){}})();`,
           }}
         />
         <ServiceWorkerRegistration />
