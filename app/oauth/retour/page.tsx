@@ -26,6 +26,9 @@ const NOMS_SERVICES: Record<string, string> = {
   notion: "Notion",
   google_drive: "Google Drive",
   github: "GitHub",
+  vercel_mcp: "Vercel",
+  railway_mcp: "Railway",
+  supabase_mcp: "Supabase",
 };
 
 // Durée d'affichage de la confirmation avant de ramener la personne au chat.

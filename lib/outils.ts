@@ -356,4 +356,7 @@ export const APPLIS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // visuellement un tracé SVG avant mise en prod) : à remplacer par un
   // vrai logo (même logique que IconeNotion.tsx) si besoin plus tard.
   { nom: "google_drive", label: "Google Drive", Icone: HardDrive },
+  { nom: "vercel_mcp", label: "Vercel", Icone: PanelsTopLeft },
+  { nom: "railway_mcp", label: "Railway", Icone: Wrench },
+  { nom: "supabase_mcp", label: "Supabase", Icone: Database },
 ];
