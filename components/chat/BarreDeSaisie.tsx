@@ -294,10 +294,11 @@ export function BarreDeSaisie({
   // cliquerNotion()/cliquerGoogleDrive() gèrent déjà eux-mêmes, via
   // statutConnexion()/demarrerConnexion() (appels REST directs, pas liés
   // à outilsPourAgent), l'état connecté/non connecté au clic. GitHub
-  // exclu de CE bouton précis (même demande) même s'il n'a pas ce
-  // problème d'amorçage. APPLIS_DISPONIBLES (lib/outils.ts) reste
-  // inchangé -- il sert aussi à app/dashboard/applications/page.tsx
-  // (liste des applis connectables), qui doit continuer à lister GitHub.
+  // (20/10/2026, demande Bourama) rejoint Notion dans ce bouton pour que
+  // chaque personne puisse connecter son compte GitHub ; cliquerGithub()
+  // gère lui aussi connexion et sélecteur de dépôts au clic.
+  // APPLIS_DISPONIBLES (lib/outils.ts) reste inchangé : il sert aussi à
+  // app/dashboard/applications/page.tsx (liste des applis connectables).
   // google_drive retiré du filtre (19/09/2026, demande Bourama : "on va
   // masquer son bouton pour l'instant") -- bouton/menu uniquement, ne
   // touche pas à core/registre_outils.py côté backend : si un agent a
@@ -307,7 +308,7 @@ export function BarreDeSaisie({
   // app/dashboard/applications/page.tsx continue donc de lister Google
   // Drive comme appli connectable, ce filtre-ci ne concerne que la barre
   // de saisie du chat.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.nom === "notion");
+  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.nom === "notion" || a.nom === "github");
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
@@ -344,6 +345,7 @@ export function BarreDeSaisie({
   // équivalent de appliSlotUnique?.nom === "x" mais qui reste vrai aussi
   // dans le cas multi-appli (Notion + Drive tous les deux actifs).
   const notionDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "notion");
+  const githubDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "github");
   const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
   // Les réglages de réponse (modèle, longueur, mode pédagogique, modes
   // ressources, code enseignant) vivent dans le bouton Réglages
@@ -744,18 +746,18 @@ export function BarreDeSaisie({
   }, [selecteurOuvert]);
 
   // Correctif (02/09/2026, signalé Bourama : 404 répétés en console) :
-  // le bouton GitHub (plus bas, appliSlotUnique?.nom === "github") ne
-  // s'affiche que si l'agent a exactement cette appli activée -- avant
+  // le bouton GitHub (githubDisponiblePourAgent, appli seule ou menu
+  // multi-appli) ne s'affiche que si l'agent a cette appli. Avant
   // ce correctif, cet appel de statut partait quand même à chaque
   // chargement du chat même quand le bouton n'existe pas, contre un
   // endpoint qui répond 404 pour cet agent. Même garde-fou que le
   // rendu du bouton, pour ne plus appeler l'endpoint pour rien.
   useEffect(() => {
-    if (appliSlotUnique?.nom !== "github") return;
+    if (!githubDisponiblePourAgent) return;
     statutConnexion("github")
       .then((r) => setGithubConnecte(r.connecte))
       .catch(() => setGithubConnecte(false));
-  }, [appliSlotUnique?.nom]);
+  }, [githubDisponiblePourAgent]);
 
   // Connexion Notion (01/08, activation complète demandée par Bourama) --
   // même pattern que githubConnecte/selecteurOuvert ci-dessus. Le choix du
