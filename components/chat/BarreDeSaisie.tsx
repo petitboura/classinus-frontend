@@ -1682,6 +1682,7 @@ export function BarreDeSaisie({
                           >
                             <Icone size={14} />
                             <span className="flex-1">{label}</span>
+                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
                           </button>
                         ))}
                     </div>
@@ -1855,6 +1856,7 @@ export function BarreDeSaisie({
                       >
                         <Icone size={14} />
                         <span className="flex-1">{label}</span>
+                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
                         {actif && <Check size={13} />}
                       </button>
                     );
@@ -2142,6 +2144,7 @@ export function BarreDeSaisie({
                   >
                     <Icone size={15} />
                     <span className="flex-1">{label}</span>
+                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
                     {actif && <Check size={14} />}
                   </button>
                 );
@@ -2170,6 +2173,7 @@ export function BarreDeSaisie({
               >
                 <Icone size={16} />
                 <span className="flex-1">{label}</span>
+                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
               </button>
             ))}
         </div>
