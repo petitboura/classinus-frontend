@@ -234,7 +234,7 @@ export function AppSidebar({
   // l'un masque par CSS. Chacun a ses propres boutons de groupe, qui ecoutent
   // les appuis sur le document : seul celui qui est visible doit etre monte.
   const estDesktop = useEstDesktop();
-  // Bouton "Télécharger pour PC" du menu Plus : navigateur sur Windows
+  // Bouton "Télécharger pour PC" de la barre latérale : navigateur sur Windows
   // seulement (voir lib/useProposerTelechargementPc.ts).
   const proposerTelechargementPc = useProposerTelechargementPc();
   // 03/09/2026, demande Bourama, audit "clic sur une section ne fait
@@ -629,6 +629,27 @@ export function AppSidebar({
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${railOuvert ? "md:w-72" : "md:w-14"}`}
       >
+        {/* 20/10/2026, demande de Bourama : le bouton "Télécharger pour PC" vit
+            dans la barre elle-même, juste avant la ligne "Classinus", et non
+            dans le menu Plus. Visible seulement dans un navigateur sur Windows
+            (voir lib/useProposerTelechargementPc.ts). */}
+        {proposerTelechargementPc && (
+          <Link
+            href="/telecharger"
+            title="Télécharger pour PC"
+            className="group mb-1 flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          >
+            <span className={CELLULE_ICONE_RAIL}>
+              <MonitorDown
+                size={TAILLE_ICONE_RAIL}
+                strokeWidth={TRAIT_ICONE_RAIL}
+                className="transition-transform duration-200 group-hover:translate-y-0.5"
+              />
+            </span>
+            <LibelleRail ouverte={railOuvert}>Télécharger pour PC</LibelleRail>
+          </Link>
+        )}
+
         <button
           onClick={() => setSurvolRail(true)}
           onMouseEnter={() => setSurvolRail(true)}
@@ -817,23 +838,6 @@ export function AppSidebar({
                   <Share2 size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:-rotate-12" />
                   {copie ? "Copié !" : "Partager"}
                 </button>
-
-                {proposerTelechargementPc && (
-                  <Link
-                    href="/telecharger"
-                    // Même précaution que les onglets plus haut : marquer avant
-                    // de fermer, sinon le démontage du menu consomme une
-                    // entrée d'historique et annule la navigation.
-                    onClick={() => {
-                      marquerActionsSansHistorique();
-                      setActionsDeplie(false);
-                    }}
-                    className="group flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                  >
-                    <MonitorDown size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:translate-y-0.5" />
-                    Télécharger pour PC
-                  </Link>
-                )}
 
                 <div className="rounded-lg">
                   <button
