@@ -308,7 +308,7 @@ export function BarreDeSaisie({
   // app/dashboard/applications/page.tsx continue donc de lister Google
   // Drive comme appli connectable, ce filtre-ci ne concerne que la barre
   // de saisie du chat.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.nom === "notion" || a.nom === "github");
+  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => ["notion", "github", "vercel_mcp", "railway_mcp", "supabase_mcp"].includes(a.nom));
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
@@ -347,6 +347,9 @@ export function BarreDeSaisie({
   const notionDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "notion");
   const githubDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "github");
   const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
+  const vercelMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "vercel_mcp");
+  const railwayMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "railway_mcp");
+  const supabaseMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "supabase_mcp");
   // Les réglages de réponse (modèle, longueur, mode pédagogique, modes
   // ressources, code enseignant) vivent dans le bouton Réglages
   // (barre/BoutonReglages.tsx). Leurs données sont chargées une seule fois
@@ -462,6 +465,11 @@ export function BarreDeSaisie({
         break;
       case "google_drive":
         cliquerGoogleDrive();
+        break;
+      case "vercel_mcp":
+      case "railway_mcp":
+      case "supabase_mcp":
+        void cliquerPlatformMcp(nom);
         break;
     }
   }
@@ -882,6 +890,37 @@ export function BarreDeSaisie({
     } catch (e) {
       alert(messageErreur(e));
       setDriveEnCours(false);
+    }
+  }
+
+  // Connexions individuelles aux plateformes MCP (Vercel, Railway, Supabase).
+  // Les jetons restent propres à l'utilisateur côté backend.
+  const [platformMcpConnectes, setPlatformMcpConnectes] = useState<Record<string, boolean>>({});
+  const [platformMcpEnCours, setPlatformMcpEnCours] = useState<string | null>(null);
+
+  useEffect(() => {
+    const services = [
+      ["vercel_mcp", vercelMcpDisponiblePourAgent],
+      ["railway_mcp", railwayMcpDisponiblePourAgent],
+      ["supabase_mcp", supabaseMcpDisponiblePourAgent],
+    ] as const;
+    for (const [service, disponible] of services) {
+      if (!disponible) continue;
+      statutConnexion(service)
+        .then((r) => setPlatformMcpConnectes((prec) => ({ ...prec, [service]: r.connecte })))
+        .catch(() => setPlatformMcpConnectes((prec) => ({ ...prec, [service]: false })));
+    }
+  }, [vercelMcpDisponiblePourAgent, railwayMcpDisponiblePourAgent, supabaseMcpDisponiblePourAgent]);
+
+  async function cliquerPlatformMcp(service: "vercel_mcp" | "railway_mcp" | "supabase_mcp") {
+    if (platformMcpConnectes[service]) return;
+    setPlatformMcpEnCours(service);
+    try {
+      const { url } = await demarrerConnexion(service, agentId);
+      window.location.href = url;
+    } catch (e) {
+      alert(messageErreur(e));
+      setPlatformMcpEnCours(null);
     }
   }
 
