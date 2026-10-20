@@ -50,6 +50,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Capacitor.isNativePlatform() n'a pas répondu -- évite un flash du
   // hamburger web au tout premier rendu dans l'appli native.
   const [natif, setNatif] = useState(false);
+  // Vrai seulement dans l'appli PC installée (Electron). Sert à garder la bulle du chat
+  // visible sur PC, alors que natif est aussi vrai là-bas.
+  const [surAppliPc, setSurAppliPc] = useState(false);
   // Remonté ici depuis ChatFlottant.tsx (16/08/2026) pour pouvoir être
   // ouvert depuis d'autres écrans -- voir lib/contexteChat.tsx et le
   // bouton "Ouvrir le chat" de l'écran d'accueil.
@@ -192,6 +195,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     import("@capacitor/core").then(({ Capacitor }) => {
       const estNatif = Capacitor.isNativePlatform();
       if (!annule) setNatif(estNatif);
+      if (!annule) setSurAppliPc(Capacitor.getPlatform() === "electron");
       // Attribut lu par ChatSection.tsx (qui ne recalcule jamais la
       // détection native lui-même). Depuis le 13/10/2026 il ne sert plus à
       // la marge du bas : l'appli native a la même barre que le site.
@@ -314,6 +318,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onOuvrirCatalogue={() => setCatalogueOuvert(true)}
             nouvelleConversationRef={nouvelleConversationRef}
             natif={natif}
+            surAppliPc={surAppliPc}
           />
           <FenetresSections />
           <PaletteCommandes

@@ -43,12 +43,14 @@ export const SECTIONS_PARAMETRES: SectionDeGroupe[] = [
     label: "Capacités du téléphone",
     description: "Connecteur Notion, mise à jour, nom de l'appareil",
     Icone: Smartphone,
+    masqueSurPc: true,
   },
   {
     href: ROUTES_PARAMETRES.accessibilite,
     label: "Accessibilité",
     description: "Autoriser Classinus à lire et agir dans les apps choisies",
     Icone: Accessibility,
+    masqueSurPc: true,
   },
 ];
 

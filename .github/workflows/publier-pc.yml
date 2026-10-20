@@ -97,9 +97,11 @@ jobs:
       - name: Construire le site pour l'appli PC (export statique)
         run: npx next build
 
-      - name: Synchroniser le projet Electron
-        run: npx cap sync @capawesome/capacitor-electron
-
+      # Ordre important : les plugins doivent être compilés AVANT `cap sync`.
+      # `cap sync` ne retient que les plugins dont le fichier compilé
+      # (electron/dist/plugin.mjs) existe déjà, et ignore les autres sans
+      # erreur. Dans l'ordre inverse, l'installeur sortait sans aucun plugin
+      # (superposition, pont natif, dossiers, mise à jour automatique).
       - name: Compiler les plugins Electron
         shell: bash
         run: |
@@ -107,6 +109,9 @@ jobs:
           npm --prefix packages/capacitor-pont-natif-electron run build
           npm --prefix packages/capacitor-superposition-electron run build
           npm --prefix packages/capacitor-mise-a-jour-pc-electron run build
+
+      - name: Synchroniser le projet Electron
+        run: npx cap sync @capawesome/capacitor-electron
 
       - name: Installer les dépendances d'Electron
         working-directory: electron

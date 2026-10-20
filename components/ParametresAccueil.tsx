@@ -15,6 +15,7 @@ import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { ROUTES_PARAMETRES } from "@/lib/routesParametres";
 import { LIGNE_TRAIT_ICONE_18, TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
+import { useSurAppliPc } from "@/lib/useSurAppliPc";
 
 // 19/09/2026, demande Bourama : Paramètres fonctionne maintenant comme
 // Personnaliser Classinus/Bibliothèque/Bureau/Concentration -- cette page
@@ -103,6 +104,7 @@ export function ParametresAccueil() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const surAppliPc = useSurAppliPc();
   const [chargement, setChargement] = useState(true);
   const [sansCompte, setSansCompte] = useState(false);
   const [erreurChargement, setErreurChargement] = useState<string | null>(null);
@@ -273,11 +275,14 @@ export function ParametresAccueil() {
           décision Bourama, voir /areas/clovis.md) -- plugins natifs
           Capacitor sans écran jusqu'ici. Chaque carte/écran gère déjà son
           propre état "disponible seulement sur mobile" (usePluginNatif),
-          donc rien à faire ici pour le web. */}
-      <Liste enferme>
-        <LigneLien icone={Smartphone} titre="Capacités du téléphone" sousTitre="Connecteurs, mise à jour, nom de l'appareil" href={ROUTES_PARAMETRES.capacitesTelephone} />
-        <LigneLien icone={Accessibility} titre="Accessibilité" href={ROUTES_PARAMETRES.accessibilite} />
-      </Liste>
+          donc rien à faire ici pour le web. Ces deux lignes sont retirées dans l'appli PC
+          installée (20/10/2026, demande de Bourama), où ces plugins n'existent pas. */}
+      {!surAppliPc && (
+        <Liste enferme>
+          <LigneLien icone={Smartphone} titre="Capacités du téléphone" sousTitre="Connecteurs, mise à jour, nom de l'appareil" href={ROUTES_PARAMETRES.capacitesTelephone} />
+          <LigneLien icone={Accessibility} titre="Accessibilité" href={ROUTES_PARAMETRES.accessibilite} />
+        </Liste>
+      )}
 
       <Liste enferme>
         <LigneAction
