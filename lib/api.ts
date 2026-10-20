@@ -1398,6 +1398,16 @@ export async function lireOutilsChatAgent(agentId: string) {
  */
 export async function statutConnexion(service: string) {
   const resultat = await appelerApi(`/api/connexions/${service}/statut`);
+  // a_reconnecter : connexion enregistrée mais jeton expiré ou révoqué (Vercel, Railway, Supabase).
+  return resultat as { connecte: boolean; a_reconnecter?: boolean };
+}
+
+/**
+ * Supprime la connexion personnelle à Vercel, Railway ou Supabase
+ * (voir api/connexions.py:deconnecter_plateforme_mcp côté backend).
+ */
+export async function deconnecterPlateformeMcp(service: string) {
+  const resultat = await appelerApi(`/api/connexions/${service}/deconnecter`, { method: "POST" });
   return resultat as { connecte: boolean };
 }
 

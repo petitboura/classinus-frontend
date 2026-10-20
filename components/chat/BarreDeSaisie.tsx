@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, FileText, ArrowUpRight, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, SlidersHorizontal, UserX, Radio } from "lucide-react";
-import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent, demarrerZipChat } from "@/lib/api";
+import { transcrireAudioChat, statutConnexion, demarrerConnexion, deconnecterPlateformeMcp, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent, demarrerZipChat } from "@/lib/api";
 import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { LecteurMedia } from "./LecteurMedia";
 import { CanvasDessin } from "./CanvasDessin";
@@ -895,8 +895,15 @@ export function BarreDeSaisie({
 
   // Connexions individuelles aux plateformes MCP (Vercel, Railway, Supabase).
   // Les jetons restent propres à l'utilisateur côté backend.
-  const [platformMcpConnectes, setPlatformMcpConnectes] = useState<Record<string, boolean>>({});
-  const [, setPlatformMcpEnCours] = useState<string | null>(null);
+  const [platformMcpEtat, setPlatformMcpEtat] = useState<Record<string, "connecte" | "a_reconnecter">>({});
+  const [platformMcpEnCours, setPlatformMcpEnCours] = useState<string | null>(null);
+
+  // Étiquette affichée à côté de l'appli dans les menus ; rien tant que la personne n'est pas connectée.
+  function etiquetteConnexionMcp(nom: string): string | null {
+    if (platformMcpEtat[nom] === "connecte") return "Connecté";
+    if (platformMcpEtat[nom] === "a_reconnecter") return "À reconnecter";
+    return null;
+  }
 
   useEffect(() => {
     const services = [
@@ -907,15 +914,44 @@ export function BarreDeSaisie({
     for (const [service, disponible] of services) {
       if (!disponible) continue;
       statutConnexion(service)
-        .then((r) => setPlatformMcpConnectes((prec) => ({ ...prec, [service]: r.connecte })))
-        .catch(() => setPlatformMcpConnectes((prec) => ({ ...prec, [service]: false })));
+        .then((r) =>
+          setPlatformMcpEtat((prec) => {
+            const suivant = { ...prec };
+            if (r.connecte) suivant[service] = "connecte";
+            else if (r.a_reconnecter) suivant[service] = "a_reconnecter";
+            else delete suivant[service];
+            return suivant;
+          })
+        )
+        .catch(() =>
+          setPlatformMcpEtat((prec) => {
+            const suivant = { ...prec };
+            delete suivant[service];
+            return suivant;
+          })
+        );
     }
   }, [vercelMcpDisponiblePourAgent, railwayMcpDisponiblePourAgent, supabaseMcpDisponiblePourAgent]);
 
   async function cliquerPlatformMcp(service: "vercel_mcp" | "railway_mcp" | "supabase_mcp") {
-    if (platformMcpConnectes[service]) return;
+    if (platformMcpEnCours) return;
     setPlatformMcpEnCours(service);
     try {
+      if (platformMcpEtat[service] === "connecte") {
+        // Déjà connecté : un second clic propose de déconnecter, jamais sans confirmation.
+        const label = APPLIS_DISPONIBLES.find((a) => a.nom === service)?.label ?? service;
+        if (window.confirm(`Déconnecter ${label} de ton compte Classinus ?`)) {
+          await deconnecterPlateformeMcp(service);
+          setPlatformMcpEtat((prec) => {
+            const suivant = { ...prec };
+            delete suivant[service];
+            return suivant;
+          });
+        }
+        setPlatformMcpEnCours(null);
+        return;
+      }
+      // Pas connecté, ou jeton expiré (à reconnecter) : on relance la connexion.
       const { url } = await demarrerConnexion(service, agentId);
       window.location.href = url;
     } catch (e) {
@@ -1682,7 +1718,7 @@ export function BarreDeSaisie({
                           >
                             <Icone size={14} />
                             <span className="flex-1">{label}</span>
-                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
+                            {etiquetteConnexionMcp(nom) && <span className="text-xs text-dj-texte-muet">{etiquetteConnexionMcp(nom)}</span>}
                           </button>
                         ))}
                     </div>
@@ -1856,7 +1892,7 @@ export function BarreDeSaisie({
                       >
                         <Icone size={14} />
                         <span className="flex-1">{label}</span>
-                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
+                        {etiquetteConnexionMcp(nom) && <span className="text-xs text-dj-texte-muet">{etiquetteConnexionMcp(nom)}</span>}
                         {actif && <Check size={13} />}
                       </button>
                     );
@@ -2144,7 +2180,7 @@ export function BarreDeSaisie({
                   >
                     <Icone size={15} />
                     <span className="flex-1">{label}</span>
-                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
+                    {etiquetteConnexionMcp(nom) && <span className="text-xs text-dj-texte-muet">{etiquetteConnexionMcp(nom)}</span>}
                     {actif && <Check size={14} />}
                   </button>
                 );
@@ -2173,7 +2209,7 @@ export function BarreDeSaisie({
               >
                 <Icone size={16} />
                 <span className="flex-1">{label}</span>
-                {platformMcpConnectes[nom] && <span className="text-xs text-dj-texte-muet">Connecté</span>}
+                {etiquetteConnexionMcp(nom) && <span className="text-xs text-dj-texte-muet">{etiquetteConnexionMcp(nom)}</span>}
               </button>
             ))}
         </div>
