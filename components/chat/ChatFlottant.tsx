@@ -82,7 +82,6 @@ export function ChatFlottant({
   onOuvrirCatalogue,
   nouvelleConversationRef,
   natif = false,
-  surAppliPc = false,
 }: {
   connecte: boolean;
   etat: EtatChat;
@@ -96,17 +95,9 @@ export function ChatFlottant({
   // AppShell.tsx, pas un enfant, donc il ne peut pas appeler directement
   // nouvelleConversation() ci-dessous. Voir l'effet plus bas.
   nouvelleConversationRef?: React.MutableRefObject<(() => void) | null>;
-  // Ajouté le 26/08/2026 (correctif "boutons qui s'ajoutent par-dessus") :
-  // en app native, BarreOngletsNative.tsx expose déjà un onglet "Chat"
-  // dans la vraie barre système : la bulle flottante ronde faisait
-  // doublon par-dessus elle (voir plus bas, bouton "fermee" masqué dans
-  // ce cas). N'affecte que la bulle fermée : une fois le chat ouvert
-  // (mini/plein écran), rien ne change.
+  // Vrai dans l'appli native (Android, iOS, PC installée). Transmis au contenu
+  // du chat qui s'adapte à l'appli native.
   natif?: boolean;
-  // Ajouté le 20/10/2026 (demande de Bourama) : dans l'appli PC installée natif est vrai aussi,
-  // mais il n'y a pas de barre d'onglets avec un onglet Chat. La bulle fermée y reste donc
-  // affichée, comme sur le site. Elle n'est masquée que sur Android et iOS.
-  surAppliPc?: boolean;
 }) {
   const [compteRequis, setCompteRequis] = useState(false);
   const [historiqueOuvert, setHistoriqueOuvert] = useState(false);
@@ -429,26 +420,20 @@ export function ChatFlottant({
   // le popup mini ne doivent s'afficher par-dessus elle.
   if (estPageChat(pathname)) return null;
 
-  // Bulle fermée : affichée sur desktop uniquement, seul endroit où
-  // elle sert encore, faute d'un onglet "Chat" dédié là-bas. Masquée en
-  // app Android et iOS (l'onglet "Chat" de la barre système fait déjà ce rôle,
-  // voir props `natif` et `surAppliPc` ci-dessus) ET, depuis le 30/08/2026 (demande
-  // Bourama, une fois BarreOngletsWeb.tsx alignée sur le natif avec son
-  // propre onglet "Chat"), sur web mobile aussi, la bulle y faisait
-  // doublon par-dessus cet onglet.
+  // Bulle fermée : l'oiseau flottant en bas à droite, sur ordinateur ET sur
+  // mobile (site et appli native). 20/10/2026, demande Bourama : l'onglet Chat
+  // a quitté la barre du bas (voir BarreOngletsWeb.tsx), la bulle prend sa
+  // place. Elle disparaît d'elle même quand la fenêtre du chat est ouverte,
+  // et n'existe ni sur le chat ni sur Découvrir (hors de ce layout).
   if (etat === "fermee") {
-    if (natif && !surAppliPc) return null;
     return (
       <button
         onClick={() => setEtat("mini")}
         aria-label="Ouvrir le chat"
-        // 28/08/2026, chantier "web mobile façon appli" : levée au-dessus
-        // de BarreOngletsWeb (voir components/mobile/BarreOngletsWeb.tsx)
-        // via --dj-barre-onglets-web -- conservé même si la bulle est
-        // maintenant masquée sur mobile web (md:hidden), pour ne pas
-        // casser le calc() si elle redevenait visible un jour en-dessous
-        // du point de rupture md.
-        className="group fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 hidden h-12 w-12 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2 md:flex"
+        // Levée au-dessus de BarreOngletsWeb via --dj-barre-onglets-web
+        // (retombe à la zone de sécurité seule quand le clavier est ouvert,
+        // la bulle reste alors visible en bas).
+        className="group fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-12 w-12 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2"
       >
         <Bird size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
       </button>

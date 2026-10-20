@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Library, Hourglass, MessageCircle, Briefcase, Wand2, type LucideIcon } from "lucide-react";
-import { ROUTES_APP, correspondARoute, estPageChat } from "@/lib/routesApp";
+import { Library, Hourglass, Briefcase, Wand2, type LucideIcon } from "lucide-react";
+import { correspondARoute, estPageChat } from "@/lib/routesApp";
 import { useClavierOuvert } from "@/lib/useClavierOuvert";
 // Créé le 28/08/2026, Bourama : chantier "web mobile façon appli",
 // remplace le menu hamburger + tiroir (AppSidebar en mode mobile, masqué
@@ -41,10 +41,12 @@ import { useClavierOuvert } from "@/lib/useClavierOuvert";
 // app/(app)/chat/page.tsx et components/chat/ChatSection.tsx, étape 2)
 // au lieu d'ouvrirChat("plein_ecran") sur ChatFlottant.tsx -- même
 // mécanisme que les autres onglets, y compris l'état actif visuel.
+// 20/10/2026, demande Bourama : l'onglet Chat n'est plus dans cette barre, qui
+// passe à 4 onglets répartis sur toute la largeur. Le chat devient la bulle
+// oiseau flottante en bas à droite (voir ChatFlottant.tsx).
 const ONGLETS_WEB: { href: string; label: string; Icone: LucideIcon }[] = [
   { href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
   { href: "/controle-session", label: "Concentration", Icone: Hourglass },
-  { href: ROUTES_APP.chat, label: "Chat", Icone: MessageCircle },
   { href: "/bureau", label: "Bureau", Icone: Briefcase },
   { href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2 },
 ];
