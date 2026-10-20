@@ -474,6 +474,9 @@ export function ChatFlottant({
         // pensée pour un espace étroit, même quand il ne restait plus
         // assez de place pour la version "large".
         "@container fixed z-40 flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)]" +
+        // Sur mobile, la fenêtre est centrée (inset-x-0 mx-auto) et entièrement
+        // visible. Le panneau d'historique est à z-30 pour passer au dessus de la
+        // rangée du modèle du chat (z-20).
         // Classes de position/taille : uniquement sur mobile désormais
         // (desktop les reçoit via le style inline ci-dessus -- voir
         // commentaire juste au-dessus). 28/08/2026, chantier "web mobile
@@ -483,7 +486,7 @@ export function ChatFlottant({
         // BarreOngletsWeb sur mobile web.
         (estDesktop
           ? ""
-          : " bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] right-5 h-[min(70dvh,600px)] w-[min(92vw,380px)]") +
+          : " inset-x-0 mx-auto bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] h-[min(70dvh,600px)] w-[min(92vw,380px)]") +
         // Fondu d'ouverture (mount -- reprend l'animation standard des
         // modals du projet, cgpt-entree-modal) et de fermeture (juste
         // avant le démontage réel, voir fermerAvecFondu) -- demande
@@ -547,7 +550,7 @@ export function ChatFlottant({
               {historiqueOuvert && (
                 <div
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-9 z-10 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-lg"
+                  className="absolute right-0 top-9 z-30 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-lg"
                 >
                   <ListeHistorique
                     conversationActiveId={cle}
