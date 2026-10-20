@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { ErreurApi, messageErreur } from "./erreurs";
+import { obtenirOrigineAppareil } from "./origineAppareil";
 
 // URL du backend FastAPI (voir api/main.py). En local pendant le dev :
 // http://localhost:8000. Une fois déployé sur Railway : l'URL publique de
@@ -145,10 +146,18 @@ export async function appelerApiStream(
     entetes.set("Authorization", `Bearer ${session.access_token}`);
   }
 
+  // Origine de l'appareil (20/10/2026, demande de Bourama) : annoncée avec chaque message du chat,
+  // pour que le serveur sache quels outils d'écran existent ici. Voir lib/origineAppareil.ts.
+  let corpsEnvoye = corps;
+  if (chemin === "/api/chat" && corps && typeof corps === "object" && !Array.isArray(corps) && !("origine" in corps)) {
+    const origine = obtenirOrigineAppareil();
+    if (origine) corpsEnvoye = { ...(corps as Record<string, unknown>), origine };
+  }
+
   const reponse = await fetch(`${API_URL}${chemin}`, {
     method: "POST",
     headers: entetes,
-    body: JSON.stringify(corps),
+    body: JSON.stringify(corpsEnvoye),
     signal,
   });
 
