@@ -896,7 +896,7 @@ export function BarreDeSaisie({
   // Connexions individuelles aux plateformes MCP (Vercel, Railway, Supabase).
   // Les jetons restent propres à l'utilisateur côté backend.
   const [platformMcpConnectes, setPlatformMcpConnectes] = useState<Record<string, boolean>>({});
-  const [platformMcpEnCours, setPlatformMcpEnCours] = useState<string | null>(null);
+  const [, setPlatformMcpEnCours] = useState<string | null>(null);
 
   useEffect(() => {
     const services = [
