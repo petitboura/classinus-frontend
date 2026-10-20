@@ -12,6 +12,9 @@ export type SectionDeGroupe = {
   label: string;
   description: string;
   Icone: LucideIcon;
+  // Vrai pour une page qui n'existe que sur téléphone : elle est retirée du menu des pages
+  // voisines dans l'appli PC installée (voir SectionPage.tsx).
+  masqueSurPc?: boolean;
 };
 
 // Les icônes sont des éléments déjà construits, pas des références de
@@ -26,6 +29,7 @@ export function construireGroupe(label: string, href: string, sections: SectionD
       href: s.href,
       label: s.label,
       icone: <s.Icone size={16} className="flex-shrink-0" />,
+      masqueSurPc: s.masqueSurPc,
     })),
   };
 }

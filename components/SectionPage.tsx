@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useSurAppliPc } from "@/lib/useSurAppliPc";
 import { BoutonRetour } from "./BoutonRetour";
 import { BoutonInfoSection } from "./BoutonInfoSection";
 import { OngletsLiens } from "./OngletsSegment";
@@ -145,10 +146,11 @@ export function SectionPage({
   groupe?: {
     label: string;
     href: string;
-    soeurs: { href: string; label: string; icone: React.ReactNode }[];
+    soeurs: { href: string; label: string; icone: React.ReactNode; masqueSurPc?: boolean }[];
   };
 }) {
   const pathname = usePathname();
+  const surAppliPc = useSurAppliPc();
   const [infoRubriqueId, setInfoRubriqueId] = useState<string | null>(null);
 
   if (!groupe) {
@@ -170,6 +172,8 @@ export function SectionPage({
   // signature pour ne pas toucher les pages qui l'envoient. Le bouton
   // retour vers la page mère du groupe reste, à gauche du titre (retour de
   // Bourama le 13/10/2026 : il doit toujours y en avoir un).
+  const soeurs = groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc));
+
   return (
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
     <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
@@ -181,11 +185,11 @@ export function SectionPage({
         <div className="sticky top-[calc(2.5rem_-_var(--dj-hamburger-espace))] z-30 -mb-2 bg-dj-fond md:hidden">
           <OngletsLiens
             ariaLabel={groupe.label}
-            onglets={groupe.soeurs.map((s) => ({ href: s.href, libelle: s.label }))}
+            onglets={soeurs.map((s) => ({ href: s.href, libelle: s.label }))}
           />
         </div>
         <nav className="hidden w-48 flex-shrink-0 flex-col gap-1 md:flex">
-          {groupe.soeurs.map((s) => {
+          {soeurs.map((s) => {
             const actif = pathname === s.href;
             return (
               <Link

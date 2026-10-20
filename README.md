@@ -290,6 +290,8 @@ lib/
                           sert au widget interactif et à l'animation, qui ne démarrent qu'à ce moment
                           pour qu'une longue conversation n'en lance pas dix d'un coup
   usePluginNatif.ts       hook d'accès générique aux plugins Capacitor
+  useSurAppliPc.ts        vrai seulement dans l'appli PC installée (Electron) ; sert à retirer des Paramètres
+                          ce qui n'existe que sur téléphone (champ masqueSurPc de lib/groupeSections.tsx)
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
