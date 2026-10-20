@@ -19,7 +19,6 @@ import {
   Edit3,
   Sigma,
   AudioLines,
-  Github,
   Calculator,
   Divide,
   Paperclip,
@@ -44,6 +43,7 @@ import {
   Camera,
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
+import { IconeGithub } from "@/components/icons/IconeGithub";
 import { useEffect, useState } from "react";
 import * as IconesLucide from "lucide-react";
 import { lireRegistreOutils } from "@/lib/api";
@@ -84,6 +84,7 @@ export type OutilAffichage = { nom: string; label: string; Icone: typeof Search;
 // mais rare -- vérifié à la main lors de l'ajout d'un outil).
 function resoudreIcone(nomIcone: string): typeof Search {
   if (nomIcone === "notion-logo") return IconeNotion;
+  if (nomIcone === "github-logo") return IconeGithub;
   const composant = (IconesLucide as unknown as Record<string, typeof Search>)[nomIcone];
   return composant ?? Wrench;
 }
@@ -257,7 +258,7 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // comme tout autre outil onglet=None -- OUTILS_DISPONIBLES est réservé
   // aux outils déclenchables à la main dans BarreDeSaisie.
 
-  { nom: "gerer_depot_github", label: "Dépôt GitHub", Icone: Github, onglet: "action_app", appli: "github" },
+  { nom: "gerer_depot_github", label: "Dépôt GitHub", Icone: IconeGithub, onglet: "action_app", appli: "github" },
   // Notion activé à 100% côté backend (01/08, demande Bourama, voir
   // registre_outils.py) -- une icône PAR outil désormais (01/08, demande
   // Bourama : "regarde comment pour github ça fonctionne"), même
@@ -343,8 +344,8 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
 // "Action dans l'app" ci-dessus, via le champ `appli` des entrées de
 // OUTILS_DISPONIBLES -- et pour app/dashboard/applications/page.tsx (liste
 // des applis connectables).
-export const APPLIS_DISPONIBLES: { nom: string; label: string; Icone: typeof Github }[] = [
-  { nom: "github", label: "GitHub", Icone: Github },
+export const APPLIS_DISPONIBLES: { nom: string; label: string; Icone: typeof Search }[] = [
+  { nom: "github", label: "GitHub", Icone: IconeGithub },
   // BookOpen (icône générique) remplacée par le vrai logo Notion (01/08,
   // demande Bourama) -- même logique que Github juste au-dessus : le
   // trait suit la couleur du bouton (text-dj-accent-1 / text-dj-texte-muet),
