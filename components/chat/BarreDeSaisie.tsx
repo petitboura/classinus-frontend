@@ -308,7 +308,7 @@ export function BarreDeSaisie({
   // app/dashboard/applications/page.tsx continue donc de lister Google
   // Drive comme appli connectable, ce filtre-ci ne concerne que la barre
   // de saisie du chat.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => ["notion", "github", "vercel_mcp", "railway_mcp", "supabase_mcp"].includes(a.nom));
+  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => ["notion", "github", "higgsfield_mcp", "vercel_mcp", "railway_mcp", "supabase_mcp"].includes(a.nom));
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
@@ -347,6 +347,7 @@ export function BarreDeSaisie({
   const notionDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "notion");
   const githubDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "github");
   const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
+  const higgsfieldDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "higgsfield_mcp");
   const vercelMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "vercel_mcp");
   const railwayMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "railway_mcp");
   const supabaseMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "supabase_mcp");
@@ -466,6 +467,7 @@ export function BarreDeSaisie({
       case "google_drive":
         cliquerGoogleDrive();
         break;
+      case "higgsfield_mcp":
       case "vercel_mcp":
       case "railway_mcp":
       case "supabase_mcp":
@@ -893,7 +895,7 @@ export function BarreDeSaisie({
     }
   }
 
-  // Connexions individuelles aux plateformes MCP (Vercel, Railway, Supabase).
+  // Connexions individuelles aux plateformes MCP (Higgsfield, Vercel, Railway, Supabase).
   // Les jetons restent propres à l'utilisateur côté backend.
   const [platformMcpEtat, setPlatformMcpEtat] = useState<Record<string, "connecte" | "a_reconnecter">>({});
   const [platformMcpEnCours, setPlatformMcpEnCours] = useState<string | null>(null);
@@ -907,6 +909,7 @@ export function BarreDeSaisie({
 
   useEffect(() => {
     const services = [
+      ["higgsfield_mcp", higgsfieldDisponiblePourAgent],
       ["vercel_mcp", vercelMcpDisponiblePourAgent],
       ["railway_mcp", railwayMcpDisponiblePourAgent],
       ["supabase_mcp", supabaseMcpDisponiblePourAgent],
@@ -931,9 +934,9 @@ export function BarreDeSaisie({
           })
         );
     }
-  }, [vercelMcpDisponiblePourAgent, railwayMcpDisponiblePourAgent, supabaseMcpDisponiblePourAgent]);
+  }, [higgsfieldDisponiblePourAgent, vercelMcpDisponiblePourAgent, railwayMcpDisponiblePourAgent, supabaseMcpDisponiblePourAgent]);
 
-  async function cliquerPlatformMcp(service: "vercel_mcp" | "railway_mcp" | "supabase_mcp") {
+  async function cliquerPlatformMcp(service: "higgsfield_mcp" | "vercel_mcp" | "railway_mcp" | "supabase_mcp") {
     if (platformMcpEnCours) return;
     setPlatformMcpEnCours(service);
     try {

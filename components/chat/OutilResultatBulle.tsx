@@ -177,7 +177,7 @@ export function OutilResultatBulle({
   // encore recevoir un nouvel outil au tour suivant du modèle.
   peutSeReplier?: boolean;
 }) {
-  const { outils, verbes } = useOutilsRegistre();
+  const { outils, verbes, prefixes } = useOutilsRegistre();
 
   const resultats = resultatsBruts?.map((r) => ({
     ...r,
@@ -268,7 +268,7 @@ export function OutilResultatBulle({
   // l'événement "statut" par ChatIA.tsx). Repli Wrench pour tout outil
   // absent du registre (voir iconePourOutil).
   const elementsResultats = lignes.map((ligne, position) => {
-    const { Icone, appli } = iconePrincipalePour(outils, ligne.nomOutil, ligne.action);
+    const { Icone, appli } = iconePrincipalePour(outils, ligne.nomOutil, ligne.action, prefixes);
     return (
       <LigneOutil
         key={ligne.cle}

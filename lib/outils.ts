@@ -44,6 +44,10 @@ import {
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { IconeGithub } from "@/components/icons/IconeGithub";
+import { IconeHiggsfield } from "@/components/icons/IconeHiggsfield";
+import { IconeVercel } from "@/components/icons/IconeVercel";
+import { IconeRailway } from "@/components/icons/IconeRailway";
+import { IconeSupabase } from "@/components/icons/IconeSupabase";
 import { useEffect, useState } from "react";
 import * as IconesLucide from "lucide-react";
 import { lireRegistreOutils } from "@/lib/api";
@@ -98,7 +102,14 @@ type OutilBrut = { nom: string; label: string; icone: string; onglet?: OngletOut
 // ligne côté backend, rien à toucher ici.
 export type VerbesActions = Record<string, typeof Search>;
 
-type RegistreOutils = { outils: OutilAffichage[]; verbes: VerbesActions };
+// Préfixe de nom des outils de chaque appli connectée à un serveur MCP personnel
+// (Higgsfield, Vercel, Railway, Supabase), ex. { vercel_mcp: "vercel_" }. Ces outils
+// sont trop nombreux et changent trop souvent pour figurer un par un dans le
+// registre : le préfixe dit à quelle appli, donc à quel vrai logo, ils appartiennent.
+// Servi par le backend (clé "prefixes_applis" de GET /api/outils/registre).
+export type PrefixesApplis = Record<string, string>;
+
+type RegistreOutils = { outils: OutilAffichage[]; verbes: VerbesActions; prefixes: PrefixesApplis };
 
 // Comme resoudreIcone, mais sans repli sur Wrench : une petite icône
 // inconnue ne s'affiche pas du tout plutôt que d'afficher une clé à molette
@@ -117,6 +128,7 @@ async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
       const reponse = (await lireRegistreOutils()) as {
         outils: OutilBrut[];
         verbes_actions?: Record<string, { icone: string }>;
+        prefixes_applis?: PrefixesApplis;
       };
       const verbes: VerbesActions = {};
       for (const [verbe, { icone }] of Object.entries(reponse.verbes_actions ?? {})) {
@@ -132,6 +144,7 @@ async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
           appli: o.appli,
         })),
         verbes,
+        prefixes: reponse.prefixes_applis ?? {},
       };
     } catch {
       if (tentative < NB_TENTATIVES - 1) {
@@ -145,7 +158,7 @@ async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
   // depuis ce figeage manquerait juste d'icône/libellé ce jour-là, rien
   // d'autre ne casse. Voir OUTILS_DISPONIBLES plus bas dans ce fichier.
   // Sans le backend, aucune petite icône d'action (verbes vide).
-  return { outils: OUTILS_DISPONIBLES, verbes: {} };
+  return { outils: OUTILS_DISPONIBLES, verbes: {}, prefixes: {} };
 }
 
 /**
@@ -158,9 +171,10 @@ async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
  * ce hook. Ajouter un outil = une seule ligne dans le registre backend,
  * plus rien à toucher ici (c'est tout le sens de ce hook).
  */
-export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesActions; charge: boolean } {
+export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesActions; prefixes: PrefixesApplis; charge: boolean } {
   const [outils, setOutils] = useState<OutilAffichage[]>(OUTILS_DISPONIBLES);
   const [verbes, setVerbes] = useState<VerbesActions>({});
+  const [prefixes, setPrefixes] = useState<PrefixesApplis>({});
   const [charge, setCharge] = useState(false);
 
   useEffect(() => {
@@ -170,6 +184,7 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
       if (actif) {
         setOutils(registre.outils);
         setVerbes(registre.verbes);
+        setPrefixes(registre.prefixes);
         setCharge(true);
       }
     });
@@ -178,7 +193,7 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
     };
   }, []);
 
-  return { outils, verbes, charge };
+  return { outils, verbes, prefixes, charge };
 }
 
 // Petite icône d'action d'une ligne d'outil (24/09/2026, demande Bourama).
@@ -214,6 +229,7 @@ export function iconePrincipalePour(
   outils: OutilAffichage[],
   nomOutil: string | undefined,
   action: string | undefined,
+  prefixes: PrefixesApplis = {},
 ): { Icone: typeof Search; appli?: string } {
   const entree =
     (action ? outils.find((o) => o.nom === `${nomOutil}:${action}`) : undefined) ??
@@ -221,6 +237,12 @@ export function iconePrincipalePour(
   if (entree?.appli) {
     const appli = APPLIS_DISPONIBLES.find((a) => a.nom === entree.appli);
     if (appli) return { Icone: appli.Icone, appli: entree.appli };
+  }
+  // Outil d'un serveur MCP personnel absent du registre : son préfixe donne son appli.
+  if (!entree && nomOutil) {
+    const nomAppli = Object.keys(prefixes).find((nom) => nomOutil.startsWith(prefixes[nom]));
+    const appli = nomAppli ? APPLIS_DISPONIBLES.find((a) => a.nom === nomAppli) : undefined;
+    if (appli) return { Icone: appli.Icone, appli: appli.nom };
   }
   return { Icone: entree?.Icone ?? Wrench, appli: entree?.appli };
 }
@@ -356,7 +378,11 @@ export const APPLIS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // visuellement un tracé SVG avant mise en prod) : à remplacer par un
   // vrai logo (même logique que IconeNotion.tsx) si besoin plus tard.
   { nom: "google_drive", label: "Google Drive", Icone: HardDrive },
-  { nom: "vercel_mcp", label: "Vercel", Icone: PanelsTopLeft },
-  { nom: "railway_mcp", label: "Railway", Icone: Wrench },
-  { nom: "supabase_mcp", label: "Supabase", Icone: Database },
+  // Connexions personnelles aux plateformes (20/10/2026) : le nom est celui du
+  // service côté backend (api/connexions.py), il ne doit pas changer. Les
+  // icônes sont les vrais logos (components/icons).
+  { nom: "higgsfield_mcp", label: "Higgsfield", Icone: IconeHiggsfield },
+  { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel },
+  { nom: "railway_mcp", label: "Railway", Icone: IconeRailway },
+  { nom: "supabase_mcp", label: "Supabase", Icone: IconeSupabase },
 ];

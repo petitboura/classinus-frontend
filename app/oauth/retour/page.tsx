@@ -26,6 +26,7 @@ const NOMS_SERVICES: Record<string, string> = {
   notion: "Notion",
   google_drive: "Google Drive",
   github: "GitHub",
+  higgsfield_mcp: "Higgsfield",
   vercel_mcp: "Vercel",
   railway_mcp: "Railway",
   supabase_mcp: "Supabase",
