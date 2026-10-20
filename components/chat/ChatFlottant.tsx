@@ -82,6 +82,7 @@ export function ChatFlottant({
   onOuvrirCatalogue,
   nouvelleConversationRef,
   natif = false,
+  surAppliPc = false,
 }: {
   connecte: boolean;
   etat: EtatChat;
@@ -102,6 +103,10 @@ export function ChatFlottant({
   // ce cas). N'affecte que la bulle fermée : une fois le chat ouvert
   // (mini/plein écran), rien ne change.
   natif?: boolean;
+  // Ajouté le 20/10/2026 (demande de Bourama) : dans l'appli PC installée natif est vrai aussi,
+  // mais il n'y a pas de barre d'onglets avec un onglet Chat. La bulle fermée y reste donc
+  // affichée, comme sur le site. Elle n'est masquée que sur Android et iOS.
+  surAppliPc?: boolean;
 }) {
   const [compteRequis, setCompteRequis] = useState(false);
   const [historiqueOuvert, setHistoriqueOuvert] = useState(false);
@@ -426,13 +431,13 @@ export function ChatFlottant({
 
   // Bulle fermée : affichée sur desktop uniquement, seul endroit où
   // elle sert encore, faute d'un onglet "Chat" dédié là-bas. Masquée en
-  // app native (l'onglet "Chat" de la barre système fait déjà ce rôle,
-  // voir prop `natif` ci-dessus) ET, depuis le 30/08/2026 (demande
+  // app Android et iOS (l'onglet "Chat" de la barre système fait déjà ce rôle,
+  // voir props `natif` et `surAppliPc` ci-dessus) ET, depuis le 30/08/2026 (demande
   // Bourama, une fois BarreOngletsWeb.tsx alignée sur le natif avec son
   // propre onglet "Chat"), sur web mobile aussi, la bulle y faisait
   // doublon par-dessus cet onglet.
   if (etat === "fermee") {
-    if (natif) return null;
+    if (natif && !surAppliPc) return null;
     return (
       <button
         onClick={() => setEtat("mini")}
