@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { IconeGithub } from "@/components/icons/IconeGithub";
+import { IconeHiggsfield } from "@/components/icons/IconeHiggsfield";
 import { useEffect, useState } from "react";
 import * as IconesLucide from "lucide-react";
 import { lireRegistreOutils } from "@/lib/api";
@@ -356,4 +357,8 @@ export const APPLIS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // visuellement un tracé SVG avant mise en prod) : à remplacer par un
   // vrai logo (même logique que IconeNotion.tsx) si besoin plus tard.
   { nom: "google_drive", label: "Google Drive", Icone: HardDrive },
+  // Ajouté le 20/10/2026 : connexion du compte Higgsfield (génération
+  // vidéo). Le nom "higgsfield_mcp" est celui du service côté backend
+  // (api/connexions.py), il ne doit pas changer.
+  { nom: "higgsfield_mcp", label: "Higgsfield", Icone: IconeHiggsfield },
 ];

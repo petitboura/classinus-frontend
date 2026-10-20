@@ -129,7 +129,7 @@ Conséquence pratique sur les formulaires :
 
 Construit uniquement à partir des fonctionnalités réellement présentes
 dans le code (comptes, bibliothèque de documents, comportements/skills,
-connecteurs OAuth Google Drive/Notion/GitHub, notifications, contrôle de
+connecteurs OAuth Google Drive/Notion/GitHub/Higgsfield, notifications, contrôle de
 session/temps d'écran, mémoire). **Champs entre crochets `[...]` = je ne
 peux pas les inventer, à remplir avant publication.**
 
@@ -152,7 +152,7 @@ politique ou vos données : [email de contact].
   conversations avec l'assistant, comportements/skills personnalisés,
   éléments enregistrés dans votre mémoire.
 - **Connecteurs externes (optionnels)** : si vous connectez un compte
-  Google Drive, Notion, GitHub ou Claude, nous accédons aux données de
+  Google Drive, Notion, GitHub, Higgsfield ou Claude, nous accédons aux données de
   ce service dans la limite des permissions que vous accordez au moment
   de la connexion, et uniquement pour exécuter les actions que vous
   demandez.

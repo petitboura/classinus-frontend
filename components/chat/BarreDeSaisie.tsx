@@ -308,7 +308,11 @@ export function BarreDeSaisie({
   // app/dashboard/applications/page.tsx continue donc de lister Google
   // Drive comme appli connectable, ce filtre-ci ne concerne que la barre
   // de saisie du chat.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.nom === "notion" || a.nom === "github");
+  // Higgsfield ajouté le 20/10/2026 (demande de Bourama) : connexion du
+  // compte depuis le menu Applications, avec Notion et GitHub.
+  const applisPourAgent = APPLIS_DISPONIBLES.filter(
+    (a) => a.nom === "notion" || a.nom === "github" || a.nom === "higgsfield_mcp",
+  );
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
@@ -347,6 +351,7 @@ export function BarreDeSaisie({
   const notionDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "notion");
   const githubDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "github");
   const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
+  const higgsfieldDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "higgsfield_mcp");
   // Les réglages de réponse (modèle, longueur, mode pédagogique, modes
   // ressources, code enseignant) vivent dans le bouton Réglages
   // (barre/BoutonReglages.tsx). Leurs données sont chargées une seule fois
@@ -462,6 +467,9 @@ export function BarreDeSaisie({
         break;
       case "google_drive":
         cliquerGoogleDrive();
+        break;
+      case "higgsfield_mcp":
+        cliquerHiggsfield();
         break;
     }
   }
@@ -882,6 +890,32 @@ export function BarreDeSaisie({
     } catch (e) {
       alert(messageErreur(e));
       setDriveEnCours(false);
+    }
+  }
+
+  // Connexion du compte Higgsfield (20/10/2026). Même principe que Google
+  // Drive : pas de sélecteur, un clic ouvre la page d'autorisation du
+  // fournisseur, qui renvoie ensuite sur /oauth/retour. Un clic sur un
+  // compte déjà connecté ne fait rien.
+  const [higgsfieldConnecte, setHiggsfieldConnecte] = useState<boolean | null>(null);
+  const [higgsfieldEnCours, setHiggsfieldEnCours] = useState(false);
+
+  useEffect(() => {
+    if (!higgsfieldDisponiblePourAgent) return;
+    statutConnexion("higgsfield_mcp")
+      .then((r) => setHiggsfieldConnecte(r.connecte))
+      .catch(() => setHiggsfieldConnecte(false));
+  }, [higgsfieldDisponiblePourAgent]);
+
+  async function cliquerHiggsfield() {
+    if (higgsfieldConnecte || higgsfieldEnCours) return;
+    setHiggsfieldEnCours(true);
+    try {
+      const { url } = await demarrerConnexion("higgsfield_mcp", agentId);
+      window.location.href = url;
+    } catch (e) {
+      alert(messageErreur(e));
+      setHiggsfieldEnCours(false);
     }
   }
 

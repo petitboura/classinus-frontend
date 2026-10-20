@@ -26,6 +26,7 @@ const NOMS_SERVICES: Record<string, string> = {
   notion: "Notion",
   google_drive: "Google Drive",
   github: "GitHub",
+  higgsfield_mcp: "Higgsfield",
 };
 
 // Durée d'affichage de la confirmation avant de ramener la personne au chat.
