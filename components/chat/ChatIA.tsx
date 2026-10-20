@@ -29,6 +29,7 @@ import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
 import { detecterLangageCode } from "@/lib/texteColle";
+import type { ModeleDisponible } from "./barre/reglagesReponse";
 
 // Lecture à voix haute par paragraphes pendant que la réponse s'écrit : un
 // paragraphe n'est confié à la voix qu'une fois qu'au moins ce nombre de
@@ -109,7 +110,7 @@ export function ChatIA({
   // vide = agent sans abonnement premium debloque, BarreDeSaisie
   // n'affiche alors AUCUN selecteur (comportement identique a avant
   // cette feature). Le modele actif est resolu par lib/modeleActif.ts.
-  modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
+  modelesDisponibles?: ModeleDisponible[];
   // Modèles affichés grisés avec la mention Bientôt dans le bouton du modèle (14/10/2026).
   modelesBientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string> }[];
   // Agent "Classinus" / contenu dynamique par matière (06/08/2026) -- voir

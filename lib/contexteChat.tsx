@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MessageAffiche } from "@/components/chat/BulleMessage";
+import type { ModeleDisponible } from "@/components/chat/barre/reglagesReponse";
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { supabase } from "@/lib/supabase";
@@ -35,7 +36,7 @@ export type AgentDetail = {
   icone_url: string | null;
   titre_accueil: string;
   sous_titre_accueil: string;
-  modeles_disponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
+  modeles_disponibles?: ModeleDisponible[];
   // Modèles montrés grisés avec la mention Bientôt, jamais choisissables (14/10/2026).
   modeles_bientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string> }[];
   bouton_sans_enseignant?: boolean;

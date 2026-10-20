@@ -6,9 +6,9 @@ import { LigneReglage, LARGEUR_VOLET_REM } from "./LigneReglage";
 import {
   type LongueurReponse,
   type EffortReflexion,
+  type ModeleDisponible,
   NIVEAUX_LONGUEUR,
   LABELS_LONGUEUR,
-  NIVEAUX_EFFORT,
   LABELS_EFFORT,
   PERSONAS,
   MODES_SOURCE,
@@ -18,6 +18,7 @@ import {
 import type { EtatModeActif } from "./useModeActif";
 import type { EtatReglagesPedagogiques } from "./useReglagesPedagogiques";
 import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
+import { effortApplique, effortsDuModele } from "@/lib/effortModele";
 
 type LigneId = "modele" | "longueur" | "effort" | "persona" | "source" | "code";
 
@@ -106,12 +107,13 @@ export function BoutonReglages({
   // bouton du haut du chat (SelecteurModeleHaut.tsx). Vrai par défaut : le canal en direct,
   // qui n'a pas ce bouton, garde la ligne Modèle ici.
   afficherChoixModele?: boolean;
-  modelesDisponibles: { modele_id: string; label: string; distributeur: string; palier: string }[];
+  modelesDisponibles: ModeleDisponible[];
   modeleSelectionne: string | null;
   onModeleChange?: (modeleId: string) => void;
   longueur: LongueurReponse;
   onLongueurChange: (valeur: LongueurReponse) => void;
-  // Effort de réflexion de DeepSeek (04/10/2026), voir lib/reglagesProchainMessage.ts.
+  // Effort de réflexion choisi (04/10/2026). Chaque modèle n'en accepte qu'une partie : la ligne
+  // n'affiche que ceux du modèle actif, voir lib/effortModele.ts.
   effort: EffortReflexion;
   onEffortChange: (valeur: EffortReflexion) => void;
   // Faux quand l'enseignant a décoché "l'élève peut choisir son mode".
@@ -142,7 +144,10 @@ export function BoutonReglages({
   // Choix actuel de chaque ligne, lu dans la bulle au survol du bouton.
   const valeurModele = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne)?.label ?? "";
   const valeurLongueur = LABELS_LONGUEUR[longueur];
-  const valeurEffort = LABELS_EFFORT[effort];
+  const modeleActuel = modelesDisponibles.find((m) => m.modele_id === modeleSelectionne);
+  const effortsPossibles = effortsDuModele(modeleActuel);
+  const effortAffiche = effortApplique(modeleActuel, effort);
+  const afficherEffort = effortAffiche !== null;
   const valeurPersona = PERSONAS.find((p) => p.id === pedagogie.persona)?.label ?? "Aucun mode";
   const valeurSource = MODES_SOURCE.find((m) => m.id === pedagogie.modeSource)?.label ?? "Aucun";
   const codeActif = modeActif.rattachements.find((r) => r.rattachement_id === modeActif.modeActifId);
@@ -150,7 +155,7 @@ export function BoutonReglages({
   const resume: { titre: string; valeur: string }[] = [];
   if (afficherModele) resume.push({ titre: "Modèle", valeur: valeurModele });
   resume.push({ titre: "Longueur de réponse", valeur: valeurLongueur });
-  resume.push({ titre: "Effort", valeur: valeurEffort });
+  if (effortAffiche !== null) resume.push({ titre: "Effort", valeur: LABELS_EFFORT[effortAffiche] });
   if (afficherPersona) resume.push({ titre: "Mode pédagogique", valeur: valeurPersona });
   resume.push({ titre: "Modes ressources", valeur: valeurSource });
   if (afficherCode) resume.push({ titre: "Code enseignant", valeur: valeurCode });
@@ -359,21 +364,23 @@ export function BoutonReglages({
             ))}
           </LigneReglage>
 
-          <LigneReglage Icone={Gauge} titre="Effort" {...ligneProps("effort")}>
-            {NIVEAUX_EFFORT.map((valeur) => (
-              <Choix
-                grand={mobile}
-                key={valeur}
-                actif={effort === valeur}
-                onClick={() => {
-                  onEffortChange(valeur);
-                  fermer();
-                }}
-              >
-                {LABELS_EFFORT[valeur]}
-              </Choix>
-            ))}
-          </LigneReglage>
+          {afficherEffort && (
+            <LigneReglage Icone={Gauge} titre="Effort" {...ligneProps("effort")}>
+              {effortsPossibles.map((valeur) => (
+                <Choix
+                  grand={mobile}
+                  key={valeur}
+                  actif={effortAffiche === valeur}
+                  onClick={() => {
+                    onEffortChange(valeur);
+                    fermer();
+                  }}
+                >
+                  {LABELS_EFFORT[valeur]}
+                </Choix>
+              ))}
+            </LigneReglage>
+          )}
 
           {afficherPersona && (
             <LigneReglage Icone={GraduationCap} titre="Mode pédagogique" {...ligneProps("persona")}>

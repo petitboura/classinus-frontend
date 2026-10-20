@@ -24,7 +24,7 @@ import { MenuPlus, type EntreeMenuPlus } from "./barre/MenuPlus";
 import { BandeauAccesBloque } from "./barre/BandeauAccesBloque";
 import { useModeActif } from "./barre/useModeActif";
 import { useReglagesPedagogiques } from "./barre/useReglagesPedagogiques";
-import type { LongueurReponse } from "./barre/reglagesReponse";
+import type { LongueurReponse, ModeleDisponible } from "./barre/reglagesReponse";
 import { useReglagesProchainMessage } from "@/lib/useReglagesProchainMessage";
 import {
   definirEffortProchainMessage,
@@ -171,7 +171,7 @@ export function BarreDeSaisie({
   // local ici, contrairement a rechercheForcee -- la valeur
   // doit survivre au closure de envoyerMessage sans passer par
   // onEnvoyer (deja tres charge), voir ChatIA.tsx:modeleSelectionne.
-  modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
+  modelesDisponibles?: ModeleDisponible[];
   modeleSelectionne?: string | null;
   onModeleChange?: (modeleId: string) => void;
   // Agent "Classinus" / contenu dynamique par matière (06/08/2026, demande

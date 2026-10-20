@@ -12,18 +12,33 @@ export const LABELS_LONGUEUR: Record<LongueurReponse, string> = {
   longue: "Longue",
 };
 
-// Effort de réflexion (04/10/2026, demande Bourama) : mêmes valeurs que
-// EFFORTS_REFLEXION_DEEPSEEK côté backend (core/fournisseurs_llm.py). Ne
-// concerne que DeepSeek. "none" coupe la réflexion, donc plus rien à afficher.
-export type EffortReflexion = "none" | "low" | "high" | "max";
+// Effort de réflexion (04/10/2026 pour DeepSeek, étendu à chaque fournisseur le 20/10/2026) :
+// toutes les valeurs que le serveur sait envoyer (core/efforts_modeles.py). Chaque modèle n'en
+// accepte qu'une partie, lue dans ses champs efforts et effort_defaut (voir lib/effortModele.ts).
+// "none" coupe la réflexion, donc plus rien à afficher.
+export type EffortReflexion = "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
+// Efforts de DeepSeek : liste utilisée tant qu'aucun modèle n'est choisi (cascade).
 export const NIVEAUX_EFFORT: EffortReflexion[] = ["none", "low", "high", "max"];
 
 export const LABELS_EFFORT: Record<EffortReflexion, string> = {
   none: "Aucun",
+  minimal: "Minimal",
   low: "Faible",
+  medium: "Moyen",
   high: "Élevé",
+  xhigh: "Très élevé",
   max: "Maximum",
+};
+
+// Modèle du sélecteur, tel que le serveur le décrit (core/fournisseurs_llm.py).
+export type ModeleDisponible = {
+  modele_id: string;
+  label: string;
+  distributeur: string;
+  palier: string;
+  efforts?: string[];
+  effort_defaut?: string | null;
 };
 
 // Regroupement du sélecteur de modèle premium par distributeur (02/08/2026,
