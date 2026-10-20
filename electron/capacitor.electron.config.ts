@@ -7,6 +7,11 @@ export default defineConfig({
     onWindowCreated: (window) => {
       // Le canal et le miroir continuent lorsque Classinus est en arrière-plan.
       window.webContents.setBackgroundThrottling(false);
+      // Plus de barre de menu Fichier, Édition, Affichage, Fenêtre en haut de la fenêtre
+      // (20/10/2026, demande de Bourama). Windows et Linux seulement : la fenêtre n'a plus de
+      // menu, donc ses raccourcis de menu (zoom, Ctrl+W, Ctrl+Q) ne marchent plus non plus.
+      // Copier, coller et annuler continuent de fonctionner.
+      window.removeMenu();
     },
   },
   window: {
