@@ -106,7 +106,7 @@ grande qui corrige le problème, ou supprimer la release défectueuse dans
   l'avertissement SmartScreen. Tant qu'aucune version n'est publiée, elle affiche
   un message d'indisponibilité. Mac et Linux voient un message « Windows
   seulement » et un QR pour le téléphone. Le bouton « Télécharger pour PC » de
-  la barre latérale (juste avant la ligne Classinus) n'apparaît que dans un
+  la barre latérale (juste au-dessus de Plus) n'apparaît que dans un
   navigateur sur Windows (`lib/useProposerTelechargementPc.ts`), jamais sur
   mobile ni dans l'appli installée. La page est mise en cache environ une minute : une nouvelle version
   publiée apparaît donc rapidement.

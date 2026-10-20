@@ -629,27 +629,6 @@ export function AppSidebar({
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${railOuvert ? "md:w-72" : "md:w-14"}`}
       >
-        {/* 20/10/2026, demande de Bourama : le bouton "Télécharger pour PC" vit
-            dans la barre elle-même, juste avant la ligne "Classinus", et non
-            dans le menu Plus. Visible seulement dans un navigateur sur Windows
-            (voir lib/useProposerTelechargementPc.ts). */}
-        {proposerTelechargementPc && (
-          <Link
-            href="/telecharger"
-            title="Télécharger pour PC"
-            className="group mb-1 flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-          >
-            <span className={CELLULE_ICONE_RAIL}>
-              <MonitorDown
-                size={TAILLE_ICONE_RAIL}
-                strokeWidth={TRAIT_ICONE_RAIL}
-                className="transition-transform duration-200 group-hover:translate-y-0.5"
-              />
-            </span>
-            <LibelleRail ouverte={railOuvert}>Télécharger pour PC</LibelleRail>
-          </Link>
-        )}
-
         <button
           onClick={() => setSurvolRail(true)}
           onMouseEnter={() => setSurvolRail(true)}
@@ -764,7 +743,34 @@ export function AppSidebar({
           </div>
         )}
 
-        <div ref={actionsRef} className={`relative rounded-xl ${railOuvert ? "mt-2" : "mt-auto"}`}>
+        {/* 20/10/2026, demande de Bourama : le bouton "Télécharger pour PC" est une
+            ligne de la barre, juste au dessus de "Plus". Visible seulement dans
+            un navigateur sur Windows (voir lib/useProposerTelechargementPc.ts).
+            Il prend la place du mt-auto de "Plus" quand la barre est repliée,
+            pour que les deux restent collés en bas. */}
+        {proposerTelechargementPc && (
+          <Link
+            href="/telecharger"
+            title="Télécharger pour PC"
+            className={`group flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+              railOuvert ? "mt-2" : "mt-auto"
+            }`}
+          >
+            <span className={CELLULE_ICONE_RAIL}>
+              <MonitorDown
+                size={TAILLE_ICONE_RAIL}
+                strokeWidth={TRAIT_ICONE_RAIL}
+                className="transition-transform duration-200 group-hover:translate-y-0.5"
+              />
+            </span>
+            <LibelleRail ouverte={railOuvert}>Télécharger pour PC</LibelleRail>
+          </Link>
+        )}
+
+        <div
+          ref={actionsRef}
+          className={`relative rounded-xl ${railOuvert || proposerTelechargementPc ? "mt-2" : "mt-auto"}`}
+        >
           <button
             onClick={basculerActions}
             title="Plus"
