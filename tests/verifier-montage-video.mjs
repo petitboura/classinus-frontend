@@ -10,7 +10,7 @@ const api = lire("lib/api.ts");
 const types = lire("lib/videoMontage.ts");
 const apercus = lire("components/chat/LigneApercuPieces.tsx");
 
-assert.match(editeur, /const selectionFaite = intervalleActif \|\| zone !== null/);
+assert.match(editeur, /const selectionFaite = intervalleActif \|\| \(zone !== null && origineRef\.current === null\)/);|\| zone !== null/);
 assert.match(editeur, /\{selectionFaite && \(/);
 assert.match(editeur, /Demander à Clovis/);
 assert.match(editeur, /aria-label="Début de la sélection"/);
