@@ -53,12 +53,6 @@ const SUGGESTIONS: Suggestion[] = [
     appareil: "pc",
   },
   {
-    id: "thonny",
-    label: "Utiliser Classinus dans Thonny",
-    message: "Aide-moi à analyser et corriger mon programme Python dans Thonny avec le plugin Classinus. Explique les erreurs et propose une correction que je pourrai vérifier dans l'éditeur.",
-    appareil: "pc",
-  },
-  {
     id: "dossier-telephone",
     label: "Retrouver un fichier sur mon téléphone",
     message: "Aide-moi à retrouver un document dans les dossiers de mon téléphone auxquels j'ai autorisé Classinus à accéder.",
@@ -125,23 +119,29 @@ export function SuggestionsCapacitesChat() {
       </div>
 
       <div
-        className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden"
+        className="relative w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden"
         style={{
           maskImage: "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
           WebkitMaskImage: "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
         }}
       >
-        {telephone.map((suggestion) => (
-          <CarteSuggestion
-            key={suggestion.id}
-            suggestion={suggestion}
-            onChoisir={ouvrirChatAvecTexte}
-          />
-        ))}
+        <div className="flex w-max gap-2 py-1 [animation:classinus-suggestions-defilement-mobile_36s_linear_infinite] hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]">
+          {[...telephone, ...telephone].map((suggestion, index) => (
+            <CarteSuggestion
+              key={`${suggestion.id}-mobile-${index}`}
+              suggestion={suggestion}
+              onChoisir={ouvrirChatAvecTexte}
+            />
+          ))}
+        </div>
       </div>
 
       <style jsx>{`
         @keyframes classinus-suggestions-defilement {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        @keyframes classinus-suggestions-defilement-mobile {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
