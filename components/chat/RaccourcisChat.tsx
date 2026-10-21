@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { estCleSection } from "@/lib/cleSections";
 import { useFenetres } from "@/lib/contexteFenetres";
-import { RACCOURCIS_CHAT_BUREAU, RACCOURCIS_CHAT_MOBILE } from "@/lib/raccourcisChat";
+import { RACCOURCIS_CHAT_BUREAU } from "@/lib/raccourcisChat";
 
-// Sur PC, toutes les sous-sections défilent sur une seule ligne à leur
-// emplacement actuel, avec un fondu aux deux bords. Sur mobile, la liste
-// verticale existante reste au-dessus de la barre de saisie.
+// Sur PC, toutes les sous-sections défilent horizontalement.
+// Sur mobile, elles défilent verticalement avec cinq lignes visibles.
 type Props = {
   variante: "bureau" | "mobile";
   visible?: boolean;
@@ -57,13 +56,25 @@ export function RaccourcisChat({ variante, visible = true }: Props) {
         (visible ? "grid-rows-[1fr] opacity-100" : "pointer-events-none grid-rows-[0fr] opacity-0")
       }
     >
-      <nav aria-label="Raccourcis" className="min-h-0 overflow-hidden">
+      <nav
+        aria-label="Sous-sections"
+        className="min-h-0 max-h-[220px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{
+          maskImage: "linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)",
+        }}
+      >
         <ul className="pb-2">
-          {RACCOURCIS_CHAT_MOBILE.map(({ id, label, href, Icone }) => (
+          {RACCOURCIS_CHAT_BUREAU.map(({ id, label, href, Icone }) => (
             <li key={id}>
               <Link
                 href={href}
                 tabIndex={visible ? 0 : -1}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !estCleSection(href)) return;
+                  e.preventDefault();
+                  ouvrir(href);
+                }}
                 className={`flex h-11 items-center ${DECALAGE_ALIGNEMENT_PLUS} text-sm text-dj-texte-muet transition-colors hover:text-dj-texte`}
               >
                 <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center">
