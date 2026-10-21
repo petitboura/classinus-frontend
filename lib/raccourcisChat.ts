@@ -1,17 +1,12 @@
-import { Brain, ClipboardList, Code, Hourglass, Library, ScrollText, Smartphone, type LucideIcon } from "lucide-react";
+import { Brain, ClipboardList, Code, Hourglass, Smartphone, type LucideIcon } from "lucide-react";
 import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { ROUTES_BUREAU } from "@/lib/routesBureau";
 import { ROUTES_CONCENTRATION } from "@/lib/routesConcentration";
 import { ROUTES_PERSONNALISER } from "@/lib/routesPersonnaliser";
+import { GROUPES_RAIL } from "@/lib/groupesRail";
 
-// 01/10/2026, demande Bourama : raccourcis directs vers des sous-sections
-// utiles, affichés autour de la barre de saisie sur l'écran vide du chat
-// (voir components/chat/RaccourcisChat.tsx). Les adresses viennent des
-// fichiers de routes de chaque section, jamais écrites en dur ici.
-//
-// Deux listes, car les deux appareils n'ont pas les mêmes besoins (demande
-// de Bourama) : "Temps d'écran" et "Dossier du phone" n'ont pas d'intérêt
-// sur PC, et sur mobile "Configuration" prend la place de "Perso".
+// Les raccourcis du bureau reprennent automatiquement toutes les sous-sections
+// définies pour le rail : une seule source de vérité, aucun élément oublié.
 export type RaccourciChat = {
   id: string;
   label: string;
@@ -19,19 +14,20 @@ export type RaccourciChat = {
   Icone: LucideIcon;
 };
 
-// PC : une seule ligne de petits rectangles arrondis sous la barre de saisie.
-export const RACCOURCIS_CHAT_BUREAU: readonly RaccourciChat[] = [
-  { id: "perso", label: "Perso", href: ROUTES_BIBLIOTHEQUE.perso, Icone: Library },
-  { id: "editeur", label: "Éditeur", href: ROUTES_BUREAU.editeur, Icone: Code },
-  { id: "memoire", label: "Ma mémoire", href: ROUTES_PERSONNALISER.memoire, Icone: Brain },
-  { id: "configuration", label: "Configuration", href: ROUTES_BUREAU.configuration, Icone: ClipboardList },
-  { id: "mes-skills", label: "Mes skills", href: ROUTES_PERSONNALISER.comportements, Icone: ScrollText },
-];
+export const RACCOURCIS_CHAT_BUREAU: readonly RaccourciChat[] = GROUPES_RAIL.flatMap(
+  (groupe) =>
+    groupe.sections.map(({ href, label, Icone }) => ({
+      id: href,
+      label,
+      href,
+      Icone,
+    }))
+);
 
-// Mobile : liste au-dessus de la barre de saisie.
+// Sur mobile, on conserve les cinq raccourcis adaptés à ce format.
 export const RACCOURCIS_CHAT_MOBILE: readonly RaccourciChat[] = [
   { id: "configuration", label: "Configuration", href: ROUTES_BUREAU.configuration, Icone: ClipboardList },
-  { id: "dossier-phone", label: "Dossier du phone", href: ROUTES_BIBLIOTHEQUE.telephone, Icone: Smartphone },
+  { id: "dossier-phone", label: "Dossier du téléphone", href: ROUTES_BIBLIOTHEQUE.telephone, Icone: Smartphone },
   { id: "temps-ecran", label: "Temps d'écran", href: ROUTES_CONCENTRATION.tempsEcran, Icone: Hourglass },
   { id: "editeur", label: "Éditeur", href: ROUTES_BUREAU.editeur, Icone: Code },
   { id: "memoire", label: "Ma mémoire", href: ROUTES_PERSONNALISER.memoire, Icone: Brain },
