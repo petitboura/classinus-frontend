@@ -2870,3 +2870,13 @@ export async function dupliquerSignalementPedagogique(signalementId: string) {
 export async function supprimerSignalementPedagogique(signalementId: string) {
   await appelerApi(`/api/signalements-pedagogiques/${signalementId}`, { method: "DELETE" });
 }
+
+
+/**
+ * Déconnecte un fournisseur lié au compte courant. Le backend sélectionne
+ * le stockage approprié (OAuth générique, Notion ou serveur MCP) et ne
+ * supprime que la connexion de l'utilisateur authentifié.
+ */
+export async function deconnecterApplication(service: string) {
+  return appelerApi(`/api/connexions/${service}/deconnecter`, { method: "POST" }) as Promise<{ connecte: boolean }>;
+}
