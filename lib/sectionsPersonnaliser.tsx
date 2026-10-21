@@ -28,6 +28,12 @@ export const SECTIONS_PERSONNALISER: SectionDeGroupe[] = [
     description: "Ce que Classinus retient de toi entre les conversations",
     Icone: Brain,
   },
+  {
+    href: ROUTES_PERSONNALISER.connexions,
+    label: "Applications connectées",
+    description: "Relie tes comptes externes à Classinus, consulte leur état et retire leurs autorisations quand tu le souhaites.",
+    Icone: Cable,
+  },
 ];
 
 // Valeur à passer au prop `groupe` de SectionPage sur chaque page fille.
