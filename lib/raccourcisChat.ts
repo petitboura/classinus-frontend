@@ -1,4 +1,4 @@
-import { Brain, ClipboardList, Code, Code2, Hourglass, Plug, Smartphone, type LucideIcon } from "lucide-react";
+import { Brain, ClipboardList, Code, Hourglass, Smartphone, type LucideIcon } from "lucide-react";
 import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
 import { ROUTES_BUREAU } from "@/lib/routesBureau";
 import { ROUTES_CONCENTRATION } from "@/lib/routesConcentration";
@@ -14,15 +14,15 @@ export type RaccourciChat = {
   Icone: LucideIcon;
 };
 
-export const RACCOURCIS_CHAT_BUREAU: readonly RaccourciChat[] = [
-  ...GROUPES_RAIL.flatMap((groupe) =>
-    groupe.sections.map(({ href, label, Icone }) => ({ id: href, label, href, Icone }))
-  ),
-  // Connecteurs complémentaires accessibles depuis l’écran vide du chat :
-  // chacun ouvre son guide de connexion déjà existant.
-  { id: "connecter-thonny", label: "Connecter Thonny", href: "/connecter-thonny", Icone: Code2 },
-  { id: "connecter-claude", label: "Connecter Claude", href: "/connecter-claude", Icone: Plug },
-];
+export const RACCOURCIS_CHAT_BUREAU: readonly RaccourciChat[] = GROUPES_RAIL.flatMap(
+  (groupe) =>
+    groupe.sections.map(({ href, label, Icone }) => ({
+      id: href,
+      label,
+      href,
+      Icone,
+    }))
+);
 
 // Sur mobile, on conserve les cinq raccourcis adaptés à ce format.
 export const RACCOURCIS_CHAT_MOBILE: readonly RaccourciChat[] = [
