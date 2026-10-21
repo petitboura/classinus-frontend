@@ -2,8 +2,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, extname } from "node:path";
 import ts from "typescript";
 
-const ROOTS = ["app", "components", "lib", "packages"];
-const EXTENSIONS = new Set([".ts", ".tsx"]);
+const ROOTS = ["app", "components", "lib", "packages", "hooks", "contexts", "context", "utils", "services", "providers", "screens", "src"];
+const EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 const ATTRS = new Set([
   "title", "placeholder", "aria-label", "aria-description", "alt",
   "label", "value", "tooltip", "emptylabel",
@@ -124,7 +124,11 @@ function parcourir(node, fichier, sourceFile) {
 const fichiers = ROOTS.flatMap(fichiersDans);
 for (const fichier of fichiers) {
   const contenu = readFileSync(fichier, "utf8");
-  const kind = extname(fichier) === ".tsx" ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const extension = extname(fichier);
+  const kind = extension === ".tsx" ? ts.ScriptKind.TSX
+    : extension === ".jsx" ? ts.ScriptKind.JSX
+      : extension === ".js" ? ts.ScriptKind.JS
+        : ts.ScriptKind.TS;
   const source = ts.createSourceFile(fichier, contenu, ts.ScriptTarget.Latest, true, kind);
   parcourir(source, fichier.replace(process.cwd() + "/", ""), source);
 }
