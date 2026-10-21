@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { connecter } from "@/lib/authFallback";
+import { ROUTE_MOT_DE_PASSE_OUBLIE } from "@/lib/reinitialisationMotDePasse";
 import { EcranAutonome } from "@/components/EcranAutonome";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/Skeleton";
@@ -177,6 +178,19 @@ function FormulaireConnexion() {
             )}
 
             <ChampMotDePasse id="mot-de-passe" value={motDePasse} onChange={setMotDePasse} />
+
+            {/* Le lien est envoyé par email : inutile pour un compte créé avec
+                un numéro de téléphone, donc affiché seulement dans l'onglet Email. */}
+            {methode === "email" && (
+              <div className="-mt-2 text-right animate-dj-fade-in-rapide">
+                <Link
+                  href={`${ROUTE_MOT_DE_PASSE_OUBLIE}${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+                  className="text-sm text-dj-texte-muet hover:text-dj-texte hover:underline"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+            )}
 
             {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 

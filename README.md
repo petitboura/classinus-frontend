@@ -23,6 +23,7 @@ foi — pas d'anciennes conversations ou de documentation externe.
 app/
   (app)/                 écrans connectés (voir "Écrans" plus bas)
   connexion/, inscription/  authentification
+  mot-de-passe-oublie/, reinitialiser-mot-de-passe/  réinitialisation du mot de passe par email
   oauth/, oauth/consent/  retour OAuth (Notion, connecteurs génériques)
   mon-espace/            section publique "Mon espace" (bibliothèque publique, portfolio)
   telecharger/           page de téléchargement : dernier APK Android (GitHub Releases), installeur
@@ -344,6 +345,26 @@ Historique : une garde globale bloquant toute page sans compte (sauf les
 pages d'élément partagé) a existé du 19/09/2026 au 22/09/2026
 (`components/AppShell.tsx`, liste dans l'ex-`lib/routesPubliques.ts`) --
 retirée à la demande de Bourama, qui bloquait aussi le chat invité.
+
+## Réinitialisation du mot de passe
+
+Tout passe par Supabase Auth depuis le frontend, le backend ne gère aucun mot de passe.
+
+1. Sur `/connexion`, l'onglet Email affiche "Mot de passe oublié ?" (absent de l'onglet Téléphone : un compte
+   créé avec un numéro n'a pas d'email où envoyer le lien).
+2. `/mot-de-passe-oublie` demande l'email et appelle `resetPasswordForEmail`. Le message de confirmation est le
+   même que le compte existe ou non. Le renvoi du lien est bloqué 60 secondes.
+3. Le lien de l'email ouvre `/reinitialiser-mot-de-passe`, où l'utilisateur choisit son nouveau mot de passe
+   (`updateUser`), puis revient au chat, connecté. Un lien expiré ou déjà utilisé affiche un écran qui propose
+   d'en recevoir un nouveau.
+
+Le code partagé (adresses, délais, messages d'erreur en français) est dans `lib/reinitialisationMotDePasse.ts`.
+Dans l'appli installée, l'adresse du lien vient de `NEXT_PUBLIC_APP_URL`, donc le lien ouvre le site dans le
+navigateur (ouvrir l'appli directement depuis un lien est un chantier à part).
+
+À configurer côté Supabase (Authentication, URL Configuration, Redirect URLs) : ajouter
+`<NEXT_PUBLIC_APP_URL>/reinitialiser-mot-de-passe` pour chaque projet (production, et test si besoin). Sans cela,
+Supabase refuse d'envoyer le lien. Le texte de l'email se règle dans Authentication, Email Templates.
 
 ## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau, Concentration)
 
