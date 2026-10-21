@@ -17,7 +17,7 @@ import { choisirModele, useModeleActif } from "@/lib/modeleActif";
 import { SelecteurModeleHaut } from "./SelecteurModeleHaut";
 import { lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
-import { RaccourcisChat } from "./RaccourcisChat";
+import { ConnecteursChat } from "./ConnecteursChat";
 import { SuggestionsCapacitesChat } from "./SuggestionsCapacitesChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
@@ -1780,7 +1780,7 @@ export function ChatIA({
               (!raccourcis || saisieActive ? "grow-0" : "grow md:grow-0")
             }
           />
-          {raccourcis && <RaccourcisChat variante="mobile" visible={!saisieActive} />}
+          {raccourcis && <ConnecteursChat variante="mobile" visible={!saisieActive} />}
           <div
             onFocusCapture={(e) => {
               if (e.target instanceof HTMLTextAreaElement) setSaisieActive(true);
@@ -1807,7 +1807,7 @@ export function ChatIA({
               onAccesBloqueChange={setAccesBloqueMineur}
             />
           </div>
-          {raccourcis && <RaccourcisChat variante="bureau" />}
+          {raccourcis && <ConnecteursChat variante="bureau" />}
           <div
             className={
               "shrink-0 basis-0 transition-[flex-grow] duration-300 ease-cgpt-doux " +
