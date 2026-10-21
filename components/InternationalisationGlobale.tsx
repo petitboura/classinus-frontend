@@ -23,6 +23,8 @@ export function InternationalisationGlobale() {
   const pathname = usePathname();
   const [locale, setLocale] = useState<Locale>("fr");
   const localeRef = useRef<Locale>("fr");
+  // Vrai seulement quand la page porte des textes traduits. En français pur, rien n'est parcouru ni surveillé.
+  const traductionActive = useRef(false);
   const textesOriginaux = useRef(new WeakMap<Text, ValeurTraduisible>());
   const attributsOriginaux = useRef(new WeakMap<Element, Map<string, ValeurTraduisible>>());
 
@@ -95,10 +97,17 @@ export function InternationalisationGlobale() {
     };
 
     const appliquerPartout = () => {
+      // Français sans traduction préalable : rien à parcourir, on évite de lire toute la page.
+      if (localeRef.current !== "en" && !traductionActive.current) {
+        document.documentElement.lang = localeRef.current;
+        return;
+      }
       // Inclut le titre et les métadonnées descriptives du head, ainsi que
       // le corps, tout en laissant les scripts et contenus dynamiques protégés.
       traduireSousArbre(document.documentElement);
       document.documentElement.lang = localeRef.current;
+      // Après un retour au français, les textes d'origine sont restaurés : plus rien à surveiller.
+      traductionActive.current = localeRef.current === "en";
     };
 
     localeRef.current = obtenirLocale();
@@ -106,6 +115,7 @@ export function InternationalisationGlobale() {
     appliquerPartout();
 
     const observer = new MutationObserver((changements) => {
+      if (!traductionActive.current) return;
       // Traite chaque lot remis par le navigateur sans en abandonner si
       // React met à jour plusieurs nœuds pendant un rendu rapide.
       for (const changement of changements) {

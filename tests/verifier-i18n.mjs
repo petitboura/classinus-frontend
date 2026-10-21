@@ -35,6 +35,8 @@ assert.match(locale, /EVENEMENT_LOCALE_CLASSINUS/);
 const globalI18n = readFileSync("components/InternationalisationGlobale.tsx", "utf8");
 assert.match(globalI18n, /<option value="fr">FR · Français<\/option>/);
 assert.match(globalI18n, /<option value="en">EN · English<\/option>/);
+assert.match(globalI18n, /traductionActive/, "Le français pur ne doit pas surveiller la page");
+assert.match(globalI18n, /if \(!traductionActive\.current\) return;/, "L'observateur doit s'arrêter quand rien n'est traduit");
 for (const protectedSelector of ["pre", "code", "textarea", ".markdown-body", ".katex", "[contenteditable='true']"]) {
   assert.ok(globalI18n.includes(protectedSelector), `Expected user content protection for ${protectedSelector}`);
 }
