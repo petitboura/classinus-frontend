@@ -1333,6 +1333,46 @@ export async function uploaderVideoChat(fichier: File) {
 }
 
 /**
+ * Upload d'une source pour l'atelier de montage vidéo contextuel.
+ * Le fichier reste dans l'espace temporaire de cette conversation ; cette
+ * route ne lance ni transcription, ni analyse de frames par défaut.
+ */
+export async function uploaderVideoEspace(fichier: File, conversationId: string) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Connecte-toi pour modifier une vidéo.");
+  }
+  if (!conversationId) {
+    throw new Error("Ouvre une conversation avant de modifier une vidéo.");
+  }
+
+  const corps = new FormData();
+  corps.append("fichier", fichier);
+  corps.append("conversation_id", conversationId);
+
+  const chemin = "/api/uploads/video-workspace";
+  const reponse = await fetch(`${API_URL}${chemin}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: corps,
+  });
+  if (!reponse.ok) {
+    throw await construireErreurApi(reponse, chemin);
+  }
+  return (await reponse.json()) as {
+    video_id: string;
+    nom_fichier: string;
+    taille_octets: number;
+    type_mime: string;
+    source_path: string;
+    duree_secondes: number;
+  };
+}
+
+/**
  * OCR ciblé formule (2026-07-26, priorité maths de Bourama) -- voir
  * api/uploads.py:extraire_formule. Contrairement à uploaderImageChat,
  * cette image ne rejoint jamais la conversation : elle sert uniquement
