@@ -106,6 +106,8 @@ export function EditeurVideoContextuel({
     };
   }, [open, fichier, conversationId, retry, source]);
 
+  const urlLecture = urlMedia || urlLocale;
+
   useEffect(() => {
     if (!open) {
       setCadreAffiche(null);
@@ -154,7 +156,6 @@ export function EditeurVideoContextuel({
 
   if (!open || !fichier) return null;
 
-  const urlLecture = urlMedia || urlLocale;
   const selectionFaite = intervalleActif || zone !== null;
   const intervalleValide = intervalleActif && fin > debut;
   const peutEnvoyer = Boolean(
