@@ -135,3 +135,5 @@ for (const item of manquants.slice(0, 300)) {
   console.log(`MISSING_I18N [${item.fichier}] [${item.source}] ${JSON.stringify(item.texte)}`);
 }
 if (manquants.length > 300) console.log(`Additional missing entries omitted: ${manquants.length - 300}`);
+
+if (manquants.length > 0) process.exitCode = 1;
