@@ -10,7 +10,7 @@ const ATTRS = new Set([
 ]);
 const PROPERTIES = new Set([
   "title", "titre", "description", "label", "libelle", "placeholder",
-  "tooltip", "emptylabel", "emptytext", "ariaLabel", "aria-label",
+  "tooltip", "emptylabel", "emptytext", "arialabel", "aria-label",
 ]);
 const TAGS_NON_UI = new Set(["code", "pre", "textarea", "script", "style", "svg", "math"]);
 
