@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Check } from "lucide-react";
 import { telechargerImage } from "@/lib/telechargerImageGraphique";
+import { MESSAGES } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 // Rend un bloc ```geometrie du markdown -- même famille que ```chart
 // (GraphiqueDonnees.tsx) et ```carte (CarteMessage.tsx), ajouté le 27/07
@@ -91,7 +93,7 @@ export function SchemaGeometrique({ code }: { code: string }) {
         setErreur(null);
       } catch (e) {
         console.warn("Données de schéma géométrique invalides dans Classinus :", e);
-        setErreur("Ce schéma géométrique n’a pas pu être affiché car ses données sont incomplètes ou invalides. Demande à Classinus de le recréer.");
+        setErreur(MESSAGES[obtenirLocale()].AFFICHAGE_SCHEMA_INVALIDE);
       }
     }, 500);
     return () => clearTimeout(delai);

@@ -296,6 +296,7 @@ lib/
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
+  textesPagesErreur.ts    textes (français et anglais) des écrans d'erreur et du lien de réinitialisation impossible à vérifier
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
 android/, ios/            projets Capacitor (capacitor.config.ts minimal, export statique build:capacitor

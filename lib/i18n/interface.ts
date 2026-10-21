@@ -2414,13 +2414,6 @@ const EN: Record<string, string> = {
   "la réponse": "the answer",
   "le fil de conversation": "the conversation thread",
   "Supprimer le signalement": "Delete report",
-  "Cette page n’a pas pu s’afficher": "This page couldn’t be displayed",
-  "Un problème inattendu a interrompu l’affichage de cette page.": "An unexpected problem interrupted the display of this page.",
-  "Vérifie l’état de ta dernière action avant de la refaire : elle a peut-être déjà été effectuée.": "Check the result of your last action before repeating it: it may already have gone through.",
-  "Classinus a rencontré un problème": "Classinus ran into a problem",
-  "L’application n’a pas pu afficher cet écran correctement.": "The app couldn’t display this screen correctly.",
-  "Demander un nouveau lien": "Request a new link",
-  "Impossible de vérifier le lien": "Unable to verify the link",
 };
 
 function normaliserCasse(texte: string): string {

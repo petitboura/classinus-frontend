@@ -17,6 +17,7 @@ import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/Skeleton";
 import { Bouton } from "@/components/Bouton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
+import { textesPagesErreur } from "@/lib/textesPagesErreur";
 
 // Deuxième étape de la réinitialisation : l'utilisateur arrive ici depuis le
 // lien de l'email. Supabase a déjà ouvert une session de récupération à partir
@@ -29,6 +30,7 @@ const DELAI_RETOUR_CHAT_MS = 1800;
 type Etat = "verification" | "erreur_verification" | "pret" | "lien_invalide" | "termine";
 
 export default function PageReinitialisationMotDePasse() {
+  const textes = textesPagesErreur();
   const router = useRouter();
   const [etat, setEtat] = useState<Etat>("verification");
   const [motDePasse, setMotDePasse] = useState("");
@@ -151,9 +153,9 @@ export default function PageReinitialisationMotDePasse() {
         <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">
           {etat === "erreur_verification" && (
             <div className="animate-dj-fade-in-rapide">
-              <h1 className="font-display text-xl font-bold text-dj-texte">Impossible de vérifier le lien</h1>
+              <h1 className="font-display text-xl font-bold text-dj-texte">{textes.lienNonVerifiableTitre}</h1>
               <p role="alert" className="mt-3 text-sm text-dj-texte-muet">
-                {erreur ?? "Vérifie ta connexion puis réessaie."}
+                {erreur ?? textes.lienNonVerifiableRepli}
               </p>
               <Bouton
                 type="button"
@@ -164,11 +166,11 @@ export default function PageReinitialisationMotDePasse() {
                 }}
                 className="mt-4 w-full"
               >
-                Réessayer
+                {textes.reessayer}
               </Bouton>
               <p className="mt-4 text-center text-sm text-dj-texte-muet">
                 <Link href={ROUTE_MOT_DE_PASSE_OUBLIE} className="hover:text-dj-texte hover:underline">
-                  Demander un nouveau lien
+                  {textes.nouveauLien}
                 </Link>
               </p>
             </div>

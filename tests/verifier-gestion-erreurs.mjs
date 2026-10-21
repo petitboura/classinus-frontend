@@ -246,6 +246,35 @@ for (const code of codesServeur5xx) {
   assert.ok(MESSAGES.en[code], "code serveur absent en anglais : " + code);
 }
 console.log("OK — " + codesServeur5xx.length + " codes serveur 5xx présents en français et en anglais");
+
+// Textes d'erreur affichés à l'étudiant : jamais écrits en dur dans un seul
+// langage, toujours lus dans le dictionnaire (français ET anglais).
+const clesTextesAffiches = [
+  "AFFICHAGE_CARTE_INVALIDE", "AFFICHAGE_FICHE_INVALIDE", "AFFICHAGE_GRAPHIQUE_INVALIDE",
+  "AFFICHAGE_DIAGRAMME_INVALIDE", "AFFICHAGE_QCM_INVALIDE", "AFFICHAGE_QUESTION_INVALIDE",
+  "AFFICHAGE_SCHEMA_INVALIDE", "CONNEXION_GOOGLE_PREPARATION_ECHEC", "PLUGIN_ERREUR_GENERIQUE",
+  "PLUGIN_PERMISSION_REFUSEE", "PLUGIN_INDISPONIBLE", "PLUGIN_EXECUTION_ECHEC",
+];
+for (const cle of clesTextesAffiches) {
+  assert.ok(MESSAGES.fr[cle], "texte absent en français : " + cle);
+  assert.ok(MESSAGES.en[cle], "texte absent en anglais : " + cle);
+}
+for (const chemin of [
+  "components/chat/CarteMessage.tsx", "components/chat/FicheRevision.tsx", "components/chat/GraphiqueDonnees.tsx",
+  "components/chat/Mermaid.tsx", "components/chat/QCMInteractif.tsx", "components/chat/QuestionInteractive.tsx",
+  "components/chat/SchemaGeometrique.tsx", "components/BoutonGoogle.tsx",
+]) {
+  const source = await readFile(new URL("../" + chemin, import.meta.url), "utf8");
+  assert.doesNotMatch(source, /setErreur\(\s*["`][^"`]/, chemin + " : message d'erreur écrit en dur");
+}
+const sourcePluginNatif = await readFile(new URL("../lib/usePluginNatif.ts", import.meta.url), "utf8");
+assert.doesNotMatch(sourcePluginNatif, /return "[^"]*(?:Classinus|autorisation|fonction)/i, "usePluginNatif : message écrit en dur");
+for (const chemin of ["app/error.tsx", "app/global-error.tsx"]) {
+  const source = await readFile(new URL("../" + chemin, import.meta.url), "utf8");
+  assert.match(source, /textesPagesErreur\(\)/, chemin + " doit lire ses textes dans textesPagesErreur");
+  assert.doesNotMatch(source, /Réessayer|n’a pas pu|Vérifie l’état/, chemin + " : texte écrit en dur");
+}
+console.log("OK — textes d'erreur affichés lus dans le dictionnaire (français et anglais)");
 console.log("OK — détection réseau (cas positifs et négatifs)");
 
 assert.match(messageErreur(new ErreurApi(429, "Erreur API")), /Trop de demandes/i);

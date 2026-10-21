@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { BlocLarge } from "./BlocLarge";
 import { BoutonTelechargerImage } from "./BoutonTelechargerImage";
 import { telechargerImageElement } from "@/lib/telechargerImageElement";
+import { MESSAGES } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 let compteurMermaid = 0;
 
@@ -114,7 +116,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
         // les messages internes du moteur de rendu.
         console.warn("Diagramme Mermaid impossible à afficher dans Classinus :", e);
         if (!annule) {
-          setErreur("Ce diagramme n’a pas pu être affiché. Sa syntaxe est peut-être incomplète ou non prise en charge. Demande à Classinus de le recréer plus simplement.");
+          setErreur(MESSAGES[obtenirLocale()].AFFICHAGE_DIAGRAMME_INVALIDE);
         }
       }
     }, 400);
