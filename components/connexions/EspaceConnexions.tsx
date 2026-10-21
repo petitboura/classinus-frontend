@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, CircleAlert, LoaderCircle, PlugZap, Unplug } from "lucide-react";
 import { APPLIS_DISPONIBLES } from "@/lib/outils";
-import { statutConnexion, demarrerConnexion, deconnecterPlateformeMcp } from "@/lib/api";
+import { statutConnexion, demarrerConnexion, deconnecterApplication } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { memoriserRetourConnexion, oublierRetourConnexion } from "@/lib/retourApresConnexion";
 import { ROUTES_PERSONNALISER } from "@/lib/routesPersonnaliser";
@@ -22,7 +22,6 @@ const DESCRIPTIONS: Record<string, string> = {
   supabase_mcp: "Permets à Classinus d’interagir avec tes projets Supabase sans partager tes identifiants avec d’autres utilisateurs.",
 };
 
-const SERVICES_DECONNECTABLES = new Set(["higgsfield_mcp", "vercel_mcp", "railway_mcp", "supabase_mcp"]);
 
 export function EspaceConnexions() {
   const [lignes, setLignes] = useState<Record<string, Ligne>>({});
@@ -64,7 +63,7 @@ export function EspaceConnexions() {
     setErreur(null);
     setEnCours(service);
     try {
-      await deconnecterPlateformeMcp(service);
+      await deconnecterApplication(service);
       setLignes((avant) => ({ ...avant, [service]: { etat: "deconnecte" } }));
     } catch (e) {
       setErreur(messageErreur(e));
@@ -101,7 +100,7 @@ export function EspaceConnexions() {
                   {ligne.etat === "chargement" ? <LoaderCircle size={14} className="animate-spin" /> : connecte ? <Check size={14} className="text-emerald-500" /> : ligne.etat === "erreur" || ligne.etat === "reconnecter" ? <CircleAlert size={14} /> : <PlugZap size={14} />}
                   {ligne.etat === "chargement" ? "Vérification…" : connecte ? "Connecté" : ligne.etat === "reconnecter" ? "Reconnexion nécessaire" : ligne.etat === "erreur" ? "Statut indisponible" : "Non connecté"}
                 </span>
-                {connecte && SERVICES_DECONNECTABLES.has(app.nom) ? (
+                {connecte ? (
                   <button type="button" onClick={() => void deconnecter(app.nom)} disabled={!!enCours} className="inline-flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50">
                     <Unplug size={14} />{occupée ? "Déconnexion…" : "Déconnecter"}
                   </button>
