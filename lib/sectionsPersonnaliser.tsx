@@ -1,4 +1,4 @@
-import { ScrollText, Download, Brain } from "lucide-react";
+import { ScrollText, Download, Brain, Cable } from "lucide-react";
 import { ROUTES_PERSONNALISER } from "./routesPersonnaliser";
 import { construireGroupe, type SectionDeGroupe } from "./groupeSections";
 
