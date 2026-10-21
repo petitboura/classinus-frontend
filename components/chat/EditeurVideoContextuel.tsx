@@ -367,7 +367,7 @@ export function EditeurVideoContextuel({
                 <video
                   ref={lecteurRef}
                   src={urlLecture}
-                  controls
+                  controls={!selectionnerZone}
                   playsInline
                   preload="metadata"
                   className="block max-h-[44dvh] w-full object-contain"
@@ -450,6 +450,7 @@ export function EditeurVideoContextuel({
                     const valeur = Math.min(Number(e.target.value), Math.max(0, fin - 0.1));
                     setDebut(valeur);
                     setIntervalleActif(true);
+                    if (lecteurRef.current) lecteurRef.current.currentTime = valeur;
                   }}
                   disabled={!source || duree <= 0}
                   className="w-full accent-sky-500"
@@ -470,6 +471,7 @@ export function EditeurVideoContextuel({
                     const valeur = Math.max(debut + 0.1, Math.min(Number(e.target.value), duree));
                     setFin(valeur);
                     setIntervalleActif(true);
+                    if (lecteurRef.current) lecteurRef.current.currentTime = valeur;
                   }}
                   disabled={!source || duree <= 0}
                   className="w-full accent-sky-500"
