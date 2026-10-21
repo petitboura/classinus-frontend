@@ -61,8 +61,14 @@ function estTexteFrancais(texte) {
 function sousContenuProtege(node) {
   for (let parent = node.parent; parent; parent = parent.parent) {
     if (ts.isJsxElement(parent) || ts.isJsxSelfClosingElement(parent)) {
-      const tag = (ts.isJsxElement(parent) ? parent.openingElement.tagName : parent.tagName).getText();
+      const ouverture = ts.isJsxElement(parent) ? parent.openingElement : parent;
+      const tag = ouverture.tagName.getText();
       if (TAGS_NON_UI.has(tag.toLowerCase())) return true;
+      const exclu = ouverture.attributes.properties.some((attribut) =>
+        ts.isJsxAttribute(attribut)
+        && (attribut.name.getText() === "data-i18n-skip" || attribut.name.getText() === "data-no-translate")
+      );
+      if (exclu) return true;
     }
   }
   return false;
