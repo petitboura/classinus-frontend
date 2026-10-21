@@ -1,0 +1,34 @@
+name: Video editor frontend checks
+
+on:
+  push:
+    branches:
+      - wip/video-montage-non-verifie
+    paths:
+      - "components/chat/BarreDeSaisie.tsx"
+      - "components/chat/ChatIA.tsx"
+      - "components/chat/EditeurVideoContextuel.tsx"
+      - "lib/api.ts"
+      - "lib/videoMontage.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/video-editor-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Type-check frontend
+        run: npx tsc --noEmit --pretty false
