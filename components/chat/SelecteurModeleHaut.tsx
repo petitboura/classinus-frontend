@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { IconeFournisseur } from "./IconeFournisseur";
 import { ORDRE_DISTRIBUTEURS_AFFICHAGE, LABELS_DISTRIBUTEUR } from "./barre/reglagesReponse";
-import { LOCALE_ACTIVE } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 // libelles_bientot : le mot affiché sur un modèle Bientôt, par langue. Il vient du backend, qui le lit
 // dans Supabase (table textes_modeles_llm), donc il se change sans toucher au code.
@@ -21,7 +21,8 @@ type ModeleDisponible = {
 const LIBELLE_BIENTOT_PAR_DEFAUT = "Bientôt";
 
 function libelleBientot(libelles?: Record<string, string>): string {
-  return libelles?.[LOCALE_ACTIVE] ?? libelles?.fr ?? LIBELLE_BIENTOT_PAR_DEFAUT;
+  const locale = obtenirLocale();
+  return libelles?.[locale] ?? (locale === "en" ? "Coming soon" : libelles?.fr ?? LIBELLE_BIENTOT_PAR_DEFAUT);
 }
 
 /**

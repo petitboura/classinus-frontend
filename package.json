@@ -32,7 +32,9 @@
     "test:lecteur-youtube": "node tests/verifier-lecteur-youtube.mjs",
     "test:liens-entrants": "node tests/verifier-liens-entrants.mjs",
     "test:gestion-erreurs": "node tests/verifier-gestion-erreurs.mjs",
-    "postinstall": "node scripts/appliquer-correctif-lector.mjs"
+    "postinstall": "node scripts/appliquer-correctif-lector.mjs",
+    "test:i18n": "node tests/verifier-i18n.mjs",
+    "audit:i18n": "node tests/auditer-i18n.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "3.7.1",

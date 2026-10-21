@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Timer } from "lucide-react";
 import { BoutonInfoSection } from "@/components/BoutonInfoSection";
 import { textesMinuteurs } from "@/lib/textesMinuteurs";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import {
   DUREES_RAPIDES_MINUTES,
@@ -37,7 +38,8 @@ export function LanceurMinuteur({
   onLancer: (dureeSecondes: number, actionFin: string | null) => void;
   onAfficher: (id: string) => void;
 }) {
-  const t = textesMinuteurs();
+  const locale = useLocale();
+  const t = textesMinuteurs(locale);
   const [ouvert, setOuvert] = useState(false);
   const [saisie, setSaisie] = useState("");
   const [unite, setUnite] = useState<UniteDuree>("minutes");

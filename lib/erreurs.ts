@@ -3,10 +3,12 @@
  * djiguigne-backend/core/erreurs.py:MESSAGES_FR pour la source de vérité
  * côté backend -- les codes doivent rester synchronisés des deux côtés).
  *
- * Une seule locale est active pour l'instant (fr), mais la structure est
- * prête pour en ajouter d'autres : il suffit de renseigner LOCALE_ACTIVE
- * et/ou d'ajouter une clé dans MESSAGES ci-dessous.
+ * La locale courante est choisie dans lib/i18n/locale.ts. Les deux dictionnaires
+ * gardent les mêmes codes pour assurer un comportement cohérent en français
+ * et en anglais.
  */
+
+import { obtenirLocale } from "@/lib/i18n/locale";
 export type Locale = "fr" | "en";
 
 export const LOCALE_ACTIVE: Locale = "fr";
@@ -371,6 +373,177 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     PROFIL_FERMETURE_PARTIELLE: "Your content was deleted but the account itself could not be closed, please try again.",
     RELAIS_EXTERNE_INDISPONIBLE: "Opening external files is not available right now.",
     SIGNATURE_INDISPONIBLE: "Electronic signature is not available yet.",
+    AGENT_INTROUVABLE: "Agent not found.",
+    ARTICLE_SANS_PHOTOS_SUPP: "An article has no additional photos.",
+    ARTICLE_SANS_TITRE: "An article must have a title.",
+    AUCUN_COMPTE_AVEC_CET_EMAIL: "No Classinus account uses this email address.",
+    CIBLE_DU_SIGNALEMENT_MANQUANTE: "Specify the document or location concerned.",
+    COMPTE_NON_CREATEUR: "This account does not have creator status yet.",
+    COMMENTAIRE_VIDE: "The comment cannot be empty.",
+    COMMENTAIRE_INTROUVABLE: "Comment not found.",
+    COMMENTAIRE_NE_T_APPARTIENT_PAS: "This comment does not belong to you.",
+    PROFIL_PUBLIC_REQUIS_POUR_COMMENTER: "Make your profile public in profile settings to comment.",
+    CONTENU_LEGAL_INTROUVABLE: "Legal content not found.",
+    CETTE_PUBLICATION_NE_T_APPARTIENT_PAS: "This post does not belong to you.",
+    CET_AGENT_NE_T_APPARTIENT_PAS: "This agent does not belong to you.",
+    DONNE_AU_MOINS_UNE_DESCRIPTION_OU: "Provide at least a description or a title.",
+    FICHIER_TROP_LOURD_50_MO_MAX: "File is too large (50 MB maximum).",
+    ZIP_TROP_LOURD_200_MO_MAX: "Archive is too large (200 MB maximum).",
+    FORMAT_NON_SUPPORTE_ZIP: "Unsupported format (ZIP only).",
+    HISTOIRE_SANS_COUVERTURE: "A story must have a cover image.",
+    HISTOIRE_SANS_TITRE: "A story must have a title.",
+    IMPOSSIBLE_DE_CHARGER_LES_ABONNES_POUR: "Unable to load followers right now.",
+    IMPOSSIBLE_DE_CHARGER_LES_CATEGORIES_POUR: "Unable to load categories right now.",
+    IMPOSSIBLE_DE_CHARGER_LES_CREATEURS_POUR: "Unable to load creators right now.",
+    IMPOSSIBLE_DE_CHARGER_LES_MISES_A: "Unable to load updates right now.",
+    IMPOSSIBLE_DE_CHARGER_LES_PUBLICATIONS_POUR: "Unable to load posts right now.",
+    IMPOSSIBLE_DE_CHARGER_LE_FEED_POUR: "Unable to load the feed right now.",
+    IMPOSSIBLE_DE_PUBLIER_LA_MISE_A: "Unable to publish the update right now.",
+    IMPOSSIBLE_DE_PUBLIER_POUR_LE_MOMENT: "Unable to publish right now.",
+    IMPOSSIBLE_DE_RETIRER_CE_FOLLOW_POUR: "Unable to unfollow right now.",
+    IMPOSSIBLE_DE_SE_SUIVRE_SOI_MEME: "You cannot follow yourself.",
+    IMPOSSIBLE_DE_SUIVRE_CE_CREATEUR_POUR: "Unable to follow this creator right now.",
+    IMPOSSIBLE_DE_SUPPRIMER_CETTE_PUBLICATION_POUR: "Unable to delete this post right now.",
+    IMPOSSIBLE_DE_SUPPRIMER_CET_AGENT_POUR: "Unable to delete this agent right now.",
+    IMPOSSIBLE_DE_VERIFIER_CET_AGENT_POUR: "Unable to verify this agent right now.",
+    IMPOSSIBLE_D_EFFACER_LE_PROFIL_POUR: "Unable to delete the profile right now.",
+    IMPOSSIBLE_D_ENREGISTRER_LE_LIKE_POUR: "Unable to save the like right now.",
+    LA_MISE_A_JOUR_N_A: "The update could not be created due to a technical error.",
+    LA_NOTE_DOIT_ETRE_COMPRISE_ENTRE: "The rating must be between 1 and 5.",
+    LA_PUBLICATION_N_A_PAS_PU: "The post could not be created due to a technical error.",
+    LE_COMMENTAIRE_NE_PEUT_PAS_ETRE: "The comment cannot be empty.",
+    LE_CONTENU_A_ETE_SUPPRIME_MAIS: "The content was deleted, but the account could not be closed. Try again.",
+    LE_DELAI_D_INACTIVITE_DOIT_ETRE: "The inactivity period must be at least 1 day.",
+    LE_DELAI_MINIMUM_ENTRE_DEUX_RELANCES: "The minimum time between reminders must be at least 1 day.",
+    LE_NOM_DE_L_AGENT_EST: "The agent name is required.",
+    LE_TITRE_NE_PEUT_PAS_ETRE: "The title cannot be empty.",
+    PERSONA_PEDAGOGIQUE_INVALIDE: "Unknown teaching mode.",
+    PLAGE_JOURS_INVALIDE: "The requested date range is invalid.",
+    PLATEFORME_INCONNUE: "Unknown platform (expected Android or iOS).",
+    PUBLICATION_INTROUVABLE: "Post not found.",
+    REFLEXION_SANS_PHOTO: "A reflection does not contain a photo.",
+    REMPLIS_AU_MOINS_LA_POSTURE_GENERALE: "Fill in at least the general approach or global limits.",
+    RIEN_A_METTRE_A_JOUR_IMAGE: "Nothing to update (image_vitrine_url and description are missing).",
+    TYPE_DE_PUBLICATION_INVALIDE: "Invalid post type.",
+    TYPE_ELEMENT_INCONNU: "Unknown item type.",
+    VITRINE_ERREUR_TECHNIQUE: "Unable to update the showcase due to a technical error. Try again shortly.",
+    VITRINE_INDISPONIBLE: "Unable to update the showcase right now.",
+    RENDU_VIDEO_FORMAT_INVALIDE: "This video format does not exist.",
+    RENDU_VIDEO_DOCUMENT_INVALIDE: "This animation cannot be converted to video.",
+    RENDU_VIDEO_DOCUMENT_TROP_LOURD: "This animation is too large to convert to video.",
+    RENDU_VIDEO_DEJA_EN_COURS: "A video is already being created for you. Wait until it is ready.",
+    RENDU_VIDEO_OCCUPE: "Many videos are being created right now. Try again in a moment.",
+    RENDU_VIDEO_INTROUVABLE: "This video cannot be found or is no longer available.",
+    RENDU_VIDEO_PAS_PRETE: "This video is not ready yet.",
+    RENDU_VIDEO_ANIMATION_EN_ERREUR: "The animation contains an error, so the video cannot be created.",
+    RENDU_VIDEO_TROP_LONGUE: "This animation is too long to convert to video (2-minute maximum).",
+    RENDU_VIDEO_INDISPONIBLE: "Video creation is unavailable right now.",
+    RENDU_VIDEO_ECHEC: "Video creation failed. Try again.",
+    MATIERE_ET_SYSTEM_PROMPT_REQUIS: "The subject and content are required.",
+    CONTENU_MATIERE_INTROUVABLE: "Content not found.",
+    CODE_INVALIDE: "This code does not match any content.",
+    DEJA_RATTACHE_A_CE_CONTENU: "You have already unlocked this content.",
+    RATTACHEMENT_INTROUVABLE: "Link not found.",
+    DOCUMENT_ARCHIVE_INTROUVABLE: "This document was not found on Internet Archive.",
+    DOCUMENT_ARCHIVE_RESTREINT: "This document is available for digital lending and cannot be opened here. Use its Internet Archive page link.",
+    DOCUMENT_ARCHIVE_SANS_PDF: "This document has no PDF to open.",
+    DOCUMENT_ARCHIVE_TROP_GROS: "This PDF is too large to open here. Use its Internet Archive page link.",
+    ARCHIVE_INDISPONIBLE: "Internet Archive is not responding right now. Try again shortly.",
+    LIEN_RELAIS_INVALIDE: "This file link has expired or is invalid. Reopen the file from the message.",
+    LIEN_EXTERNE_NON_AUTORISE: "This address cannot be opened here.",
+    SITE_EXTERNE_INDISPONIBLE: "The file's website is not responding right now. Try again shortly.",
+    FICHIER_EXTERNE_RESTREINT: "This website denies access to the file.",
+    FICHIER_EXTERNE_INTROUVABLE: "This file no longer exists on its website.",
+    FICHIER_EXTERNE_TROP_GROS: "This file is too large to open here. Use the website link.",
+    TYPE_FICHIER_NON_AUTORISE: "This file type cannot be opened here.",
+    ELEMENT_CATALOGUE_PUBLIC_INTROUVABLE: "This item was not found in the public catalog.",
+    AGENT_NOM_DEJA_PROCHE: "An agent with a very similar name already exists (generated ID: {agent_id}). Choose a slightly different name.",
+    VITRINE_RIEN_A_METTRE_A_JOUR: "Nothing to update (image_vitrine_url and description are missing).",
+    AGENT_CREATION_CHAMPS_MANQUANTS: "Fill in at least the general approach or global limits.",
+    AGENT_CREE_MAIS_INDEXATION_ECHEC: "The agent was created, but “{nom}” could not be indexed. Try again from “My agents”.",
+    ROLE_DEJA_CHOISI: "Your role has already been selected and cannot be changed here.",
+    ROLE_INVALIDE: "Invalid role.",
+    ETABLISSEMENT_INTROUVABLE: "Institution not found.",
+    ENSEIGNANT_INTROUVABLE: "Teacher not found.",
+    ENSEIGNANT_ID_REQUIS_POUR_ETUDIANT: "Choose your teacher to continue.",
+    ETABLISSEMENT_ID_REQUIS_POUR_ENSEIGNANT: "Choose your institution to continue.",
+    ACTION_RESERVEE_A_CE_ROLE: "This action is not available for your role.",
+    ETABLISSEMENT_NOM_REQUIS: "Enter a name for your institution.",
+    ETABLISSEMENT_PROFIL_INTROUVABLE: "This account does not have an institution profile yet.",
+    SEUL_ETABLISSEMENT_PEUT_ACCEPTER: "Only the relevant institution can accept this request.",
+    SEUL_ETABLISSEMENT_PEUT_LISTER_RATTACHEMENTS: "Only the relevant institution can view this list.",
+    PUBLICATION_CONTENU_REQUIS: "Enter content to publish.",
+    SEUL_ETABLISSEMENT_PEUT_VALIDER: "Only the relevant institution can approve this post.",
+    RATTACHEMENT_ACCEPTE_REQUIS_POUR_PUBLIER: "You must be linked to and approved by this institution to publish on its behalf.",
+    AUCUNE_INVITATION_ACTIVE: "There is no active code yet. Generate one.",
+    CODE_MANQUANT: "Enter a code to continue.",
+    NOM_AFFICHE_MANQUANT: "Enter your name to continue.",
+    CODE_INVITATION_INVALIDE: "This invitation code is invalid.",
+    PAS_LE_DROIT_SUR_CET_AGENT: "You are not allowed to edit this agent.",
+    DESTINATAIRE_INTROUVABLE: "Recipient not found.",
+    MESSAGE_VIDE: "The message cannot be empty.",
+    ANNONCE_VIDE: "The announcement cannot be empty.",
+    NON_LIE_A_UN_CODE: "This item is not linked to any code, so it applies to you.",
+    PORTEE_INVALIDE: "Unknown recipient selection.",
+    MOTIF_REQUIS: "Specify the reason for the report.",
+    COORDONNEES_PLAIGNANT_REQUISES: "Your name and email are required.",
+    DECLARATION_SUR_L_HONNEUR_REQUISE: "The declaration of good faith is required.",
+    PAS_LE_DROIT_ADMIN: "Administrators only.",
+    ACTION_INVALIDE: "Invalid action.",
+    SIGNALEMENT_INTROUVABLE: "Report not found.",
+    SIGNALEMENT_DEJA_TRAITE: "This report has already been handled.",
+    DEMANDE_INTROUVABLE: "Request not found.",
+    DEMANDE_DEJA_TRAITEE: "This request has already been handled.",
+    SEUL_LE_CREATEUR_CONCERNE_PEUT_CONFIRMER: "Only the creator concerned can confirm this request.",
+    SEUL_LE_CREATEUR_CONCERNE_PEUT_REFUSER: "Only the creator concerned can decline this request.",
+    DEPLACEMENT_CREERAIT_UNE_BOUCLE: "This move is not possible (a folder cannot be moved into itself or one of its own subfolders).",
+    DOSSIER_DESTINATION_INTROUVABLE: "Destination folder not found.",
+    MINUTEUR_DUREE_INVALIDE: "This timer duration is invalid.",
+    MINUTEUR_INTROUVABLE: "Timer not found.",
+    MINUTEUR_DEJA_TERMINE: "This timer has already ended or been stopped.",
+    MINUTEUR_ECHEC: "Unable to update this timer right now.",
+    TYPE_DE_SIGNALEMENT_INVALIDE: "Invalid report type.",
+    ECHEC_DU_STOCKAGE_REESSAIE: "Loading failed. Try again.",
+    CE_MODELE_N_EST_PAS_DEBLOQUE_POUR: "This model is not enabled for your account.",
+    URL_MANQUANTE: "A URL is required.",
+    IMPOSSIBLE_D_AJOUTER_CE_LIEN_POUR: "Unable to add this link right now.",
+    ECHEC_DE_L_ENREGISTREMENT_DU_LIEN: "Failed to save the link.",
+    APPAREIL_ID_MANQUANT: "Device ID is required.",
+    ECHEC_SYNCHRONISATION_DOSSIERS: "Failed to sync designated folders.",
+    TOKEN_VIDE: "The push notification token is empty.",
+    ECHEC_ENREGISTREMENT_TOKEN: "Failed to save the push notification token.",
+    ECHEC_DESINSCRIPTION_TOKEN: "Failed to unregister the push notification token.",
+    ACTION_DEJA_PRISE_OU_INTROUVABLE: "This action has already been handled or could not be found.",
+    ACTION_INTROUVABLE: "Action not found.",
+    ECHEC_RAPPORT_RESULTAT: "Failed to submit the action result.",
+    TEXTE_VIDE: "Text cannot be empty.",
+    ECHEC_DE_L_ENREGISTREMENT_DE_LA_NOTE: "Failed to save the text note.",
+    CODE_INVALIDE_OU_INACTIF: "Invalid or inactive code.",
+    SKILL_INTROUVABLE: "Skill not found.",
+    LIEN_INCOMPLET: "The link is incomplete.",
+    TYPE_LIEN_INVALIDE: "Invalid link type.",
+    EMPLACEMENT_INTROUVABLE: "Linked item not found.",
+    CATEGORIE_INVALIDE: "Invalid category.",
+    FICHIER_MD_REQUIS: "A Markdown (.md) file is required.",
+    COMPORTEMENT_PUBLIC_INTROUVABLE: "Public skill not found.",
+    CONTENU_INTROUVABLE: "Content not found.",
+    DOSSIER_INTROUVABLE: "Folder not found.",
+    DOSSIER_PARENT_INTROUVABLE: "Parent folder not found.",
+    CE_DOSSIER_PARENT_NE_T_APPARTIENT_PAS: "You do not own this parent folder.",
+    CE_DOSSIER_NE_T_APPARTIENT_PAS: "You do not own this folder.",
+    NOM_DE_DOSSIER_MANQUANT: "Folder name is required.",
+    STATUT_INVALIDE: "Invalid folder status.",
+    CE_DOSSIER_EST_PRIVE_A_SON_CREATEUR: "This folder is private to its creator.",
+    SEUL_LE_CREATEUR_DU_DOSSIER_PEUT_EN_RETIRER_UN_FICHIER: "Only the folder's creator can remove a file from it.",
+    ECHEC_DU_TRANSFERT: "File transfer failed. Please try again.",
+    ECHEC_ENREGISTREMENT: "Failed to save the file.",
+    CHEMIN_INVALIDE_LISTE_JSON_ATTENDUE: "Invalid path. Expected a JSON list.",
+    ECHEC_LECTURE_PROGRESSION: "Failed to read progress.",
+    MODE_VERROUILLE_MINEUR: "This mode is locked for minor accounts.",
+    MODE_SOURCE_INVALIDE: "Invalid source mode.",
+    NOTION_PROGRAMME_REGLE_INVALIDE: "Invalid curriculum concept rule.",
+    TYPE_SIGNALEMENT_DESACTIVE: "This report type is no longer actionable.",
+    IMPOSSIBLE_D_ENREGISTRER_CE_SIGNALEMENT: "Unable to save this report.",
   },
 };
 
@@ -471,7 +644,7 @@ function estErreurTechnique(e: Error): boolean {
  * Les codes métier connus gardent la priorité. Les erreurs réseau et les
  * pannes HTTP génériques reçoivent une explication et une action possibles.
  */
-export function messageErreur(e: unknown, locale: Locale = LOCALE_ACTIVE): string {
+export function messageErreur(e: unknown, locale: Locale = obtenirLocale()): string {
   const messages = MESSAGES[locale];
 
   if (e instanceof ErreurApi) {
@@ -516,7 +689,7 @@ export function messageErreur(e: unknown, locale: Locale = LOCALE_ACTIVE): strin
  * Messages dédiés à l'ouverture audio : les API du navigateur renvoient souvent
  * des DOMException en anglais, dont le texte varie selon le système.
  */
-export function messageErreurVoix(e: unknown, locale: Locale = LOCALE_ACTIVE): string {
+export function messageErreurVoix(e: unknown, locale: Locale = obtenirLocale()): string {
   const objet = e && typeof e === "object" ? e as { name?: unknown; message?: unknown } : {};
   const nom = typeof objet.name === "string" ? objet.name.toLowerCase() : "";
   const message = typeof objet.message === "string"
@@ -562,7 +735,7 @@ export type ContexteErreurAuthentification = "connexion" | "inscription" | "auto
 export function messageErreurAuthentification(
   e: unknown,
   contexte: ContexteErreurAuthentification,
-  locale: Locale = LOCALE_ACTIVE
+  locale: Locale = obtenirLocale()
 ): string {
   const objet = e && typeof e === "object" ? e as { message?: unknown; name?: unknown; code?: unknown } : {};
   const brut = typeof objet.message === "string" ? objet.message : typeof e === "string" ? e : "";
@@ -660,7 +833,7 @@ export type ActionErreurFichierNatif = "lister" | "ouvrir" | "lire" | "recherche
 export function messageErreurFichierNatif(
   e: unknown,
   action: ActionErreurFichierNatif,
-  locale: Locale = LOCALE_ACTIVE
+  locale: Locale = obtenirLocale()
 ): string {
   const objet = e && typeof e === "object" ? e as { message?: unknown; code?: unknown; name?: unknown } : {};
   const brut = typeof objet.message === "string" ? objet.message : typeof e === "string" ? e : "";

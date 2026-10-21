@@ -5,6 +5,7 @@ import { Clapperboard } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
 import { Skeleton } from "@/components/Skeleton";
 import { useTheme } from "@/lib/useTheme";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { useProcheEcran } from "@/lib/useProcheEcran";
 import type { ThemeIframe } from "@/lib/paletteIframe";
 import { textesAnimation } from "@/lib/textesAnimation";
@@ -67,7 +68,8 @@ function SqueletteAnimation({ surMontage }: { surMontage: (el: HTMLDivElement | 
 
 export function AnimationLecteur({ code }: { code: string }) {
   const { resolu } = useTheme();
-  const textes = textesAnimation();
+  const locale = useLocale();
+  const textes = textesAnimation(locale);
   const [codeStable, setCodeStable] = useState<string | null>(null);
   const [zoneSqueletteEl, setZoneSqueletteEl] = useState<HTMLDivElement | null>(null);
   const procheEcran = useProcheEcran(zoneSqueletteEl);

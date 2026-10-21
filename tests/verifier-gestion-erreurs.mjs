@@ -12,8 +12,14 @@ const compile = ts.transpileModule(source, {
     module: ts.ModuleKind.ESNext,
   },
 });
+// La langue des erreurs vient de lib/i18n/locale.ts : dans ce test sans navigateur, c'est le français.
+const sortieSansLocale = compile.outputText.replace(
+  /import \{ obtenirLocale \} from "@\/lib\/i18n\/locale";/,
+  'const obtenirLocale = () => "fr";'
+);
+assert.ok(!sortieSansLocale.includes("@/lib/i18n/locale"), "l'import de la locale doit être remplacé dans le test");
 const moduleErreur = await import(
-  `data:text/javascript;base64,${Buffer.from(compile.outputText).toString("base64")}`
+  `data:text/javascript;base64,${Buffer.from(sortieSansLocale).toString("base64")}`
 );
 const {
   ErreurApi,
@@ -27,7 +33,7 @@ const {
 } = moduleErreur;
 const sourceReinitialisationUtilitaire = await readFile(new URL("../lib/reinitialisationMotDePasse.ts", import.meta.url), "utf8");
 assert.match(sourceReinitialisationUtilitaire, /catch \(e\)[\s\S]*messageErreurAuthentification\(e, "reinitialisation"\)/);
-assert.match(sourceReinitialisationUtilitaire, /estErreurReseau\(message\)[\s\S]*MESSAGES\[LOCALE_ACTIVE\]\.ERREUR_RESEAU/);
+assert.match(sourceReinitialisationUtilitaire, /estErreurReseau\(message\)[\s\S]*MESSAGES\[obtenirLocale\(\)\]\.ERREUR_RESEAU/);
 
 
 const cas = [

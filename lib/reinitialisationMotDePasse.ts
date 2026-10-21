@@ -11,7 +11,8 @@
 // URL Configuration, Redirect URLs), sinon Supabase refuse d'envoyer le lien.
 import type { AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { LOCALE_ACTIVE, MESSAGES, estErreurReseau, messageErreurAuthentification } from "@/lib/erreurs";
+import { MESSAGES, estErreurReseau, messageErreurAuthentification } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 export const ROUTE_MOT_DE_PASSE_OUBLIE = "/mot-de-passe-oublie";
 export const ROUTE_REINITIALISATION = "/reinitialiser-mot-de-passe";
@@ -47,7 +48,7 @@ function adresseDuSite(): string | null {
 export function traduireErreurAuth(erreur: AuthError | { code?: string; message?: string }): string {
   const message = erreur.message?.toLowerCase() ?? "";
   if (estErreurReseau(message)) {
-    return MESSAGES[LOCALE_ACTIVE].ERREUR_RESEAU;
+    return MESSAGES[obtenirLocale()].ERREUR_RESEAU;
   }
   switch (erreur.code) {
     case "over_email_send_rate_limit":

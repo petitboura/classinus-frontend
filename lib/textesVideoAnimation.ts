@@ -1,9 +1,9 @@
 // Textes du bouton "télécharger en vidéo" du bloc animation (07/10/2026,
-// demande Bourama). Même modèle que lib/textesAnimation.ts : une seule langue
-// active pour l'instant (fr), en ajouter une ne demande qu'une entrée dans
-// TEXTES. Séparés de textesAnimation.ts car ceux-là sont aussi injectés dans
-// l'iframe du lecteur, et ceux d'ici n'ont rien à y faire.
-import { LOCALE_ACTIVE, type Locale } from "@/lib/erreurs";
+// demande Bourama). Séparés de textesAnimation.ts car les textes de ce
+// module ne sont pas injectés dans l'iframe du lecteur.
+import type { Locale } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
+import type { Elargir } from "@/lib/i18n/types";
 
 const TEXTES_FR = {
   telecharger: "Télécharger",
@@ -18,10 +18,23 @@ const TEXTES_FR = {
   nomFichier: (format: string) => `animation-${format.replace(":", "x")}.mp4`,
 } as const;
 
-export type TextesVideoAnimation = typeof TEXTES_FR;
+export type TextesVideoAnimation = Elargir<typeof TEXTES_FR>;
 
-const TEXTES: Partial<Record<Locale, TextesVideoAnimation>> = { fr: TEXTES_FR };
+const TEXTES_EN: Elargir<typeof TEXTES_FR> = {
+  telecharger: "Download",
+  horizontal: "Video 16:9 (landscape)",
+  vertical: "Video 9:16 (portrait)",
+  envoi: "Uploading",
+  creation: (pourcent: number) => `Creating ${pourcent}%`,
+  annuler: "Cancel video creation",
+  telechargement: "Downloading",
+  ok: "Video downloaded",
+  echec: "Video failed",
+  nomFichier: (format: string) => `animation-${format.replace(":", "x")}.mp4`,
+};
 
-export function textesVideoAnimation(locale: Locale = LOCALE_ACTIVE): TextesVideoAnimation {
+const TEXTES: Record<Locale, Elargir<typeof TEXTES_FR>> = { fr: TEXTES_FR, en: TEXTES_EN };
+
+export function textesVideoAnimation(locale: Locale = obtenirLocale()): TextesVideoAnimation {
   return TEXTES[locale] ?? TEXTES_FR;
 }

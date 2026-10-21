@@ -1,11 +1,11 @@
 // Textes affichés par les minuteurs du chat (20/09/2026, demande Bourama).
 //
-// Regroupés ici, par langue, sur le même modèle que lib/erreurs.ts : une
-// seule locale active pour l'instant (fr), mais ajouter une langue ne
-// demande que de renseigner une entrée dans TEXTES ci-dessous, sans
-// toucher aux composants. Aucun texte affiché n'est écrit en dur dans
-// components/chat/minuteurs/.
-import { LOCALE_ACTIVE, type Locale } from "@/lib/erreurs";
+// Les dictionnaires FR/EN suivent le même modèle que lib/erreurs.ts, sans
+// avoir à modifier les composants qui utilisent ces libellés. Aucun texte
+// affiché n'est écrit en dur dans components/chat/minuteurs/.
+import type { Locale } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
+import type { Elargir } from "@/lib/i18n/types";
 
 const TEXTES_FR = {
   titreParDefaut: "Minuteur",
@@ -36,8 +36,37 @@ const TEXTES_FR = {
   minutesCourt: (n: number) => `${n} min`,
 } as const;
 
-const TEXTES: Partial<Record<Locale, typeof TEXTES_FR>> = { fr: TEXTES_FR };
+const TEXTES_EN: Elargir<typeof TEXTES_FR> = {
+  titreParDefaut: "Timer",
+  arreter: "Stop",
+  reduire: "Minimize",
+  agrandir: "Expand",
+  masquer: "Hide",
+  afficher: "Show",
+  ajouterCinq: "5 min",
+  ajouterCinqAria: "Add 5 minutes",
+  retirerCinqAria: "Remove 5 minutes",
+  voirSuite: "View planned follow-up",
+  masquerSuite: "Hide planned follow-up",
+  aucuneSuite: "Nothing specific is planned; Classinus will decide based on the conversation.",
+  termine: "Completed",
+  arrete: "Stopped",
+  boutonMinuteurs: "Timers",
+  lancerTitre: "Start a timer",
+  autreDuree: "Custom duration",
+  uniteAria: "Duration unit",
+  unites: { secondes: "seconds", minutes: "minutes", heures: "hours" },
+  suiteLabel: "What should Classinus do when the timer ends? (optional)",
+  suitePlaceholder: "For example: ask me 5 questions about chapter 3",
+  lancer: "Start",
+  minuteursMasques: "Hidden timers",
+  infoCourt: "Start a timer that does not block anything. Classinus can also start one on its own and take action when it ends.",
+  infoAria: "More information about timers",
+  minutesCourt: (n: number) => `${n} min`,
+};
 
-export function textesMinuteurs(locale: Locale = LOCALE_ACTIVE): typeof TEXTES_FR {
+const TEXTES: Record<Locale, Elargir<typeof TEXTES_FR>> = { fr: TEXTES_FR, en: TEXTES_EN };
+
+export function textesMinuteurs(locale: Locale = obtenirLocale()): Elargir<typeof TEXTES_FR> {
   return TEXTES[locale] ?? TEXTES_FR;
 }

@@ -2,6 +2,7 @@
 
 import { AlertCircle, Check, Download, Loader2 } from "lucide-react";
 import { useEtatTelechargement, useSuiviParBouton, type EtatTelechargement } from "@/lib/etatTelechargements";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { textesTelechargement } from "@/lib/textesTelechargement";
 
 // Pièces partagées du retour visuel d'un téléchargement (10/10/2026, demande
@@ -45,7 +46,8 @@ export function IconeTelechargement({
 // "Échec, réessayer".
 export function LibelleTelechargement({ href, defaut }: { href: string | null | undefined; defaut: string }) {
   const etat = useEtatTelechargement(href);
-  const t = textesTelechargement();
+  const locale = useLocale();
+  const t = textesTelechargement(locale);
   if (!etat) return <>{defaut}</>;
   if (etat.statut === "encours") {
     return <>{etat.pourcentage === null ? t.preparation : t.pourcentage(etat.pourcentage)}</>;

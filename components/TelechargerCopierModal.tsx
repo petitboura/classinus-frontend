@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { X, Download, Loader2 } from "lucide-react";
 import { CaseACocher } from "./CaseACocher";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { messageErreur } from "@/lib/erreurs";
 import { useEtatTelechargement, useSuiviParBouton } from "@/lib/etatTelechargements";
 import { textesTelechargement } from "@/lib/textesTelechargement";
@@ -49,7 +50,8 @@ export function TelechargerCopierModal({
   const copieFaite = useRef(false);
   const etatTelechargement = useEtatTelechargement(hrefTelechargement);
   useSuiviParBouton(hrefTelechargement);
-  const t = textesTelechargement();
+  const locale = useLocale();
+  const t = textesTelechargement(locale);
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onFermer);
 

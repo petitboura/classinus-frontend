@@ -11,7 +11,8 @@ import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { afficherTexteDepuisAgent, mettreAJourJournalDepuisAgent, pousserJournalDepuisAgent } from "./contexteCanalEnDirect";
 import { obtenirPontEditeur } from "./pontEditeurAgent";
 import type { ModeEcritureEditeur } from "./operationsEditeurAgent";
-import { LOCALE_ACTIVE, MESSAGES, messageErreur as messageErreurGlobale } from "./erreurs";
+import { MESSAGES, messageErreur as messageErreurGlobale } from "./erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 type Repondre = (id: string, resultat: unknown) => void;
 
@@ -25,7 +26,7 @@ function decrireLignes(debut: number, fin: number): string {
 
 function messageErreur(e: unknown, parDefaut: string): string {
   const message = messageErreurGlobale(e);
-  return message === MESSAGES[LOCALE_ACTIVE].ERREUR_INCONNUE ? parDefaut : message;
+  return message === MESSAGES[obtenirLocale()].ERREUR_INCONNUE ? parDefaut : message;
 }
 
 export async function traiterDemandeEditeur(id: string, operation: unknown, repondre: Repondre) {
