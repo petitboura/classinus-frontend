@@ -29,6 +29,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test interface localization
         run: npm run test:i18n
+      - name: Audit remaining interface strings
+        run: npm run audit:i18n
       - name: Test incoming app links remain intact
         run: npm run test:liens-entrants
       - name: Type-check the application
