@@ -22,28 +22,39 @@ export function RaccourcisChat({ variante, visible = true }: Props) {
       <div className="relative mt-3 hidden w-full min-w-0 md:block">
         <nav
           aria-label="Sous-sections"
-          className="flex w-full min-w-0 gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="relative w-full min-w-0 overflow-hidden whitespace-nowrap"
           style={{
             maskImage: "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
           }}
         >
-          {RACCOURCIS_CHAT_BUREAU.map(({ id, label, href, Icone }) => (
-            <Link
-              key={id}
-              href={href}
-              onClick={(e) => {
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !estCleSection(href)) return;
-                e.preventDefault();
-                ouvrir(href);
-              }}
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
-            >
-              <Icone size={14} aria-hidden className="flex-shrink-0" />
-              {label}
-            </Link>
-          ))}
+          <div className="flex w-max gap-1.5 py-1 [animation:classinus-outils-defilement_48s_linear_infinite] hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]">
+            {[...RACCOURCIS_CHAT_BUREAU, ...RACCOURCIS_CHAT_BUREAU].map(({ id, label, href, Icone }, index) => (
+              <Link
+                key={`${id}-ticker-${index}`}
+                href={href}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !estCleSection(href)) return;
+                  e.preventDefault();
+                  ouvrir(href);
+                }}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+              >
+                <Icone size={14} aria-hidden className="flex-shrink-0" />
+                {label}
+              </Link>
+            ))}
+          </div>
         </nav>
+        <style jsx>{`
+          @keyframes classinus-outils-defilement {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            div[class*="classinus-outils-defilement"] { animation: none; }
+          }
+        `}</style>
       </div>
     );
   }
