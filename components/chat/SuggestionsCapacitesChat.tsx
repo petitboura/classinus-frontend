@@ -102,7 +102,7 @@ export function SuggestionsCapacitesChat() {
 
       <div className="relative hidden w-full overflow-hidden md:block">
         <div
-          className="flex w-max gap-2 py-1 [animation:classinus-suggestions-defilement_42s_linear_infinite_reverse] hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]"
+          className="flex w-max gap-2 py-1 [animation:classinus-suggestions-defilement_42s_linear_infinite] hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]"
           style={{
             maskImage: "linear-gradient(to right, transparent, black 4%, black 96%, transparent)",
             WebkitMaskImage: "linear-gradient(to right, transparent, black 4%, black 96%, transparent)",
