@@ -2,6 +2,7 @@
 
 import { Check, Timer } from "lucide-react";
 import { textesMinuteurs } from "@/lib/textesMinuteurs";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { formaterTemps, secondesRestantes, type Minuteur } from "@/lib/minuteurs";
 
 // Version réduite d'un minuteur (20/09/2026, demande Bourama) : une petite
@@ -16,7 +17,8 @@ export function PastilleMinuteur({
   maintenantMs: number;
   onAgrandir: () => void;
 }) {
-  const t = textesMinuteurs();
+  const locale = useLocale();
+  const t = textesMinuteurs(locale);
   const termine = minuteur.statut === "termine";
   const arrete = minuteur.statut === "arrete";
   const temps = formaterTemps(minuteur.statut === "en_cours" ? secondesRestantes(minuteur, maintenantMs) : minuteur.secondes_restantes);

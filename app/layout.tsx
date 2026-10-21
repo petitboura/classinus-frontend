@@ -17,6 +17,7 @@ import { MiseAJourOta } from "@/components/MiseAJourOta";
 import { ReveilBackend } from "@/components/ReveilBackend";
 import { SplashOuverture } from "@/components/SplashOuverture";
 import { SplashPret } from "@/components/SplashPret";
+import { InternationalisationGlobale } from "@/components/InternationalisationGlobale";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
@@ -244,6 +245,7 @@ export default function RacineLayout({
         <IndicateurTelechargements />
         <VisionneurGlobalRacine />
         <SplashPret />
+        <InternationalisationGlobale />
       </body>
     </html>
   );

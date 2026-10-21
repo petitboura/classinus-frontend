@@ -1,15 +1,9 @@
-// 28/09/2026, demande Bourama, onglet "Configuration" de Bureau.
-// Première vraie fondation de traduction dans Classinus : aujourd'hui,
-// tout le texte affiché ailleurs dans l'app est écrit en dur en français
-// directement dans les composants. Portée volontairement limitée aux
-// textes de ce nouvel onglet, le reste de l'application n'est pas touché.
-//
-// Principe : chaque texte a un identifiant stable (IdTexteConfiguration),
-// jamais la chaîne française elle même, appelé depuis les composants via
-// texteConfiguration(id). Une seule langue existe aujourd'hui (fr).
-// Ajouter une langue plus tard = ajouter un objet à côté de FR ci-dessous
-// (même forme, mêmes clés) et faire choisir la langue à
-// texteConfiguration(), sans changer un seul composant qui l'appelle.
+import { obtenirLocale } from "./locale";
+
+// Textes de l'onglet « Configuration » du Bureau, regroupés sous des
+// identifiants stables. Les clés de FR et EN restent alignées pour permettre
+// le changement de langue sans modifier les composants qui consomment ces
+// libellés. La préférence globale est définie dans lib/i18n/locale.ts.
 
 const FR = {
   "onglet.procedure": "Procédure",
@@ -85,10 +79,84 @@ const FR = {
   "ariaCategorie": "Catégorie de configuration",
 } as const;
 
+const EN: { [K in keyof typeof FR]: string } = {
+  "onglet.procedure": "Procedure",
+  "onglet.regle": "Rule",
+  "onglet.comportement": "Behavior",
+  "onglet.style": "Style",
+  "bouton.nouveau.procedure": "New procedure",
+  "bouton.nouveau.regle": "New rule",
+  "bouton.nouveau.comportement": "New behavior",
+  "bouton.nouveau.style": "New style",
+  "vide.procedure": "No procedures yet.",
+  "vide.regle": "No rules yet.",
+  "vide.comportement": "No behaviors yet.",
+  "vide.style": "No styles yet.",
+  "champ.quandUtiliser.libelle": "When to use it (optional)",
+  "champ.quandUtiliser.placeholder": "E.g. when the student asks for a worked exercise",
+  "champ.nom.auto": "Name generated automatically",
+  "champ.nom.placeholder": "E.g. Solve an exercise",
+  "champ.nom.caseAuto": "Auto",
+  "titre.creation.procedure": "New procedure",
+  "titre.creation.regle": "New rule",
+  "titre.creation.comportement": "New behavior",
+  "titre.creation.style": "New style",
+  "titre.edition.procedure": "Edit this procedure",
+  "titre.edition.regle": "Edit this rule",
+  "titre.edition.comportement": "Edit this behavior",
+  "titre.edition.style": "Edit this style",
+  "procedure.etape.placeholder": "Describe the step",
+  "procedure.ajouterEtape": "Add a step",
+  "procedure.etape.un": "step",
+  "procedure.etape.plusieurs": "steps",
+  "procedure.autres.un": "other step",
+  "procedure.autres.plusieurs": "other steps",
+  "procedure.monter": "Move this step up",
+  "procedure.descendre": "Move this step down",
+  "procedure.retirer": "Remove this step",
+  "regle.ajout.placeholder": "E.g. always answer in English",
+  "regle.ajout.bouton": "Add",
+  "comportement.cas.libelle": "In this situation",
+  "comportement.cas.placeholder": "E.g. the student makes the same mistake several times",
+  "comportement.reaction.libelle": "Behave this way",
+  "comportement.reaction.placeholder": "E.g. stay patient, encourage the student, and explain it another way",
+  "style.libelle": "Tone to reproduce",
+  "style.placeholder": "Paste a writing sample or describe the tone you want. E.g. short sentences, warm tone, no jargon",
+  "editeur.onglet.contenu": "Content",
+  "editeur.onglet.codes": "Codes",
+  "editeur.ariaOnglets": "Item view",
+  "action.fermer": "Close",
+  "action.supprimer": "Delete",
+  "action.creer": "Create",
+  "action.enregistrer": "Save",
+  "action.enregistrement": "Saving…",
+  "action.ia": "Use with AI",
+  "action.activer": "Enable",
+  "action.desactiver": "Disable (will no longer be suggested to the AI)",
+  "action.ouvrir": "Open and edit",
+  "menu.aria": "Actions for this item",
+  "action.lierCode": "Link to a code",
+  "action.destinataire": "Recipient",
+  "destinataire.titre": "Who uses this item?",
+  "destinataire.deux": "Me and recipients",
+  "destinataire.deuxDetail": "It applies to you and to people who receive the code.",
+  "destinataire.destinataires": "Recipients only",
+  "destinataire.destinatairesDetail": "It does not apply to you, only to people who receive the code.",
+  "destinataire.badge": "Recipients only",
+  "action.partager": "Share",
+  "action.telecharger": "Download",
+  "action.publier": "Publish",
+  "confirm.supprimer": "Delete this item? This action is permanent.",
+  "retour.publie": "Published in the public catalog",
+  "retour.publication": "Publishing…",
+  "retour.nomFichierDefaut": "configuration",
+  "ariaCategorie": "Configuration category",
+} as const;
+
 export type IdTexteConfiguration = keyof typeof FR;
 
 export function texteConfiguration(id: IdTexteConfiguration): string {
-  return FR[id];
+  return (obtenirLocale() === "en" ? EN[id] : FR[id]);
 }
 
 // Pluriel géré ici pour que les composants n'aient jamais à décider du
