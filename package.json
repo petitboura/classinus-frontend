@@ -31,7 +31,8 @@
     "test:traits-crayon": "node tests/verifier-traits-crayon.mjs",
     "test:lecteur-youtube": "node tests/verifier-lecteur-youtube.mjs",
     "test:liens-entrants": "node tests/verifier-liens-entrants.mjs",
-    "postinstall": "node scripts/appliquer-correctif-lector.mjs"
+    "postinstall": "node scripts/appliquer-correctif-lector.mjs",
+    "test:i18n": "node tests/verifier-i18n.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "3.7.1",
