@@ -155,17 +155,16 @@ export function EditeurVideoContextuel({
     setZone(initiale);
   }
 
-  function bougerZone(e: React.PointerEvent<HTMLDivElement>) {
+  function bougerZone(e: PointerEvent<HTMLDivElement>) {
     if (!selectionnerZone || !origineRef.current) return;
     const point = coordonnees(e.clientX, e.clientY);
     if (!point) return;
-    setDeplacement(point);
     const suivante = decrireZone(origineRef.current, point);
     zoneRef.current = suivante;
     setZone(suivante);
   }
 
-  function terminerZone(e: React.PointerEvent<HTMLDivElement>) {
+  function terminerZone(e: PointerEvent<HTMLDivElement>) {
     if (!selectionnerZone || !origineRef.current) return;
     const point = coordonnees(e.clientX, e.clientY);
     if (point) {
@@ -431,14 +430,16 @@ export function EditeurVideoContextuel({
               <span>Sélectionne un passage ou une zone pour afficher l’action.</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={envoyer}
-            disabled={!peutEnvoyer}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Demander à Clovis
-          </button>
+          {selectionFaite && (
+            <button
+              type="button"
+              onClick={envoyer}
+              disabled={!peutEnvoyer}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Demander à Clovis
+            </button>
+          )}
         </footer>
       </div>
     </div>
