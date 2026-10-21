@@ -60,6 +60,7 @@ export function EditeurVideoContextuel({
   const [intervalleActif, setIntervalleActif] = useState(false);
   const [selectionnerZone, setSelectionnerZone] = useState(false);
   const [zone, setZone] = useState<ZoneSelectionVideo | null>(null);
+  const [cadreAffiche, setCadreAffiche] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const lecteurRef = useRef<HTMLVideoElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const origineRef = useRef<Point | null>(null);
@@ -106,6 +107,48 @@ export function EditeurVideoContextuel({
   }, [open, fichier, conversationId, retry, source]);
 
   useEffect(() => {
+    if (!open) {
+      setCadreAffiche(null);
+      return;
+    }
+    const mettreAJourCadre = () => {
+      const surface = surfaceRef.current;
+      const video = lecteurRef.current;
+      if (!surface || !video || video.videoWidth <= 0 || video.videoHeight <= 0) {
+        setCadreAffiche(null);
+        return;
+      }
+      const surfaceRect = surface.getBoundingClientRect();
+      const videoRect = video.getBoundingClientRect();
+      const ratio = video.videoWidth / video.videoHeight;
+      // object-fit: contain peut laisser des bandes noires dans la boîte HTML
+      // (notamment quand max-height contraint une vidéo 16:9). La sélection doit
+      // rester alignée sur les pixels vidéo réellement visibles, pas ces bandes.
+      const largeur = Math.min(videoRect.width, videoRect.height * ratio);
+      const hauteur = Math.min(videoRect.height, videoRect.width / ratio);
+      const gauche = videoRect.left + (videoRect.width - largeur) / 2;
+      const haut = videoRect.top + (videoRect.height - hauteur) / 2;
+      setCadreAffiche({
+        left: ((gauche - surfaceRect.left) / Math.max(surfaceRect.width, 1)) * 100,
+        top: ((haut - surfaceRect.top) / Math.max(surfaceRect.height, 1)) * 100,
+        width: (largeur / Math.max(surfaceRect.width, 1)) * 100,
+        height: (hauteur / Math.max(surfaceRect.height, 1)) * 100,
+      });
+    };
+    const surface = surfaceRef.current;
+    const video = lecteurRef.current;
+    const observateur = typeof ResizeObserver !== "undefined" ? new ResizeObserver(mettreAJourCadre) : null;
+    if (surface) observateur?.observe(surface);
+    if (video) observateur?.observe(video);
+    window.addEventListener("resize", mettreAJourCadre);
+    requestAnimationFrame(mettreAJourCadre);
+    return () => {
+      observateur?.disconnect();
+      window.removeEventListener("resize", mettreAJourCadre);
+    };
+  }, [open, urlLecture]);
+
+  useEffect(() => {
     if (open) setPrompt(initialPrompt);
   }, [open, initialPrompt, fichier]);
 
@@ -123,13 +166,38 @@ export function EditeurVideoContextuel({
       (!intervalleActif || intervalleValide)
   );
 
-  function coordonnees(clientX: number, clientY: number): Point | null {
-    const surface = surfaceRef.current;
-    if (!surface) return null;
-    const rect = surface.getBoundingClientRect();
+  function cadreVideoClient(): { left: number; top: number; width: number; height: number } | null {
+    const video = lecteurRef.current;
+    if (!video || video.videoWidth <= 0 || video.videoHeight <= 0) return null;
+    const rect = video.getBoundingClientRect();
+    const ratio = video.videoWidth / video.videoHeight;
+    const width = Math.min(rect.width, rect.height * ratio);
+    const height = Math.min(rect.height, rect.width / ratio);
     return {
-      x: borner((clientX - rect.left) / Math.max(rect.width, 1)),
-      y: borner((clientY - rect.top) / Math.max(rect.height, 1)),
+      left: rect.left + (rect.width - width) / 2,
+      top: rect.top + (rect.height - height) / 2,
+      width,
+      height,
+    };
+  }
+
+  function dansCadreVideo(clientX: number, clientY: number): boolean {
+    const cadre = cadreVideoClient();
+    return Boolean(
+      cadre &&
+      clientX >= cadre.left &&
+      clientX <= cadre.left + cadre.width &&
+      clientY >= cadre.top &&
+      clientY <= cadre.top + cadre.height
+    );
+  }
+
+  function coordonnees(clientX: number, clientY: number): Point | null {
+    const cadre = cadreVideoClient();
+    if (!cadre) return null;
+    return {
+      x: borner((clientX - cadre.left) / Math.max(cadre.width, 1)),
+      y: borner((clientY - cadre.top) / Math.max(cadre.height, 1)),
     };
   }
 
@@ -146,6 +214,7 @@ export function EditeurVideoContextuel({
 
   function demarrerZone(e: PointerEvent<HTMLDivElement>) {
     if (!selectionnerZone) return;
+    if (!dansCadreVideo(e.clientX, e.clientY)) return;
     const point = coordonnees(e.clientX, e.clientY);
     if (!point) return;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -200,13 +269,18 @@ export function EditeurVideoContextuel({
     setIntervalleActif(false);
   }
 
-  const zoneAffichee = zone;
-  const apercuZone = zoneAffichee && {
-    left: `${zoneAffichee.x * 100}%`,
-    top: `${zoneAffichee.y * 100}%`,
-    width: `${zoneAffichee.largeur * 100}%`,
-    height: `${zoneAffichee.hauteur * 100}%`,
-  };
+  const apercuZone = zone && cadreAffiche ? {
+    left: `${cadreAffiche.left + zone.x * cadreAffiche.width}%`,
+    top: `${cadreAffiche.top + zone.y * cadreAffiche.height}%`,
+    width: `${zone.largeur * cadreAffiche.width}%`,
+    height: `${zone.hauteur * cadreAffiche.height}%`,
+  } : null;
+  const styleCadreAffiche = cadreAffiche ? {
+    left: `${cadreAffiche.left}%`,
+    top: `${cadreAffiche.top}%`,
+    width: `${cadreAffiche.width}%`,
+    height: `${cadreAffiche.height}%`,
+  } : undefined;
 
   return (
     <div
@@ -315,8 +389,11 @@ export function EditeurVideoContextuel({
                   aria-label="Zone sélectionnée"
                 />
               )}
-              {selectionnerZone && (
-                <div className="pointer-events-none absolute inset-0 border border-dashed border-white/45 bg-transparent" />
+              {selectionnerZone && styleCadreAffiche && (
+                <div
+                  className="pointer-events-none absolute border border-dashed border-white/45 bg-transparent"
+                  style={styleCadreAffiche}
+                />
               )}
             </div>
             {selectionnerZone && (
