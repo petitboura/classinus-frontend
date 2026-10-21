@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Check, Clock3, Crop, LoaderCircle, RotateCcw, X } from "lucide-react";
 import { uploaderVideoEspace } from "@/lib/api";
 import type { ContexteVideoMontage, SourceVideoEspace, ZoneSelectionVideo } from "@/lib/videoMontage";
@@ -60,7 +60,6 @@ export function EditeurVideoContextuel({
   const [intervalleActif, setIntervalleActif] = useState(false);
   const [selectionnerZone, setSelectionnerZone] = useState(false);
   const [zone, setZone] = useState<ZoneSelectionVideo | null>(null);
-  const [deplacement, setDeplacement] = useState<Point | null>(null);
   const lecteurRef = useRef<HTMLVideoElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const origineRef = useRef<Point | null>(null);
@@ -145,13 +144,12 @@ export function EditeurVideoContextuel({
     };
   }
 
-  function demarrerZone(e: React.PointerEvent<HTMLDivElement>) {
+  function demarrerZone(e: PointerEvent<HTMLDivElement>) {
     if (!selectionnerZone) return;
     const point = coordonnees(e.clientX, e.clientY);
     if (!point) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     origineRef.current = point;
-    setDeplacement(point);
     const initiale = { x: point.x, y: point.y, largeur: 0.005, hauteur: 0.005 };
     zoneRef.current = initiale;
     setZone(initiale);
@@ -181,7 +179,6 @@ export function EditeurVideoContextuel({
       }
     }
     origineRef.current = null;
-    setDeplacement(null);
     setSelectionnerZone(false);
   }
 
