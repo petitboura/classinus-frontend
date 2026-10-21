@@ -4,6 +4,7 @@ package com.classinus.app.notifications
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -50,7 +51,11 @@ object NotificationsNatives {
         val builder = NotificationCompat.Builder(context, canal)
             .setContentTitle(titre)
             .setContentText(corps)
-            .setSmallIcon(com.classinus.app.R.drawable.ic_clovis_notification)
+            // Petite icone (barre du haut) : silhouette blanche de la plume,
+            // seule forme acceptee par Android a cet endroit. Grande icone
+            // (a cote du texte) : le logo en couleurs, sur sa tuile sombre.
+            .setSmallIcon(com.classinus.app.R.drawable.ic_notification_plume)
+            .setLargeIcon(BitmapFactory.decodeResource(context.resources, com.classinus.app.R.drawable.ic_notification_grande))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
 
