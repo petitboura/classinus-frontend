@@ -156,7 +156,7 @@ export function EditeurVideoContextuel({
 
   if (!open || !fichier) return null;
 
-  const selectionFaite = intervalleActif || zone !== null;
+  const selectionFaite = intervalleActif || (zone !== null && origineRef.current === null);
   const intervalleValide = intervalleActif && fin > debut;
   const peutEnvoyer = Boolean(
     source &&
