@@ -5,6 +5,7 @@ import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { enregistrerReponseQCM } from "@/lib/api";
 import { TexteMath } from "./TexteMath";
+import { LOCALE_ACTIVE, MESSAGES } from "@/lib/erreurs";
 
 // Rend un bloc ```qcm du markdown -- même famille que ```chart
 // (GraphiqueDonnees.tsx), ```carte (CarteMessage.tsx) et ```geometrie
@@ -87,7 +88,7 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
         setErreur(null);
       } catch (e) {
         console.warn("Contenu de QCM invalide dans Classinus :", e);
-        setErreur("Ce QCM n’a pas pu être affiché car son contenu est incomplet ou invalide. Demande à Classinus de le régénérer.");
+        setErreur(MESSAGES[LOCALE_ACTIVE].AFFICHAGE_QCM_INVALIDE);
       }
     }, 500);
     return () => clearTimeout(delai);

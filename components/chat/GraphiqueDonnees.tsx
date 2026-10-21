@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import { Download, Check } from "lucide-react";
 import { telechargerImage } from "@/lib/telechargerImageGraphique";
+import { LOCALE_ACTIVE, MESSAGES } from "@/lib/erreurs";
 
 // Rend un bloc ```chart du markdown -- convention documentée dans la
 // page Notion "IA Conversationnelle" (section Affichage > Graphiques de
@@ -67,7 +68,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
         setErreur(null);
       } catch (e) {
         console.warn("Données de graphique invalides dans Classinus :", e);
-        setErreur("Ce graphique n’a pas pu être affiché car ses données sont incomplètes ou invalides. Demande à Classinus de le recréer.");
+        setErreur(MESSAGES[LOCALE_ACTIVE].AFFICHAGE_GRAPHIQUE_INVALIDE);
       }
     }, 500);
     return () => clearTimeout(delai);

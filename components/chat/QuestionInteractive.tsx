@@ -20,6 +20,7 @@ import { ChampEchelle } from "./ChampEchelle";
 import { ChampClassement } from "./ChampClassement";
 import { ChampDate } from "./ChampDate";
 import { QuestionMultiChamps } from "./QuestionMultiChamps";
+import { LOCALE_ACTIVE, MESSAGES } from "@/lib/erreurs";
 
 // Rend un bloc ```question du markdown -- même famille que ```qcm
 // (QCMInteractif.tsx) et ```fiche (FicheRevision.tsx). Ajouté le
@@ -332,7 +333,7 @@ export function QuestionInteractive({
         setErreur(null);
       } catch (e) {
         console.warn("Contenu de question interactive invalide dans Classinus :", e);
-        setErreur("Cette question interactive n’a pas pu être affichée car son contenu est incomplet ou invalide. Demande à Classinus de la recréer.");
+        setErreur(MESSAGES[LOCALE_ACTIVE].AFFICHAGE_QUESTION_INVALIDE);
       }
     }, 500);
     return () => clearTimeout(delai);

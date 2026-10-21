@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { messageErreur as messageErreurGlobale } from "./erreurs";
+import { LOCALE_ACTIVE, MESSAGES, messageErreur as messageErreurGlobale } from "./erreurs";
 
 /**
  * 26/08/2026, Bourama : Lot 3B Partie 3 mobile : construction des interfaces
@@ -50,18 +50,18 @@ export function usePluginNatif<T extends object>(nomPlugin: string) {
  */
 export function messageErreurPlugin(e: unknown): string {
   if (!(e instanceof Error) || !e.message) {
-    return "Classinus n’a pas pu terminer cette action. Réessaie dans un instant.";
+    return MESSAGES[LOCALE_ACTIVE].PLUGIN_ERREUR_GENERIQUE;
   }
 
   const message = e.message.toLowerCase();
   if (/\bpermission(?:s)?\b.*\b(?:denied|not granted|blocked|refused|missing)\b|\b(?:not authorized|unauthorized|authorization denied)\b|\b(?:autorisation|permission)(?:s)?\b.*\b(?:refusée?|non accordée?|bloquée?|manquante?)\b/.test(message)) {
-    return "L’autorisation nécessaire a été refusée. Vérifie les permissions de Classinus dans les paramètres de ton appareil, puis réessaie.";
+    return MESSAGES[LOCALE_ACTIVE].PLUGIN_PERMISSION_REFUSEE;
   }
   if (/not implemented|not supported on (?:the )?(?:web|android|ios|this platform)|not available on (?:the )?(?:web|android|ios|this platform)|only available on (?:android|ios)|unsupported platform|no such plugin|plugin(?:\s+[\w-]+){0,3}\s+(?:not found|unavailable|does not exist)/.test(message)) {
-    return "Cette fonction n’est pas disponible dans cette version de Classinus ou sur cette plateforme.";
+    return MESSAGES[LOCALE_ACTIVE].PLUGIN_INDISPONIBLE;
   }
   if (/^(?:java\.|android\.|kotlin\.|com\.getcapacitor\.|org\.apache\.cordova\.|error invoking\b|pluginexception\b|nativepluginerror\b)/i.test(message)) {
-    return "Classinus n’a pas pu exécuter cette fonction sur cet appareil. Vérifie les autorisations nécessaires, puis réessaie. Si le problème persiste, mets à jour Classinus.";
+    return MESSAGES[LOCALE_ACTIVE].PLUGIN_EXECUTION_ECHEC;
   }
 
   return messageErreurGlobale(e);

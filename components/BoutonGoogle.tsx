@@ -13,7 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { connexionGoogleNative, estAppliNative } from "@/lib/connexionGoogleNative";
-import { messageErreurAuthentification } from "@/lib/erreurs";
+import { LOCALE_ACTIVE, MESSAGES, messageErreurAuthentification } from "@/lib/erreurs";
 
 export function BoutonGoogle({ retour }: { retour: string }) {
   const router = useRouter();
@@ -55,7 +55,7 @@ export function BoutonGoogle({ retour }: { retour: string }) {
         // l'état de redirection tant que le navigateur quitte cet écran.
         redirectionEnCours = true;
       } else {
-        setErreur("Classinus n’a pas pu préparer la connexion avec Google. Réessaie.");
+        setErreur(MESSAGES[LOCALE_ACTIVE].CONNEXION_GOOGLE_PREPARATION_ECHEC);
       }
     } catch (e) {
       console.warn("Échec inattendu de la connexion Google :", e);

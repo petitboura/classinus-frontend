@@ -2,6 +2,8 @@
 
 import "./globals.css";
 import { useEffect } from "react";
+import { LOCALE_ACTIVE } from "@/lib/erreurs";
+import { textesPagesErreur } from "@/lib/textesPagesErreur";
 
 type PropsErreurGlobale = {
   error: Error & { digest?: string };
@@ -13,12 +15,14 @@ type PropsErreurGlobale = {
  * Ce composant fournit lui-même html/body et ne révèle pas les détails internes.
  */
 export default function ErreurGlobale({ error, reset }: PropsErreurGlobale) {
+  const textes = textesPagesErreur();
+
   useEffect(() => {
     console.error("Erreur globale dans Classinus :", error);
   }, [error]);
 
   return (
-    <html lang="fr">
+    <html lang={LOCALE_ACTIVE}>
       <body style={{ margin: 0 }}>
         <main
           role="main"
@@ -39,13 +43,13 @@ export default function ErreurGlobale({ error, reset }: PropsErreurGlobale) {
               Classinus
             </p>
             <h1 style={{ margin: "0 0 12px", fontSize: "clamp(24px, 4vw, 32px)", lineHeight: 1.2, fontWeight: 600 }}>
-              Classinus a rencontré un problème
+              {textes.globalTitre}
             </h1>
             <p role="alert" aria-live="assertive" style={{ margin: "0 0 12px", lineHeight: 1.6, color: "var(--dj-texte-muet, #444)" }}>
-              L’application n’a pas pu afficher cet écran correctement.
+              {textes.globalProbleme}
             </p>
             <p style={{ margin: "0 0 24px", lineHeight: 1.6, color: "var(--dj-texte-muet, #444)" }}>
-              Vérifie l’état de ta dernière action avant de la refaire : elle a peut-être déjà été effectuée.
+              {textes.verifierAvantRefaire}
             </p>
             <button
               type="button"
@@ -62,7 +66,7 @@ export default function ErreurGlobale({ error, reset }: PropsErreurGlobale) {
                 cursor: "pointer",
               }}
             >
-              Réessayer
+              {textes.reessayer}
             </button>
           </section>
         </main>

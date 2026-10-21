@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { textesPagesErreur } from "@/lib/textesPagesErreur";
 
 type PropsErreur = {
   error: Error & { digest?: string };
@@ -12,6 +13,8 @@ type PropsErreur = {
  * un moyen clair de relancer l'affichage sans exposer les détails techniques.
  */
 export default function ErrorPage({ error, reset }: PropsErreur) {
+  const textes = textesPagesErreur();
+
   useEffect(() => {
     // Le détail reste dans la console pour le diagnostic, jamais dans l'interface.
     console.error("Erreur de rendu dans Classinus :", error);
@@ -24,20 +27,20 @@ export default function ErrorPage({ error, reset }: PropsErreur) {
           Classinus
         </p>
         <h1 className="mb-3 text-2xl font-semibold leading-tight sm:text-3xl">
-          Cette page n’a pas pu s’afficher
+          {textes.pageTitre}
         </h1>
         <p role="alert" aria-live="assertive" className="mb-3 leading-relaxed text-dj-texte-muet">
-          Un problème inattendu a interrompu l’affichage de cette page.
+          {textes.pageProbleme}
         </p>
         <p className="mb-6 leading-relaxed text-dj-texte-muet">
-          Vérifie l’état de ta dernière action avant de la refaire : elle a peut-être déjà été effectuée.
+          {textes.verifierAvantRefaire}
         </p>
         <button
           type="button"
           onClick={() => reset()}
           className="rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute px-[22px] py-3 text-sm font-semibold text-dj-texte transition-colors duration-200 hover:border-dj-bordure-forte hover:bg-dj-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dj-accent-1"
         >
-          Réessayer
+          {textes.reessayer}
         </button>
       </section>
     </main>
