@@ -10,6 +10,8 @@ import { VisionneuseImage } from "./VisionneuseImage";
 import { LigneApercuPieces, type GenrePiece, type PieceApercu } from "./LigneApercuPieces";
 import { FenetreTexteColle } from "./FenetreTexteColle";
 import { FenetreMedia } from "./FenetreMedia";
+import { EditeurVideoContextuel } from "./EditeurVideoContextuel";
+import type { ContexteVideoMontage } from "@/lib/videoMontage";
 import dynamic from "next/dynamic";
 import katex from "katex";
 import { messageErreur } from "@/lib/erreurs";
@@ -151,7 +153,9 @@ export function BarreDeSaisie({
     // déjà démarrés dès la sélection (voir ajouterFichiers), à transmettre
     // tels quels à /api/chat (zips_en_attente) -- voir
     // ChatIA.tsx:envoyerMessage et core/main.py:chat().
-    zipsEnAttente: string[]
+    zipsEnAttente: string[],
+    automatique?: boolean,
+    contexteVideo?: ContexteVideoMontage
   ) => void;
   desactive?: boolean;
   // Ajouté 20/09/2026 (demande Bourama : bouton arrêter, jusque-là
@@ -226,6 +230,7 @@ export function BarreDeSaisie({
   const [fichiers, setFichiers] = useState<{ id: string; fichier: File; apercu: string | null; urlMedia?: string; zipJobId?: string }[]>([]);
   const [imageAgrandieId, setImageAgrandieId] = useState<string | null>(null);
   const [mediaOuvertId, setMediaOuvertId] = useState<string | null>(null);
+  const [videoPourEdition, setVideoPourEdition] = useState<{ id: string; fichier: File; urlMedia?: string } | null>(null);
   // Icône de recherche web (2026-07-23, demande de Bourama : "une icône
   // dans la barre de saisie mais peut s'activer automatiquement") --
   // forçage manuel EN PLUS de l'activation automatique déjà possible
@@ -1506,8 +1511,14 @@ export function BarreDeSaisie({
   function ouvrirPiece(piece: PieceApercu) {
     if (piece.genre === "image") setImageAgrandieId(piece.id);
     else if (piece.genre === "texte") setTexteColleOuvertId(piece.id.slice("texte:".length));
-    else if (piece.genre === "video" || piece.genre === "audio") setMediaOuvertId(piece.id);
-    else {
+    else if (piece.genre === "video") {
+      const fichierVideo = fichiers.find((x) => x.id === piece.id);
+      if (fichierVideo) {
+        setVideoPourEdition({ id: fichierVideo.id, fichier: fichierVideo.fichier, urlMedia: fichierVideo.urlMedia });
+      }
+    } else if (piece.genre === "audio") {
+      setMediaOuvertId(piece.id);
+    } else {
       // Le blob local est intrinsèquement sûr (fichier choisi par
       // l'utilisateur, pas encore envoyé) : pas de vérification d'origine.
       const f = fichiers.find((x) => x.id === piece.id);
@@ -2299,6 +2310,32 @@ export function BarreDeSaisie({
           nom={mediaOuvert.fichier.name}
           type={mediaOuvert.fichier.type.startsWith("video/") ? "video" : "audio"}
           onFermer={() => setMediaOuvertId(null)}
+        />
+      )}
+
+      {videoPourEdition && (
+        <EditeurVideoContextuel
+          open={Boolean(videoPourEdition)}
+          fichier={videoPourEdition.fichier}
+          urlMedia={videoPourEdition.urlMedia}
+          conversationId={conversationId}
+          initialPrompt={texte}
+          disabled={Boolean(desactive || genererEnCours)}
+          onClose={() => setVideoPourEdition(null)}
+          onEnvoyer={(demande, contexteVideo) => {
+            // Le fichier est déjà déposé dans l'espace vidéo dédié : on
+            // transmet le contexte uniquement, sans repasser par le pipeline
+            // transcription + frames de /api/uploads/video-chat.
+            onEnvoyer(demande, longueur, [], null, [], false, sansEnseignant, [], false, contexteVideo);
+            retirerFichier(videoPourEdition.id);
+            setVideoPourEdition(null);
+            setTexte("");
+            setLocalisation(null);
+            setTextesColles([]);
+            setRechercheForcee(false);
+            setSansEnseignant(false);
+            requestAnimationFrame(ajusterHauteurTexte);
+          }}
         />
       )}
 
