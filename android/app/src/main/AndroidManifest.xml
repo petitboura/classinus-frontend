@@ -37,6 +37,54 @@
                 <data android:scheme="classinusmobile" android:host="connexion" />
             </intent-filter>
 
+            <!-- 21/10/2026 : liens de Classinus qui ouvrent l'appli (App Links).
+                 Un lien https://classinus.com/... touche dans un email, un
+                 message ou une page s'ouvre ici au lieu du navigateur, une fois
+                 la verification faite par Android (fichier
+                 public/.well-known/assetlinks.json du site). Voir
+                 lib/liensEntrants.ts, qui recoit le lien (appUrlOpen).
+                 L'hote vient de manifestPlaceholders (build.gradle).
+                 Une ligne par page de premier niveau, SANS /oauth,
+                 /agent-superposition ni /dev-demo-question (voir
+                 PREFIXES_NON_OUVERTS_DANS_APPLI) : Android ne sait pas exclure,
+                 il faut donc lister. tests/verifier-liens-entrants.mjs verifie
+                 que cette liste suit les pages de app/. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="${hoteLiensApp}" />
+                <data android:path="/" />
+                <data android:pathPrefix="/admin" />
+                <data android:pathPrefix="/bibliotheque" />
+                <data android:pathPrefix="/bureau" />
+                <data android:pathPrefix="/cgu" />
+                <data android:pathPrefix="/comportements" />
+                <data android:pathPrefix="/confidentialite" />
+                <data android:pathPrefix="/connecter-claude" />
+                <data android:pathPrefix="/connecter-thonny" />
+                <data android:pathPrefix="/connexion" />
+                <data android:pathPrefix="/controle-session" />
+                <data android:pathPrefix="/copyright" />
+                <data android:pathPrefix="/decouvrir" />
+                <data android:pathPrefix="/dossiers" />
+                <data android:pathPrefix="/etablissements" />
+                <data android:pathPrefix="/inscription" />
+                <data android:pathPrefix="/memoire" />
+                <data android:pathPrefix="/mon-espace" />
+                <data android:pathPrefix="/mot-de-passe-oublie" />
+                <data android:pathPrefix="/parametres" />
+                <data android:pathPrefix="/personnaliser" />
+                <data android:pathPrefix="/plus" />
+                <data android:pathPrefix="/rappels" />
+                <data android:pathPrefix="/reinitialiser-mot-de-passe" />
+                <data android:pathPrefix="/signalements" />
+                <data android:pathPrefix="/skills" />
+                <data android:pathPrefix="/skills-publics" />
+                <data android:pathPrefix="/tableau-de-bord" />
+                <data android:pathPrefix="/telecharger" />
+            </intent-filter>
+
         </activity>
 
         <activity

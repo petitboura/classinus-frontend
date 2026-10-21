@@ -48,6 +48,10 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode versionCodeApp.trim().toInteger()
         versionName versionNameApp.trim()
+        // Hote des liens qui ouvrent l'appli (App Links, voir AndroidManifest.xml
+        // et public/.well-known/assetlinks.json). Doit etre l'hote de
+        // NEXT_PUBLIC_APP_URL.
+        manifestPlaceholders = [hoteLiensApp: "classinus.com"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

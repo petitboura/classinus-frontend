@@ -30,6 +30,7 @@
     "test:phrase-crayon": "node tests/verifier-phrase-crayon.mjs",
     "test:traits-crayon": "node tests/verifier-traits-crayon.mjs",
     "test:lecteur-youtube": "node tests/verifier-lecteur-youtube.mjs",
+    "test:liens-entrants": "node tests/verifier-liens-entrants.mjs",
     "postinstall": "node scripts/appliquer-correctif-lector.mjs"
   },
   "dependencies": {
