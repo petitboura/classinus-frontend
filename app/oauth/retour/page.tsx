@@ -85,6 +85,7 @@ function EcranRetour() {
 
   const [resultat, setResultat] = useState<Resultat>({ etat: "en_cours" });
   const [retour, setRetour] = useState<RetourApresConnexion>(RETOUR_PAR_DEFAUT);
+  const destinationRetour = useRef<RetourApresConnexion | null>(null);
   // Le code n'est utilisable qu'une fois : en développement React monte les
   // effets deux fois, le second appel échouerait et écraserait le succès.
   const dejaLance = useRef(false);
@@ -112,8 +113,12 @@ function EcranRetour() {
 
   useEffect(() => {
     if (resultat.etat !== "succes") return;
-    const destination = lireRetourConnexion();
-    setRetour(destination);
+    // Le ref évite de perdre la destination si React rejoue l’effet en développement.
+    if (!destinationRetour.current) {
+      destinationRetour.current = lireRetourConnexion();
+      setRetour(destinationRetour.current);
+    }
+    const destination = destinationRetour.current ?? RETOUR_PAR_DEFAUT;
     const minuteur = setTimeout(() => router.replace(destination.href), DELAI_RETOUR_MS);
     return () => clearTimeout(minuteur);
   }, [resultat, router]);
