@@ -10,6 +10,7 @@ on:
       - "components/chat/EditeurVideoContextuel.tsx"
       - "lib/api.ts"
       - "lib/videoMontage.ts"
+      - "tests/verifier-montage-video.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/video-editor-checks.yml"
@@ -32,3 +33,5 @@ jobs:
         run: npm ci
       - name: Type-check frontend
         run: npx tsc --noEmit --pretty false
+      - name: Verify contextual video editor wiring
+        run: npm run test:montage-video
