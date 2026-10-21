@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { connexionGoogleNative, estAppliNative } from "@/lib/connexionGoogleNative";
+import { messageErreurAuthentification } from "@/lib/erreurs";
 
 export function BoutonGoogle({ retour }: { retour: string }) {
   const router = useRouter();
@@ -22,28 +23,46 @@ export function BoutonGoogle({ retour }: { retour: string }) {
   async function continuerAvecGoogle() {
     setEnCours(true);
     setErreur("");
+    let redirectionEnCours = false;
 
-    if (await estAppliNative()) {
-      const resultat = await connexionGoogleNative();
-      if (resultat.ok) {
-        router.push(retour);
+    try {
+      if (await estAppliNative()) {
+        const resultat = await connexionGoogleNative();
+        if (resultat.ok) {
+          redirectionEnCours = true;
+          router.push(retour);
+          return;
+        }
+        console.warn("Échec de la connexion Google native :", resultat.erreur);
+        setErreur(messageErreurAuthentification(resultat.erreur, "autorisation"));
         return;
       }
-      setEnCours(false);
-      setErreur(resultat.erreur);
-      return;
-    }
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}${retour}`,
-      },
-    });
-    // En cas d'erreur, Supabase ne redirige pas : on redonne la main au
-    // bouton. En cas de succes, la page quitte de toute facon (redirection
-    // vers Google), donc pas besoin de remettre enCours a false ici.
-    if (error) setEnCours(false);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}${retour}`,
+        },
+      });
+      if (error) {
+        console.warn("Échec de la demande OAuth Google :", error);
+        setErreur(messageErreurAuthentification(error, "autorisation"));
+        return;
+      }
+
+      if (data?.url) {
+        // La page va quitter Classinus pour le fournisseur OAuth. Conserve
+        // l'état de redirection tant que le navigateur quitte cet écran.
+        redirectionEnCours = true;
+      } else {
+        setErreur("Classinus n’a pas pu préparer la connexion avec Google. Réessaie.");
+      }
+    } catch (e) {
+      console.warn("Échec inattendu de la connexion Google :", e);
+      setErreur(messageErreurAuthentification(e, "autorisation"));
+    } finally {
+      if (!redirectionEnCours) setEnCours(false);
+    }
   }
 
   return (

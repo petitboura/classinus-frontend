@@ -86,7 +86,8 @@ export function QCMInteractif({ code, conversationId }: { code: string; conversa
         setQcm(valeur);
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Contenu de QCM invalide dans Classinus :", e);
+        setErreur("Ce QCM n’a pas pu être affiché car son contenu est incomplet ou invalide. Demande à Classinus de le régénérer.");
       }
     }, 500);
     return () => clearTimeout(delai);

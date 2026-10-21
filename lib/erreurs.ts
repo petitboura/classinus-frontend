@@ -63,6 +63,15 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     ECHEC_DE_L_UPLOAD_REESSAIE: "Échec de l'upload, réessaie.",
     ECHEC_DU_DESABONNEMENT: "Échec du désabonnement.",
     ERREUR_INCONNUE: "Une erreur est survenue, réessaie dans un instant.",
+    ERREUR_RESEAU: "Impossible de joindre Classinus pour le moment. Vérifie ta connexion Internet ; si elle fonctionne, réessaie dans un instant.",
+    HTTP_ERREUR_REQUETE: "Les informations envoyées ne sont pas valides. Vérifie les champs puis réessaie.",
+    HTTP_ERREUR_AUTORISATION: "Tu n’as pas l’autorisation d’effectuer cette action.",
+    HTTP_ERREUR_INTROUVABLE: "Ce contenu est introuvable ou n’est plus disponible. Actualise la page puis réessaie.",
+    HTTP_ERREUR_CONFLIT: "Cette action n’est plus possible car les informations ont changé. Actualise la page puis réessaie.",
+    HTTP_ERREUR_TROP_DEMANDES: "Trop de demandes en peu de temps. Attends un peu avant de réessayer.",
+    HTTP_ERREUR_TIMEOUT: "Le service met trop de temps à répondre. Réessaie dans un instant.",
+    HTTP_ERREUR_SERVICE: "Classinus n’a pas pu terminer cette action à cause d’un problème du service. Vérifie le résultat avant de recommencer.",
+    HTTP_ERREUR_GENERIQUE: "Classinus n’a pas pu terminer cette action. Réessaie dans un instant.",
     // 18/09/2026, chantier "profil contributeur bibliotheque publique",
     // étapes 5/10 : erreurs des commentaires/compteurs du catalogue public.
     TYPE_ELEMENT_INCONNU: "Type d'élément inconnu.",
@@ -160,10 +169,10 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     RIEN_N_A_ETE_COMPRIS_REESSAIE: "Rien n'a été compris, réessaie plus près du micro.",
     SERVICE_INCONNU: "Service « {service} » inconnu.",
     SESSION_EXPIREE: "Ta session a expiré, reconnecte-toi.",
-    CONNEXION_REQUISE: "Connecte-toi ou crée un compte pour continuer.",
+    CONNEXION_REQUISE: "Connecte-toi ou reconnecte-toi pour continuer.",
     SEULS_LES_FICHIERS_PDF_SONT_ACCEPTES: "Seuls les fichiers PDF sont acceptés.",
-    TOKEN_INVALIDE: "Token invalide ou expiré",
-    TOKEN_MANQUANT: "Token d'authentification manquant",
+    TOKEN_INVALIDE: "Ta session n’est plus valide. Reconnecte-toi pour continuer.",
+    TOKEN_MANQUANT: "Connecte-toi ou reconnecte-toi pour continuer.",
     TYPE_DE_FICHIER_NON_SUPPORTE: "Type de fichier non supporté.",
     VIDEO_ILLISIBLE_REESSAIE_AVEC_UN_AUTRE: "Vidéo illisible, réessaie avec un autre fichier.",
     VIDEO_TROP_LONGUE: "Vidéo trop longue ({duree}s, {maximum}s max).",
@@ -183,6 +192,28 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     NOTION_PROGRAMME_STATUT_INVALIDE: "Statut de notion invalide.",
     NOTION_PROGRAMME_FUSION_INVALIDE: "Cette fusion n'est pas possible.",
     NOTION_PROGRAMME_GENERATION_ECHEC: "Échec de la génération de la structure, réessaie.",
+    AGENT_MODIFICATION_ERREUR_TECHNIQUE: "Impossible de modifier l'agent (erreur technique). Réessaie dans un instant.",
+    AGENT_MODIFICATION_INDISPONIBLE: "Impossible de modifier l'agent pour le moment.",
+    ECHEC_DE_L_ENVOI_POUR_SIGNATURE: "Échec de l'envoi pour signature, réessaie.",
+    ECHEC_GENERATION_ARCHIVE: "Échec de la génération de l'archive, réessaie.",
+    ECHEC_GENERATION_IMAGE: "Échec de la génération de l'image, réessaie.",
+    ECHEC_LANCEMENT_GENERATION_3D: "Échec du lancement de la génération 3D.",
+    ECHEC_LANCEMENT_GENERATION_VIDEO: "Échec du lancement de la génération vidéo.",
+    ECHEC_LECTURE_USAGE: "Impossible de récupérer le temps d'usage pour le moment.",
+    ECHEC_SYNCHRONISATION_USAGE: "Impossible de synchroniser le temps d'usage pour le moment.",
+    ETABLISSEMENT_DEJA_DECLARE: "Ce compte est déjà déclaré comme établissement.",
+    GENERATION_3D_INDISPONIBLE: "La génération 3D n'est pas encore activée.",
+    GENERATION_VIDEO_INDISPONIBLE: "La génération vidéo n'est pas encore activée.",
+    IMPOSSIBLE_DE_CHARGER_LES_ADMINISTRATEURS: "Impossible de charger les administrateurs pour le moment.",
+    IMPOSSIBLE_DE_CHARGER_LES_COMMENTAIRES_POUR: "Impossible de charger les commentaires pour le moment.",
+    IMPOSSIBLE_D_AJOUTER_L_ADMINISTRATEUR: "Impossible d'ajouter cet administrateur pour le moment.",
+    IMPOSSIBLE_D_ENREGISTRER_LE_COMMENTAIRE_POUR: "Impossible d'enregistrer le commentaire pour le moment.",
+    LE_COMMENTAIRE_N_A_PAS_PU: "Le commentaire n'a pas pu être créé (erreur technique).",
+    NOTIFICATIONS_LECTURE_ECHEC: "Impossible de récupérer tes notifications pour le moment.",
+    NOTIFICATIONS_MAJ_ECHEC: "Impossible de mettre à jour tes notifications pour le moment.",
+    PROFIL_FERMETURE_PARTIELLE: "Le contenu a été supprimé mais le compte lui-même n'a pas pu être fermé, réessaie.",
+    RELAIS_EXTERNE_INDISPONIBLE: "L'ouverture des fichiers externes n'est pas disponible pour le moment.",
+    SIGNATURE_INDISPONIBLE: "La signature électronique n'est pas encore activée.",
   },
   en: {
     PRECISE_MATIERE_AUTRE: "Specify the subject in \"Other\".",
@@ -209,6 +240,15 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     ECHEC_DE_L_UPLOAD_REESSAIE: "Upload failed, try again.",
     ECHEC_DU_DESABONNEMENT: "Failed to unsubscribe.",
     ERREUR_INCONNUE: "Something went wrong, try again in a moment.",
+    ERREUR_RESEAU: "Classinus could not reach the service. Check your internet connection; if it works, try again shortly.",
+    HTTP_ERREUR_REQUETE: "The information sent is invalid. Check the fields and try again.",
+    HTTP_ERREUR_AUTORISATION: "You are not allowed to perform this action.",
+    HTTP_ERREUR_INTROUVABLE: "This content could not be found or is no longer available. Refresh the page and try again.",
+    HTTP_ERREUR_CONFLIT: "This action is no longer possible because the information has changed. Refresh the page and try again.",
+    HTTP_ERREUR_TROP_DEMANDES: "Too many requests in a short time. Wait a little before trying again.",
+    HTTP_ERREUR_TIMEOUT: "The service is taking too long to respond. Try again shortly.",
+    HTTP_ERREUR_SERVICE: "Classinus could not complete this action because of a service problem. Check the result before trying again.",
+    HTTP_ERREUR_GENERIQUE: "Classinus could not complete this action. Try again shortly.",
     NOM_DEJA_UTILISE_BIBLIOTHEQUE_PERSO: "You already have a file named \"{nom}\" in your library. Rename it or replace the existing one.",
     NOM_DEJA_UTILISE_BIBLIOTHEQUE_PUBLIQUE: "A document named \"{nom}\" already exists in the public library. Choose a different name.",
     FICHIER_AUDIO_VIDE: "Empty audio file.",
@@ -288,10 +328,10 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     RIEN_N_A_ETE_COMPRIS_REESSAIE: "Nothing was understood, try again closer to the microphone.",
     SERVICE_INCONNU: "Unknown service « {service} ».",
     SESSION_EXPIREE: "Your session has expired, please sign in again.",
-    CONNEXION_REQUISE: "Sign in or create an account to continue.",
+    CONNEXION_REQUISE: "Sign in or sign in again to continue.",
     SEULS_LES_FICHIERS_PDF_SONT_ACCEPTES: "Only PDF files are accepted.",
-    TOKEN_INVALIDE: "Invalid or expired token.",
-    TOKEN_MANQUANT: "Missing authentication token.",
+    TOKEN_INVALIDE: "Your session is no longer valid. Sign in again to continue.",
+    TOKEN_MANQUANT: "Sign in or sign in again to continue.",
     TEXTE_REQUIS: "Text can't be empty.",
     TYPE_DE_FICHIER_NON_SUPPORTE: "Unsupported file type.",
     VIDEO_ILLISIBLE_REESSAIE_AVEC_UN_AUTRE: "Video unreadable, try again with a different file.",
@@ -309,6 +349,28 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     NOTION_PROGRAMME_STATUT_INVALIDE: "Invalid topic status.",
     NOTION_PROGRAMME_FUSION_INVALIDE: "This merge isn't possible.",
     NOTION_PROGRAMME_GENERATION_ECHEC: "Structure generation failed, try again.",
+    AGENT_MODIFICATION_ERREUR_TECHNIQUE: "Unable to modify the agent (technical error). Try again in a moment.",
+    AGENT_MODIFICATION_INDISPONIBLE: "Unable to modify the agent right now.",
+    ECHEC_DE_L_ENVOI_POUR_SIGNATURE: "Sending for signature failed, please try again.",
+    ECHEC_GENERATION_ARCHIVE: "Archive generation failed, please try again.",
+    ECHEC_GENERATION_IMAGE: "Image generation failed, please try again.",
+    ECHEC_LANCEMENT_GENERATION_3D: "Could not start 3D generation.",
+    ECHEC_LANCEMENT_GENERATION_VIDEO: "Could not start video generation.",
+    ECHEC_LECTURE_USAGE: "Unable to retrieve your usage time right now.",
+    ECHEC_SYNCHRONISATION_USAGE: "Unable to sync your usage time right now.",
+    ETABLISSEMENT_DEJA_DECLARE: "This account is already registered as an institution.",
+    GENERATION_3D_INDISPONIBLE: "3D generation is not available yet.",
+    GENERATION_VIDEO_INDISPONIBLE: "Video generation is not available yet.",
+    IMPOSSIBLE_DE_CHARGER_LES_ADMINISTRATEURS: "Unable to load the administrators right now.",
+    IMPOSSIBLE_DE_CHARGER_LES_COMMENTAIRES_POUR: "Unable to load the comments right now.",
+    IMPOSSIBLE_D_AJOUTER_L_ADMINISTRATEUR: "Unable to add this administrator right now.",
+    IMPOSSIBLE_D_ENREGISTRER_LE_COMMENTAIRE_POUR: "Unable to save the comment right now.",
+    LE_COMMENTAIRE_N_A_PAS_PU: "The comment could not be created (technical error).",
+    NOTIFICATIONS_LECTURE_ECHEC: "Unable to retrieve your notifications right now.",
+    NOTIFICATIONS_MAJ_ECHEC: "Unable to update your notifications right now.",
+    PROFIL_FERMETURE_PARTIELLE: "Your content was deleted but the account itself could not be closed, please try again.",
+    RELAIS_EXTERNE_INDISPONIBLE: "Opening external files is not available right now.",
+    SIGNATURE_INDISPONIBLE: "Electronic signature is not available yet.",
   },
 };
 
@@ -348,21 +410,302 @@ export class ErreurApi extends Error {
 }
 
 /**
- * Message à afficher à l'utilisateur pour une erreur donnée (issue d'un
- * catch autour d'un appel à lib/api.ts, ou de n'importe où ailleurs).
- *
- * Priorité :
- * 1. Le code est connu dans la locale active -> message traduit.
- * 2. Sinon, le message par défaut renvoyé par le backend (déjà en
- *    français, voir core/erreurs.py) -> toujours affichable tel quel.
- * 3. Sinon (erreur JS quelconque, réseau coupé...) -> message générique.
+ * Produit un message compréhensible pour l'utilisateur sans exposer
+ * les détails internes d'une erreur JavaScript ou d'une réponse serveur.
+ */
+function messageErreurHttp(statusCode: number, locale: Locale): string | undefined {
+  const messages = MESSAGES[locale];
+  if (statusCode === 400 || statusCode === 422) return messages.HTTP_ERREUR_REQUETE;
+  if (statusCode === 401) return messages.CONNEXION_REQUISE;
+  if (statusCode === 403) return messages.HTTP_ERREUR_AUTORISATION;
+  if (statusCode === 404) return messages.HTTP_ERREUR_INTROUVABLE;
+  if (statusCode === 408 || statusCode === 504) return messages.HTTP_ERREUR_TIMEOUT;
+  if (statusCode === 409) return messages.HTTP_ERREUR_CONFLIT;
+  if (statusCode === 413) return locale === "fr"
+    ? "Le fichier est trop volumineux pour être envoyé."
+    : "The file is too large to upload.";
+  if (statusCode === 429) return messages.HTTP_ERREUR_TROP_DEMANDES;
+  if (statusCode >= 500 && statusCode <= 599) return messages.HTTP_ERREUR_SERVICE;
+  if (statusCode >= 400 && statusCode <= 499) return messages.HTTP_ERREUR_GENERIQUE;
+  return undefined;
+}
+
+export function estErreurReseau(message: string): boolean {
+  return /failed to fetch|fetch failed|network(?: request)? failed|network(?: request)? error|networkerror|load failed|err(?:_| )network|err(?:_| )internet(?:_| )disconnected|internet.*offline|no internet connection|dns lookup failed|host unreachable|network is unreachable|socket hang up|econn(?:reset|refused|aborted)|etimedout|ehostunreach|enotfound|eai_again|failed to connect|(?:you(?:'re| are)|device is|browser is|went|currently) offline/i.test(message);
+}
+
+function estMessageHttpGenerique(message: string): boolean {
+  const texte = message.trim();
+
+  // Formulations fréquentes de bibliothèques HTTP (par exemple Axios), qui
+  // sont des diagnostics techniques même si elles ne viennent pas d'ErreurApi.
+  if (/^(?:request failed with status(?: code)?\s*[45]\d{2}|http(?: error)?\s+[45]\d{2}(?:\b|[:—-]).*|status code\s+[45]\d{2})$/i.test(texte)) {
+    return true;
+  }
+
+  const erreurStandard = /^(?:error:\s*)?(?:(?:http\s*)?[45]\d{2}\s*[:：—-]?\s*)?(?:internal server error|bad gateway|service unavailable|gateway timeout|request failed|network(?: request)? error|network request failed|failed to fetch|fetch failed|bad request|unauthorized|forbidden|access denied|not found|resource not found|conflict|request timeout|too many requests|rate limit exceeded|missing authentication token|invalid (?:or expired )?token|token expired|authentication required|not authenticated|payload too large|entity too large|request entity too large|erreur api|erreur serveur|api error|server error|http\s+\d{3}|\[object object\])(?:\s*(?:\(\d{3}\)|\[\d{3}\]))?[.!]?$/i;
+  if (erreurStandard.test(texte)) return true;
+
+  // Normalise aussi les messages de repli génériques en français renvoyés
+  // par certaines routes historiques, en conservant le statut HTTP associé.
+  return /^(?:une erreur est survenue|erreur (?:api|serveur)|api error|server error)(?:\s*\(\d{3}\)(?:\s*[,;:—-].*)?)?[.!]?$/i.test(texte);
+}
+
+function estErreurTechnique(e: Error): boolean {
+  const message = e.message.trim();
+  if (!message) return true;
+  if (estMessageHttpGenerique(message)) return true;
+  if (/^(?:cannot read properties|cannot set properties|undefined is not|cannot convert undefined|null is not|unexpected token|unexpected end of json|invalid hook call|minified react error)/i.test(message)) {
+    return true;
+  }
+  if (/^(?:https?:\/\/|\{\s*["']detail["']|<!doctype html|<html)/i.test(message)) return true;
+  if (/^(?:failed to|could not|unable to|error invoking|native error|plugin error|unknown error|exception\b|fatal error\b|err_[a-z0-9_]+\b|econn(?:reset|refused|aborted)\b|etimedout\b|ehostunreach\b|enotfound\b|eai_again\b|enoent\b|eacces\b|eperm\b|eio\b)/i.test(message)) return true;
+  if (/^(?:traceback(?: \(most recent call last\))?:|(?:psycopg2?|asyncpg|sqlalchemy|sqlstate|redis|uvicorn|starlette|fastapi|pydantic|sqlite|databaseerror|operationalerror|integrityerror)\b|node:internal\/|errno\b)/i.test(message)) return true;
+  if (/\b(?:sqlstate|psycopg|sqlalchemy|stack trace)\b/i.test(message)) return true;
+  if (/\b(?:at [\w$.]+\s*\(|node_modules|chunk\.[\w-]+\.js:\d+|\/api\/[\w/?.=&-]+)/i.test(message)) return true;
+  return ["TypeError", "ReferenceError", "SyntaxError", "RangeError"].includes(e.name);
+}
+
+/**
+ * Message à afficher à l'utilisateur pour une erreur donnée.
+ * Les codes métier connus gardent la priorité. Les erreurs réseau et les
+ * pannes HTTP génériques reçoivent une explication et une action possibles.
  */
 export function messageErreur(e: unknown, locale: Locale = LOCALE_ACTIVE): string {
+  const messages = MESSAGES[locale];
+
   if (e instanceof ErreurApi) {
-    const gabarit = e.code ? MESSAGES[locale][e.code] : undefined;
-    if (gabarit) return interpoler(gabarit, e.params);
+    const gabarit = e.code ? messages[e.code] : undefined;
+    if (gabarit && e.code !== "ERREUR_INCONNUE") {
+      return interpoler(gabarit, e.params);
+    }
+
+    // Un code d'erreur métier connu a déjà été traité plus haut. Sinon, un
+    // statut 5xx doit toujours rester générique : le corps peut contenir un
+    // diagnostic interne imprévu (base de données, proxy, pile technique).
+    // On le traite avant le texte : « connection refused » peut désigner
+    // le serveur de base de données, pas la connexion Internet de l'étudiant.
+    if (e.statusCode >= 500 && e.statusCode <= 599) {
+      return messageErreurHttp(e.statusCode, locale) ?? messages.ERREUR_INCONNUE;
+    }
+
+    if (estErreurReseau(e.message)) {
+      return messages.ERREUR_RESEAU;
+    }
+
+    if (e.code === "ERREUR_INCONNUE" || !e.message || estErreurTechnique(e)) {
+      return messageErreurHttp(e.statusCode, locale) ?? messages.ERREUR_INCONNUE;
+    }
+
+    if (e.message) return e.message;
+    return messageErreurHttp(e.statusCode, locale) ?? messages.ERREUR_INCONNUE;
+  }
+
+  if (e instanceof Error) {
+    if (estErreurReseau(e.message)) {
+      return messages.ERREUR_RESEAU;
+    }
+    if (estErreurTechnique(e)) return messages.ERREUR_INCONNUE;
     if (e.message) return e.message;
   }
-  if (e instanceof Error && e.message) return e.message;
-  return MESSAGES[locale].ERREUR_INCONNUE;
+
+  return messages.ERREUR_INCONNUE;
+}
+
+/**
+ * Messages dédiés à l'ouverture audio : les API du navigateur renvoient souvent
+ * des DOMException en anglais, dont le texte varie selon le système.
+ */
+export function messageErreurVoix(e: unknown, locale: Locale = LOCALE_ACTIVE): string {
+  const objet = e && typeof e === "object" ? e as { name?: unknown; message?: unknown } : {};
+  const nom = typeof objet.name === "string" ? objet.name.toLowerCase() : "";
+  const message = typeof objet.message === "string"
+    ? objet.message.toLowerCase()
+    : typeof e === "string" ? e.toLowerCase() : "";
+
+  if (/^(?:notallowederror|permissiondeniederror)$/.test(nom) ||
+      /permission (?:denied|was denied)|user denied|microphone.*(?:denied|blocked)|audio capture.*denied|not allowed to access (?:audio|microphone)/i.test(message)) {
+    return locale === "fr"
+      ? "L’accès au microphone a été refusé. Autorise le microphone dans les paramètres du navigateur ou de l’appareil, puis réessaie."
+      : "Microphone access was denied. Allow microphone access in your browser or device settings, then try again.";
+  }
+  if (/^(?:notfounderror|devicesnotfounderror)$/.test(nom) ||
+      /no device found|requested device not found|no microphone|microphone.*not found/i.test(message)) {
+    return locale === "fr"
+      ? "Aucun microphone compatible n’a été trouvé. Branche ou active un microphone, puis réessaie."
+      : "No compatible microphone was found. Connect or enable a microphone, then try again.";
+  }
+  if (/^(?:notreadableerror|trackstarterror)$/.test(nom) ||
+      /could not start audio source|device.*in use|microphone.*in use|audio capture.*(?:failed|unavailable)/i.test(message)) {
+    return locale === "fr"
+      ? "Le microphone ne peut pas être utilisé pour le moment. Ferme les autres applications qui l’utilisent, puis réessaie."
+      : "The microphone cannot be used right now. Close other applications using it, then try again.";
+  }
+
+  const normalise = messageErreur(e, locale);
+  if (normalise === MESSAGES[locale].ERREUR_INCONNUE) {
+    return locale === "fr"
+      ? "Impossible d’ouvrir le canal vocal. Vérifie ta connexion et les autorisations du microphone, puis réessaie."
+      : "Could not open voice mode. Check your connection and microphone permissions, then try again.";
+  }
+  return normalise;
+}
+
+
+export type ContexteErreurAuthentification = "connexion" | "inscription" | "autorisation" | "reinitialisation";
+
+/**
+ * Normalise les erreurs renvoyées par Supabase Auth avant affichage.
+ * Les détails bruts restent disponibles dans la console du navigateur,
+ * jamais dans les messages montrés à l'utilisateur.
+ */
+export function messageErreurAuthentification(
+  e: unknown,
+  contexte: ContexteErreurAuthentification,
+  locale: Locale = LOCALE_ACTIVE
+): string {
+  const objet = e && typeof e === "object" ? e as { message?: unknown; name?: unknown; code?: unknown } : {};
+  const brut = typeof objet.message === "string" ? objet.message : typeof e === "string" ? e : "";
+  const code = typeof objet.code === "string" ? objet.code : "";
+  // Supabase Auth renvoie des codes stables même si le texte est vide ou varie.
+  const message = `${brut} ${code}`.replace(/[_-]+/g, " ").toLowerCase();
+  const fr = locale === "fr";
+
+  if (estErreurReseau(message)) return MESSAGES[locale].ERREUR_RESEAU;
+  if (/rate limit|too many requests|too many attempts|request rate limit|email rate limit|sms rate limit|over (?:email|sms|request) (?:send )?rate limit/i.test(message)) {
+    return MESSAGES[locale].HTTP_ERREUR_TROP_DEMANDES;
+  }
+  if (/access denied|user denied|cancelled by user|user cancelled|authorization cancelled/i.test(message)) {
+    return fr
+      ? "La connexion a été annulée. Tu peux la relancer quand tu veux."
+      : "Sign-in was cancelled. You can try again whenever you're ready.";
+  }
+  if (/google.*(?:connexion|sign.?in)|(?:connexion|sign.?in).*google/i.test(message)) {
+    return fr
+      ? "La connexion avec Google n’a pas abouti. Réessaie."
+      : "Google sign-in did not complete. Try again.";
+  }
+  if (/redirect[ _]uri|redirect url|redirect destination.*not allowed|not allowed.*redirect/i.test(message)) {
+    return fr
+      ? "Cette méthode de connexion n’est pas configurée pour cette adresse. Réessaie plus tard."
+      : "This sign-in method is not configured for this address. Try again later.";
+  }
+  if (/invalid login credentials|invalid credentials|email or password is incorrect|invalid password|user not found|invalid email or password/i.test(message)) {
+    return fr
+      ? "Adresse e-mail ou numéro de téléphone, ou mot de passe incorrect."
+      : "The email address or phone number, or password, is incorrect.";
+  }
+  if (/user already registered|already registered|user already exists|email already registered|phone number already registered/i.test(message)) {
+    // Évite de confirmer explicitement qu'un identifiant appartient à un compte.
+    return contexte === "inscription"
+      ? fr
+        ? "Impossible de créer un compte avec ces informations. Si tu as déjà un compte, connecte-toi ou réinitialise ton mot de passe."
+        : "Could not create an account with this information. If you already have an account, sign in or reset your password."
+      : fr
+        ? "Impossible de traiter ces informations de connexion. Vérifie-les puis réessaie."
+        : "Could not process these sign-in details. Check them and try again.";
+  }
+  if (/email not confirmed|user not confirmed|email not verified/i.test(message)) {
+    return fr
+      ? "Connexion impossible pour le moment. Si tu viens de créer un compte, vérifie ta boîte mail pour le confirmer."
+      : "Could not sign in right now. If you just created an account, check your inbox to confirm it.";
+  }
+  if (/invalid email|email address.*invalid|unable to validate email address/i.test(message)) {
+    return fr ? "L’adresse e-mail n’est pas valide. Vérifie-la puis réessaie." : "The email address is invalid. Check it and try again.";
+  }
+  if (/invalid phone|phone number.*invalid|phone.*not valid/i.test(message)) {
+    return fr ? "Le numéro de téléphone n’est pas valide. Vérifie le pays et le numéro puis réessaie." : "The phone number is invalid. Check the country and number, then try again.";
+  }
+  if (/password.*(?:at least|too short|weak|must contain|characters)|weak password|password should/i.test(message)) {
+    return fr ? "Le mot de passe ne respecte pas les critères requis. Vérifie sa longueur et sa composition." : "The password does not meet the requirements. Check its length and composition.";
+  }
+  if (/(?:token|otp|verification link|email link).*(?:expired|invalid)|(?:expired|invalid).*(?:token|otp|verification link|email link)|otp_expired|token_expired/i.test(message)) {
+    return fr
+      ? "Ce code ou lien de vérification a expiré ou n’est plus valide. Demande-en un nouveau puis réessaie."
+      : "This verification code or link has expired or is no longer valid. Request a new one and try again.";
+  }
+  if (/error sending (?:confirmation )?(?:email|sms)|failed to send (?:confirmation )?(?:email|sms)|email delivery|sms provider|sending email/i.test(message)) {
+    return fr
+      ? "Impossible d’envoyer le message de vérification pour le moment. Réessaie dans un instant."
+      : "The verification message could not be sent right now. Try again shortly.";
+  }
+
+  if (contexte === "inscription") {
+    return fr
+      ? "Impossible de créer le compte pour le moment. Vérifie les informations saisies puis réessaie."
+      : "The account could not be created right now. Check the information and try again.";
+  }
+  if (contexte === "autorisation") {
+    return fr
+      ? "Impossible de traiter cette demande d’autorisation. Actualise la page puis réessaie."
+      : "The authorization request could not be processed. Refresh the page and try again.";
+  }
+  if (contexte === "reinitialisation") {
+    return fr
+      ? "Impossible de terminer la réinitialisation du mot de passe. Vérifie ta connexion puis réessaie."
+      : "The password reset could not be completed. Check your connection and try again.";
+  }
+  return fr
+    ? "Impossible de te connecter avec ces informations. Vérifie-les puis réessaie."
+    : "Could not sign in with this information. Check it and try again.";
+}
+
+export type ActionErreurFichierNatif = "lister" | "ouvrir" | "lire" | "rechercher";
+
+/**
+ * Produit un message stable pour les exceptions du plugin de fichiers natif.
+ * Les erreurs de chemin déjà détectées par l'application gardent leur message
+ * précis ; cette fonction ne traite que les échecs d'exécution du plugin.
+ */
+export function messageErreurFichierNatif(
+  e: unknown,
+  action: ActionErreurFichierNatif,
+  locale: Locale = LOCALE_ACTIVE
+): string {
+  const objet = e && typeof e === "object" ? e as { message?: unknown; code?: unknown; name?: unknown } : {};
+  const brut = typeof objet.message === "string" ? objet.message : typeof e === "string" ? e : "";
+  const code = typeof objet.code === "string" ? objet.code : "";
+  const message = (code + " " + brut).toLowerCase();
+  const fr = locale === "fr";
+
+  if (/permission|access denied|not authorized|eacces|securityerror/i.test(message)) {
+    return fr
+      ? "Classinus n’a pas l’autorisation d’accéder à ce dossier ou fichier. Vérifie les autorisations de l’application puis réessaie."
+      : "Classinus is not allowed to access this folder or file. Check the app permissions and try again.";
+  }
+  if (/enospc|no space left|not enough storage|insufficient storage|disk full/i.test(message)) {
+    return fr
+      ? "L’espace de stockage de l’appareil est insuffisant. Libère de l’espace puis réessaie."
+      : "There is not enough storage space on the device. Free up space and try again.";
+  }
+  if (/enoent|no such file|file not found|file_not_found|directory not found|directory_not_found|path does not exist|does not exist/i.test(message)) {
+    return fr
+      ? "Le fichier ou le dossier n’est plus disponible à cet emplacement. Actualise la liste puis réessaie."
+      : "The file or folder is no longer available at this location. Refresh the list and try again.";
+  }
+  if (/plugin.*(?:not implemented|not available|not found)|not supported on (?:the )?(?:web|this platform)|unsupported platform/i.test(message)) {
+    return fr
+      ? "Cette fonction de gestion des fichiers n’est pas disponible sur cet appareil."
+      : "This file-management feature is not available on this device.";
+  }
+  if (estErreurReseau(message)) return MESSAGES[locale].ERREUR_RESEAU;
+
+  if (action === "lire") {
+    return fr
+      ? "Impossible de lire ce fichier sur cet appareil. Vérifie qu’il est encore accessible puis réessaie."
+      : "This file could not be read on this device. Check that it is still accessible and try again.";
+  }
+  if (action === "rechercher") {
+    return fr
+      ? "Impossible de terminer la recherche dans ce dossier. Vérifie que le stockage est accessible puis réessaie."
+      : "The search in this folder could not be completed. Check that storage is accessible and try again.";
+  }
+  if (action === "ouvrir") {
+    return fr
+      ? "Impossible d’ouvrir ce sous-dossier sur cet appareil. Vérifie que le dossier est toujours accessible puis réessaie."
+      : "This subfolder could not be opened on this device. Check that it is still accessible and try again.";
+  }
+  return fr
+    ? "Impossible d’accéder au contenu de ce dossier sur cet appareil. Vérifie que le stockage est disponible puis réessaie."
+    : "The contents of this folder could not be accessed on this device. Check that storage is available and try again.";
 }

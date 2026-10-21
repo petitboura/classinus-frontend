@@ -31,6 +31,7 @@
     "test:traits-crayon": "node tests/verifier-traits-crayon.mjs",
     "test:lecteur-youtube": "node tests/verifier-lecteur-youtube.mjs",
     "test:liens-entrants": "node tests/verifier-liens-entrants.mjs",
+    "test:gestion-erreurs": "node tests/verifier-gestion-erreurs.mjs",
     "postinstall": "node scripts/appliquer-correctif-lector.mjs"
   },
   "dependencies": {

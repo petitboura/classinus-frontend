@@ -66,7 +66,8 @@ export function GraphiqueDonnees({ code }: { code: string }) {
         setChart(JSON.parse(code));
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Données de graphique invalides dans Classinus :", e);
+        setErreur("Ce graphique n’a pas pu être affiché car ses données sont incomplètes ou invalides. Demande à Classinus de le recréer.");
       }
     }, 500);
     return () => clearTimeout(delai);

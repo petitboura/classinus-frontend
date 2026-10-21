@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { inscrireOuConnecter } from "@/lib/authFallback";
 import { mettreAJourMonProfil } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, messageErreurAuthentification } from "@/lib/erreurs";
 import { EcranAutonome } from "@/components/EcranAutonome";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
@@ -64,14 +64,21 @@ export default function PageInscription() {
     setErreur(null);
     setEnCours(true);
 
-    const { error } =
-      methode === "email"
-        ? await inscrireOuConnecter({ email, password: motDePasse })
-        : await inscrireOuConnecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
+    let erreurInscription: unknown = null;
+    try {
+      const { error } =
+        methode === "email"
+          ? await inscrireOuConnecter({ email, password: motDePasse })
+          : await inscrireOuConnecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
+      erreurInscription = error;
+    } catch (e) {
+      erreurInscription = e;
+    }
 
-    if (error) {
+    if (erreurInscription) {
       setEnCours(false);
-      setErreur(error.message);
+      console.warn("Échec d’inscription Supabase :", erreurInscription);
+      setErreur(messageErreurAuthentification(erreurInscription, "inscription"));
       return;
     }
 

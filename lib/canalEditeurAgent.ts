@@ -11,6 +11,7 @@ import { deplacerCurseurDepuisAgent } from "./contexteCurseurVirtuel";
 import { afficherTexteDepuisAgent, mettreAJourJournalDepuisAgent, pousserJournalDepuisAgent } from "./contexteCanalEnDirect";
 import { obtenirPontEditeur } from "./pontEditeurAgent";
 import type { ModeEcritureEditeur } from "./operationsEditeurAgent";
+import { LOCALE_ACTIVE, MESSAGES, messageErreur as messageErreurGlobale } from "./erreurs";
 
 type Repondre = (id: string, resultat: unknown) => void;
 
@@ -23,7 +24,8 @@ function decrireLignes(debut: number, fin: number): string {
 }
 
 function messageErreur(e: unknown, parDefaut: string): string {
-  return e instanceof Error && e.message ? e.message : parDefaut;
+  const message = messageErreurGlobale(e);
+  return message === MESSAGES[LOCALE_ACTIVE].ERREUR_INCONNUE ? parDefaut : message;
 }
 
 export async function traiterDemandeEditeur(id: string, operation: unknown, repondre: Repondre) {

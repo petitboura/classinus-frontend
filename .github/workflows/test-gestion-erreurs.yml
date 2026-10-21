@@ -1,0 +1,37 @@
+name: Vérification des messages d’erreur
+
+on:
+  push:
+    branches:
+      - fix/gestion-erreurs-utilisateur
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gestion-erreurs:
+    name: Vérifier les messages destinés aux utilisateurs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances sans scripts d’installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Vérifier TypeScript
+        run: npx tsc --noEmit
+
+      - name: Tester la gestion des erreurs
+        run: npm run test:gestion-erreurs

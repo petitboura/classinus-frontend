@@ -331,7 +331,8 @@ export function QuestionInteractive({
         setDonnee(valeur);
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Contenu de question interactive invalide dans Classinus :", e);
+        setErreur("Cette question interactive n’a pas pu être affichée car son contenu est incomplet ou invalide. Demande à Classinus de la recréer.");
       }
     }, 500);
     return () => clearTimeout(delai);

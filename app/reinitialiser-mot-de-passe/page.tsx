@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { messageErreurAuthentification } from "@/lib/erreurs";
 import { ROUTES_APP } from "@/lib/routesApp";
 import {
   LONGUEUR_MINI_MOT_DE_PASSE,
@@ -25,7 +26,7 @@ import { ChampMotDePasse } from "@/components/ChampMotDePasse";
 // Délai avant le retour automatique au chat, une fois le mot de passe changé.
 const DELAI_RETOUR_CHAT_MS = 1800;
 
-type Etat = "verification" | "pret" | "lien_invalide" | "termine";
+type Etat = "verification" | "erreur_verification" | "pret" | "lien_invalide" | "termine";
 
 export default function PageReinitialisationMotDePasse() {
   const router = useRouter();
@@ -34,27 +35,38 @@ export default function PageReinitialisationMotDePasse() {
   const [confirmation, setConfirmation] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [tentativeVerification, setTentativeVerification] = useState(0);
 
   // getSession() attend que le client ait fini de lire le lien : si une session
-  // existe à ce moment, le lien était valide.
+  // existe à ce moment, le lien était valide. Un rejet réseau doit donner une
+  // action de récupération, jamais laisser le squelette tourner indéfiniment.
   useEffect(() => {
     let annule = false;
     async function verifierLien() {
-      if (lienPorteUneErreur()) {
-        setEtat("lien_invalide");
-        return;
+      try {
+        if (lienPorteUneErreur()) {
+          if (!annule) setEtat("lien_invalide");
+          return;
+        }
+        const {
+          data: { session },
+          error: erreurSession,
+        } = await supabase.auth.getSession();
+        if (erreurSession) throw erreurSession;
+        if (annule) return;
+        setEtat(session ? "pret" : "lien_invalide");
+      } catch (e) {
+        if (annule) return;
+        console.warn("Échec inattendu de la vérification du lien de réinitialisation :", e);
+        setErreur(messageErreurAuthentification(e, "reinitialisation"));
+        setEtat("erreur_verification");
       }
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (annule) return;
-      setEtat(session ? "pret" : "lien_invalide");
     }
     void verifierLien();
     return () => {
       annule = true;
     };
-  }, []);
+  }, [tentativeVerification]);
 
   // Retour automatique au chat une fois le mot de passe changé.
   useEffect(() => {
@@ -77,17 +89,22 @@ export default function PageReinitialisationMotDePasse() {
     }
 
     setEnCours(true);
-    const { error } = await supabase.auth.updateUser({ password: motDePasse });
-    setEnCours(false);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: motDePasse });
+      if (error) {
+        setErreur(traduireErreurAuth(error));
+        return;
+      }
 
-    if (error) {
-      setErreur(traduireErreurAuth(error));
-      return;
+      setMotDePasse("");
+      setConfirmation("");
+      setEtat("termine");
+    } catch (e) {
+      console.warn("Échec inattendu de la mise à jour du mot de passe :", e);
+      setErreur(messageErreurAuthentification(e, "reinitialisation"));
+    } finally {
+      setEnCours(false);
     }
-
-    setMotDePasse("");
-    setConfirmation("");
-    setEtat("termine");
   }
 
   if (etat === "verification") {
@@ -132,6 +149,31 @@ export default function PageReinitialisationMotDePasse() {
         </div>
 
         <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">
+          {etat === "erreur_verification" && (
+            <div className="animate-dj-fade-in-rapide">
+              <h1 className="font-display text-xl font-bold text-dj-texte">Impossible de vérifier le lien</h1>
+              <p role="alert" className="mt-3 text-sm text-dj-texte-muet">
+                {erreur ?? "Vérifie ta connexion puis réessaie."}
+              </p>
+              <Bouton
+                type="button"
+                onClick={() => {
+                  setErreur(null);
+                  setEtat("verification");
+                  setTentativeVerification((v) => v + 1);
+                }}
+                className="mt-4 w-full"
+              >
+                Réessayer
+              </Bouton>
+              <p className="mt-4 text-center text-sm text-dj-texte-muet">
+                <Link href={ROUTE_MOT_DE_PASSE_OUBLIE} className="hover:text-dj-texte hover:underline">
+                  Demander un nouveau lien
+                </Link>
+              </p>
+            </div>
+          )}
+
           {etat === "lien_invalide" && (
             <div className="animate-dj-fade-in-rapide">
               <h1 className="font-display text-xl font-bold text-dj-texte">Ce lien n&apos;est plus valide</h1>

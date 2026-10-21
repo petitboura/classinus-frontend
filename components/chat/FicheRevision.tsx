@@ -156,7 +156,8 @@ export function FicheRevision({ code }: { code: string }) {
         setFiche(valeur);
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Contenu de fiche de révision invalide dans Classinus :", e);
+        setErreur("Cette fiche n’a pas pu être affichée car son contenu est incomplet ou invalide. Demande à Classinus de la régénérer.");
       }
     }, 500);
     return () => clearTimeout(delai);

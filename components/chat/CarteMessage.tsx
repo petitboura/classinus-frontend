@@ -35,7 +35,8 @@ export function CarteMessage({ code }: { code: string }) {
         setLieu(JSON.parse(code));
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Données de localisation invalides dans une carte Classinus :", e);
+        setErreur("Cette carte ne peut pas être affichée car ses données de localisation sont incomplètes ou invalides. Demande à Classinus de la recréer.");
       }
     }, 500);
     return () => clearTimeout(delai);

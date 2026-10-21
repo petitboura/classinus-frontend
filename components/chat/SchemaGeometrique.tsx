@@ -90,7 +90,8 @@ export function SchemaGeometrique({ code }: { code: string }) {
         setSchema(JSON.parse(code));
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Données de schéma géométrique invalides dans Classinus :", e);
+        setErreur("Ce schéma géométrique n’a pas pu être affiché car ses données sont incomplètes ou invalides. Demande à Classinus de le recréer.");
       }
     }, 500);
     return () => clearTimeout(delai);
