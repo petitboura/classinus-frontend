@@ -297,6 +297,9 @@ lib/
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
   textesPagesErreur.ts    textes (français et anglais) des écrans d'erreur et du lien de réinitialisation impossible à vérifier
+  logosSites.ts           vrais logos des sites et sources visés par un outil du chat (YouTube, Internet Archive, arXiv, HAL) ;
+                          tout autre site montre l'icône qu'il publie lui-même (components/chat/LogoSite.tsx).
+                          Les domaines viennent du champ "domaines" des événements d'outil (core/domaines_affichage.py côté backend)
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
 android/, ios/            projets Capacitor (capacitor.config.ts minimal, export statique build:capacitor

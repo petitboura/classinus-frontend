@@ -350,7 +350,7 @@ export const RESUME_CLASSINUS = {
     "Chat avec une IA pour poser des questions et travailler des notions de cours",
     "Choix parmi les modèles d'IA disponibles, regroupés par fournisseur ; les modèles non activés sont signalés « Bientôt »",
     "Bibliothèque personnelle et catalogue public de documents partagés par les élèves",
-    "Recherche de livres et de PDF dans Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg, ainsi que recherche de vidéos et de pages web",
+    "Recherche de livres et de PDF dans Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg, ainsi que recherche de vidéos et de pages web ; le chat affiche le logo du site ou de la source consultée",
     "Mode vocal pour dicter une demande et écouter la réponse",
     "Exécution de code Python directement dans le chat",
     "Plugin Thonny-Classinus : panneau intégré à Thonny pour analyser ou corriger du code Python et expliquer les erreurs ; l'envoi du code nécessite une action explicite",
