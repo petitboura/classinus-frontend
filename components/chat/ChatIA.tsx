@@ -246,6 +246,7 @@ export function ChatIA({
   const [raisonnementEnCours, setRaisonnementEnCours] = useState(false);
   const [confirmation, setConfirmation] = useState<{
     nomLisible: string;
+    nomOutil?: string;
     agentNom?: string | null;
     arguments: Record<string, unknown>;
     etatReprise: unknown;
@@ -775,6 +776,7 @@ export function ChatIA({
     } else if (evenement.type === "confirmation_requise") {
       setConfirmation({
         nomLisible: evenement.nom_lisible,
+        nomOutil: evenement.nom_outil,
         agentNom: evenement.agent_nom,
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,
@@ -1633,6 +1635,9 @@ export function ChatIA({
 
   async function repriseApresConfirmation(approuve: boolean) {
     if (!confirmation) return;
+    // Demande traitée par ce clic : si la reprise en fait apparaître une nouvelle
+    // (deuxième outil à approuver), elle doit rester affichée à la fin du flux.
+    const confirmationTraitee = confirmation;
     setConfirmationEnAttente(true);
     reinitialiserAffichageControle();
     setGenEnCours(true);
@@ -1666,7 +1671,7 @@ export function ChatIA({
       }
     } finally {
       controleurAbandonRef.current = null;
-      setConfirmation(null);
+      setConfirmation((courante) => (courante === confirmationTraitee ? null : courante));
       setConfirmationEnAttente(false);
       setGenEnCours(false);
       // Même filet que dans les deux autres finally de fin de génération,
@@ -2007,6 +2012,7 @@ export function ChatIA({
         {confirmation && (
           <ConfirmationOutil
             nomLisible={confirmation.nomLisible}
+            nomOutil={confirmation.nomOutil}
             agentNom={confirmation.agentNom}
             arguments={confirmation.arguments}
             enAttente={confirmationEnAttente}

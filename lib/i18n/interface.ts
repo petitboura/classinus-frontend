@@ -2416,6 +2416,9 @@ const EN: Record<string, string> = {
   "la réponse": "the answer",
   "le fil de conversation": "the conversation thread",
   "Supprimer le signalement": "Delete report",
+  "veut faire ceci": "wants to do this",
+  "Confirmer ?": "Confirm?",
+  "Outil": "Tool",
 };
 
 function normaliserCasse(texte: string): string {
