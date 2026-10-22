@@ -49,22 +49,23 @@ Copie `android/keystore.properties.example` vers `android/keystore.properties`
 valeurs (chemin vers le `.jks`, mots de passe, alias) — les mêmes valeurs que
 côté `clovis-mobile` si tu réutilises la même clé.
 
-## 4. À chaque nouvelle version `externe`
+## 4. À chaque nouvelle version
 
-Avant de générer un nouvel APK à publier sur GitHub Releases :
-1. Incrémenter `versionCode` **et** `versionName` dans
-   `android/version-app.properties` (le seul endroit : `build.gradle` les lit
-   dans ce fichier). `versionName` doit être identique à l'étiquette de la
-   release GitHub sans le "v" (étiquette `v1.6.0` = `versionName=1.6.0`), sinon
-   le bandeau "Version X disponible" se trompe.
-2. Générer l'APK signé (Android Studio → Build → Generate Signed APK, flavor
-   `externe`).
-3. Créer une nouvelle Release GitHub sur `petitboura/classinus-frontend` (dépôt
-   réellement interrogé par `VerificateurMiseAJour.kt` : `URL_DERNIERE_RELEASE`
-   pointe vers `api.github.com/repos/petitboura/classinus-frontend/releases/latest`,
-   pas `clovis-mobile`), avec un tag correspondant à `versionName`
-   (ex. `v0.2.0`), et joindre l'APK en pièce jointe de la release.
+Depuis le 21/10/2026, la publication est automatique (voir la section "Appli
+Android : publication de l'APK" du README principal et
+`.github/workflows/publier-android.yml`) :
+1. Mettre `versionName` et `versionCode` à jour dans
+   `android/version-app.properties` (le seul endroit : `build.gradle` les lit dans
+   ce fichier) et le mettre dans `main`. `versionName` doit être identique à
+   l'étiquette de la release sans le "v" (étiquette `v1.6.0` = `versionName=1.6.0`).
+2. Pousser l'étiquette `v1.6.0` sur ce commit. Le workflow construit l'APK signé,
+   vérifie qu'il est signé avec la même clé que la release précédente, puis crée la
+   release sur `petitboura/classinus-frontend` (dépôt interrogé par
+   `VerificateurMiseAJour.kt` et par la page `/telecharger`).
+
+La clé de signature reste la même : elle est conservée en secrets GitHub
+(`ANDROID_KEYSTORE_BASE64` et les trois autres), jamais dans le dépôt.
 
 L'app vérifie elle-même s'il existe une release plus récente que celle
-installée (voir `VerificateurMiseAJour.kt`) — pas la peine d'en informer
+installée (voir `VerificateurMiseAJour.kt`) : pas la peine d'en informer
 les étudiants manuellement.
