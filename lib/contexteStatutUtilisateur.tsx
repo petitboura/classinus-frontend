@@ -23,6 +23,7 @@
 import { createContext, useCallback, useEffect, useState } from "react";
 import { obtenirMonStatut, enregistrerMonProfil } from "@/lib/api";
 import { hydraterModelePrefere } from "@/lib/modeleActif";
+import { aChoisiLocale, definirLocale, obtenirLocale, type Locale } from "@/lib/i18n/locale";
 
 export type ValeurStatutUtilisateur = {
   /** true tant que la lecture initiale (une seule, au tout premier montage) n'est pas revenue. */
@@ -43,7 +44,14 @@ export type ValeurStatutUtilisateur = {
   traductionAutoErreurs: boolean | null;
   definirLangueCibleErreurs: (valeur: string) => Promise<void>;
   definirTraductionAutoErreurs: (valeur: boolean) => Promise<void>;
+  // 22/10/2026, demande Bourama : la langue de l'interface vit dans
+  // Paramètres (plus de pastille FR/EN flottante) et sur le compte.
+  /** Change la langue tout de suite sur l'appareil, puis l'enregistre sur le compte (et aligne la langue des erreurs). */
+  definirLangueInterface: (valeur: Locale) => Promise<void>;
 };
+
+/** Langue des erreurs d'exécution alignée sur la langue de l'interface. */
+const LANGUE_ERREURS_PAR_LOCALE: Record<Locale, string> = { fr: "Français", en: "Anglais" };
 
 export const ContexteStatutUtilisateur = createContext<ValeurStatutUtilisateur>({
   chargement: true,
@@ -54,6 +62,7 @@ export const ContexteStatutUtilisateur = createContext<ValeurStatutUtilisateur>(
   traductionAutoErreurs: null,
   definirLangueCibleErreurs: async () => {},
   definirTraductionAutoErreurs: async () => {},
+  definirLangueInterface: async () => {},
 });
 
 export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
@@ -91,6 +100,14 @@ export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
         setTraductionAutoErreurs(s.traduction_auto_erreurs);
         // 15/10/2026 : le dernier modèle choisi, retrouvé sur n'importe quel appareil.
         hydraterModelePrefere(s.modele_prefere);
+        // 22/10/2026 : la langue du compte l'emporte sur celle de l'appareil.
+        // Compte sans langue : on n'enregistre que si la personne en avait
+        // déjà choisi une sur cet appareil (jamais le simple français par défaut).
+        if (s.langue_interface) {
+          if (s.langue_interface !== obtenirLocale()) definirLocale(s.langue_interface);
+        } else if (aChoisiLocale()) {
+          enregistrerMonProfil({ langue_interface: obtenirLocale() }).catch(() => {});
+        }
         setConnecte(true);
       })
       .catch(() => {
@@ -140,6 +157,22 @@ export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
     }
   }, [traductionAutoErreurs]);
 
+  const definirLangueInterface = useCallback(async (valeur: Locale) => {
+    definirLocale(valeur); // immédiat sur l'appareil, même sans compte
+    if (!connecte) return;
+    const langueErreursPrecedente = langueCibleErreurs;
+    setLangueCibleErreurs(LANGUE_ERREURS_PAR_LOCALE[valeur]); // optimiste
+    try {
+      await enregistrerMonProfil({
+        langue_interface: valeur,
+        langue_cible_erreurs: LANGUE_ERREURS_PAR_LOCALE[valeur],
+      });
+    } catch (e) {
+      setLangueCibleErreurs(langueErreursPrecedente);
+      throw e;
+    }
+  }, [connecte, langueCibleErreurs]);
+
   return {
     chargement,
     estProfesseur,
@@ -149,5 +182,6 @@ export function useFournirStatutUtilisateur(): ValeurStatutUtilisateur {
     traductionAutoErreurs,
     definirLangueCibleErreurs,
     definirTraductionAutoErreurs,
+    definirLangueInterface,
   };
 }

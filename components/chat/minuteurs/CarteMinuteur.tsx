@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp, EyeOff, Minimize2, Minus, Plus } from "lucide-react";
 import { textesMinuteurs } from "@/lib/textesMinuteurs";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { secondesRestantes, type Minuteur } from "@/lib/minuteurs";
 import { AnneauMinuteur } from "./AnneauMinuteur";
 
@@ -33,7 +34,8 @@ export function CarteMinuteur({
   onReduire: () => void;
   onMasquer: () => void;
 }) {
-  const t = textesMinuteurs();
+  const locale = useLocale();
+  const t = textesMinuteurs(locale);
   const [suiteOuverte, setSuiteOuverte] = useState(false);
   const enCours = minuteur.statut === "en_cours";
   // Arrêté : le temps reste figé à ce qu'il était au moment de l'arrêt (valeur donnée par le serveur).

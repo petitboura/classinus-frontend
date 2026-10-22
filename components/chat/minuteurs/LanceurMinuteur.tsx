@@ -4,7 +4,9 @@ import { useState, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Timer } from "lucide-react";
 import { BoutonInfoSection } from "@/components/BoutonInfoSection";
+import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { textesMinuteurs } from "@/lib/textesMinuteurs";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
 import {
   DUREES_RAPIDES_MINUTES,
@@ -37,7 +39,8 @@ export function LanceurMinuteur({
   onLancer: (dureeSecondes: number, actionFin: string | null) => void;
   onAfficher: (id: string) => void;
 }) {
-  const t = textesMinuteurs();
+  const locale = useLocale();
+  const t = textesMinuteurs(locale);
   const [ouvert, setOuvert] = useState(false);
   const [saisie, setSaisie] = useState("");
   const [unite, setUnite] = useState<UniteDuree>("minutes");
@@ -121,18 +124,14 @@ export function LanceurMinuteur({
                   aria-label={t.autreDuree}
                   className="h-8 min-w-0 flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-2 text-xs text-dj-texte placeholder:text-dj-texte-muet focus:border-dj-accent-1 focus:outline-none"
                 />
-                <select
-                  value={unite}
-                  onChange={(e) => setUnite(e.target.value as UniteDuree)}
-                  aria-label={t.uniteAria}
-                  className="h-8 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-1.5 text-xs text-dj-texte focus:border-dj-accent-1 focus:outline-none"
-                >
-                  {UNITES_DUREE.map((u) => (
-                    <option key={u} value={u}>
-                      {t.unites[u]}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-28 flex-shrink-0" aria-label={t.uniteAria}>
+                  <SelectPersonnalise
+                    compact
+                    options={UNITES_DUREE.map((u) => ({ id: u, label: t.unites[u] }))}
+                    valeur={unite}
+                    onChange={(id) => setUnite(id as UniteDuree)}
+                  />
+                </div>
                 <button
                   type="button"
                   disabled={secondesSaisies === null}

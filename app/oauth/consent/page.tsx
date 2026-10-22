@@ -7,6 +7,7 @@ import { EcranAutonome } from "@/components/EcranAutonome";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
 import { Skeleton } from "@/components/Skeleton";
+import { messageErreurAuthentification } from "@/lib/erreurs";
 
 /**
  * Écran de consentement OAuth 2.1 (voir Authentication > OAuth Server dans
@@ -102,34 +103,41 @@ function EcranConsentement() {
     }
 
     async function charger() {
-      // Utilisateur non connecté : on le renvoie vers /connexion, qui devra
-      // revenir ici avec le même authorization_id une fois connecté.
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        router.replace(
-          `/connexion?retour=${encodeURIComponent(`/oauth/consent?authorization_id=${authorizationId}`)}`
-        );
-        return;
-      }
+      try {
+        // Utilisateur non connecté : on le renvoie vers /connexion, qui devra
+        // revenir ici avec le même authorization_id une fois connecté.
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          router.replace(
+            `/connexion?retour=${encodeURIComponent(`/oauth/consent?authorization_id=${authorizationId}`)}`
+          );
+          return;
+        }
 
-      const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId!);
+        const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId!);
 
-      if (error || !data) {
-        setErreur(error?.message ?? "Impossible de récupérer les détails de la demande d'accès.");
+        if (error || !data) {
+          console.warn("Impossible de récupérer les détails du consentement OAuth :", error);
+          setErreur(messageErreurAuthentification(error ?? "détails d’autorisation absents", "autorisation"));
+          setChargement(false);
+          return;
+        }
+
+        // L'utilisateur a déjà approuvé ce client par le passé : Supabase ne
+        // redemande pas de consentement, il fournit directement une URL de
+        // retour vers le client externe.
+        if (!("authorization_id" in data)) {
+          router.replace(data.redirect_url);
+          return;
+        }
+
+        setDetails(data as DetailsAutorisation);
         setChargement(false);
-        return;
+      } catch (e) {
+        console.warn("Échec inattendu du chargement de consentement OAuth :", e);
+        setErreur(messageErreurAuthentification(e, "autorisation"));
+        setChargement(false);
       }
-
-      // L'utilisateur a déjà approuvé ce client par le passé : Supabase ne
-      // redemande pas de consentement, il fournit directement une URL de
-      // retour vers le client externe.
-      if (!("authorization_id" in data)) {
-        router.replace(data.redirect_url);
-        return;
-      }
-
-      setDetails(data as DetailsAutorisation);
-      setChargement(false);
     }
 
     charger();
@@ -140,18 +148,25 @@ function EcranConsentement() {
     setEnCours(true);
     setErreur(null);
 
-    const { data, error } =
-      decision === "approve"
-        ? await supabase.auth.oauth.approveAuthorization(authorizationId)
-        : await supabase.auth.oauth.denyAuthorization(authorizationId);
+    try {
+      const { data, error } =
+        decision === "approve"
+          ? await supabase.auth.oauth.approveAuthorization(authorizationId)
+          : await supabase.auth.oauth.denyAuthorization(authorizationId);
 
-    if (error) {
-      setErreur(error.message);
+      if (error) {
+        console.warn("Échec de la décision de consentement OAuth :", error);
+        setErreur(messageErreurAuthentification(error, "autorisation"));
+        setEnCours(false);
+        return;
+      }
+
+      router.replace(data.redirect_url);
+    } catch (e) {
+      console.warn("Échec inattendu de la décision de consentement OAuth :", e);
+      setErreur(messageErreurAuthentification(e, "autorisation"));
       setEnCours(false);
-      return;
     }
-
-    router.replace(data.redirect_url);
   }
 
   const nomClient = details?.client?.name || "Une application externe";

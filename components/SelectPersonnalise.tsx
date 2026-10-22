@@ -26,12 +26,15 @@ export function SelectPersonnalise({
   onChange,
   placeholder = "Choisir…",
   maxLongueurLabel = 50,
+  compact = false,
 }: {
   options: OptionMenu[];
   valeur: string;
   onChange: (id: string) => void;
   placeholder?: string;
   maxLongueurLabel?: number;
+  /** Version basse (h-8, texte xs) pour les barres d'outils et rangées serrées. */
+  compact?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -86,7 +89,9 @@ export function SelectPersonnalise({
       <button
         type="button"
         onClick={() => (ouvert ? fermer() : ouvrirMenu())}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-left text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+        className={`flex w-full items-center justify-between gap-2 rounded-lg border border-dj-bordure bg-dj-surface text-left text-dj-texte outline-none focus:border-dj-bordure-forte ${
+          compact ? "h-8 px-2 text-xs" : "px-3 py-2 text-sm"
+        }`}
       >
         <span className="min-w-0 truncate">{choisi ? tronquer(choisi.label) : placeholder}</span>
         <ChevronDown size={14} className="flex-shrink-0 text-dj-texte-muet" />

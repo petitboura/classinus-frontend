@@ -296,6 +296,7 @@ lib/
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
+  textesPagesErreur.ts    textes (français et anglais) des écrans d'erreur et du lien de réinitialisation impossible à vérifier
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
 android/, ios/            projets Capacitor (capacitor.config.ts minimal, export statique build:capacitor
@@ -359,12 +360,42 @@ Tout passe par Supabase Auth depuis le frontend, le backend ne gère aucun mot d
    d'en recevoir un nouveau.
 
 Le code partagé (adresses, délais, messages d'erreur en français) est dans `lib/reinitialisationMotDePasse.ts`.
-Dans l'appli installée, l'adresse du lien vient de `NEXT_PUBLIC_APP_URL`, donc le lien ouvre le site dans le
-navigateur (ouvrir l'appli directement depuis un lien est un chantier à part).
+Dans l'appli installée, l'adresse du lien vient de `NEXT_PUBLIC_APP_URL`. Sur Android, ce lien ouvre ensuite l'appli
+(voir "Liens qui ouvrent l'appli" plus bas) ; sur PC, il ouvre le navigateur.
 
 À configurer côté Supabase (Authentication, URL Configuration, Redirect URLs) : ajouter
 `<NEXT_PUBLIC_APP_URL>/reinitialiser-mot-de-passe` pour chaque projet (production, et test si besoin). Sans cela,
 Supabase refuse d'envoyer le lien. Le texte de l'email se règle dans Authentication, Email Templates.
+
+## Liens qui ouvrent l'appli
+
+Un lien de Classinus doit ouvrir l'appli installée, pas le navigateur. Une seule lecture des liens pour tous
+les cas : `lib/liensEntrants.ts` (pur, testé), branchée par `components/EcouteurLiensEntrants.tsx` (monté dans
+`app/layout.tsx`, via l'événement `appUrlOpen` de `@capacitor/app`).
+
+| Plateforme | Comment | Fichiers |
+|---|---|---|
+| Android | App Links : un lien `https://classinus.com/...` s'ouvre dans l'appli une fois vérifié par Android | `android/app/src/main/AndroidManifest.xml` (filtre `autoVerify`), `android/app/build.gradle` (`hoteLiensApp`), `public/.well-known/assetlinks.json` |
+| PC (Windows) | Protocole `classinus://app/...` enregistré par l'appli (instance unique : le lien arrive dans la fenêtre ouverte) | `electron/capacitor.electron.config.ts` (`deepLinks`) |
+| Navigateur PC | Un lien https ne peut pas ouvrir une appli de bureau : un bandeau "Ouvrir dans l'appli Classinus" apparaît sur les liens de partage (`?fichier=`, `?dossier=`, `?skill=`) | `components/BandeauOuvrirDansAppli.tsx` |
+| iOS | Rien pour l'instant : l'appli iOS n'est distribuée qu'en PWA, sans identifiant d'équipe Apple | |
+
+Règles à connaître :
+- `/oauth`, `/agent-superposition` et `/dev-demo-question` ne s'ouvrent jamais dans l'appli
+  (`PREFIXES_NON_OUVERTS_DANS_APPLI`). Le consentement du connecteur Claude doit rester dans le navigateur,
+  sinon le retour vers Claude casse.
+- Android ne sait pas exclure une page : le filtre du manifeste liste une ligne par page de premier niveau.
+  Page ajoutée ou retirée dans `app/` : mettre cette liste à jour. `npm run test:liens-entrants` échoue sinon.
+- Le fichier `assetlinks.json` contient l'empreinte SHA-256 du certificat de signature de l'APK (lue dans l'APK
+  publié v1.5.0), pour les paquets `com.classinus.app` et `com.classinus.app.externe`. Si la clé de signature
+  change, mettre ce fichier à jour, sinon les liens ouvrent de nouveau le navigateur.
+- L'hôte (`classinus.com`) est écrit dans `build.gradle` (`hoteLiensApp`) : il doit rester l'hôte de
+  `NEXT_PUBLIC_APP_URL`, ce que vérifie le test. Le site ne doit jamais rediriger `/.well-known/assetlinks.json`
+  (ni vers `www`, ni ailleurs), sinon Android refuse la vérification.
+- Le lien de l'email "mot de passe oublié" ouvre donc l'appli sur Android : la session de récupération portée
+  par le lien est ouverte par l'écouteur, et seulement pour `/reinitialiser-mot-de-passe`.
+- Ces réglages touchent la partie native : ils demandent une nouvelle version de l'APK et de l'installeur PC, la
+  mise à jour OTA seule ne suffit pas.
 
 ## Sections en groupe (Personnaliser Clovis, Bibliothèque, Bureau, Concentration)
 

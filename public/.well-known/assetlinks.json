@@ -1,0 +1,22 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.classinus.app",
+      "sha256_cert_fingerprints": [
+        "D9:4F:3C:1E:B3:68:3D:A6:5F:16:AE:78:C1:49:53:7F:77:89:C0:AD:24:72:39:BA:16:11:54:86:A0:0F:D7:79"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.classinus.app.externe",
+      "sha256_cert_fingerprints": [
+        "D9:4F:3C:1E:B3:68:3D:A6:5F:16:AE:78:C1:49:53:7F:77:89:C0:AD:24:72:39:BA:16:11:54:86:A0:0F:D7:79"
+      ]
+    }
+  }
+]

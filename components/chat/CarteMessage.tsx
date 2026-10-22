@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap } from "leaflet";
 import { MapPin, ExternalLink } from "lucide-react";
 import "leaflet/dist/leaflet.css";
+import { MESSAGES } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 // Rend un bloc ```carte du markdown -- convention : JSON
 //   { "lat": number, "lng": number, "label"?: string }
@@ -35,7 +37,8 @@ export function CarteMessage({ code }: { code: string }) {
         setLieu(JSON.parse(code));
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Données de localisation invalides dans une carte Classinus :", e);
+        setErreur(MESSAGES[obtenirLocale()].AFFICHAGE_CARTE_INVALIDE);
       }
     }, 500);
     return () => clearTimeout(delai);

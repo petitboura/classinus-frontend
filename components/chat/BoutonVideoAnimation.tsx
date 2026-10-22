@@ -4,6 +4,7 @@ import { AlertCircle, Check, Download, Loader2, RectangleHorizontal, RectangleVe
 import { MenuActionsCarte } from "@/components/MenuActionsCarte";
 import type { FormatVideo } from "./animation/styleRenduVideo";
 import type { EtatVideoAnimation } from "@/lib/useVideoAnimation";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { textesVideoAnimation } from "@/lib/textesVideoAnimation";
 
 // Bouton "Télécharger" du bloc animation, rendu dans la rangée d'actions de
@@ -30,7 +31,8 @@ export function BoutonVideoAnimation({
   surChoix: (format: FormatVideo) => void;
   surAnnuler: () => void;
 }) {
-  const t = textesVideoAnimation();
+  const locale = useLocale();
+  const t = textesVideoAnimation(locale);
   const classe = avecTexte
     ? "flex items-center gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface-haute px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60"
     : "flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg border border-dj-bordure bg-dj-surface-haute px-1.5 text-[11px] text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-60";

@@ -9,6 +9,8 @@ import { FicheDates } from "./FicheDates";
 import { FicheVocabulaire } from "./FicheVocabulaire";
 import { FicheCarteMentale } from "./FicheCarteMentale";
 import { FicheTableauComparatif } from "./FicheTableauComparatif";
+import { MESSAGES } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 // Rend un bloc ```fiche du markdown -- même famille que ```qcm
 // (QCMInteractif.tsx), ```chart (GraphiqueDonnees.tsx), ```carte
@@ -156,7 +158,8 @@ export function FicheRevision({ code }: { code: string }) {
         setFiche(valeur);
         setErreur(null);
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
+        console.warn("Contenu de fiche de révision invalide dans Classinus :", e);
+        setErreur(MESSAGES[obtenirLocale()].AFFICHAGE_FICHE_INVALIDE);
       }
     }, 500);
     return () => clearTimeout(delai);

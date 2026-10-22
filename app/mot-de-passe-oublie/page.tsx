@@ -7,6 +7,7 @@ import {
   DELAI_RENVOI_LIEN_SECONDES,
   demanderLienReinitialisation,
 } from "@/lib/reinitialisationMotDePasse";
+import { messageErreurAuthentification } from "@/lib/erreurs";
 import { EcranAutonome } from "@/components/EcranAutonome";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/Skeleton";
@@ -75,17 +76,21 @@ function FormulaireMotDePasseOublie() {
     setErreur(null);
     setEnCours(true);
 
-    const { erreur: erreurEnvoi } = await demanderLienReinitialisation(email);
+    try {
+      const { erreur: erreurEnvoi } = await demanderLienReinitialisation(email);
+      if (erreurEnvoi) {
+        setErreur(erreurEnvoi);
+        return;
+      }
 
-    setEnCours(false);
-
-    if (erreurEnvoi) {
-      setErreur(erreurEnvoi);
-      return;
+      setEnvoye(true);
+      setAttente(DELAI_RENVOI_LIEN_SECONDES);
+    } catch (e) {
+      console.warn("Échec inattendu du formulaire de mot de passe oublié :", e);
+      setErreur(messageErreurAuthentification(e, "reinitialisation"));
+    } finally {
+      setEnCours(false);
     }
-
-    setEnvoye(true);
-    setAttente(DELAI_RENVOI_LIEN_SECONDES);
   }
 
   function gererSoumission(e: React.FormEvent) {

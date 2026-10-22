@@ -12,6 +12,7 @@ import { Bouton } from "@/components/Bouton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
 import { ChampTelephone } from "@/components/ChampTelephone";
 import { BoutonGoogle } from "@/components/BoutonGoogle";
+import { messageErreurAuthentification } from "@/lib/erreurs";
 
 type MethodeConnexion = "email" | "telephone";
 
@@ -91,22 +92,26 @@ function FormulaireConnexion() {
     setErreur(null);
     setEnCours(true);
 
-    const { error } =
-      methode === "email"
-        ? await connecter({ email, password: motDePasse })
-        : await connecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
+    try {
+      const { error } =
+        methode === "email"
+          ? await connecter({ email, password: motDePasse })
+          : await connecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
 
-    setEnCours(false);
+      if (error) {
+        // Conserve l’anti-énumération : ne révèle pas si le compte existe.
+        console.warn("Échec de connexion Supabase :", error);
+        setErreur(messageErreurAuthentification(error, "connexion"));
+        return;
+      }
 
-    if (error) {
-      // Supabase renvoie le même message générique pour "mauvais mot de
-      // passe" et "aucun compte" (anti-énumération) : on l'affiche tel
-      // quel plutôt que d'essayer de deviner lequel des deux c'est.
-      setErreur(error.message);
-      return;
+      router.push(retour);
+    } catch (erreurConnexion) {
+      console.warn("La tentative de connexion a échoué de façon inattendue :", erreurConnexion);
+      setErreur(messageErreurAuthentification(erreurConnexion, "connexion"));
+    } finally {
+      setEnCours(false);
     }
-
-    router.push(retour);
   }
 
   return (

@@ -9,11 +9,15 @@ import "./polices-lecture.css";
 // besoin de ce découpage par route — chargé une fois au niveau racine.
 import "katex/dist/katex.min.css";
 import "mathlive/fonts.css";
+import { Suspense } from "react";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { EcouteurLiensEntrants } from "@/components/EcouteurLiensEntrants";
+import { BandeauOuvrirDansAppli } from "@/components/BandeauOuvrirDansAppli";
 import { MiseAJourOta } from "@/components/MiseAJourOta";
 import { ReveilBackend } from "@/components/ReveilBackend";
 import { SplashOuverture } from "@/components/SplashOuverture";
 import { SplashPret } from "@/components/SplashPret";
+import { InternationalisationGlobale } from "@/components/InternationalisationGlobale";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
@@ -221,6 +225,15 @@ export default function RacineLayout({
           }}
         />
         <ServiceWorkerRegistration />
+        {/* Liens de Classinus qui ouvrent l'appli (21/10/2026, demande de Bourama) :
+            voir lib/liensEntrants.ts. L'écouteur reçoit les liens du système dans
+            l'appli installée ; le bandeau propose d'ouvrir l'appli PC depuis un
+            navigateur PC. Le bandeau lit les paramètres de l'adresse, d'où son
+            Suspense (requis par l'export statique mobile). */}
+        <EcouteurLiensEntrants />
+        <Suspense fallback={null}>
+          <BandeauOuvrirDansAppli />
+        </Suspense>
         <MiseAJourOta />
         <ReveilBackend />
         <FournisseurRequetes>
@@ -232,6 +245,7 @@ export default function RacineLayout({
         <IndicateurTelechargements />
         <VisionneurGlobalRacine />
         <SplashPret />
+        <InternationalisationGlobale />
       </body>
     </html>
   );

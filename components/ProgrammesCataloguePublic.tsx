@@ -28,6 +28,7 @@ import { BoutonEtoile } from "@/components/BoutonEtoile";
 import { ProfilPublicModal } from "@/components/ProfilPublicModal";
 import { PanneauFlottant } from "./PanneauFlottant";
 import { SelectPersonnalise, type OptionMenu } from "./SelectPersonnalise";
+import { CaseACocher } from "./CaseACocher";
 
 /**
  * Catalogue public du Programme (22/09/2026, demande Bourama : "il
@@ -454,11 +455,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
             className="w-full resize-none rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
           />
           <label className="flex items-center gap-2 text-xs text-dj-texte-muet">
-            <input
-              type="checkbox"
-              checked={reglesConsignesPublication}
-              onChange={(e) => setReglesConsignesPublication(e.target.checked)}
-            />
+            <CaseACocher checked={reglesConsignesPublication} onChange={setReglesConsignesPublication} />
             Inclure les règles de comportement et consignes IA de chaque notion
           </label>
           {erreurPublication && <p className="text-xs text-[var(--dj-erreur)]">{erreurPublication}</p>}
@@ -618,7 +615,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
             </div>
             {entreeACopier.inclut_regles_consignes && (
               <label className="flex items-center gap-2 text-xs text-dj-texte-muet">
-                <input type="checkbox" checked={reglesConsignesCopie} onChange={(e) => setReglesConsignesCopie(e.target.checked)} />
+                <CaseACocher checked={reglesConsignesCopie} onChange={setReglesConsignesCopie} />
                 Reprendre aussi les règles de comportement et consignes IA
               </label>
             )}

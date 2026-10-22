@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Flag, Check } from "lucide-react";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { CaseACocher } from "@/components/CaseACocher";
 
 export type ChoixSignalement = {
   visible_question: boolean;
@@ -137,15 +138,15 @@ export function MenuSignalementCorrection({
           <p className="mb-2 text-xs text-dj-texte-muet">Ce que tu partages avec ton prof :</p>
           <div className="flex flex-col gap-1.5">
             <label className="flex items-center gap-2 text-xs text-dj-texte">
-              <input type="checkbox" checked={visibleQuestion} onChange={(e) => setVisibleQuestion(e.target.checked)} />
+              <CaseACocher checked={visibleQuestion} onChange={setVisibleQuestion} />
               Ma question
             </label>
             <label className="flex items-center gap-2 text-xs text-dj-texte">
-              <input type="checkbox" checked={visibleReponse} onChange={(e) => setVisibleReponse(e.target.checked)} />
+              <CaseACocher checked={visibleReponse} onChange={setVisibleReponse} />
               La réponse de l'IA
             </label>
             <label className="flex items-center gap-2 text-xs text-dj-texte">
-              <input type="checkbox" checked={visibleConversation} onChange={(e) => setVisibleConversation(e.target.checked)} />
+              <CaseACocher checked={visibleConversation} onChange={setVisibleConversation} />
               Le fil de la conversation
             </label>
           </div>

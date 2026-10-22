@@ -835,10 +835,11 @@ async function executerActionSysteme(type: string, parametres: Record<string, un
         return refus ? { erreur: refus } : { ok: true, autorise: true };
       }
       default:
-        return { erreur: `type d'action systeme inconnu : ${type}` };
+        return { erreur: "Classinus ne reconnaît pas cette action sur l’ordinateur. Demande-lui d’utiliser une action disponible." };
     }
   } catch (e) {
-    return { erreur: e instanceof Error ? e.message : String(e) };
+    console.warn("Échec inattendu d’une action système Electron :", e);
+    return { erreur: "Classinus n’a pas pu terminer cette action sur l’ordinateur. Vérifie que la fenêtre cible est disponible et que les autorisations nécessaires sont accordées, puis réessaie." };
   }
 }
 

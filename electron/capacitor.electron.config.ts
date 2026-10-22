@@ -22,6 +22,16 @@ export default defineConfig({
     // apparaît (superposition). Lancé à la main : comportement habituel.
     showOnLaunch: !lancementDepuisSession(),
   },
+  // Liens qui ouvrent l'appli (21/10/2026, demande de Bourama) : Windows envoie
+  // les liens classinus://app/... à l'appli installée, qui les reçoit par
+  // l'événement appUrlOpen (voir components/EcouteurLiensEntrants.tsx et
+  // lib/liensEntrants.ts). Ce nom doit rester identique à SCHEMA_LIEN_APPLI
+  // (lib/liensEntrants.ts) : les deux projets sont compilés séparément, un import
+  // entre eux serait fragile, et tests/verifier-liens-entrants.mjs vérifie
+  // l'égalité. Un seul exemplaire de l'appli tourne à la fois (instance unique,
+  // déjà le comportement par défaut) : un lien ouvert pendant qu'elle tourne
+  // arrive donc dans la fenêtre existante.
+  deepLinks: { scheme: 'classinus' },
   // Plus aucun écran d'ouverture Electron (05/10/2026, décision de Bourama) :
   // il pouvait s'afficher avant la vraie fenêtre et se mélanger avec la
   // superposition. Ne JAMAIS le remettre, même si la branche est réalignée
