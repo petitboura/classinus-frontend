@@ -15,6 +15,11 @@ name: Publier l'appli PC (Windows)
 #   refuse une adresse de backend contenant "staging" ;
 # - CLASSINUS_CIBLE_TEST est neutralisé, donc la cible de test de
 #   next.config.mjs ne peut pas s'appliquer ici.
+# - la release est créée en BROUILLON avant electron-builder, puis publiée à la fin
+#   seulement si l'installeur et latest.yml y sont bien (22/10/2026). Sans cela,
+#   electron-builder envoyait les fichiers en parallèle et chacun tentait de créer
+#   la release : GitHub refusait (erreur 422) ou créait deux releases du même nom,
+#   et latest.yml devenait introuvable pour les appareils installés.
 
 on:
   push:
@@ -124,7 +129,31 @@ jobs:
           npm run build
           npx capacitor-electron vendor
 
-      - name: Construire et publier l'installeur Windows
+      # Étape 1 : créer la release en brouillon, UNE seule fois, avant que
+      # electron-builder n'envoie quoi que ce soit. electron-builder cherche une
+      # release à l'étiquette vX.Y.Z (brouillons compris) et la réutilise : tous ses
+      # envois en parallèle arrivent alors dans la même release.
+      - name: Préparer la release en brouillon
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
+          DEPOT_RELEASES: petitboura/classinus-updates-pc
+        run: |
+          tag="v$VERSION_PC"
+          existantes=$(gh api "repos/$DEPOT_RELEASES/releases?per_page=100" --jq "[.[] | select(.tag_name==\"$tag\")] | length")
+          if [ "$existantes" != "0" ]; then
+            echo "Une release $tag existe déjà dans $DEPOT_RELEASES. Rien n'est publié : supprimer cette release (et son étiquette si besoin) ou choisir un autre numéro."
+            exit 1
+          fi
+          id=$(gh api -X POST "repos/$DEPOT_RELEASES/releases" -f tag_name="$tag" -f name="$VERSION_PC" -F draft=true -F prerelease=false --jq '.id')
+          if [ -z "$id" ]; then
+            echo "Impossible de créer la release brouillon."
+            exit 1
+          fi
+          echo "ID_RELEASE_PC=$id" >> "$GITHUB_ENV"
+          echo "Release brouillon créée : $tag (id $id)"
+
+      - name: Construire et envoyer l'installeur Windows
         working-directory: electron
         shell: bash
         env:
@@ -133,3 +162,66 @@ jobs:
           npx electron-builder --config electron-builder.config.js --win --publish always -c.extraMetadata.version="$VERSION_PC"
           echo "Fichiers produits :"
           ls -la dist
+
+      # Étape 3 : ne publier que si tout est là. Les appareils installés ne voient
+      # jamais une release à moitié remplie.
+      - name: Vérifier puis publier la release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
+          DEPOT_RELEASES: petitboura/classinus-updates-pc
+        run: |
+          tag="v$VERSION_PC"
+          exe="Classinus-Setup-$VERSION_PC.exe"
+          memes=$(gh api "repos/$DEPOT_RELEASES/releases?per_page=100" --jq "[.[] | select(.tag_name==\"$tag\")] | length")
+          if [ "$memes" != "1" ]; then
+            echo "Il y a $memes releases à l'étiquette $tag au lieu d'une seule. Publication annulée."
+            exit 1
+          fi
+          for fichier in "$exe" "latest.yml"; do
+            etat=$(gh api "repos/$DEPOT_RELEASES/releases/$ID_RELEASE_PC" --jq ".assets[] | select(.name==\"$fichier\") | .state")
+            if [ "$etat" != "uploaded" ]; then
+              echo "Le fichier $fichier est absent ou incomplet dans la release (état : '$etat'). Publication annulée."
+              exit 1
+            fi
+          done
+          gh api -X PATCH "repos/$DEPOT_RELEASES/releases/$ID_RELEASE_PC" -F draft=false -f make_latest=true --jq '.html_url'
+          echo "Release $tag publiée."
+
+      # Contrôle final : l'adresse que lisent les appareils installés répond bien.
+      - name: Contrôler l'adresse de mise à jour
+        shell: bash
+        env:
+          DEPOT_RELEASES: petitboura/classinus-updates-pc
+        run: |
+          for essai in 1 2 3 4 5; do
+            if curl -fsSL "https://github.com/$DEPOT_RELEASES/releases/latest/download/latest.yml" | grep -q "^version: $VERSION_PC\$"; then
+              echo "latest.yml répond avec la version $VERSION_PC."
+              exit 0
+            fi
+            echo "Essai $essai : latest.yml ne répond pas encore avec la version $VERSION_PC, nouvel essai dans 10 secondes."
+            sleep 10
+          done
+          echo "latest.yml ne répond pas avec la version $VERSION_PC. La release est publiée mais à vérifier à la main."
+          exit 1
+
+      # En cas d'échec avant la publication : supprimer le brouillon, pour qu'une
+      # relance du même numéro reparte propre. Une release déjà publiée n'est jamais touchée.
+      - name: Nettoyer le brouillon en cas d'échec
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
+          DEPOT_RELEASES: petitboura/classinus-updates-pc
+        run: |
+          if [ -z "$ID_RELEASE_PC" ]; then
+            echo "Aucun brouillon à nettoyer."
+            exit 0
+          fi
+          brouillon=$(gh api "repos/$DEPOT_RELEASES/releases/$ID_RELEASE_PC" --jq '.draft' || echo "")
+          if [ "$brouillon" = "true" ]; then
+            gh api -X DELETE "repos/$DEPOT_RELEASES/releases/$ID_RELEASE_PC"
+            echo "Brouillon supprimé (id $ID_RELEASE_PC)."
+          else
+            echo "La release n'est plus un brouillon, elle n'est pas touchée."
+          fi
