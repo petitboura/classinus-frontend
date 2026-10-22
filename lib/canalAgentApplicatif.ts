@@ -104,6 +104,7 @@ import { abonnerArretTache, arreterToutLocalEtServeur, mettreAJourSourceTache, s
 import { consommerReglagesUniquesProchainMessage, lireReglagesProchainMessage } from "./reglagesProchainMessage";
 import { modeleActifProchainMessage } from "./modeleActif";
 import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
+import { messageErreurPlugin } from "./usePluginNatif";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
@@ -533,7 +534,8 @@ async function traiterDemandeAction(id: string, actionId: string) {
     envoyerReponse(id, { succes: true });
   } catch (e) {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors de l'exécution." });
+    console.warn("Échec d’un clic dans Classinus :", e);
+    envoyerReponse(id, { erreur: "Le clic n’a pas pu être effectué. Vérifie que l’élément est toujours présent et actif, puis réessaie." });
   }
 }
 
@@ -658,7 +660,8 @@ async function traiterDemandeEcriture(id: string, actionId: string, texteAEcrire
     envoyerReponse(id, { succes: true });
   } catch (e) {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors de l'écriture." });
+    console.warn("Échec d’une écriture dans un champ Classinus :", e);
+    envoyerReponse(id, { erreur: "Classinus n’a pas pu écrire dans ce champ. Vérifie que le champ est toujours visible et modifiable, puis réessaie." });
   }
 }
 
@@ -689,7 +692,8 @@ function traiterDemandeLecturePage(id: string, longueurMax: unknown) {
     envoyerReponse(id, { succes: true, texte: lecture.texte, coupe: lecture.coupe });
   } catch (e) {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors de la lecture de la page." });
+    console.warn("Échec de lecture d’une page par Classinus :", e);
+    envoyerReponse(id, { erreur: "Impossible de lire le contenu de cette page pour le moment. Vérifie qu’elle est toujours ouverte, puis réessaie." });
   }
 }
 
@@ -708,27 +712,28 @@ async function traiterDemandeClicGenerique(id: string, selecteur: string, descri
   const idJournal = pousserJournalDepuisAgent(description);
   afficherTexteDepuisAgent(description);
 
-  element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
-  await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
-
-  // Toute dernière vérification, juste avant le clic physique -- on
-  // re-résout l'élément par son sélecteur CSS plutôt que de vérifier
-  // l'ancien objet DOM (même raison que traiterDemandeAction : React
-  // peut avoir remplacé le nœud entre-temps).
-  const elementActuel = resoudreElementCliquable(selecteur);
-  if (!elementActuel) {
-    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
-    envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
-    return;
-  }
-
   try {
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+    await deplacerCurseurDepuisAgent(element, { cliquer: true, forme: "main" });
+
+    // Toute dernière vérification, juste avant le clic physique -- on
+    // re-résout l'élément par son sélecteur CSS plutôt que de vérifier
+    // l'ancien objet DOM (même raison que traiterDemandeAction : React
+    // peut avoir remplacé le nœud entre-temps).
+    const elementActuel = resoudreElementCliquable(selecteur);
+    if (!elementActuel) {
+      if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+      envoyerReponse(id, { erreur: "L'élément a disparu juste avant le clic." });
+      return;
+    }
+
     elementActuel.click();
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
     envoyerReponse(id, { succes: true });
   } catch (e) {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue lors du clic." });
+    console.warn("Échec d’un clic générique dans Classinus :", e);
+    envoyerReponse(id, { erreur: "Le clic n’a pas pu être effectué. Vérifie que l’élément est encore disponible et accessible, puis réessaie." });
   }
 }
 
@@ -745,9 +750,14 @@ async function traiterDemandeMontrer(id: string, actionId: string) {
     return;
   }
 
-  element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
-  await deplacerCurseurDepuisAgent(element, { cliquer: false, forme: "main" });
-  envoyerReponse(id, { succes: true });
+  try {
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
+    await deplacerCurseurDepuisAgent(element, { cliquer: false, forme: "main" });
+    envoyerReponse(id, { succes: true });
+  } catch (e) {
+    console.warn("Échec du pointage d’un élément dans Classinus :", e);
+    envoyerReponse(id, { erreur: "Classinus n’a pas pu pointer cet élément. Vérifie qu’il est toujours visible, puis réessaie." });
+  }
 }
 
 async function traiterPointageEcran(id: string, point: { x: number; y: number }) {
@@ -763,7 +773,8 @@ async function traiterPointageEcran(id: string, point: { x: number; y: number })
     envoyerReponse(id, { succes: true });
   } catch (e) {
     if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Pointage impossible." });
+    console.warn("Échec du pointage à l’écran dans Classinus :", e);
+    envoyerReponse(id, { erreur: "Impossible de pointer cet emplacement à l’écran. Vérifie que la fenêtre cible est disponible, puis réessaie." });
   }
 }
 
@@ -885,8 +896,22 @@ function traiterMessage(message: unknown) {
         executerActionSysteme(options: { id: string; type: string; parametres: Record<string, unknown> }): Promise<unknown>;
       }>("PontNatif");
       return pont.executerActionSysteme({ id, type: action_systeme, parametres: parametres ?? {} });
-    }).then(resultat => envoyerReponse(id, resultat))
-      .catch(e => envoyerReponse(id, { erreur: e instanceof Error ? e.message : String(e) }));
+    }).then(resultat => {
+      // Le pont natif peut résoudre sa promesse avec { erreur: ... } :
+      // ce n'est pas un rejet, mais son texte ne doit pas contourner
+      // le gestionnaire central des erreurs natives.
+      if (resultat && typeof resultat === "object" && !Array.isArray(resultat)) {
+        const objet = resultat as Record<string, unknown>;
+        if (typeof objet.erreur === "string") {
+          envoyerReponse(id, { ...objet, erreur: messageErreurPlugin(new Error(objet.erreur)) });
+          return;
+        }
+      }
+      envoyerReponse(id, resultat);
+    }).catch(e => {
+      console.warn("Échec d’une action native du canal Classinus :", e);
+      envoyerReponse(id, { erreur: "Classinus n’a pas pu exécuter cette action sur l’ordinateur. Vérifie que l’application et la fenêtre cible sont disponibles, puis réessaie." });
+    });
   } else if (m.id && m.action_id && typeof m.texte_a_ecrire === "string") {
     traiterDemandeEcriture(m.id, m.action_id, m.texte_a_ecrire);
   } else if (m.id && m.action_id) {

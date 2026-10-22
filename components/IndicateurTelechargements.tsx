@@ -7,6 +7,7 @@ import {
   type EntreeTelechargement,
 } from "@/lib/etatTelechargements";
 import { textesTelechargement } from "@/lib/textesTelechargement";
+import { useLocale } from "@/lib/i18n/useLocale";
 
 // Carte globale des téléchargements (10/10/2026, demande Bourama : afficher
 // l'avancement en pourcentage et informer en cas d'échec partout). Les boutons
@@ -15,7 +16,8 @@ import { textesTelechargement } from "@/lib/textesTelechargement";
 // le chat, téléchargement d'une sélection de fichiers, etc. Un échec reste
 // affiché avec "Réessayer" jusqu'à ce que l'utilisateur le ferme.
 function LigneTelechargement({ entree }: { entree: EntreeTelechargement }) {
-  const t = textesTelechargement();
+  const locale = useLocale();
+  const t = textesTelechargement(locale);
   const { statut, pourcentage, erreur, nom, relancer, cle } = entree;
   const enEchec = statut === "echec";
 

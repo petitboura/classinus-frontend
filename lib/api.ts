@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { ErreurApi, messageErreur } from "./erreurs";
 import { obtenirOrigineAppareil } from "./origineAppareil";
+import { obtenirLocale } from "./i18n/locale";
 
 // URL du backend FastAPI (voir api/main.py). En local pendant le dev :
 // http://localhost:8000. Une fois déployé sur Railway : l'URL publique de
@@ -96,6 +97,7 @@ export async function appelerApi(chemin: string, options: RequestInit = {}) {
 
   const entetes = new Headers(options.headers);
   entetes.set("Content-Type", "application/json");
+  entetes.set("Accept-Language", obtenirLocale());
   if (session?.access_token) {
     entetes.set("Authorization", `Bearer ${session.access_token}`);
   }
@@ -142,6 +144,7 @@ export async function appelerApiStream(
 
   const entetes = new Headers();
   entetes.set("Content-Type", "application/json");
+  entetes.set("Accept-Language", obtenirLocale());
   if (session?.access_token) {
     entetes.set("Authorization", `Bearer ${session.access_token}`);
   }
@@ -219,7 +222,7 @@ export async function appelerApiFichier(chemin: string, fichier: File) {
 
   const reponse = await fetch(`${API_URL}${chemin}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
     body: corps,
   });
 
@@ -257,7 +260,7 @@ export async function ajouterFichierBibliotheque(
 
   const reponse = await fetch(`${API_URL}/api/agents/${agentId}/bibliotheque`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
     body: corps,
   });
 
@@ -317,7 +320,7 @@ export async function obtenirProgressionDossierDesigne(dossierNom: string, plate
 
   const params = new URLSearchParams({ dossier_nom: dossierNom, plateforme });
   const reponse = await fetch(`${API_URL}/api/dossiers-designes/progression?${params}`, {
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
   });
 
   if (!reponse.ok) {
@@ -438,7 +441,7 @@ export async function ajouterFichierBibliothequePersonnelle(fichier: File, descr
 
   const reponse = await fetch(`${API_URL}/api/bibliotheque`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
     body: corps,
   });
 
@@ -778,7 +781,7 @@ export async function ajouterABibliothequePublique(
 
   const reponse = await fetch(`${API_URL}/api/bibliotheque-publique`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
     body: corps,
   });
 
@@ -1712,7 +1715,7 @@ export async function uploaderSkillPublic(fichier: File, nom: string, descriptio
 
   const reponse = await fetch(`${API_URL}/api/comportements-publics/uploader`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
     body: corps,
   });
 
@@ -1907,7 +1910,7 @@ export async function importerComportementDepuisFichier(agentId: string, fichier
 
   const reponse = await fetch(`${API_URL}/api/agents/${agentId}/mes-comportements/importer`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
     body: corps,
   });
 
@@ -1974,7 +1977,7 @@ export async function supprimerComportement(agentId: string, comportementId: str
 // d'erreur réseau, pour ne jamais faire planter Mon espace.
 export async function sectionComportementsActivee(agentId: string): Promise<boolean> {
   try {
-    const reponse = await fetch(`${API_URL}/api/agents/${agentId}`);
+    const reponse = await fetch(`${API_URL}/api/agents/${agentId}`, { headers: { "Accept-Language": obtenirLocale() } });
     if (!reponse.ok) return false;
     const data = await reponse.json();
     return !!data.section_mes_comportements;
@@ -2039,6 +2042,8 @@ export async function enregistrerMonProfil(payload: {
   traduction_auto_erreurs?: boolean;
   // 15/10/2026, voir api/profiles.py:MettreAJourProfilPayload.
   modele_prefere?: string;
+  // 22/10/2026, voir api/profiles.py:MettreAJourProfilPayload.
+  langue_interface?: "fr" | "en";
 }) {
   return appelerApi("/api/profiles/me", {
     method: "PATCH",
@@ -2062,6 +2067,8 @@ export async function obtenirMonStatut() {
     traduction_auto_erreurs: boolean | null;
     // 15/10/2026, voir api/profiles.py:MonStatutReponse -- null = jamais choisi.
     modele_prefere: string | null;
+    // 22/10/2026, voir api/profiles.py:MonStatutReponse, null = jamais choisie.
+    langue_interface: "fr" | "en" | null;
   }>;
 }
 
@@ -2479,7 +2486,7 @@ export async function diffuserDocumentMatiere(
   const chemin = `/api/agents/clovis/contenus-matiere/${contenuId}/diffuser`;
   const reponse = await fetch(`${API_URL}${chemin}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
     body: corps,
   });
 

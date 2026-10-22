@@ -89,3 +89,16 @@ Pour tout ajout :
 - Le clic à l'extérieur doit tester `innerRef.contains(cible)` en plus du
   bouton, car le panneau n'est plus un descendant DOM de son bouton.
 - Le niveau (z-index) est géré par le composant, sous la couche de l'agent.
+
+## Listes et cases à cocher : jamais de natif
+
+Décision de Bourama (22/10/2026), à ne jamais défaire. Le navigateur dessine
+lui-même les `<select>` et les `<input type="checkbox">`, sans notre thème.
+- Liste déroulante : `SelectPersonnalise` (option `compact` pour les rangées serrées).
+- Case à cocher : `CaseACocher`.
+- Ne jamais écrire `<select>` ni `<input type="checkbox">` ailleurs que dans ces
+  deux composants. `tests/verifier-composants-natifs.mjs` tourne avant chaque
+  build (`prebuild`, et les builds Capacitor) et l'arrête avec le fichier et la
+  ligne fautifs. Ne pas le contourner ni l'assouplir.
+- Même logique pour la langue de l'interface : pas de pastille FR/EN flottante,
+  le choix est dans Paramètres > Préférences et à la création du compte.

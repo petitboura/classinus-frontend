@@ -11,6 +11,8 @@
 // URL Configuration, Redirect URLs), sinon Supabase refuse d'envoyer le lien.
 import type { AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { MESSAGES, estErreurReseau, messageErreurAuthentification } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 export const ROUTE_MOT_DE_PASSE_OUBLIE = "/mot-de-passe-oublie";
 export const ROUTE_REINITIALISATION = "/reinitialiser-mot-de-passe";
@@ -44,6 +46,10 @@ function adresseDuSite(): string | null {
 
 /** Message en français pour une erreur Supabase Auth, jamais le texte anglais brut. */
 export function traduireErreurAuth(erreur: AuthError | { code?: string; message?: string }): string {
+  const message = erreur.message?.toLowerCase() ?? "";
+  if (estErreurReseau(message)) {
+    return MESSAGES[obtenirLocale()].ERREUR_RESEAU;
+  }
   switch (erreur.code) {
     case "over_email_send_rate_limit":
     case "over_request_rate_limit":
@@ -76,12 +82,17 @@ export async function demanderLienReinitialisation(email: string): Promise<{ err
     return { erreur: "Impossible de préparer le lien depuis cet appareil. Réessaie depuis un navigateur." };
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${site}${ROUTE_REINITIALISATION}`,
-  });
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${site}${ROUTE_REINITIALISATION}`,
+    });
 
-  if (error) return { erreur: traduireErreurAuth(error) };
-  return { erreur: null };
+    if (error) return { erreur: traduireErreurAuth(error) };
+    return { erreur: null };
+  } catch (e) {
+    console.warn("Échec inattendu de l’envoi du lien de réinitialisation :", e);
+    return { erreur: messageErreurAuthentification(e, "reinitialisation") };
+  }
 }
 
 /**

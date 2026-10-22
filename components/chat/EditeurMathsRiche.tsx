@@ -32,6 +32,7 @@ import { useRef, useState } from "react";
 import { X, Sigma, Mic, Square, Check } from "lucide-react";
 import { NoeudMaths } from "./MathNode";
 import { transcrireAudioChat } from "@/lib/api";
+import { messageErreur } from "@/lib/erreurs";
 import { texteParleVersLatex } from "@/lib/texteParleVersLatex";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 
@@ -108,7 +109,7 @@ export function EditeurMathsRiche({
           // <math-field> éditable/corrigeable, pas une phrase à retaper.
           editor?.chain().focus().insertContent({ type: "maths", attrs: { latex } }).run();
         } catch (e) {
-          alert(e instanceof Error ? e.message : "Erreur de transcription.");
+          alert(messageErreur(e));
         } finally {
           setTranscriptionEnCours(false);
         }

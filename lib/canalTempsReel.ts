@@ -1,6 +1,7 @@
 import { creerReconnexionProgressive } from "./reconnexionProgressive";
 import { supabase } from "./supabase";
 import type { NotificationClovis } from "./api";
+import { messageErreurFichierNatif } from "./erreurs";
 
 // Ajoute le 30/08/2026, Bourama : Lot 1 Partie 3 (app mobile), chantier
 // "Exploration de dossier en temps reel" (voir 00-commun-exploration-dossier.md
@@ -174,7 +175,8 @@ async function repondreListerContenu(id: string, dossierNom: string) {
     const { elements } = await pluginDossiers.listerContenu({ uri: dossier.uri });
     envoyerReponse(id, { elements: elements.map(formatterElement) });
   } catch (e) {
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue." });
+    console.warn("Échec du listage d’un dossier natif :", e);
+    envoyerReponse(id, { erreur: messageErreurFichierNatif(e, "lister") });
   }
 }
 
@@ -217,7 +219,8 @@ async function repondreOuvrirSousDossier(id: string, dossierNom: string, chemin:
     const { elements } = await pluginDossiers!.listerContenu({ uri: resolu.uri });
     envoyerReponse(id, { elements: elements.map(formatterElement) });
   } catch (e) {
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue." });
+    console.warn("Échec de l’ouverture d’un sous-dossier natif :", e);
+    envoyerReponse(id, { erreur: messageErreurFichierNatif(e, "ouvrir") });
   } finally {
     signalerExploration({ enCours: false });
   }
@@ -263,7 +266,8 @@ async function repondreChercherParNom(id: string, dossierNom: string, termeReche
     await chercherRecursif(racine.uri, [], termeRecherche.toLowerCase(), 0, resultats);
     envoyerReponse(id, { elements: resultats });
   } catch (e) {
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue." });
+    console.warn("Échec de la recherche dans les dossiers natifs :", e);
+    envoyerReponse(id, { erreur: messageErreurFichierNatif(e, "rechercher") });
   } finally {
     signalerExploration({ enCours: false });
   }
@@ -324,7 +328,8 @@ async function repondreLireFichier(id: string, dossierNom: string, chemin: strin
       tailleOctets: lecture.tailleOctets,
     });
   } catch (e) {
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue." });
+    console.warn("Échec de lecture d’un fichier natif :", e);
+    envoyerReponse(id, { erreur: messageErreurFichierNatif(e, "lire") });
   }
 }
 
@@ -370,7 +375,8 @@ async function repondreListerTousFichiers(id: string, dossierNom: string) {
     await collecterTousFichiers(racine.uri, [], 0, resultats);
     envoyerReponse(id, { elements: resultats });
   } catch (e) {
-    envoyerReponse(id, { erreur: e instanceof Error ? e.message : "Erreur inconnue." });
+    console.warn("Échec du listage récursif des fichiers natifs :", e);
+    envoyerReponse(id, { erreur: messageErreurFichierNatif(e, "lister") });
   } finally {
     signalerExploration({ enCours: false });
   }

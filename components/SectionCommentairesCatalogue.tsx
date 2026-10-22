@@ -13,6 +13,7 @@ import {
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/Skeleton";
+import { useLocale } from "@/lib/i18n/useLocale";
 
 const TAILLE_PAGE = 20;
 
@@ -40,6 +41,7 @@ export function SectionCommentairesCatalogue({
   typeElement: TypeElementCataloguePublic;
   elementId: string;
 }) {
+  const locale = useLocale();
   const [depliee, setDepliee] = useState(false);
   const [commentaires, setCommentaires] = useState<CommentaireCatalogue[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -243,7 +245,7 @@ export function SectionCommentairesCatalogue({
                     <div className="flex items-center gap-2">
                       <span className="truncate text-xs font-semibold text-dj-texte">{c.auteur_nom || "Anonyme"}</span>
                       <span className="flex-shrink-0 text-[10px] text-dj-texte-muet">
-                        {new Date(c.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                        {new Date(c.created_at).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "short" })}
                       </span>
                     </div>
                     <p className="whitespace-pre-wrap text-sm text-dj-texte">{c.contenu}</p>

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { BlocLarge } from "./BlocLarge";
 import { BoutonTelechargerImage } from "./BoutonTelechargerImage";
 import { telechargerImageElement } from "@/lib/telechargerImageElement";
+import { MESSAGES } from "@/lib/erreurs";
+import { obtenirLocale } from "@/lib/i18n/locale";
 
 let compteurMermaid = 0;
 
@@ -108,17 +110,14 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
           setErreur(null);
         }
       } catch (e) {
-        // 2026-07-20 (Bourama : "le mermaid ne marche même plus, il doit
-        // avoir une limite peut-être") -- jusqu'ici cette erreur était
-        // avalée en silence (juste "en cours de construction..." pour
-        // toujours), impossible de savoir si c'était : un diagramme
-        // encore incomplet en plein streaming (normal, transitoire), une
-        // vraie limite de mermaid (ex: maxTextSize/maxEdges dépassé sur
-        // un gros diagramme), ou une syntaxe que cette version de
-        // mermaid ne supporte pas. On affiche désormais le message
-        // d'erreur réel -- s'il reste affiché après la fin du streaming,
-        // ce N'EST PAS un diagramme incomplet.
-        if (!annule) setErreur(e instanceof Error ? e.message : String(e));
+        // Mermaid peut refuser une syntaxe invalide ou un diagramme trop
+        // complexe. Le détail technique reste dans la console pour aider au
+        // diagnostic, mais l'interface explique le problème sans exposer
+        // les messages internes du moteur de rendu.
+        console.warn("Diagramme Mermaid impossible à afficher dans Classinus :", e);
+        if (!annule) {
+          setErreur(MESSAGES[obtenirLocale()].AFFICHAGE_DIAGRAMME_INVALIDE);
+        }
       }
     }, 400);
 

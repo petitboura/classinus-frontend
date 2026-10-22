@@ -653,7 +653,7 @@ export function BarreDeSaisie({
           // pièce jointe qui ne sera jamais lue.
           console.error("Démarrage dézipage échoué :", e);
           setFichiers((prec) => prec.filter((entree) => entree.fichier !== f));
-          alert(e instanceof Error ? e.message : "Impossible de lire cette archive.");
+          alert(messageErreur(e));
         });
     }
   }

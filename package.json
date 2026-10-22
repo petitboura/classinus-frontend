@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node tests/verifier-composants-natifs.mjs",
     "build": "next build",
+    "test:composants-natifs": "node tests/verifier-composants-natifs.mjs",
     "start": "next start",
     "lint": "next lint",
-    "build:capacitor": "cross-env CAPACITOR_BUILD=true next build && npx cap sync",
-    "build:capacitor:test": "cross-env CAPACITOR_BUILD=true CLASSINUS_CIBLE_TEST=true next build && npx cap sync",
+    "build:capacitor": "node tests/verifier-composants-natifs.mjs && cross-env CAPACITOR_BUILD=true next build && npx cap sync",
+    "build:capacitor:test": "node tests/verifier-composants-natifs.mjs && cross-env CAPACITOR_BUILD=true CLASSINUS_CIBLE_TEST=true next build && npx cap sync",
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:mise-a-jour-pc": "node tests/verifier-mise-a-jour-pc.mjs",
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
@@ -31,7 +33,10 @@
     "test:traits-crayon": "node tests/verifier-traits-crayon.mjs",
     "test:lecteur-youtube": "node tests/verifier-lecteur-youtube.mjs",
     "test:liens-entrants": "node tests/verifier-liens-entrants.mjs",
+    "test:gestion-erreurs": "node tests/verifier-gestion-erreurs.mjs",
     "postinstall": "node scripts/appliquer-correctif-lector.mjs",
+    "test:i18n": "node tests/verifier-i18n.mjs",
+    "audit:i18n": "node tests/auditer-i18n.mjs",
     "test:montage-video": "node tests/verifier-montage-video.mjs"
   },
   "dependencies": {

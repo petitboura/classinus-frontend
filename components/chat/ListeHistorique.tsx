@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { Check, ChevronRight, MessageSquare, MoreVertical, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { useLocale } from "@/lib/i18n/useLocale";
 
 const LONGUEUR_MAX_TITRE = 80;
 // Distance (px) avant la fin de la liste a laquelle on charge deja la suite,
@@ -34,14 +35,14 @@ function majuscule(texte: string): string {
 // Groupe de date d'un fil : jours recents, puis semaines (jusqu'a 5 Sem selon la date),
 // puis Mois dernier, puis un groupe par mois (annee affichee seulement
 // pour les annees passees).
-function groupeDeDate(iso: string, maintenant: Date): { cle: string; libelle: string } {
+function groupeDeDate(iso: string, maintenant: Date, locale: "fr" | "en"): { cle: string; libelle: string } {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { cle: "inconnu", libelle: "Plus ancien" };
+  if (Number.isNaN(d.getTime())) return { cle: "inconnu", libelle: locale === "en" ? "Older" : "Plus ancien" };
   const debutJour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const ecart = Math.max(0, Math.round((debutJour(maintenant) - debutJour(d)) / 86400000));
-  if (ecart === 0) return { cle: "aujourdhui", libelle: "Aujourd'hui" };
-  if (ecart === 1) return { cle: "hier", libelle: "Hier" };
-  if (ecart === 2) return { cle: "avant-hier", libelle: "Avant-hier" };
+  if (ecart === 0) return { cle: "aujourdhui", libelle: locale === "en" ? "Today" : "Aujourd'hui" };
+  if (ecart === 1) return { cle: "hier", libelle: locale === "en" ? "Yesterday" : "Hier" };
+  if (ecart === 2) return { cle: "avant-hier", libelle: locale === "en" ? "Day before yesterday" : "Avant-hier" };
   // Les semaines vont jusqu'au meme jour du mois dernier (ramene au dernier
   // jour du mois dernier s'il est plus court), donc 28 a 31 jours selon la date.
   const dernierJourMoisDernier = new Date(maintenant.getFullYear(), maintenant.getMonth(), 0).getDate();
@@ -53,22 +54,22 @@ function groupeDeDate(iso: string, maintenant: Date): { cle: string; libelle: st
   const limiteSemaines = Math.round((debutJour(maintenant) - memeJourMoisDernier.getTime()) / 86400000);
   if (ecart <= limiteSemaines) {
     const semaines = Math.ceil(ecart / 7);
-    return { cle: `sem-${semaines}`, libelle: `Il y a ${semaines} Sem` };
+    return { cle: `sem-${semaines}`, libelle: locale === "en" ? `${semaines} weeks ago` : `Il y a ${semaines} Sem` };
   }
   const moisEcoules = (maintenant.getFullYear() - d.getFullYear()) * 12 + (maintenant.getMonth() - d.getMonth());
-  if (moisEcoules === 1) return { cle: "mois-dernier", libelle: "Mois dernier" };
-  const nomMois = majuscule(d.toLocaleDateString("fr-FR", { month: "long" }));
+  if (moisEcoules === 1) return { cle: "mois-dernier", libelle: locale === "en" ? "Last month" : "Mois dernier" };
+  const nomMois = majuscule(d.toLocaleDateString(locale === "en" ? "en-US" : "fr-FR", { month: "long" }));
   const libelle = d.getFullYear() === maintenant.getFullYear() ? nomMois : `${nomMois} ${d.getFullYear()}`;
   return { cle: `mois-${d.getFullYear()}-${d.getMonth()}`, libelle };
 }
 
 // Regroupe des fils deja tries du plus recent au plus ancien ; l'ordre des
 // groupes suit donc celui des fils, et un groupe vide n'existe jamais.
-function regrouperParDate(fils: FilConversation[]): GroupeDate[] {
+function regrouperParDate(fils: FilConversation[], locale: "fr" | "en"): GroupeDate[] {
   const maintenant = new Date();
   const groupes: GroupeDate[] = [];
   for (const fil of fils) {
-    const { cle, libelle } = groupeDeDate(fil.derniere_activite, maintenant);
+    const { cle, libelle } = groupeDeDate(fil.derniere_activite, maintenant, locale);
     const dernier = groupes[groupes.length - 1];
     if (dernier && dernier.cle === cle) dernier.fils.push(fil);
     else groupes.push({ cle, libelle, fils: [fil] });
@@ -95,6 +96,7 @@ export function ListeHistorique({
   variante = "popup",
   className = "",
 }: PropsListe) {
+  const locale = useLocale();
   const ctx = useContext(ContexteChat);
   const historique = ctx?.historique ?? [];
   const aPlus = ctx?.historiqueAPlus ?? false;
@@ -118,7 +120,7 @@ export function ListeHistorique({
     .filter((f) => !f.epingle)
     .sort((a, b) => Date.parse(b.derniere_activite) - Date.parse(a.derniere_activite));
 
-  const groupes = regrouperParDate(recents);
+  const groupes = regrouperParDate(recents, locale);
   // Rien a charger tant que tous les groupes de dates sont replies (la
   // liste est alors courte et le bas toujours visible : on chargerait tout).
   const chargementAutorise = groupes.length === 0 || groupes.some((g) => !groupesFermes.has(g.cle));

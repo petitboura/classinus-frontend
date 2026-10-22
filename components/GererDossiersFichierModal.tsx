@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { messageErreur } from "@/lib/erreurs";
+import { CaseACocher } from "./CaseACocher";
 
 // 15/09/2026, demande Bourama ("une liste à cocher quand on veut
 // déplacer") : un fichier du catalogue public peut désormais être
@@ -155,12 +156,7 @@ export function GererDossiersFichierModal({
                 key={d.id}
                 className="flex cursor-pointer items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte"
               >
-                <input
-                  type="checkbox"
-                  checked={coches.has(d.id)}
-                  onChange={() => basculer(d.id)}
-                  className="flex-shrink-0 accent-dj-accent-1"
-                />
+                <CaseACocher checked={coches.has(d.id)} onChange={() => basculer(d.id)} />
                 {d.statut === "contribution_libre" ? (
                   <Globe size={14} className="flex-shrink-0 text-dj-texte-muet" />
                 ) : (

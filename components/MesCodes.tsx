@@ -26,6 +26,7 @@ import { PanneauFlottant } from "./PanneauFlottant";
 import { EditeurComportement } from "./EditeurComportement";
 import { EspaceBibliotheque } from "./EspaceBibliotheque";
 import { MenuActionsCarte } from "./MenuActionsCarte";
+import { CaseACocher } from "./CaseACocher";
 
 // Même agent générique que MesComportements.tsx (app/(app)/comportements/page.tsx)
 // -- "Mes comportements" n'a jamais eu de notion de rôle, un seul agentId
@@ -663,11 +664,10 @@ function CarteCode({
               core/outils_changement_mode.py). Ne restreint jamais un
               changement de mode piloté par un skill attaché à ce code. */}
           <label className="mt-2 flex w-full cursor-pointer items-start gap-2 rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte">
-            <input
-              type="checkbox"
+            <CaseACocher
               checked={c.eleve_choisit_mode !== false}
-              onChange={(e) => onSauverEleveChoisitMode(e.target.checked)}
-              className="mt-0.5 flex-shrink-0"
+              onChange={onSauverEleveChoisitMode}
+              className="mt-0.5"
             />
             <span className="min-w-0 flex-1">
               L'élève peut choisir lui-même son mode source et son mode pédagogique
