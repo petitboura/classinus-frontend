@@ -23,6 +23,7 @@ import { EspaceTempsEcran } from "@/components/EspaceTempsEcran";
 import { MesComportements } from "@/components/MesComportements";
 import { SkillsPublics } from "@/components/SkillsPublics";
 import { MaMemoire } from "@/components/MaMemoire";
+import { EspaceConnexions } from "@/components/connexions/EspaceConnexions";
 
 // Source unique du CONTENU de chaque sous-section (Bureau, Bibliothèque,
 // Concentration, Personnaliser Classinus). La vraie page
@@ -119,6 +120,7 @@ const CONTENU_SECTIONS: Record<CleSection, () => ReactNode> = {
     </>
   ),
   [ROUTES_PERSONNALISER.memoire]: () => <MaMemoire />,
+  [ROUTES_PERSONNALISER.connexions]: () => <EspaceConnexions />,
 };
 
 /** Le contenu d'une sous-section, identique en vraie page et en fenêtre flottante. */

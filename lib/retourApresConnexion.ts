@@ -15,8 +15,10 @@ export function lireRetourConnexion(): RetourApresConnexion {
     if (!brut) return RETOUR_PAR_DEFAUT;
     const note = JSON.parse(brut) as Partial<RetourApresConnexion> & { a?: number };
     const recente = typeof note.a === "number" && Date.now() - note.a < DUREE_VALIDITE_MS;
-    const interne = typeof note.href === "string" && note.href.startsWith("/") && !note.href.startsWith("//");
-    if (!recente || !interne || typeof note.libelle !== "string" || !note.libelle) return RETOUR_PAR_DEFAUT;
-    return { href: note.href, libelle: note.libelle };
+    const href = note.href;
+    const libelle = note.libelle;
+    if (!recente || typeof href !== "string" || !href.startsWith("/") || href.startsWith("//")) return RETOUR_PAR_DEFAUT;
+    if (typeof libelle !== "string" || !libelle) return RETOUR_PAR_DEFAUT;
+    return { href, libelle };
   } catch { return RETOUR_PAR_DEFAUT; }
 }
