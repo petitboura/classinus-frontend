@@ -2419,6 +2419,21 @@ const EN: Record<string, string> = {
   "veut faire ceci": "wants to do this",
   "Confirmer ?": "Confirm?",
   "Outil": "Tool",
+  "Applications connectées": "Connected apps",
+  "Relie les services que tu utilises à Classinus. Chaque connexion est personnelle : les autorisations sont accordées par ton fournisseur et ne doivent pas être partagées avec d’autres comptes.": "Link the services you use to Classinus. Each connection is personal: permissions are granted by your provider and must not be shared with other accounts.",
+  "Accède à tes dépôts GitHub pour consulter du code et travailler sur tes projets, selon les autorisations accordées.": "Access your GitHub repositories to view code and work on your projects, depending on the permissions granted.",
+  "Permets à Classinus de retrouver et d’utiliser les pages et bases de données de ton espace Notion.": "Let Classinus find and use the pages and databases in your Notion workspace.",
+  "Autorise Classinus à utiliser les fonctionnalités Higgsfield disponibles via son serveur MCP, avec ton propre compte.": "Allow Classinus to use the Higgsfield features available through its MCP server, with your own account.",
+  "Permets à Classinus d’interagir avec tes projets et services Railway selon les autorisations de ton compte.": "Let Classinus interact with your Railway projects and services, depending on your account permissions.",
+  "Permets à Classinus d’interagir avec tes projets Supabase sans partager tes identifiants avec d’autres utilisateurs.": "Let Classinus interact with your Supabase projects without sharing your credentials with other users.",
+  "Relie ce service à Classinus pour utiliser les fonctionnalités autorisées depuis ton compte.": "Link this service to Classinus to use the features allowed from your account.",
+  "Reconnecter": "Reconnect",
+  "Reconnexion nécessaire": "Reconnection required",
+  "Statut indisponible": "Status unavailable",
+  "Déconnexion…": "Disconnecting…",
+  "Connecte-toi ou crée un compte pour gérer tes applications connectées.": "Sign in or create an account to manage your connected apps.",
+  "Déconnecter Classinus ne révoque pas toujours l’autorisation chez le fournisseur. Pour retirer totalement l’accès, consulte aussi les paramètres de sécurité du service concerné.": "Disconnecting Classinus does not always revoke the authorization with the provider. To remove access completely, also check the security settings of the service concerned.",
+  "On te ramène à tes applications connectées.": "Taking you back to your connected apps.",
 };
 
 function normaliserCasse(texte: string): string {
