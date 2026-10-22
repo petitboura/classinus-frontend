@@ -519,20 +519,33 @@ let minuteurEssaiAffichage: ReturnType<typeof setTimeout> | null = null;
 const DELAI_ESSAI_AFFICHAGE_MS = 250;
 const NB_MAX_ESSAIS_AFFICHAGE = 40;
 
+// Correctif (23/10/2026, demande de Bourama) : la note « deja affichee » ne suffisait pas. Si la
+// superposition disparaissait sans passer par retirerSuperposition (fermee depuis l'icone de la
+// barre des taches, cachee par le systeme), la note restait vraie et plus aucun etat ne la
+// remontrait. On regarde donc l'etat reel de la fenetre a chaque demande, pas seulement la note.
+let ecouteBlurPosee = false;
+
 function essayerAffichageSuperposition(essai: number) {
-  if (!affichageVoulu || superpositionAffichee) return;
+  if (!affichageVoulu) return;
   const superposition = trouverFenetreSuperposition();
   if (superposition && !superposition.isDestroyed()) {
+    if (superpositionAffichee && superposition.isVisible()) return;
     superpositionAffichee = true;
     superposition.showInactive();
     // L'etudiant clique dans une autre fenetre : la superposition perd le focus, elle redevient
     // non activable (rien a rendre : c'est deja l'autre fenetre qui est active).
-    superposition.on("blur", () => {
-      if (saisieTexteActive) definirSaisieTexte(superposition, false);
-    });
+    if (!ecouteBlurPosee) {
+      ecouteBlurPosee = true;
+      superposition.on("blur", () => {
+        if (saisieTexteActive) definirSaisieTexte(superposition, false);
+      });
+    }
     demarrerSuiviSouris();
     return;
   }
+  // Fenetre detruite : la note ne doit plus la croire affichee, et l'ecoute du blur est perdue.
+  superpositionAffichee = false;
+  ecouteBlurPosee = false;
   if (essai >= NB_MAX_ESSAIS_AFFICHAGE || minuteurEssaiAffichage) return;
   minuteurEssaiAffichage = setTimeout(() => {
     minuteurEssaiAffichage = null;
