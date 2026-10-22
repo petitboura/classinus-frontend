@@ -1,15 +1,18 @@
 name: Video editor frontend checks
 
 on:
-  push:
-    branches:
-      - wip/video-montage-non-verifie
+  pull_request:
     paths:
       - "components/chat/BarreDeSaisie.tsx"
       - "components/chat/ChatIA.tsx"
       - "components/chat/EditeurVideoContextuel.tsx"
+      - "components/chat/MenuChoixVideoJointe.tsx"
+      - "components/chat/LigneApercuPieces.tsx"
       - "lib/api.ts"
       - "lib/videoMontage.ts"
+      - "lib/textesEditeurVideo.ts"
+      - "lib/useFermetureAnimee.ts"
+      - "lib/i18n/interface.ts"
       - "tests/verifier-montage-video.mjs"
       - "package.json"
       - "package-lock.json"
