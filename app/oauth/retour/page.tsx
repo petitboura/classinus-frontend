@@ -9,6 +9,7 @@ import { EcranAutonome } from "@/components/EcranAutonome";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
 import { Skeleton } from "@/components/Skeleton";
+import { lireRetourConnexion, RETOUR_PAR_DEFAUT, type RetourApresConnexion } from "@/lib/retourApresConnexion";
 
 /**
  * Page de retour après la connexion à une application (Notion, Google Drive).
@@ -83,6 +84,8 @@ function EcranRetour() {
   const refus = params.get("error");
 
   const [resultat, setResultat] = useState<Resultat>({ etat: "en_cours" });
+  const [retour, setRetour] = useState<RetourApresConnexion>(RETOUR_PAR_DEFAUT);
+  const destinationRetour = useRef<RetourApresConnexion | null>(null);
   // Le code n'est utilisable qu'une fois : en développement React monte les
   // effets deux fois, le second appel échouerait et écraserait le succès.
   const dejaLance = useRef(false);
@@ -110,7 +113,13 @@ function EcranRetour() {
 
   useEffect(() => {
     if (resultat.etat !== "succes") return;
-    const minuteur = setTimeout(() => router.replace("/"), DELAI_RETOUR_MS);
+    // Le ref évite de perdre la destination si React rejoue l’effet en développement.
+    if (!destinationRetour.current) {
+      destinationRetour.current = lireRetourConnexion();
+      setRetour(destinationRetour.current);
+    }
+    const destination = destinationRetour.current ?? RETOUR_PAR_DEFAUT;
+    const minuteur = setTimeout(() => router.replace(destination.href), DELAI_RETOUR_MS);
     return () => clearTimeout(minuteur);
   }, [resultat, router]);
 
@@ -127,7 +136,7 @@ function EcranRetour() {
             <Check size={26} strokeWidth={2.5} aria-hidden />
           </span>
           <h1 className="mt-4 font-display text-xl font-bold text-dj-texte">{nom} est connecté</h1>
-          <p className="mt-2 text-sm text-dj-texte-muet">On te ramène au chat.</p>
+          <p className="mt-2 text-sm text-dj-texte-muet">On te ramène {retour.libelle}.</p>
         </div>
       </CadreRetour>
     );
@@ -141,7 +150,7 @@ function EcranRetour() {
         </span>
         <h1 className="mt-4 font-display text-xl font-bold text-dj-texte">Connexion impossible</h1>
         <p className="mt-2 text-sm text-dj-texte-muet">{resultat.message}</p>
-        <Bouton className="mt-6 w-full" onClick={() => router.replace("/")}>
+        <Bouton className="mt-6 w-full" onClick={() => router.replace(lireRetourConnexion().href)}>
           Retourner au chat
         </Bouton>
       </div>

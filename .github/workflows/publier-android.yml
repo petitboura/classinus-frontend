@@ -1,0 +1,203 @@
+name: Publier l'appli Android (APK)
+
+# Construit l'APK Android de Classinus (variante "play", celle que sert la page
+# /telecharger), le signe avec la clé habituelle et le publie dans une release de
+# CE dépôt (petitboura/classinus-frontend). La page /telecharger et le bandeau
+# "Version X disponible" de l'appli lisent cette release (releases/latest).
+#
+# Déclenchement : uniquement en poussant une étiquette de la forme vX.Y.Z
+# (par exemple v1.6.0). Jamais à chaque push sur main : comme pour l'appli PC
+# (publier-pc.yml), c'est un geste volontaire, séparé de l'OTA (ota.yml).
+# Les étiquettes pc-vX.Y.Z (appli PC) ne déclenchent pas ce fichier.
+#
+# Garde-fous (rien n'est publié si l'un d'eux échoue) :
+# - l'étiquette doit pointer un commit déjà contenu dans main ;
+# - l'étiquette doit être identique à versionName dans android/version-app.properties ;
+# - la clé de signature doit être configurée (sinon l'APK ne serait pas signé) ;
+# - l'APK doit être signé avec la MÊME clé que la release précédente, sinon aucune
+#   mise à jour ne pourrait s'installer par-dessus l'appli existante ;
+# - versionCode doit être strictement supérieur à celui de la release précédente,
+#   et au moins égal à versionNativeMin de ota.config.json ;
+# - le build utilise les variables de PRODUCTION (les mêmes que ota.yml) et refuse
+#   une adresse de backend contenant "staging".
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Une publication à la fois, sans en annuler en cours de route.
+concurrency:
+  group: android-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      CAPACITOR_BUILD: "true"
+      CLASSINUS_CIBLE_TEST: ""
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Vérifier l'étiquette, la branche et la version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Étiquette invalide : $GITHUB_REF_NAME. Forme attendue : v1.2.3"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Le commit de l'étiquette n'est pas dans main. On ne publie l'appli Android que depuis main."
+            exit 1
+          fi
+          nom=$(grep -E '^versionName=' android/version-app.properties | cut -d= -f2 | tr -d '[:space:]')
+          code=$(grep -E '^versionCode=' android/version-app.properties | cut -d= -f2 | tr -d '[:space:]')
+          if [ "$nom" != "$version" ]; then
+            echo "L'étiquette ($version) ne correspond pas à versionName ($nom) dans android/version-app.properties."
+            echo "Corriger ce fichier dans main, puis recréer l'étiquette."
+            exit 1
+          fi
+          minimum=$(node -p "require('./ota.config.json').versionNativeMin")
+          if [ "$code" -lt "$minimum" ]; then
+            echo "versionCode ($code) est inférieur à versionNativeMin ($minimum) de ota.config.json."
+            exit 1
+          fi
+          echo "VERSION_APK=$version" >> "$GITHUB_ENV"
+          echo "CODE_APK=$code" >> "$GITHUB_ENV"
+          echo "Version publiée : $version (code $code)"
+
+      - name: Vérifier la configuration
+        shell: bash
+        run: |
+          manquantes=""
+          for nom in NEXT_PUBLIC_API_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_APP_URL ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!nom}" ]; then
+              manquantes="$manquantes $nom"
+            fi
+          done
+          if [ -n "$manquantes" ]; then
+            echo "Configuration incomplète. Variables ou secrets manquants :$manquantes"
+            echo "À renseigner dans Settings, Secrets and variables, Actions."
+            exit 1
+          fi
+          case "$NEXT_PUBLIC_API_URL" in
+            *staging*)
+              echo "NEXT_PUBLIC_API_URL vise le staging. Une publication Android doit viser la production."
+              exit 1
+              ;;
+          esac
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Installer le SDK Android
+        uses: android-actions/setup-android@v3
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Construire le site pour l'appli (export statique)
+        run: npx next build
+
+      - name: Copier le site dans le projet Android
+        run: npx cap sync android
+
+      - name: Préparer la clé de signature
+        shell: bash
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/classinus-release.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/classinus-release.jks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/keystore.properties
+
+      - name: Construire l'APK signé
+        working-directory: android
+        run: ./gradlew --no-daemon assemblePlayRelease
+
+      - name: Vérifier la signature et la version de l'APK
+        shell: bash
+        run: |
+          apk=$(find android/app/build/outputs/apk/play/release -name '*.apk' | head -n 1)
+          if [ -z "$apk" ]; then
+            echo "Aucun APK produit."
+            exit 1
+          fi
+          outils=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          cp "$apk" Classinus.apk
+
+          # 1. L'APK est bien signé et contient la bonne version.
+          "$outils/apksigner" verify --print-certs Classinus.apk > signature-nouvelle.txt
+          empreinte_nouvelle=$(grep -m1 'certificate SHA-256 digest' signature-nouvelle.txt | awk '{print $NF}')
+          if [ -z "$empreinte_nouvelle" ]; then
+            echo "L'APK n'est pas signé."
+            exit 1
+          fi
+          code_apk=$("$outils/aapt2" dump badging Classinus.apk | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -n 1)
+          nom_apk=$("$outils/aapt2" dump badging Classinus.apk | sed -n "s/.*versionName='\([^']*\)'.*/\1/p" | head -n 1)
+          echo "APK construit : version $nom_apk, code $code_apk, empreinte $empreinte_nouvelle"
+          if [ "$code_apk" != "$CODE_APK" ] || [ "$nom_apk" != "$VERSION_APK" ]; then
+            echo "L'APK ne contient pas la version attendue ($VERSION_APK, code $CODE_APK)."
+            exit 1
+          fi
+
+          # 2. Comparaison avec la release précédente (même clé, version qui monte).
+          precedente=$(gh release view --json tagName -q .tagName 2>/dev/null || true)
+          if [ -n "$precedente" ] && [ "$precedente" != "$GITHUB_REF_NAME" ]; then
+            gh release download "$precedente" --pattern '*.apk' --output precedent.apk
+            "$outils/apksigner" verify --print-certs precedent.apk > signature-precedente.txt
+            empreinte_precedente=$(grep -m1 'certificate SHA-256 digest' signature-precedente.txt | awk '{print $NF}')
+            if [ "$empreinte_nouvelle" != "$empreinte_precedente" ]; then
+              echo "La clé de signature est DIFFÉRENTE de celle de la release $precedente."
+              echo "Les mises à jour ne s'installeraient pas par-dessus l'appli existante. Publication annulée."
+              exit 1
+            fi
+            code_precedent=$("$outils/aapt2" dump badging precedent.apk | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -n 1)
+            if [ "$code_apk" -le "$code_precedent" ]; then
+              echo "versionCode ($code_apk) doit être supérieur à celui de $precedente ($code_precedent)."
+              exit 1
+            fi
+            echo "Même clé que $precedente, versionCode $code_precedent vers $code_apk : OK"
+          fi
+
+      # Publication en dernier : si une étape plus haut échoue, rien n'est publié
+      # et la page /telecharger continue de servir la version précédente.
+      - name: Publier la release
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" Classinus.apk \
+            --title "Version $VERSION_APK" \
+            --notes "APK Android construit automatiquement depuis le commit $GITHUB_SHA" \
+            --latest \
+            --verify-tag
