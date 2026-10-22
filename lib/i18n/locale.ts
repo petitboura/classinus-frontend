@@ -13,7 +13,18 @@ export function obtenirLocale(): Locale {
   }
 }
 
-/** Enregistre le choix sans requête ni effet sur les données du compte. */
+/** Vrai si la personne a déjà choisi une langue sur cet appareil (sinon c'est juste le français par défaut). */
+export function aChoisiLocale(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const v = window.localStorage.getItem(CLE_LOCALE_CLASSINUS);
+    return v === "fr" || v === "en";
+  } catch {
+    return false;
+  }
+}
+
+/** Enregistre le choix sur l'appareil, sans requête. Le compte est mis à jour par definirLangueInterface (lib/contexteStatutUtilisateur.tsx). */
 export function definirLocale(locale: Locale): void {
   if (typeof window === "undefined") return;
   try {

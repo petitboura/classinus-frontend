@@ -833,6 +833,8 @@ const EN: Record<string, string> = {
   "Relances de Classinus": "Classinus reminders",
   "Je suis prof": "I am a teacher",
   "Langue de traduction des erreurs": "Error translation language",
+  "Langue de l'interface": "Interface language",
+  "Langue des menus et des textes de Classinus. Les erreurs de code sont traduites dans la même langue.": "Language of Classinus menus and texts. Code errors are translated into the same language.",
   "Traduction automatique des erreurs": "Automatic error translation",
   "Traduction automatique activée.": "Automatic translation enabled.",
   "Traduction à la demande (bouton traduire).": "On-demand translation (Translate button).",

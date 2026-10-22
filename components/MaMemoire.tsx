@@ -13,6 +13,7 @@ import { dateRelative } from "@/lib/dateRelative";
 import { modifierLigneMemoire, oublierCategorieMemoire, titreCategorieMemoire } from "@/lib/categoriesMemoire";
 import { MenuActionsCarte } from "./MenuActionsCarte";
 import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
+import { CaseACocher } from "./CaseACocher";
 
 // Écran "Ma mémoire" (29/09/2026, demande Bourama : un seul système de
 // mémoire). Il lit la mémoire structurée de l'élève (table memoire_eleve,
@@ -143,7 +144,7 @@ function ChampEditable({ cle, valeur, onChange }: { cle: string; valeur: unknown
   if (typeof valeur === "boolean") {
     return (
       <label className="flex min-w-0 items-center gap-2 text-sm text-dj-texte">
-        <input type="checkbox" checked={valeur} onChange={(e) => onChange(e.target.checked)} />
+        <CaseACocher checked={valeur} onChange={(c) => onChange(c)} />
         {libelleCle(cle)}
       </label>
     );
