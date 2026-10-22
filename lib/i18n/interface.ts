@@ -369,7 +369,7 @@ const EN: Record<string, string> = {
   "Supprimer mon compte": "Delete my account",
   "Se connecter": "Sign in",
   "Se connecter avec Google": "Sign in with Google",
-  "Connexion…": "Signing in…",
+  "Connexion…": "Connecting…",
   "Téléphone": "Phone",
   "Mot de passe oublié ?": "Forgot password?",
   "Pas encore de compte ?": "Don't have an account yet?",
