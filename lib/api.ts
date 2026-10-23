@@ -1355,7 +1355,24 @@ export async function extraireFormuleImage(fichier: File) {
  * Bourama). Pas d'authentification requise (accessible avant connexion).
  */
 export async function lireRegistreOutils() {
-  return appelerApi(`/api/outils/registre`);
+  const registre = await appelerApi(`/api/outils/registre`) as {
+    outils: { nom: string; label: string; icone: string; onglet?: string | null; appli?: string }[];
+    verbes_actions?: Record<string, { icone: string }>;
+    prefixes_applis?: Record<string, string>;
+  };
+  // Les outils de serveurs personnels sont visibles seulement pour le compte connecté.
+  try {
+    const personnalises = await appelerApi(`/api/mcp-personnalises/outils-interface`) as {
+      outils?: { nom: string; label: string; icone: string; onglet?: string | null; appli?: string }[];
+    };
+    const noms = new Set(registre.outils.map((outil) => outil.nom));
+    return {
+      ...registre,
+      outils: [...registre.outils, ...(personnalises.outils ?? []).filter((outil) => !noms.has(outil.nom))],
+    };
+  } catch {
+    return registre;
+  }
 }
 
 export async function lireDroitsAgent(agentId: string) {
@@ -2886,4 +2903,74 @@ export async function supprimerSignalementPedagogique(signalementId: string) {
  */
 export async function deconnecterApplication(service: string) {
   return appelerApi(`/api/connexions/${service}/deconnecter`, { method: "POST" }) as Promise<{ connecte: boolean }>;
+}
+
+
+export type AuthTypeMcpPersonnalise = "none" | "bearer" | "oauth";
+
+export type McpPersonnalise = {
+  id: string;
+  nom: string;
+  url: string;
+  auth_type: AuthTypeMcpPersonnalise;
+  actif: boolean;
+  connecte: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type PayloadMcpPersonnalise = {
+  nom: string;
+  url: string;
+  auth_type: AuthTypeMcpPersonnalise;
+  token?: string | null;
+};
+
+export async function listerMcpPersonnalises() {
+  return appelerApi("/api/mcp-personnalises") as Promise<{ serveurs: McpPersonnalise[] }>;
+}
+
+export async function enregistrerMcpPersonnalise(payload: PayloadMcpPersonnalise, id?: string) {
+  const chemin = id
+    ? `/api/mcp-personnalises/${encodeURIComponent(id)}`
+    : "/api/mcp-personnalises";
+  return appelerApi(chemin, {
+    method: id ? "PATCH" : "POST",
+    body: JSON.stringify(payload),
+  }) as Promise<{ serveur: McpPersonnalise }>;
+}
+
+export async function definirMcpPersonnaliseActif(id: string, actif: boolean) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/actif`, {
+    method: "POST",
+    body: JSON.stringify({ actif }),
+  }) as Promise<{ actif: boolean }>;
+}
+
+export async function supprimerMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  }) as Promise<{ supprime: boolean }>;
+}
+
+export async function testerMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/tester`, {
+    method: "POST",
+  }) as Promise<{
+    connecte: boolean;
+    nombre_outils: number;
+    outils: { nom: string; description: string }[];
+  }>;
+}
+
+export async function demarrerConnexionMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/demarrer-oauth`, {
+    method: "POST",
+  }) as Promise<{ url: string }>;
+}
+
+export async function deconnecterMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/deconnecter`, {
+    method: "POST",
+  }) as Promise<{ connecte: boolean }>;
 }

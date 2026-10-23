@@ -8,6 +8,7 @@ import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { memoriserRetourConnexion, oublierRetourConnexion } from "@/lib/retourApresConnexion";
 import { ROUTES_PERSONNALISER } from "@/lib/routesPersonnaliser";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
+import { McpPersonnalises } from "@/components/connexions/McpPersonnalises";
 
 type Etat = "chargement" | "connecte" | "deconnecte" | "reconnecter" | "erreur";
 type Ligne = { etat: Etat; message?: string; action?: boolean };
@@ -119,6 +120,7 @@ export function EspaceConnexions() {
           );
         })}
       </div>
+      <McpPersonnalises />
       <p className="text-xs leading-5 text-dj-texte-muet">Déconnecter Classinus ne révoque pas toujours l’autorisation chez le fournisseur. Pour retirer totalement l’accès, consulte aussi les paramètres de sécurité du service concerné.</p>
     </section>
   );
