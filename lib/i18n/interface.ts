@@ -2523,6 +2523,11 @@ const EN: Record<string, string> = {
   "Annule un déploiement Vercel en cours.": "Cancel an ongoing Vercel deployment.",
   "Modifie les variables d’environnement d’un service Railway ; cela peut changer le comportement d’une application déployée.": "Change the environment variables of a Railway service; this may change the behavior of a deployed application.",
   "Supprime un service Railway. Cette action peut interrompre l’application et être difficile à annuler.": "Delete a Railway service. This can interrupt the application and may be difficult to undo.",
+  "On te ramène": "Taking you back",
+  "à tes applications connectées": "to your connected apps",
+  "Relie uniquement les services dont tu as besoin. La connexion rattache ton compte fournisseur à Classinus ; elle ne signifie pas que toutes les actions de ce service sont autorisées en permanence.": "Connect only the services you need. Connecting links your provider account to Classinus; it does not mean every action from that service is always authorized.",
+  "Toutes les règles": "All rules",
+  "Relie tes comptes externes à Classinus, consulte leur état et retire leurs autorisations quand tu le souhaites.": "Connect your external accounts to Classinus, check their status, and revoke their authorizations whenever you choose.",
 };
 
 function normaliserCasse(texte: string): string {
