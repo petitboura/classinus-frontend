@@ -2889,7 +2889,7 @@ export async function deconnecterApplication(service: string) {
 }
 
 
-export type FichierSkillIndependant = { chemin: string; contenu?: string; type_mime?: string | null; taille_octets?: number; mis_a_jour_le?: string | null };
+export type FichierSkillIndependant = { chemin: string; contenu?: string | null; binaire?: boolean; type_mime?: string | null; taille_octets?: number; mis_a_jour_le?: string | null };
 export type SkillIndependant = { id: string; nom: string; description: string; actif: boolean; created_at: string; updated_at: string; fichiers?: FichierSkillIndependant[] };
 export async function listerSkillsIndependants() { return appelerApi("/api/skills") as Promise<SkillIndependant[]>; }
 export async function obtenirSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`) as Promise<SkillIndependant>; }
