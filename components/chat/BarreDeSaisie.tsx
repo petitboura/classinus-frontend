@@ -942,8 +942,9 @@ export function BarreDeSaisie({
       let etat = platformMcpEtat[service];
       if (!etat || etat === "chargement" || etat === "erreur") {
         const statut = await statutConnexion(service);
-        etat = statut.connecte ? "connecte" : statut.a_reconnecter ? "a_reconnecter" : "deconnecte";
-        setPlatformMcpEtat((prec) => ({ ...prec, [service]: etat }));
+        const etatVerifie: EtatConnexionMcp = statut.connecte ? "connecte" : statut.a_reconnecter ? "a_reconnecter" : "deconnecte";
+        etat = etatVerifie;
+        setPlatformMcpEtat((prec) => ({ ...prec, [service]: etatVerifie }));
       }
       if (etat === "connecte") {
         // Déjà connecté : un second clic propose de déconnecter, jamais sans confirmation.

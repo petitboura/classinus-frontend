@@ -32,7 +32,7 @@ assert.match(espace, /APPLIS_DISPONIBLES\.filter\(\(app\) => app\.visibleDansEsp
 assert.match(barre, /APPLIS_DISPONIBLES\.filter\(\(a\) => a\.visibleDansBoutonApplications\)/);
 assert.ok(espace.includes('ligne.etat === "erreur" ? void recharger()'), "Réessayer doit actualiser le statut, pas relancer OAuth");
 assert.ok(espace.includes("ligne.message"), "les erreurs de statut doivent être visibles");
-assert.ok(barre.includes('if (platformMcpEtat[nom] === "erreur") return "Statut indisponible";'));
+assert.ok(barre.includes('if (etat === "erreur") return "Statut indisponible";'));
 assert.ok(barre.includes('[service]: "erreur"'), "une panne de statut MCP ne doit pas être interprétée comme une déconnexion");
 assert.ok(catalogue.includes("registre.repli && promesseRegistre === promesseCourante"));
 assert.ok(catalogue.includes('window.addEventListener("online", reessayerSiDisponible)'));
