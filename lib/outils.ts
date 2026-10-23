@@ -51,6 +51,7 @@ import { IconeSupabase } from "@/components/icons/IconeSupabase";
 import { useEffect, useState } from "react";
 import * as IconesLucide from "lucide-react";
 import { lireRegistreOutils } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 // Extrait de components/chat/BarreDeSaisie.tsx le 01/08 (Bourama : "est-ce
 // que ça varie en fonction de quel outil est ajouté ou enlevé" --
@@ -120,6 +121,27 @@ function resoudreSousIcone(nomIcone: string): typeof Search | null {
 }
 
 let promesseRegistre: Promise<RegistreOutils> | null = null;
+const EVENEMENT_REGISTRE_OUTILS = "classinus:registre-outils-a-actualiser";
+
+/** Invalide le cache partagé après une modification des serveurs MCP personnels. */
+export function invaliderRegistreOutils() {
+  promesseRegistre = null;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENEMENT_REGISTRE_OUTILS));
+}
+
+// Le registre contient des outils propres au compte : un changement de compte
+// invalide le catalogue même si aucune vue de chat n'est montée lors du switch.
+let ecouteurAuthInstalle = false;
+function installerEcouteurAuthRegistre() {
+  if (typeof window === "undefined" || ecouteurAuthInstalle) return;
+  ecouteurAuthInstalle = true;
+  supabase.auth.onAuthStateChange((evenement) => {
+    if (evenement === "SIGNED_IN" || evenement === "SIGNED_OUT") {
+      // Évite de rappeler getSession dans le callback synchrone de Supabase Auth.
+      window.setTimeout(() => invaliderRegistreOutils(), 0);
+    }
+  });
+}
 
 async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
   const NB_TENTATIVES = 3;
@@ -178,8 +200,11 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
 
   useEffect(() => {
     let actif = true;
+    let generation = 0;
+    installerEcouteurAuthRegistre();
 
     const chargerEtAppliquer = async () => {
+      const maGeneration = ++generation;
       if (!promesseRegistre) promesseRegistre = chargerRegistreOutilsAvecRepli();
       const promesseCourante = promesseRegistre;
       try {
@@ -189,7 +214,8 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
         if (registre.repli && promesseRegistre === promesseCourante) {
           promesseRegistre = null;
         }
-        if (actif) {
+        // Seule la réponse la plus récente est appliquée (changement de compte, serveur ajouté).
+        if (actif && maGeneration === generation) {
           setOutils(registre.outils);
           setVerbes(registre.verbes);
           setPrefixes(registre.prefixes);
@@ -197,21 +223,26 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
         }
       } catch {
         if (promesseRegistre === promesseCourante) promesseRegistre = null;
-        if (actif) setCharge(true);
+        if (actif && maGeneration === generation) setCharge(true);
       }
     };
 
     const reessayerSiDisponible = () => {
       if (!promesseRegistre) void chargerEtAppliquer();
     };
+    const actualiser = () => {
+      void chargerEtAppliquer();
+    };
 
     void chargerEtAppliquer();
     window.addEventListener("online", reessayerSiDisponible);
     window.addEventListener("focus", reessayerSiDisponible);
+    window.addEventListener(EVENEMENT_REGISTRE_OUTILS, actualiser);
     return () => {
       actif = false;
       window.removeEventListener("online", reessayerSiDisponible);
       window.removeEventListener("focus", reessayerSiDisponible);
+      window.removeEventListener(EVENEMENT_REGISTRE_OUTILS, actualiser);
     };
   }, []);
 

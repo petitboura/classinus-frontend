@@ -10,6 +10,7 @@ import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
 import { Skeleton } from "@/components/Skeleton";
 import { lireRetourConnexion, RETOUR_PAR_DEFAUT, type RetourApresConnexion } from "@/lib/retourApresConnexion";
+import { invaliderRegistreOutils } from "@/lib/outils";
 
 /**
  * Page de retour après la connexion à une application (Notion, Google Drive).
@@ -31,6 +32,7 @@ const NOMS_SERVICES: Record<string, string> = {
   vercel_mcp: "Vercel",
   railway_mcp: "Railway",
   supabase_mcp: "Supabase",
+  mcp_personnalise: "Serveur MCP personnalisé",
 };
 
 // Durée d'affichage de la confirmation avant de ramener la personne au chat.
@@ -105,7 +107,10 @@ function EcranRetour() {
 
     finaliserConnexion(code, state)
       .then((r) => {
-        if (r.succes) setResultat({ etat: "succes", service: r.service });
+        if (r.succes) {
+          if (r.service === "mcp_personnalise") invaliderRegistreOutils();
+          setResultat({ etat: "succes", service: r.service });
+        }
         else setResultat({ etat: "echec", message: r.message });
       })
       .catch((e) => setResultat({ etat: "echec", message: messageErreur(e) }));
