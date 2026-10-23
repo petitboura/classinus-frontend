@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Check, CircleAlert, LoaderCircle, PlugZap, Unplug } from "lucide-react";
 import { APPLIS_DISPONIBLES } from "@/lib/outils";
 import { statutConnexion, demarrerConnexion, deconnecterApplication } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { memoriserRetourConnexion, oublierRetourConnexion } from "@/lib/retourApresConnexion";
 import { ROUTES_PERSONNALISER } from "@/lib/routesPersonnaliser";
+import { ROUTES_PARAMETRES } from "@/lib/routesParametres";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 
 type Etat = "chargement" | "connecte" | "deconnecte" | "reconnecter" | "erreur";
@@ -18,13 +20,13 @@ const MASQUEES = new Set(["google_drive"]);
 const APPLIS_AFFICHEES = APPLIS_DISPONIBLES.filter((app) => !MASQUEES.has(app.nom));
 
 const DESCRIPTIONS: Record<string, string> = {
-  github: "Accède à tes dépôts GitHub pour consulter du code et travailler sur tes projets, selon les autorisations accordées.",
-  notion: "Permets à Classinus de retrouver et d’utiliser les pages et bases de données de ton espace Notion.",
-  google_drive: "Relie Google Drive pour retrouver les fichiers que tu choisis de rendre accessibles à Classinus.",
-  higgsfield_mcp: "Autorise Classinus à utiliser les fonctionnalités Higgsfield disponibles via son serveur MCP, avec ton propre compte.",
-  vercel_mcp: "Permets à Classinus d’interagir avec tes projets et déploiements Vercel selon les accès que tu accordes.",
-  railway_mcp: "Permets à Classinus d’interagir avec tes projets et services Railway selon les autorisations de ton compte.",
-  supabase_mcp: "Permets à Classinus d’interagir avec tes projets Supabase sans partager tes identifiants avec d’autres utilisateurs.",
+  github: "Connecte ton compte GitHub pour que Clovis puisse rechercher tes dépôts, lire des fichiers et examiner branches, commits et pull requests. Selon les outils autorisés, il peut aussi préparer ou effectuer des changements dans les dépôts. Les actions d’écriture et de fusion se règlent séparément dans Gestion des outils.",
+  notion: "Connecte ton espace Notion pour rechercher et lire des pages et bases de données. Selon les outils disponibles et les règles que tu choisis, Clovis peut aussi créer, modifier ou déplacer des pages et gérer certains commentaires. La connexion Notion ne vaut pas autorisation permanente de chaque action.",
+  google_drive: "Relie Google Drive pour rechercher, lire ou télécharger les fichiers accessibles à ton compte. Certains outils peuvent aussi créer ou copier des fichiers. Google Drive reste masqué dans cette liste sur décision actuelle, mais sa description est conservée pour le catalogue.",
+  higgsfield_mcp: "Relie ton propre compte Higgsfield pour utiliser les outils de génération et de consultation de résultats disponibles sur ce compte. La génération peut consommer des crédits ou un quota du fournisseur ; vérifie les effets de chaque outil avant de l’autoriser en permanence.",
+  vercel_mcp: "Connecte Vercel pour consulter tes projets, déploiements et informations de build. Selon les outils autorisés, Clovis peut aussi lancer ou annuler un déploiement et modifier certains réglages. Ces actions peuvent affecter un site en ligne : définis des règles explicites dans Gestion des outils.",
+  railway_mcp: "Connecte Railway pour consulter tes projets, services, déploiements et journaux. Selon les outils autorisés, Clovis peut aussi toucher aux variables d’environnement, domaines ou services. Ces opérations peuvent interrompre une application ou exposer des secrets ; n’autorise que les outils nécessaires.",
+  supabase_mcp: "Connecte Supabase pour consulter tes projets, schémas de base de données, tables et journaux. Certains outils peuvent exécuter du SQL ou appliquer des migrations, donc lire, modifier ou supprimer des données et changer le schéma. Configure chaque outil séparément dans Gestion des outils.",
 };
 
 
@@ -81,9 +83,14 @@ export function EspaceConnexions() {
 
   return (
     <section className="flex flex-col gap-4">
-      <p className="max-w-3xl text-sm leading-6 text-dj-texte-muet">
-        Relie les services que tu utilises à Classinus. Chaque connexion est personnelle : les autorisations sont accordées par ton fournisseur et ne doivent pas être partagées avec d’autres comptes.
-      </p>
+      <div className="flex max-w-3xl flex-col gap-2">
+        <p className="text-sm leading-6 text-dj-texte-muet">
+          Relie uniquement les services dont tu as besoin. La connexion rattache ton compte fournisseur à Classinus ; elle ne signifie pas que toutes les actions de ce service sont autorisées en permanence.
+        </p>
+        <Link href={ROUTES_PARAMETRES.outils} className="w-fit text-sm font-semibold text-dj-texte underline underline-offset-4 hover:text-dj-texte-muet">
+          Gérer les autorisations outil par outil
+        </Link>
+      </div>
       {erreur && <div role="alert" className="flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]"><CircleAlert size={17} className="mt-0.5 shrink-0" />{erreur}</div>}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {APPLIS_AFFICHEES.map((app) => {

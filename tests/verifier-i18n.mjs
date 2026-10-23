@@ -33,8 +33,8 @@ assert.match(locale, /localStorage\.setItem\(CLE_LOCALE_CLASSINUS, locale\)/);
 assert.match(locale, /EVENEMENT_LOCALE_CLASSINUS/);
 
 const globalI18n = readFileSync("components/InternationalisationGlobale.tsx", "utf8");
-assert.match(globalI18n, /<option value="fr">FR · Français<\/option>/);
-assert.match(globalI18n, /<option value="en">EN · English<\/option>/);
+assert.doesNotMatch(globalI18n, /<select\b|<option\b/, "Le composant global ne doit pas afficher de sélecteur de langue.");
+assert.match(globalI18n, /return null;/, "La traduction globale ne doit afficher aucun contrôle.");
 assert.match(globalI18n, /traductionActive/, "Le français pur ne doit pas surveiller la page");
 assert.match(globalI18n, /if \(!traductionActive\.current\) return;/, "L'observateur doit s'arrêter quand rien n'est traduit");
 for (const protectedSelector of ["pre", "code", "textarea", ".markdown-body", ".katex", "[contenteditable='true']"]) {

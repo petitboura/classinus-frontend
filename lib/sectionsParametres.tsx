@@ -1,4 +1,4 @@
-import { UserRound, SlidersHorizontal, Lock, HelpCircle, Info, Smartphone, Accessibility } from "lucide-react";
+import { UserRound, SlidersHorizontal, Lock, HelpCircle, Info, Smartphone, Accessibility, ShieldCheck } from "lucide-react";
 import { ROUTES_PARAMETRES } from "./routesParametres";
 import { construireGroupe, type SectionDeGroupe } from "./groupeSections";
 
@@ -19,6 +19,12 @@ export const SECTIONS_PARAMETRES: SectionDeGroupe[] = [
     label: "Préférences",
     description: "Thème, relances proactives, réglage prof/pas prof et démarrage avec Windows",
     Icone: SlidersHorizontal,
+  },
+  {
+    href: ROUTES_PARAMETRES.outils,
+    label: "Gestion des outils",
+    description: "Choisir précisément ce que Clovis peut lire, créer ou modifier dans chaque application connectée",
+    Icone: ShieldCheck,
   },
   {
     href: ROUTES_PARAMETRES.confidentialite,
