@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/frontend-connexions-centralisees
+      - feat/mcp-complets-depuis-connexions-centralisees
     paths:
       - "components/chat/BarreDeSaisie.tsx"
       - "components/connexions/EspaceConnexions.tsx"

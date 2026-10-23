@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 export const metadata: Metadata = {
-  title: "Applications connectées Classinus : relier GitHub, Notion, Vercel, Railway et Supabase",
+  title: "Applications connectées Classinus : Google Workspace, Microsoft, Netlify, Render et Cloudflare",
   description:
-    "Relie tes comptes externes à Classinus avec ton autorisation, consulte l'état de chaque connexion et retire l'accès quand tu veux. Classinus se connecte aux serveurs MCP de Vercel, Railway, Supabase et Higgsfield.",
+    "Relie tes comptes externes à Classinus avec ton autorisation, consulte l'état de chaque connexion et retire l'accès quand tu veux. Google Drive reste distinct des autres services Google Workspace. Microsoft Graph MCP Enterprise est en préversion et limité à certaines lectures d’annuaire.",
 };
 
 export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
@@ -16,19 +17,23 @@ export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Applications disponibles</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase. Google Drive n’est pas proposé dans les interfaces de connexion pour le moment. Pour Higgsfield, Vercel, Railway et Supabase, Classinus passe par leur serveur MCP officiel.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Google Drive, Gmail, Google Docs, Google Sheets, Google Slides, Google Calendar, Google Chat, Google Classroom, Google People, Microsoft MCP Enterprise, Netlify, Render et Cloudflare, ainsi que Higgsfield, Vercel, Railway et Supabase. Chaque service Google Workspace a son propre MCP ; Google Drive reste séparé. Ces serveurs sont en préversion développeur : il faut rejoindre le <a href="https://developers.google.com/workspace/preview" target="_blank" rel="noreferrer" className="underline">programme Google Workspace Developer Preview</a>, activer les APIs et services MCP dans Google Cloud, puis suivre le <a href="https://developers.google.com/workspace/guides/configure-mcp-servers" target="_blank" rel="noreferrer" className="underline">guide officiel de configuration</a>. Google précise qu’une intégration utilisant des fonctions en préversion ne doit pas être proposée à des utilisateurs hors de son domaine/entreprise avant autorisation explicite de Google ou disponibilité générale.</p>
+      </section>
+      <section className="mt-6">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Autres serveurs MCP</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tavily utilise une clé API configurée côté serveur. Netlify demande un jeton personnel que Classinus vérifie auprès de son API officielle et stocke côté serveur. Microsoft Graph MCP Enterprise est en préversion, nécessite une application Entra et se limite à certaines lectures d’annuaire. Render et Cloudflare utilisent leurs serveurs MCP hébergés. Classinus expose également son propre serveur MCP distant pour Claude : <span className="font-mono">https://api.classinus.com/mcp/espace</span>. Tu trouveras les étapes de configuration dans <Link className="underline" href="/connecter-claude">le guide Claude</Link>.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Connecter une application</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Ouvre Personnaliser puis Applications connectées, ou utilise le menu des applications dans la barre de saisie du chat. Choisis l'application, valide l'autorisation sur le site du fournisseur, puis tu es ramené dans Classinus. Chaque ligne indique l'état de la connexion : Connecté, Non connecté, Reconnexion nécessaire ou Statut indisponible.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Ouvre Personnaliser puis Applications connectées. Pour les services OAuth, choisis l’application et autorise Classinus sur le site du fournisseur. Pour Netlify, colle un jeton personnel dans sa carte et valide-le ; Classinus le vérifie avant de l’enregistrer. Le menu du chat sert à choisir les outils que l’agent est autorisé à utiliser. Chaque ligne indique l'état de la connexion : Connecté, Non connecté, Reconnexion nécessaire ou Statut indisponible.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Retirer l'accès</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Un bouton de déconnexion est disponible pour chaque application connectée. L'autorisation enregistrée par Classinus est alors supprimée. Si l'accès a expiré ou a été révoqué chez le fournisseur, Classinus te propose de te reconnecter.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Un bouton de déconnexion est disponible pour chaque application connectée. Classinus supprime alors les jetons qu’il conserve. Pour Netlify, cela ne révoque pas le jeton dans Netlify : révoque-le aussi dans les paramètres Netlify si tu veux couper définitivement son accès.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Pour les développeurs : Classinus comme client MCP</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Classinus se connecte aux serveurs MCP distants en Streamable HTTP. L'autorisation utilise OAuth avec PKCE (méthode S256) et le paramètre resource. Quand le serveur annonce l'enregistrement dynamique de client, Classinus s'enregistre sous le nom Classinus ; sinon, une application OAuth enregistrée chez le fournisseur est utilisée. L'adresse de retour OAuth est https://classinus.com/oauth/retour.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Classinus se connecte aux serveurs MCP distants en Streamable HTTP, avec OAuth/PKCE lorsque le fournisseur le permet. Google Workspace nécessite d’activer les APIs MCP concernées et de configurer le client OAuth. Microsoft Graph MCP Enterprise nécessite les permissions Entra appropriées. Le serveur MCP Netlify officiel étant local (stdio), Classinus propose un pont interne basé sur l’API REST officielle et un jeton personnel par utilisateur. L'adresse de retour OAuth est https://classinus.com/oauth/retour.</p>
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Les jetons sont stockés séparément pour chaque utilisateur et chaque fournisseur, et ne sont jamais partagés entre comptes.</p>
       </section>
     </MiseEnPageDecouvrirPersonnaliser>

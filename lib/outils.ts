@@ -39,7 +39,6 @@ import {
   SlidersHorizontal,
   Library,
   Wrench,
-  HardDrive,
   Camera,
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -48,6 +47,19 @@ import { IconeHiggsfield } from "@/components/icons/IconeHiggsfield";
 import { IconeVercel } from "@/components/icons/IconeVercel";
 import { IconeRailway } from "@/components/icons/IconeRailway";
 import { IconeSupabase } from "@/components/icons/IconeSupabase";
+import { IconeGmail } from "@/components/icons/IconeGmail";
+import { IconeGoogleDocs } from "@/components/icons/IconeGoogleDocs";
+import { IconeGoogleSheets } from "@/components/icons/IconeGoogleSheets";
+import { IconeGoogleSlides } from "@/components/icons/IconeGoogleSlides";
+import { IconeGoogleCalendar } from "@/components/icons/IconeGoogleCalendar";
+import { IconeGoogleChat } from "@/components/icons/IconeGoogleChat";
+import { IconeGoogleClassroom } from "@/components/icons/IconeGoogleClassroom";
+import { IconeGoogleDrive } from "@/components/icons/IconeGoogleDrive";
+import { IconeGooglePeople } from "@/components/icons/IconeGooglePeople";
+import { IconeMicrosoft } from "@/components/icons/IconeMicrosoft";
+import { IconeNetlify } from "@/components/icons/IconeNetlify";
+import { IconeRender } from "@/components/icons/IconeRender";
+import { IconeCloudflare } from "@/components/icons/IconeCloudflare";
 import { useEffect, useState } from "react";
 import * as IconesLucide from "lucide-react";
 import { lireRegistreOutils } from "@/lib/api";
@@ -395,6 +407,8 @@ export type AppliDisponible = {
   Icone: typeof Search;
   visibleDansBoutonApplications: boolean;
   visibleDansEspaceConnexions: boolean;
+  modeConnexion?: "oauth" | "jeton";
+  etatDisponibilite?: "apercu";
 };
 export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   { nom: "github", label: "GitHub", Icone: IconeGithub, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
@@ -403,11 +417,19 @@ export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   // trait suit la couleur du bouton (text-dj-accent-1 / text-dj-texte-muet),
   // jamais une couleur de marque figée. Voir components/icons/IconeNotion.tsx.
   { nom: "notion", label: "Notion", Icone: IconeNotion, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
-  // Ajouté 01/09 (demande Bourama) -- icône générique HardDrive plutôt
-  // qu'un logo Drive redessiné à la main (pas de moyen de vérifier
-  // visuellement un tracé SVG avant mise en prod) : à remplacer par un
-  // vrai logo (même logique que IconeNotion.tsx) si besoin plus tard.
-  { nom: "google_drive", label: "Google Drive", Icone: HardDrive, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false },
+  { nom: "google_drive", label: "Google Drive", Icone: IconeGoogleDrive, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_gmail_mcp", label: "Gmail", Icone: IconeGmail, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_docs_mcp", label: "Google Docs", Icone: IconeGoogleDocs, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_sheets_mcp", label: "Google Sheets", Icone: IconeGoogleSheets, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_slides_mcp", label: "Google Slides", Icone: IconeGoogleSlides, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_calendar_mcp", label: "Google Calendar", Icone: IconeGoogleCalendar, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_chat_mcp", label: "Google Chat", Icone: IconeGoogleChat, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_classroom_mcp", label: "Google Classroom", Icone: IconeGoogleClassroom, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "google_people_mcp", label: "Google People", Icone: IconeGooglePeople, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  { nom: "microsoft_mcp", label: "Microsoft MCP Enterprise", Icone: IconeMicrosoft, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+  { nom: "netlify_mcp", label: "Netlify", Icone: IconeNetlify, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, modeConnexion: "jeton" },
+  { nom: "render_mcp", label: "Render", Icone: IconeRender, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+  { nom: "cloudflare_mcp", label: "Cloudflare", Icone: IconeCloudflare, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   // Connexions personnelles aux plateformes (20/10/2026) : le nom est celui du
   // service côté backend (api/connexions.py), il ne doit pas changer. Les
   // icônes sont les vrais logos (components/icons).
@@ -415,4 +437,52 @@ export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   { nom: "railway_mcp", label: "Railway", Icone: IconeRailway, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   { nom: "supabase_mcp", label: "Supabase", Icone: IconeSupabase, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+];
+
+
+// Serveurs MCP qui ne sont pas des connexions OAuth personnelles.
+// Leur état dépend de la configuration backend, du registre de plateforme et/ou des droits d'outils.
+export type ServeurMcpComplementaire = {
+  id: "tavily" | "generation" | "wolfram" | "classinus_claude";
+  nom: string;
+  statut: "cle_plateforme" | "interne" | "desactive" | "expose";
+  libelleStatut: string;
+  description: string;
+  endpoint?: string;
+  guideHref?: string;
+};
+
+export const URL_MCP_CLASSINUS_CLAUDE = "https://api.classinus.com/mcp/espace";
+
+export const MCP_SERVEURS_COMPLEMENTAIRES: ServeurMcpComplementaire[] = [
+  {
+    id: "tavily",
+    nom: "Tavily",
+    statut: "cle_plateforme",
+    libelleStatut: "Clé côté serveur",
+    description: "Recherche et extraction web via le serveur MCP Tavily. Utilise TAVILY_API_KEY côté backend ; aucune connexion à un compte utilisateur n'est requise. La disponibilité dépend de la configuration serveur et des outils autorisés.",
+  },
+  {
+    id: "generation",
+    nom: "Génération Classinus",
+    statut: "interne",
+    libelleStatut: "MCP interne",
+    description: "Serveur MCP interne au backend pour les outils de génération, de fichiers et d'autres fonctions Classinus. Les outils affichés dépendent du registre de plateforme et des droits de l'agent.",
+  },
+  {
+    id: "wolfram",
+    nom: "Wolfram",
+    statut: "desactive",
+    libelleStatut: "Désactivé côté backend",
+    description: "Wolfram reste désactivé côté backend à cause des indisponibilités répétées constatées précédemment. Cette fiche informe sur son état ; elle ne le réactive pas.",
+  },
+  {
+    id: "classinus_claude",
+    nom: "Serveur MCP Classinus pour Claude",
+    statut: "expose",
+    libelleStatut: "Serveur MCP exposé",
+    description: "Point d'accès MCP distant qui permet à un client compatible, comme Claude, d'utiliser les fonctions de Classinus après autorisation.",
+    endpoint: URL_MCP_CLASSINUS_CLAUDE,
+    guideHref: "/connecter-claude",
+  },
 ];

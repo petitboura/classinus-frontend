@@ -282,7 +282,7 @@ export function BarreDeSaisie({
   // Les applications proposées par le bouton sont définies dans lib/outils.ts.
   // Cette règle contrôle l'affichage, pas les permissions d'accès : le backend
   // continue de vérifier les connexions et les autorisations des outils.
-  // Google Drive reste masqué ici selon la décision du 19/09/2026.
+  // Google Drive est inclus dans cette branche avec les autres MCP personnels.
   const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.visibleDansBoutonApplications);
 
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre

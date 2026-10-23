@@ -2884,6 +2884,13 @@ export async function supprimerSignalementPedagogique(signalementId: string) {
  * le stockage approprié (OAuth générique, Notion ou serveur MCP) et ne
  * supprime que la connexion de l'utilisateur authentifié.
  */
+export async function enregistrerJetonNetlify(token: string) {
+  return appelerApi("/api/connexions/netlify_mcp/jeton", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  }) as Promise<{ connecte: boolean }>;
+}
+
 export async function deconnecterApplication(service: string) {
   return appelerApi(`/api/connexions/${service}/deconnecter`, { method: "POST" }) as Promise<{ connecte: boolean }>;
 }
