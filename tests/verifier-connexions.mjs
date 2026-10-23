@@ -34,6 +34,8 @@ assert.ok(espace.includes('ligne.etat === "erreur" ? void recharger()'), "Réess
 assert.ok(espace.includes("ligne.message"), "les erreurs de statut doivent être visibles");
 assert.ok(barre.includes('if (etat === "erreur") return "Statut indisponible";'));
 assert.ok(barre.includes('[service]: "erreur"'), "une panne de statut MCP ne doit pas être interprétée comme une déconnexion");
+assert.ok(barre.includes('[service]: "deconnecte"'), "après une déconnexion réussie, l’état doit devenir Non connecté");
+assert.ok(!/catch \(e\) \{\s*\/\/ Échec du démarrage[^\n]*\n\s*setPlatformMcpEtat/.test(barre), "un échec de connexion ou de déconnexion ne doit pas passer l’état en erreur de statut");
 assert.ok(catalogue.includes("registre.repli && promesseRegistre === promesseCourante"));
 assert.ok(catalogue.includes('window.addEventListener("online", reessayerSiDisponible)'));
 assert.ok(catalogue.includes('window.addEventListener("focus", reessayerSiDisponible)'));
