@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
+import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
 
 export const metadata: Metadata = {
   title: "Applications connectées Classinus : relier GitHub, Notion, Vercel, Railway et Supabase",
   description:
     "Relie tes comptes externes à Classinus avec ton autorisation, consulte l'état de chaque connexion et retire l'accès quand tu veux. Classinus se connecte aux serveurs MCP de Vercel, Railway, Supabase et Higgsfield.",
+  alternates: {
+    canonical: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
+    languages: {
+      fr: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
+      en: ROUTES_DECOUVRIR.personnaliser.applicationsConnecteesEn,
+    },
+  },
 };
 
 export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
@@ -31,6 +40,11 @@ export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Classinus se connecte aux serveurs MCP distants en Streamable HTTP. L'autorisation utilise OAuth avec PKCE (méthode S256) et le paramètre resource. Quand le serveur annonce l'enregistrement dynamique de client, Classinus s'enregistre sous le nom Classinus ; sinon, une application OAuth enregistrée chez le fournisseur est utilisée. L'adresse de retour OAuth est https://classinus.com/oauth/retour.</p>
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Les jetons sont stockés séparément pour chaque utilisateur et chaque fournisseur, et ne sont jamais partagés entre comptes.</p>
       </section>
+      <p className="mt-6 text-sm text-dj-texte-muet">
+        <Link href={ROUTES_DECOUVRIR.personnaliser.applicationsConnecteesEn} hrefLang="en" className="underline hover:text-dj-texte">
+          English version
+        </Link>
+      </p>
     </MiseEnPageDecouvrirPersonnaliser>
   );
 }

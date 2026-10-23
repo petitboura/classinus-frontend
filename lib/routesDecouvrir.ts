@@ -29,6 +29,7 @@ export const ROUTES_DECOUVRIR = {
     skillsPublics: "/decouvrir/personnaliser/skills-publics",
     memoire: "/decouvrir/personnaliser/memoire",
     applicationsConnectees: "/decouvrir/personnaliser/applications-connectees",
+    applicationsConnecteesEn: "/decouvrir/personnaliser/applications-connectees/en",
   },
   concentration: {
     accueil: "/decouvrir/concentration",
