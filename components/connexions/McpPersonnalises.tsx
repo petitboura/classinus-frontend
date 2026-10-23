@@ -16,8 +16,11 @@ import {
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { invaliderRegistreOutils } from "@/lib/outils";
 import { memoriserRetourConnexion } from "@/lib/retourApresConnexion";
+import { obtenirLocale } from "@/lib/i18n/locale";
+import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
+import { Skeleton } from "@/components/Skeleton";
 
 type ResultatTest = {
   nombre_outils: number;
@@ -199,7 +202,8 @@ export function McpPersonnalises() {
   }
 
   async function supprimer(serveur: McpPersonnalise) {
-    if (!window.confirm("Supprimer « " + serveur.nom + " » et les identifiants enregistrés dans Classinus ?")) return;
+    const question = traduireTexteInterface("Supprimer ce serveur MCP et les identifiants enregistrés dans Classinus ?", obtenirLocale());
+    if (!window.confirm("« " + serveur.nom + " »\n" + question)) return;
     setErreur(null);
     setMessage(null);
     setEnCours(serveur.id);
@@ -291,8 +295,8 @@ export function McpPersonnalises() {
         </div>
       </form>
 
-      {erreur && <div role="alert" className="flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]"><CircleAlert size={16} className="mt-0.5 shrink-0" />{erreur}</div>}
-      {message && <p role="status" className="rounded-xl border border-dj-bordure p-3 text-sm text-dj-texte">{message}</p>}
+      {erreur && <div role="alert" className="animate-dj-fade-in-rapide motion-reduce:animate-none flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]"><CircleAlert size={16} className="mt-0.5 shrink-0" />{erreur}</div>}
+      {message && <p role="status" className="animate-dj-fade-in-rapide motion-reduce:animate-none rounded-xl border border-dj-bordure p-3 text-sm text-dj-texte">{message}</p>}
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
@@ -302,7 +306,25 @@ export function McpPersonnalises() {
           </button>
         </div>
         {chargement ? (
-          <p className="text-sm text-dj-texte-muet">Chargement des serveurs…</p>
+          <ul aria-busy="true" aria-label="Chargement des serveurs" className="flex flex-col gap-3">
+            {[0, 1].map((i) => (
+              <li key={i} className="flex flex-col gap-3 rounded-xl border border-dj-bordure p-3 sm:p-4">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <Skeleton className="h-4 w-1/3 rounded-md" />
+                    <Skeleton className="h-3 w-3/4 rounded-md" />
+                    <Skeleton className="h-3 w-1/4 rounded-md" />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-8 w-28 rounded-lg" />
+                  <Skeleton className="h-8 w-24 rounded-lg" />
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : serveurs.length === 0 ? (
           <p className="rounded-xl border border-dashed border-dj-bordure p-3 text-sm text-dj-texte-muet">Aucun serveur MCP personnalisé. Ajoute une URL HTTPS ci-dessus pour commencer.</p>
         ) : (
@@ -311,17 +333,17 @@ export function McpPersonnalises() {
               const occupé = enCours === serveur.id;
               const resultatTest = tests[serveur.id];
               return (
-                <li key={serveur.id} className="flex flex-col gap-3 rounded-xl border border-dj-bordure p-3 sm:p-4">
+                <li key={serveur.id} className="animate-dj-fade-in-rapide motion-reduce:animate-none flex flex-col gap-3 rounded-xl border border-dj-bordure p-3 sm:p-4">
                   <div className="flex items-start gap-3">
                     <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte">
-                      {serveur.actif && serveur.connecte ? <Check size={17} /> : <PlugZap size={17} />}
+                      {serveur.actif && (serveur.auth_type === "oauth" ? serveur.connecte : !!tests[serveur.id]) ? <Check size={17} /> : <PlugZap size={17} />}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="break-words text-sm font-semibold text-dj-texte">{serveur.nom}</p>
                       <p className="mt-1 break-all text-xs text-dj-texte-muet">{serveur.url}</p>
                       <p className="mt-1 text-xs text-dj-texte-muet">{ETIQUETTES_AUTH[serveur.auth_type]}</p>
                       <p className="mt-1 text-xs font-medium text-dj-texte-muet">
-                        {!serveur.actif ? "Désactivé" : serveur.auth_type === "oauth" ? (serveur.connecte ? "Connecté via OAuth" : "OAuth à connecter") : "Configuré côté serveur"}
+                        {!serveur.actif ? "Désactivé" : serveur.auth_type === "oauth" ? (serveur.connecte ? "Connecté via OAuth" : "OAuth à connecter") : tests[serveur.id] ? "Connexion vérifiée" : "Pas encore testé"}
                       </p>
                     </div>
                   </div>
@@ -351,13 +373,13 @@ export function McpPersonnalises() {
                     </button>
                   </div>
                   {resultatTest && (
-                    <div className="rounded-lg bg-dj-surface-haute p-3">
+                    <div className="animate-dj-fade-in-rapide motion-reduce:animate-none rounded-lg bg-dj-surface-haute p-3">
                       <p className="text-xs font-semibold text-dj-texte">{resultatTest.nombre_outils} outil(s) découvert(s)</p>
                       <ul className="mt-2 flex flex-col gap-1.5">
                         {resultatTest.outils.slice(0, 12).map((outil, index) => (
                           <li key={outil.nom + "-" + index} className="text-xs leading-5 text-dj-texte-muet">
                             <span className="font-medium text-dj-texte">{outil.nom}</span>
-                            {outil.description ? " — " + outil.description : ""}
+                            {outil.description ? ", " + outil.description : ""}
                           </li>
                         ))}
                       </ul>

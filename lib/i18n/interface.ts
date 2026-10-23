@@ -2508,7 +2508,19 @@ const EN: Record<string, string> = {
   "12 premiers outils affichés.": "Showing the first 12 tools.",
   "aucun serveur mcp personnalisé.": "No custom MCP server yet.",
   "action sur serveur mcp personnalisé": "Action on custom MCP server",
-  "consultation de serveur mcp personnalisé": "Read from custom MCP server"
+  "consultation de serveur mcp personnalisé": "Read from custom MCP server",
+  "Applications connectées Classinus : relier GitHub, Notion, Vercel, Railway, Supabase et tes serveurs MCP": "Classinus connected apps: link GitHub, Notion, Vercel, Railway, Supabase and your own MCP servers",
+  "Relie GitHub, Notion, Vercel, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.": "Link GitHub, Notion, Vercel, Railway, Supabase or Higgsfield to your Classinus account, add your own MCP servers and remove their authorizations whenever you want.",
+  "Classinus peut travailler avec tes comptes externes pour t'aider sur tes projets. En plus des services intégrés, tu peux ajouter un serveur MCP distant compatible et autoriser son accès à ton compte.": "Classinus can work with your external accounts to help you on your projects. On top of the built-in services, you can add a compatible remote MCP server and authorize its access to your account.",
+  "Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase, ou ajouter un serveur MCP personnalisé utilisant HTTPS. Les connexions officielles passent par le mécanisme OAuth ou l'intégration prévue pour chaque fournisseur.": "You can link GitHub, Notion, Higgsfield, Vercel, Railway and Supabase, or add a custom MCP server using HTTPS. Official connections use OAuth or the integration provided for each provider.",
+  "Dans Personnaliser puis Applications connectées, indique le nom et l'URL HTTPS de ton serveur. Classinus teste l'accès et découvre les outils exposés. Tu peux choisir aucune authentification, un jeton Bearer ou OAuth automatique lorsque le serveur prend en charge la découverte OAuth et l'enregistrement dynamique. Les jetons sont conservés côté serveur.": "In Customize, then Connected apps, enter the name and HTTPS URL of your server. Classinus tests access and discovers the tools it exposes. You can choose no authentication, a Bearer token, or automatic OAuth when the server supports OAuth discovery and dynamic registration. Tokens are kept server-side.",
+  "Tu peux tester les outils, désactiver le serveur, modifier ses paramètres ou supprimer sa configuration. Les outils des serveurs personnalisés demandent une confirmation avant chaque exécution et les adresses locales ou privées sont refusées.": "You can test the tools, disable the server, change its settings or delete its configuration. Tools from custom servers ask for confirmation before every execution, and local or private addresses are refused.",
+  "Choisir une authentification": "Choose an authentication method",
+  "Chargement des serveurs": "Loading servers",
+  "Pas encore testé": "Not tested yet",
+  "outil(s) découvert(s)": "tool(s) discovered",
+  "Connexion vérifiée": "Connection verified",
+  "Supprimer ce serveur MCP et les identifiants enregistrés dans Classinus ?": "Delete this MCP server and the credentials saved in Classinus?",
 };
 
 function normaliserCasse(texte: string): string {
@@ -2547,6 +2559,7 @@ export function traduireTexteInterface(texte: string, locale: Locale): string {
     [/^création\s+(\d+)\s*%$/i, "Creating $1%"],
     [/^étape\s+(\d+)$/i, "Step $1"],
     [/^page\s+(\d+)$/i, "Page $1"],
+    [/^(\d+) outil\(s\) découvert\(s\)$/i, "$1 tool(s) discovered"],
     [/^chargement de (.+)…$/i, "Loading $1…"],
     [/^chargement de (.+)\.\.\.$/i, "Loading $1..."],
     [/^texte collé,?\s+([\d\s\u00a0.,]+) caractères$/i, "Pasted text, $1 characters"],

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 export const metadata: Metadata = {
-  title: "Applications connectées Classinus : relier des applications et serveurs MCP personnalisés",
+  title: "Applications connectées Classinus : relier GitHub, Notion, Vercel, Railway, Supabase et tes serveurs MCP",
   description:
-    "Relie des applications officielles ou ajoute tes propres serveurs MCP HTTPS, configure l'authentification, teste leurs outils et garde le contrôle sur chaque connexion.",
+    "Relie GitHub, Notion, Vercel, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
 };
 
 export default function PageDecouvrirPersonnaliserApplicationsConnectees() {

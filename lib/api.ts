@@ -1364,25 +1364,51 @@ export async function extraireFormuleImage(fichier: File) {
  * d'avoir à toucher ce dépôt à chaque nouvel outil (2026-08-15, demande
  * Bourama). Pas d'authentification requise (accessible avant connexion).
  */
-export async function lireRegistreOutils() {
+type OutilRegistreBrut = { nom: string; label: string; icone: string; onglet?: string | null; appli?: string };
+
+// Attente maximale des outils des serveurs MCP personnels avant d'afficher le menu Outils sans eux.
+// Un serveur lent ne doit jamais retarder le menu pour tout le monde.
+const DELAI_OUTILS_PERSONNALISES_MS = 2500;
+const DELAI_ABANDON_OUTILS_PERSONNALISES_MS = 10000;
+
+async function lireOutilsPersonnalises(): Promise<OutilRegistreBrut[]> {
+  // Visiteur sans compte : la route exige une connexion, inutile de l'appeler.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return [];
+  const controle = new AbortController();
+  const minuterie = setTimeout(() => controle.abort(), DELAI_ABANDON_OUTILS_PERSONNALISES_MS);
+  try {
+    const reponse = await appelerApi(`/api/mcp-personnalises/outils-interface`, { signal: controle.signal }) as { outils?: OutilRegistreBrut[] };
+    return reponse.outils ?? [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(minuterie);
+  }
+}
+
+/**
+ * `surOutilsPersonnalisesTardifs` : appelée si les outils des serveurs MCP personnels arrivent après
+ * l'affichage du menu, pour que l'appelant recharge le registre (la liste est alors prête côté serveur).
+ */
+export async function lireRegistreOutils(surOutilsPersonnalisesTardifs?: () => void) {
+  // Les deux requêtes partent en même temps : le registre officiel n'attend pas les serveurs personnels.
+  const personnalisesEnCours = lireOutilsPersonnalises();
   const registre = await appelerApi(`/api/outils/registre`) as {
-    outils: { nom: string; label: string; icone: string; onglet?: string | null; appli?: string }[];
+    outils: OutilRegistreBrut[];
     verbes_actions?: Record<string, { icone: string }>;
     prefixes_applis?: Record<string, string>;
   };
-  // Les outils de serveurs personnels sont visibles seulement pour le compte connecté.
-  try {
-    const personnalises = await appelerApi(`/api/mcp-personnalises/outils-interface`) as {
-      outils?: { nom: string; label: string; icone: string; onglet?: string | null; appli?: string }[];
-    };
-    const noms = new Set(registre.outils.map((outil) => outil.nom));
-    return {
-      ...registre,
-      outils: [...registre.outils, ...(personnalises.outils ?? []).filter((outil) => !noms.has(outil.nom))],
-    };
-  } catch {
+  const attente = new Promise<null>((resoudre) => setTimeout(() => resoudre(null), DELAI_OUTILS_PERSONNALISES_MS));
+  const personnalises = await Promise.race([personnalisesEnCours, attente]);
+  if (personnalises === null) {
+    if (surOutilsPersonnalisesTardifs) {
+      void personnalisesEnCours.then((outils) => { if (outils.length > 0) surOutilsPersonnalisesTardifs(); });
+    }
     return registre;
   }
+  const noms = new Set(registre.outils.map((outil) => outil.nom));
+  return { ...registre, outils: [...registre.outils, ...personnalises.filter((outil) => !noms.has(outil.nom))] };
 }
 
 export async function lireDroitsAgent(agentId: string) {

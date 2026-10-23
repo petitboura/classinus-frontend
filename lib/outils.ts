@@ -131,15 +131,22 @@ export function invaliderRegistreOutils() {
 
 // Le registre contient des outils propres au compte : un changement de compte
 // invalide le catalogue même si aucune vue de chat n'est montée lors du switch.
+// Supabase émet SIGNED_IN à chaque retour sur l'onglet : on compare donc l'identifiant du compte
+// et on ne recharge que s'il a réellement changé (connexion, déconnexion, autre compte).
 let ecouteurAuthInstalle = false;
+let compteConnuRegistre: string | null | undefined;
 function installerEcouteurAuthRegistre() {
   if (typeof window === "undefined" || ecouteurAuthInstalle) return;
   ecouteurAuthInstalle = true;
-  supabase.auth.onAuthStateChange((evenement) => {
-    if (evenement === "SIGNED_IN" || evenement === "SIGNED_OUT") {
-      // Évite de rappeler getSession dans le callback synchrone de Supabase Auth.
-      window.setTimeout(() => invaliderRegistreOutils(), 0);
-    }
+  supabase.auth.onAuthStateChange((evenement, session) => {
+    if (evenement !== "INITIAL_SESSION" && evenement !== "SIGNED_IN" && evenement !== "SIGNED_OUT") return;
+    const compte = session?.user?.id ?? null;
+    const precedent = compteConnuRegistre;
+    compteConnuRegistre = compte;
+    // Premier relevé du compte : le registre qui se charge en ce moment est déjà le bon.
+    if (precedent === undefined || precedent === compte) return;
+    // Évite de rappeler getSession dans le callback synchrone de Supabase Auth.
+    window.setTimeout(() => invaliderRegistreOutils(), 0);
   });
 }
 
@@ -147,7 +154,7 @@ async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
   const NB_TENTATIVES = 3;
   for (let tentative = 0; tentative < NB_TENTATIVES; tentative++) {
     try {
-      const reponse = (await lireRegistreOutils()) as {
+      const reponse = (await lireRegistreOutils(() => invaliderRegistreOutils())) as {
         outils: OutilBrut[];
         verbes_actions?: Record<string, { icone: string }>;
         prefixes_applis?: PrefixesApplis;

@@ -45,4 +45,11 @@ assert.ok(guide.includes("Serveurs MCP personnalisés"), "la page Découvrir doi
 assert.ok(labels.includes('"serveurs mcp personnalisés": "Custom MCP servers"'), "le panneau doit avoir sa traduction anglaise");
 assert.ok(labels.includes("function normaliserCasse(texte: string): string"), "le dictionnaire doit conserver sa signature TypeScript");
 
+assert.ok(tools.includes("compteConnuRegistre"), "le registre ne doit se recharger que si le compte change vraiment");
+assert.ok(api.includes("lireOutilsPersonnalises()") && api.includes("Promise.race"), "les outils personnels ne doivent pas retarder le registre officiel");
+assert.ok(api.includes("if (!session?.access_token) return [];"), "aucun appel MCP personnel pour un visiteur sans compte");
+assert.ok(!panel.includes(" — "), "aucun tiret long dans le texte visible");
+assert.ok(panel.includes("<Skeleton"), "le chargement doit afficher un skeleton");
+assert.ok(!panel.includes("Configuré côté serveur"), "aucune étiquette trompeuse avant un test réel");
+
 console.log("Vérifications structurelles MCP personnalisés : OK");

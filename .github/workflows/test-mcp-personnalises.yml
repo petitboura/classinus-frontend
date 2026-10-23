@@ -2,8 +2,6 @@ name: Vérifier les MCP personnalisés
 
 on:
   push:
-    branches:
-      - feature/mcp-personnalises-ui-20261023
     paths:
       - "components/connexions/McpPersonnalises.tsx"
       - "components/connexions/EspaceConnexions.tsx"
