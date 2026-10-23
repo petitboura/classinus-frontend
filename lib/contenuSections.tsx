@@ -21,6 +21,7 @@ import { EspaceDossiers } from "@/components/EspaceDossiers";
 import { EspaceControleSession } from "@/components/EspaceControleSession";
 import { EspaceTempsEcran } from "@/components/EspaceTempsEcran";
 import { MesComportements } from "@/components/MesComportements";
+import { SkillsIndependants } from "@/components/SkillsIndependants";
 import { SkillsPublics } from "@/components/SkillsPublics";
 import { MaMemoire } from "@/components/MaMemoire";
 import { EspaceConnexions } from "@/components/connexions/EspaceConnexions";
@@ -112,7 +113,7 @@ const CONTENU_SECTIONS: Record<CleSection, () => ReactNode> = {
     </>
   ),
 
-  [ROUTES_PERSONNALISER.comportements]: () => <MesComportements agentId={AGENT_ID} sansOnglets />,
+  [ROUTES_PERSONNALISER.comportements]: () => <><SkillsIndependants /><div className="mt-8 border-t border-dj-bordure pt-6"><p className="mb-4 text-sm font-semibold text-dj-texte">Skills historiques (à migrer)</p><MesComportements agentId={AGENT_ID} sansOnglets /></div></>,
   [ROUTES_PERSONNALISER.skillsPublics]: () => (
     <>
       <DefinirInfoSection id="skills-publics" />
