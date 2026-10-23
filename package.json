@@ -7,6 +7,7 @@
     "prebuild": "node tests/verifier-composants-natifs.mjs",
     "build": "next build",
     "test:composants-natifs": "node tests/verifier-composants-natifs.mjs",
+    "test:connexions": "node tests/verifier-connexions.mjs",
     "start": "next start",
     "lint": "next lint",
     "build:capacitor": "node tests/verifier-composants-natifs.mjs && cross-env CAPACITOR_BUILD=true next build && npx cap sync",

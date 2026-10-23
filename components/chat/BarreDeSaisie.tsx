@@ -279,40 +279,12 @@ export function BarreDeSaisie({
   // toucher dans ce dépôt.
   const { outils: outilsDisponibles } = useOutilsRegistre();
   const outilsPourAgent = outilsDisponibles.filter((o) => outilAutorisePourAgent(o));
-  // Une appli (ex. GitHub) est autorisée si au moins une de ses actions
-  // (ex. explorer_depot_github) fait partie des outils autorisés.
-  //
-  // CORRECTIF (19/09/2026, demande Bourama) : Notion et Google Drive sont
-  // "necessite_utilisateur" côté backend (core/registre_outils.py) --
-  // tant que la personne n'est pas connectée, leurs outils sont
-  // entièrement absents d'outilsPourAgent (headers=None -> ignoré en
-  // silence, voir lister_outils_autorises_pour_agent). Baser l'affichage
-  // du bouton sur outilsPourAgent est donc impossible à amorcer : avant
-  // la toute première connexion, la liste est vide, le bouton ne peut
-  // jamais apparaître, et sans bouton la personne ne peut jamais se
-  // connecter. Notion et Drive sont donc toujours proposés ici --
-  // cliquerNotion()/cliquerGoogleDrive() gèrent déjà eux-mêmes, via
-  // statutConnexion()/demarrerConnexion() (appels REST directs, pas liés
-  // à outilsPourAgent), l'état connecté/non connecté au clic. GitHub
-  // (20/10/2026, demande Bourama) rejoint Notion dans ce bouton pour que
-  // chaque personne puisse connecter son compte GitHub ; cliquerGithub()
-  // gère lui aussi connexion et sélecteur de dépôts au clic.
-  // APPLIS_DISPONIBLES (lib/outils.ts) reste inchangé : il sert aussi à
-  // app/dashboard/applications/page.tsx (liste des applis connectables).
-  // google_drive retiré du filtre (19/09/2026, demande Bourama : "on va
-  // masquer son bouton pour l'instant") -- bouton/menu uniquement, ne
-  // touche pas à core/registre_outils.py côté backend : si un agent a
-  // encore "google_drive" coché dans ses droits, l'outil reste utilisable
-  // en autonomie par le modèle, seul le bouton de connexion manuelle
-  // disparaît ici. APPLIS_DISPONIBLES (lib/outils.ts) reste inchangé --
-  // app/dashboard/applications/page.tsx continue donc de lister Google
-  // Drive comme appli connectable, ce filtre-ci ne concerne que la barre
-  // de saisie du chat.
-  // vercel_mcp remis dans le filtre (23/10/2026, demande Bourama) pour que
-  // Vercel puisse tester Classinus pendant l'examen de l'annuaire des clients
-  // MCP. Tant que Vercel n'a pas approuvé le client, sa connexion peut encore
-  // échouer avec invalid_redirect_uri.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => ["notion", "github", "higgsfield_mcp", "vercel_mcp", "railway_mcp", "supabase_mcp"].includes(a.nom));
+  // Les applications proposées par le bouton sont définies dans lib/outils.ts.
+  // Cette règle contrôle l'affichage, pas les permissions d'accès : le backend
+  // continue de vérifier les connexions et les autorisations des outils.
+  // Google Drive reste masqué ici selon la décision du 19/09/2026.
+  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => a.visibleDansBoutonApplications);
+
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
@@ -770,7 +742,7 @@ export function BarreDeSaisie({
     if (!githubDisponiblePourAgent) return;
     statutConnexion("github")
       .then((r) => setGithubConnecte(r.connecte))
-      .catch(() => setGithubConnecte(false));
+      .catch(() => setGithubConnecte(null));
   }, [githubDisponiblePourAgent]);
 
   // Connexion Notion (01/08, activation complète demandée par Bourama) --
@@ -820,7 +792,7 @@ export function BarreDeSaisie({
     if (!notionDisponiblePourAgent) return;
     statutConnexion("notion")
       .then((r) => setNotionConnecte(r.connecte))
-      .catch(() => setNotionConnecte(false));
+      .catch(() => setNotionConnecte(null));
   }, [notionDisponiblePourAgent]);
 
   // Recherche débouncée (400ms) déclenchée par la frappe, uniquement
@@ -846,7 +818,21 @@ export function BarreDeSaisie({
   }, [rechercheNotion, selecteurNotionOuvert]);
 
   async function cliquerNotion() {
-    if (!notionConnecte) {
+    let connecte = notionConnecte;
+    if (connecte === null) {
+      setNotionEnCours(true);
+      try {
+        connecte = (await statutConnexion("notion")).connecte;
+        setNotionConnecte(connecte);
+      } catch (e) {
+        alert(messageErreur(e));
+        setNotionEnCours(false);
+        return;
+      }
+      setNotionEnCours(false);
+    }
+
+    if (!connecte) {
       setNotionEnCours(true);
       try {
         const { url } = await demarrerConnexion("notion", agentId);
@@ -884,11 +870,24 @@ export function BarreDeSaisie({
     if (!driveDisponiblePourAgent) return;
     statutConnexion("google_drive")
       .then((r) => setDriveConnecte(r.connecte))
-      .catch(() => setDriveConnecte(false));
+      .catch(() => setDriveConnecte(null));
   }, [driveDisponiblePourAgent]);
 
   async function cliquerGoogleDrive() {
-    if (driveConnecte) return;
+    let connecte = driveConnecte;
+    if (connecte === null) {
+      setDriveEnCours(true);
+      try {
+        connecte = (await statutConnexion("google_drive")).connecte;
+        setDriveConnecte(connecte);
+      } catch (e) {
+        alert(messageErreur(e));
+        setDriveEnCours(false);
+        return;
+      }
+      setDriveEnCours(false);
+    }
+    if (connecte) return;
     setDriveEnCours(true);
     try {
       const { url } = await demarrerConnexion("google_drive", agentId);
@@ -901,13 +900,17 @@ export function BarreDeSaisie({
 
   // Connexions individuelles aux plateformes MCP (Higgsfield, Vercel, Railway, Supabase).
   // Les jetons restent propres à l'utilisateur côté backend.
-  const [platformMcpEtat, setPlatformMcpEtat] = useState<Record<string, "connecte" | "a_reconnecter">>({});
+  type EtatConnexionMcp = "chargement" | "connecte" | "deconnecte" | "a_reconnecter" | "erreur";
+  const [platformMcpEtat, setPlatformMcpEtat] = useState<Record<string, EtatConnexionMcp>>({});
   const [platformMcpEnCours, setPlatformMcpEnCours] = useState<string | null>(null);
 
-  // Étiquette affichée à côté de l'appli dans les menus ; rien tant que la personne n'est pas connectée.
   function etiquetteConnexionMcp(nom: string): string | null {
-    if (platformMcpEtat[nom] === "connecte") return "Connecté";
-    if (platformMcpEtat[nom] === "a_reconnecter") return "À reconnecter";
+    const etat = platformMcpEtat[nom];
+    if (etat === "chargement") return "Vérification…";
+    if (etat === "connecte") return "Connecté";
+    if (etat === "deconnecte") return "Non connecté";
+    if (etat === "a_reconnecter") return "À reconnecter";
+    if (etat === "erreur") return "Statut indisponible";
     return null;
   }
 
@@ -920,22 +923,14 @@ export function BarreDeSaisie({
     ] as const;
     for (const [service, disponible] of services) {
       if (!disponible) continue;
+      setPlatformMcpEtat((prec) => ({ ...prec, [service]: "chargement" }));
       statutConnexion(service)
-        .then((r) =>
-          setPlatformMcpEtat((prec) => {
-            const suivant = { ...prec };
-            if (r.connecte) suivant[service] = "connecte";
-            else if (r.a_reconnecter) suivant[service] = "a_reconnecter";
-            else delete suivant[service];
-            return suivant;
-          })
-        )
+        .then((r) => {
+          const etat: EtatConnexionMcp = r.connecte ? "connecte" : r.a_reconnecter ? "a_reconnecter" : "deconnecte";
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: etat }));
+        })
         .catch(() =>
-          setPlatformMcpEtat((prec) => {
-            const suivant = { ...prec };
-            delete suivant[service];
-            return suivant;
-          })
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: "erreur" }))
         );
     }
   }, [higgsfieldDisponiblePourAgent, vercelMcpDisponiblePourAgent, railwayMcpDisponiblePourAgent, supabaseMcpDisponiblePourAgent]);
@@ -944,16 +939,27 @@ export function BarreDeSaisie({
     if (platformMcpEnCours) return;
     setPlatformMcpEnCours(service);
     try {
-      if (platformMcpEtat[service] === "connecte") {
+      let etat = platformMcpEtat[service];
+      if (!etat || etat === "chargement" || etat === "erreur") {
+        try {
+          const statut = await statutConnexion(service);
+          const etatVerifie: EtatConnexionMcp = statut.connecte ? "connecte" : statut.a_reconnecter ? "a_reconnecter" : "deconnecte";
+          etat = etatVerifie;
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: etatVerifie }));
+        } catch (e) {
+          // Seule la lecture du statut qui échoue donne "Statut indisponible".
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: "erreur" }));
+          alert(messageErreur(e));
+          setPlatformMcpEnCours(null);
+          return;
+        }
+      }
+      if (etat === "connecte") {
         // Déjà connecté : un second clic propose de déconnecter, jamais sans confirmation.
         const label = APPLIS_DISPONIBLES.find((a) => a.nom === service)?.label ?? service;
         if (window.confirm(`Déconnecter ${label} de ton compte Classinus ?`)) {
           await deconnecterPlateformeMcp(service);
-          setPlatformMcpEtat((prec) => {
-            const suivant = { ...prec };
-            delete suivant[service];
-            return suivant;
-          });
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: "deconnecte" }));
         }
         setPlatformMcpEnCours(null);
         return;
@@ -962,6 +968,7 @@ export function BarreDeSaisie({
       const { url } = await demarrerConnexion(service, agentId);
       window.location.href = url;
     } catch (e) {
+      // Échec du démarrage ou de la déconnexion : le statut lu reste valable, on ne le remplace pas.
       alert(messageErreur(e));
       setPlatformMcpEnCours(null);
     }
@@ -1209,7 +1216,21 @@ export function BarreDeSaisie({
   }
 
   async function cliquerGithub() {
-    if (!githubConnecte) {
+    let connecte = githubConnecte;
+    if (connecte === null) {
+      setGithubEnCours(true);
+      try {
+        connecte = (await statutConnexion("github")).connecte;
+        setGithubConnecte(connecte);
+      } catch (e) {
+        alert(messageErreur(e));
+        setGithubEnCours(false);
+        return;
+      }
+      setGithubEnCours(false);
+    }
+
+    if (!connecte) {
       setGithubEnCours(true);
       try {
         const { url } = await demarrerConnexion("github", agentId);

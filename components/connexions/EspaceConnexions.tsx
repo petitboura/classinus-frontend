@@ -12,10 +12,9 @@ import { CTACompteRequis } from "@/components/CTACompteRequis";
 type Etat = "chargement" | "connecte" | "deconnecte" | "reconnecter" | "erreur";
 type Ligne = { etat: Etat; message?: string; action?: boolean };
 
-// Décision Bourama (22/10) : Google Drive n'est pas affiché sur cet écran.
-// Vercel est de nouveau affiché (23/10) pour que Vercel puisse tester le client.
-const MASQUEES = new Set(["google_drive"]);
-const APPLIS_AFFICHEES = APPLIS_DISPONIBLES.filter((app) => !MASQUEES.has(app.nom));
+// La liste des applications affichées est centralisée dans lib/outils.ts.
+// Google Drive y reste masqué selon la décision du 22/10 ; Vercel reste visible pour les tests.
+const APPLIS_AFFICHEES = APPLIS_DISPONIBLES.filter((app) => app.visibleDansEspaceConnexions);
 
 const DESCRIPTIONS: Record<string, string> = {
   github: "Accède à tes dépôts GitHub pour consulter du code et travailler sur tes projets, selon les autorisations accordées.",
@@ -36,6 +35,8 @@ export function EspaceConnexions() {
 
   const recharger = useCallback(async () => {
     oublierRetourConnexion();
+    setErreur(null);
+    setLignes(Object.fromEntries(APPLIS_AFFICHEES.map((app) => [app.nom, { etat: "chargement" as const }])));
     const resultats = await Promise.all(APPLIS_AFFICHEES.map(async (app) => {
       try {
         const statut = await statutConnexion(app.nom);
@@ -110,11 +111,21 @@ export function EspaceConnexions() {
                     <Unplug size={14} />{occupée ? "Déconnexion…" : "Déconnecter"}
                   </button>
                 ) : (
-                  <button type="button" onClick={() => void connecter(app.nom)} disabled={!!enCours || ligne.etat === "chargement" || connecte} className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">
-                    {occupée ? "Connexion…" : ligne.etat === "reconnecter" ? "Reconnecter" : connecte ? "Connecté" : ligne.etat === "erreur" ? "Réessayer" : "Connecter"}
+                  <button
+                    type="button"
+                    onClick={() => ligne.etat === "erreur" ? void recharger() : void connecter(app.nom)}
+                    disabled={!!enCours || ligne.etat === "chargement" || connecte}
+                    className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                  >
+                    {occupée ? "Connexion…" : ligne.etat === "reconnecter" ? "Reconnecter" : connecte ? "Connecté" : ligne.etat === "erreur" ? "Réessayer le statut" : "Connecter"}
                   </button>
                 )}
               </div>
+              {ligne.etat === "erreur" && ligne.message && (
+                <p role="status" aria-live="polite" className="text-xs leading-5 text-[var(--dj-erreur)]">
+                  {ligne.message}
+                </p>
+              )}
             </article>
           );
         })}
