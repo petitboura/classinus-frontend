@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { ErreurApi, messageErreur } from "./erreurs";
 import { obtenirOrigineAppareil } from "./origineAppareil";
 import { obtenirLocale } from "./i18n/locale";
+import { lireReponseJsonOuNulle } from "./reponseApi";
 
 // URL du backend FastAPI (voir api/main.py). En local pendant le dev :
 // http://localhost:8000. Une fois déployé sur Railway : l'URL publique de
@@ -96,7 +97,12 @@ export async function appelerApi(chemin: string, options: RequestInit = {}) {
   } = await supabase.auth.getSession();
 
   const entetes = new Headers(options.headers);
-  entetes.set("Content-Type", "application/json");
+  // Ne pas forcer Content-Type: application/json sur les GET sans corps.
+  // Sur les requêtes cross-origin anonymes, cet en-tête non nécessaire
+  // provoquait un preflight CORS supplémentaire pour chaque lecture.
+  if (options.body !== undefined && options.body !== null && !entetes.has("Content-Type")) {
+    entetes.set("Content-Type", "application/json");
+  }
   entetes.set("Accept-Language", obtenirLocale());
   if (session?.access_token) {
     entetes.set("Authorization", `Bearer ${session.access_token}`);
@@ -111,17 +117,10 @@ export async function appelerApi(chemin: string, options: RequestInit = {}) {
     throw await construireErreurApi(reponse, chemin);
   }
 
-  // Certaines routes (ex: POST .../rating) renvoient 204 No Content —
-  // aucun corps à parser. Sans ce garde-fou, response.json() plante avec
-
-  // "Unexpected end of JSON input" (bug remonté par Bourama, 2026-07-12,
-  // sur le clic étoile de la note). content-length à "0" couvre aussi le
-  // cas d'un corps vide envoyé avec un autre code que 204.
-  if (reponse.status === 204 || reponse.headers.get("content-length") === "0") {
-    return null;
-  }
-
-  return reponse.json();
+  // Certaines réponses réussies sont vides sans envoyer Content-Length
+  // (204/205, proxy ou réponse chunked). Lire le texte d'abord évite de
+  // transformer ces réponses valides en erreur JSON.
+  return lireReponseJsonOuNulle(reponse);
 }
 
 /**
@@ -172,33 +171,44 @@ export async function appelerApiStream(
   const decodeur = new TextDecoder();
   let tampon = "";
 
-  while (true) {
-    // Ajouté 20/09/2026 (demande Bourama : bouton arrêter) : si le
-    // signal est déjà annulé pile entre deux morceaux reçus, .read()
-    // ne le détecte pas forcément tout de suite selon le navigateur,
-    // vérification explicite pour couper au plus vite plutôt que
-    // d'attendre le prochain morceau réseau. Une fois annulé, .read()
-    // lève de toute façon une AbortError que l'appelant (ChatIA.tsx)
-    // distingue des vraies erreurs réseau.
-    if (signal?.aborted) return;
-    const { done, value } = await lecteur.read();
-    if (done) break;
-    tampon += decodeur.decode(value, { stream: true });
-
-    // Un événement SSE = une ligne "data: {...}", séparée par \n\n.
-    const morceaux = tampon.split("\n\n");
-    tampon = morceaux.pop() ?? "";
-
-    for (const morceau of morceaux) {
-      const ligne = morceau.trim();
-      if (!ligne.startsWith("data:")) continue;
-      const contenu = ligne.slice("data:".length).trim();
-      if (contenu === "[DONE]") return;
-      try {
-        surEvenement(JSON.parse(contenu));
-      } catch {
-        // Ligne mal formée : on l'ignore plutôt que de casser tout le flux.
+  try {
+    while (true) {
+      // Un arrêt peut arriver entre deux morceaux reçus : annuler aussi
+      // explicitement le lecteur libère la connexion sans attendre un chunk.
+      if (signal?.aborted) {
+        await lecteur.cancel().catch(() => {});
+        return;
       }
+      const { done, value } = await lecteur.read();
+      if (done) break;
+      tampon += decodeur.decode(value, { stream: true });
+
+      // Un événement SSE = une ligne "data: {...}", séparée par \n\n.
+      const morceaux = tampon.split("\n\n");
+      tampon = morceaux.pop() ?? "";
+
+      for (const morceau of morceaux) {
+        const ligne = morceau.trim();
+        if (!ligne.startsWith("data:")) continue;
+        const contenu = ligne.slice("data:".length).trim();
+        if (contenu === "[DONE]") {
+          await lecteur.cancel().catch(() => {});
+          return;
+        }
+        try {
+          surEvenement(JSON.parse(contenu));
+        } catch {
+          // Ligne mal formée : on l'ignore plutôt que de casser tout le flux.
+        }
+      }
+    }
+  } finally {
+    // Chaque tour de chat acquiert un reader : ne pas conserver le verrou
+    // après [DONE], annulation, fin du flux ou erreur de lecture.
+    try {
+      lecteur.releaseLock();
+    } catch {
+      // Un reader déjà libéré/annulé ne doit pas masquer l'erreur initiale.
     }
   }
 }

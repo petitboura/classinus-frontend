@@ -2,8 +2,6 @@ name: Internationalization checks
 
 on:
   push:
-    branches:
-      - feature/i18n-fr-en
   pull_request:
     branches:
       - main
@@ -33,5 +31,9 @@ jobs:
         run: npm run audit:i18n
       - name: Test incoming app links remain intact
         run: npm run test:liens-entrants
+      - name: Test API empty-response handling
+        run: node tests/verifier-reponse-api.mjs
+      - name: Test user-facing error handling
+        run: npm run test:gestion-erreurs
       - name: Type-check the application
         run: npx tsc --noEmit
