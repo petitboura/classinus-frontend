@@ -11,6 +11,7 @@ export const ROUTES_PARAMETRES = {
   accueil: "/parametres",
   profil: "/parametres/profil",
   preferences: "/parametres/preferences",
+  outils: "/parametres/outils",
   confidentialite: "/parametres/confidentialite",
   aide: "/parametres/aide",
   aPropos: "/parametres/a-propos",
