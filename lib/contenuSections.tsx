@@ -113,7 +113,7 @@ const CONTENU_SECTIONS: Record<CleSection, () => ReactNode> = {
     </>
   ),
 
-  [ROUTES_PERSONNALISER.comportements]: () => <><SkillsIndependants /><div className="mt-8 border-t border-dj-bordure pt-6"><p className="mb-4 text-sm font-semibold text-dj-texte">Skills historiques (à migrer)</p><MesComportements agentId={AGENT_ID} sansOnglets /></div></>,
+  [ROUTES_PERSONNALISER.comportements]: () => <><SkillsIndependants /><div className="mt-8 border-t border-dj-bordure pt-6"><p className="mb-4 text-sm font-semibold text-dj-texte">Anciens skills</p><MesComportements agentId={AGENT_ID} sansOnglets /></div></>,
   [ROUTES_PERSONNALISER.skillsPublics]: () => (
     <>
       <DefinirInfoSection id="skills-publics" />

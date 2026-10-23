@@ -228,6 +228,22 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     PLUGIN_PERMISSION_REFUSEE: "L’autorisation nécessaire a été refusée. Vérifie les permissions de Classinus dans les paramètres de ton appareil, puis réessaie.",
     PLUGIN_INDISPONIBLE: "Cette fonction n’est pas disponible dans cette version de Classinus ou sur cette plateforme.",
     PLUGIN_EXECUTION_ECHEC: "Classinus n’a pas pu exécuter cette fonction sur cet appareil. Vérifie les autorisations nécessaires, puis réessaie. Si le problème persiste, mets à jour Classinus.",
+    // 23/10/2026, skills autonomes : codes à garder synchronisés avec
+    // core/erreurs.py côté backend (voir api/skills.py).
+    CHEMIN_FICHIER_INVALIDE: "Ce chemin de fichier n'est pas valide. Utilise par exemple dossier/fichier.md.",
+    CHEMIN_FICHIER_DUPLIQUE: "Deux fichiers ont le même chemin dans ce skill.",
+    SKILL_INTROUVABLE: "Ce skill est introuvable.",
+    NOM_SKILL_REQUIS: "Donne un nom à ce skill.",
+    NOM_SKILL_INVALIDE: "Le nom et la description d'un skill ne peuvent pas contenir de saut de ligne.",
+    SKILL_TROP_VOLUMINEUX: "Ce skill est trop volumineux ({total_mo} Mo au total et {fichier_mo} Mo par fichier au maximum).",
+    SKILLS_LIMITE_ATTEINTE: "Tu as atteint le nombre maximum de skills ({maximum}). Supprime-en un pour en créer un nouveau.",
+    IMPOSSIBLE_DE_LISTER_SKILLS: "Impossible de charger tes skills pour le moment. Réessaie dans un instant.",
+    IMPOSSIBLE_DE_CHARGER_SKILL: "Impossible de charger ce skill pour le moment. Réessaie dans un instant.",
+    IMPOSSIBLE_DE_CHARGER_FICHIERS_SKILL: "Impossible de charger les fichiers de ce skill pour le moment. Réessaie dans un instant.",
+    IMPOSSIBLE_DE_LIRE_FICHIER_SKILL: "Impossible de lire un des fichiers de ce skill. Réessaie dans un instant.",
+    IMPOSSIBLE_DE_CREER_SKILL: "Impossible de créer ce skill. Rien n'a été enregistré, réessaie dans un instant.",
+    IMPOSSIBLE_DE_MODIFIER_SKILL: "Impossible d'enregistrer les modifications de ce skill. Réessaie dans un instant.",
+    IMPOSSIBLE_DE_SUPPRIMER_SKILL: "Impossible de supprimer ce skill pour le moment. Réessaie dans un instant.",
   },
   en: {
     PRECISE_MATIERE_AUTRE: "Specify the subject in \"Other\".",
@@ -568,6 +584,20 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     PLUGIN_PERMISSION_REFUSEE: "The required permission was denied. Check Classinus’s permissions in your device settings, then try again.",
     PLUGIN_INDISPONIBLE: "This feature isn’t available in this version of Classinus or on this platform.",
     PLUGIN_EXECUTION_ECHEC: "Classinus couldn’t run this feature on this device. Check the required permissions, then try again. If the problem continues, update Classinus.",
+    // 2026-10-23, standalone skills: keep in sync with core/erreurs.py (api/skills.py).
+    CHEMIN_FICHIER_INVALIDE: "This file path is not valid. Use something like folder/file.md.",
+    CHEMIN_FICHIER_DUPLIQUE: "Two files in this skill have the same path.",
+    NOM_SKILL_REQUIS: "Give this skill a name.",
+    NOM_SKILL_INVALIDE: "A skill's name and description cannot contain line breaks.",
+    SKILL_TROP_VOLUMINEUX: "This skill is too large ({total_mo} MB in total and {fichier_mo} MB per file at most).",
+    SKILLS_LIMITE_ATTEINTE: "You have reached the maximum number of skills ({maximum}). Delete one to create a new one.",
+    IMPOSSIBLE_DE_LISTER_SKILLS: "Unable to load your skills right now. Try again in a moment.",
+    IMPOSSIBLE_DE_CHARGER_SKILL: "Unable to load this skill right now. Try again in a moment.",
+    IMPOSSIBLE_DE_CHARGER_FICHIERS_SKILL: "Unable to load this skill's files right now. Try again in a moment.",
+    IMPOSSIBLE_DE_LIRE_FICHIER_SKILL: "Unable to read one of this skill's files. Try again in a moment.",
+    IMPOSSIBLE_DE_CREER_SKILL: "Unable to create this skill. Nothing was saved, try again in a moment.",
+    IMPOSSIBLE_DE_MODIFIER_SKILL: "Unable to save the changes to this skill. Try again in a moment.",
+    IMPOSSIBLE_DE_SUPPRIMER_SKILL: "Unable to delete this skill right now. Try again in a moment.",
   },
 };
 
