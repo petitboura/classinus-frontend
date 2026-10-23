@@ -6,6 +6,7 @@ import { CheckCircle2, ChevronDown, ChevronRight, Link2, Loader2 } from "lucide-
 import { SourcesBulle } from "./SourcesBulle";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
+import { LogoSite, LogosSites } from "./LogoSite";
 
 // Une ligne d'outil (18/09/2026, demande Bourama : le statut d'un outil
 // changeait de façon brutale et incohérente). Avant, l'outil en cours et
@@ -57,6 +58,7 @@ export function LigneOutil({
   donnees,
   Icone,
   SousIcone,
+  domaines,
   nombre = 1,
   estDerniere,
   estGroupe,
@@ -66,6 +68,10 @@ export function LigneOutil({
   // Petite icône d'action posée dans le coin de l'icône principale
   // (24/09/2026, demande Bourama) : null/absente = pas de petite icône.
   SousIcone?: typeof Loader2 | null;
+  // Sites visés par l'appel (21/10/2026, demande Bourama) : un seul site, son
+  // logo remplace l'icône de l'outil ; plusieurs, une rangée de logos
+  // s'affiche à côté du libellé et l'icône de l'outil reste. Voir LogoSite.tsx.
+  domaines?: string[];
   // Nombre d'appels fusionnés dans cette ligne (même outil, même action, à
   // la suite) : affiché en pastille "x N" dès que N > 1.
   nombre?: number;
@@ -128,6 +134,8 @@ export function LigneOutil({
   }, [etat]);
 
   const aDesSources = !!sources && sources.length > 0;
+  const logoUnique = domaines && domaines.length === 1 ? domaines[0] : null;
+  const plusieursLogos = !!domaines && domaines.length > 1;
 
   // Une couche par phase, superposées dans la même boîte fixe de 16x16 :
   // la couche visible s'affiche, les autres s'effacent en fondu. Aucune ne
@@ -158,7 +166,7 @@ export function LigneOutil({
             <CheckCircle2 size={16} className="text-dj-succes" />
           </span>
           <span className={couche(phase === "final")} aria-hidden={phase !== "final"}>
-            <Icone size={13} className="text-dj-texte-muet" />
+            {logoUnique ? <LogoSite domaine={logoUnique} size={13} /> : <Icone size={13} className="text-dj-texte-muet" />}
             {SousIcone && (
               <span className="absolute -bottom-1 -right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-dj-fond">
                 <SousIcone size={8} className="text-dj-texte-muet" />
@@ -192,6 +200,7 @@ export function LigneOutil({
                 className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
                 <span>{nomLisible}</span>
+                {plusieursLogos && <LogosSites domaines={domaines!} />}
                 {pastille}
                 {ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               </button>
