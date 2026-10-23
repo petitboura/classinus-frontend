@@ -2453,6 +2453,9 @@ const EN: Record<string, string> = {
   "Connecte-toi ou crée un compte pour gérer tes applications connectées.": "Sign in or create an account to manage your connected apps.",
   "Déconnecter Classinus ne révoque pas toujours l’autorisation chez le fournisseur. Pour retirer totalement l’accès, consulte aussi les paramètres de sécurité du service concerné.": "Disconnecting Classinus does not always revoke the authorization with the provider. To remove access completely, also check the security settings of the service concerned.",
   "On te ramène à tes applications connectées.": "Taking you back to your connected apps.",
+  "à tes applications connectées": "to your connected apps",
+  "On te ramène": "Taking you back",
+  "Relie tes comptes externes à Classinus, consulte leur état et retire leurs autorisations quand tu le souhaites.": "Connect your external accounts to Classinus, check their status, and revoke their permissions whenever you like.",
 };
 
 function normaliserCasse(texte: string): string {
