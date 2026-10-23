@@ -16,7 +16,7 @@ export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Applications disponibles</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase. Pour Higgsfield, Vercel, Railway et Supabase, Classinus passe par leur serveur MCP officiel.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase. Google Drive n’est pas proposé dans les interfaces de connexion pour le moment. Pour Higgsfield, Vercel, Railway et Supabase, Classinus passe par leur serveur MCP officiel.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Connecter une application</h2>
