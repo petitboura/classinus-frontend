@@ -142,6 +142,26 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
       },
     ],
   },
+  {
+    titre: "Applications connectées",
+    questions: [
+      {
+        question: "Quelles applications puis-je relier à Classinus ?",
+        reponse:
+          "Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase. Chaque connexion se fait avec ton propre compte et seulement si tu l'autorises.",
+      },
+      {
+        question: "Mes autorisations sont-elles partagées avec les autres utilisateurs ?",
+        reponse:
+          "Non. Les autorisations sont enregistrées séparément pour chaque utilisateur et chaque application. Aucun accès n'est partagé entre comptes.",
+      },
+      {
+        question: "Comment retirer l'accès de Classinus à une application ?",
+        reponse:
+          "Ouvre Personnaliser puis Applications connectées, et utilise le bouton de déconnexion de l'application concernée. L'autorisation est alors retirée côté Classinus.",
+      },
+    ],
+  },
 ];
 
 export const QUESTIONS_DECOUVRIR_CONCENTRATION: GroupeQuestionsDecouvrir[] = [
