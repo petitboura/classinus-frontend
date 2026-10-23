@@ -181,7 +181,7 @@ export function ParametresPreferences() {
       <div className="flex flex-col gap-2 border-t border-dj-bordure pt-4">
         <span className="text-sm font-medium text-dj-texte">Langue de l'interface</span>
         <span className="text-xs text-dj-texte-muet">
-          Langue des menus et des textes de Classinus. Les erreurs de code sont traduites dans la même langue.
+          Langue des menus et des textes de Classinus. Tant que tu n'en as pas choisi une, c'est celle de ton navigateur ou de ton téléphone (anglais si c'est l'anglais, sinon français). Les erreurs de code sont traduites dans la même langue.
         </span>
         <div data-i18n-skip>
           <SelectPersonnalise

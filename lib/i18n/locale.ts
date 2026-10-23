@@ -3,17 +3,37 @@ export type Locale = "fr" | "en";
 export const CLE_LOCALE_CLASSINUS = "classinus.locale";
 export const EVENEMENT_LOCALE_CLASSINUS = "classinus:locale-change";
 
-/** Locale de l'interface sur cet appareil. Le français reste le repli sûr. */
-export function obtenirLocale(): Locale {
-  if (typeof window === "undefined") return "fr";
+/**
+ * Langue du navigateur ou du téléphone : anglais si c'est l'anglais, sinon le français
+ * (arabe ou toute autre langue comprise, le français reste le repli sûr). Seule la langue
+ * principale compte. Lecture seule, rien n'est enregistré nulle part.
+ */
+function localeDeLAppareil(): Locale {
   try {
-    return window.localStorage.getItem(CLE_LOCALE_CLASSINUS) === "en" ? "en" : "fr";
+    const principale = navigator.languages?.[0] ?? navigator.language ?? "";
+    return principale.toLowerCase().startsWith("en") ? "en" : "fr";
   } catch {
     return "fr";
   }
 }
 
-/** Vrai si la personne a déjà choisi une langue sur cet appareil (sinon c'est juste le français par défaut). */
+/**
+ * Locale de l'interface sur cet appareil. Ordre : le choix déjà fait sur l'appareil (Préférences,
+ * inscription, ou langue du compte reportée ici), sinon la langue du navigateur ou du téléphone.
+ * Le compte n'est jamais modifié par la simple détection (voir aChoisiLocale ci-dessous).
+ */
+export function obtenirLocale(): Locale {
+  if (typeof window === "undefined") return "fr";
+  try {
+    const choix = window.localStorage.getItem(CLE_LOCALE_CLASSINUS);
+    if (choix === "fr" || choix === "en") return choix;
+  } catch {
+    // Stockage bloqué : on retombe sur la langue de l'appareil.
+  }
+  return localeDeLAppareil();
+}
+
+/** Vrai si la personne a déjà choisi une langue sur cet appareil (sinon c'est juste la langue détectée, qui ne doit jamais être enregistrée sur le compte). */
 export function aChoisiLocale(): boolean {
   if (typeof window === "undefined") return false;
   try {
