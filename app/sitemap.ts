@@ -75,8 +75,6 @@ function urlsDecouvrir(): MetadataRoute.Sitemap {
     ...SOUS_PAGES_DECOUVRIR_CONCENTRATION.map((page) => page.href),
     ...SOUS_PAGES_DECOUVRIR_BUREAU.map((page) => page.href),
     ...USAGES_DECOUVRIR.map((usage) => usage.href),
-    // Version anglaise hors registre (23/10/2026), voir sa page.
-    ROUTES_DECOUVRIR.personnaliser.applicationsConnecteesEn,
   ];
 
   return [...new Set(chemins)].map((href) => ({
