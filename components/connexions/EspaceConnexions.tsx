@@ -12,8 +12,9 @@ import { CTACompteRequis } from "@/components/CTACompteRequis";
 type Etat = "chargement" | "connecte" | "deconnecte" | "reconnecter" | "erreur";
 type Ligne = { etat: Etat; message?: string; action?: boolean };
 
-// Décision Bourama (22/10) : Vercel et Google Drive ne sont pas affichés sur cet écran.
-const MASQUEES = new Set(["vercel_mcp", "google_drive"]);
+// Décision Bourama (22/10) : Google Drive n'est pas affiché sur cet écran.
+// Vercel est de nouveau affiché (23/10) pour que Vercel puisse tester le client.
+const MASQUEES = new Set(["google_drive"]);
 const APPLIS_AFFICHEES = APPLIS_DISPONIBLES.filter((app) => !MASQUEES.has(app.nom));
 
 const DESCRIPTIONS: Record<string, string> = {

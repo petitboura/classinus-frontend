@@ -308,12 +308,11 @@ export function BarreDeSaisie({
   // app/dashboard/applications/page.tsx continue donc de lister Google
   // Drive comme appli connectable, ce filtre-ci ne concerne que la barre
   // de saisie du chat.
-  // vercel_mcp retiré du filtre (21/10/2026, demande Bourama) : Vercel refuse
-  // l'adresse de retour de Classinus (erreur invalid_redirect_uri), son MCP
-  // n'accepte que les clients approuvés par Vercel. Bouton et menus seulement,
-  // rien n'est supprimé : remettre "vercel_mcp" dans la liste ci-dessous une
-  // fois l'approbation obtenue.
-  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => ["notion", "github", "higgsfield_mcp", "railway_mcp", "supabase_mcp"].includes(a.nom));
+  // vercel_mcp remis dans le filtre (23/10/2026, demande Bourama) pour que
+  // Vercel puisse tester Classinus pendant l'examen de l'annuaire des clients
+  // MCP. Tant que Vercel n'a pas approuvé le client, sa connexion peut encore
+  // échouer avec invalid_redirect_uri.
+  const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => ["notion", "github", "higgsfield_mcp", "vercel_mcp", "railway_mcp", "supabase_mcp"].includes(a.nom));
   // Bouton "Utilitaires" (2026-08-01, demande Bourama : "seront un autre
   // bouton à part, plus dans outils") -- ex-onglet "utilitaires" du menu
   // Outils, sorti dans son propre bouton dédié. Même liste/filtre agent
