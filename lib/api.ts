@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { ErreurApi, messageErreur } from "./erreurs";
 import { obtenirOrigineAppareil } from "./origineAppareil";
 import { obtenirLocale } from "./i18n/locale";
+import { lireReponseJsonOuNulle } from "./reponseApi";
 
 // URL du backend FastAPI (voir api/main.py). En local pendant le dev :
 // http://localhost:8000. Une fois déployé sur Railway : l'URL publique de
@@ -116,17 +117,10 @@ export async function appelerApi(chemin: string, options: RequestInit = {}) {
     throw await construireErreurApi(reponse, chemin);
   }
 
-  // Certaines routes (ex: POST .../rating) renvoient 204 No Content —
-  // aucun corps à parser. Sans ce garde-fou, response.json() plante avec
-
-  // "Unexpected end of JSON input" (bug remonté par Bourama, 2026-07-12,
-  // sur le clic étoile de la note). content-length à "0" couvre aussi le
-  // cas d'un corps vide envoyé avec un autre code que 204.
-  if (reponse.status === 204 || reponse.headers.get("content-length") === "0") {
-    return null;
-  }
-
-  return reponse.json();
+  // Certaines réponses réussies sont vides sans envoyer Content-Length
+  // (204/205, proxy ou réponse chunked). Lire le texte d'abord évite de
+  // transformer ces réponses valides en erreur JSON.
+  return lireReponseJsonOuNulle(reponse);
 }
 
 /**
