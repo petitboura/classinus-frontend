@@ -2897,3 +2897,13 @@ export async function supprimerSignalementPedagogique(signalementId: string) {
 export async function deconnecterApplication(service: string) {
   return appelerApi(`/api/connexions/${service}/deconnecter`, { method: "POST" }) as Promise<{ connecte: boolean }>;
 }
+
+
+export type FichierSkillIndependant = { chemin: string; contenu?: string | null; binaire?: boolean; type_mime?: string | null; taille_octets?: number; mis_a_jour_le?: string | null };
+export type SkillIndependant = { id: string; nom: string; description: string; actif: boolean; created_at: string; updated_at: string; fichiers?: FichierSkillIndependant[] };
+export async function listerSkillsIndependants() { return appelerApi("/api/skills") as Promise<SkillIndependant[]>; }
+export async function obtenirSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`) as Promise<SkillIndependant>; }
+export async function enregistrerSkillIndependant(skill: { nom: string; description: string; actif: boolean; fichiers: { chemin: string; contenu: string }[] }, id?: string) {
+  return appelerApi(id ? `/api/skills/${id}` : "/api/skills", { method: id ? "PUT" : "POST", body: JSON.stringify(skill) }) as Promise<SkillIndependant>;
+}
+export async function supprimerSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`, { method: "DELETE" }) as Promise<{ supprime: boolean; id: string }>; }
