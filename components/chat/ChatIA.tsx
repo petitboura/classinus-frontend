@@ -27,6 +27,7 @@ import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
 import { texteMessageAutomatique } from "@/lib/minuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { listeDomaines } from "@/lib/logosSites";
+import { lireLangage } from "@/lib/logosLangages";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
 import { detecterLangageCode } from "@/lib/texteColle";
@@ -206,7 +207,7 @@ export function ChatIA({
   // statut sans id (chemins plus anciens/rares : lecture d'image,
   // "niveau2" dans main.py -- toujours un seul à la fois, jamais de
   // vrai parallélisme) garde l'ancien comportement par repli.
-  const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; nomLisible?: string; action?: string; domaines?: string[]; texte: string; etat: EtatStatut; libelleIa?: boolean }[]>([]);
+  const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; nomLisible?: string; action?: string; domaines?: string[]; langage?: string; texte: string; etat: EtatStatut; libelleIa?: boolean }[]>([]);
   // Ajouté (18/09/2026, demande Bourama : statut d'outil incohérent) :
   // texte "X effectuée" reçu dans "statut_termine", gardé par id_appel
   // jusqu'à l'événement "outil_resultat" du même appel, qui l'emporte avec
@@ -464,6 +465,7 @@ export function ChatIA({
           nomLisible: evenement.nom_lisible,
           action: evenement.action,
           domaines: listeDomaines(evenement.domaines),
+          langage: lireLangage(evenement.langage),
           texte: evenement.texte,
           etat: "en_cours" as EtatStatut,
           // Phrase écrite par l'IA (23/10/2026) : le texte peut contenir n'importe quel mot,
@@ -592,6 +594,7 @@ export function ChatIA({
           nomLisible: evenement.nom_lisible,
           action: (evenement.action as string | undefined) || undefined,
           domaines: listeDomaines(evenement.domaines),
+          langage: lireLangage(evenement.langage),
           resultat: evenement.resultat,
           idAppel: evenement.id_appel as string | undefined,
           texteTermine,
@@ -1862,6 +1865,7 @@ export function ChatIA({
       nomLisible: s.nomLisible,
       action: s.action,
       domaines: s.domaines,
+      langage: s.langage,
       texte: s.texte,
       etat: s.etat === "termine" ? ("termine" as const) : ("en_cours" as const),
     }));

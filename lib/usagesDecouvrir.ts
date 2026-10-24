@@ -352,7 +352,7 @@ export const RESUME_CLASSINUS = {
     "Bibliothèque personnelle et catalogue public de documents partagés par les élèves",
     "Recherche de livres et de PDF dans Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg, ainsi que recherche de vidéos et de pages web ; le chat affiche le logo du site ou de la source consultée",
     "Mode vocal pour dicter une demande et écouter la réponse",
-    "Exécution de code Python directement dans le chat",
+    "Exécution de code (Python, JavaScript, TypeScript et Bash) directement dans le chat ; la ligne de l'outil montre le logo du langage lancé",
     "Plugin Thonny-Classinus : panneau intégré à Thonny pour analyser ou corriger du code Python et expliquer les erreurs ; l'envoi du code nécessite une action explicite",
     "Fiches de révision, QCM interactifs et animations téléchargeables en vidéo MP4",
     "Mémoire consultable et gérable, skills personnalisés et outils de concentration",

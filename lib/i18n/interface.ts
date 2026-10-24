@@ -801,7 +801,7 @@ const EN: Record<string, string> = {
   "Bibliothèque personnelle et catalogue public de documents partagés par les élèves": "Personal library and public catalog of documents shared by students",
   "Recherche de livres et de PDF dans Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg, ainsi que recherche de vidéos et de pages web ; le chat affiche le logo du site ou de la source consultée": "Search books and PDFs on Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex, and Project Gutenberg, as well as videos and web pages; the chat shows the logo of the site or source consulted",
   "Mode vocal pour dicter une demande et écouter la réponse": "Voice mode for dictating a request and listening to the response",
-  "Exécution de code Python directement dans le chat": "Run Python code directly in chat",
+  "Exécution de code (Python, JavaScript, TypeScript et Bash) directement dans le chat ; la ligne de l'outil montre le logo du langage lancé": "Run code (Python, JavaScript, TypeScript, and Bash) directly in chat; the tool line shows the logo of the language that ran",
   "Plugin Thonny-Classinus : panneau intégré à Thonny pour analyser ou corriger du code Python et expliquer les erreurs ; l'envoi du code nécessite une action explicite": "Thonny-Classinus plugin: a panel built into Thonny for analyzing or fixing Python code and explaining errors; sending code requires an explicit action",
   "Fiches de révision, QCM interactifs et animations téléchargeables en vidéo MP4": "Revision sheets, interactive quizzes, and animations downloadable as MP4 videos",
   "Mémoire consultable et gérable, skills personnalisés et outils de concentration": "Reviewable and manageable memory, custom skills, and focus tools",

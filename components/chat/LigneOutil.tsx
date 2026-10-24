@@ -7,6 +7,7 @@ import { SourcesBulle } from "./SourcesBulle";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LogoSite, LogosSites } from "./LogoSite";
+import { logoPourLangage } from "@/lib/logosLangages";
 
 // Une ligne d'outil (18/09/2026, demande Bourama : le statut d'un outil
 // changeait de façon brutale et incohérente). Avant, l'outil en cours et
@@ -59,6 +60,7 @@ export function LigneOutil({
   Icone,
   SousIcone,
   domaines,
+  langage,
   nombre = 1,
   estDerniere,
   estGroupe,
@@ -72,6 +74,10 @@ export function LigneOutil({
   // logo remplace l'icône de l'outil ; plusieurs, une rangée de logos
   // s'affiche à côté du libellé et l'icône de l'outil reste. Voir LogoSite.tsx.
   domaines?: string[];
+  // Langage lancé par l'appel (24/10/2026, demande Bourama) : son logo se pose en
+  // petit badge dans le coin de l'icône Play, à la place de la petite icône d'action.
+  // Absent ou inconnu : rien de changé. Voir lib/logosLangages.ts.
+  langage?: string;
   // Nombre d'appels fusionnés dans cette ligne (même outil, même action, à
   // la suite) : affiché en pastille "x N" dès que N > 1.
   nombre?: number;
@@ -135,6 +141,7 @@ export function LigneOutil({
 
   const aDesSources = !!sources && sources.length > 0;
   const logoUnique = domaines && domaines.length === 1 ? domaines[0] : null;
+  const logoLangage = logoPourLangage(langage);
   const plusieursLogos = !!domaines && domaines.length > 1;
 
   // Une couche par phase, superposées dans la même boîte fixe de 16x16 :
@@ -167,10 +174,22 @@ export function LigneOutil({
           </span>
           <span className={couche(phase === "final")} aria-hidden={phase !== "final"}>
             {logoUnique ? <LogoSite domaine={logoUnique} size={13} /> : <Icone size={13} className="text-dj-texte-muet" />}
-            {SousIcone && (
-              <span className="absolute -bottom-1 -right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-dj-fond">
-                <SousIcone size={8} className="text-dj-texte-muet" />
+            {logoLangage ? (
+              // Logo du langage lancé (24/10/2026, demande Bourama) : un cran plus grand que
+              // la petite icône d'action (10 px au lieu de 8) pour rester lisible, et il la
+              // remplace puisque c'est lui qui dit ce que fait cette ligne.
+              <span
+                title={logoLangage.nom}
+                className="absolute -bottom-1.5 -right-2 flex h-3 w-3 items-center justify-center rounded-[3px] bg-dj-fond"
+              >
+                <logoLangage.Icone size={10} />
               </span>
+            ) : (
+              SousIcone && (
+                <span className="absolute -bottom-1 -right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-dj-fond">
+                  <SousIcone size={8} className="text-dj-texte-muet" />
+                </span>
+              )
             )}
           </span>
         </div>
