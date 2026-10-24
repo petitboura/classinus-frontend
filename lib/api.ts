@@ -3,6 +3,7 @@ import { ErreurApi, messageErreur } from "./erreurs";
 import { obtenirOrigineAppareil } from "./origineAppareil";
 import { obtenirLocale } from "./i18n/locale";
 import { lireReponseJsonOuNulle } from "./reponseApi";
+import { textesEditeurVideo } from "./textesEditeurVideo";
 
 // URL du backend FastAPI (voir api/main.py). En local pendant le dev :
 // http://localhost:8000. Une fois déployé sur Railway : l'URL publique de
@@ -1343,6 +1344,47 @@ export async function transcrireAudioChat(fichier: File) {
 export async function uploaderVideoChat(fichier: File) {
   const resultat = await appelerApiFichier("/api/uploads/video-chat", fichier);
   return resultat as { transcript: string; frames_base64: string[]; url: string | null };
+}
+
+/**
+ * Upload d'une source pour l'atelier de montage vidéo contextuel.
+ * Le fichier reste dans l'espace temporaire de cette conversation ; cette
+ * route ne lance ni transcription, ni analyse de frames par défaut.
+ */
+export async function uploaderVideoEspace(fichier: File, conversationId: string) {
+  const t = textesEditeurVideo();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error(t.erreurConnexion);
+  }
+  if (!conversationId) {
+    throw new Error(t.erreurConversation);
+  }
+
+  const corps = new FormData();
+  corps.append("fichier", fichier);
+  corps.append("conversation_id", conversationId);
+
+  const chemin = "/api/uploads/video-workspace";
+  const reponse = await fetch(`${API_URL}${chemin}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
+    body: corps,
+  });
+  if (!reponse.ok) {
+    throw await construireErreurApi(reponse, chemin);
+  }
+  return (await reponse.json()) as {
+    video_id: string;
+    nom_fichier: string;
+    taille_octets: number;
+    type_mime: string;
+    source_path: string;
+    duree_secondes: number;
+  };
 }
 
 /**

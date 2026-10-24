@@ -1,0 +1,47 @@
+name: Video editor frontend checks
+
+on:
+  pull_request:
+    paths:
+      - "components/chat/BarreDeSaisie.tsx"
+      - "components/chat/ChatIA.tsx"
+      - "components/chat/EditeurVideoContextuel.tsx"
+      - "components/chat/MenuChoixVideoJointe.tsx"
+      - "components/chat/LigneApercuPieces.tsx"
+      - "lib/api.ts"
+      - "lib/videoMontage.ts"
+      - "lib/textesEditeurVideo.ts"
+      - "lib/useFermetureAnimee.ts"
+      - "lib/i18n/interface.ts"
+      - "tests/verifier-montage-video.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/video-editor-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Type-check frontend
+        run: npx tsc --noEmit --pretty false
+      - name: Verify contextual video editor wiring
+        run: npm run test:montage-video
+      - name: Build Next.js web app
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
+          NEXT_PUBLIC_SUPABASE_URL: https://test-project.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key-for-build-only
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+        run: npm run build

@@ -259,7 +259,7 @@ export interface MessageAffiche {
   // séparé du message) : elles doivent apparaître juste après le
   // résultat de leur outil, pas dans un bloc "Sources" à part à la fin
   // -- voir OutilResultatBulle.tsx.
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; domaines?: string[]; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
   // Ajouté 30/08/2026 (audit UX mobile, partie 5 : "pas de chemin de
   // récupération après une erreur") : la génération a échoué avant la
   // moindre réponse persistée -- message.id reste donc null pour
@@ -356,6 +356,8 @@ export type SegmentMessage =
       action?: string;
       // Sites visés par l'appel (21/10/2026, logo du site dans la ligne d'outil).
       domaines?: string[];
+      // Langage lancé par l'appel (24/10/2026, logo du langage sur le Play), absent sinon.
+      langage?: string;
       idAppel?: string;
       texteTermine?: string;
       sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[];
@@ -654,7 +656,7 @@ function BulleMessageInterne({
   estEnCoursDeGeneration?: boolean;
   raisonnement?: string;
   raisonnementEnCours?: boolean;
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; domaines?: string[]; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
   outilsEnCours?: OutilEnCours[];
   // Persona pédagogique / jonction "QCM complet" (14/09/2026) : transmis
   // tel quel à QCMInteractif (voir le case "qcm" du switch plus bas) --
