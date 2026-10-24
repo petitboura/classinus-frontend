@@ -10,6 +10,9 @@ import { VisionneuseImage } from "./VisionneuseImage";
 import { LigneApercuPieces, type GenrePiece, type PieceApercu } from "./LigneApercuPieces";
 import { FenetreTexteColle } from "./FenetreTexteColle";
 import { FenetreMedia } from "./FenetreMedia";
+import { EditeurVideoContextuel } from "./EditeurVideoContextuel";
+import { MenuChoixVideoJointe } from "./MenuChoixVideoJointe";
+import type { ContexteVideoMontage } from "@/lib/videoMontage";
 import dynamic from "next/dynamic";
 import katex from "katex";
 import { messageErreur } from "@/lib/erreurs";
@@ -151,7 +154,9 @@ export function BarreDeSaisie({
     // déjà démarrés dès la sélection (voir ajouterFichiers), à transmettre
     // tels quels à /api/chat (zips_en_attente) -- voir
     // ChatIA.tsx:envoyerMessage et core/main.py:chat().
-    zipsEnAttente: string[]
+    zipsEnAttente: string[],
+    automatique?: boolean,
+    contexteVideo?: ContexteVideoMontage
   ) => void;
   desactive?: boolean;
   // Ajouté 20/09/2026 (demande Bourama : bouton arrêter, jusque-là
@@ -226,6 +231,12 @@ export function BarreDeSaisie({
   const [fichiers, setFichiers] = useState<{ id: string; fichier: File; apercu: string | null; urlMedia?: string; zipJobId?: string }[]>([]);
   const [imageAgrandieId, setImageAgrandieId] = useState<string | null>(null);
   const [mediaOuvertId, setMediaOuvertId] = useState<string | null>(null);
+  const [videoPourEdition, setVideoPourEdition] = useState<{ id: string; fichier: File; urlMedia?: string } | null>(null);
+  // Id de la vidéo dont la demande vient d'être envoyée : elle quitte la barre quand la fermeture animée de l'éditeur se termine.
+  const videoEnvoyeeRef = useRef<string | null>(null);
+  // Clic sur une vidéo jointe : un petit menu propose l'aperçu simple ou l'éditeur.
+  const [choixVideoId, setChoixVideoId] = useState<string | null>(null);
+  const ancreChoixVideoRef = useRef<HTMLElement | null>(null);
   // Icône de recherche web (2026-07-23, demande de Bourama : "une icône
   // dans la barre de saisie mais peut s'activer automatiquement") --
   // forçage manuel EN PLUS de l'activation automatique déjà possible
@@ -633,6 +644,7 @@ export function BarreDeSaisie({
     });
     setImageAgrandieId((prec) => (prec === id ? null : prec));
     setMediaOuvertId((prec) => (prec === id ? null : prec));
+    setChoixVideoId((prec) => (prec === id ? null : prec));
   }
 
   function viderFichiers() {
@@ -1523,11 +1535,22 @@ export function BarreDeSaisie({
     })),
   ];
 
-  function ouvrirPiece(piece: PieceApercu) {
+  function ouvrirPiece(piece: PieceApercu, ancre?: HTMLElement) {
     if (piece.genre === "image") setImageAgrandieId(piece.id);
     else if (piece.genre === "texte") setTexteColleOuvertId(piece.id.slice("texte:".length));
-    else if (piece.genre === "video" || piece.genre === "audio") setMediaOuvertId(piece.id);
-    else {
+    else if (piece.genre === "video") {
+      const fichierVideo = fichiers.find((x) => x.id === piece.id);
+      if (fichierVideo) {
+        if (ancre) {
+          ancreChoixVideoRef.current = ancre;
+          setChoixVideoId(fichierVideo.id);
+        } else {
+          setVideoPourEdition({ id: fichierVideo.id, fichier: fichierVideo.fichier, urlMedia: fichierVideo.urlMedia });
+        }
+      }
+    } else if (piece.genre === "audio") {
+      setMediaOuvertId(piece.id);
+    } else {
       // Le blob local est intrinsèquement sûr (fichier choisi par
       // l'utilisateur, pas encore envoyé) : pas de vérification d'origine.
       const f = fichiers.find((x) => x.id === piece.id);
@@ -1545,6 +1568,7 @@ export function BarreDeSaisie({
   }
 
   const mediaOuvert = mediaOuvertId ? fichiers.find((f) => f.id === mediaOuvertId) : undefined;
+  const fichierChoixVideo = choixVideoId ? fichiers.find((f) => f.id === choixVideoId) : undefined;
   const texteColleOuvert = texteColleOuvertId ? textesColles.find((t) => t.id === texteColleOuvertId) : undefined;
 
   return (
@@ -2319,6 +2343,56 @@ export function BarreDeSaisie({
           nom={mediaOuvert.fichier.name}
           type={mediaOuvert.fichier.type.startsWith("video/") ? "video" : "audio"}
           onFermer={() => setMediaOuvertId(null)}
+        />
+      )}
+
+      {fichierChoixVideo && (
+        <MenuChoixVideoJointe
+          ancreRef={ancreChoixVideoRef}
+          onApercu={() => setMediaOuvertId(fichierChoixVideo.id)}
+          onEditer={() =>
+            setVideoPourEdition({
+              id: fichierChoixVideo.id,
+              fichier: fichierChoixVideo.fichier,
+              urlMedia: fichierChoixVideo.urlMedia,
+            })
+          }
+          onFermer={() => setChoixVideoId(null)}
+        />
+      )}
+
+      {videoPourEdition && (
+        <EditeurVideoContextuel
+          open={Boolean(videoPourEdition)}
+          fichier={videoPourEdition.fichier}
+          urlMedia={videoPourEdition.urlMedia}
+          conversationId={conversationId}
+          initialPrompt={texte}
+          disabled={Boolean(desactive || genererEnCours)}
+          onClose={() => {
+            // Appelé par l'éditeur à la fin de son animation de sortie : c'est
+            // seulement ici qu'il est démonté et que la vidéo envoyée quitte la
+            // barre (sa prévisualisation reste donc valable pendant la fermeture).
+            if (videoEnvoyeeRef.current === videoPourEdition.id) {
+              retirerFichier(videoPourEdition.id);
+            }
+            videoEnvoyeeRef.current = null;
+            setVideoPourEdition(null);
+          }}
+          onEnvoyer={(demande, contexteVideo) => {
+            // Le fichier est déjà déposé dans l'espace vidéo dédié : on
+            // transmet le contexte uniquement, sans repasser par le pipeline
+            // transcription + frames de /api/uploads/video-chat.
+            onEnvoyer(demande, longueur, [], null, [], false, sansEnseignant, [], false, contexteVideo);
+            videoEnvoyeeRef.current = videoPourEdition.id;
+            // On ne vide que ce qui vient réellement de partir avec la demande :
+            // le texte et l'option sans enseignant. Les textes collés, la
+            // localisation et le bouton de recherche ne sont pas transmis ici,
+            // ils restent donc dans la barre pour le prochain envoi.
+            setTexte("");
+            setSansEnseignant(false);
+            requestAnimationFrame(ajusterHauteurTexte);
+          }}
         />
       )}
 

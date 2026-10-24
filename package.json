@@ -38,7 +38,8 @@
     "test:gestion-erreurs": "node tests/verifier-gestion-erreurs.mjs",
     "postinstall": "node scripts/appliquer-correctif-lector.mjs",
     "test:i18n": "node tests/verifier-i18n.mjs",
-    "audit:i18n": "node tests/auditer-i18n.mjs"
+    "audit:i18n": "node tests/auditer-i18n.mjs",
+    "test:montage-video": "node tests/verifier-montage-video.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "3.7.1",

@@ -31,6 +31,7 @@ import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
 import { detecterLangageCode } from "@/lib/texteColle";
 import type { ModeleDisponible } from "./barre/reglagesReponse";
+import type { ContexteVideoMontage } from "@/lib/videoMontage";
 
 // Lecture à voix haute par paragraphes pendant que la réponse s'écrit : un
 // paragraphe n'est confié à la voix qu'une fois qu'au moins ce nombre de
@@ -1011,7 +1012,9 @@ export function ChatIA({
     // l'étudiant, réveille Clovis (fin d'un minuteur). Le message part et
     // est enregistré comme les autres mais n'est jamais affiché comme une
     // bulle de l'étudiant, ni maintenant ni au rechargement.
-    automatique: boolean = false
+    automatique: boolean = false,
+    // Atelier vidéo contextuel : absent pour les messages classiques.
+    contexteVideo?: ContexteVideoMontage
   ) {
     // Doit être le tout premier test de la fonction : si le parent
     // bloque (limite invité atteinte), on sort avant de toucher à quoi
@@ -1236,6 +1239,10 @@ export function ChatIA({
           image_url: null,
           image_urls: imageUrls.length ? imageUrls : null,
           images_base64: imagesBase64.length ? imagesBase64 : null,
+          // Contexte de sélection de l'atelier vidéo. Aucun chemin de fichier
+          // n'est accepté ici : l'API résout la source par identifiant opaque,
+          // utilisateur connecté et conversation.
+          contexte_video: contexteVideo ?? null,
           // Zip(s) en cours/terminé(s) de dézipage (26/09/2026) -- voir
           // core/main.py:chat(), paramètre zips_en_attente.
           zips_en_attente: zipsEnAttente.length ? zipsEnAttente : null,

@@ -87,7 +87,8 @@ export function LigneApercuPieces({
 }: {
   pieces: PieceApercu[];
   taille?: keyof typeof TAILLE_PIECE;
-  onOuvrir: (piece: PieceApercu) => void;
+  /** `ancre` : l'élément cliqué, pour ouvrir un menu à côté de lui. */
+  onOuvrir: (piece: PieceApercu, ancre?: HTMLElement) => void;
   /** Absent après l'envoi : aucune croix n'est affichée. */
   onRetirer?: (id: string) => void;
   /** Actions supplémentaires posées dans un carré (par exemple l'extraction de formule). */
@@ -180,7 +181,7 @@ export function LigneApercuPieces({
           return (
             <div key={carre.id} className={`relative shrink-0 ${classeAnimation(carre.id)}`}>
               <button
-                onClick={() => onOuvrir(carre)}
+                onClick={(e) => onOuvrir(carre, e.currentTarget)}
                 aria-label={carre.genre === "video" ? `Lire ${carre.nom}` : `Agrandir ${carre.nom}`}
                 className="relative block h-[var(--taille-piece)] w-[var(--taille-piece)] overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface-haute"
               >
