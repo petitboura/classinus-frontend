@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { listerSkillsIndependants, obtenirSkillIndependant, enregistrerSkillIndependant, supprimerSkillIndependant, type SkillIndependant } from "@/lib/api";
+import { listerSkillsIndependants, obtenirSkillIndependant, enregistrerSkillIndependant, supprimerSkillIndependant, importerSkillZip, type SkillIndependant } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { CaseACocher } from "@/components/CaseACocher";
 import { Skeleton } from "@/components/Skeleton";
@@ -30,6 +30,10 @@ export function SkillsIndependants() {
   const [actif, setActif] = useState(true);
   const [erreur, setErreur] = useState("");
   const [busy, setBusy] = useState(false);
+  // La page montre d'abord la liste des skills ; un clic sur un skill (ou Nouveau skill) ouvre l'éditeur.
+  const [vue, setVue] = useState<"liste" | "editeur">("liste");
+  const [zipEnCours, setZipEnCours] = useState(false);
+  const champZip = useRef<HTMLInputElement>(null);
   const enregistre = useRef(empreinte("", "", true, fichiersInitiaux()));
   const modifie = empreinte(nom, description, actif, fichiers) !== enregistre.current;
 
@@ -71,18 +75,38 @@ export function SkillsIndependants() {
   }
 
   async function ouvrir(id: string) {
-    if (id === selection || ouverture || !abandonnerModifications()) return;
+    if (ouverture) return;
     setOuverture(id); setErreur("");
     try {
       const s = await obtenirSkillIndependant(id);
       charge(id, s.nom, s.description || "", s.actif, (s.fichiers || []).map(f => ({ chemin: f.chemin, contenu: f.contenu || "" })));
+      setVue("editeur");
     } catch (e) { setErreur(messageErreur(e)); }
     finally { setOuverture(null); }
   }
 
-  function nouveau(forcer = false) {
-    if (!forcer && !abandonnerModifications()) return;
+  function nouveau() {
     charge(null, "", "", true, fichiersInitiaux());
+    setVue("editeur");
+  }
+
+  // Retour à la liste : demande confirmation s'il reste des modifications non enregistrées.
+  function retourListe() {
+    if (!abandonnerModifications()) return;
+    charge(null, "", "", true, fichiersInitiaux());
+    setVue("liste");
+    void charger();
+  }
+
+  async function envoyerZip(fichier: File | undefined) {
+    if (!fichier || zipEnCours) return;
+    setZipEnCours(true); setErreur("");
+    try {
+      const cree = await importerSkillZip(fichier);
+      await charger();
+      await ouvrir(cree.id);
+    } catch (e) { setErreur(messageErreur(e)); }
+    finally { setZipEnCours(false); if (champZip.current) champZip.current.value = ""; }
   }
 
   async function sauver() {
@@ -102,7 +126,7 @@ export function SkillsIndependants() {
   async function supprimer() {
     if (!selection || !window.confirm("Supprimer ce skill et ses fichiers ?")) return;
     setBusy(true);
-    try { await supprimerSkillIndependant(selection); nouveau(true); await charger(); }
+    try { await supprimerSkillIndependant(selection); charge(null, "", "", true, fichiersInitiaux()); setVue("liste"); await charger(); }
     catch (e) { setErreur(messageErreur(e)); }
     finally { setBusy(false); }
   }
@@ -118,24 +142,30 @@ export function SkillsIndependants() {
   }
 
   const champ = "rounded border border-dj-bordure bg-transparent p-2 transition-colors focus:border-dj-bordure-forte focus:outline-none";
+  const bouton = "rounded-lg px-3 py-2 text-sm transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50";
   return <section className="flex min-w-0 flex-col gap-4">
-    <header className="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 className="text-lg font-semibold">Skills et fichiers</h2>
-        <p className="text-sm text-dj-texte-muet">Crée des skills avec leurs fichiers et leurs dossiers.</p>
-      </div>
-      <button type="button" onClick={() => nouveau()} className="rounded-lg bg-dj-primaire px-3 py-2 text-sm text-white transition-opacity hover:opacity-90">Nouveau skill</button>
-    </header>
     {erreur && <p role="alert" className="animate-dj-fade-in-rapide rounded-lg border border-red-500/40 p-3 text-sm text-red-600">{erreur}</p>}
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
-      <aside className="rounded-xl border border-dj-bordure p-3">
-        <h3 className="mb-2 text-sm font-semibold">Mes skills ({liste.length})</h3>
-        {chargementListe && <div className="flex flex-col gap-2" aria-busy="true">{[0, 1, 2].map(i => <Skeleton key={i} className="h-11 rounded-lg" />)}</div>}
+    {vue === "liste" ? <div key="liste" className="flex min-w-0 animate-dj-fade-in-rapide flex-col gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Skills et fichiers</h2>
+          <p className="text-sm text-dj-texte-muet">Crée des skills avec leurs fichiers et leurs dossiers, ou envoie-les dans un zip.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={e => void envoyerZip(e.target.files?.[0])} />
+          <button type="button" disabled={zipEnCours} onClick={() => champZip.current?.click()} className={`border border-dj-bordure ${bouton}`}>{zipEnCours ? "Envoi du zip…" : "Envoyer un zip"}</button>
+          <button type="button" onClick={nouveau} className={`bg-dj-primaire text-white ${bouton}`}>Nouveau skill</button>
+        </div>
+      </header>
+      <div className="flex min-w-0 flex-col" aria-busy={chargementListe}>
+        {chargementListe && [0, 1, 2, 3].map(i => <Skeleton key={i} className="my-1 h-5 w-2/3" />)}
         {!chargementListe && liste.length === 0 && <p className="animate-dj-fade-in-rapide text-sm text-dj-texte-muet">Aucun skill pour le moment.</p>}
-        {!chargementListe && liste.map(s => <button key={s.id} type="button" disabled={!!ouverture} onClick={() => void ouvrir(s.id)} className={`mb-1 block w-full animate-dj-fade-in-rapide rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-dj-surface-haute disabled:cursor-wait ${s.id === selection ? "bg-dj-surface-haute" : ""} ${s.id === ouverture ? "opacity-60" : ""}`}>
-          <span className="block truncate">{s.nom}</span><span className="block truncate text-xs text-dj-texte-muet">{s.description}</span>
-        </button>)}
-      </aside>
+        {!chargementListe && liste.map(s => <button key={s.id} type="button" disabled={!!ouverture} onClick={() => void ouvrir(s.id)} className={`block w-full animate-dj-fade-in-rapide truncate py-2 text-left text-sm transition-colors hover:text-dj-primaire disabled:cursor-wait ${s.actif ? "" : "text-dj-texte-muet"} ${ouverture === s.id ? "opacity-60" : ""}`}>{s.nom}</button>)}
+      </div>
+    </div> : <div key="editeur" className="flex min-w-0 animate-dj-fade-in-rapide flex-col gap-4">
+      <div>
+        <button type="button" onClick={retourListe} className="text-sm text-dj-texte-muet transition-colors hover:text-dj-texte">← Retour aux skills</button>
+      </div>
       <div key={vueEditeur} className="min-w-0 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">Nom<input value={nom} onChange={e => changerNom(e.target.value)} className={champ} /></label>
@@ -159,6 +189,6 @@ export function SkillsIndependants() {
           <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-primaire px-4 py-2 text-sm text-white transition-opacity hover:opacity-90 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
         </div>
       </div>
-    </div>
+    </div>}
   </section>;
 }

@@ -2907,3 +2907,5 @@ export async function enregistrerSkillIndependant(skill: { nom: string; descript
   return appelerApi(id ? `/api/skills/${id}` : "/api/skills", { method: id ? "PUT" : "POST", body: JSON.stringify(skill) }) as Promise<SkillIndependant>;
 }
 export async function supprimerSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`, { method: "DELETE" }) as Promise<{ supprime: boolean; id: string }>; }
+// Crée un nouveau skill à partir d'un zip (SKILL.md et ses fichiers texte).
+export async function importerSkillZip(fichier: File) { return appelerApiFichier("/api/skills/import-zip", fichier) as Promise<SkillIndependant>; }
