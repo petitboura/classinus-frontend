@@ -933,21 +933,25 @@ export function BarreDeSaisie({
     try {
       let etat = platformMcpEtat[service];
       if (!etat || etat === "chargement" || etat === "erreur") {
-        const statut = await statutConnexion(service);
-        const etatVerifie: EtatConnexionMcp = statut.connecte ? "connecte" : statut.a_reconnecter ? "a_reconnecter" : "deconnecte";
-        etat = etatVerifie;
-        setPlatformMcpEtat((prec) => ({ ...prec, [service]: etatVerifie }));
+        try {
+          const statut = await statutConnexion(service);
+          const etatVerifie: EtatConnexionMcp = statut.connecte ? "connecte" : statut.a_reconnecter ? "a_reconnecter" : "deconnecte";
+          etat = etatVerifie;
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: etatVerifie }));
+        } catch (e) {
+          // Seule la lecture du statut qui échoue donne "Statut indisponible".
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: "erreur" }));
+          alert(messageErreur(e));
+          setPlatformMcpEnCours(null);
+          return;
+        }
       }
       if (etat === "connecte") {
         // Déjà connecté : un second clic propose de déconnecter, jamais sans confirmation.
         const label = APPLIS_DISPONIBLES.find((a) => a.nom === service)?.label ?? service;
         if (window.confirm(`Déconnecter ${label} de ton compte Classinus ?`)) {
           await deconnecterPlateformeMcp(service);
-          setPlatformMcpEtat((prec) => {
-            const suivant = { ...prec };
-            delete suivant[service];
-            return suivant;
-          });
+          setPlatformMcpEtat((prec) => ({ ...prec, [service]: "deconnecte" }));
         }
         setPlatformMcpEnCours(null);
         return;
@@ -956,7 +960,7 @@ export function BarreDeSaisie({
       const { url } = await demarrerConnexion(service, agentId);
       window.location.href = url;
     } catch (e) {
-      setPlatformMcpEtat((prec) => ({ ...prec, [service]: "erreur" }));
+      // Échec du démarrage ou de la déconnexion : le statut lu reste valable, on ne le remplace pas.
       alert(messageErreur(e));
       setPlatformMcpEnCours(null);
     }
