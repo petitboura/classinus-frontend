@@ -2893,7 +2893,7 @@ export type FichierSkillIndependant = { chemin: string; contenu?: string | null;
 export type SkillIndependant = { id: string; nom: string; description: string; actif: boolean; created_at: string; updated_at: string; fichiers?: FichierSkillIndependant[] };
 export async function listerSkillsIndependants() { return appelerApi("/api/skills") as Promise<SkillIndependant[]>; }
 export async function obtenirSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`) as Promise<SkillIndependant>; }
-export async function enregistrerSkillIndependant(skill: { nom: string; description: string; actif: boolean; fichiers: { chemin: string; contenu: string; type_mime?: string }[] }, id?: string) {
+export async function enregistrerSkillIndependant(skill: { nom: string; description: string; actif: boolean; fichiers: { chemin: string; contenu: string }[] }, id?: string) {
   return appelerApi(id ? `/api/skills/${id}` : "/api/skills", { method: id ? "PUT" : "POST", body: JSON.stringify(skill) }) as Promise<SkillIndependant>;
 }
 export async function supprimerSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`, { method: "DELETE" }) as Promise<{ supprime: boolean; id: string }>; }
