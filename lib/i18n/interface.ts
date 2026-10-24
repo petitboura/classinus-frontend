@@ -1046,6 +1046,7 @@ const EN: Record<string, string> = {
   "Génération d'un PowerPoint": "Generate a PowerPoint presentation",
   "Génération d'un document LaTeX": "Generate a LaTeX document",
   "Génération de code": "Generate code",
+  "Exécution de code": "Code execution",
   "Génération d'un site (zip)": "Generate a website archive",
   "Génération d'une archive": "Generate an archive",
   "Génération d'une image": "Generate an image",
