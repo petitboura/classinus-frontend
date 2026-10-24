@@ -4,12 +4,13 @@ import { listerSkillsIndependants, obtenirSkillIndependant, enregistrerSkillInde
 import { messageErreur } from "@/lib/erreurs";
 import { CaseACocher } from "@/components/CaseACocher";
 import { Skeleton } from "@/components/Skeleton";
+import { appliquerEntete, lireEntete } from "@/lib/enteteSkill";
 
 type FichierEdition = { chemin: string; contenu: string };
 
 const CHEMIN_PRINCIPAL = "SKILL.md";
-const MODELE_PRINCIPAL = "---\nname: nouveau-skill\ndescription: Description\n---\n\n";
-const fichiersInitiaux = (): FichierEdition[] => [{ chemin: CHEMIN_PRINCIPAL, contenu: MODELE_PRINCIPAL }];
+// Le SKILL.md d'un nouveau skill naît avec son en-tête, aligné sur Nom et Description.
+const fichiersInitiaux = (): FichierEdition[] => [{ chemin: CHEMIN_PRINCIPAL, contenu: appliquerEntete("", "", "") }];
 
 // Empreinte de ce qui est enregistrable : sert à savoir s'il y a des modifications non enregistrées.
 const empreinte = (nom: string, description: string, actif: boolean, fichiers: FichierEdition[]) =>
@@ -38,6 +39,24 @@ export function SkillsIndependants() {
     finally { setChargementListe(false); }
   }
   useEffect(() => { void charger(); }, []);
+
+  // Nom et Description font foi : l'en-tête du SKILL.md les suit toujours.
+  function changerNom(valeur: string) {
+    setNom(valeur);
+    setFichiers(old => old.map(f => f.chemin === CHEMIN_PRINCIPAL ? { ...f, contenu: appliquerEntete(f.contenu, valeur, description) } : f));
+  }
+  function changerDescription(valeur: string) {
+    setDescription(valeur);
+    setFichiers(old => old.map(f => f.chemin === CHEMIN_PRINCIPAL ? { ...f, contenu: appliquerEntete(f.contenu, nom, valeur) } : f));
+  }
+  // Et inversement : si l'en-tête est modifié à la main, les champs suivent.
+  function changerContenu(valeur: string) {
+    setFichiers(old => old.map(f => f.chemin === fichierActif ? { ...f, contenu: valeur } : f));
+    if (fichierActif !== CHEMIN_PRINCIPAL) return;
+    const entete = lireEntete(valeur);
+    if (entete.nom !== undefined && entete.nom !== nom) setNom(entete.nom);
+    if (entete.description !== undefined && entete.description !== description) setDescription(entete.description);
+  }
 
   function abandonnerModifications() {
     return !modifie || window.confirm("Tu as des modifications non enregistrées. Les abandonner ?");
@@ -69,9 +88,11 @@ export function SkillsIndependants() {
   async function sauver() {
     setBusy(true);
     try {
-      const s = await enregistrerSkillIndependant({ nom, description, actif, fichiers }, selection || undefined);
+      const aEnregistrer = fichiers.map(f => f.chemin === CHEMIN_PRINCIPAL ? { ...f, contenu: appliquerEntete(f.contenu, nom, description) } : f);
+      const s = await enregistrerSkillIndependant({ nom, description, actif, fichiers: aEnregistrer }, selection || undefined);
       setSelection(s.id);
-      enregistre.current = empreinte(nom, description, actif, fichiers);
+      setFichiers(aEnregistrer);
+      enregistre.current = empreinte(nom, description, actif, aEnregistrer);
       setErreur("");
       await charger();
     } catch (e) { setErreur(messageErreur(e)); }
@@ -117,8 +138,8 @@ export function SkillsIndependants() {
       </aside>
       <div key={vueEditeur} className="min-w-0 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm">Nom<input value={nom} onChange={e => setNom(e.target.value)} className={champ} /></label>
-          <label className="flex flex-col gap-1 text-sm">Description<input value={description} onChange={e => setDescription(e.target.value)} className={champ} /></label>
+          <label className="flex flex-col gap-1 text-sm">Nom<input value={nom} onChange={e => changerNom(e.target.value)} className={champ} /></label>
+          <label className="flex flex-col gap-1 text-sm">Description<input value={description} onChange={e => changerDescription(e.target.value)} className={champ} /></label>
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm"><CaseACocher checked={actif} onChange={setActif} />Actif</label>
         <div className="mt-4 grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
@@ -130,7 +151,7 @@ export function SkillsIndependants() {
           </div>
           <div className="min-w-0">
             <p className="mb-2 truncate text-xs text-dj-texte-muet">{fichierActif}</p>
-            <textarea value={fichiers.find(f => f.chemin === fichierActif)?.contenu ?? ""} onChange={e => setFichiers(old => old.map(f => f.chemin === fichierActif ? { ...f, contenu: e.target.value } : f))} className={`min-h-[260px] w-full p-3 font-mono text-sm sm:min-h-[350px] ${champ}`} spellCheck={false} />
+            <textarea value={fichiers.find(f => f.chemin === fichierActif)?.contenu ?? ""} onChange={e => changerContenu(e.target.value)} className={`min-h-[260px] w-full p-3 font-mono text-sm sm:min-h-[350px] ${champ}`} spellCheck={false} />
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">

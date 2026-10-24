@@ -12,6 +12,7 @@
     "lint": "next lint",
     "build:capacitor": "node tests/verifier-composants-natifs.mjs && cross-env CAPACITOR_BUILD=true next build && npx cap sync",
     "build:capacitor:test": "node tests/verifier-composants-natifs.mjs && cross-env CAPACITOR_BUILD=true CLASSINUS_CIBLE_TEST=true next build && npx cap sync",
+    "test:entete-skill": "node tests/verifier-entete-skill.mjs",
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:mise-a-jour-pc": "node tests/verifier-mise-a-jour-pc.mjs",
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
