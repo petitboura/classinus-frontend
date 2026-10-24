@@ -3,6 +3,7 @@
 import { supabase } from "./supabase";
 import { appelerApiStream } from "./api";
 import { ajouterTourDirect, lireEtatConversation, type IdMessage } from "./conversationPartagee";
+import { messageErreur } from "./erreurs";
 
 // Le modèle vocal, l'adresse de connexion, les consignes, la phrase d'accueil et la
 // description de l'outil ne sont plus écrits ici : ils viennent du serveur avec le
@@ -561,7 +562,8 @@ export async function ouvrirGeminiLive(options: OptionsGeminiLive): Promise<Sess
           if (reponseClovis) demarrerLecture(reponseClovis);
           functionResponses.push(reponseOutil(appel, { result: reponseClovis || "Classinus n a pas renvoyé de réponse textuelle." }));
         } catch (e) {
-          functionResponses.push(reponseOutil(appel, { error: e instanceof Error ? e.message : "Erreur lors de l appel à Classinus." }));
+          console.warn("Échec d’une demande transmise au canal vocal Classinus :", e);
+          functionResponses.push(reponseOutil(appel, { error: messageErreur(e) }));
         } finally {
           arreterRelances();
           demandesEnCours = Math.max(0, demandesEnCours - 1);

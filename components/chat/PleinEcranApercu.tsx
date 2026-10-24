@@ -47,6 +47,9 @@ export function PleinEcranApercu({
   // Dans la fenêtre de superposition PC (transparente et traversée par les clics),
   // seuls les éléments marqués data-agent-superposition reçoivent la souris :
   // sans ce marquage, un plein écran ouvert depuis le canal serait traversé.
+  // Depuis le 23/10/2026 ce réglage n'est plus nécessaire dans la fenêtre de
+  // superposition : le marquage et la forme en panneau y sont automatiques, quel que soit
+  // l'appelant (bloc de code, bloc dépliable, éditeur...).
   capturerSouris?: boolean;
   children: ReactNode;
 }) {
@@ -74,7 +77,13 @@ export function PleinEcranApercu({
   // en noir ou en blanc (selon le thème) et cachait l'application d'en dessous. Ici c'est donc
   // un grand panneau centré avec des marges : le reste de l'écran reste visible et les clics
   // le traversent toujours.
-  const enPanneauSurPc = capturerSouris && estDansFenetreSuperposition();
+  // Correctif (23/10/2026, demande de Bourama) : seul le plein écran ouvert depuis les contrôles du
+  // canal passait capturerSouris. Un plein écran ouvert depuis un message de la bulle (bloc de
+  // code, bloc dépliable, éditeur) se peignait sur tout l'écran du PC sans être marqué, donc les
+  // clics le traversaient et il était impossible à fermer. Dans la fenêtre de superposition, c'est
+  // maintenant toujours un panneau marqué.
+  const surPc = estDansFenetreSuperposition();
+  const enPanneauSurPc = surPc;
   const formeEtFond = enPanneauSurPc
     ? "fixed inset-x-[6vw] inset-y-[8vh] z-[160] flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-2xl"
     : "fixed inset-0 z-[160] flex flex-col bg-dj-surface pb-[var(--safe-bottom)] pt-[var(--safe-top)]";
@@ -84,7 +93,7 @@ export function PleinEcranApercu({
       role="dialog"
       aria-modal="true"
       aria-label={titre}
-      data-agent-superposition={capturerSouris ? "true" : undefined}
+      data-agent-superposition={capturerSouris || surPc ? "true" : undefined}
       // Un clic dans le plein écran ne doit rien déclencher dans le
       // message d'origine (l'arbre React traverse le portail).
       onClick={(e) => e.stopPropagation()}

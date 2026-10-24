@@ -26,6 +26,7 @@ import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { ContexteMinuteurs } from "@/lib/contexteMinuteurs";
 import { texteMessageAutomatique } from "@/lib/minuteurs";
 import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
+import { listeDomaines } from "@/lib/logosSites";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
 import { detecterLangageCode } from "@/lib/texteColle";
@@ -204,7 +205,7 @@ export function ChatIA({
   // statut sans id (chemins plus anciens/rares : lecture d'image,
   // "niveau2" dans main.py -- toujours un seul à la fois, jamais de
   // vrai parallélisme) garde l'ancien comportement par repli.
-  const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; nomLisible?: string; action?: string; texte: string; etat: EtatStatut }[]>([]);
+  const [statuts, setStatuts] = useState<{ id?: string; nomOutil?: string; nomLisible?: string; action?: string; domaines?: string[]; texte: string; etat: EtatStatut; libelleIa?: boolean }[]>([]);
   // Ajouté (18/09/2026, demande Bourama : statut d'outil incohérent) :
   // texte "X effectuée" reçu dans "statut_termine", gardé par id_appel
   // jusqu'à l'événement "outil_resultat" du même appel, qui l'emporte avec
@@ -245,6 +246,7 @@ export function ChatIA({
   const [raisonnementEnCours, setRaisonnementEnCours] = useState(false);
   const [confirmation, setConfirmation] = useState<{
     nomLisible: string;
+    nomOutil?: string;
     agentNom?: string | null;
     arguments: Record<string, unknown>;
     etatReprise: unknown;
@@ -460,8 +462,12 @@ export function ChatIA({
           nomOutil: evenement.nom_outil,
           nomLisible: evenement.nom_lisible,
           action: evenement.action,
+          domaines: listeDomaines(evenement.domaines),
           texte: evenement.texte,
           etat: "en_cours" as EtatStatut,
+          // Phrase écrite par l'IA (23/10/2026) : le texte peut contenir n'importe quel mot,
+          // il ne faut jamais la lire comme un échec ou une annulation.
+          libelleIa: !!evenement.libelle_ia,
         },
       ]);
     } else if (item.type === "statut_termine") {
@@ -484,15 +490,15 @@ export function ChatIA({
               })();
         // "a échoué" traité comme "annulée" (18/09/2026) : une ligne d'outil
         // ne doit jamais afficher de coche verte pour un échec.
-        const estEchecOuAnnulation = evenement.texte.includes("annulée") || evenement.texte.includes("échoué");
+        const estEchecOuAnnulation = !evenement.libelle_ia && (evenement.texte.includes("annulée") || evenement.texte.includes("échoué"));
         if (i === -1) {
-          copie.push({ texte: evenement.texte, etat: "termine" });
+          copie.push({ texte: evenement.texte, etat: "termine", libelleIa: !!evenement.libelle_ia });
         } else {
           copie[i] = { ...copie[i], texte: evenement.texte, etat: estEchecOuAnnulation ? "annule" : "termine" };
         }
         return copie;
       });
-      if (evenement.id_appel && !(evenement.texte.includes("annulée") || evenement.texte.includes("échoué"))) {
+      if (evenement.id_appel && (evenement.libelle_ia || !(evenement.texte.includes("annulée") || evenement.texte.includes("échoué")))) {
         textesTermineRef.current.set(evenement.id_appel, evenement.texte);
       }
     } else if (item.type === "sources") {
@@ -584,6 +590,7 @@ export function ChatIA({
           nomOutil: evenement.nom_outil,
           nomLisible: evenement.nom_lisible,
           action: (evenement.action as string | undefined) || undefined,
+          domaines: listeDomaines(evenement.domaines),
           resultat: evenement.resultat,
           idAppel: evenement.id_appel as string | undefined,
           texteTermine,
@@ -774,6 +781,7 @@ export function ChatIA({
     } else if (evenement.type === "confirmation_requise") {
       setConfirmation({
         nomLisible: evenement.nom_lisible,
+        nomOutil: evenement.nom_outil,
         agentNom: evenement.agent_nom,
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,
@@ -1572,7 +1580,13 @@ export function ChatIA({
       prec.some((s) => s.etat === "en_cours")
         ? prec.map((s) =>
             s.etat === "en_cours"
-              ? { ...s, texte: `${(s.nomLisible || s.texte.replace(/\.{3}$/, "")).trim()} annulée`, etat: "annule" as EtatStatut }
+              ? {
+                  ...s,
+                  // Une phrase écrite par l'IA reste telle quelle (« annulée » collé derrière
+                  // ferait une phrase bancale, et l'icône suffit à montrer l'arrêt).
+                  texte: s.libelleIa ? s.texte.replace(/(\.{3}|…)$/, "").trim() : `${(s.nomLisible || s.texte.replace(/\.{3}$/, "")).trim()} annulée`,
+                  etat: "annule" as EtatStatut,
+                }
               : s
           )
         : prec
@@ -1626,6 +1640,9 @@ export function ChatIA({
 
   async function repriseApresConfirmation(approuve: boolean) {
     if (!confirmation) return;
+    // Demande traitée par ce clic : si la reprise en fait apparaître une nouvelle
+    // (deuxième outil à approuver), elle doit rester affichée à la fin du flux.
+    const confirmationTraitee = confirmation;
     setConfirmationEnAttente(true);
     reinitialiserAffichageControle();
     setGenEnCours(true);
@@ -1659,7 +1676,7 @@ export function ChatIA({
       }
     } finally {
       controleurAbandonRef.current = null;
-      setConfirmation(null);
+      setConfirmation((courante) => (courante === confirmationTraitee ? null : courante));
       setConfirmationEnAttente(false);
       setGenEnCours(false);
       // Même filet que dans les deux autres finally de fin de génération,
@@ -1837,6 +1854,7 @@ export function ChatIA({
       nomOutil: s.nomOutil,
       nomLisible: s.nomLisible,
       action: s.action,
+      domaines: s.domaines,
       texte: s.texte,
       etat: s.etat === "termine" ? ("termine" as const) : ("en_cours" as const),
     }));
@@ -2000,6 +2018,7 @@ export function ChatIA({
         {confirmation && (
           <ConfirmationOutil
             nomLisible={confirmation.nomLisible}
+            nomOutil={confirmation.nomOutil}
             agentNom={confirmation.agentNom}
             arguments={confirmation.arguments}
             enAttente={confirmationEnAttente}

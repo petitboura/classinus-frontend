@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { inscrireOuConnecter } from "@/lib/authFallback";
-import { mettreAJourMonProfil } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { mettreAJourMonProfil, enregistrerMonProfil } from "@/lib/api";
+import { definirLocale } from "@/lib/i18n/locale";
+import { useLocale } from "@/lib/i18n/useLocale";
+import { messageErreur, messageErreurAuthentification } from "@/lib/erreurs";
 import { EcranAutonome } from "@/components/EcranAutonome";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
@@ -14,6 +16,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
 import { ChampTelephone } from "@/components/ChampTelephone";
 import { BoutonGoogle } from "@/components/BoutonGoogle";
+import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 
 type MethodeAuth = "email" | "telephone";
 
@@ -43,6 +46,10 @@ export default function PageInscription() {
   const [motDePasse, setMotDePasse] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  // 22/10/2026, demande Bourama : la langue de l'interface se demande ici (la
+  // pastille FR/EN flottante est supprimée). Le choix s'applique tout de suite
+  // à la page, puis est enregistré sur le compte une fois créé.
+  const langue = useLocale();
 
   useEffect(() => {
     let annule = false;
@@ -64,14 +71,21 @@ export default function PageInscription() {
     setErreur(null);
     setEnCours(true);
 
-    const { error } =
-      methode === "email"
-        ? await inscrireOuConnecter({ email, password: motDePasse })
-        : await inscrireOuConnecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
+    let erreurInscription: unknown = null;
+    try {
+      const { error } =
+        methode === "email"
+          ? await inscrireOuConnecter({ email, password: motDePasse })
+          : await inscrireOuConnecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
+      erreurInscription = error;
+    } catch (e) {
+      erreurInscription = e;
+    }
 
-    if (error) {
+    if (erreurInscription) {
       setEnCours(false);
-      setErreur(error.message);
+      console.warn("Échec d’inscription Supabase :", erreurInscription);
+      setErreur(messageErreurAuthentification(erreurInscription, "inscription"));
       return;
     }
 
@@ -87,6 +101,18 @@ export default function PageInscription() {
       setEnCours(false);
       setErreur(messageErreur(e));
       return;
+    }
+
+    // Langue choisie sur le compte, avec les erreurs de code traduites dans la
+    // même langue. Non bloquant : en cas d'échec, la langue de l'appareil est
+    // renvoyée au compte au prochain chargement (voir contexteStatutUtilisateur).
+    try {
+      await enregistrerMonProfil({
+        langue_interface: langue,
+        langue_cible_erreurs: langue === "en" ? "Anglais" : "Français",
+      });
+    } catch {
+      // volontairement ignoré
     }
 
     setEnCours(false);
@@ -194,6 +220,20 @@ export default function PageInscription() {
                 onChange={(e) => setNom(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-dj-texte outline-none focus:border-dj-bordure-forte"
               />
+            </div>
+
+            <div>
+              <span className="block text-sm font-medium text-dj-texte-muet">Langue de l'interface</span>
+              <div className="mt-1" data-i18n-skip>
+                <SelectPersonnalise
+                  options={[
+                    { id: "fr", label: "Français" },
+                    { id: "en", label: "English" },
+                  ]}
+                  valeur={langue}
+                  onChange={(id) => definirLocale(id === "en" ? "en" : "fr")}
+                />
+              </div>
             </div>
 
             {methode === "email" ? (

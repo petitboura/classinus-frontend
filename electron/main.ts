@@ -188,6 +188,29 @@ capacitorApp.whenReady.then(() => {
     superposition.moveTop();
   }, INTERVALLE_RAPPEL_PREMIER_PLAN_MS);
   superposition.on('closed', () => clearInterval(rappelPremierPlan));
+
+  // Correctif (23/10/2026, demande Bourama) : la superposition ne doit jamais pouvoir etre fermee
+  // pour de bon par un geste de l'etudiant (par exemple « Fermer la fenetre » sur une icone de
+  // la barre des taches). Detruite, elle n'etait jamais recreee et ne revenait plus meme en
+  // ouvrant Classinus ou en activant le canal. Comme pour la fenetre principale (arrierePlan.ts),
+  // fermer revient a cacher ; le plugin SuperpositionAgent la remontre au prochain etat.
+  // Seule une vraie sortie de l'appli (Quitter, arret de Windows) la ferme vraiment.
+  let sortieReelle = false;
+  app.on('before-quit', () => {
+    sortieReelle = true;
+  });
+  superposition.on('session-end', () => {
+    sortieReelle = true;
+  });
+  superposition.on('close', (evenement) => {
+    if (sortieReelle) return;
+    evenement.preventDefault();
+    superposition.hide();
+  });
+  // Windows remet une fenetre dans la barre des taches des qu'elle devient activable puis
+  // reaffichee ; la superposition n'y a jamais sa place (c'est ce qui faisait apparaitre une
+  // icone fermable). On la retire a chaque affichage.
+  superposition.on('show', () => superposition.setSkipTaskbar(true));
   // Rien capte par defaut : le plugin SuperpositionAgent (suivreSouris dans
   // packages/capacitor-superposition-electron/electron/src/plugin.mts) active
   // la capture des clics uniquement quand le pointeur est au dessus d'un

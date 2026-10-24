@@ -188,6 +188,30 @@ export default function PageAgentSuperposition() {
     };
   }, []);
 
+  // Fenetres ouvertes depuis la bulle (23/10/2026, demande de Bourama) : un plein ecran, un apercu
+  // d'image, une fenetre media ou un menu est rendu par un portail directement dans <body>. Sans
+  // la marque data-agent-superposition, il s'affiche mais les clics le traversent (le processus
+  // principal ne capte que les elements marques) : impossible de le fermer. Plutot que de
+  // demander a chaque composant de se marquer, tout element ajoute dans <body> apres le
+  // demarrage de la page est marque ici. Les elements presents au demarrage (racine de la page)
+  // ne sont jamais marques : la page entiere captant la souris bloquerait tout le PC.
+  useEffect(() => {
+    const presentsAuDemarrage = new Set<Node>(Array.from(document.body.children));
+    const IGNORES = new Set(["SCRIPT", "STYLE", "LINK", "META", "NOSCRIPT", "TEMPLATE"]);
+    function marquer(noeud: Node) {
+      if (!(noeud instanceof HTMLElement) || presentsAuDemarrage.has(noeud)) return;
+      if (IGNORES.has(noeud.tagName)) return;
+      const nom = noeud.tagName.toLowerCase();
+      if (nom.startsWith("next-") || nom.startsWith("nextjs-")) return;
+      noeud.setAttribute("data-agent-superposition", "true");
+    }
+    const observateur = new MutationObserver((mutations) => {
+      for (const m of mutations) m.addedNodes.forEach(marquer);
+    });
+    observateur.observe(document.body, { childList: true });
+    return () => observateur.disconnect();
+  }, []);
+
   // Clavier (12/10/2026) : la superposition n'est activable par Windows que pendant que
   // l'etudiant ecrit. Un appui dans une zone de texte la rend activable ; quand le texte
   // perd le focus vers autre chose qu'une zone de texte, elle redevient non activable et

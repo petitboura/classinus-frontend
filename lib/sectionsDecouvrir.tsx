@@ -86,6 +86,12 @@ export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
     titre: "Ma mémoire",
     description: "Consulte les informations retenues par Classinus et gère celles que tu souhaites conserver ou supprimer.",
   },
+  {
+    slug: "applications-connectees",
+    href: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
+    titre: "Applications connectées",
+    description: "Relie GitHub, Notion, Vercel, Railway, Supabase ou Higgsfield à ton compte Classinus et retire leurs autorisations quand tu veux.",
+  },
 ];
 
 export const SOUS_PAGES_DECOUVRIR_CONCENTRATION: CarteDecouvrir[] = [

@@ -120,10 +120,10 @@ app.on("will-quit", () => raccourcisCrayon.definirActif(false));
 // Applique le passe-clic voulu, seulement s'il change : chaque appel a
 // setIgnoreMouseEvents coute un aller-retour vers le systeme, et en
 // enchainer sans necessite etait la source du tremblement du pointeur.
-function appliquerPasseClic(fenetre: BrowserWindow): void {
+function appliquerPasseClic(fenetre: BrowserWindow, forcer = false): void {
   if (fenetre.isDestroyed()) return;
   const traversant = clicTraversant || !(captureDemandee || crayonActif);
-  if (passeClicApplique === traversant) return;
+  if (!forcer && passeClicApplique === traversant) return;
   passeClicApplique = traversant;
   fenetre.setIgnoreMouseEvents(traversant);
 }
@@ -148,6 +148,10 @@ const INTERVALLE_SUIVI_SOURIS_MS = 33;
 // plein geste, par exemple), la capture ne doit pas rester bloquee sur tout
 // l'ecran.
 const DUREE_MAX_MAINTIEN_CAPTURE_MS = 20000;
+// Delai maximum d'une question a la page de superposition (voir suivreSouris), et intervalle de
+// la reaffirmation de l'etat de passe-clic aupres de Windows (voir reaffirmerPasseClic).
+const DELAI_MAX_QUESTION_PAGE_MS = 1500;
+const INTERVALLE_REAFFIRMATION_PASSE_CLIC_MS = 1000;
 const SELECTEUR_ELEMENT_SUPERPOSITION = '[data-agent-superposition="true"]';
 let minuteurSuiviSouris: ReturnType<typeof setInterval> | null = null;
 let dernierPointSouris: PointEcranLocal | null = null;
@@ -173,9 +177,26 @@ async function suivreSouris(): Promise<void> {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
   verificationSourisEnCours = true;
   try {
-    const dessus = await fenetre.webContents.executeJavaScript(
-      `Boolean(document.elementFromPoint(${x}, ${y})?.closest('${SELECTEUR_ELEMENT_SUPERPOSITION}'))`
-    );
+    // Correctif (23/10/2026, demande de Bourama) : sans delai maximum, une page qui ne repond
+    // jamais (occupee, gelee un instant) laissait cette verification « en cours » pour toujours,
+    // donc la souris n'etait plus suivie et la superposition refusait les clics jusqu'au
+    // redemarrage. Au bout de DELAI_MAX_QUESTION_PAGE_MS la question est abandonnee (le catch
+    // ci-dessous la traite comme une page pas prete) et la suivante peut partir.
+    let minuteurDelai: ReturnType<typeof setTimeout> | null = null;
+    const delaiDepasse = new Promise<never>((_, refuser) => {
+      minuteurDelai = setTimeout(() => refuser(new Error("La page de superposition n'a pas repondu a temps.")), DELAI_MAX_QUESTION_PAGE_MS);
+    });
+    let dessus: unknown;
+    try {
+      dessus = await Promise.race([
+        fenetre.webContents.executeJavaScript(
+          `Boolean(document.elementFromPoint(${x}, ${y})?.closest('${SELECTEUR_ELEMENT_SUPERPOSITION}'))`
+        ),
+        delaiDepasse,
+      ]);
+    } finally {
+      if (minuteurDelai) clearTimeout(minuteurDelai);
+    }
     if (maintienCapture || fenetre.isDestroyed()) return;
     captureDemandee = dessus === true;
     appliquerPasseClic(fenetre);
@@ -186,12 +207,33 @@ async function suivreSouris(): Promise<void> {
   }
 }
 
+// Correctif (23/10/2026, demande de Bourama) : le passe-clic n'etait renvoye a Windows que si
+// l'etat voulu changeait. Si Windows modifiait lui-meme la fenetre (remise au premier plan,
+// fenetre cachee puis remontree, activable puis non activable), la memoire disait « capte » alors
+// que la fenetre laissait passer, et les clics traversaient les boutons jusqu'au redemarrage.
+// On renvoie donc l'etat voulu une fois par seconde, sans se fier a la memoire. Pas pendant un
+// appui en cours (maintienCapture) pour ne pas interrompre un geste.
+let derniereReaffirmationPasseClic = 0;
+
+function reaffirmerPasseClic(): void {
+  const maintenant = performance.now();
+  if (maintenant - derniereReaffirmationPasseClic < INTERVALLE_REAFFIRMATION_PASSE_CLIC_MS) return;
+  derniereReaffirmationPasseClic = maintenant;
+  if (maintienCapture) return;
+  const fenetre = trouverFenetreSuperposition();
+  if (!fenetre || fenetre.isDestroyed() || !fenetre.isVisible()) return;
+  appliquerPasseClic(fenetre, true);
+}
+
 function demarrerSuiviSouris(): void {
   // La fenetre vient d'etre creee en passe-clic (electron/main.ts) : on ne
   // se fie pas a un etat applique avant, on le reapplique au prochain besoin.
   passeClicApplique = null;
   if (minuteurSuiviSouris) return;
-  minuteurSuiviSouris = setInterval(() => { void suivreSouris(); }, INTERVALLE_SUIVI_SOURIS_MS);
+  minuteurSuiviSouris = setInterval(() => {
+    void suivreSouris();
+    reaffirmerPasseClic();
+  }, INTERVALLE_SUIVI_SOURIS_MS);
 }
 
 function arreterSuiviSouris(): void {
@@ -519,20 +561,33 @@ let minuteurEssaiAffichage: ReturnType<typeof setTimeout> | null = null;
 const DELAI_ESSAI_AFFICHAGE_MS = 250;
 const NB_MAX_ESSAIS_AFFICHAGE = 40;
 
+// Correctif (23/10/2026, demande de Bourama) : la note « deja affichee » ne suffisait pas. Si la
+// superposition disparaissait sans passer par retirerSuperposition (fermee depuis l'icone de la
+// barre des taches, cachee par le systeme), la note restait vraie et plus aucun etat ne la
+// remontrait. On regarde donc l'etat reel de la fenetre a chaque demande, pas seulement la note.
+let ecouteBlurPosee = false;
+
 function essayerAffichageSuperposition(essai: number) {
-  if (!affichageVoulu || superpositionAffichee) return;
+  if (!affichageVoulu) return;
   const superposition = trouverFenetreSuperposition();
   if (superposition && !superposition.isDestroyed()) {
+    if (superpositionAffichee && superposition.isVisible()) return;
     superpositionAffichee = true;
     superposition.showInactive();
     // L'etudiant clique dans une autre fenetre : la superposition perd le focus, elle redevient
     // non activable (rien a rendre : c'est deja l'autre fenetre qui est active).
-    superposition.on("blur", () => {
-      if (saisieTexteActive) definirSaisieTexte(superposition, false);
-    });
+    if (!ecouteBlurPosee) {
+      ecouteBlurPosee = true;
+      superposition.on("blur", () => {
+        if (saisieTexteActive) definirSaisieTexte(superposition, false);
+      });
+    }
     demarrerSuiviSouris();
     return;
   }
+  // Fenetre detruite : la note ne doit plus la croire affichee, et l'ecoute du blur est perdue.
+  superpositionAffichee = false;
+  ecouteBlurPosee = false;
   if (essai >= NB_MAX_ESSAIS_AFFICHAGE || minuteurEssaiAffichage) return;
   minuteurEssaiAffichage = setTimeout(() => {
     minuteurEssaiAffichage = null;

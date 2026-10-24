@@ -45,8 +45,9 @@ export type LectureEntouree = {
   texte_long_ignore?: boolean;
 };
 
-// Codes d'erreur : le texte montré à l'étudiant est choisi par l'appelant (traduisible).
-export type ErreurLectureEntouree = { erreur: "aucun_trait" | "indisponible"; detail?: string };
+// Codes d'erreur stables : le détail natif reste dans la console pour le diagnostic,
+// il n'est pas transporté vers le modèle ni affiché à l'étudiant.
+export type ErreurLectureEntouree = { erreur: "aucun_trait" | "indisponible" };
 
 type PontNatifEntoure = { lireElementsEntoures(options: { zones: ZonePage[] }): Promise<LectureEntouree | { erreur: string }> };
 
@@ -58,9 +59,13 @@ export async function lireCeQuiEstEntoure(): Promise<LectureEntouree | ErreurLec
   try {
     pont ??= registerPlugin<PontNatifEntoure>("PontNatif");
     const resultat = await pont.lireElementsEntoures({ zones });
-    if ("erreur" in resultat) return { erreur: "indisponible", detail: resultat.erreur };
+    if ("erreur" in resultat) {
+      console.warn("Le pont natif n’a pas pu lire ce qui est entouré :", resultat.erreur);
+      return { erreur: "indisponible" };
+    }
     return resultat;
   } catch (e) {
-    return { erreur: "indisponible", detail: e instanceof Error ? e.message : String(e) };
+    console.warn("Échec de lecture du crayon PC :", e);
+    return { erreur: "indisponible" };
   }
 }

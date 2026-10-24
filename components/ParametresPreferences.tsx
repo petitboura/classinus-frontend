@@ -9,6 +9,9 @@ import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { LANGUES_TRADUCTION_ERREURS } from "@/lib/languesTraductionErreurs";
+import { useLocale } from "@/lib/i18n/useLocale";
+import type { Locale } from "@/lib/i18n/locale";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 
 // 19/09/2026, demande Bourama : ancien écran "preferences" d'EspaceParametres.tsx.
 const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
@@ -29,7 +32,9 @@ export function ParametresPreferences() {
     traductionAutoErreurs,
     definirLangueCibleErreurs,
     definirTraductionAutoErreurs,
+    definirLangueInterface,
   } = useContext(ContexteStatutUtilisateur);
+  const localeActive = useLocale();
   const estProfesseur = estProfesseurContexte ?? true;
 
   const [chargement, setChargement] = useState(true);
@@ -43,6 +48,7 @@ export function ParametresPreferences() {
   // 27/09/2026, chantier "traduction erreurs execution".
   const [messageLangue, setMessageLangue] = useState<string | null>(null);
   const [enregistrementLangue, setEnregistrementLangue] = useState(false);
+  const [messageLangueInterface, setMessageLangueInterface] = useState<string | null>(null);
   const [messageAuto, setMessageAuto] = useState<string | null>(null);
   const [enregistrementAuto, setEnregistrementAuto] = useState(false);
   const traductionAuto = traductionAutoErreurs ?? false;
@@ -103,6 +109,18 @@ export function ParametresPreferences() {
     }
   }
 
+  // 22/10/2026, demande Bourama : la langue de l'interface se règle ici (la
+  // pastille FR/EN flottante est supprimée). Aligne aussi la langue des erreurs.
+  async function choisirLangueInterface(id: string) {
+    const locale: Locale = id === "en" ? "en" : "fr";
+    setMessageLangueInterface(null);
+    try {
+      await definirLangueInterface(locale);
+    } catch (e) {
+      setMessageLangueInterface(messageErreur(e));
+    }
+  }
+
   async function basculerTraductionAuto() {
     const nouvelleValeur = !traductionAuto;
     setEnregistrementAuto(true);
@@ -158,6 +176,24 @@ export function ParametresPreferences() {
             );
           })}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-dj-bordure pt-4">
+        <span className="text-sm font-medium text-dj-texte">Langue de l'interface</span>
+        <span className="text-xs text-dj-texte-muet">
+          Langue des menus et des textes de Classinus. Tant que tu n'en as pas choisi une, c'est celle de ton navigateur ou de ton téléphone (anglais si c'est l'anglais, sinon français). Les erreurs de code sont traduites dans la même langue.
+        </span>
+        <div data-i18n-skip>
+          <SelectPersonnalise
+            options={[
+              { id: "fr", label: "Français" },
+              { id: "en", label: "English" },
+            ]}
+            valeur={localeActive}
+            onChange={choisirLangueInterface}
+          />
+        </div>
+        {messageLangueInterface && <span className="text-sm text-[var(--dj-erreur)]">{messageLangueInterface}</span>}
       </div>
 
       <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">

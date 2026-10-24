@@ -26,7 +26,8 @@ import { imagesNonPlacees, videosNonPlacees } from "./mediasNonPlaces";
 // Étendu (24/09/2026, regroupement) : `nomLisible` et `action` viennent de
 // l'événement "statut" du backend, pour fusionner les appels identiques à la
 // suite et poser la petite icône d'action dès la phase "en cours".
-export type OutilEnCours = { id: string; nomOutil?: string; nomLisible?: string; action?: string; texte: string; etat?: "en_cours" | "termine" };
+// `domaines` (21/10/2026) : sites visés par l'appel, pour afficher leur logo dès la phase "en cours".
+export type OutilEnCours = { id: string; nomOutil?: string; nomLisible?: string; action?: string; domaines?: string[]; texte: string; etat?: "en_cours" | "termine" };
 
 // Affiche, pour CHAQUE outil utilisé, ce qu'il a concrètement exécuté /
 // retourné -- dans sa propre section, avec l'icône de cet outil précis,
@@ -71,6 +72,8 @@ type ResultatOutil = {
   resultat: string;
   // Action de l'appel pour les outils à actions (24/09/2026), absente sinon.
   action?: string;
+  // Sites visés par l'appel (21/10/2026, logo du site dans la ligne), absent sinon.
+  domaines?: string[];
   // Ajoutés (18/09/2026) : idAppel recolle le résultat à la ligne "en cours"
   // du même outil (même clé, donc même élément, plus de remplacement) ;
   // texteTermine est le texte "effectuée" reçu juste avant le résultat.
@@ -81,17 +84,19 @@ type ResultatOutil = {
   videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[];
 };
 
-type Rangee = { cle: string; nomOutil?: string; nomLisible?: string; action?: string; donnees: DonneesLigneOutil };
+type Rangee = { cle: string; nomOutil?: string; nomLisible?: string; action?: string; domaines?: string[]; donnees: DonneesLigneOutil };
 
 // Une ligne affichée = un ou plusieurs appels identiques à la suite
 // (24/09/2026, demande Bourama : dix fois le même outil = une ligne "x 10").
-type Ligne = { cle: string; nomOutil?: string; action?: string; membres: Rangee[] };
+type Ligne = { cle: string; nomOutil?: string; action?: string; domaines?: string[]; membres: Rangee[] };
 
 // Deux rangées se fusionnent seulement si elles se suivent ET portent le même
-// outil et le même libellé (le libellé porte déjà le verbe de l'action, voir
-// core/profils_agents.py:_nom_lisible). Sans libellé connu : jamais fusionnée.
+// outil, le même libellé (le libellé porte déjà le verbe de l'action, voir
+// core/profils_agents.py:_nom_lisible) et les mêmes sites visés : deux pages de
+// sites différents ne doivent pas partager le logo de l'un. Sans libellé connu :
+// jamais fusionnée.
 function cleFusion(rangee: Rangee): string | null {
-  return rangee.nomLisible ? `${rangee.nomOutil ?? ""}|${rangee.nomLisible}` : null;
+  return rangee.nomLisible ? `${rangee.nomOutil ?? ""}|${rangee.nomLisible}|${(rangee.domaines ?? []).join(",")}` : null;
 }
 
 // Regroupe les rangées qui se suivent en lignes. Une série interrompue par un
@@ -104,7 +109,7 @@ function fusionnerRangees(rangees: Rangee[]): Ligne[] {
     if (derniere && cle && cleFusion(derniere.membres[0]) === cle) {
       derniere.membres.push(rangee);
     } else {
-      lignes.push({ cle: rangee.cle, nomOutil: rangee.nomOutil, action: rangee.action, membres: [rangee] });
+      lignes.push({ cle: rangee.cle, nomOutil: rangee.nomOutil, action: rangee.action, domaines: rangee.domaines, membres: [rangee] });
     }
   }
   return lignes;
@@ -208,6 +213,7 @@ export function OutilResultatBulle({
       nomOutil: r.nomOutil,
       nomLisible: r.nomLisible,
       action: r.action,
+      domaines: r.domaines,
       donnees: {
         etat: "resultat" as const,
         nomLisible: r.nomLisible,
@@ -225,6 +231,7 @@ export function OutilResultatBulle({
         nomOutil: e.nomOutil,
         nomLisible: e.nomLisible,
         action: e.action,
+        domaines: e.domaines,
         donnees:
           e.etat === "termine"
             ? { etat: "termine" as const, texteTermine: e.texte }
@@ -275,6 +282,7 @@ export function OutilResultatBulle({
         donnees={donneesDeLigne(ligne)}
         Icone={Icone}
         SousIcone={sousIconePour(ligne.action, ligne.nomOutil, appli, verbes)}
+        domaines={ligne.domaines}
         nombre={ligne.membres.length}
         estDerniere={position === lignes.length - 1}
         estGroupe={estGroupe}

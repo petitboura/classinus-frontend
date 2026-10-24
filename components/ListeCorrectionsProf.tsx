@@ -21,6 +21,7 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 
 // Même rendu markdown que les réponses du chat (titres, listes, code, formules),
 // chargé à la demande : il est lourd et ne sert qu'à l'ouverture d'un signalement.
@@ -301,35 +302,27 @@ export function ListeCorrectionsProf() {
 
               {rattachementOuvertPour === s.id && (
                 <div className="mt-2.5 flex flex-col gap-2 rounded-lg border border-dj-bordure bg-dj-surface p-2">
-                  <select
-                    defaultValue={s.code_id ?? ""}
-                    onChange={(e) => {
-                      const codeId = e.target.value || null;
+                  <SelectPersonnalise
+                    options={[
+                      { id: "", label: "Aucune matière" },
+                      ...(codes ?? []).map((c) => ({ id: c.id, label: c.nom || c.code })),
+                    ]}
+                    valeur={s.code_id ?? ""}
+                    onChange={(id) => {
+                      const codeId = id || null;
                       if (codeId) chargerNotions(codeId);
                       rattacher(s.id, codeId, null);
                     }}
-                    className="rounded-lg border border-dj-bordure bg-dj-surface-haute p-1.5 text-xs text-dj-texte"
-                  >
-                    <option value="">Aucune matière</option>
-                    {codes?.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nom || c.code}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {s.code_id && (
-                    <select
-                      defaultValue={s.notion_id ?? ""}
-                      onChange={(e) => rattacher(s.id, s.code_id, e.target.value || null)}
-                      className="rounded-lg border border-dj-bordure bg-dj-surface-haute p-1.5 text-xs text-dj-texte"
-                    >
-                      <option value="">Aucune notion précise</option>
-                      {notionsParCode[s.code_id]?.map((n) => (
-                        <option key={n.id} value={n.id}>
-                          {n.nom}
-                        </option>
-                      ))}
-                    </select>
+                    <SelectPersonnalise
+                      options={[
+                        { id: "", label: "Aucune notion précise" },
+                        ...(notionsParCode[s.code_id] ?? []).map((n) => ({ id: n.id, label: n.nom })),
+                      ]}
+                      valeur={s.notion_id ?? ""}
+                      onChange={(id) => rattacher(s.id, s.code_id, id || null)}
+                    />
                   )}
                 </div>
               )}

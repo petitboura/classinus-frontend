@@ -109,7 +109,7 @@ export type VerbesActions = Record<string, typeof Search>;
 // Servi par le backend (clé "prefixes_applis" de GET /api/outils/registre).
 export type PrefixesApplis = Record<string, string>;
 
-type RegistreOutils = { outils: OutilAffichage[]; verbes: VerbesActions; prefixes: PrefixesApplis };
+type RegistreOutils = { outils: OutilAffichage[]; verbes: VerbesActions; prefixes: PrefixesApplis; repli: boolean };
 
 // Comme resoudreIcone, mais sans repli sur Wrench : une petite icône
 // inconnue ne s'affiche pas du tout plutôt que d'afficher une clé à molette
@@ -145,6 +145,7 @@ async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
         })),
         verbes,
         prefixes: reponse.prefixes_applis ?? {},
+        repli: false,
       };
     } catch {
       if (tentative < NB_TENTATIVES - 1) {
@@ -152,13 +153,11 @@ async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
       }
     }
   }
-  // Secours (2026-08-15) : si le backend reste injoignable après 3
-  // tentatives au chargement du chat, on retombe sur cette liste figée
-  // ci-dessous plutôt que de casser le menu Outils -- un outil ajouté
-  // depuis ce figeage manquerait juste d'icône/libellé ce jour-là, rien
-  // d'autre ne casse. Voir OUTILS_DISPONIBLES plus bas dans ce fichier.
+  // Secours temporaire : conserver une interface utilisable en cas de panne,
+  // sans garder ce catalogue figé pour toute la session. Le hook invalide ce
+  // résultat et réessaie quand la fenêtre reprend le focus ou que le réseau revient.
   // Sans le backend, aucune petite icône d'action (verbes vide).
-  return { outils: OUTILS_DISPONIBLES, verbes: {}, prefixes: {} };
+  return { outils: OUTILS_DISPONIBLES, verbes: {}, prefixes: {}, repli: true };
 }
 
 /**
@@ -179,17 +178,40 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
 
   useEffect(() => {
     let actif = true;
-    if (!promesseRegistre) promesseRegistre = chargerRegistreOutilsAvecRepli();
-    promesseRegistre.then((registre) => {
-      if (actif) {
-        setOutils(registre.outils);
-        setVerbes(registre.verbes);
-        setPrefixes(registre.prefixes);
-        setCharge(true);
+
+    const chargerEtAppliquer = async () => {
+      if (!promesseRegistre) promesseRegistre = chargerRegistreOutilsAvecRepli();
+      const promesseCourante = promesseRegistre;
+      try {
+        const registre = await promesseCourante;
+        // Une réponse de secours reste utilisable, mais n'est pas mise en cache :
+        // la prochaine reprise du réseau/fenêtre pourra charger le catalogue vivant.
+        if (registre.repli && promesseRegistre === promesseCourante) {
+          promesseRegistre = null;
+        }
+        if (actif) {
+          setOutils(registre.outils);
+          setVerbes(registre.verbes);
+          setPrefixes(registre.prefixes);
+          setCharge(true);
+        }
+      } catch {
+        if (promesseRegistre === promesseCourante) promesseRegistre = null;
+        if (actif) setCharge(true);
       }
-    });
+    };
+
+    const reessayerSiDisponible = () => {
+      if (!promesseRegistre) void chargerEtAppliquer();
+    };
+
+    void chargerEtAppliquer();
+    window.addEventListener("online", reessayerSiDisponible);
+    window.addEventListener("focus", reessayerSiDisponible);
     return () => {
       actif = false;
+      window.removeEventListener("online", reessayerSiDisponible);
+      window.removeEventListener("focus", reessayerSiDisponible);
     };
   }, []);
 
@@ -366,23 +388,31 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
 // "Action dans l'app" ci-dessus, via le champ `appli` des entrées de
 // OUTILS_DISPONIBLES -- et pour app/dashboard/applications/page.tsx (liste
 // des applis connectables).
-export const APPLIS_DISPONIBLES: { nom: string; label: string; Icone: typeof Search }[] = [
-  { nom: "github", label: "GitHub", Icone: IconeGithub },
+// La visibilité d'une appli dans chaque zone est déclarée ici une seule fois.
+export type AppliDisponible = {
+  nom: string;
+  label: string;
+  Icone: typeof Search;
+  visibleDansBoutonApplications: boolean;
+  visibleDansEspaceConnexions: boolean;
+};
+export const APPLIS_DISPONIBLES: AppliDisponible[] = [
+  { nom: "github", label: "GitHub", Icone: IconeGithub, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   // BookOpen (icône générique) remplacée par le vrai logo Notion (01/08,
   // demande Bourama) -- même logique que Github juste au-dessus : le
   // trait suit la couleur du bouton (text-dj-accent-1 / text-dj-texte-muet),
   // jamais une couleur de marque figée. Voir components/icons/IconeNotion.tsx.
-  { nom: "notion", label: "Notion", Icone: IconeNotion },
+  { nom: "notion", label: "Notion", Icone: IconeNotion, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   // Ajouté 01/09 (demande Bourama) -- icône générique HardDrive plutôt
   // qu'un logo Drive redessiné à la main (pas de moyen de vérifier
   // visuellement un tracé SVG avant mise en prod) : à remplacer par un
   // vrai logo (même logique que IconeNotion.tsx) si besoin plus tard.
-  { nom: "google_drive", label: "Google Drive", Icone: HardDrive },
+  { nom: "google_drive", label: "Google Drive", Icone: HardDrive, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false },
   // Connexions personnelles aux plateformes (20/10/2026) : le nom est celui du
   // service côté backend (api/connexions.py), il ne doit pas changer. Les
   // icônes sont les vrais logos (components/icons).
-  { nom: "higgsfield_mcp", label: "Higgsfield", Icone: IconeHiggsfield },
-  { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel },
-  { nom: "railway_mcp", label: "Railway", Icone: IconeRailway },
-  { nom: "supabase_mcp", label: "Supabase", Icone: IconeSupabase },
+  { nom: "higgsfield_mcp", label: "Higgsfield", Icone: IconeHiggsfield, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+  { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+  { nom: "railway_mcp", label: "Railway", Icone: IconeRailway, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+  { nom: "supabase_mcp", label: "Supabase", Icone: IconeSupabase, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
 ];

@@ -296,6 +296,10 @@ lib/
   useNotificationsPush.ts abonnement aux notifications Web Push (protégé : jamais appelé en natif,
                           la WebView Capacitor n'a pas l'objet Notification du navigateur)
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
+  textesPagesErreur.ts    textes (français et anglais) des écrans d'erreur et du lien de réinitialisation impossible à vérifier
+  logosSites.ts           vrais logos des sites et sources visés par un outil du chat (YouTube, Internet Archive, arXiv, HAL) ;
+                          tout autre site montre l'icône qu'il publie lui-même (components/chat/LogoSite.tsx).
+                          Les domaines viennent du champ "domaines" des événements d'outil (core/domaines_affichage.py côté backend)
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
 android/, ios/            projets Capacitor (capacitor.config.ts minimal, export statique build:capacitor
@@ -498,6 +502,33 @@ publie par une étiquette `pc-vX.Y.Z` (workflow `.github/workflows/publier-pc.ym
 releases du dépôt public `petitboura/classinus-updates-pc`). C'est indépendant de l'OTA
 mobile ci dessous. Mode d'emploi, réglages à faire une fois et limites :
 `docs/appli-pc-mise-a-jour-et-publication.md`.
+
+## Appli Android : publication de l'APK (release à télécharger)
+
+L'APK que sert la page `/telecharger` (variante `play`) se construit et se publie
+tout seul, comme l'appli PC : on pousse une étiquette `vX.Y.Z` (par exemple
+`v1.6.0`) sur un commit de `main`, et `.github/workflows/publier-android.yml`
+construit l'APK, le signe, le vérifie, puis le publie en release de ce dépôt
+(`Classinus.apk`, marquée "latest"). C'est un geste volontaire, indépendant de
+l'OTA : l'OTA met à jour le code web de l'appli installée à chaque push sur
+`main`, la release n'est à refaire que pour un changement natif (plugin,
+permission, manifest, icône native) ou pour que le fichier téléchargé soit à jour.
+
+Avant d'étiqueter : changer `versionName` (identique à l'étiquette sans le "v") et
+`versionCode` (strictement supérieur au précédent) dans
+`android/version-app.properties`, et le mettre dans `main`. Le workflow refuse de
+publier si l'étiquette et `versionName` diffèrent, si `versionCode` ne monte pas,
+si la clé de signature n'est pas la même que celle de la release précédente, ou si
+le commit n'est pas dans `main`. Rien n'est publié tant que ces contrôles ne
+passent pas : `/telecharger` garde alors la version précédente.
+
+Réglages GitHub à faire une fois (Settings, Secrets and variables, Actions) :
+secrets `ANDROID_KEYSTORE_BASE64` (le fichier `.jks` encodé en base64),
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, plus les
+variables déjà utilisées par `ota.yml` (`NEXT_PUBLIC_API_URL`,
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`).
+La clé doit être celle des publications précédentes (voir
+`android/README-SIGNATURE.md`).
 
 ## Mises à jour OTA (sans réinstaller l'APK)
 

@@ -11,4 +11,5 @@ export const ROUTES_PERSONNALISER = {
   comportements: "/comportements",
   skillsPublics: "/skills-publics",
   memoire: "/memoire",
+  connexions: "/applications-connectees",
 } as const;

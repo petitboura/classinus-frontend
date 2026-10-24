@@ -22,6 +22,7 @@ declare module "electron" {
     // echouer `npm run build` avec deux erreurs TS2339.
     showInactive(): void;
     hide(): void;
+    isVisible(): boolean;
     // Ajoutes le 12/10/2026 : la superposition n'est activable par Windows que
     // pendant que l'etudiant ecrit dans une de ses zones de texte (plugin.mts).
     setFocusable(focusable: boolean): void;

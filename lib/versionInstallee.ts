@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 /**
  * Version de l'appli installée sur le téléphone, lue auprès du système
  * Android ou iOS via @capacitor/app (le numéro versionName du fichier
- * android/app/build.gradle). Sert à masquer la notification "nouvelle
+ * android/version-app.properties). Sert à masquer la notification "nouvelle
  * version disponible" quand l'appli est déjà à jour.
  *
  * Vaut null sur le web (pas d'appli installée, donc rien à comparer) et

@@ -1,0 +1,55 @@
+name: Vérifier les connexions des applications
+
+on:
+  push:
+    branches:
+      - fix/frontend-connexions-centralisees
+    paths:
+      - "components/chat/BarreDeSaisie.tsx"
+      - "components/connexions/EspaceConnexions.tsx"
+      - "lib/api.ts"
+      - "lib/outils.ts"
+      - "app/decouvrir/personnaliser/applications-connectees/page.tsx"
+      - "tests/verifier-connexions.mjs"
+      - "package.json"
+      - ".github/workflows/test-connexions.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "components/chat/BarreDeSaisie.tsx"
+      - "components/connexions/EspaceConnexions.tsx"
+      - "lib/api.ts"
+      - "lib/outils.ts"
+      - "app/decouvrir/personnaliser/applications-connectees/page.tsx"
+      - "tests/verifier-connexions.mjs"
+      - "package.json"
+      - ".github/workflows/test-connexions.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  connexions:
+    name: Contrôler le catalogue et les états de connexion
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Vérifier TypeScript
+        run: npx tsc --noEmit
+
+      - name: Vérifier les connexions
+        run: npm run test:connexions

@@ -33,9 +33,18 @@ assert.match(locale, /localStorage\.setItem\(CLE_LOCALE_CLASSINUS, locale\)/);
 assert.match(locale, /EVENEMENT_LOCALE_CLASSINUS/);
 
 const globalI18n = readFileSync("components/InternationalisationGlobale.tsx", "utf8");
-assert.match(globalI18n, /<option value="fr">FR · Français<\/option>/);
-assert.match(globalI18n, /<option value="en">EN · English<\/option>/);
-assert.match(globalI18n, /traductionActive/, "Le français pur ne doit pas surveiller la page");
+// Le sélecteur flottant a été supprimé : le composant de traduction ne rend aucun contrôle.
+assert.doesNotMatch(globalI18n, /<option value="fr">FR · Français<\/option>/);
+assert.doesNotMatch(globalI18n, /<option value="en">EN · English<\/option>/);
+assert.match(globalI18n, /return null;/, "Le composant global de traduction ne doit rien afficher");
+assert.match(globalI18n, /obtenirLocale\(\)/, "La langue doit provenir des préférences");
+
+assert.equal(traduireTexteInterface("à tes applications connectées", "en"), "to your connected apps");
+assert.equal(traduireTexteInterface("On te ramène", "en"), "Taking you back");
+assert.equal(
+  traduireTexteInterface("Relie tes comptes externes à Classinus, consulte leur état et retire leurs autorisations quand tu le souhaites.", "en"),
+  "Connect your external accounts to Classinus, check their status, and revoke their permissions whenever you like."
+);
 assert.match(globalI18n, /if \(!traductionActive\.current\) return;/, "L'observateur doit s'arrêter quand rien n'est traduit");
 for (const protectedSelector of ["pre", "code", "textarea", ".markdown-body", ".katex", "[contenteditable='true']"]) {
   assert.ok(globalI18n.includes(protectedSelector), `Expected user content protection for ${protectedSelector}`);

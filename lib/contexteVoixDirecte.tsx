@@ -23,6 +23,7 @@ import { abonnerMessagesBulle, canalEnDirectEstActif } from "./contexteCanalEnDi
 import { abonnerArretTache } from "./tacheCanal";
 import { ChatIndisponiblePourVoix } from "./contexteChat";
 import { conversationActive, conversationPourVoix } from "./conversationPartagee";
+import { messageErreurVoix } from "./erreurs";
 
 export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur";
 
@@ -141,7 +142,8 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
     } catch (e) {
       conversationSessionRef.current = null;
       setEtat("erreur");
-      setErreur(e instanceof Error ? e.message : "Impossible d ouvrir le canal vocal.");
+      console.warn("Impossible d’ouvrir le canal vocal Classinus :", e);
+      setErreur(messageErreurVoix(e));
     } finally {
       ouvertureEnCoursRef.current = false;
     }
