@@ -39,6 +39,7 @@ import {
   SlidersHorizontal,
   Library,
   Wrench,
+  HardDrive,
   Camera,
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -54,7 +55,6 @@ import { IconeGoogleSlides } from "@/components/icons/IconeGoogleSlides";
 import { IconeGoogleCalendar } from "@/components/icons/IconeGoogleCalendar";
 import { IconeGoogleChat } from "@/components/icons/IconeGoogleChat";
 import { IconeGoogleClassroom } from "@/components/icons/IconeGoogleClassroom";
-import { IconeGoogleDrive } from "@/components/icons/IconeGoogleDrive";
 import { IconeGooglePeople } from "@/components/icons/IconeGooglePeople";
 import { IconeMicrosoft } from "@/components/icons/IconeMicrosoft";
 import { IconeNetlify } from "@/components/icons/IconeNetlify";
@@ -410,6 +410,15 @@ export type AppliDisponible = {
   modeConnexion?: "oauth" | "jeton";
   etatDisponibilite?: "apercu";
 };
+// Services Google Workspace en préversion développeur (Gmail, Docs, Sheets, Slides,
+// Calendar, Chat, Classroom, People). Google interdit de proposer une intégration
+// qui utilise ces fonctions en préversion à des utilisateurs extérieurs à
+// l'organisation du développeur sans son accord explicite ou la disponibilité
+// générale. Tant que cet accord n'est pas obtenu, ils restent masqués partout
+// (menu du chat et écran des applications connectées). Ne passer à true qu'après
+// cet accord, sur décision de Bourama.
+const AFFICHER_GOOGLE_WORKSPACE_APERCU = false;
+
 export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   { nom: "github", label: "GitHub", Icone: IconeGithub, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   // BookOpen (icône générique) remplacée par le vrai logo Notion (01/08,
@@ -417,17 +426,24 @@ export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   // trait suit la couleur du bouton (text-dj-accent-1 / text-dj-texte-muet),
   // jamais une couleur de marque figée. Voir components/icons/IconeNotion.tsx.
   { nom: "notion", label: "Notion", Icone: IconeNotion, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
-  { nom: "google_drive", label: "Google Drive", Icone: IconeGoogleDrive, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_gmail_mcp", label: "Gmail", Icone: IconeGmail, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_docs_mcp", label: "Google Docs", Icone: IconeGoogleDocs, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_sheets_mcp", label: "Google Sheets", Icone: IconeGoogleSheets, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_slides_mcp", label: "Google Slides", Icone: IconeGoogleSlides, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_calendar_mcp", label: "Google Calendar", Icone: IconeGoogleCalendar, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_chat_mcp", label: "Google Chat", Icone: IconeGoogleChat, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_classroom_mcp", label: "Google Classroom", Icone: IconeGoogleClassroom, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
-  { nom: "google_people_mcp", label: "Google People", Icone: IconeGooglePeople, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, etatDisponibilite: "apercu" },
+  // Ajouté 01/09 (demande Bourama) -- icône générique HardDrive plutôt
+  // qu'un logo Drive redessiné à la main (pas de moyen de vérifier
+  // visuellement un tracé SVG avant mise en prod) : à remplacer par un
+  // vrai logo (même logique que IconeNotion.tsx) si besoin plus tard.
+  // Masqué partout (décision du 22/10 de Bourama) : ne pas le réafficher sans
+  // sa demande explicite.
+  { nom: "google_drive", label: "Google Drive", Icone: HardDrive, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false },
+  { nom: "google_gmail_mcp", label: "Gmail", Icone: IconeGmail, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
+  { nom: "google_docs_mcp", label: "Google Docs", Icone: IconeGoogleDocs, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
+  { nom: "google_sheets_mcp", label: "Google Sheets", Icone: IconeGoogleSheets, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
+  { nom: "google_slides_mcp", label: "Google Slides", Icone: IconeGoogleSlides, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
+  { nom: "google_calendar_mcp", label: "Google Calendar", Icone: IconeGoogleCalendar, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
+  { nom: "google_chat_mcp", label: "Google Chat", Icone: IconeGoogleChat, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
+  { nom: "google_classroom_mcp", label: "Google Classroom", Icone: IconeGoogleClassroom, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
+  { nom: "google_people_mcp", label: "Google People", Icone: IconeGooglePeople, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
   { nom: "microsoft_mcp", label: "Microsoft MCP Enterprise", Icone: IconeMicrosoft, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
-  { nom: "netlify_mcp", label: "Netlify", Icone: IconeNetlify, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, modeConnexion: "jeton" },
+  // Netlify : jeton personnel saisi dans l'écran des applications connectées, le menu du chat n'a pas de champ pour le saisir.
+  { nom: "netlify_mcp", label: "Netlify", Icone: IconeNetlify, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: true, modeConnexion: "jeton" },
   { nom: "render_mcp", label: "Render", Icone: IconeRender, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   { nom: "cloudflare_mcp", label: "Cloudflare", Icone: IconeCloudflare, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   // Connexions personnelles aux plateformes (20/10/2026) : le nom est celui du
@@ -440,49 +456,12 @@ export const APPLIS_DISPONIBLES: AppliDisponible[] = [
 ];
 
 
-// Serveurs MCP qui ne sont pas des connexions OAuth personnelles.
-// Leur état dépend de la configuration backend, du registre de plateforme et/ou des droits d'outils.
-export type ServeurMcpComplementaire = {
-  id: "tavily" | "generation" | "wolfram" | "classinus_claude";
-  nom: string;
-  statut: "cle_plateforme" | "interne" | "desactive" | "expose";
-  libelleStatut: string;
-  description: string;
-  endpoint?: string;
-  guideHref?: string;
-};
-
+// Adresse du serveur MCP que Classinus expose pour Claude (guide /connecter-claude).
 export const URL_MCP_CLASSINUS_CLAUDE = "https://api.classinus.com/mcp/espace";
 
-export const MCP_SERVEURS_COMPLEMENTAIRES: ServeurMcpComplementaire[] = [
-  {
-    id: "tavily",
-    nom: "Tavily",
-    statut: "cle_plateforme",
-    libelleStatut: "Clé côté serveur",
-    description: "Recherche et extraction web via le serveur MCP Tavily. Utilise TAVILY_API_KEY côté backend ; aucune connexion à un compte utilisateur n'est requise. La disponibilité dépend de la configuration serveur et des outils autorisés.",
-  },
-  {
-    id: "generation",
-    nom: "Génération Classinus",
-    statut: "interne",
-    libelleStatut: "MCP interne",
-    description: "Serveur MCP interne au backend pour les outils de génération, de fichiers et d'autres fonctions Classinus. Les outils affichés dépendent du registre de plateforme et des droits de l'agent.",
-  },
-  {
-    id: "wolfram",
-    nom: "Wolfram",
-    statut: "desactive",
-    libelleStatut: "Désactivé côté backend",
-    description: "Wolfram reste désactivé côté backend à cause des indisponibilités répétées constatées précédemment. Cette fiche informe sur son état ; elle ne le réactive pas.",
-  },
-  {
-    id: "classinus_claude",
-    nom: "Serveur MCP Classinus pour Claude",
-    statut: "expose",
-    libelleStatut: "Serveur MCP exposé",
-    description: "Point d'accès MCP distant qui permet à un client compatible, comme Claude, d'utiliser les fonctions de Classinus après autorisation.",
-    endpoint: URL_MCP_CLASSINUS_CLAUDE,
-    guideHref: "/connecter-claude",
-  },
-];
+// Services du menu Applications du chat qui se connectent par OAuth avec le même
+// parcours générique (statut, connexion, déconnexion). GitHub, Notion et Drive ont leur
+// propre logique ; Netlify passe par un jeton saisi dans l'écran des connexions.
+export const SERVICES_MCP_OAUTH: string[] = APPLIS_DISPONIBLES
+  .filter((a) => a.nom.endsWith("_mcp") && a.modeConnexion !== "jeton")
+  .map((a) => a.nom);

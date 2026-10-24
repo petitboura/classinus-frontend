@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { Check, CircleAlert, ExternalLink, LoaderCircle, PlugZap, Server, Unplug } from "lucide-react";
-import { APPLIS_DISPONIBLES, MCP_SERVEURS_COMPLEMENTAIRES } from "@/lib/outils";
+import { Check, CircleAlert, LoaderCircle, PlugZap, Unplug } from "lucide-react";
+import { APPLIS_DISPONIBLES } from "@/lib/outils";
 import { statutConnexion, demarrerConnexion, deconnecterApplication, enregistrerJetonNetlify } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { memoriserRetourConnexion, oublierRetourConnexion } from "@/lib/retourApresConnexion";
@@ -13,8 +12,9 @@ import { CTACompteRequis } from "@/components/CTACompteRequis";
 type Etat = "chargement" | "connecte" | "deconnecte" | "reconnecter" | "erreur";
 type Ligne = { etat: Etat; message?: string; action?: boolean };
 
-// La liste des applications personnelles est centralisée dans lib/outils.ts.
-// Cette branche affiche aussi Google Drive afin de présenter tous les MCP personnels configurés.
+// La liste des applications affichées est centralisée dans lib/outils.ts.
+// Google Drive y reste masqué selon la décision du 22/10 ; Vercel reste visible pour les tests.
+// Les services Google Workspace en préversion y sont masqués tant que Google n'a pas donné son accord.
 const APPLIS_AFFICHEES = APPLIS_DISPONIBLES.filter((app) => app.visibleDansEspaceConnexions);
 
 const DESCRIPTIONS: Record<string, string> = {
@@ -179,48 +179,6 @@ export function EspaceConnexions() {
         })}
       </div>
       <p className="text-xs leading-5 text-dj-texte-muet">Déconnecter Classinus ne révoque pas toujours l’autorisation chez le fournisseur. Pour retirer totalement l’accès, consulte aussi les paramètres de sécurité du service concerné.</p>
-
-      <section className="mt-8 flex flex-col gap-3" aria-labelledby="mcp-plateforme-titre">
-        <div>
-          <h2 id="mcp-plateforme-titre" className="text-base font-semibold text-dj-texte">Autres serveurs MCP de Classinus</h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-dj-texte-muet">
-            Ces serveurs ne sont pas tous des comptes personnels à connecter. Leur fonctionnement dépend de la configuration du backend et des outils autorisés ; les fiches ci-dessous indiquent leur rôle sans prétendre tester leur disponibilité en direct.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {MCP_SERVEURS_COMPLEMENTAIRES.map((serveur) => (
-            <article key={serveur.id} className="flex min-h-36 flex-col justify-between gap-3 rounded-2xl border border-dj-bordure bg-dj-surface p-4">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte">
-                  <Server size={18} />
-                </span>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-dj-texte">{serveur.nom}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-dj-texte-muet">{serveur.description}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={
-                  "inline-flex rounded-full border px-2.5 py-1 text-xs " +
-                  (serveur.statut === "desactive"
-                    ? "border-[var(--dj-erreur)]/30 text-[var(--dj-erreur)]"
-                    : "border-dj-bordure text-dj-texte-muet")
-                }>
-                  {serveur.libelleStatut}
-                </span>
-                {serveur.endpoint && (
-                  <code className="max-w-full break-all text-xs text-dj-texte-muet">{serveur.endpoint}</code>
-                )}
-                {serveur.guideHref && (
-                  <Link href={serveur.guideHref} className="inline-flex items-center gap-1 text-xs font-semibold text-dj-accent-1 hover:underline">
-                    Ouvrir le guide Claude <ExternalLink size={12} />
-                  </Link>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
     </section>
   );
 }

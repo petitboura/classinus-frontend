@@ -2880,9 +2880,8 @@ export async function supprimerSignalementPedagogique(signalementId: string) {
 
 
 /**
- * Déconnecte un fournisseur lié au compte courant. Le backend sélectionne
- * le stockage approprié (OAuth générique, Notion ou serveur MCP) et ne
- * supprime que la connexion de l'utilisateur authentifié.
+ * Enregistre le jeton personnel Netlify de la personne connectée. Le serveur le
+ * vérifie auprès de Netlify avant de le conserver ; il n'est jamais renvoyé.
  */
 export async function enregistrerJetonNetlify(token: string) {
   return appelerApi("/api/connexions/netlify_mcp/jeton", {
@@ -2891,6 +2890,11 @@ export async function enregistrerJetonNetlify(token: string) {
   }) as Promise<{ connecte: boolean }>;
 }
 
+/**
+ * Déconnecte un fournisseur lié au compte courant. Le backend sélectionne
+ * le stockage approprié (OAuth générique, Notion ou serveur MCP) et ne
+ * supprime que la connexion de l'utilisateur authentifié.
+ */
 export async function deconnecterApplication(service: string) {
   return appelerApi(`/api/connexions/${service}/deconnecter`, { method: "POST" }) as Promise<{ connecte: boolean }>;
 }
