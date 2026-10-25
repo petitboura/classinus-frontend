@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { listerSkillsIndependants, obtenirSkillIndependant, enregistrerSkillIndependant, supprimerSkillIndependant, importerSkillZip, type SkillIndependant } from "@/lib/api";
+import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur } from "@/lib/erreurs";
 import { CaseACocher } from "@/components/CaseACocher";
 import { Skeleton } from "@/components/Skeleton";
@@ -43,6 +44,8 @@ export function SkillsIndependants() {
     finally { setChargementListe(false); }
   }
   useEffect(() => { void charger(); }, []);
+  // Quand l'IA crée ou modifie un skill depuis le chat, la liste se met à jour toute seule.
+  useEffect(() => ecouterDonneesModifiees("skills", () => { void charger(); }), []);
 
   // Nom et Description font foi : l'en-tête du SKILL.md les suit toujours.
   function changerNom(valeur: string) {
