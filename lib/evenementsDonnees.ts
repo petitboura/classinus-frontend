@@ -9,7 +9,7 @@
 // suffit, émis par ChatIA.tsx dès qu'un outil_resultat correspond à une
 // écriture (voir PORTEE_PAR_OUTIL ci-dessous).
 
-export type PorteeDonnees = "comportements" | "minuteurs";
+export type PorteeDonnees = "comportements" | "minuteurs" | "skills";
 
 const NOM_EVENEMENT = "clovis:donnees_modifiees";
 
@@ -25,6 +25,9 @@ const PORTEE_PAR_OUTIL: Record<string, PorteeDonnees[]> = {
   // lecture ne coûte qu'un petit GET, uniquement si la section est déjà
   // montée.
   gerer_comportement: ["comportements"],
+  // Skills avec dossier et fichiers (25/10/2026) : la liste de la page Skills est relue quand l'IA
+  // lit, crée ou modifie un skill depuis le chat.
+  gerer_skill: ["skills"],
   // annule la dernière modification de comportement -- on rafraîchit par
   // sécurité, le coût est négligeable (une poignée de petits GET,
   // uniquement si la section est déjà montée).
