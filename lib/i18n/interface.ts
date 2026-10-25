@@ -2518,6 +2518,7 @@ const EN: Record<string, string> = {
   "Choisir une authentification": "Choose an authentication method",
   "Chargement des serveurs": "Loading servers",
   "Pas encore testé": "Not tested yet",
+  "Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase, ou ajouter un serveur MCP personnalisé utilisant HTTPS. Google Drive n’est pas proposé dans les interfaces de connexion pour le moment. Pour Higgsfield, Vercel, Railway et Supabase, Classinus passe par leur serveur MCP officiel.": "You can link GitHub, Notion, Higgsfield, Vercel, Railway and Supabase, or add a custom MCP server using HTTPS. Google Drive is not offered in the connection screens for now. For Higgsfield, Vercel, Railway and Supabase, Classinus uses their official MCP server.",
   "outil(s) découvert(s)": "tool(s) discovered",
   "Connexion vérifiée": "Connection verified",
   "Supprimer ce serveur MCP et les identifiants enregistrés dans Classinus ?": "Delete this MCP server and the credentials saved in Classinus?",
