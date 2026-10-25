@@ -361,15 +361,17 @@ export function EditeurComportement({
           )}
           {!estCreation && comportementActuel && (
             <>
-              <BoutonAvecIA
-                variante="icone"
-                libelle="Utiliser avec l'IA"
-                texte={
-                  `Je veux utiliser ${categoriePreset ? "cet élément" : "le skill"} id ${comportementActuel.id}. ` +
-                  `Utilise l'outil gerer_comportement (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
-                  `puis discutons-en ensemble.`
-                }
-              />
+              {categoriePreset && (
+                <BoutonAvecIA
+                  variante="icone"
+                  libelle="Utiliser avec l'IA"
+                  texte={
+                    `Je veux utiliser cet élément id ${comportementActuel.id}. ` +
+                    `Utilise l'outil gerer_configuration (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
+                    `puis discutons-en ensemble.`
+                  }
+                />
+              )}
               <ButtonPartager lien={lienPartage("skill-perso", comportementActuel.id)} titre={comportementActuel.nom || undefined} variante="icone" />
             </>
           )}

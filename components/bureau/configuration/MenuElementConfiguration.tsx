@@ -159,7 +159,7 @@ export function MenuElementConfiguration({
       onClick: () =>
         ouvrirChatAvecTexte(
           `Je veux utiliser cet élément id ${c.id}. ` +
-            `Utilise l'outil gerer_comportement (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
+            `Utilise l'outil gerer_configuration (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
             `puis discutons-en ensemble.`
         ),
     },

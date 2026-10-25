@@ -142,7 +142,7 @@ export function EditeurConfiguration({
               libelle={texteConfiguration("action.ia")}
               texte={
                 `Je veux utiliser cet élément id ${comportement.id}. ` +
-                `Utilise l'outil gerer_comportement (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
+                `Utilise l'outil gerer_configuration (action "consulter") avec cet id pour voir de quoi il s'agit, ` +
                 `puis discutons-en ensemble.`
               }
             />
