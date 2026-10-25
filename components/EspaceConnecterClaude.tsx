@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { useInfoSection } from "./SectionPage";
+import { URL_MCP_CLASSINUS_CLAUDE } from "@/lib/outils";
 import { Capture, EtapeGuide } from "./GuideEtapes";
 
 // Guide "Utiliser Classinus dans Claude" (18/08, demande Bourama).
@@ -15,13 +16,6 @@ import { Capture, EtapeGuide } from "./GuideEtapes";
 // écrans de transition sans contenu -- écartées, pas de trou dans la
 // numérotation ni doublon inventé).
 //
-// URL du serveur MCP Classinus confirmée par Bourama le 18/08, mise à
-// jour le 22/09 suite au passage du backend au domaine api.classinus.com
-// (à la place de l'ancien domaine Railway par défaut) :
-// https://api.classinus.com/mcp/espace
-
-const URL_MCP_CLOVIS = "https://api.classinus.com/mcp/espace";
-
 export function EspaceConnecterClaude() {
   // Description fixe remplacée par le bouton "i" du titre de page (voir
   // lib/aideSections.tsx, rubrique "connecter-claude") -- correctif
@@ -133,7 +127,7 @@ function UrlACopier() {
 
   async function copier() {
     try {
-      await navigator.clipboard.writeText(URL_MCP_CLOVIS);
+      await navigator.clipboard.writeText(URL_MCP_CLASSINUS_CLAUDE);
       setCopie(true);
       setTimeout(() => setCopie(false), 2000);
     } catch {
@@ -145,7 +139,7 @@ function UrlACopier() {
   return (
     <div className="flex items-center gap-2">
       <span className="flex-1 overflow-x-auto rounded-xl border border-dj-bordure-forte bg-dj-surface-haute px-3 py-2.5 font-mono text-xs text-dj-texte">
-        {URL_MCP_CLOVIS}
+        {URL_MCP_CLASSINUS_CLAUDE}
       </span>
       <button
         onClick={copier}

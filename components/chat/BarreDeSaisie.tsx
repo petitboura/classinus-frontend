@@ -3,7 +3,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, FileText, ArrowUpRight, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, SlidersHorizontal, UserX, Radio } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, deconnecterPlateformeMcp, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent, demarrerZipChat } from "@/lib/api";
-import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
+import { APPLIS_DISPONIBLES, SERVICES_MCP_OAUTH, useOutilsRegistre } from "@/lib/outils";
 import { LecteurMedia } from "./LecteurMedia";
 import { CanvasDessin } from "./CanvasDessin";
 import { VisionneuseImage } from "./VisionneuseImage";
@@ -334,10 +334,11 @@ export function BarreDeSaisie({
   const notionDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "notion");
   const githubDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "github");
   const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
-  const higgsfieldDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "higgsfield_mcp");
-  const vercelMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "vercel_mcp");
-  const railwayMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "railway_mcp");
-  const supabaseMcpDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "supabase_mcp");
+  // Services MCP personnels visibles dans le menu (Higgsfield, Vercel, Railway, Supabase,
+  // Microsoft, Render, Cloudflare, etc.), sous forme de chaîne stable pour les deps des effets.
+  const cleServicesMcpDisponibles = AFFICHER_BOUTON_APPLICATIONS
+    ? applisPourAgent.filter((a) => SERVICES_MCP_OAUTH.includes(a.nom)).map((a) => a.nom).join(",")
+    : "";
   // Les réglages de réponse (modèle, longueur, mode pédagogique, modes
   // ressources, code enseignant) vivent dans le bouton Réglages
   // (barre/BoutonReglages.tsx). Leurs données sont chargées une seule fois
@@ -454,11 +455,8 @@ export function BarreDeSaisie({
       case "google_drive":
         cliquerGoogleDrive();
         break;
-      case "higgsfield_mcp":
-      case "vercel_mcp":
-      case "railway_mcp":
-      case "supabase_mcp":
-        void cliquerPlatformMcp(nom);
+      default:
+        if (SERVICES_MCP_OAUTH.includes(nom)) void cliquerPlatformMcp(nom);
         break;
     }
   }
@@ -910,7 +908,7 @@ export function BarreDeSaisie({
     }
   }
 
-  // Connexions individuelles aux plateformes MCP (Higgsfield, Vercel, Railway, Supabase).
+  // Connexions individuelles aux plateformes MCP (Higgsfield, Vercel, Railway, Supabase, Microsoft, Render, Cloudflare).
   // Les jetons restent propres à l'utilisateur côté backend.
   type EtatConnexionMcp = "chargement" | "connecte" | "deconnecte" | "a_reconnecter" | "erreur";
   const [platformMcpEtat, setPlatformMcpEtat] = useState<Record<string, EtatConnexionMcp>>({});
@@ -927,14 +925,8 @@ export function BarreDeSaisie({
   }
 
   useEffect(() => {
-    const services = [
-      ["higgsfield_mcp", higgsfieldDisponiblePourAgent],
-      ["vercel_mcp", vercelMcpDisponiblePourAgent],
-      ["railway_mcp", railwayMcpDisponiblePourAgent],
-      ["supabase_mcp", supabaseMcpDisponiblePourAgent],
-    ] as const;
-    for (const [service, disponible] of services) {
-      if (!disponible) continue;
+    const services = cleServicesMcpDisponibles ? cleServicesMcpDisponibles.split(",") : [];
+    for (const service of services) {
       setPlatformMcpEtat((prec) => ({ ...prec, [service]: "chargement" }));
       statutConnexion(service)
         .then((r) => {
@@ -945,9 +937,9 @@ export function BarreDeSaisie({
           setPlatformMcpEtat((prec) => ({ ...prec, [service]: "erreur" }))
         );
     }
-  }, [higgsfieldDisponiblePourAgent, vercelMcpDisponiblePourAgent, railwayMcpDisponiblePourAgent, supabaseMcpDisponiblePourAgent]);
+  }, [cleServicesMcpDisponibles]);
 
-  async function cliquerPlatformMcp(service: "higgsfield_mcp" | "vercel_mcp" | "railway_mcp" | "supabase_mcp") {
+  async function cliquerPlatformMcp(service: string) {
     if (platformMcpEnCours) return;
     setPlatformMcpEnCours(service);
     try {
