@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, CircleAlert, LoaderCircle, PlugZap, Unplug } from "lucide-react";
 import { APPLIS_DISPONIBLES } from "@/lib/outils";
-import { statutConnexion, demarrerConnexion, deconnecterApplication, enregistrerJetonNetlify } from "@/lib/api";
+import { statutConnexion, demarrerConnexion, deconnecterApplication, enregistrerJetonNetlify, enregistrerJetonRender } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { memoriserRetourConnexion, oublierRetourConnexion } from "@/lib/retourApresConnexion";
 import { ROUTES_PERSONNALISER } from "@/lib/routesPersonnaliser";
@@ -12,6 +12,26 @@ import { McpPersonnalises } from "@/components/connexions/McpPersonnalises";
 
 type Etat = "chargement" | "connecte" | "deconnecte" | "reconnecter" | "erreur";
 type Ligne = { etat: Etat; message?: string; action?: boolean };
+
+// Services qui se connectent par un jeton (ou une clé) personnel collé dans l'écran.
+const JETONS: Record<string, { nom: string; champ: string; placeholder: string; lien: string; libelleLien: string; enregistrer: (jeton: string) => Promise<unknown> }> = {
+  netlify_mcp: {
+    nom: "Netlify",
+    champ: "Jeton personnel Netlify",
+    placeholder: "Colle ton jeton Netlify",
+    lien: "https://app.netlify.com/user/applications#personal-access-tokens",
+    libelleLien: "les paramètres de Netlify",
+    enregistrer: enregistrerJetonNetlify,
+  },
+  render_mcp: {
+    nom: "Render",
+    champ: "Clé personnelle Render",
+    placeholder: "Colle ta clé Render",
+    lien: "https://dashboard.render.com/u/settings/api-keys",
+    libelleLien: "les paramètres de ton compte Render",
+    enregistrer: enregistrerJetonRender,
+  },
+};
 
 // La liste des applications affichées est centralisée dans lib/outils.ts.
 // Google Drive y reste masqué selon la décision du 22/10 ; Vercel reste visible pour les tests.
@@ -32,7 +52,7 @@ const DESCRIPTIONS: Record<string, string> = {
   google_people_mcp: "Serveur MCP Google People : consulter les profils et contacts couverts par les autorisations Google accordées.",
   microsoft_mcp: "Microsoft MCP Server for Enterprise est en préversion. Il permet d’interroger certaines données d’entreprise Microsoft Entra/Graph ; une inscription d’application et les autorisations du locataire sont nécessaires. Ce n’est pas une intégration autonome complète d’Outlook, Teams ou OneDrive.",
   netlify_mcp: "Pont MCP Classinus vers l’API REST officielle Netlify : lister les sites et déploiements, consulter leur état et relancer un build. Le jeton personnel est vérifié puis conservé côté serveur, séparément pour ton compte.",
-  render_mcp: "Serveur MCP officiel Render : explorer les services, déploiements et journaux accessibles à ton compte. Les actions qui modifient un service ou déclenchent un déploiement demandent une confirmation.",
+  render_mcp: "Serveur MCP officiel Render : explorer les services, déploiements et journaux accessibles à ton compte. Tu colles ta clé personnelle Render, vérifiée puis conservée côté serveur pour ton compte. Les actions qui modifient un service ou déclenchent un déploiement demandent une confirmation.",
   cloudflare_mcp: "Serveur MCP officiel Cloudflare : rechercher la documentation et interagir avec les ressources Cloudflare autorisées par ton compte, selon les outils proposés par le serveur.",
   higgsfield_mcp: "Autorise Classinus à utiliser les fonctionnalités Higgsfield disponibles via son serveur MCP, avec ton propre compte.",
   vercel_mcp: "Permets à Classinus d’interagir avec tes projets et déploiements Vercel selon les accès que tu accordes.",
@@ -46,7 +66,7 @@ export function EspaceConnexions() {
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
-  const [jetonNetlify, setJetonNetlify] = useState("");
+  const [jetons, setJetons] = useState<Record<string, string>>({});
 
   const recharger = useCallback(async () => {
     oublierRetourConnexion();
@@ -70,11 +90,12 @@ export function EspaceConnexions() {
   const connecter = async (service: string) => {
     setErreur(null);
     setEnCours(service);
-    if (service === "netlify_mcp") {
+    const jeton = JETONS[service];
+    if (jeton) {
       try {
-        await enregistrerJetonNetlify(jetonNetlify.trim());
+        await jeton.enregistrer((jetons[service] ?? "").trim());
         setLignes((avant) => ({ ...avant, [service]: { etat: "connecte" } }));
-        setJetonNetlify("");
+        setJetons((avant) => ({ ...avant, [service]: "" }));
       } catch (e) {
         setErreur(messageErreur(e));
       } finally {
@@ -135,18 +156,18 @@ export function EspaceConnexions() {
               </div>
               {app.modeConnexion === "jeton" && !connecte && (
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={"jeton-" + app.nom} className="text-xs font-semibold text-dj-texte">Jeton personnel Netlify</label>
+                  <label htmlFor={"jeton-" + app.nom} className="text-xs font-semibold text-dj-texte">{JETONS[app.nom]?.champ}</label>
                   <input
                     id={"jeton-" + app.nom}
                     type="password"
                     autoComplete="off"
-                    value={jetonNetlify}
-                    onChange={(event) => setJetonNetlify(event.target.value)}
-                    placeholder="Colle ton jeton Netlify"
+                    value={jetons[app.nom] ?? ""}
+                    onChange={(event) => setJetons((avant) => ({ ...avant, [app.nom]: event.target.value }))}
+                    placeholder={JETONS[app.nom]?.placeholder}
                     className="w-full rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
                   />
                   <p className="text-xs leading-5 text-dj-texte-muet">
-                    Crée un jeton dans <a href="https://app.netlify.com/user/applications#personal-access-tokens" target="_blank" rel="noreferrer" className="underline">les paramètres de Netlify</a>. Il sera stocké côté serveur pour ton compte Classinus.
+                    Crée-en une dans <a href={JETONS[app.nom]?.lien} target="_blank" rel="noreferrer" className="underline">{JETONS[app.nom]?.libelleLien}</a>. Elle sera stockée côté serveur pour ton compte Classinus.
                   </p>
                 </div>
               )}
@@ -163,10 +184,10 @@ export function EspaceConnexions() {
                   <button
                     type="button"
                     onClick={() => app.modeConnexion === "jeton" ? void connecter(app.nom) : ligne.etat === "erreur" ? void recharger() : void connecter(app.nom)}
-                    disabled={!!enCours || ligne.etat === "chargement" || connecte || (app.modeConnexion === "jeton" && !jetonNetlify.trim())}
+                    disabled={!!enCours || ligne.etat === "chargement" || connecte || (app.modeConnexion === "jeton" && !(jetons[app.nom] ?? "").trim())}
                     className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
                   >
-                    {occupée ? "Connexion…" : app.modeConnexion === "jeton" && !connecte ? "Valider le jeton" : ligne.etat === "reconnecter" ? "Reconnecter" : connecte ? "Connecté" : ligne.etat === "erreur" ? "Réessayer le statut" : "Connecter"}
+                    {occupée ? "Connexion…" : app.modeConnexion === "jeton" && !connecte ? "Valider" : ligne.etat === "reconnecter" ? "Reconnecter" : connecte ? "Connecté" : ligne.etat === "erreur" ? "Réessayer le statut" : "Connecter"}
                   </button>
                 )}
               </div>

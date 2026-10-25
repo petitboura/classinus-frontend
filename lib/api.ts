@@ -2986,6 +2986,17 @@ export async function enregistrerJetonNetlify(token: string) {
 }
 
 /**
+ * Enregistre la clé personnelle Render de la personne connectée. Le serveur la
+ * vérifie auprès de Render avant de la conserver ; elle n'est jamais renvoyée.
+ */
+export async function enregistrerJetonRender(token: string) {
+  return appelerApi("/api/connexions/render_mcp/jeton", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  }) as Promise<{ connecte: boolean }>;
+}
+
+/**
  * Déconnecte un fournisseur lié au compte courant. Le backend sélectionne
  * le stockage approprié (OAuth générique, Notion ou serveur MCP) et ne
  * supprime que la connexion de l'utilisateur authentifié.
