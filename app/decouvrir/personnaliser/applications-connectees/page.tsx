@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 export const metadata: Metadata = {
-  title: "Applications connectées Classinus : relier GitHub, Notion, Vercel, Railway et Supabase",
+  title: "Applications connectées Classinus : relier GitHub, Notion, Vercel, Railway, Supabase et tes serveurs MCP",
   description:
-    "Relie tes comptes externes à Classinus avec ton autorisation, consulte l'état de chaque connexion et retire l'accès quand tu veux. Classinus se connecte aux serveurs MCP de Vercel, Railway, Supabase et Higgsfield.",
+    "Relie GitHub, Notion, Vercel, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
 };
 
 export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
@@ -12,16 +12,21 @@ export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
     <MiseEnPageDecouvrirPersonnaliser>
       <h1 className="font-display text-2xl font-bold text-dj-texte">Applications connectées</h1>
       <p className="mt-4 text-base leading-relaxed text-dj-texte">
-        Classinus peut travailler avec tes comptes externes pour t'aider sur tes projets : consulter du code, retrouver des pages ou gérer des services. Chaque application est reliée avec ton propre compte, uniquement si tu l'autorises.
+        Classinus peut travailler avec tes comptes externes pour t'aider sur tes projets. En plus des services intégrés, tu peux ajouter un serveur MCP distant compatible et autoriser son accès à ton compte.
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Applications disponibles</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway, Supabase, Microsoft MCP Enterprise, Netlify, Render et Cloudflare. Google Drive n’est pas proposé dans les interfaces de connexion pour le moment. Pour Higgsfield, Vercel, Railway, Supabase, Render et Cloudflare, Classinus passe par leur serveur MCP officiel. Microsoft MCP Enterprise est en préversion, nécessite une application Entra et se limite à certaines lectures d’annuaire.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway, Supabase, Microsoft MCP Enterprise, Netlify, Render et Cloudflare, ou ajouter un serveur MCP personnalisé utilisant HTTPS. Google Drive n’est pas proposé dans les interfaces de connexion pour le moment. Pour Higgsfield, Vercel, Railway, Supabase, Render et Cloudflare, Classinus passe par leur serveur MCP officiel. Microsoft MCP Enterprise est en préversion, nécessite une application Entra et se limite à certaines lectures d’annuaire.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Connecter une application</h2>
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Ouvre Personnaliser puis Applications connectées, ou utilise le menu des applications dans la barre de saisie du chat. Choisis l'application, valide l'autorisation sur le site du fournisseur, puis tu es ramené dans Classinus. Chaque ligne indique l'état de la connexion : Connecté, Non connecté, Reconnexion nécessaire ou Statut indisponible.</p>
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Netlify fonctionne avec un jeton personnel : depuis Personnaliser, colle-le dans sa carte. Classinus le vérifie auprès de Netlify avant de l'enregistrer.</p>
+      </section>
+      <section className="mt-6">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Serveurs MCP personnalisés</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Dans Personnaliser puis Applications connectées, indique le nom et l'URL HTTPS de ton serveur. Classinus teste l'accès et découvre les outils exposés. Tu peux choisir aucune authentification, un jeton Bearer ou OAuth automatique lorsque le serveur prend en charge la découverte OAuth et l'enregistrement dynamique. Les jetons sont conservés côté serveur.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux tester les outils, désactiver le serveur, modifier ses paramètres ou supprimer sa configuration. Les outils des serveurs personnalisés demandent une confirmation avant chaque exécution et les adresses locales ou privées sont refusées.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Retirer l'accès</h2>
