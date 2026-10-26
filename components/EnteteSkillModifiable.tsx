@@ -61,43 +61,47 @@ function ValeurModifiable({
 }
 
 /**
- * En-tête d'un SKILL.md dans l'aperçu : le crayon devant « Nom » et devant
- * « Description », et pour la description un bouton qui la replie ou la déplie
- * (dépliée par défaut), à droite du crayon.
+ * Ligne du nom d'un skill : le crayon devant le mot « Nom », puis le nom, modifiable en place.
  */
-export function EnteteSkillModifiable({
-  nom, description, onNom, onDescription,
-}: { nom: string; description: string; onNom: (v: string) => void; onDescription: (v: string) => void }) {
-  const [editeNom, setEditeNom] = useState(false);
-  const [editeDescription, setEditeDescription] = useState(false);
-  const [ouverte, setOuverte] = useState(true);
-  const visible = ouverte || editeDescription;
+export function LigneNomSkill({ nom, onNom }: { nom: string; onNom: (v: string) => void }) {
+  const [edite, setEdite] = useState(false);
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1">
-        <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setEditeNom(true)} aria-label="Modifier le nom" title="Modifier le nom" className={BOUTON_ICONE}>
+    <div className="flex min-w-0 items-center gap-1">
+      <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setEdite(true)} aria-label="Modifier le nom" title="Modifier le nom" className={BOUTON_ICONE}>
+        <Pencil size={14} />
+      </button>
+      <span className={ETIQUETTE}>Nom</span>
+      <div className="min-w-0 flex-1 pl-2">
+        <ValeurModifiable valeur={nom} enEdition={edite} onFin={() => setEdite(false)} onValider={onNom} etiquetteAria="Nom du skill" vide="Sans nom" classes="text-base font-semibold text-dj-texte" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Description d'un SKILL.md dans l'aperçu : le bouton qui la replie ou la déplie
+ * (dépliée par défaut) et le crayon devant le mot « Description », puis le texte
+ * sur toute la largeur, sans cadre.
+ */
+export function EnteteSkillModifiable({ description, onDescription }: { description: string; onDescription: (v: string) => void }) {
+  const [edite, setEdite] = useState(false);
+  const [ouverte, setOuverte] = useState(true);
+  const visible = ouverte || edite;
+  return (
+    <div className="flex min-w-0 flex-col">
+      <div className="flex items-center gap-1">
+        <button type="button" onClick={() => setOuverte(o => !o)} aria-expanded={visible} aria-label={visible ? "Replier la description" : "Déplier la description"} title={visible ? "Replier la description" : "Déplier la description"} className={BOUTON_ICONE}>
+          <ChevronDown size={16} className={`transition-transform duration-200 ${visible ? "" : "-rotate-90"}`} />
+        </button>
+        <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { setEdite(true); setOuverte(true); }} aria-label="Modifier la description" title="Modifier la description" className={BOUTON_ICONE}>
           <Pencil size={14} />
         </button>
-        <span className={ETIQUETTE}>Nom</span>
-        <div className="min-w-0 flex-1 pl-2">
-          <ValeurModifiable valeur={nom} enEdition={editeNom} onFin={() => setEditeNom(false)} onValider={onNom} etiquetteAria="Nom du skill" vide="Sans nom" classes="text-base font-semibold text-dj-texte" />
-        </div>
+        <span className={ETIQUETTE}>Description</span>
       </div>
-      <div className="flex min-w-0 flex-col">
-        <div className="flex items-center gap-1">
-          <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { setEditeDescription(true); setOuverte(true); }} aria-label="Modifier la description" title="Modifier la description" className={BOUTON_ICONE}>
-            <Pencil size={14} />
-          </button>
-          <button type="button" onClick={() => setOuverte(o => !o)} aria-expanded={visible} aria-label={visible ? "Replier la description" : "Déplier la description"} title={visible ? "Replier la description" : "Déplier la description"} className={BOUTON_ICONE}>
-            <ChevronDown size={16} className={`transition-transform duration-200 ${visible ? "" : "-rotate-90"}`} />
-          </button>
-          <span className={ETIQUETTE}>Description</span>
-        </div>
-        <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${visible ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
-          <div className="min-h-0 overflow-hidden">
-            <div className="pt-1.5">
-              <ValeurModifiable valeur={description} enEdition={editeDescription} onFin={() => setEditeDescription(false)} onValider={onDescription} multiligne etiquetteAria="Description du skill" vide="Aucune description" classes="font-lecture text-sm leading-relaxed text-dj-texte-muet" />
-            </div>
+      <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${visible ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <div className="min-h-0 overflow-hidden">
+          <div className="pt-1.5">
+            <ValeurModifiable valeur={description} enEdition={edite} onFin={() => setEdite(false)} onValider={onDescription} multiligne etiquetteAria="Description du skill" vide="Aucune description" classes="font-lecture text-sm leading-relaxed text-dj-texte-muet" />
           </div>
         </div>
       </div>

@@ -34,7 +34,8 @@ export function BasculeFormatBrut({ vueBrute, onChanger }: { vueBrute: boolean; 
  * texte plus petit et dans une autre police, sans cadre et sur toute la largeur,
  * puis les autres champs, puis le corps en markdown.
  */
-export type EditionEntete = { nom: string; description: string; onNom: (v: string) => void; onDescription: (v: string) => void };
+// En édition (SKILL.md de l'éditeur), le nom vit dans la barre du haut : l'aperçu ne montre que la description.
+export type EditionEntete = { description: string; onDescription: (v: string) => void };
 
 export function ApercuSkillMd({ contenu, vide = "Rien à afficher pour l'instant.", edition }: { contenu: string; vide?: string; edition?: EditionEntete }) {
   const lu = useMemo(() => lireChampsEntete(contenu), [contenu]);
@@ -49,7 +50,7 @@ export function ApercuSkillMd({ contenu, vide = "Rien à afficher pour l'instant
       {aEntete && (
         <div className="flex flex-col gap-3">
           {edition ? (
-            <EnteteSkillModifiable nom={edition.nom} description={edition.description} onNom={edition.onNom} onDescription={edition.onDescription} />
+            <EnteteSkillModifiable description={edition.description} onDescription={edition.onDescription} />
           ) : (
             <>
               {nom && (
