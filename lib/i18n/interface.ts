@@ -7,6 +7,16 @@ import type { Locale } from "./locale";
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Carte de connexion proposée dans le chat et écran Connexions (26/10/2026).
+  "utiliser pour ça": "Use it for this",
+  "demande envoyée": "Request sent",
+  "non connecté": "Not connected",
+  "reconnecter": "Reconnect",
+  "vérification…": "Checking…",
+  "reconnexion nécessaire": "Reconnection needed",
+  "statut indisponible": "Status unavailable",
+  "réessayer le statut": "Retry status",
+  "connexion…": "Connecting…",
   "mon espace": "My space",
   "mon compte": "My account",
   "accueil": "Home",
