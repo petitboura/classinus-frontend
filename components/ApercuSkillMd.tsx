@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { lireChampsEntete } from "@/lib/enteteSkill";
+import { EnteteSkillModifiable } from "@/components/EnteteSkillModifiable";
 
 // Même rendu du corps que le reste de l'app (classes dj-markdown des aperçus de skills).
 const CLASSES_MARKDOWN =
@@ -33,29 +34,37 @@ export function BasculeFormatBrut({ vueBrute, onChanger }: { vueBrute: boolean; 
  * texte plus petit et dans une autre police, sans cadre et sur toute la largeur,
  * puis les autres champs, puis le corps en markdown.
  */
-export function ApercuSkillMd({ contenu, vide = "Rien à afficher pour l'instant." }: { contenu: string; vide?: string }) {
+export type EditionEntete = { nom: string; description: string; onNom: (v: string) => void; onDescription: (v: string) => void };
+
+export function ApercuSkillMd({ contenu, vide = "Rien à afficher pour l'instant.", edition }: { contenu: string; vide?: string; edition?: EditionEntete }) {
   const lu = useMemo(() => lireChampsEntete(contenu), [contenu]);
   const corps = (lu ? lu.corps : contenu).trim();
   const nom = lu?.champs.find(c => c.cle === "name")?.valeur ?? "";
   const description = lu?.champs.find(c => c.cle === "description")?.valeur ?? "";
   const autres = (lu?.champs ?? []).filter(c => c.cle !== "name" && c.cle !== "description" && c.valeur !== "");
-  const aEntete = !!lu && (nom !== "" || description !== "" || autres.length > 0);
+  const aEntete = !!edition || (!!lu && (nom !== "" || description !== "" || autres.length > 0));
   if (!aEntete && !corps) return <p className="text-sm text-dj-texte-muet">{vide}</p>;
   return (
     <div className="flex min-w-0 flex-col gap-4 break-words">
       {aEntete && (
         <div className="flex flex-col gap-3">
-          {nom && (
-            <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className={ETIQUETTE}>Nom</span>
-              <span className="text-base font-semibold text-dj-texte">{nom}</span>
-            </p>
-          )}
-          {description && (
-            <div className="flex flex-col gap-1">
-              <span className={ETIQUETTE}>Description</span>
-              <p className="w-full whitespace-pre-line font-lecture text-sm leading-relaxed text-dj-texte-muet">{description}</p>
-            </div>
+          {edition ? (
+            <EnteteSkillModifiable nom={edition.nom} description={edition.description} onNom={edition.onNom} onDescription={edition.onDescription} />
+          ) : (
+            <>
+              {nom && (
+                <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className={ETIQUETTE}>Nom</span>
+                  <span className="text-base font-semibold text-dj-texte">{nom}</span>
+                </p>
+              )}
+              {description && (
+                <div className="flex flex-col gap-1">
+                  <span className={ETIQUETTE}>Description</span>
+                  <p className="w-full whitespace-pre-line font-lecture text-sm leading-relaxed text-dj-texte-muet">{description}</p>
+                </div>
+              )}
+            </>
           )}
           {autres.map(c => (
             <div key={c.cle} className="flex flex-col gap-1">
