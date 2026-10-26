@@ -2,9 +2,10 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { appelerApiStream, signalerPedagogique } from "@/lib/api";
+import { appelerApi, appelerApiStream, signalerPedagogique } from "@/lib/api";
+import { dernierIdEnregistre, versionsAvecActiveMiseAJour, versionsExistantesPour } from "@/lib/versionsConversation";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
-import { BulleMessage, MessageAffiche, SegmentMessage, VersionAlternative } from "./BulleMessage";
+import { BulleMessage, MessageAffiche, SegmentMessage } from "./BulleMessage";
 import type { OutilEnCours } from "./OutilResultatBulle";
 import { BarreDeSaisie, LongueurReponse, LocalisationJointe } from "./BarreDeSaisie";
 import { PopupFeedback } from "./PopupFeedback";
@@ -1117,7 +1118,9 @@ export function ChatIA({
     // Versions navigables (20/09/2026) : parent_id du NOUVEAU tour = id du
     // dernier message actuellement affiché (avant l'ajout ci-dessous),
     // capturé maintenant car `messages` va changer juste en dessous.
-    const parentIdPourEnvoi = messages[messages.length - 1]?.id ?? null;
+    // Dernier message reellement enregistre : une reponse en echec n'a pas
+    // d'id, et y rattacher la suite en ferait une racine orpheline.
+    const parentIdPourEnvoi = dernierIdEnregistre(messages);
     majMessages((prec) => [
       ...prec.map((m) =>
         m.repriseDisponible || m.interrompue ? { ...m, repriseDisponible: null, interrompue: false } : m
@@ -1339,12 +1342,14 @@ export function ChatIA({
     const messageUtilisateur = messages[index - 1];
     const ancienneReponse = messages[index];
     if (!messageUtilisateur || !ancienneReponse) return;
-    const ancienneSuite = messages.slice(index);
-
-    const versionsExistantes: VersionAlternative[] =
-      ancienneReponse.versions && ancienneReponse.versions.length > 0
-        ? ancienneReponse.versions
-        : [{ message: { ...ancienneReponse, versions: undefined, versionActive: undefined }, suite: ancienneSuite.slice(1) }];
+    // La question n'a pas d'id quand la tentative d'avant a echoue avant
+    // de tout enregistrer : on la renvoie alors comme un envoi normal (le
+    // serveur l'enregistre), rattachee au dernier message qui existe vraiment.
+    const questionEnregistree = messageUtilisateur.id !== null && messageUtilisateur.id !== undefined;
+    const parentIdPourApi = questionEnregistree
+      ? messageUtilisateur.id
+      : dernierIdEnregistre(messages.slice(0, index - 1));
+    const versionsExistantes = versionsExistantesPour(ancienneReponse, messages.slice(index + 1));
     const nouvelIndex = versionsExistantes.length;
     const historiquePourApi = messages.slice(0, index - 1).map((m) => ({
       role: m.role,
@@ -1379,8 +1384,8 @@ export function ChatIA({
           agent_id: agentId,
           historique: historiquePourApi,
           conversation_id: conversationId,
-          parent_id: messageUtilisateur.id,
-          regenerer: true,
+          parent_id: parentIdPourApi,
+          regenerer: questionEnregistree,
           longueur_reponse: "moyenne",
           sans_enseignant: false,
           // Champs ajoutés côté main pendant que cette branche vivait à part
@@ -1398,19 +1403,9 @@ export function ChatIA({
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
-      // Synchronise le contenu final dans versions[versionActive], sans
-      // ça, la version resterait figée sur son placeholder vide dès
-      // qu'on navigue ailleurs puis qu'on revient dessus.
-      majMessages((prec) => {
-        const dernier = prec[prec.length - 1];
-        if (!dernier.versions || dernier.versionActive === undefined) return prec;
-        const versions = dernier.versions.map((v, i) =>
-          i === dernier.versionActive
-            ? { message: { ...dernier, versions: undefined, versionActive: undefined }, suite: [] as MessageAffiche[] }
-            : v
-        );
-        return [...prec.slice(0, -1), { ...dernier, versions }];
-      });
+      // La copie de cette version dans `versions` est prise au moment de
+      // quitter la version (voir naviguerVersion), pas ici : le texte
+      // s'affiche mot par mot et n'est pas encore complet a la fin du flux.
     } catch (e) {
       reinitialiserAffichageControle();
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1422,10 +1417,15 @@ export function ChatIA({
       } else {
         majMessages((prec) => {
           const copie = [...prec];
+          const dernier = copie[copie.length - 1];
           copie[copie.length - 1] = {
-            ...copie[copie.length - 1],
+            ...dernier,
             content: "Une erreur est survenue, réessaie dans un instant.",
             erreur: true,
+            // La tentative echouee n'existe pas en base : elle ne reste pas
+            // comptee comme une version (compteur et fleches).
+            versions: dernier.versions?.filter((_, i) => i !== dernier.versionActive),
+            versionActive: undefined,
           };
           return copie;
         });
@@ -1444,13 +1444,10 @@ export function ChatIA({
   async function editerMessage(index: number, nouveauTexte: string) {
     const ancienMessage = messages[index];
     if (!ancienMessage) return;
-    const ancienneSuite = messages.slice(index);
-    const parentIdPourNouvelle = messages[index - 1]?.id ?? null;
-
-    const versionsExistantes: VersionAlternative[] =
-      ancienMessage.versions && ancienMessage.versions.length > 0
-        ? ancienMessage.versions
-        : [{ message: { ...ancienMessage, versions: undefined, versionActive: undefined }, suite: ancienneSuite.slice(1) }];
+    const parentIdPourNouvelle = dernierIdEnregistre(messages.slice(0, index));
+    // La suite complete (reponse et tout ce qui suit) est rangee avec l'ancienne
+    // version de la question : en revenant dessus, sa reponse reapparait.
+    const versionsExistantes = versionsExistantesPour(ancienMessage, messages.slice(index + 1));
     const nouvelIndex = versionsExistantes.length;
     const historiquePourApi = messages.slice(0, index).map((m) => ({
       role: m.role,
@@ -1498,18 +1495,8 @@ export function ChatIA({
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
-      majMessages((prec) => {
-        const utilisateurMsg = prec[prec.length - 2];
-        if (!utilisateurMsg || !utilisateurMsg.versions || utilisateurMsg.versionActive === undefined) return prec;
-        const versions = utilisateurMsg.versions.map((v, i) =>
-          i === utilisateurMsg.versionActive
-            ? { message: { ...utilisateurMsg, versions: undefined, versionActive: undefined }, suite: [] as MessageAffiche[] }
-            : v
-        );
-        const copie = [...prec];
-        copie[copie.length - 2] = { ...utilisateurMsg, versions };
-        return copie;
-      });
+      // La copie de cette version et de sa suite est prise au moment de
+      // quitter la version (voir naviguerVersion), quand le texte est complet.
     } catch (e) {
       reinitialiserAffichageControle();
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1541,16 +1528,33 @@ export function ChatIA({
   // stockée, ne touche jamais aux autres branches, ni aux versions
   // situées plus loin dans la conversation.
   function naviguerVersion(index: number, direction: -1 | 1) {
+    // Pas de navigation pendant qu'une reponse s'ecrit : la copie de la
+    // version quittee serait incomplete.
+    if (genEnCours || affichageEnCours) return;
     const message = messages[index];
     if (!message?.versions || message.versionActive === undefined) return;
     const nouvelIndex = message.versionActive + direction;
-    const cible = message.versions[nouvelIndex];
+    // Avant de quitter la version affichee, on range son etat reel (texte
+    // complet, id, et tout ce qui a ete ecrit apres elle dans cette branche),
+    // sinon elle reapparaitrait vide ou tronquee au retour.
+    const versions = versionsAvecActiveMiseAJour(message, messages.slice(index + 1)) ?? message.versions;
+    const cible = versions[nouvelIndex];
     if (!cible) return;
     majMessages((prec) => [
       ...prec.slice(0, index),
-      { ...cible.message, versions: message.versions, versionActive: nouvelIndex },
+      { ...cible.message, versions, versionActive: nouvelIndex },
       ...cible.suite,
     ]);
+    // Retient ce choix cote serveur pour qu'un rechargement affiche la meme
+    // version. Sans effet visible si ca echoue (invite, ou fil pas encore
+    // enregistre) : l'affichage actuel ne depend pas de cette ecriture.
+    const idChoisi = cible.message.id;
+    if (idChoisi !== null && idChoisi !== undefined) {
+      appelerApi(`/api/historique/${agentId}/conversations/${conversationId}/version-active`, {
+        method: "POST",
+        body: JSON.stringify({ message_id: idChoisi }),
+      }).catch(() => {});
+    }
   }
 
   function expliquerSelection(texteSelectionne: string) {
@@ -1951,10 +1955,15 @@ export function ChatIA({
               raisonnementEnCours={estDernier ? raisonnementEnCours : false}
               outilsResultats={message.outilsResultats}
               outilsEnCours={estDernier && message.role === "assistant" ? outilsEnCoursTrackes : undefined}
+              // "Renvoyer" sur une question : la reponse qui la suit est ecartee
+              // et une nouvelle est construite en parallele, comme version
+              // soeur sous la meme question, sans rien ajouter en bas.
               onRegenerer={
                 message.role === "assistant"
                   ? () => regenererDepuis(index)
-                  : () => envoyerMessage(message.content, "moyenne", [])
+                  : messages[index + 1]?.role === "assistant"
+                    ? () => regenererDepuis(index + 1)
+                    : () => envoyerMessage(message.content, "moyenne", [])
               }
               onEditer={message.role === "user" ? (texte) => editerMessage(index, texte) : undefined}
               onLike={
