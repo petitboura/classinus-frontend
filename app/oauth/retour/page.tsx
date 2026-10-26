@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { finaliserConnexion } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+import { APPLIS_DISPONIBLES } from "@/lib/outils";
 import { EcranAutonome } from "@/components/EcranAutonome";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
@@ -23,15 +24,11 @@ import { lireRetourConnexion, RETOUR_PAR_DEFAUT, type RetourApresConnexion } fro
  * finaliser, le state (à usage unique) fait office de preuve d'origine.
  */
 
-const NOMS_SERVICES: Record<string, string> = {
-  notion: "Notion",
-  google_drive: "Google Drive",
-  github: "GitHub",
-  higgsfield_mcp: "Higgsfield",
-  vercel_mcp: "Vercel",
-  railway_mcp: "Railway",
-  supabase_mcp: "Supabase",
-};
+// Les noms viennent du catalogue des applications (lib/outils.ts) : un service ajouté
+// là-bas s'affiche ici sans autre modification.
+const NOMS_SERVICES: Record<string, string> = Object.fromEntries(
+  APPLIS_DISPONIBLES.map((a) => [a.nom, a.label]),
+);
 
 // Durée d'affichage de la confirmation avant de ramener la personne au chat.
 const DELAI_RETOUR_MS = 1400;
