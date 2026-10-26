@@ -25,6 +25,7 @@ import { SchemaGeometrique } from "./SchemaGeometrique";
 import { QCMInteractif } from "./QCMInteractif";
 import { QuestionInteractive } from "./QuestionInteractive";
 import { FicheRevision } from "./FicheRevision";
+import { CarteConnecteur } from "./CarteConnecteur";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { AnimationLecteur } from "./AnimationLecteur";
 import { ImageMessage } from "./ImageMessage";
@@ -107,6 +108,8 @@ function PreMarkdown({ children }: { children?: ReactNode }) {
           onChangementGroupe={(entree) => etat?.enregistrerReponseGroupee(code, entree)}
         />
       );
+    case "connecteur":
+      return <CarteConnecteur code={code} onUtiliser={etat?.onRepondreQuestion} />;
     case "fiche":
       return <FicheRevision code={code} />;
     case "animation":
