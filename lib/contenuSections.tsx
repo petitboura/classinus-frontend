@@ -20,7 +20,6 @@ import { BibliothequePublique } from "@/components/BibliothequePublique";
 import { EspaceDossiers } from "@/components/EspaceDossiers";
 import { EspaceControleSession } from "@/components/EspaceControleSession";
 import { EspaceTempsEcran } from "@/components/EspaceTempsEcran";
-import { MesComportements } from "@/components/MesComportements";
 import { SkillsIndependants } from "@/components/SkillsIndependants";
 import { SkillsPublics } from "@/components/SkillsPublics";
 import { MaMemoire } from "@/components/MaMemoire";
@@ -37,8 +36,6 @@ import { EspaceConnexions } from "@/components/connexions/EspaceConnexions";
 // (lib/routes*.ts) et CONTENU_SECTIONS est un Record complet sur ce type.
 // Ajouter une sous-section sans décrire son contenu ici fait échouer la
 // vérification de types, donc impossible de l'oublier côté fenêtre.
-
-const AGENT_ID = "clovis";
 
 const CONTENU_SECTIONS: Record<CleSection, () => ReactNode> = {
   [ROUTES_BUREAU.audit]: () => (
@@ -113,7 +110,7 @@ const CONTENU_SECTIONS: Record<CleSection, () => ReactNode> = {
     </>
   ),
 
-  [ROUTES_PERSONNALISER.comportements]: () => <><SkillsIndependants /><div className="mt-8 border-t border-dj-bordure pt-6"><p className="mb-4 text-sm font-semibold text-dj-texte">Anciens skills</p><MesComportements agentId={AGENT_ID} sansOnglets /></div></>,
+  [ROUTES_PERSONNALISER.comportements]: () => <SkillsIndependants />,
   [ROUTES_PERSONNALISER.skillsPublics]: () => (
     <>
       <DefinirInfoSection id="skills-publics" />

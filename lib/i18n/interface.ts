@@ -686,7 +686,6 @@ const EN: Record<string, string> = {
   "Envoi du zip…": "Uploading the zip…",
   "← Retour aux skills": "← Back to skills",
   "dossier/fichier.md": "folder/file.md",
-  "Anciens skills": "Previous skills",
   "Ce chemin n'est pas valide ou existe déjà.": "This path is not valid or already exists.",
   "Tu as des modifications non enregistrées. Les abandonner ?": "You have unsaved changes. Discard them?",
   "Supprimer ce skill et ses fichiers ?": "Delete this skill and its files?",
