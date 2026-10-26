@@ -30,7 +30,7 @@ const applications = [
   ["google_people_mcp", GOOGLE, GOOGLE],
   ["microsoft_mcp", true, true],
   ["netlify_mcp", false, true],
-  ["render_mcp", true, true],
+  ["render_mcp", false, true],
   ["cloudflare_mcp", true, true],
   ["higgsfield_mcp", true, true],
   ["vercel_mcp", true, true],
@@ -53,7 +53,10 @@ assert.ok(guideClaude.includes("URL_MCP_CLASSINUS_CLAUDE"), "le guide Claude doi
 assert.ok(barre.includes("SERVICES_MCP_OAUTH.includes(nom)"), "chaque service OAuth du menu doit déclencher une action");
 assert.ok(catalogue.includes("export const SERVICES_MCP_OAUTH"), "la liste des services OAuth du chat doit venir du catalogue");
 assert.ok(espace.includes('app.modeConnexion === "jeton"'), "Netlify doit utiliser son mode jeton personnel");
-assert.ok(espace.includes("enregistrerJetonNetlify(jetonNetlify.trim())"), "le jeton Netlify doit être validé côté serveur");
+const applisJeton = await lire("../lib/connexionsApplis.ts");
+assert.ok(espace.includes("jeton.enregistrer("), "le jeton personnel doit être validé côté serveur");
+assert.ok(applisJeton.includes("enregistrer: enregistrerJetonNetlify"), "Netlify doit être branché sur la validation de son jeton");
+assert.ok(applisJeton.includes("enregistrer: enregistrerJetonRender"), "Render doit être branché sur la validation de sa clé");
 
 assert.match(espace, /APPLIS_DISPONIBLES\.filter\(\(app\) => app\.visibleDansEspaceConnexions\)/);
 assert.match(barre, /APPLIS_DISPONIBLES\.filter\(\(a\) => a\.visibleDansBoutonApplications\)/);
