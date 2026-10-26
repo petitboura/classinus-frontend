@@ -175,32 +175,28 @@ export function SkillsIndependants() {
         <button type="button" onClick={retourListe} className="text-sm text-dj-texte-muet transition-colors hover:text-dj-texte">← Retour aux skills</button>
       </div>
       <div key={vueEditeur} className="min-w-0 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure p-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm">Nom<input value={nom} onChange={e => changerNom(e.target.value)} className={champ} /></label>
-          <label className="flex flex-col gap-1 text-sm">Description<input value={description} onChange={e => changerDescription(e.target.value)} className={champ} /></label>
-        </div>
-        <label className="mt-3 flex items-center gap-2 text-sm"><CaseACocher checked={actif} onChange={setActif} />Actif</label>
-        <div className="mt-4 grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="rounded border border-dj-bordure p-2">
+        <label className="flex items-center gap-2 text-sm"><CaseACocher checked={actif} onChange={setActif} />Actif</label>
+        <div className="mt-4 grid gap-3 md:h-[70vh] md:min-h-[440px] md:max-h-[860px] md:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="flex min-h-0 flex-col rounded border border-dj-bordure p-2">
             <h3 className="mb-2 text-sm font-semibold">Fichiers et dossiers</h3>
-            {fichiers.map(f => <button key={f.chemin} type="button" onClick={() => { setFichierActif(f.chemin); setVueBrute(false); }} className={`mb-1 block w-full truncate rounded px-2 py-1 text-left text-xs transition-colors hover:bg-dj-surface-haute ${f.chemin === fichierActif ? "bg-dj-surface-haute" : ""}`}>{f.chemin}</button>)}
+            <div className="min-h-0 flex-1 overflow-y-auto">{fichiers.map(f => <button key={f.chemin} type="button" onClick={() => { setFichierActif(f.chemin); setVueBrute(false); }} className={`mb-1 block w-full truncate rounded px-2 py-1 text-left text-xs transition-colors hover:bg-dj-surface-haute ${f.chemin === fichierActif ? "bg-dj-surface-haute" : ""}`}>{f.chemin}</button>)}</div>
             <input value={nouveauChemin} onChange={e => setNouveauChemin(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); ajouterFichier(); } }} placeholder="dossier/fichier.md" className={`mt-3 w-full text-xs ${champ}`} />
             <button type="button" onClick={ajouterFichier} className="mt-2 rounded border border-dj-bordure px-2 py-1 text-xs transition-colors hover:bg-dj-surface-haute">Ajouter un fichier</button>
           </div>
-          <div className="min-w-0">
+          <div className="flex h-[65vh] min-h-[360px] min-w-0 flex-col md:h-auto md:min-h-0">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="min-w-0 truncate text-xs text-dj-texte-muet">{fichierActif}</p>
               {estMarkdown(fichierActif) && <BasculeFormatBrut vueBrute={vueBrute} onChanger={setVueBrute} />}
             </div>
-            <div key={`${fichierActif}-${vueBrute && estMarkdown(fichierActif) ? "brut" : "formate"}`} className="animate-dj-fade-in-rapide">
+            <div key={`${fichierActif}-${vueBrute && estMarkdown(fichierActif) ? "brut" : "formate"}`} className="min-h-0 flex-1 animate-dj-fade-in-rapide">
               {estMarkdown(fichierActif) && !vueBrute
-                ? <div className="min-h-[260px] py-1 sm:min-h-[350px]"><ApercuSkillMd contenu={contenuActif} vide="Ce fichier est vide. Passe en Brut pour écrire." /></div>
-                : <textarea value={contenuActif} onChange={e => changerContenu(e.target.value)} className={`min-h-[260px] w-full p-3 font-mono text-sm sm:min-h-[350px] ${champ}`} spellCheck={false} />}
+                ? <div className="h-full overflow-y-auto rounded border border-dj-bordure p-4"><ApercuSkillMd contenu={contenuActif} vide="Ce fichier est vide. Passe en Brut pour écrire." edition={fichierActif === CHEMIN_PRINCIPAL ? { nom, description, onNom: changerNom, onDescription: changerDescription } : undefined} /></div>
+                : <textarea value={contenuActif} onChange={e => changerContenu(e.target.value)} className={`h-full w-full resize-none p-3 font-mono text-sm ${champ}`} spellCheck={false} />}
             </div>
           </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          {selection && <button type="button" disabled={busy} onClick={() => void supprimer()} className="rounded border border-red-500/40 px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50">Supprimer</button>}
+        <div className="mt-4 flex items-center justify-end gap-2">
+          {selection && <button type="button" disabled={busy} onClick={() => void supprimer()} className="rounded border border-red-500/40 px-2 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50">Supprimer</button>}
           <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-primaire px-4 py-2 text-sm text-white transition-opacity hover:opacity-90 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
         </div>
       </div>
