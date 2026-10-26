@@ -52,3 +52,39 @@ export function lireEntete(contenu: string): { nom?: string; description?: strin
   }
   return sortie;
 }
+
+export type ChampEntete = { cle: string; valeur: string };
+
+// Valeur d'un champ de l'en-tête, avec ses éventuelles lignes de suite : texte entre
+// guillemets, bloc replié (>) ou littéral (|), liste, ou texte nu sur plusieurs lignes.
+function valeurChamp(premiere: string, suite: string[]): string {
+  const p = premiere.trim();
+  const lignes = suite.map(l => l.replace(/\s+$/, ""));
+  if (/^[>|][+-]?$/.test(p)) {
+    const gardees = lignes.filter(l => l.trim() !== "");
+    const marge = gardees.length ? Math.min(...gardees.map(l => l.length - l.trimStart().length)) : 0;
+    const coupees = lignes.map(l => l.slice(marge));
+    if (p.startsWith("|")) return coupees.join("\n").trim();
+    return coupees.join("\n").trim().replace(/([^\n])\n(?=[^\n])/g, "$1 ").replace(/\n{2,}/g, "\n");
+  }
+  if (lignes.every(l => l.trim() === "")) return valeur(p) ?? p;
+  const reste = lignes.map(l => l.trim()).filter(Boolean);
+  const estListe = p === "" && reste.every(l => l.startsWith("- "));
+  return [p, ...reste].filter(Boolean).join(estListe ? "\n" : " ");
+}
+
+/** Tous les champs de l'en-tête, dans l'ordre, et le corps. null quand il n'y a pas d'en-tête. */
+export function lireChampsEntete(contenu: string): { champs: ChampEntete[]; corps: string } | null {
+  const morceau = separer(contenu.replace(/\r\n/g, "\n"));
+  if (!morceau) return null;
+  const champs: ChampEntete[] = [];
+  let courant: { cle: string; premiere: string; suite: string[] } | null = null;
+  const clore = () => { if (courant) champs.push({ cle: courant.cle, valeur: valeurChamp(courant.premiere, courant.suite) }); courant = null; };
+  for (const ligne of morceau.lignes) {
+    const trouve = /^([A-Za-z0-9_][A-Za-z0-9_-]*):(.*)$/.exec(ligne);
+    if (trouve) { clore(); courant = { cle: trouve[1], premiere: trouve[2], suite: [] }; }
+    else if (courant) courant.suite.push(ligne);
+  }
+  clore();
+  return { champs, corps: morceau.corps };
+}

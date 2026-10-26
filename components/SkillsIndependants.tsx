@@ -6,10 +6,13 @@ import { messageErreur } from "@/lib/erreurs";
 import { CaseACocher } from "@/components/CaseACocher";
 import { Skeleton } from "@/components/Skeleton";
 import { appliquerEntete, lireEntete } from "@/lib/enteteSkill";
+import { ApercuSkillMd, BasculeFormatBrut } from "@/components/ApercuSkillMd";
 
 type FichierEdition = { chemin: string; contenu: string };
 
 const CHEMIN_PRINCIPAL = "SKILL.md";
+// Les fichiers markdown s'ouvrent en aperçu formaté, avec un bouton Brut pour les éditer.
+const estMarkdown = (chemin: string) => /\.(md|markdown)$/i.test(chemin);
 // Le SKILL.md d'un nouveau skill naît avec son en-tête, aligné sur Nom et Description.
 const fichiersInitiaux = (): FichierEdition[] => [{ chemin: CHEMIN_PRINCIPAL, contenu: appliquerEntete("", "", "") }];
 
@@ -28,6 +31,7 @@ export function SkillsIndependants() {
   const [fichiers, setFichiers] = useState<FichierEdition[]>(fichiersInitiaux);
   const [nouveauChemin, setNouveauChemin] = useState("");
   const [fichierActif, setFichierActif] = useState(CHEMIN_PRINCIPAL);
+  const [vueBrute, setVueBrute] = useState(false);
   const [actif, setActif] = useState(true);
   const [erreur, setErreur] = useState("");
   const [busy, setBusy] = useState(false);
@@ -73,7 +77,7 @@ export function SkillsIndependants() {
     setVueEditeur(v => v + 1);
     setSelection(id); setNom(n); setDescription(d); setActif(a); setFichiers(f);
     setFichierActif(f.find(x => x.chemin === CHEMIN_PRINCIPAL)?.chemin ?? f[0]?.chemin ?? CHEMIN_PRINCIPAL);
-    setNouveauChemin(""); setErreur("");
+    setNouveauChemin(""); setErreur(""); setVueBrute(false);
     enregistre.current = empreinte(n, d, a, f);
   }
 
@@ -141,9 +145,10 @@ export function SkillsIndependants() {
       return;
     }
     setFichiers(old => [...old, { chemin, contenu: "" }]);
-    setFichierActif(chemin); setNouveauChemin(""); setErreur("");
+    setFichierActif(chemin); setVueBrute(true); setNouveauChemin(""); setErreur("");
   }
 
+  const contenuActif = fichiers.find(f => f.chemin === fichierActif)?.contenu ?? "";
   const champ = "rounded border border-dj-bordure bg-transparent p-2 transition-colors focus:border-dj-bordure-forte focus:outline-none";
   const bouton = "rounded-lg px-3 py-2 text-sm transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50";
   return <section className="flex min-w-0 flex-col gap-4">
@@ -178,13 +183,20 @@ export function SkillsIndependants() {
         <div className="mt-4 grid gap-3 md:grid-cols-[220px_minmax(0,1fr)]">
           <div className="rounded border border-dj-bordure p-2">
             <h3 className="mb-2 text-sm font-semibold">Fichiers et dossiers</h3>
-            {fichiers.map(f => <button key={f.chemin} type="button" onClick={() => setFichierActif(f.chemin)} className={`mb-1 block w-full truncate rounded px-2 py-1 text-left text-xs transition-colors hover:bg-dj-surface-haute ${f.chemin === fichierActif ? "bg-dj-surface-haute" : ""}`}>{f.chemin}</button>)}
+            {fichiers.map(f => <button key={f.chemin} type="button" onClick={() => { setFichierActif(f.chemin); setVueBrute(false); }} className={`mb-1 block w-full truncate rounded px-2 py-1 text-left text-xs transition-colors hover:bg-dj-surface-haute ${f.chemin === fichierActif ? "bg-dj-surface-haute" : ""}`}>{f.chemin}</button>)}
             <input value={nouveauChemin} onChange={e => setNouveauChemin(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); ajouterFichier(); } }} placeholder="dossier/fichier.md" className={`mt-3 w-full text-xs ${champ}`} />
             <button type="button" onClick={ajouterFichier} className="mt-2 rounded border border-dj-bordure px-2 py-1 text-xs transition-colors hover:bg-dj-surface-haute">Ajouter un fichier</button>
           </div>
           <div className="min-w-0">
-            <p className="mb-2 truncate text-xs text-dj-texte-muet">{fichierActif}</p>
-            <textarea value={fichiers.find(f => f.chemin === fichierActif)?.contenu ?? ""} onChange={e => changerContenu(e.target.value)} className={`min-h-[260px] w-full p-3 font-mono text-sm sm:min-h-[350px] ${champ}`} spellCheck={false} />
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="min-w-0 truncate text-xs text-dj-texte-muet">{fichierActif}</p>
+              {estMarkdown(fichierActif) && <BasculeFormatBrut vueBrute={vueBrute} onChanger={setVueBrute} />}
+            </div>
+            <div key={`${fichierActif}-${vueBrute && estMarkdown(fichierActif) ? "brut" : "formate"}`} className="animate-dj-fade-in-rapide">
+              {estMarkdown(fichierActif) && !vueBrute
+                ? <div className="min-h-[260px] py-1 sm:min-h-[350px]"><ApercuSkillMd contenu={contenuActif} vide="Ce fichier est vide. Passe en Brut pour écrire." /></div>
+                : <textarea value={contenuActif} onChange={e => changerContenu(e.target.value)} className={`min-h-[260px] w-full p-3 font-mono text-sm sm:min-h-[350px] ${champ}`} spellCheck={false} />}
+            </div>
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">
