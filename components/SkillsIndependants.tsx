@@ -182,14 +182,14 @@ export function SkillsIndependants() {
             <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${actif ? "translate-x-5" : "translate-x-0"}`} />
           </button>
         </div>
-        <div className="mt-4 grid gap-3 md:h-[70vh] md:min-h-[440px] md:max-h-[860px] md:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="mt-4 grid gap-3 md:h-[calc(100dvh-12rem)] md:min-h-[520px] md:grid-cols-[220px_minmax(0,1fr)]">
           <div className="flex min-h-0 flex-col rounded border border-dj-bordure p-2">
             <h3 className="mb-2 text-sm font-semibold">Fichiers et dossiers</h3>
             <div className="min-h-0 flex-1 overflow-y-auto">{fichiers.map(f => <button key={f.chemin} type="button" onClick={() => { setFichierActif(f.chemin); setVueBrute(false); }} className={`mb-1 block w-full truncate rounded px-2 py-1 text-left text-xs transition-colors hover:bg-dj-surface-haute ${f.chemin === fichierActif ? "bg-dj-surface-haute" : ""}`}>{f.chemin}</button>)}</div>
             <input value={nouveauChemin} onChange={e => setNouveauChemin(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); ajouterFichier(); } }} placeholder="dossier/fichier.md" className={`mt-3 w-full text-xs ${champ}`} />
             <button type="button" onClick={ajouterFichier} className="mt-2 rounded border border-dj-bordure px-2 py-1 text-xs transition-colors hover:bg-dj-surface-haute">Ajouter un fichier</button>
           </div>
-          <div className="flex h-[65vh] min-h-[360px] min-w-0 flex-col md:h-auto md:min-h-0">
+          <div className="flex h-[calc(100dvh-10rem)] min-h-[420px] min-w-0 flex-col md:h-auto md:min-h-0">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="min-w-0 truncate text-xs text-dj-texte-muet">{fichierActif}</p>
               {estMarkdown(fichierActif) && <BasculeFormatBrut vueBrute={vueBrute} onChanger={setVueBrute} />}

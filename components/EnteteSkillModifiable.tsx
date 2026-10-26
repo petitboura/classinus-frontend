@@ -79,9 +79,9 @@ export function LigneNomSkill({ nom, onNom }: { nom: string; onNom: (v: string) 
 }
 
 /**
- * Description d'un SKILL.md dans l'aperçu : le bouton qui la replie ou la déplie
- * (dépliée par défaut) et le crayon devant le mot « Description », puis le texte
- * sur toute la largeur, sans cadre.
+ * Description d'un SKILL.md dans l'aperçu : le crayon devant le mot « Description », le
+ * bouton qui la replie ou la déplie à sa droite (dépliée par défaut), puis le texte sur
+ * toute la largeur, sans cadre.
  */
 export function EnteteSkillModifiable({ description, onDescription }: { description: string; onDescription: (v: string) => void }) {
   const [edite, setEdite] = useState(false);
@@ -90,13 +90,13 @@ export function EnteteSkillModifiable({ description, onDescription }: { descript
   return (
     <div className="flex min-w-0 flex-col">
       <div className="flex items-center gap-1">
-        <button type="button" onClick={() => setOuverte(o => !o)} aria-expanded={visible} aria-label={visible ? "Replier la description" : "Déplier la description"} title={visible ? "Replier la description" : "Déplier la description"} className={BOUTON_ICONE}>
-          <ChevronDown size={16} className={`transition-transform duration-200 ${visible ? "" : "-rotate-90"}`} />
-        </button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { setEdite(true); setOuverte(true); }} aria-label="Modifier la description" title="Modifier la description" className={BOUTON_ICONE}>
           <Pencil size={14} />
         </button>
         <span className={ETIQUETTE}>Description</span>
+        <button type="button" onClick={() => setOuverte(o => !o)} aria-expanded={visible} aria-label={visible ? "Replier la description" : "Déplier la description"} title={visible ? "Replier la description" : "Déplier la description"} className={BOUTON_ICONE}>
+          <ChevronDown size={16} className={`transition-transform duration-200 ${visible ? "" : "-rotate-90"}`} />
+        </button>
       </div>
       <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${visible ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className="min-h-0 overflow-hidden">
