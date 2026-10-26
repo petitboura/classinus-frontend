@@ -493,6 +493,10 @@ export interface LigneHistorique {
   role: "user" | "assistant";
   content: string;
   created_at: string;
+  // Date du dernier choix de cette version avec les fleches de version
+  // (26/10/2026) : sert a rouvrir la conversation sur la version regardee en
+  // dernier, voir construireMessagesDepuisHistorique.
+  selectionne_le?: string | null;
   meta?: {
     outils?: MessageAffiche["outilsResultats"];
     pieces_jointes?: MessageAffiche["piecesJointes"];
@@ -558,7 +562,19 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
       .sort((a, b) => a.created_at.localeCompare(b.created_at));
     if (candidats.length === 0) return [];
 
-    const indexActif = candidats.length - 1; // le plus récent, par défaut
+    // Version affichée : celle dont le dernier "moment d'intérêt" est le plus
+    // récent, soit son choix avec les flèches (selectionne_le), soit sa
+    // création. Une version neuve passe donc devant, et un retour volontaire
+    // vers une ancienne version la fait repasser devant après rechargement.
+    // L'ordre du compteur (1/N) reste celui de la création.
+    const momentDInteret = (l: LigneHistorique) => {
+      const t = Date.parse(l.selectionne_le ?? l.created_at);
+      return Number.isNaN(t) ? 0 : t;
+    };
+    let indexActif = candidats.length - 1;
+    for (let i = candidats.length - 2; i >= 0; i--) {
+      if (momentDInteret(candidats[i]) > momentDInteret(candidats[indexActif])) indexActif = i;
+    }
     if (candidats.length === 1) {
       const seul = ligneVersMessage(candidats[0]);
       return [seul, ...resoudreSuite(candidats[0].id !== null && candidats[0].id !== undefined ? String(candidats[0].id) : "__sans_id__")];
