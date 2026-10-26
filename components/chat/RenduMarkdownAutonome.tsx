@@ -28,6 +28,7 @@ import { SchemaGeometrique } from "./SchemaGeometrique";
 import { QCMInteractif } from "./QCMInteractif";
 import { QuestionInteractive } from "./QuestionInteractive";
 import { FicheRevision } from "./FicheRevision";
+import { CarteConnecteur } from "./CarteConnecteur";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { AnimationLecteur } from "./AnimationLecteur";
 import { ImageMessage } from "./ImageMessage";
@@ -83,6 +84,8 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
           // La réponse choisie part comme un message de l'étudiant dans la
           // conversation du canal (voir BulleDialogueAgent.tsx).
           return <QuestionInteractive code={code} onReponse={onRepondreQuestion} dejaRepondu={questionDejaRepondue} />;
+        case "connecteur":
+          return <CarteConnecteur code={code} onUtiliser={onRepondreQuestion} />;
         case "fiche":
           return <FicheRevision code={code} />;
         case "animation":
