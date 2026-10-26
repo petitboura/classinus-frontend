@@ -4,7 +4,7 @@
 // ajoutés au message ([Image jointe : ...], [Document joint : ...], etc.).
 // Le contenu des commentaires est inchangé, seule la place du code a bougé.
 
-import { uploaderImageChat, uploaderDocumentChat, uploaderVideoChat, transcrireAudioChat } from "@/lib/api";
+import { uploaderImageChat, uploaderDocumentChat, uploaderMediaChat } from "@/lib/api";
 
 export type TypeFichierJoint = "image" | "document" | "video" | "audio" | "zip";
 
@@ -20,7 +20,7 @@ export function typeDeFichier(f: File): TypeFichierJoint {
     : "document";
 }
 
-export type ResultatFichierJoint = { texteBloc: string; imageUrl?: string; imagesBase64?: string[] };
+export type ResultatFichierJoint = { texteBloc: string; imageUrl?: string };
 
 export function traiterFichiersJoints(fichiers: File[]): Promise<PromiseSettledResult<ResultatFichierJoint>[]> {
   return Promise.allSettled(
@@ -35,10 +35,16 @@ export function traiterFichiersJoints(fichiers: File[]): Promise<PromiseSettledR
         // redemande plus tard (repéré en test réel, 2026-07-23).
         return { imageUrl: url, texteBloc: `\n\n[Image jointe : ${url}]` };
       }
-      if (type === "audio") {
-        const { texte: texteAudio, url: urlAudio } = await transcrireAudioChat(fichier);
-        const lienAudio = urlAudio ? `\n[Lien réel du fichier : ${urlAudio}]` : "";
-        return { texteBloc: `\n\n[Audio joint : ${fichier.name} -- transcription]\n${texteAudio}${lienAudio}` };
+      if (type === "audio" || type === "video") {
+        // Contrairement aux images et aux documents, une vidéo ou un audio n'est
+        // pas lu à l'envoi (26/10/2026, demande Bourama) : seules ses informations
+        // et son lien réel partent dans le message, et c'est le modèle qui décide
+        // de le lire avec l'outil lire_media_conversation (voir
+        // core/lecture_media_conversation.py côté serveur). Le chip du message
+        // ne lit que le nom et le lien (BulleMessage.tsx, extraireUneBloc).
+        const { url, resume } = await uploaderMediaChat(fichier);
+        const marqueur = type === "audio" ? "Audio joint" : "Vidéo jointe";
+        return { texteBloc: `\n\n[${marqueur} : ${fichier.name}]\nContenu non lu (${resume}).\n[Lien réel du fichier : ${url}]` };
       }
       if (type === "zip") {
         // Rien à uploader ici : le dézipage a déjà démarré dès la
@@ -52,14 +58,6 @@ export function traiterFichiersJoints(fichiers: File[]): Promise<PromiseSettledR
         // MARQUEURS_PIECE_JOINTE) -- volontairement AUCUN contenu de
         // fichier n'est injecté dans le message visible.
         return { texteBloc: `\n\n[Archive jointe : ${fichier.name}]` };
-      }
-      if (type === "video") {
-        const { transcript, frames_base64, url: urlVideo } = await uploaderVideoChat(fichier);
-        const lienVideo = urlVideo ? `\n[Lien réel du fichier : ${urlVideo}]` : "";
-        const texteBloc = transcript
-          ? `\n\n[Vidéo jointe : ${fichier.name} -- transcription audio]\n${transcript}${lienVideo}`
-          : `\n\n[Vidéo jointe : ${fichier.name} -- pas de son exploitable, images seules]${lienVideo}`;
-        return { texteBloc, imagesBase64: frames_base64.length ? frames_base64 : undefined };
       }
       const { texte: texteDocument, tronque, lisible, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
       const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";

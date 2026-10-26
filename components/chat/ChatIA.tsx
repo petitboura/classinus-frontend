@@ -1146,18 +1146,16 @@ export function ChatIA({
     //   api/uploads.py:uploader_document_chat) et injecté APRÈS le texte
     //   de l'étudiant, jamais à la place -- le cascade Groq habituel le
     //   traite comme du texte normal, aucun changement de modèle requis.
-    // - vidéo (2026-07-20) -> traitement combiné : la piste audio est
-    //   transcrite (Whisper) et injectée comme texte (comme un document),
-    //   les frames image sont envoyées à Gemini (comme des images) --
-    //   voir api/uploads.py:uploader_video_chat et core/main.py:chat(),
-    //   paramètre images_base64.
+    // - vidéo et audio (26/10/2026) -> pas lus à l'envoi : seul un bloc avec
+    //   leurs informations et leur lien réel est ajouté, le modèle décide de
+    //   les lire avec l'outil lire_media_conversation (voir
+    //   api/uploads.py:uploader_media_chat).
     //
     // Chaque fichier est indépendant (Promise.allSettled, pas Promise.all) :
     // demande explicite de Bourama, "les autres partent, erreur juste pour
     // celui qui échoue" -- un PDF scanné sans texte, par exemple, ne doit
     // plus faire échouer tout le message si une image valide l'accompagne.
     const imageUrls: string[] = [];
-    const imagesBase64: string[] = [];
     let texteEnrichi = texte + textesColles.map((contenu) => `\n\n[Texte collé joint]\n${contenu}`).join("");
 
     if (fichiers.length) {
@@ -1171,7 +1169,6 @@ export function ChatIA({
         if (resultat.status === "fulfilled") {
           texteEnrichi += resultat.value.texteBloc;
           if (resultat.value.imageUrl) imageUrls.push(resultat.value.imageUrl);
-          if (resultat.value.imagesBase64) imagesBase64.push(...resultat.value.imagesBase64);
         } else {
           // Même correction que pour la dictée vocale (2026-07-20) : le
           // message générique masquait la vraie cause (format refusé,
@@ -1241,7 +1238,6 @@ export function ChatIA({
           longueur_reponse: longueur,
           image_url: null,
           image_urls: imageUrls.length ? imageUrls : null,
-          images_base64: imagesBase64.length ? imagesBase64 : null,
           // Contexte de sélection de l'atelier vidéo. Aucun chemin de fichier
           // n'est accepté ici : l'API résout la source par identifiant opaque,
           // utilisateur connecté et conversation.

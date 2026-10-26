@@ -1335,15 +1335,24 @@ export async function transcrireAudioChat(fichier: File) {
 }
 
 /**
- * Traitement d'une vidéo jointe à un message de chat -- voir
- * api/uploads.py:uploader_video_chat (extraction audio via Whisper +
- * frames via ffmpeg, analysées ensuite par Gemini). Depuis le
- * 2026-07-22, la vidéo originale est aussi gardée dans la bibliothèque
- * (niveau utilisateur), pas seulement traitée puis jetée.
+ * Vidéo ou audio joint à un message de chat : le serveur enregistre le fichier
+ * et renvoie ses informations (api/uploads.py:uploader_media_chat), sans le
+ * transcrire ni extraire d'images. C'est le modèle qui décide ensuite de le
+ * lire. `resume` est un texte prêt à afficher (durée, taille, résolution, son).
  */
-export async function uploaderVideoChat(fichier: File) {
-  const resultat = await appelerApiFichier("/api/uploads/video-chat", fichier);
-  return resultat as { transcript: string; frames_base64: string[]; url: string | null };
+export async function uploaderMediaChat(fichier: File) {
+  const resultat = await appelerApiFichier("/api/uploads/media-chat", fichier);
+  return resultat as {
+    url: string;
+    nom: string;
+    type: "video" | "audio";
+    duree_secondes: number;
+    taille_octets: number;
+    a_audio: boolean;
+    largeur: number | null;
+    hauteur: number | null;
+    resume: string;
+  };
 }
 
 /**
