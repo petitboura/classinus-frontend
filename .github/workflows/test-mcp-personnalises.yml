@@ -1,0 +1,45 @@
+name: Vérifier les MCP personnalisés
+
+on:
+  push:
+    paths:
+      - "components/connexions/McpPersonnalises.tsx"
+      - "components/connexions/EspaceConnexions.tsx"
+      - "lib/api.ts"
+      - "lib/outils.ts"
+      - "lib/i18n/interface.ts"
+      - "app/oauth/retour/page.tsx"
+      - "app/decouvrir/personnaliser/applications-connectees/page.tsx"
+      - "lib/sectionsDecouvrir.tsx"
+      - "tests/verifier-mcp-personnalises.mjs"
+      - ".github/workflows/test-mcp-personnalises.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: TypeScript et flux MCP personnalisés
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Installer les dépendances
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Vérifier TypeScript
+        run: npx tsc --noEmit
+      - name: Construire Next.js
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.classinus.com
+          NEXT_PUBLIC_SUPABASE_URL: https://prchrczmcoqngesbzzfi.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.c2lnbmF0dXJl
+      - name: Vérifier les raccordements MCP personnalisés
+        run: node tests/verifier-mcp-personnalises.mjs

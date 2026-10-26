@@ -63,6 +63,7 @@ import { IconeCloudflare } from "@/components/icons/IconeCloudflare";
 import { useEffect, useState } from "react";
 import * as IconesLucide from "lucide-react";
 import { lireRegistreOutils } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 // Extrait de components/chat/BarreDeSaisie.tsx le 01/08 (Bourama : "est-ce
 // que ça varie en fonction de quel outil est ajouté ou enlevé" --
@@ -132,12 +133,40 @@ function resoudreSousIcone(nomIcone: string): typeof Search | null {
 }
 
 let promesseRegistre: Promise<RegistreOutils> | null = null;
+const EVENEMENT_REGISTRE_OUTILS = "classinus:registre-outils-a-actualiser";
+
+/** Invalide le cache partagé après une modification des serveurs MCP personnels. */
+export function invaliderRegistreOutils() {
+  promesseRegistre = null;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENEMENT_REGISTRE_OUTILS));
+}
+
+// Le registre contient des outils propres au compte : un changement de compte
+// invalide le catalogue même si aucune vue de chat n'est montée lors du switch.
+// Supabase émet SIGNED_IN à chaque retour sur l'onglet : on compare donc l'identifiant du compte
+// et on ne recharge que s'il a réellement changé (connexion, déconnexion, autre compte).
+let ecouteurAuthInstalle = false;
+let compteConnuRegistre: string | null | undefined;
+function installerEcouteurAuthRegistre() {
+  if (typeof window === "undefined" || ecouteurAuthInstalle) return;
+  ecouteurAuthInstalle = true;
+  supabase.auth.onAuthStateChange((evenement, session) => {
+    if (evenement !== "INITIAL_SESSION" && evenement !== "SIGNED_IN" && evenement !== "SIGNED_OUT") return;
+    const compte = session?.user?.id ?? null;
+    const precedent = compteConnuRegistre;
+    compteConnuRegistre = compte;
+    // Premier relevé du compte : le registre qui se charge en ce moment est déjà le bon.
+    if (precedent === undefined || precedent === compte) return;
+    // Évite de rappeler getSession dans le callback synchrone de Supabase Auth.
+    window.setTimeout(() => invaliderRegistreOutils(), 0);
+  });
+}
 
 async function chargerRegistreOutilsAvecRepli(): Promise<RegistreOutils> {
   const NB_TENTATIVES = 3;
   for (let tentative = 0; tentative < NB_TENTATIVES; tentative++) {
     try {
-      const reponse = (await lireRegistreOutils()) as {
+      const reponse = (await lireRegistreOutils(() => invaliderRegistreOutils())) as {
         outils: OutilBrut[];
         verbes_actions?: Record<string, { icone: string }>;
         prefixes_applis?: PrefixesApplis;
@@ -190,8 +219,11 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
 
   useEffect(() => {
     let actif = true;
+    let generation = 0;
+    installerEcouteurAuthRegistre();
 
     const chargerEtAppliquer = async () => {
+      const maGeneration = ++generation;
       if (!promesseRegistre) promesseRegistre = chargerRegistreOutilsAvecRepli();
       const promesseCourante = promesseRegistre;
       try {
@@ -201,7 +233,8 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
         if (registre.repli && promesseRegistre === promesseCourante) {
           promesseRegistre = null;
         }
-        if (actif) {
+        // Seule la réponse la plus récente est appliquée (changement de compte, serveur ajouté).
+        if (actif && maGeneration === generation) {
           setOutils(registre.outils);
           setVerbes(registre.verbes);
           setPrefixes(registre.prefixes);
@@ -209,21 +242,26 @@ export function useOutilsRegistre(): { outils: OutilAffichage[]; verbes: VerbesA
         }
       } catch {
         if (promesseRegistre === promesseCourante) promesseRegistre = null;
-        if (actif) setCharge(true);
+        if (actif && maGeneration === generation) setCharge(true);
       }
     };
 
     const reessayerSiDisponible = () => {
       if (!promesseRegistre) void chargerEtAppliquer();
     };
+    const actualiser = () => {
+      void chargerEtAppliquer();
+    };
 
     void chargerEtAppliquer();
     window.addEventListener("online", reessayerSiDisponible);
     window.addEventListener("focus", reessayerSiDisponible);
+    window.addEventListener(EVENEMENT_REGISTRE_OUTILS, actualiser);
     return () => {
       actif = false;
       window.removeEventListener("online", reessayerSiDisponible);
       window.removeEventListener("focus", reessayerSiDisponible);
+      window.removeEventListener(EVENEMENT_REGISTRE_OUTILS, actualiser);
     };
   }, []);
 

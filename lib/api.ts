@@ -1364,8 +1364,51 @@ export async function extraireFormuleImage(fichier: File) {
  * d'avoir à toucher ce dépôt à chaque nouvel outil (2026-08-15, demande
  * Bourama). Pas d'authentification requise (accessible avant connexion).
  */
-export async function lireRegistreOutils() {
-  return appelerApi(`/api/outils/registre`);
+type OutilRegistreBrut = { nom: string; label: string; icone: string; onglet?: string | null; appli?: string };
+
+// Attente maximale des outils des serveurs MCP personnels avant d'afficher le menu Outils sans eux.
+// Un serveur lent ne doit jamais retarder le menu pour tout le monde.
+const DELAI_OUTILS_PERSONNALISES_MS = 2500;
+const DELAI_ABANDON_OUTILS_PERSONNALISES_MS = 10000;
+
+async function lireOutilsPersonnalises(): Promise<OutilRegistreBrut[]> {
+  // Visiteur sans compte : la route exige une connexion, inutile de l'appeler.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return [];
+  const controle = new AbortController();
+  const minuterie = setTimeout(() => controle.abort(), DELAI_ABANDON_OUTILS_PERSONNALISES_MS);
+  try {
+    const reponse = await appelerApi(`/api/mcp-personnalises/outils-interface`, { signal: controle.signal }) as { outils?: OutilRegistreBrut[] };
+    return reponse.outils ?? [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(minuterie);
+  }
+}
+
+/**
+ * `surOutilsPersonnalisesTardifs` : appelée si les outils des serveurs MCP personnels arrivent après
+ * l'affichage du menu, pour que l'appelant recharge le registre (la liste est alors prête côté serveur).
+ */
+export async function lireRegistreOutils(surOutilsPersonnalisesTardifs?: () => void) {
+  // Les deux requêtes partent en même temps : le registre officiel n'attend pas les serveurs personnels.
+  const personnalisesEnCours = lireOutilsPersonnalises();
+  const registre = await appelerApi(`/api/outils/registre`) as {
+    outils: OutilRegistreBrut[];
+    verbes_actions?: Record<string, { icone: string }>;
+    prefixes_applis?: Record<string, string>;
+  };
+  const attente = new Promise<null>((resoudre) => setTimeout(() => resoudre(null), DELAI_OUTILS_PERSONNALISES_MS));
+  const personnalises = await Promise.race([personnalisesEnCours, attente]);
+  if (personnalises === null) {
+    if (surOutilsPersonnalisesTardifs) {
+      void personnalisesEnCours.then((outils) => { if (outils.length > 0) surOutilsPersonnalisesTardifs(); });
+    }
+    return registre;
+  }
+  const noms = new Set(registre.outils.map((outil) => outil.nom));
+  return { ...registre, outils: [...registre.outils, ...personnalises.filter((outil) => !noms.has(outil.nom))] };
 }
 
 export async function lireDroitsAgent(agentId: string) {
@@ -2920,3 +2963,72 @@ export async function enregistrerSkillIndependant(skill: { nom: string; descript
 export async function supprimerSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`, { method: "DELETE" }) as Promise<{ supprime: boolean; id: string }>; }
 // Crée un nouveau skill à partir d'un zip (SKILL.md et ses fichiers texte).
 export async function importerSkillZip(fichier: File) { return appelerApiFichier("/api/skills/import-zip", fichier) as Promise<SkillIndependant>; }
+
+export type AuthTypeMcpPersonnalise = "none" | "bearer" | "oauth";
+
+export type McpPersonnalise = {
+  id: string;
+  nom: string;
+  url: string;
+  auth_type: AuthTypeMcpPersonnalise;
+  actif: boolean;
+  connecte: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type PayloadMcpPersonnalise = {
+  nom: string;
+  url: string;
+  auth_type: AuthTypeMcpPersonnalise;
+  token?: string | null;
+};
+
+export async function listerMcpPersonnalises() {
+  return appelerApi("/api/mcp-personnalises") as Promise<{ serveurs: McpPersonnalise[] }>;
+}
+
+export async function enregistrerMcpPersonnalise(payload: PayloadMcpPersonnalise, id?: string) {
+  const chemin = id
+    ? `/api/mcp-personnalises/${encodeURIComponent(id)}`
+    : "/api/mcp-personnalises";
+  return appelerApi(chemin, {
+    method: id ? "PATCH" : "POST",
+    body: JSON.stringify(payload),
+  }) as Promise<{ serveur: McpPersonnalise }>;
+}
+
+export async function definirMcpPersonnaliseActif(id: string, actif: boolean) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/actif`, {
+    method: "POST",
+    body: JSON.stringify({ actif }),
+  }) as Promise<{ actif: boolean }>;
+}
+
+export async function supprimerMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  }) as Promise<{ supprime: boolean }>;
+}
+
+export async function testerMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/tester`, {
+    method: "POST",
+  }) as Promise<{
+    connecte: boolean;
+    nombre_outils: number;
+    outils: { nom: string; description: string }[];
+  }>;
+}
+
+export async function demarrerConnexionMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/demarrer-oauth`, {
+    method: "POST",
+  }) as Promise<{ url: string }>;
+}
+
+export async function deconnecterMcpPersonnalise(id: string) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/deconnecter`, {
+    method: "POST",
+  }) as Promise<{ connecte: boolean }>;
+}
