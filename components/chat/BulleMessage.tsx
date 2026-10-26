@@ -624,6 +624,7 @@ function BulleMessageInterne({
   questionDejaRepondue,
   declencherEdition,
   onNaviguerVersion,
+  navigationVersionsBloquee,
 }: {
   message: MessageAffiche;
   onRegenerer?: () => void;
@@ -634,6 +635,10 @@ function BulleMessageInterne({
   // entrée (voir MessageAffiche.versions). ChatIA.tsx:naviguerVersion
   // fait le remplacement réel dans le tableau `messages`.
   onNaviguerVersion?: (direction: -1 | 1) => void;
+  // Vrai uniquement tant que le modele ecrit encore une reponse qui n'est pas
+  // recue en entier : les fleches sont alors grisees. Faux des que la reponse
+  // est complete, la navigation est immediate (voir ChatIA.tsx:naviguerVersion).
+  navigationVersionsBloquee?: boolean;
   // Ajouté 20/09/2026 (demande Bourama, bouton "Modifier" du bandeau
   // "Réponse interrompue" sur le message ASSISTANT suivant, voir
   // BandeauReponseInterrompue.tsx et ChatIA.tsx:modifierApresInterruption)
@@ -1355,7 +1360,7 @@ function BulleMessageInterne({
         <div className="mt-1 flex items-center gap-1 text-[11px] text-dj-texte-muet">
           <button
             onClick={() => onNaviguerVersion?.(-1)}
-            disabled={(message.versionActive ?? 0) <= 0}
+            disabled={navigationVersionsBloquee || (message.versionActive ?? 0) <= 0}
             aria-label="Version précédente"
             className="rounded-md p-1 hover:text-dj-texte disabled:opacity-30"
           >
@@ -1366,7 +1371,7 @@ function BulleMessageInterne({
           </span>
           <button
             onClick={() => onNaviguerVersion?.(1)}
-            disabled={(message.versionActive ?? 0) >= message.versions.length - 1}
+            disabled={navigationVersionsBloquee || (message.versionActive ?? 0) >= message.versions.length - 1}
             aria-label="Version suivante"
             className="rounded-md p-1 hover:text-dj-texte disabled:opacity-30"
           >
@@ -1489,7 +1494,8 @@ function memeApparence(
     precedent.outilsEnCours === suivant.outilsEnCours &&
     precedent.conversationId === suivant.conversationId &&
     precedent.questionDejaRepondue === suivant.questionDejaRepondue &&
-    precedent.declencherEdition === suivant.declencherEdition
+    precedent.declencherEdition === suivant.declencherEdition &&
+    precedent.navigationVersionsBloquee === suivant.navigationVersionsBloquee
   );
 }
 
