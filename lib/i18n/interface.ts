@@ -1799,6 +1799,8 @@ const EN: Record<string, string> = {
   "Zoom arrière": "Zoom out",
   "Formaté": "Formatted",
   "Brut": "Raw",
+  "Skill actif": "Skill enabled",
+  "Skill désactivé": "Skill disabled",
   "Sans nom": "No name",
   "Aucune description": "No description",
   "Modifier le nom": "Edit name",
