@@ -197,6 +197,12 @@ export function ChatIA({
   const tickerActifRef = useRef(false);
   const tickerIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [affichageEnCours, setAffichageEnCours] = useState(false);
+  // Vrai des que le serveur a confirme l'enregistrement de la reponse en cours
+  // (evenement "meta") : elle est alors recue en entier, meme si le flux n'est
+  // pas encore ferme et si le texte finit de s'afficher. Remis a faux au
+  // demarrage de chaque generation (reinitialiserAffichageControle). Sert a
+  // rendre la navigation entre versions immediate.
+  const [sauvegardeRecue, setSauvegardeRecue] = useState(false);
   // Étendu (15/09/2026, chantier "ligne connectrice", demande Bourama) :
   // `id`/`nomOutil` viennent de id_appel/nom_outil, ajoutés côté backend
   // sur l'événement "statut" (execution_outils.py:_traiter_appels) --
@@ -410,6 +416,7 @@ export function ChatIA({
     tickerActifRef.current = false;
     bufferAffichageRef.current = "";
     setAffichageEnCours(false);
+    setSauvegardeRecue(false);
     fileOutilsEnAttenteRef.current = [];
   }
 
@@ -733,6 +740,7 @@ export function ChatIA({
     } else if (evenement.type === "reponse_annulee") {
       annulerReponseAffichee();
     } else if (evenement.type === "meta") {
+      setSauvegardeRecue(true);
       // `evenement.modele` = modele_id brut (voir core/main.py --
       // _sauvegarder_echange renvoie desormais ce champ pour TOUTE
       // reponse, Groq/Gemini par defaut inclus). On ne resout un label
@@ -1531,27 +1539,53 @@ export function ChatIA({
   // stockée, ne touche jamais aux autres branches, ni aux versions
   // situées plus loin dans la conversation.
   function naviguerVersion(index: number, direction: -1 | 1) {
-    // Pas de navigation pendant qu'une reponse s'ecrit : la copie de la
-    // version quittee serait incomplete.
-    if (genEnCours || affichageEnCours) return;
+    // Seule une reponse que le modele est encore en train d'ecrire bloque la
+    // navigation (les fleches sont alors grisees, voir navigationVersionsBloquee).
+    // Des que la reponse est recue en entier, la navigation est immediate :
+    // elle n'attend ni la fin de l'affichage mot par mot, ni l'enregistrement.
+    if (genEnCours && !sauvegardeRecue) return;
     const message = messages[index];
     if (!message?.versions || message.versionActive === undefined) return;
-    const nouvelIndex = message.versionActive + direction;
-    // Avant de quitter la version affichee, on range son etat reel (texte
-    // complet, id, et tout ce qui a ete ecrit apres elle dans cette branche),
-    // sinon elle reapparaitrait vide ou tronquee au retour.
-    const versions = versionsAvecActiveMiseAJour(message, messages.slice(index + 1)) ?? message.versions;
-    const cible = versions[nouvelIndex];
-    if (!cible) return;
-    majMessages((prec) => [
-      ...prec.slice(0, index),
-      { ...cible.message, versions, versionActive: nouvelIndex },
-      ...cible.suite,
-    ]);
+    const idChoisi = message.versions[message.versionActive + direction]?.message.id;
+
+    // Le texte encore en attente d'affichage est ecrit d'un coup, pour que la
+    // version quittee soit rangee complete.
+    const restant = bufferAffichageRef.current;
+    if (tickerIdRef.current) clearTimeout(tickerIdRef.current);
+    tickerActifRef.current = false;
+    bufferAffichageRef.current = "";
+    setAffichageEnCours(false);
+    viderFileOutilsEnAttente();
+
+    majMessages((prec) => {
+      let base = prec;
+      if (restant) {
+        base = [...prec];
+        const dernier = base[base.length - 1];
+        base[base.length - 1] = {
+          ...dernier,
+          content: dernier.content + restant,
+          segments: segmentsAvecTexteFusionne(dernier.segments, "texte", restant),
+        };
+      }
+      const courant = base[index];
+      if (!courant?.versions || courant.versionActive === undefined) return base;
+      const nouvelIndex = courant.versionActive + direction;
+      // Avant de quitter la version affichee, on range son etat reel (texte
+      // complet, id, et tout ce qui a ete ecrit apres elle dans cette branche),
+      // sinon elle reapparaitrait vide ou tronquee au retour.
+      const versions = versionsAvecActiveMiseAJour(courant, base.slice(index + 1)) ?? courant.versions;
+      const cible = versions[nouvelIndex];
+      if (!cible) return base;
+      return [
+        ...base.slice(0, index),
+        { ...cible.message, versions, versionActive: nouvelIndex },
+        ...cible.suite,
+      ];
+    });
     // Retient ce choix cote serveur pour qu'un rechargement affiche la meme
     // version. Sans effet visible si ca echoue (invite, ou fil pas encore
     // enregistre) : l'affichage actuel ne depend pas de cette ecriture.
-    const idChoisi = cible.message.id;
     if (idChoisi !== null && idChoisi !== undefined) {
       appelerApi(`/api/historique/${agentId}/conversations/${conversationId}/version-active`, {
         method: "POST",
@@ -1927,6 +1961,7 @@ export function ChatIA({
                 conversationId={conversationId}
                 declencherEdition={index === indexAEditer ? jetonEdition : undefined}
                 onNaviguerVersion={(direction) => naviguerVersion(index, direction)}
+                navigationVersionsBloquee={genEnCours && !sauvegardeRecue}
                 // Lot 3 (chantier "question riche dans le chat", voir
                 // specs-question-riche.md) : réutilise envoyerMessage comme
                 // pour "renvoyer"/"reformuler" plus haut, la réponse
