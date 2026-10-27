@@ -1684,6 +1684,11 @@ export function ChatIA({
     // Demande traitée par ce clic : si la reprise en fait apparaître une nouvelle
     // (deuxième outil à approuver), elle doit rester affichée à la fin du flux.
     const confirmationTraitee = confirmation;
+    // Le panneau disparait des le clic (27/10/2026, demande Bourama : il restait
+    // affiche, boutons grises, pendant toute la suite de la reponse, et bougeait
+    // a chaque nouvel element ajoute au-dessus). L'etat de reprise est garde
+    // dans confirmationTraitee, la reprise ne depend plus du panneau.
+    setConfirmation(null);
     setConfirmationEnAttente(true);
     reinitialiserAffichageControle();
     setGenEnCours(true);
@@ -1692,7 +1697,7 @@ export function ChatIA({
       controleurAbandonRef.current = controleur;
       await appelerApiStream(
         "/api/chat",
-        { reprise: { etat_reprise: confirmation.etatReprise, approuve } },
+        { reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve } },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );

@@ -120,7 +120,7 @@ export function RaisonnementBulle({
         onClick={basculer}
         className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
-        <BrainCog size={13} className={enCours ? "animate-pulse text-dj-texte-muet" : ""} />
+        <BrainCog size={20} className="shrink-0 text-dj-texte" />
         <span
           className={
             enCours
