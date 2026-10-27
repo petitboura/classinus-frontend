@@ -324,7 +324,7 @@ export function BarreDeSaisie({
   const githubDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "github");
   const driveDisponiblePourAgent = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.some((a) => a.nom === "google_drive");
   // Services MCP personnels visibles dans le menu (Higgsfield, Vercel, Railway, Supabase,
-  // Microsoft, Render, Cloudflare, etc.), sous forme de chaîne stable pour les deps des effets.
+  // Render, etc.), sous forme de chaîne stable pour les deps des effets.
   const cleServicesMcpDisponibles = AFFICHER_BOUTON_APPLICATIONS
     ? applisPourAgent.filter((a) => SERVICES_MCP_OAUTH.includes(a.nom)).map((a) => a.nom).join(",")
     : "";
@@ -896,7 +896,7 @@ export function BarreDeSaisie({
     }
   }
 
-  // Connexions individuelles aux plateformes MCP (Higgsfield, Vercel, Railway, Supabase, Microsoft, Render, Cloudflare).
+  // Connexions individuelles aux plateformes MCP (Higgsfield, Vercel, Railway, Supabase, Render).
   // Les jetons restent propres à l'utilisateur côté backend.
   type EtatConnexionMcp = "chargement" | "connecte" | "deconnecte" | "a_reconnecter" | "erreur";
   const [platformMcpEtat, setPlatformMcpEtat] = useState<Record<string, EtatConnexionMcp>>({});

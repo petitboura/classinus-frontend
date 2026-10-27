@@ -479,11 +479,11 @@ export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   { nom: "google_chat_mcp", label: "Google Chat", Icone: IconeGoogleChat, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
   { nom: "google_classroom_mcp", label: "Google Classroom", Icone: IconeGoogleClassroom, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
   { nom: "google_people_mcp", label: "Google People", Icone: IconeGooglePeople, visibleDansBoutonApplications: AFFICHER_GOOGLE_WORKSPACE_APERCU, visibleDansEspaceConnexions: AFFICHER_GOOGLE_WORKSPACE_APERCU, etatDisponibilite: "apercu" },
-  { nom: "microsoft_mcp", label: "Microsoft MCP Enterprise", Icone: IconeMicrosoft, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
-  // Netlify : jeton personnel saisi dans l'écran des applications connectées, le menu du chat n'a pas de champ pour le saisir.
-  { nom: "netlify_mcp", label: "Netlify", Icone: IconeNetlify, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: true, modeConnexion: "jeton" },
+  // Microsoft, Netlify et Cloudflare : masqués partout (décision du 27/10 de Bourama), ne pas les réafficher sans sa demande explicite.
+  { nom: "microsoft_mcp", label: "Microsoft MCP Enterprise", Icone: IconeMicrosoft, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false },
+  { nom: "netlify_mcp", label: "Netlify", Icone: IconeNetlify, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false, modeConnexion: "jeton" },
   { nom: "render_mcp", label: "Render", Icone: IconeRender, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: true, modeConnexion: "jeton" },
-  { nom: "cloudflare_mcp", label: "Cloudflare", Icone: IconeCloudflare, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+  { nom: "cloudflare_mcp", label: "Cloudflare", Icone: IconeCloudflare, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false },
   // Connexions personnelles aux plateformes (20/10/2026) : le nom est celui du
   // service côté backend (api/connexions.py), il ne doit pas changer. Les
   // icônes sont les vrais logos (components/icons).
@@ -499,7 +499,7 @@ export const URL_MCP_CLASSINUS_CLAUDE = "https://api.classinus.com/mcp/espace";
 
 // Services du menu Applications du chat qui se connectent par OAuth avec le même
 // parcours générique (statut, connexion, déconnexion). GitHub, Notion et Drive ont leur
-// propre logique ; Netlify et Render passent par un jeton saisi dans l'écran des connexions.
+// propre logique ; Render passe par un jeton saisi dans l'écran des connexions.
 export const SERVICES_MCP_OAUTH: string[] = APPLIS_DISPONIBLES
   .filter((a) => a.nom.endsWith("_mcp") && a.modeConnexion !== "jeton")
   .map((a) => a.nom);

@@ -28,10 +28,10 @@ const applications = [
   ["google_chat_mcp", GOOGLE, GOOGLE],
   ["google_classroom_mcp", GOOGLE, GOOGLE],
   ["google_people_mcp", GOOGLE, GOOGLE],
-  ["microsoft_mcp", true, true],
-  ["netlify_mcp", false, true],
+  ["microsoft_mcp", false, false],
+  ["netlify_mcp", false, false],
   ["render_mcp", false, true],
-  ["cloudflare_mcp", true, true],
+  ["cloudflare_mcp", false, false],
   ["higgsfield_mcp", true, true],
   ["vercel_mcp", true, true],
   ["railway_mcp", true, true],
@@ -52,16 +52,17 @@ for (const [nom, texte] of [["catalogue", catalogue], ["espace", espace], ["aide
 assert.ok(guideClaude.includes("URL_MCP_CLASSINUS_CLAUDE"), "le guide Claude doit utiliser l'URL centralisée");
 assert.ok(barre.includes("SERVICES_MCP_OAUTH.includes(nom)"), "chaque service OAuth du menu doit déclencher une action");
 assert.ok(catalogue.includes("export const SERVICES_MCP_OAUTH"), "la liste des services OAuth du chat doit venir du catalogue");
-assert.ok(espace.includes('app.modeConnexion === "jeton"'), "Netlify doit utiliser son mode jeton personnel");
+assert.ok(espace.includes('app.modeConnexion === "jeton"'), "les services à jeton doivent ouvrir le panneau de saisie du jeton");
 const applisJeton = await lire("../lib/connexionsApplis.ts");
 assert.ok(espace.includes("jeton.enregistrer("), "le jeton personnel doit être validé côté serveur");
-assert.ok(applisJeton.includes("enregistrer: enregistrerJetonNetlify"), "Netlify doit être branché sur la validation de son jeton");
+assert.ok(!applisJeton.includes("Netlify") && !applisJeton.includes("netlify_mcp"), "Netlify est masqué : plus aucune carte ni jeton");
+assert.ok(!/Microsoft|Cloudflare/.test(applisJeton), "Microsoft et Cloudflare sont masqués : plus aucune description");
 assert.ok(applisJeton.includes("enregistrer: enregistrerJetonRender"), "Render doit être branché sur la validation de sa clé");
 
 assert.match(espace, /APPLIS_DISPONIBLES\.filter\(\(app\) => app\.visibleDansEspaceConnexions\)/);
 assert.match(barre, /APPLIS_DISPONIBLES\.filter\(\(a\) => a\.visibleDansBoutonApplications\)/);
 assert.ok(espace.includes('ligne.etat === "erreur" ? void recharger()'), "Réessayer doit actualiser le statut, pas relancer OAuth");
-assert.ok(espace.includes("ligne.message"), "les erreurs de statut doivent être visibles");
+assert.ok(espace.includes("messageStatut={lignePanneau.message}"), "les erreurs de statut doivent être visibles dans le panneau");
 assert.ok(barre.includes('if (etat === "erreur") return "Statut indisponible";'));
 assert.ok(barre.includes('[service]: "erreur"'), "une panne de statut MCP ne doit pas être interprétée comme une déconnexion");
 assert.ok(barre.includes('[service]: "deconnecte"'), "après une déconnexion réussie, l’état doit devenir Non connecté");
@@ -73,7 +74,7 @@ assert.match(api, /\/api\/connexions\/\$\{service\}\/statut/);
 assert.match(api, /\/api\/connexions\/\$\{service\}\/demarrer/);
 assert.match(api, /\/api\/connexions\/\$\{service\}\/deconnecter/);
 assert.ok(aide.includes("Google Drive n’est pas proposé dans les interfaces de connexion"));
-assert.ok(aide.includes("Netlify") && aide.includes("Render") && aide.includes("Cloudflare"), "l’aide doit citer les services ajoutés");
+assert.ok(aide.includes("Render") && !/Netlify|Cloudflare|Microsoft/.test(aide), "l’aide ne cite plus les services masqués");
 assert.ok(packageJson.includes('"test:connexions": "node tests/verifier-connexions.mjs"'));
 
 assert.ok(barre.includes(' .catch(() => setGithubConnecte(null))'.trim()), "GitHub inconnu en cas d’échec du statut");

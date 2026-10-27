@@ -1,32 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, CircleAlert, LoaderCircle, PlugZap, Unplug } from "lucide-react";
+import { CircleAlert, Unplug } from "lucide-react";
 import { APPLIS_DISPONIBLES } from "@/lib/outils";
 import { statutConnexion, demarrerConnexion, deconnecterApplication } from "@/lib/api";
-import { DESCRIPTIONS, JETONS } from "@/lib/connexionsApplis";
+import { JETONS, descriptionConnexion } from "@/lib/connexionsApplis";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { memoriserRetourConnexion, oublierRetourConnexion } from "@/lib/retourApresConnexion";
 import { ROUTES_PERSONNALISER } from "@/lib/routesPersonnaliser";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { McpPersonnalises } from "@/components/connexions/McpPersonnalises";
+import { CarteConnexion, type EtatConnexion } from "@/components/connexions/CarteConnexion";
+import { PanneauConnexion } from "@/components/connexions/PanneauConnexion";
 
-type Etat = "chargement" | "connecte" | "deconnecte" | "reconnecter" | "erreur";
-type Ligne = { etat: Etat; message?: string; action?: boolean };
+type Ligne = { etat: EtatConnexion; message?: string };
 
 // La liste des applications affichées est centralisée dans lib/outils.ts.
-// Google Drive y reste masqué selon la décision du 22/10 ; Vercel reste visible pour les tests.
+// Google Drive, Microsoft, Netlify et Cloudflare y restent masqués (décisions de Bourama) ; Vercel reste visible pour les tests.
 // Les services Google Workspace en préversion y sont masqués tant que Google n'a pas donné son accord.
 const APPLIS_AFFICHEES = APPLIS_DISPONIBLES.filter((app) => app.visibleDansEspaceConnexions);
-
-
 
 export function EspaceConnexions() {
   const [lignes, setLignes] = useState<Record<string, Ligne>>({});
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
-  const [jetons, setJetons] = useState<Record<string, string>>({});
+  const [panneau, setPanneau] = useState<string | null>(null);
 
   const recharger = useCallback(async () => {
     oublierRetourConnexion();
@@ -35,7 +34,7 @@ export function EspaceConnexions() {
     const resultats = await Promise.all(APPLIS_AFFICHEES.map(async (app) => {
       try {
         const statut = await statutConnexion(app.nom);
-        const etat: Etat = statut.a_reconnecter ? "reconnecter" : statut.connecte ? "connecte" : "deconnecte";
+        const etat: EtatConnexion = statut.a_reconnecter ? "reconnecter" : statut.connecte ? "connecte" : "deconnecte";
         return [app.nom, { etat } as Ligne] as const;
       } catch (e) {
         if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
@@ -47,38 +46,30 @@ export function EspaceConnexions() {
 
   useEffect(() => { void recharger(); }, [recharger]);
 
-  const connecter = async (service: string) => {
-    setErreur(null);
-    setEnCours(service);
+  // Les trois actions lèvent leur erreur : le panneau l'affiche, la carte la remonte dans le bandeau.
+  const enregistrerJeton = async (service: string, valeur: string) => {
     const jeton = JETONS[service];
-    if (jeton) {
-      try {
-        await jeton.enregistrer((jetons[service] ?? "").trim());
-        setLignes((avant) => ({ ...avant, [service]: { etat: "connecte" } }));
-        setJetons((avant) => ({ ...avant, [service]: "" }));
-      } catch (e) {
-        setErreur(messageErreur(e));
-      } finally {
-        setEnCours(null);
-      }
-      return;
-    }
-    try {
-      const { url } = await demarrerConnexion(service);
-      memoriserRetourConnexion({ href: ROUTES_PERSONNALISER.connexions, libelle: "à tes applications connectées" });
-      window.location.assign(url);
-    } catch (e) {
-      setErreur(messageErreur(e));
-      setEnCours(null);
-    }
+    if (!jeton) return;
+    await jeton.enregistrer(valeur);
+    setLignes((avant) => ({ ...avant, [service]: { etat: "connecte" } }));
+  };
+
+  const lancerConnexion = async (service: string) => {
+    const { url } = await demarrerConnexion(service);
+    memoriserRetourConnexion({ href: ROUTES_PERSONNALISER.connexions, libelle: "à tes applications connectées" });
+    window.location.assign(url);
   };
 
   const deconnecter = async (service: string) => {
+    await deconnecterApplication(service);
+    setLignes((avant) => ({ ...avant, [service]: { etat: "deconnecte" } }));
+  };
+
+  const depuisCarte = async (service: string, action: () => Promise<void>) => {
     setErreur(null);
     setEnCours(service);
     try {
-      await deconnecterApplication(service);
-      setLignes((avant) => ({ ...avant, [service]: { etat: "deconnecte" } }));
+      await action();
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
@@ -87,6 +78,9 @@ export function EspaceConnexions() {
   };
 
   if (sansCompte) return <CTACompteRequis texte="Connecte-toi ou crée un compte pour gérer tes applications connectées." />;
+
+  const appPanneau = APPLIS_AFFICHEES.find((app) => app.nom === panneau);
+  const lignePanneau = appPanneau ? lignes[appPanneau.nom] ?? { etat: "chargement" as const } : null;
 
   return (
     <section className="flex flex-col gap-4">
@@ -97,69 +91,45 @@ export function EspaceConnexions() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {APPLIS_AFFICHEES.map((app) => {
           const ligne = lignes[app.nom] ?? { etat: "chargement" as const };
-          const Icone = app.Icone;
-          const occupée = enCours === app.nom;
           const connecte = ligne.etat === "connecte";
+          const occupee = enCours === app.nom;
           return (
-            <article key={app.nom} className="flex min-h-40 flex-col justify-between gap-4 rounded-2xl border border-dj-bordure bg-dj-surface p-4">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte"><Icone size={18} /></span>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-dj-texte">{app.label}</h3>
-                    {app.etatDisponibilite === "apercu" && (
-                      <span className="rounded-full border border-dj-bordure px-2 py-0.5 text-[10px] text-dj-texte-muet">Préversion développeur</span>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-sm leading-6 text-dj-texte-muet">{DESCRIPTIONS[app.nom] ?? "Relie ce service à Classinus pour utiliser les fonctionnalités autorisées depuis ton compte."}</p>
-                </div>
-              </div>
-              {app.modeConnexion === "jeton" && !connecte && (
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={"jeton-" + app.nom} className="text-xs font-semibold text-dj-texte">{JETONS[app.nom]?.champ}</label>
-                  <input
-                    id={"jeton-" + app.nom}
-                    type="password"
-                    autoComplete="off"
-                    value={jetons[app.nom] ?? ""}
-                    onChange={(event) => setJetons((avant) => ({ ...avant, [app.nom]: event.target.value }))}
-                    placeholder={JETONS[app.nom]?.placeholder}
-                    className="w-full rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
-                  />
-                  <p className="text-xs leading-5 text-dj-texte-muet">
-                    Crée-en une dans <a href={JETONS[app.nom]?.lien} target="_blank" rel="noreferrer" className="underline">{JETONS[app.nom]?.libelleLien}</a>. Elle sera stockée côté serveur pour ton compte Classinus.
-                  </p>
-                </div>
+            <CarteConnexion
+              key={app.nom}
+              app={app}
+              description={descriptionConnexion(app.nom)}
+              etat={ligne.etat}
+              onVoirPlus={() => setPanneau(app.nom)}
+              actions={connecte ? (
+                <button type="button" onClick={() => void depuisCarte(app.nom, () => deconnecter(app.nom))} disabled={!!enCours} className="inline-flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50">
+                  <Unplug size={14} />{occupee ? "Déconnexion…" : "Déconnecter"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => app.modeConnexion === "jeton" ? setPanneau(app.nom) : ligne.etat === "erreur" ? void recharger() : void depuisCarte(app.nom, () => lancerConnexion(app.nom))}
+                  disabled={!!enCours || ligne.etat === "chargement"}
+                  className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                >
+                  {occupee ? "Connexion…" : ligne.etat === "reconnecter" ? "Reconnecter" : ligne.etat === "erreur" && app.modeConnexion !== "jeton" ? "Réessayer le statut" : "Connecter"}
+                </button>
               )}
-              <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-1.5 text-xs text-dj-texte-muet">
-                  {ligne.etat === "chargement" ? <LoaderCircle size={14} className="animate-spin" /> : connecte ? <Check size={14} className="text-emerald-500" /> : ligne.etat === "erreur" || ligne.etat === "reconnecter" ? <CircleAlert size={14} /> : <PlugZap size={14} />}
-                  {ligne.etat === "chargement" ? "Vérification…" : connecte ? "Connecté" : ligne.etat === "reconnecter" ? "Reconnexion nécessaire" : ligne.etat === "erreur" ? "Statut indisponible" : "Non connecté"}
-                </span>
-                {connecte ? (
-                  <button type="button" onClick={() => void deconnecter(app.nom)} disabled={!!enCours} className="inline-flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50">
-                    <Unplug size={14} />{occupée ? "Déconnexion…" : "Déconnecter"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => app.modeConnexion === "jeton" ? void connecter(app.nom) : ligne.etat === "erreur" ? void recharger() : void connecter(app.nom)}
-                    disabled={!!enCours || ligne.etat === "chargement" || connecte || (app.modeConnexion === "jeton" && !(jetons[app.nom] ?? "").trim())}
-                    className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
-                  >
-                    {occupée ? "Connexion…" : app.modeConnexion === "jeton" && !connecte ? "Valider" : ligne.etat === "reconnecter" ? "Reconnecter" : connecte ? "Connecté" : ligne.etat === "erreur" ? "Réessayer le statut" : "Connecter"}
-                  </button>
-                )}
-              </div>
-              {ligne.etat === "erreur" && ligne.message && (
-                <p role="status" aria-live="polite" className="text-xs leading-5 text-[var(--dj-erreur)]">
-                  {ligne.message}
-                </p>
-              )}
-            </article>
+            />
           );
         })}
       </div>
+      {appPanneau && lignePanneau && (
+        <PanneauConnexion
+          app={appPanneau}
+          description={descriptionConnexion(appPanneau.nom)}
+          etat={lignePanneau.etat}
+          messageStatut={lignePanneau.message}
+          onFermer={() => setPanneau(null)}
+          onJeton={appPanneau.modeConnexion === "jeton" ? (valeur) => enregistrerJeton(appPanneau.nom, valeur) : undefined}
+          onConnecter={() => lancerConnexion(appPanneau.nom)}
+          onDeconnecter={() => deconnecter(appPanneau.nom)}
+        />
+      )}
       <McpPersonnalises />
       <p className="text-xs leading-5 text-dj-texte-muet">Déconnecter Classinus ne révoque pas toujours l’autorisation chez le fournisseur. Pour retirer totalement l’accès, consulte aussi les paramètres de sécurité du service concerné.</p>
     </section>

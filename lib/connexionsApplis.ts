@@ -1,4 +1,4 @@
-import { enregistrerJetonNetlify, enregistrerJetonRender } from "@/lib/api";
+import { enregistrerJetonRender } from "@/lib/api";
 
 // Textes des cartes de connexion, partagés entre l'écran Connexions et la carte proposée dans le
 // chat (components/chat/CarteConnecteur.tsx) : une seule source, les deux cartes disent la même chose.
@@ -7,14 +7,6 @@ import { enregistrerJetonNetlify, enregistrerJetonRender } from "@/lib/api";
 export type JetonService = { nom: string; champ: string; placeholder: string; lien: string; libelleLien: string; enregistrer: (jeton: string) => Promise<unknown> };
 
 export const JETONS: Record<string, JetonService> = {
-  netlify_mcp: {
-    nom: "Netlify",
-    champ: "Jeton personnel Netlify",
-    placeholder: "Colle ton jeton Netlify",
-    lien: "https://app.netlify.com/user/applications#personal-access-tokens",
-    libelleLien: "les paramètres de Netlify",
-    enregistrer: enregistrerJetonNetlify,
-  },
   render_mcp: {
     nom: "Render",
     champ: "Clé personnelle Render",
@@ -38,12 +30,14 @@ export const DESCRIPTIONS: Record<string, string> = {
   google_chat_mcp: "Serveur MCP Google Chat officiel : consulter les espaces, conversations et messages autorisés et envoyer des messages si l’application Chat est configurée.",
   google_classroom_mcp: "Serveur MCP Google Classroom : consulter les cours, listes d’élèves et travaux accessibles selon les scopes et l’accès de ton compte.",
   google_people_mcp: "Serveur MCP Google People : consulter les profils et contacts couverts par les autorisations Google accordées.",
-  microsoft_mcp: "Microsoft MCP Server for Enterprise est en préversion. Il permet d’interroger certaines données d’entreprise Microsoft Entra/Graph ; une inscription d’application et les autorisations du locataire sont nécessaires. Ce n’est pas une intégration autonome complète d’Outlook, Teams ou OneDrive.",
-  netlify_mcp: "Pont MCP Classinus vers l’API REST officielle Netlify : lister les sites et déploiements, consulter leur état et relancer un build. Le jeton personnel est vérifié puis conservé côté serveur, séparément pour ton compte.",
   render_mcp: "Serveur MCP officiel Render : explorer les services, déploiements et journaux accessibles à ton compte. Tu colles ta clé personnelle Render, vérifiée puis conservée côté serveur pour ton compte. Les actions qui modifient un service ou déclenchent un déploiement demandent une confirmation.",
-  cloudflare_mcp: "Serveur MCP officiel Cloudflare : rechercher la documentation et interagir avec les ressources Cloudflare autorisées par ton compte, selon les outils proposés par le serveur.",
   higgsfield_mcp: "Autorise Classinus à utiliser les fonctionnalités Higgsfield disponibles via son serveur MCP, avec ton propre compte.",
   vercel_mcp: "Permets à Classinus d’interagir avec tes projets et déploiements Vercel selon les accès que tu accordes.",
   railway_mcp: "Permets à Classinus d’interagir avec tes projets et services Railway selon les autorisations de ton compte.",
   supabase_mcp: "Permets à Classinus d’interagir avec tes projets Supabase sans partager tes identifiants avec d’autres utilisateurs.",
 };
+
+// Texte de la carte et du panneau d'une application ; repli commun quand aucune description n'est définie.
+export function descriptionConnexion(nom: string): string {
+  return DESCRIPTIONS[nom] ?? "Relie ce service à Classinus pour utiliser les fonctionnalités autorisées depuis ton compte.";
+}

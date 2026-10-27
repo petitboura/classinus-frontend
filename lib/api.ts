@@ -2933,17 +2933,6 @@ export async function supprimerSignalementPedagogique(signalementId: string) {
 
 
 /**
- * Enregistre le jeton personnel Netlify de la personne connectée. Le serveur le
- * vérifie auprès de Netlify avant de le conserver ; il n'est jamais renvoyé.
- */
-export async function enregistrerJetonNetlify(token: string) {
-  return appelerApi("/api/connexions/netlify_mcp/jeton", {
-    method: "POST",
-    body: JSON.stringify({ token }),
-  }) as Promise<{ connecte: boolean }>;
-}
-
-/**
  * Enregistre la clé personnelle Render de la personne connectée. Le serveur la
  * vérifie auprès de Render avant de la conserver ; elle n'est jamais renvoyée.
  */
