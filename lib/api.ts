@@ -1356,6 +1356,29 @@ export async function uploaderMediaChat(fichier: File) {
 }
 
 /**
+ * Document ou fichier joint à un message de chat (PDF, Word, Excel, PowerPoint, texte, code...) :
+ * le serveur enregistre le fichier et renvoie ses informations
+ * (api/uploads.py:uploader_fichier_chat), sans en lire le contenu (27/10/2026, demande
+ * Bourama). C'est le modèle qui décide ensuite de le lire (lire_document_conversation) ou de
+ * le copier dans l'espace d'exécution de code. `resume` est un texte prêt à afficher (type,
+ * taille, nombre de pages). Les images, vidéos, audios et zips ont leurs propres routes.
+ */
+export async function uploaderFichierChat(fichier: File) {
+  const resultat = await appelerApiFichier("/api/uploads/fichier-chat", fichier);
+  return resultat as {
+    url: string;
+    nom: string;
+    famille: string;
+    taille_octets: number;
+    pages: number | null;
+    unite: string | null;
+    feuilles: string[] | null;
+    resume: string;
+    url_apercu: string | null;
+  };
+}
+
+/**
  * Upload d'une source pour l'atelier de montage vidéo contextuel.
  * Le fichier reste dans l'espace temporaire de cette conversation ; cette
  * route ne lance ni transcription, ni analyse de frames par défaut.

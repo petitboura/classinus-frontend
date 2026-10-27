@@ -4,7 +4,8 @@
 // ajoutés au message ([Image jointe : ...], [Document joint : ...], etc.).
 // Le contenu des commentaires est inchangé, seule la place du code a bougé.
 
-import { uploaderImageChat, uploaderDocumentChat, uploaderMediaChat } from "@/lib/api";
+import { uploaderImageChat, uploaderDocumentChat, uploaderFichierChat, uploaderMediaChat } from "@/lib/api";
+import { ErreurApi } from "@/lib/erreurs";
 
 export type TypeFichierJoint = "image" | "document" | "video" | "audio" | "zip";
 
@@ -59,25 +60,44 @@ export function traiterFichiersJoints(fichiers: File[]): Promise<PromiseSettledR
         // fichier n'est injecté dans le message visible.
         return { texteBloc: `\n\n[Archive jointe : ${fichier.name}]` };
       }
-      const { texte: texteDocument, tronque, lisible, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
-      const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";
-      // Aperçu PDF (25/07) : lien séparé, volontairement en .pdf --
-      // FichierChip.tsx détecte l'extension et affiche automatiquement
-      // le visualiseur PDF intégré pour ce lien, sans aucun changement
-      // nécessaire dans FichierChip.tsx lui-même (voir core/conversion_pdf.py).
-      const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
-      // Fichier accepté mais dont le contenu n'a pas pu être lu (binaire
-      // inconnu, ancien format sans conversion) : le serveur le garde, et
-      // le modèle est prévenu pour l'expliquer à l'étudiant au lieu de
-      // croire qu'il a lu quelque chose.
-      if (!lisible) {
+      // Document (27/10/2026, demande Bourama) : comme une vidéo ou un audio, il n'est plus
+      // lu à l'envoi. Seules ses informations et son lien réel partent dans le message, et
+      // c'est le modèle qui décide de le lire (lire_document_conversation) ou de le copier
+      // dans l'espace d'exécution de code. Le chip du message ne lit que le nom et le lien
+      // (BulleMessage.tsx, extraireUneBloc), et le texte « Contenu non lu » est ce que
+      // le serveur reconnaît pour brancher l'outil (core/lecture_document_conversation.py).
+      try {
+        const { url, resume, url_apercu: urlApercu } = await uploaderFichierChat(fichier);
+        // Aperçu PDF (25/07) : lien séparé, volontairement en .pdf, FichierChip.tsx affiche
+        // automatiquement le visualiseur PDF intégré pour ce lien.
+        const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
         return {
-          texteBloc: `\n\n[Document joint : ${fichier.name} (illisible)]\nLe contenu de ce fichier n'a pas pu être lu, seul son nom est connu.${lienDocument}`,
+          texteBloc: `\n\n[Document joint : ${fichier.name}]\nContenu non lu (${resume}).\n[Lien réel du fichier : ${url}]${lienApercu}`,
         };
+      } catch (erreur) {
+        // Repli pendant un déploiement : si le serveur n'a pas encore la nouvelle route
+        // (404), on garde l'ancien chemin, qui lit le document à l'envoi.
+        if (erreur instanceof ErreurApi && erreur.statusCode === 404) {
+          return blocDocumentLuALEnvoi(fichier);
+        }
+        throw erreur;
       }
-      return {
-        texteBloc: `\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`,
-      };
     })
   );
+}
+
+// Ancien chemin, gardé comme repli (voir plus haut) : le serveur extrait le texte du document
+// DÈS l'envoi et ce texte part dans le message.
+async function blocDocumentLuALEnvoi(fichier: File): Promise<ResultatFichierJoint> {
+  const { texte: texteDocument, tronque, lisible, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
+  const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";
+  const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
+  if (!lisible) {
+    return {
+      texteBloc: `\n\n[Document joint : ${fichier.name} (illisible)]\nLe contenu de ce fichier n'a pas pu être lu, seul son nom est connu.${lienDocument}`,
+    };
+  }
+  return {
+    texteBloc: `\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`,
+  };
 }
