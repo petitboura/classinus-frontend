@@ -144,7 +144,7 @@ math-field {
   --dj-gradient: linear-gradient(135deg, #e3b341 0%, #b8860b 55%, #6b5416 100%);
   --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(184, 134, 11, 0.1), transparent 60%);
   --dj-shimmer: linear-gradient(100deg, rgba(28, 26, 22, 0.03) 20%, rgba(107, 103, 94, 0.35) 50%, rgba(28, 26, 22, 0.03) 80%);
-  --dj-shimmer-texte: linear-gradient(100deg, #6b675e 25%, #b3afa3 50%, #6b675e 75%);
+  --dj-shimmer-texte: linear-gradient(100deg, #9a968b 38%, #1c1a16 50%, #9a968b 62%);
   --dj-erreur: #dc2626;
 }
 
@@ -301,7 +301,7 @@ math-field {
     --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
     --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
     --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
-    --dj-shimmer-texte: linear-gradient(100deg, #9a9184 25%, #c7bfae 50%, #9a9184 75%);
+    --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
     --dj-erreur: #f87171;
   }
 }
@@ -333,7 +333,7 @@ math-field {
   --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
   --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
   --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
-  --dj-shimmer-texte: linear-gradient(100deg, #9a9184 25%, #c7bfae 50%, #9a9184 75%);
+  --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
   --dj-erreur: #f87171;
 }
 

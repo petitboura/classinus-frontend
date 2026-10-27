@@ -166,29 +166,29 @@ export function LigneOutil({
   // Icone de l'outil, la meme pendant l'execution et a la fin (27/10/2026, demande
   // Bourama) : plus de rond qui tourne, seul le texte scintille (shimmer). Couleur
   // exacte de la marque quand on la connait (lib/couleursIcones.ts), sinon couleur
-  // pleine du texte du theme, plus la teinte attenuee d'avant. Tailles agrandies :
-  // les anciennes (13 px, badges de 8 a 10 px) etaient quasi invisibles.
+  // pleine du texte du theme, plus la teinte attenuee d'avant. Tailles d'origine
+  // conservees : c'est le shimmer qui est rendu plus visible, pas les icones.
   const couleur = couleurMarque(Icone);
   const iconeOutil = (
     <>
       {logoUnique ? (
-        <LogoSite domaine={logoUnique} size={20} />
+        <LogoSite domaine={logoUnique} size={13} />
       ) : (
-        <Icone size={20} className={couleur ? undefined : "text-dj-texte"} style={couleur ? { color: couleur } : undefined} />
+        <Icone size={13} className={couleur ? undefined : "text-dj-texte"} style={couleur ? { color: couleur } : undefined} />
       )}
       {logoLangage ? (
         // Logo du langage lance (24/10/2026, demande Bourama), pose dans le coin de
         // l'icone Play a la place de la petite icone d'action.
         <span
           title={logoLangage.nom}
-          className="absolute -bottom-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-[4px] bg-dj-fond"
+          className="absolute -bottom-1.5 -right-2 flex h-3 w-3 items-center justify-center rounded-[3px] bg-dj-fond"
         >
-          <logoLangage.Icone size={14} />
+          <logoLangage.Icone size={10} />
         </span>
       ) : (
         SousIcone && (
-          <span className="absolute -bottom-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-dj-fond">
-            <SousIcone size={12} className="text-dj-texte" />
+          <span className="absolute -bottom-1 -right-1.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-dj-fond">
+            <SousIcone size={8} className="text-dj-texte" />
           </span>
         )
       )}
@@ -197,13 +197,13 @@ export function LigneOutil({
 
   return (
     <div className={`flex gap-2.5 ${demarreEnFinal ? "animate-dj-fade-in" : "animate-dj-fade-in-rapide"}`}>
-      <div className="flex w-6 flex-col items-center">
-        <div className="relative h-6 w-6 shrink-0">
+      <div className="flex w-4 flex-col items-center">
+        <div className="relative mt-0.5 h-4 w-4 shrink-0">
           <span className={couche(phase === "en_cours")} aria-hidden={phase !== "en_cours"}>
             {iconeOutil}
           </span>
           <span className={couche(phase === "effectuee")} aria-hidden={phase !== "effectuee"}>
-            <CheckCircle2 size={20} className="text-dj-succes" />
+            <CheckCircle2 size={16} className="text-dj-succes" />
           </span>
           <span className={couche(phase === "final")} aria-hidden={phase !== "final"}>
             {iconeOutil}
@@ -223,7 +223,7 @@ export function LigneOutil({
 
       <div className={`min-w-0 flex-1 ${estDerniere ? "" : "pb-3"}`}>
         {phase !== "final" ? (
-          <span key={phase} className="flex min-h-6 animate-dj-fade-in-rapide items-center gap-x-2 text-[13px] text-dj-texte-muet">
+          <span key={phase} className="flex animate-dj-fade-in-rapide items-center gap-x-2 text-[13px] text-dj-texte-muet">
             <span
               className={
                 phase === "en_cours"
@@ -237,7 +237,7 @@ export function LigneOutil({
           </span>
         ) : (
           <div className={demarreEnFinal ? "" : "animate-dj-fade-in-rapide"}>
-            <div className="flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <button
                 onClick={() => setOuvert((precedent) => !precedent)}
                 className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"

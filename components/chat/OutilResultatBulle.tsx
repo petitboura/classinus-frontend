@@ -316,7 +316,7 @@ export function OutilResultatBulle({
         onClick={() => setGroupeOuvertManuel(!groupeOuvert)}
         className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
-        <Layers size={20} className="text-dj-texte" />
+        <Layers size={13} className="text-dj-texte" />
         <span>
           {lignes.length} outil{lignes.length > 1 ? "s" : ""} utilisé{lignes.length > 1 ? "s" : ""}
           {nbLignesEnCours > 0 ? ` (${nbLignesEnCours} en cours)` : ""}
