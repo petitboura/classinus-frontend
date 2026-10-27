@@ -47,7 +47,7 @@ function construireDefinition(fiche: FicheCarteMentaleData): string {
 
 export function FicheCarteMentale({ fiche }: { fiche: FicheCarteMentaleData }) {
   return (
-    <BlocLarge className="my-3 animate-dj-fade-in overflow-x-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
+    <BlocLarge className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur text-dj-accent-1-texte">
           <Network size={14} />

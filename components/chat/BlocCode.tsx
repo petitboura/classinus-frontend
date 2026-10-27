@@ -187,9 +187,9 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
   }
 
   const blocPre = (
-    <pre className="overflow-x-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
+    <pre className="whitespace-pre-wrap px-4 py-3 font-mono text-[13px] leading-relaxed [overflow-wrap:anywhere]">
       <code
-        className={`hljs language-${langage || "plaintext"}`}
+        className={`hljs whitespace-pre-wrap language-${langage || "plaintext"}`}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </pre>

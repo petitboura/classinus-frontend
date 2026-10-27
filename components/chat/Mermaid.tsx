@@ -150,7 +150,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
         )}
         <div
           ref={zoneDiagrammeRef}
-          className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-[var(--largeur-naturelle,100%)] [&_svg]:!min-w-full [&_svg]:!max-w-none [&_svg]:!h-auto [&_svg]:min-h-[160px]"
+          className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-[var(--largeur-naturelle,100%)] [&_svg]:!min-w-full [&_svg]:!max-w-full [&_svg]:!h-auto [&_svg]:min-h-[160px]"
           style={{ "--largeur-naturelle": `${largeurNaturelle(svg)}px` } as CSSProperties}
           dangerouslySetInnerHTML={{ __html: svg }}
         />
@@ -167,7 +167,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
             {sourceAffichee ? "Masquer" : "Voir"} le code source
           </button>
           {sourceAffichee && (
-            <pre className="overflow-x-auto rounded-lg bg-[var(--dj-fond)] px-3 py-2 font-mono text-[12px] text-dj-texte-muet">
+            <pre className="whitespace-pre-wrap rounded-lg bg-[var(--dj-fond)] px-3 py-2 font-mono text-[12px] text-dj-texte-muet [overflow-wrap:anywhere]">
               {definition}
             </pre>
           )}
@@ -185,7 +185,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
 function Enveloppe({ sansCadre, children }: { sansCadre: boolean; children: ReactNode }) {
   if (sansCadre) return <div>{children}</div>;
   return (
-    <BlocLarge className="my-3 overflow-x-auto rounded-xl border border-dj-bordure bg-dj-surface p-4">
+    <BlocLarge className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4">
       {children}
     </BlocLarge>
   );

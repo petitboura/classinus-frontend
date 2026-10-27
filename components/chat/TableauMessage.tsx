@@ -4,6 +4,9 @@ import { useLayoutEffect, useMemo, useRef, useState, Children, isValidElement, R
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { StickyTableHeader } from "vh-sticky-table-header";
 import { BlocLarge } from "./BlocLarge";
+import { CartesTableau, type LigneCarte } from "./CartesTableau";
+import { useEstDesktop } from "@/lib/useEstDesktop";
+import { modeTableau } from "@/lib/lisibilite";
 
 // Remplace le <table> par défaut de ReactMarkdown (issu de remarkGfm) pour
 // permettre le tri par colonne -- seul point du bloc "Tableaux de
@@ -43,9 +46,11 @@ function texteDe(node: ReactNode): string {
 function TableConteneur({
   className,
   enfants,
+  large,
 }: {
   className: string;
   enfants: ReactNode;
+  large: boolean;
 }) {
   const tableRef = useRef<HTMLTableElement>(null);
   const cloneRef = useRef<HTMLTableElement>(null);
@@ -61,23 +66,24 @@ function TableConteneur({
   }, []);
 
   return (
-    <BlocLarge className="my-2">
+    <BlocLarge className="my-2" actif={large}>
       {/* overflow-y: hidden explicite -- exigence documentée de la
           librairie pour que le scroll horizontal fonctionne correctement
           avec elle (voir README, section Requirements). */}
-      <div className={className} style={{ overflowX: "auto", overflowY: "hidden" }}>
-        <table ref={tableRef} className="w-full border-collapse">
+      <div className={className} style={{ overflowX: "hidden", overflowY: "hidden" }}>
+        <table ref={tableRef} className="w-full border-collapse [&_td]:[overflow-wrap:anywhere] [&_th]:[overflow-wrap:anywhere]">
           {enfants}
         </table>
       </div>
-      <div className={className} style={{ overflowX: "auto", overflowY: "hidden" }}>
-        <table ref={cloneRef} className="w-full border-collapse" />
+      <div className={className} style={{ overflowX: "hidden", overflowY: "hidden" }}>
+        <table ref={cloneRef} className="w-full border-collapse [&_th]:[overflow-wrap:anywhere]" />
       </div>
     </BlocLarge>
   );
 }
 
 export function TableauMessage({ children }: { children: ReactNode }) {
+  const estDesktop = useEstDesktop();
   const [colonneTri, setColonneTri] = useState<number | null>(null);
   const [ordreDesc, setOrdreDesc] = useState(false);
 
@@ -115,6 +121,35 @@ export function TableauMessage({ children }: { children: ReactNode }) {
     return copie;
   }, [lignes, colonneTri, ordreDesc]);
 
+  // Regle de lisibilite (lib/lisibilite.ts) : jamais de defilement
+  // horizontal. Trop de colonnes pour l'ecran -> une carte par ligne.
+  // Le tri par colonne n'existe pas dans ce mode.
+  const mode = modeTableau(entetes.length, estDesktop);
+  if (mode === "cartes" && thead && tbody) {
+    const libelles = entetes.map((entete) => texteDe(entete).trim());
+    const cartes: LigneCarte[] = lignes.flatMap((ligne) => {
+      if (!isValidElement(ligne)) return [];
+      const cellules = Children.toArray((ligne.props as { children?: ReactNode }).children);
+      const contenu = (cellule: ReactNode) =>
+        isValidElement(cellule) ? (cellule.props as { children?: ReactNode }).children : cellule;
+      return [
+        {
+          titre: contenu(cellules[0]),
+          champs: cellules.slice(1).map((cellule, i) => ({
+            libelle: libelles[i + 1] || "",
+            contenu: contenu(cellule),
+          })),
+        },
+      ];
+    });
+    return (
+      <div className="my-2">
+        <CartesTableau lignes={cartes} />
+      </div>
+    );
+  }
+  const large = mode === "large";
+
   // Structure inattendue (pas de thead/tbody standard) -> rendu passthrough,
   // fidèle à ce que produisait le composant table par défaut.
   if (!thead || !tbody) {
@@ -122,6 +157,7 @@ export function TableauMessage({ children }: { children: ReactNode }) {
       <TableConteneur
         className="rounded-lg border border-dj-bordure [&_th]:border [&_th]:border-dj-bordure [&_th]:bg-dj-surface-haute [&_th]:px-2.5 [&_th]:py-1.5 [&_td]:border [&_td]:border-dj-bordure [&_td]:px-2.5 [&_td]:py-1.5 [&_tbody_tr:nth-child(even)]:bg-dj-surface"
         enfants={children}
+        large={large}
       />
     );
   }
@@ -137,6 +173,7 @@ export function TableauMessage({ children }: { children: ReactNode }) {
 
   return (
     <TableConteneur
+      large={large}
       className="rounded-lg border border-dj-bordure [&_td]:border [&_td]:border-dj-bordure [&_td]:px-2.5 [&_td]:py-1.5 [&_tbody_tr:nth-child(even)]:bg-dj-surface [&_tbody_tr:hover]:bg-dj-surface-haute"
       enfants={
         <>

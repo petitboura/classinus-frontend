@@ -21,8 +21,18 @@ import type { FicheFormulesData } from "./FicheRevision";
 // l'affichage), displayMode true (formule seule sur sa ligne, pas
 // entourée de texte).
 function rendreExpressionKatex(latex: string): string {
+  // Le LLM ecrit parfois les apostrophes de derivee en caracteres Unicode
+  // (U+2032, U+2033) que KaTeX ne connait pas : elles s'affichaient comme
+  // une barre penchee ("u/" au lieu de u'). On les ramene a l'apostrophe
+  // LaTeX, que KaTeX transforme en vrai prime.
+  const nettoye = latex.replace(/\u2033/g, "''").replace(/\u2032/g, "'");
   try {
-    return katex.renderToString(latex, { throwOnError: false, displayMode: true });
+    // displayMode false + \displaystyle : meme taille de formule qu'en mode
+    // centre (limites des sommes et integrales au-dessus et en dessous), mais
+    // KaTeX autorise alors le retour a la ligne apres un "=" ou un "+" au
+    // lieu de forcer une seule ligne qui defile (le CSS de KaTeX interdit le
+    // retour a la ligne seulement dans .katex-display).
+    return katex.renderToString("\\displaystyle " + nettoye, { throwOnError: false, displayMode: false });
   } catch {
     return latex;
   }
@@ -42,7 +52,7 @@ export function FicheFormules({ fiche }: { fiche: FicheFormulesData }) {
           <div key={index} className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute p-3">
             <p className="text-xs font-medium text-dj-texte-muet">{item.nom}</p>
             <div
-              className="mt-1 overflow-x-auto text-sm text-dj-texte"
+              className="mt-1 overflow-x-auto text-center text-sm text-dj-texte"
               dangerouslySetInnerHTML={{ __html: rendreExpressionKatex(item.expression) }}
             />
             {item.description && <p className="mt-1.5 text-xs text-dj-texte-muet">{item.description}</p>}
