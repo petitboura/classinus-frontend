@@ -1,3 +1,22 @@
+const { existsSync } = require('node:fs');
+const { join } = require('node:path');
+
+// Relais téléphone embarqué (28/10/2026, demande Bourama, décision D31) :
+// le workflow publier-pc.yml construit Relais-Class-Tech.exe depuis le dépôt
+// class-tech et le pose avec reglages.json par défaut dans
+// electron/relais-dist. Ce dossier part dans l'installeur sous
+// resources/relais, d'où electron/relais.ts le recopie dans userData/relais
+// à chaque lancement. Absent en local (pas de construction du relais) : on
+// construit l'installeur sans lui plutôt que d'échouer.
+const dossierRelaisDist = join(__dirname, 'relais-dist');
+const avecRelais = existsSync(join(dossierRelaisDist, 'Relais-Class-Tech.exe'));
+if (!avecRelais) {
+  console.warn(
+    'Sans relais téléphone : electron/relais-dist/Relais-Class-Tech.exe absent, ' +
+      "l'installeur sort sans lui (normal en local, voir docs/appli-pc-mise-a-jour-et-publication.md)."
+  );
+}
+
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId: 'com.classinus.app',
@@ -18,6 +37,7 @@ module.exports = {
     // Platform runtime + plugins, prepared by `capacitor-electron vendor`.
     { from: 'vendor/node_modules', to: 'node_modules' },
   ],
+  ...(avecRelais ? { extraResources: [{ from: 'relais-dist', to: 'relais' }] } : {}),
   // Appli PC Windows (19/10/2026, demande Bourama : mise à jour automatique et
   // publication). Installeur NSIS par utilisateur, sans droits administrateur,
   // pour que les mises à jour se fassent sans fenêtre de confirmation Windows.

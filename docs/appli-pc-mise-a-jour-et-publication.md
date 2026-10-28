@@ -23,6 +23,19 @@ de Classinus et la mettre à jour toute seule, et ce qu'il reste à faire à la 
   publie l'installeur dans les releases du dépôt public `petitboura/classinus-updates-pc`.
   L'appli installée lit ces releases : aucun jeton n'est embarqué dans l'appli.
 - **Test** : `npm run test:mise-a-jour-pc` (noyau de mise à jour, sans Electron).
+- **Relais téléphone embarqué** (28/10/2026, décision D31) : le workflow
+  construit `Relais-Class-Tech.exe` depuis le dépôt `class-tech` (Python +
+  PyInstaller) et l'embarque dans l'installeur avec ses réglages par défaut
+  (`electron/relais-dist`, puis `resources/relais` dans l'appli installée).
+  Au lancement, `electron/relais.ts` recopie l'exe neuf dans
+  `userData/relais` et y pose `reglages.json` seulement au premier lancement
+  (les réglages de l'étudiant survivent aux mises à jour). Le plugin
+  `RelaisPc` (`packages/capacitor-relais-pc-electron`, `lib/relaisPc.ts`)
+  lance et arrête l'exe sans fenêtre console, lit sa page de santé locale, et
+  l'arrête avec l'appli. La carte « Relais téléphone »
+  (`components/RelaisPcCarte.tsx`), dans Paramètres, Préférences, à côté de
+  la carte de mise à jour, montre l'état et les boutons Lancer, Arrêter et
+  Page de santé. Test : `npm run test:relais-pc` (noyau, sans Electron).
 
 ## À faire une seule fois (toi)
 
@@ -35,6 +48,12 @@ de Classinus et la mettre à jour toute seule, et ce qu'il reste à faire à la 
    - vérifier que les variables `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
      `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `NEXT_PUBLIC_APP_URL` existent déjà (ce sont
      celles de l'OTA mobile) et valent bien la **production**.
+4. **Créer un jeton GitHub limité à la lecture du dépôt `class-tech`**
+   (28/10/2026, relais embarqué : jeton à granularité fine, dépôt `class-tech`,
+   permission « Contents : Read only »), puis l'ajouter comme secret
+   `CLASS_TECH_LECTURE` dans `classinus-frontend` (même endroit). Le workflow
+   en a besoin pour récupérer le relais avant de le construire. Sans lui, la
+   publication s'arrête au contrôle de configuration, avant tout build.
 
 ## Publier une version
 
@@ -77,6 +96,7 @@ npm --prefix packages/capacitor-dossiers-electron run build
 npm --prefix packages/capacitor-pont-natif-electron run build
 npm --prefix packages/capacitor-superposition-electron run build
 npm --prefix packages/capacitor-mise-a-jour-pc-electron run build
+npm --prefix packages/capacitor-relais-pc-electron run build
 cd electron
 npm install
 npm run pack
@@ -85,6 +105,15 @@ npm run pack
 `npm run pack` ne publie jamais (option `--publish never`). L'installeur est dans
 `electron/dist`. Rappel : pour tes tests contre le backend de test, utiliser
 `npm run build:capacitor:test` à la place de `npm run build:capacitor`.
+
+Sans relais construit localement, l'installeur sort SANS le relais (un
+avertissement le dit pendant le build) et la carte Paramètres affiche
+« Le relais téléphone n'est pas dans cette installation de Classinus ».
+Pour tester le relais en local : depuis le dépôt `class-tech`,
+`python relais/construire_exe.py` (avec PyInstaller et
+`backend/requirements.txt` installés), puis copier
+`dist-1clic/Relais-Class-Tech.exe` et `relais/reglages.json` dans
+`electron/relais-dist` avant `npm run pack`.
 
 ## Si une version est mauvaise
 
