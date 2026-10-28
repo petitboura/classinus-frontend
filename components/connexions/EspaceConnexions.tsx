@@ -16,7 +16,7 @@ import { PanneauConnexion } from "@/components/connexions/PanneauConnexion";
 type Ligne = { etat: EtatConnexion; message?: string };
 
 // La liste des applications affichées est centralisée dans lib/outils.ts.
-// Google Drive, Microsoft, Netlify et Cloudflare y restent masqués (décisions de Bourama) ; Vercel reste visible pour les tests.
+// Google Drive, Microsoft, Netlify, Cloudflare et Vercel y restent masqués (décisions de Bourama).
 // Les services Google Workspace en préversion y sont masqués tant que Google n'a pas donné son accord.
 const APPLIS_AFFICHEES = APPLIS_DISPONIBLES.filter((app) => app.visibleDansEspaceConnexions);
 

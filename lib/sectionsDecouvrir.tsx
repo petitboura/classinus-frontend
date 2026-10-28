@@ -96,7 +96,7 @@ export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
     slug: "applications-connectees",
     href: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
     titre: "Applications connectées",
-    description: "Relie GitHub, Notion, Vercel, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
+    description: "Relie GitHub, Notion, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
   },
 ];
 

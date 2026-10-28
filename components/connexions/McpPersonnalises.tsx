@@ -85,7 +85,7 @@ export function McpPersonnalises() {
     await recharger();
     setMessage(valeurs.authType === "oauth"
       ? "Serveur enregistré. Lance sa connexion OAuth pour autoriser Classinus."
-      : "Serveur enregistré et connexion testée. Ses outils sont disponibles dans le menu Outils.");
+      : "Serveur enregistré et connexion testée. Classinus peut maintenant utiliser ses outils dans le chat, avec ta confirmation avant chaque exécution.");
   }
 
   async function basculerActif(serveur: McpPersonnalise) {
@@ -298,7 +298,7 @@ export function McpPersonnalises() {
         <PanneauFormulaireMcp serveur={serveurFormulaire} onFermer={() => setFormulaire(null)} onEnregistrer={enregistrer} />
       )}
 
-      <p className="text-xs leading-5 text-dj-texte-muet">Limite : 10 serveurs par compte et 50 outils découverts au maximum par serveur. Les outils externes sont proposés dans le menu « Outils » du chat et demandent une confirmation avant exécution.</p>
+      <p className="text-xs leading-5 text-dj-texte-muet">Limite : 10 serveurs par compte et 50 outils découverts au maximum par serveur. Classinus utilise ces outils dans le chat et demande une confirmation avant chaque exécution.</p>
     </section>
   );
 }

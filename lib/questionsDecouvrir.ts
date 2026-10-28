@@ -148,7 +148,7 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
       {
         question: "Quelles applications puis-je relier à Classinus ?",
         reponse:
-          "Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase. Chaque connexion se fait avec ton propre compte et seulement si tu l'autorises.",
+          "Tu peux relier GitHub, Notion, Higgsfield, Railway et Supabase. Chaque connexion se fait avec ton propre compte et seulement si tu l'autorises.",
       },
       {
         question: "Mes autorisations sont-elles partagées avec les autres utilisateurs ?",

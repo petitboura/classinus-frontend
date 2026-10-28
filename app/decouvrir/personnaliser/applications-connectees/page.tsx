@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 export const metadata: Metadata = {
-  title: "Applications connectées Classinus : relier GitHub, Notion, Vercel, Railway, Supabase et tes serveurs MCP",
+  title: "Applications connectées Classinus : relier GitHub, Notion, Railway, Supabase et tes serveurs MCP",
   description:
-    "Relie GitHub, Notion, Vercel, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
+    "Relie GitHub, Notion, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
 };
 
 export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
@@ -16,12 +16,12 @@ export default function PageDecouvrirPersonnaliserApplicationsConnectees() {
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Applications disponibles</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway, Supabase et Render, ou ajouter un serveur MCP personnalisé utilisant HTTPS. Google Drive n’est pas proposé dans les interfaces de connexion pour le moment. Pour Higgsfield, Vercel, Railway, Supabase et Render, Classinus passe par leur serveur MCP officiel.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux relier GitHub, Notion, Higgsfield, Railway, Supabase et Render, ou ajouter un serveur MCP personnalisé utilisant HTTPS. Google Drive n’est pas proposé dans les interfaces de connexion pour le moment. Pour Higgsfield, Railway, Supabase et Render, Classinus passe par leur serveur MCP officiel.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Connecter une application</h2>
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Ouvre Personnaliser puis Applications connectées, ou utilise le menu des applications dans la barre de saisie du chat. Choisis l'application, valide l'autorisation sur le site du fournisseur, puis tu es ramené dans Classinus. Chaque ligne indique l'état de la connexion : Connecté, Non connecté, Reconnexion nécessaire ou Statut indisponible.</p>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux aussi laisser le chat te proposer la connexion. Si ta demande relève d'un service que tu n'as pas encore connecté (par exemple déployer un site sur Vercel), Classinus ne répond pas que cela n'existe pas : il affiche dans la conversation la même carte que dans Applications connectées. Clique sur Connecter, valide l'autorisation, tu reviens dans la même conversation, puis le bouton Utiliser pour ça demande à Classinus de reprendre ta demande avec ce service. Classinus sait aussi quels services et quels serveurs MCP tu as connectés, activés ou désactivés. Quand Higgsfield existe en deux versions, celle de ton compte passe en premier, sauf si tu demandes celle de Classinus.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux aussi laisser le chat te proposer la connexion. Si ta demande relève d'un service que tu n'as pas encore connecté (par exemple déployer un site sur Railway), Classinus ne répond pas que cela n'existe pas : il affiche dans la conversation la même carte que dans Applications connectées. Clique sur Connecter, valide l'autorisation, tu reviens dans la même conversation, puis le bouton Utiliser pour ça demande à Classinus de reprendre ta demande avec ce service. Classinus sait aussi quels services et quels serveurs MCP tu as connectés, activés ou désactivés. Quand Higgsfield existe en deux versions, celle de ton compte passe en premier, sauf si tu demandes celle de Classinus.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Serveurs MCP personnalisés</h2>
