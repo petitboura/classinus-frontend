@@ -7,6 +7,13 @@ import { BoutonEtoile } from "./BoutonEtoile";
 import { SectionCommentairesCatalogue } from "./SectionCommentairesCatalogue";
 
 // 19/09/2026, demande Bourama : ancien écran "a-propos" d'EspaceParametres.tsx.
+
+// 28/10/2026, demande Bourama : lien discret vers la page publique de
+// suivi du projet Class-Tech (GitHub Pages, lue en direct sur main).
+// data-lien-libre : comportement natif (nouvel onglet), pas d'aperçu
+// interne, comme le lien APK de la page /telecharger.
+const URL_SUIVI_CLASS_TECH = "https://petitboura.github.io/class-tech/";
+
 export function ParametresAPropos() {
   const router = useRouter();
   const [infosClovis, setInfosClovis] = useState<{ etoilesCount: number; monEtoile: boolean } | null>(null);
@@ -43,6 +50,15 @@ export function ParametresAPropos() {
         <button onClick={() => router.push("/confidentialite")} className="w-fit text-dj-texte-muet hover:text-dj-texte hover:underline">
           Politique de confidentialité
         </button>
+        <a
+          href={URL_SUIVI_CLASS_TECH}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-lien-libre
+          className="w-fit text-dj-texte-muet hover:text-dj-texte hover:underline"
+        >
+          Suivi du projet Class-Tech
+        </a>
       </div>
 
       <SectionCommentairesCatalogue typeElement="clovis" elementId={ID_ELEMENT_CLOVIS} />

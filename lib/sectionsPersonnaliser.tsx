@@ -1,4 +1,4 @@
-import { ScrollText, Download, Brain, Cable } from "lucide-react";
+import { ScrollText, Download, Brain, Cable, ClipboardList } from "lucide-react";
 import { ROUTES_PERSONNALISER } from "./routesPersonnaliser";
 import { construireGroupe, type SectionDeGroupe } from "./groupeSections";
 
@@ -27,6 +27,12 @@ export const SECTIONS_PERSONNALISER: SectionDeGroupe[] = [
     label: "Ma mémoire",
     description: "Ce que Classinus retient de toi entre les conversations",
     Icone: Brain,
+  },
+  {
+    href: ROUTES_PERSONNALISER.configuration,
+    label: "Configuration",
+    description: "Procédures, règles, comportements et styles pour Classinus",
+    Icone: ClipboardList,
   },
   {
     href: ROUTES_PERSONNALISER.connexions,

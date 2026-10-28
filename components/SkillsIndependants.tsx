@@ -4,6 +4,7 @@ import { listerSkillsIndependants, obtenirSkillIndependant, enregistrerSkillInde
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "@/components/Skeleton";
+import { ImportDepuisAutreIA } from "@/components/ImportDepuisAutreIA";
 import { appliquerEntete, lireEntete } from "@/lib/enteteSkill";
 import { ApercuSkillMd, BasculeFormatBrut } from "@/components/ApercuSkillMd";
 import { LigneNomSkill } from "@/components/EnteteSkillModifiable";
@@ -165,6 +166,7 @@ export function SkillsIndependants() {
           <button type="button" onClick={nouveau} className={`bg-dj-primaire text-white ${bouton}`}>Nouveau skill</button>
         </div>
       </header>
+      <ImportDepuisAutreIA origine="skills" />
       <div className="flex min-w-0 flex-col" aria-busy={chargementListe}>
         {chargementListe && [0, 1, 2, 3].map(i => <Skeleton key={i} className="my-1 h-5 w-2/3" />)}
         {!chargementListe && liste.length === 0 && <p className="animate-dj-fade-in-rapide text-sm text-dj-texte-muet">Aucun skill pour le moment.</p>}

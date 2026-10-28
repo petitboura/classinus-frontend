@@ -19,6 +19,7 @@ const PAGES_PRIVEES = [
   "/plus",
   "/rappels",
   "/memoire",
+  "/configuration",
   "/connecter-claude",
   "/connecter-thonny",
   "/controle-session",

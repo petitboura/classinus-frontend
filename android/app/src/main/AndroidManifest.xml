@@ -62,6 +62,7 @@
                 <data android:pathPrefix="/cgu" />
                 <data android:pathPrefix="/comportements" />
                 <data android:pathPrefix="/confidentialite" />
+                <data android:pathPrefix="/configuration" />
                 <data android:pathPrefix="/connecter-claude" />
                 <data android:pathPrefix="/connecter-thonny" />
                 <data android:pathPrefix="/connexion" />

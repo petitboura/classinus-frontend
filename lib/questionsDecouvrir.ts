@@ -140,6 +140,11 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
         reponse:
           "Oui. Depuis la page Mémoire ou les paramètres prévus à cet effet, tu peux consulter les informations enregistrées, effacer une catégorie ou vider la mémoire. Lis les éléments affichés avant de confirmer une suppression.",
       },
+      {
+        question: "Puis-je importer ma mémoire, mes skills ou ma configuration depuis une autre IA ?",
+        reponse:
+          "Oui. Les pages Mémoire, Skills et Configuration ont chacune un bouton d'import, et un bandeau au dessus de la barre de saisie du chat y mène aussi. Tous font le même import. Le bouton ouvre l'autre IA avec un prompt déjà prêt. Elle te donne un zip, tu le déposes dans Classinus, qui range la mémoire, les skills et la configuration au bon endroit en arrière-plan, puis te prévient à la fin. Les applications connectées ne peuvent pas être reliées depuis l'import : Classinus en garde la liste pour te rappeler de les connecter quand tu discuteras avec lui.",
+      },
     ],
   },
   {
@@ -148,7 +153,7 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
       {
         question: "Quelles applications puis-je relier à Classinus ?",
         reponse:
-          "Tu peux relier GitHub, Notion, Higgsfield, Vercel, Railway et Supabase. Chaque connexion se fait avec ton propre compte et seulement si tu l'autorises.",
+          "Tu peux relier GitHub, Notion, Higgsfield, Railway et Supabase. Chaque connexion se fait avec ton propre compte et seulement si tu l'autorises.",
       },
       {
         question: "Mes autorisations sont-elles partagées avec les autres utilisateurs ?",

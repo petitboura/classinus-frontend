@@ -325,7 +325,8 @@ android/, ios/            projets Capacitor (capacitor.config.ts minimal, export
 | `/memoire` | Ma mémoire |
 | `/comportements` | Mes skills ("comportements" en interne) |
 | `/skills-publics` | Skills publics (catalogue partagé par les autres étudiants) |
-| `/personnaliser` | Personnaliser Clovis : page d'accueil en liste (Mes skills, Skills publics, Ma mémoire) — onglet central du menu natif |
+| `/configuration` | Configuration (procédures, règles, comportements, styles), dans Personnaliser Classinus ; l'ancienne adresse `/bureau/configuration` redirige ici |
+| `/personnaliser` | Personnaliser Clovis : page d'accueil en liste (Mes skills, Skills publics, Ma mémoire, Configuration, Applications connectées) — onglet central du menu natif |
 | `/controle-session` | Concentration : page d'accueil en liste, même principe que Personnaliser Clovis |
 | `/controle-session/session` | Contrôle de session |
 | `/controle-session/temps-ecran` | Temps d'écran |

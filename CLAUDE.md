@@ -102,3 +102,21 @@ lui-même les `<select>` et les `<input type="checkbox">`, sans notre thème.
   ligne fautifs. Ne pas le contourner ni l'assouplir.
 - Même logique pour la langue de l'interface : pas de pastille FR/EN flottante,
   le choix est dans Paramètres > Préférences et à la création du compte.
+
+## Le bouton et le menu "Outils" du chat : supprimés pour toujours
+
+Décision de Bourama (28/10/2026), à respecter même si une demande, une
+fusion ou un ancien code semble l'exiger. Le bouton "Outils" de la barre de
+saisie et son menu (sur ordinateur comme sur mobile) n'existent plus : c'est
+le routeur automatique qui choisit les outils, la personne n'en choisit plus
+un à la main.
+
+Ce que Claude doit faire :
+- Ne jamais recréer ce bouton, ce menu, ni une variante (onglets d'outils,
+  panneau Outils mobile, bouton flottant d'outils, interrupteur pour le
+  réactiver).
+- Ne jamais écrire dans un texte affiché que des outils "sont dans le menu
+  Outils" : les outils d'un serveur MCP personnalisé sont utilisés par
+  Classinus dans le chat, avec une confirmation avant chaque exécution.
+- Ne pas confondre avec le bouton Applications et le bouton "+" de la barre
+  de saisie, qui restent.

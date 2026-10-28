@@ -429,6 +429,11 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
 // kill-switch AFFICHER_BOUTON_OUTILS du 13/08, remplacé par le routeur
 // automatique côté backend pour l'agent clovis).
 
+// BOUTON ET MENU "OUTILS" SUPPRIMÉS POUR TOUJOURS (décision du 28/10/2026 de
+// Bourama) : ne jamais les remettre, sous aucune forme (onglets, panneau mobile,
+// bouton flottant, interrupteur). Voir CLAUDE.md. Le routeur automatique choisit
+// les outils, le registre ci-dessus sert seulement à les nommer et les afficher.
+
 // Liste "Appli" (2026-07-28) -- pendant symétrique à OUTILS_DISPONIBLES,
 // mais réservée à ce qui nécessite une connexion/authentification
 // utilisateur (OAuth, session tierce...). Notion ajouté le 01/08 (deuxième
@@ -488,7 +493,8 @@ export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   // service côté backend (api/connexions.py), il ne doit pas changer. Les
   // icônes sont les vrais logos (components/icons).
   { nom: "higgsfield_mcp", label: "Higgsfield", Icone: IconeHiggsfield, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
-  { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
+  // Vercel : masqué partout (décision du 28/10 de Bourama), ne pas le réafficher sans sa demande explicite.
+  { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false },
   { nom: "railway_mcp", label: "Railway", Icone: IconeRailway, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   { nom: "supabase_mcp", label: "Supabase", Icone: IconeSupabase, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
 ];

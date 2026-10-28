@@ -29,6 +29,7 @@ export const ROUTES_DECOUVRIR = {
     skillsPublics: "/decouvrir/personnaliser/skills-publics",
     memoire: "/decouvrir/personnaliser/memoire",
     applicationsConnectees: "/decouvrir/personnaliser/applications-connectees",
+    configuration: "/decouvrir/personnaliser/configuration",
   },
   concentration: {
     accueil: "/decouvrir/concentration",
@@ -54,6 +55,5 @@ export const ROUTES_DECOUVRIR = {
     audit: "/decouvrir/bureau/audit",
     signalements: "/decouvrir/bureau/signalements",
     editeur: "/decouvrir/bureau/editeur",
-    configuration: "/decouvrir/bureau/configuration",
   },
 } as const;

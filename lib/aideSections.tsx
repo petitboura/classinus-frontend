@@ -53,7 +53,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt: "Crée des procédures, règles, comportements et styles pour guider les réponses de Classinus. Chaque type a son propre format ; active les éléments utiles et partage-les selon les options disponibles.",
     texteComplet:
       "La Configuration regroupe quatre types d'éléments : une procédure décrit une suite d'étapes ; une règle formule une consigne courte ; un comportement décrit comment Classinus doit réagir dans une situation précise ; un style définit le ton ou la manière d'écrire à reproduire. Tu peux créer ou modifier ces éléments, activer ceux dont tu as besoin et, selon les options disponibles, les partager avec un code ou les publier dans le catalogue public.",
-    lienDecouvrir: ROUTES_DECOUVRIR.bureau.configuration,
+    lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.configuration,
   },
   {
     id: "audit-corrections",

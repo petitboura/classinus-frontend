@@ -87,10 +87,16 @@ export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
     description: "Consulte les informations retenues par Classinus et gère celles que tu souhaites conserver ou supprimer.",
   },
   {
+    slug: "configuration",
+    href: ROUTES_DECOUVRIR.personnaliser.configuration,
+    titre: "Configuration",
+    description: "Définis des procédures, règles, comportements et styles pour guider les réponses de Classinus.",
+  },
+  {
     slug: "applications-connectees",
     href: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
     titre: "Applications connectées",
-    description: "Relie GitHub, Notion, Vercel, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
+    description: "Relie GitHub, Notion, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
   },
 ];
 
@@ -145,11 +151,5 @@ export const SOUS_PAGES_DECOUVRIR_BUREAU: CarteDecouvrir[] = [
     href: ROUTES_DECOUVRIR.bureau.editeur,
     titre: "Éditeur de code",
     description: "Écris du code, exécute les programmes Python pris en charge et enregistre tes fichiers dans ta bibliothèque.",
-  },
-  {
-    slug: "configuration",
-    href: ROUTES_DECOUVRIR.bureau.configuration,
-    titre: "Configuration",
-    description: "Définis des procédures, règles, comportements et styles pour guider les réponses de Classinus.",
   },
 ];

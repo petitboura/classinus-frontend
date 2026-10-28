@@ -24,13 +24,13 @@ export const RACCOURCIS_CHAT_BUREAU: readonly RaccourciChat[] = [
   { id: "perso", label: "Perso", href: ROUTES_BIBLIOTHEQUE.perso, Icone: Library },
   { id: "editeur", label: "Éditeur", href: ROUTES_BUREAU.editeur, Icone: Code },
   { id: "memoire", label: "Ma mémoire", href: ROUTES_PERSONNALISER.memoire, Icone: Brain },
-  { id: "configuration", label: "Configuration", href: ROUTES_BUREAU.configuration, Icone: ClipboardList },
+  { id: "configuration", label: "Configuration", href: ROUTES_PERSONNALISER.configuration, Icone: ClipboardList },
   { id: "mes-skills", label: "Mes skills", href: ROUTES_PERSONNALISER.comportements, Icone: ScrollText },
 ];
 
 // Mobile : liste au-dessus de la barre de saisie.
 export const RACCOURCIS_CHAT_MOBILE: readonly RaccourciChat[] = [
-  { id: "configuration", label: "Configuration", href: ROUTES_BUREAU.configuration, Icone: ClipboardList },
+  { id: "configuration", label: "Configuration", href: ROUTES_PERSONNALISER.configuration, Icone: ClipboardList },
   { id: "dossier-phone", label: "Dossier du phone", href: ROUTES_BIBLIOTHEQUE.telephone, Icone: Smartphone },
   { id: "temps-ecran", label: "Temps d'écran", href: ROUTES_CONCENTRATION.tempsEcran, Icone: Hourglass },
   { id: "editeur", label: "Éditeur", href: ROUTES_BUREAU.editeur, Icone: Code },

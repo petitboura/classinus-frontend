@@ -12,4 +12,7 @@ export const ROUTES_PERSONNALISER = {
   skillsPublics: "/skills-publics",
   memoire: "/memoire",
   connexions: "/applications-connectees",
+  // 28/10/2026, demande Bourama : la Configuration quitte Bureau et rejoint Personnaliser.
+  // Adresse à la racine, comme /comportements et /memoire.
+  configuration: "/configuration",
 } as const;
