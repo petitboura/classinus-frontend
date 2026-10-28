@@ -29,6 +29,7 @@ import { QCMInteractif } from "./QCMInteractif";
 import { QuestionInteractive } from "./QuestionInteractive";
 import { FicheRevision } from "./FicheRevision";
 import { CarteConnecteur } from "./CarteConnecteur";
+import { CarteServeurMcp } from "./CarteServeurMcp";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { AnimationLecteur } from "./AnimationLecteur";
 import { ImageMessage } from "./ImageMessage";
@@ -86,6 +87,8 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
           return <QuestionInteractive code={code} onReponse={onRepondreQuestion} dejaRepondu={questionDejaRepondue} />;
         case "connecteur":
           return <CarteConnecteur code={code} onUtiliser={onRepondreQuestion} />;
+        case "serveurmcp":
+          return <CarteServeurMcp code={code} onUtiliser={onRepondreQuestion} />;
         case "fiche":
           return <FicheRevision code={code} />;
         case "animation":

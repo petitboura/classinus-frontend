@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CircleAlert, Plus, RefreshCw, Server } from "lucide-react";
+import { CircleAlert, Plus, RefreshCw, Server, Sparkles } from "lucide-react";
 import {
   demarrerConnexionMcpPersonnalise,
   definirMcpPersonnaliseActif,
@@ -13,6 +13,7 @@ import {
   type McpPersonnalise,
 } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
+import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { invaliderRegistreOutils } from "@/lib/outils";
 import { memoriserRetourConnexion } from "@/lib/retourApresConnexion";
 import { obtenirLocale } from "@/lib/i18n/locale";
@@ -22,7 +23,11 @@ import { CarteMcpPersonnalise, PanneauMcpPersonnalise, type ResultatTestMcp } fr
 import { PanneauFormulaireMcp, type ValeursMcp } from "@/components/connexions/PanneauFormulaireMcp";
 import { Skeleton } from "@/components/Skeleton";
 
+// Message prérempli envoyé au chat par le bouton « Le faire avec Classinus » (traduit à l'envoi).
+const TEXTE_DEMANDE_IA = "Je veux connecter un nouvel outil à Classinus avec un serveur MCP. Demande-moi lequel, puis cherche son serveur officiel et propose-le moi.";
+
 export function McpPersonnalises() {
+  const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
   const [serveurs, setServeurs] = useState<McpPersonnalise[]>([]);
   // Panneau du formulaire : "nouveau" pour un ajout, l'identifiant du serveur pour une modification.
   const [formulaire, setFormulaire] = useState<string | null>(null);
@@ -189,17 +194,28 @@ export function McpPersonnalises() {
 
   return (
     <section aria-labelledby="titre-mcp-personnalises" className="flex flex-col gap-4 rounded-2xl border border-dj-bordure bg-dj-surface p-4 sm:p-5">
-      <div className="flex items-start gap-3">
+      <div className="flex flex-wrap items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte">
           <Server size={19} />
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-[12rem]">
           <h2 id="titre-mcp-personnalises" className="font-display text-base font-semibold text-dj-texte">Serveurs MCP personnalisés</h2>
           <p className="mt-1 text-sm leading-6 text-dj-texte-muet">Ajoute les serveurs MCP distants que tu souhaites utiliser dans l’assistant Classinus. Chaque connexion reste liée à ton compte.</p>
         </div>
-        <button type="button" onClick={() => { setErreur(null); setMessage(null); setFormulaire("nouveau"); }} disabled={!!enCours} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">
-          <Plus size={14} />Ajouter un serveur
-        </button>
+        <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto sm:flex-col sm:items-stretch">
+          <button type="button" onClick={() => { setErreur(null); setMessage(null); setFormulaire("nouveau"); }} disabled={!!enCours} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">
+            <Plus size={14} />Ajouter un serveur
+          </button>
+          {/* 27/10/2026, demande de Bourama : l'IA cherche le serveur officiel de l'outil et le propose dans une carte du chat. */}
+          <button
+            type="button"
+            onClick={() => ouvrirChatAvecTexte(traduireTexteInterface(TEXTE_DEMANDE_IA, obtenirLocale()))}
+            disabled={!!enCours}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+          >
+            <Sparkles size={14} />Le faire avec Classinus
+          </button>
+        </div>
       </div>
 
       <div role="note" className="flex items-start gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute p-3">

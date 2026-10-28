@@ -3106,3 +3106,23 @@ export async function deconnecterMcpPersonnalise(id: string) {
     method: "POST",
   }) as Promise<{ connecte: boolean }>;
 }
+
+// 27/10/2026, demande de Bourama : résultat de la vérification d'une adresse de serveur MCP proposée
+// par l'IA. `officiel` et `lien_jeton_officiel` sont décidés par le backend (comparaison des domaines
+// avec le site officiel), jamais par l'IA. `acces` : "none" (libre), "oauth" (autorisation en un clic),
+// "bearer" (jeton), "inconnu" (réponse qui n'est pas celle d'un serveur MCP).
+export type SondageMcpPersonnalise = {
+  url: string;
+  domaine: string | null;
+  officiel: boolean;
+  lien_jeton_officiel: boolean;
+  joignable: boolean;
+  acces: "none" | "oauth" | "bearer" | "inconnu";
+};
+
+export async function sonderMcpPersonnalise(url: string, siteOfficiel?: string | null, lienJeton?: string | null) {
+  return appelerApi("/api/mcp-personnalises/sonder", {
+    method: "POST",
+    body: JSON.stringify({ url, site_officiel: siteOfficiel || null, lien_jeton: lienJeton || null }),
+  }) as Promise<SondageMcpPersonnalise>;
+}
