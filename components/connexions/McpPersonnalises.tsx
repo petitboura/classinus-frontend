@@ -189,6 +189,8 @@ export function McpPersonnalises() {
   }
 
   const serveurDetail = serveurs.find((s) => s.id === detailId) ?? null;
+  // Noms des autres serveurs : deux noms qui commencent pareil reçoivent plus de lettres dans leur logo.
+  const nomsAutres = (serveur: McpPersonnalise) => serveurs.filter((s) => s.id !== serveur.id).map((s) => s.nom);
   const serveurFormulaire = formulaire && formulaire !== "nouveau" ? serveurs.find((s) => s.id === formulaire) ?? null : null;
   const panneauOuvert = !!serveurDetail || !!formulaire;
 
@@ -261,6 +263,7 @@ export function McpPersonnalises() {
               <CarteMcpPersonnalise
                 key={serveur.id}
                 serveur={serveur}
+                autresNoms={nomsAutres(serveur)}
                 teste={!!tests[serveur.id]}
                 occupe={enCours === serveur.id}
                 desactive={!!enCours}
@@ -276,6 +279,7 @@ export function McpPersonnalises() {
       {serveurDetail && (
         <PanneauMcpPersonnalise
           serveur={serveurDetail}
+          autresNoms={nomsAutres(serveurDetail)}
           resultatTest={tests[serveurDetail.id]}
           occupe={enCours === serveurDetail.id}
           desactive={!!enCours}

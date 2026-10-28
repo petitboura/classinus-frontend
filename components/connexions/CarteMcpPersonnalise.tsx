@@ -3,6 +3,7 @@
 import { Check, CircleAlert, LoaderCircle, MoreHorizontal, Pencil, PlugZap, RefreshCw, Trash2, Unplug } from "lucide-react";
 import type { AuthTypeMcpPersonnalise, McpPersonnalise } from "@/lib/api";
 import { CadrePanneau } from "@/components/connexions/CadrePanneau";
+import { LogoMcp } from "@/components/connexions/LogoMcp";
 
 export type ResultatTestMcp = {
   nombre_outils: number;
@@ -24,14 +25,26 @@ export function libelleStatutMcp(serveur: McpPersonnalise, teste: boolean): stri
 const BOUTON_PRINCIPAL = "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50";
 const BOUTON_SECONDAIRE = "inline-flex items-center justify-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50";
 
-function IconeServeur({ serveur, teste, taille }: { serveur: McpPersonnalise; teste: boolean; taille: number }) {
+// Logo du service dans le cadre carré de la carte (28/10/2026, demande Bourama : plus de prise grise).
+// La coche verte d'avant, signe que le serveur est connecté, reste en petite pastille dans le coin.
+function LogoServeur({ serveur, teste, autresNoms, cadre, logo }: { serveur: McpPersonnalise; teste: boolean; autresNoms: string[]; cadre: string; logo: number }) {
   const ok = serveur.actif && (serveur.auth_type === "oauth" ? serveur.connecte : teste);
-  return ok ? <Check size={taille} /> : <PlugZap size={taille} />;
+  return (
+    <span className={`relative flex shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte ${cadre}`}>
+      <LogoMcp nom={serveur.nom} url={serveur.url} autresNoms={autresNoms} taille={logo} />
+      {ok && (
+        <span className="absolute -bottom-1 -right-1 flex h-4 w-4 animate-dj-fade-in-rapide items-center justify-center rounded-full border border-dj-bordure bg-dj-fond text-dj-succes motion-reduce:animate-none">
+          <Check size={10} />
+        </span>
+      )}
+    </span>
+  );
 }
 
 // Carte de taille fixe : l'adresse et le texte sont coupés, le panneau « Voir plus » montre tout.
 export function CarteMcpPersonnalise({
   serveur,
+  autresNoms,
   teste,
   occupe,
   desactive,
@@ -40,6 +53,8 @@ export function CarteMcpPersonnalise({
   onConnecterOAuth,
 }: {
   serveur: McpPersonnalise;
+  /** Noms des autres serveurs de la personne, pour les lettres du logo de secours. */
+  autresNoms: string[];
   teste: boolean;
   occupe: boolean;
   desactive: boolean;
@@ -51,7 +66,7 @@ export function CarteMcpPersonnalise({
   return (
     <li className="animate-dj-fade-in-rapide motion-reduce:animate-none flex h-40 flex-col justify-between gap-3 overflow-hidden rounded-xl border border-dj-bordure p-3 sm:p-4">
       <div className="flex min-h-0 items-start gap-3">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte"><IconeServeur serveur={serveur} teste={teste} taille={17} /></span>
+        <span className="mt-0.5 flex"><LogoServeur serveur={serveur} teste={teste} autresNoms={autresNoms} cadre="h-9 w-9" logo={22} /></span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-dj-texte">{serveur.nom}</p>
           <p className="mt-1 truncate text-xs text-dj-texte-muet">{serveur.url}</p>
@@ -80,6 +95,7 @@ export function CarteMcpPersonnalise({
 // Panneau de la carte complète : adresse entière, état, outils découverts et toutes les actions.
 export function PanneauMcpPersonnalise({
   serveur,
+  autresNoms,
   resultatTest,
   occupe,
   desactive,
@@ -94,6 +110,7 @@ export function PanneauMcpPersonnalise({
   onSupprimer,
 }: {
   serveur: McpPersonnalise;
+  autresNoms: string[];
   resultatTest?: ResultatTestMcp;
   occupe: boolean;
   desactive: boolean;
@@ -112,7 +129,7 @@ export function PanneauMcpPersonnalise({
       {(fermer) => (
         <>
           <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte"><IconeServeur serveur={serveur} teste={!!resultatTest} taille={21} /></span>
+            <LogoServeur serveur={serveur} teste={!!resultatTest} autresNoms={autresNoms} cadre="h-11 w-11" logo={28} />
             <div className="min-w-0 flex-1">
               <h4 id={"panneau-mcp-" + serveur.id} className="break-words text-base font-semibold text-dj-texte">{serveur.nom}</h4>
               <p className="mt-1 text-xs font-medium text-dj-texte-muet">{libelleStatutMcp(serveur, !!resultatTest)}</p>

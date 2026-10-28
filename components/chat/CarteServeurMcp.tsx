@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, CircleAlert, ExternalLink, LoaderCircle, PlugZap, Plus, Server, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
+import { Check, CircleAlert, ExternalLink, LoaderCircle, PlugZap, Plus, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import {
   demarrerConnexionMcpPersonnalise,
   enregistrerMcpPersonnalise,
@@ -19,6 +19,7 @@ import { memoriserRetourConnexion } from "@/lib/retourApresConnexion";
 import type { ValeursMcp } from "@/components/connexions/PanneauFormulaireMcp";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { Skeleton } from "@/components/Skeleton";
+import { LogoMcp } from "@/components/connexions/LogoMcp";
 import { EtapeJetonServeurMcp } from "@/components/chat/EtapeJetonServeurMcp";
 import { FormulaireServeurMcpCarte } from "@/components/chat/FormulaireServeurMcpCarte";
 import { BOUTON_PRINCIPAL, BOUTON_SECONDAIRE } from "@/components/chat/stylesServeurMcp";
@@ -62,6 +63,8 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
   const [enCours, setEnCours] = useState(false);
   const [erreurAction, setErreurAction] = useState<string | null>(null);
   const [dejaUtilise, setDejaUtilise] = useState(false);
+  // Serveurs déjà dans les connexions de la personne : leurs noms servent aux lettres du logo de secours.
+  const [serveursExistants, setServeursExistants] = useState<McpPersonnalise[]>([]);
   const numeroChargement = useRef(0);
 
   const url = proposition?.url ?? null;
@@ -79,6 +82,7 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
     try {
       const { serveurs } = await listerMcpPersonnalises();
       if (numero !== numeroChargement.current) return;
+      setServeursExistants(serveurs ?? []);
       const existant = url ? (serveurs ?? []).find((s) => memeAdresse(s.url, url)) : undefined;
       if (existant) { setPhase({ nom: "ajoute", serveur: existant, dejaLa: true }); return; }
       if (!url) { setPhase({ nom: "sans_adresse", refus: null }); return; }
@@ -144,6 +148,8 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
   const sondage = phase.nom === "pret" || phase.nom === "jeton" ? phase.sondage : phase.nom === "formulaire" ? phase.sondage : null;
   const domaine = sondage?.domaine ?? (url ? hoteAffiche(url) : null);
   const confirme = !!sondage && sondage.joignable && sondage.officiel;
+  // Le serveur proposé est peut-être déjà dans les connexions : on ne le compte pas comme un autre.
+  const autresNoms = serveursExistants.filter((s) => !(url && memeAdresse(s.url, url))).map((s) => s.nom);
 
   const phraseAcces = (acces: SondageMcpPersonnalise["acces"]) =>
     acces === "none" ? t("Accès libre, aucun jeton à copier.")
@@ -154,7 +160,7 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
   return (
     <article className="my-3 w-full max-w-md animate-dj-fade-up rounded-2xl border border-dj-bordure bg-dj-surface p-4">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte"><Server size={18} /></span>
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface-haute text-dj-texte"><LogoMcp nom={proposition.nom} url={sondage?.url ?? url ?? siteOfficiel} autresNoms={autresNoms} taille={22} /></span>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-dj-texte">{proposition.nom}</h3>
           {domaine && <p className="mt-0.5 truncate text-xs text-dj-texte-muet">{domaine}</p>}
