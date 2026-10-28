@@ -18,6 +18,8 @@ import { choisirModele, useModeleActif } from "@/lib/modeleActif";
 import { SelecteurModeleHaut } from "./SelecteurModeleHaut";
 import { lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
+import { BandeauErreurReponse } from "./BandeauErreurReponse";
+import { codeDepuisException, codeErreurValide } from "@/lib/erreurTour";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
@@ -54,6 +56,12 @@ const CARACTERES_MIN_PARAGRAPHE_VOIX = 200;
 // permet de recharger un ancien fil (Historique) ou d'en démarrer un
 // nouveau en remontant simplement ce composant (key={conversationId} côté
 // parent), sans changer sa logique interne d'envoi/streaming.
+// Une réponse coupée avant d'avoir écrit quoi que ce soit n'est pas envoyée au serveur comme
+// historique : un message d'assistant vide serait refusé par certains fournisseurs.
+function garderDansHistorique(m: MessageAffiche) {
+  return !(m.erreurTour && !m.content.trim());
+}
+
 export function ChatIA({
   agentId,
   nomAgent,
@@ -799,6 +807,21 @@ export function ChatIA({
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,
       });
+    } else if (evenement.type === "erreur_tour") {
+      // Le serveur a échoué en plein tour (voir classinus-backend core/erreur_tour.py). Le texte
+      // déjà reçu reste affiché ; avec un état de reprise (des outils avaient déjà tourné),
+      // « Continuer » reprend avec leurs résultats au lieu de repartir de la question.
+      majMessages((prec) => {
+        const copie = [...prec];
+        copie[copie.length - 1] = {
+          ...copie[copie.length - 1],
+          erreurTour: { code: codeErreurValide(evenement.code) },
+          repriseDisponible: evenement.etat_reprise
+            ? { type: "erreur", etatReprise: evenement.etat_reprise }
+            : copie[copie.length - 1].repriseDisponible,
+        };
+        return copie;
+      });
     } else if (evenement.type === "limite_outils_atteinte" || evenement.type === "repetition_detectee") {
       // Ajouté 02/09/2026 (voir core/main.py:_agent_groq, docstring de
       // chat()) : le texte expliquant la situation a déjà été streamé
@@ -851,7 +874,7 @@ export function ChatIA({
     // (ou un double-envoi) qui relancerait deux fois le même état.
     majMessages((prec) => {
       const copie = [...prec];
-      copie[indexMessage] = { ...copie[indexMessage], repriseDisponible: null };
+      copie[indexMessage] = { ...copie[indexMessage], repriseDisponible: null, erreurTour: null };
       const suite: MessageAffiche[] = messageUtilisateur
         ? [
             { id: null, role: "user", content: messageUtilisateur, created_at: new Date().toISOString() },
@@ -872,6 +895,7 @@ export function ChatIA({
       await appelerApiStream(
         "/api/chat",
         {
+          erreurs_typees: true,
           reprise: {
             etat_reprise: reprise.etatReprise,
             type: "continuer_agent",
@@ -894,8 +918,7 @@ export function ChatIA({
           const copie = [...prec];
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
-            content: "Une erreur est survenue, réessaie dans un instant.",
-            erreur: true,
+            erreurTour: { code: codeDepuisException(e) },
           };
           return copie;
         });
@@ -1091,7 +1114,7 @@ export function ChatIA({
     // nomLisible/resultat, sans sources/images qui ne servent qu'à
     // l'affichage). Voir core/historique_outils.py côté backend pour la
     // réinjection effective.
-    const historiquePourApi = messages.map((m) => ({
+    const historiquePourApi = messages.filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.content,
       outils:
@@ -1134,7 +1157,7 @@ export function ChatIA({
     const parentIdPourEnvoi = dernierIdEnregistre(messages);
     majMessages((prec) => [
       ...prec.map((m) =>
-        m.repriseDisponible || m.interrompue ? { ...m, repriseDisponible: null, interrompue: false } : m
+        m.repriseDisponible || m.interrompue || m.erreurTour ? { ...m, repriseDisponible: null, interrompue: false, erreurTour: null } : m
       ),
       messageUtilisateur,
       { id: null, role: "assistant", content: "", segments: [] },
@@ -1241,6 +1264,7 @@ export function ChatIA({
       await appelerApiStream(
         "/api/chat",
         {
+          erreurs_typees: true,
           message: texteEnrichi,
           agent_id: agentId,
           historique: historiquePourApi,
@@ -1317,8 +1341,7 @@ export function ChatIA({
           const copie = [...prec];
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
-            content: "Une erreur est survenue, réessaie dans un instant.",
-            erreur: true,
+            erreurTour: { code: codeDepuisException(e) },
           };
           return copie;
         });
@@ -1362,7 +1385,7 @@ export function ChatIA({
       : dernierIdEnregistre(messages.slice(0, index - 1));
     const versionsExistantes = versionsExistantesPour(ancienneReponse, messages.slice(index + 1));
     const nouvelIndex = versionsExistantes.length;
-    const historiquePourApi = messages.slice(0, index - 1).map((m) => ({
+    const historiquePourApi = messages.slice(0, index - 1).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.content,
       outils:
@@ -1391,6 +1414,7 @@ export function ChatIA({
       await appelerApiStream(
         "/api/chat",
         {
+          erreurs_typees: true,
           message: messageUtilisateur.content,
           agent_id: agentId,
           historique: historiquePourApi,
@@ -1431,8 +1455,7 @@ export function ChatIA({
           const dernier = copie[copie.length - 1];
           copie[copie.length - 1] = {
             ...dernier,
-            content: "Une erreur est survenue, réessaie dans un instant.",
-            erreur: true,
+            erreurTour: { code: codeDepuisException(e) },
             // La tentative echouee n'existe pas en base : elle ne reste pas
             // comptee comme une version (compteur et fleches).
             versions: dernier.versions?.filter((_, i) => i !== dernier.versionActive),
@@ -1460,7 +1483,7 @@ export function ChatIA({
     // version de la question : en revenant dessus, sa reponse reapparait.
     const versionsExistantes = versionsExistantesPour(ancienMessage, messages.slice(index + 1));
     const nouvelIndex = versionsExistantes.length;
-    const historiquePourApi = messages.slice(0, index).map((m) => ({
+    const historiquePourApi = messages.slice(0, index).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.content,
       outils:
@@ -1489,6 +1512,7 @@ export function ChatIA({
       await appelerApiStream(
         "/api/chat",
         {
+          erreurs_typees: true,
           message: nouveauTexte,
           agent_id: agentId,
           historique: historiquePourApi,
@@ -1521,8 +1545,7 @@ export function ChatIA({
           const copie = [...prec];
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
-            content: "Une erreur est survenue, réessaie dans un instant.",
-            erreur: true,
+            erreurTour: { code: codeDepuisException(e) },
           };
           return copie;
         });
@@ -1700,7 +1723,7 @@ export function ChatIA({
       controleurAbandonRef.current = controleur;
       await appelerApiStream(
         "/api/chat",
-        { reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve } },
+        { erreurs_typees: true, reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve } },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
@@ -1717,8 +1740,7 @@ export function ChatIA({
           const copie = [...prec];
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
-            content: "Une erreur est survenue, réessaie dans un instant.",
-            erreur: true,
+            erreurTour: { code: codeDepuisException(e) },
           };
           return copie;
         });
@@ -2044,11 +2066,20 @@ export function ChatIA({
               }
               onExpliquerSelection={message.role === "assistant" ? expliquerSelection : undefined}
               />
-              {message.repriseDisponible && (
+              {message.repriseDisponible && message.repriseDisponible.type !== "erreur" && (
                 <BoutonRepriseAgent
                   type={message.repriseDisponible.type}
                   enAttente={genEnCours}
                   onReprendre={() => reprendreAgent(index)}
+                />
+              )}
+              {message.erreurTour && !genEnCours && (
+                <BandeauErreurReponse
+                  code={message.erreurTour.code}
+                  peutContinuer={!!message.repriseDisponible || message.content.trim().length > 0}
+                  enAttente={genEnCours}
+                  onContinuer={() => (message.repriseDisponible ? reprendreAgent(index) : continuerApresInterruption())}
+                  onReessayer={() => regenererDepuis(index)}
                 />
               )}
               {message.interrompue && !genEnCours && (
