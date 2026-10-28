@@ -7,6 +7,7 @@ import config from './capacitor.electron.config';
 import { installerArrierePlan } from './arrierePlan';
 import { initialiserDemarrageAutomatique } from './demarrage';
 import { installerRefererYoutube } from './refererYoutube';
+import { preparerRelais } from './relais';
 
 const capacitorApp = createCapacitorElectronApp(config);
 
@@ -121,6 +122,9 @@ function brancherDiagnosticSuperposition(fenetre: BrowserWindow, urlDemandee: st
 capacitorApp.whenReady.then(() => {
   // Lecteur YouTube : adresse d'origine envoyee a YouTube (voir refererYoutube.ts).
   installerRefererYoutube();
+  // Relais téléphone embarqué (voir relais.ts) : recopie l'exe neuf dans le
+  // dossier de données, pose les réglages par défaut au premier lancement.
+  preparerRelais();
   const zone = zoneTousEcrans();
   // Meme script de preload que la fenetre principale (expose le pont
   // Capacitor/plugins cote renderer) : chemin officiellement documente

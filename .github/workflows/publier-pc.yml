@@ -15,6 +15,12 @@ name: Publier l'appli PC (Windows)
 #   refuse une adresse de backend contenant "staging" ;
 # - CLASSINUS_CIBLE_TEST est neutralisé, donc la cible de test de
 #   next.config.mjs ne peut pas s'appliquer ici.
+# - le relais téléphone (Relais-Class-Tech.exe) est CONSTRUIT pendant le
+#   workflow depuis le dépôt class-tech (Python + PyInstaller, 28/10/2026,
+#   décision D31 : relais embarqué), puis posé dans electron/relais-dist, d'où
+#   electron-builder l'embarque dans l'installeur (extraResources). Il faut
+#   donc aussi le secret CLASS_TECH_LECTURE (lecture seule du dépôt class-tech),
+#   en plus de PC_RELEASES_TOKEN ;
 # - la release est créée en BROUILLON avant electron-builder, puis publiée à la fin
 #   seulement si l'installeur et latest.yml y sont bien (22/10/2026). Sans cela,
 #   electron-builder envoyait les fichiers en parallèle et chacun tentait de créer
@@ -47,6 +53,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
       PC_RELEASES_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
+      CLASS_TECH_LECTURE: ${{ secrets.CLASS_TECH_LECTURE }}
 
     steps:
       - name: Récupérer le code
@@ -73,7 +80,7 @@ jobs:
         shell: bash
         run: |
           manquantes=""
-          for nom in NEXT_PUBLIC_API_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_APP_URL PC_RELEASES_TOKEN; do
+          for nom in NEXT_PUBLIC_API_URL NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_APP_URL PC_RELEASES_TOKEN CLASS_TECH_LECTURE; do
             if [ -z "${!nom}" ]; then
               manquantes="$manquantes $nom"
             fi
@@ -102,11 +109,42 @@ jobs:
       - name: Construire le site pour l'appli PC (export statique)
         run: npx next build
 
+      # Relais téléphone embarqué : récupéré puis construit ici, jamais versionné
+      # (28/10/2026, décision D31). Le script relais/construire_exe.py de class-tech
+      # produit dist-1clic/Relais-Class-Tech.exe ; on le pose avec les réglages par
+      # défaut dans electron/relais-dist, d'où electron-builder l'embarque dans
+      # l'installeur (extraResources vers resources/relais).
+      - name: Récupérer le relais (dépôt class-tech)
+        uses: actions/checkout@v4
+        with:
+          repository: petitboura/class-tech
+          ref: main
+          path: class-tech
+          token: ${{ secrets.CLASS_TECH_LECTURE }}
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Construire le relais téléphone
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller
+          python -m pip install -r class-tech/backend/requirements.txt
+          python class-tech/relais/construire_exe.py
+          mkdir -p electron/relais-dist
+          cp class-tech/dist-1clic/Relais-Class-Tech.exe electron/relais-dist/
+          cp class-tech/relais/reglages.json electron/relais-dist/
+          echo "Relais embarqué :"
+          ls -la electron/relais-dist
+
       # Ordre important : les plugins doivent être compilés AVANT `cap sync`.
       # `cap sync` ne retient que les plugins dont le fichier compilé
       # (electron/dist/plugin.mjs) existe déjà, et ignore les autres sans
       # erreur. Dans l'ordre inverse, l'installeur sortait sans aucun plugin
-      # (superposition, pont natif, dossiers, mise à jour automatique).
+      # (superposition, pont natif, dossiers, mise à jour automatique, relais).
       - name: Compiler les plugins Electron
         shell: bash
         run: |
@@ -114,6 +152,7 @@ jobs:
           npm --prefix packages/capacitor-pont-natif-electron run build
           npm --prefix packages/capacitor-superposition-electron run build
           npm --prefix packages/capacitor-mise-a-jour-pc-electron run build
+          npm --prefix packages/capacitor-relais-pc-electron run build
 
       - name: Synchroniser le projet Electron
         run: npx cap sync @capawesome/capacitor-electron
