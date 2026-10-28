@@ -18,6 +18,7 @@ import { choisirModele, useModeleActif } from "@/lib/modeleActif";
 import { SelecteurModeleHaut } from "./SelecteurModeleHaut";
 import { lireReglagesProchainMessage, consommerReglagesUniquesProchainMessage } from "@/lib/reglagesProchainMessage";
 import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
+import { CtaImportIa } from "./CtaImportIa";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
@@ -1856,6 +1857,7 @@ export function ChatIA({
               }
             }}
           >
+            {!accesBloqueMineur && <CtaImportIa />}
             <BarreDeSaisie
               onEnvoyer={envoyerMessage}
               desactive={genEnCours || affichageEnCours || accesBloqueMineur}
@@ -2130,6 +2132,7 @@ export function ChatIA({
           (pleinEcran ? " max-md:pointer-events-none max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-10" : "")
         }>
         <div className={pleinEcran ? "max-md:pointer-events-auto" : undefined}>
+          {!accesBloqueMineur && <CtaImportIa />}
           <BarreDeSaisie
             onEnvoyer={envoyerMessage}
             desactive={genEnCours || affichageEnCours || accesBloqueMineur}

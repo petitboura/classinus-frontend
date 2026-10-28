@@ -140,6 +140,11 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
         reponse:
           "Oui. Depuis la page Mémoire ou les paramètres prévus à cet effet, tu peux consulter les informations enregistrées, effacer une catégorie ou vider la mémoire. Lis les éléments affichés avant de confirmer une suppression.",
       },
+      {
+        question: "Puis-je importer ma mémoire, mes skills ou ma configuration depuis une autre IA ?",
+        reponse:
+          "Oui. Les pages Mémoire, Skills et Configuration ont chacune un bouton d'import, et un bandeau au dessus de la barre de saisie du chat y mène aussi. Le bouton ouvre l'autre IA avec un prompt déjà prêt. Elle te donne un zip, tu le déposes dans Classinus, qui le traite en arrière-plan puis te prévient à la fin. Les connexions aux applications ne sont pas incluses.",
+      },
     ],
   },
   {
