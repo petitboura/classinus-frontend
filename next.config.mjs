@@ -40,35 +40,6 @@ if (
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByY2hyY3ptY29xbmdlc2J6emZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3MDc5NTksImV4cCI6MjEwNjI4Mzk1OX0.zvWXP16CL8MIyLcRkXMUZwrArQNhKOSQkyriVweEUW0";
 }
-// STAGING SEULEMENT : la copie de test ne doit pas être indexée.
-// Le garde empêche ce bloc de se retrouver sur main ou en production.
-console.log(
-  "[garde-staging] VERCEL_ENV=" +
-    process.env.VERCEL_ENV +
-    " VERCEL_GIT_COMMIT_REF=" +
-    process.env.VERCEL_GIT_COMMIT_REF,
-);
-if (
-  process.env.VERCEL_ENV === "production" ||
-  process.env.VERCEL_GIT_COMMIT_REF === "main"
-) {
-  throw new Error(
-    "Le blocage d'indexation de staging est présent dans une construction main ou production. Retirer le bloc STAGING SEULEMENT de next.config.mjs.",
-  );
-}
-const enteteNoindexStaging =
-  process.env.CAPACITOR_BUILD === "true"
-    ? {}
-    : {
-        async headers() {
-          return [
-            {
-              source: "/:path*",
-              headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
-            },
-          ];
-        },
-      };
 // 30/09/2026, demande Bourama : le chat a pris l'adresse "/" (voir
 // lib/routesApp.ts). L'ancienne adresse /chat redirige vers "/" pour ne
 // pas casser un lien ou un marque-page existant. Ignoré (et donc non
@@ -89,7 +60,6 @@ const redirectionsWeb =
 const nextConfig = {
   ...(process.env.CAPACITOR_BUILD === "true" ? { output: "export" } : {}),
   ...redirectionsWeb,
-  ...enteteNoindexStaging,
   // Heure de construction (millisecondes), lue par lib/miseAJourOta.ts pour
   // savoir si un bundle OTA publié est plus récent que le code qui tourne.
   // Le workflow .github/workflows/ota.yml la fixe lui-même pour qu'elle soit
