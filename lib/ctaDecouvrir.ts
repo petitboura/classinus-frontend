@@ -46,6 +46,7 @@ const APPLI_PAR_PAGE_DECOUVRIR: Record<string, string> = {
   [ROUTES_DECOUVRIR.personnaliser.mesSkills]: ROUTES_PERSONNALISER.comportements,
   [ROUTES_DECOUVRIR.personnaliser.skillsPublics]: ROUTES_PERSONNALISER.skillsPublics,
   [ROUTES_DECOUVRIR.personnaliser.memoire]: ROUTES_PERSONNALISER.memoire,
+  [ROUTES_DECOUVRIR.personnaliser.configuration]: ROUTES_PERSONNALISER.configuration,
   [ROUTES_DECOUVRIR.concentration.accueil]: ROUTES_CONCENTRATION.accueil,
   [ROUTES_DECOUVRIR.concentration.session]: ROUTES_CONCENTRATION.session,
   [ROUTES_DECOUVRIR.concentration.tempsEcran]: ROUTES_CONCENTRATION.tempsEcran,
@@ -56,7 +57,6 @@ const APPLI_PAR_PAGE_DECOUVRIR: Record<string, string> = {
   [ROUTES_DECOUVRIR.bureau.audit]: ROUTES_BUREAU.audit,
   [ROUTES_DECOUVRIR.bureau.signalements]: ROUTES_BUREAU.signalements,
   [ROUTES_DECOUVRIR.bureau.editeur]: ROUTES_BUREAU.editeur,
-  [ROUTES_DECOUVRIR.bureau.configuration]: ROUTES_BUREAU.configuration,
   // Trouver des PDF : la page parle de la bibliothèque personnelle et du
   // catalogue partagé, une seule section de l'appli.
   [ROUTES_DECOUVRIR.usages.pdf]: ROUTES_BIBLIOTHEQUE.accueil,

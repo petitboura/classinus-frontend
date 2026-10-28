@@ -53,6 +53,9 @@ const redirectionsWeb =
           return [
             { source: "/chat", destination: "/", permanent: true },
             { source: "/decouvrir/accueil", destination: "/decouvrir/usages", permanent: true },
+            // 28/10/2026, demande Bourama : la Configuration passe de Bureau à Personnaliser.
+            { source: "/bureau/configuration", destination: "/configuration", permanent: true },
+            { source: "/decouvrir/bureau/configuration", destination: "/decouvrir/personnaliser/configuration", permanent: true },
           ];
         },
       };
