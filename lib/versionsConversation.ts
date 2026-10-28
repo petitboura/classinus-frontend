@@ -39,7 +39,7 @@ export function versionsAvecActiveMiseAJour(
 // compterait des versions qui n'existent pas en base.
 export function versionsExistantesPour(message: MessageAffiche, suiteApres: MessageAffiche[]): VersionAlternative[] {
   const jamaisEnregistree = message.id === null || message.id === undefined;
-  if ((message.erreur || message.interrompue) && jamaisEnregistree) {
+  if ((message.erreurTour || message.interrompue) && jamaisEnregistree) {
     return (message.versions ?? []).filter((_, i) => i !== message.versionActive);
   }
   if (message.versions && message.versions.length > 0 && message.versionActive !== undefined) {

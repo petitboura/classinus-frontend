@@ -29,6 +29,7 @@ import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { COMPOSANTS_MARKDOWN, ContexteRenduBulle, type EtatRenduBulle } from "./composantsMarkdownRiches";
 import { texteBrut } from "./texteBrut";
 import { Skeleton } from "../Skeleton";
+import type { CodeErreurTour } from "@/lib/erreurTour";
 
 // Perf (10/08) : listes de plugins ReactMarkdown constantes, sorties du
 // composant. Définies inline dans le JSX, elles seraient recréées en
@@ -260,14 +261,11 @@ export interface MessageAffiche {
   // résultat de leur outil, pas dans un bloc "Sources" à part à la fin
   // -- voir OutilResultatBulle.tsx.
   outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
-  // Ajouté 30/08/2026 (audit UX mobile, partie 5 : "pas de chemin de
-  // récupération après une erreur") : la génération a échoué avant la
-  // moindre réponse persistée -- message.id reste donc null pour
-  // toujours (voir commentaire sur les boutons d'action plus bas), ce
-  // qui masquait silencieusement le bouton Régénérer justement quand
-  // l'utilisateur en a le plus besoin. Ce flag découple "action possible"
-  // de "réponse persistée en base".
-  erreur?: boolean;
+  // Réponse coupée par une erreur (serveur ou connexion) : le texte déjà reçu reste affiché,
+  // ce champ affiche le bandeau d'erreur adapté sous ce message (BandeauErreurReponse.tsx).
+  // Il découple aussi "action possible" de "réponse persistée en base" : une réponse en
+  // échec n'a jamais d'id. Obsolète dès qu'un nouveau message est envoyé.
+  erreurTour?: { code: CodeErreurTour } | null;
   // Ajouté 02/09/2026 (demande Bourama : gestion du plafond d'appels
   // d'outils) : présent quand CE message précis s'est terminé sur
   // "limite_outils_atteinte" (plafond d'étapes atteint, voir
@@ -278,7 +276,7 @@ export interface MessageAffiche {
   // reprendre avec l'état exact où tout s'est arrêté (voir
   // ChatIA.tsx:reprendreAgent). Devient obsolète (ignoré) dès qu'un
   // nouveau message est envoyé -- voir envoyerMessage.
-  repriseDisponible?: { type: "limite" | "repetition"; etatReprise: unknown } | null;
+  repriseDisponible?: { type: "limite" | "repetition" | "erreur"; etatReprise: unknown } | null;
   // Ajouté 04/09/2026 (bug de cascade signalé par Bourama : quand un
   // modèle de la cascade échoue APRÈS avoir déjà streamé du texte, le
   // relais suivant écrivait à la suite du texte déjà affiché, donnant un
@@ -1310,29 +1308,6 @@ function BulleMessageInterne({
           réponse (rendu ci-dessus par le composant `a` custom, qui bascule
           déjà vers FichierChip/LinkPreview selon l'extension). */}
 
-      {/* Ajouté 30/08/2026 (audit UX mobile, partie 5) : jusqu'ici, une
-          génération en échec affichait un texte clair ("Une erreur est
-          survenue...") mais AUCUN moyen visible de relancer -- le bouton
-          Régénérer existait dans le code mais restait cousu à
-          `message.id !== null` (voir plus haut), or message.id ne se
-          remplit jamais pour un message qui a échoué avant sauvegarde.
-          En plus de réparer cette condition, ce bandeau rend l'action
-          immédiatement visible (pas seulement au survol -- sur mobile,
-          il n'y a pas de survol) plutôt que cachée dans la barre
-          d'actions qui n'apparaît qu'au hover. */}
-      {!estUtilisateur && message.erreur && (
-        <div className="my-1.5 flex w-fit items-center gap-2 rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-[13px] text-dj-texte">
-          <button
-            onClick={onRegenerer}
-            aria-label="Réessayer"
-            className="flex min-h-[44px] items-center gap-1.5 rounded-md px-1 py-1 font-medium text-dj-accent-1 transition-colors hover:text-dj-accent-2"
-          >
-            <RotateCw size={14} />
-            Réessayer
-          </button>
-        </div>
-      )}
-
       {!estUtilisateur && message.qualiteReduite && (
         <div className="my-1.5 flex w-fit items-start gap-2 rounded-lg border border-dj-accent-2/40 bg-dj-accent-2/10 px-3 py-2 text-[13px] text-dj-texte">
           <AlertTriangle size={16} className="mt-0.5 shrink-0 text-dj-accent-2" />
@@ -1390,7 +1365,7 @@ function BulleMessageInterne({
           étaient cliquables pendant que le texte s'écrivait encore.
           Côté utilisateur, pas de streaming à attendre -- toujours
           affichés au survol comme avant. */}
-      {(estUtilisateur || message.id !== null || message.erreur) && (
+      {(estUtilisateur || message.id !== null || message.erreurTour) && (
         <div className="mt-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <button onClick={copier} aria-label="Copier" className="rounded-md p-1.5 text-dj-texte-muet hover:text-dj-texte">
             {copie ? <Check size={14} /> : <Copy size={14} />}

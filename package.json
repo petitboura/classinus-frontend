@@ -21,6 +21,7 @@
     "test:touches-clavier": "node tests/verifier-touches-clavier.mjs",
     "test:garde-clavier": "node tests/verifier-garde-clavier.mjs",
     "test:arret-global": "node tests/verifier-arret-global.mjs",
+    "test:erreur-tour": "node tests/verifier-erreur-tour.mjs",
     "test:cible-saisie": "node tests/verifier-cible-saisie.mjs",
     "test:ecriture-arriere-plan": "node tests/verifier-ecriture-arriere-plan.mjs",
     "test:lecture-fenetre-visee": "node tests/verifier-lecture-fenetre-visee.mjs",
