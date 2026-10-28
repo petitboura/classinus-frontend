@@ -276,7 +276,7 @@ export interface MessageAffiche {
   // reprendre avec l'état exact où tout s'est arrêté (voir
   // ChatIA.tsx:reprendreAgent). Devient obsolète (ignoré) dès qu'un
   // nouveau message est envoyé -- voir envoyerMessage.
-  repriseDisponible?: { type: "limite" | "repetition" | "erreur"; etatReprise: unknown } | null;
+  repriseDisponible?: { type: "limite" | "repetition" | "erreur" | "arret"; etatReprise: unknown } | null;
   // Ajouté 04/09/2026 (bug de cascade signalé par Bourama : quand un
   // modèle de la cascade échoue APRÈS avoir déjà streamé du texte, le
   // relais suivant écrivait à la suite du texte déjà affiché, donnant un

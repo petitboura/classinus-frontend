@@ -44,6 +44,9 @@ import type { ContexteVideoMontage } from "@/lib/videoMontage";
 // (titres, phrases d'une ligne) qui hacheraient la voix.
 const CARACTERES_MIN_PARAGRAPHE_VOIX = 200;
 
+// Temps laissé au serveur pour renvoyer l'état de reprise après un clic sur Arrêter.
+const DELAI_ATTENTE_ARRET_MS = 2500;
+
 // L'aperçu interne (VisionneurPositionGlobal) n'est plus monté ici depuis
 // le 20/09/2026 : il vit dans le layout racine (VisionneurGlobalRacine.tsx)
 // pour marcher sur toutes les pages.
@@ -238,6 +241,12 @@ export function ChatIA({
   // trois peut streamer à la fois). null tant qu'aucune génération
   // n'est en cours.
   const controleurAbandonRef = useRef<AbortController | null>(null);
+  // Clic sur Arrêter : le serveur a quelques instants pour fermer le flux en envoyant l'état de
+  // reprise (résultats d'outils déjà obtenus). Pendant ce temps l'écran montre déjà l'arrêt et
+  // ignore tout ce qui arrive ; passé DELAI_ATTENTE_ARRET_MS, la connexion est coupée quand même.
+  const arretDemandeeRef = useRef(false);
+  const delaiArretRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [arretEnCours, setArretEnCours] = useState(false);
   // Ajouté 20/09/2026 (bouton "Modifier" du bandeau réponse interrompue,
   // voir BandeauReponseInterrompue.tsx et BulleMessage.tsx:declencherEdition) :
   // déclenche l'ouverture du mode édition du message UTILISATEUR à cet
@@ -709,7 +718,48 @@ export function ChatIA({
     positionVoixRef.current = fin + 2;
   }
 
+  // Lecture du flux de /api/chat, commune aux cinq envois. Un arrêt demandé par l'utilisateur se
+  // termine toujours comme une coupure de connexion (AbortError), que le serveur ait fermé le
+  // flux de lui-même ou que le délai d'attente soit écoulé.
+  async function lireFluxChat(
+    corps: Parameters<typeof appelerApiStream>[1],
+    surEvenement: (evenement: any) => void,
+    signal: AbortSignal
+  ) {
+    try {
+      // Arrêt cliqué avant même l'ouverture du flux (envoi de fichiers en cours) : rien à lire.
+      if (arretDemandeeRef.current) throw new DOMException("Arrêt demandé", "AbortError");
+      await appelerApiStream("/api/chat", corps, surEvenement, signal);
+      if (arretDemandeeRef.current) throw new DOMException("Arrêt demandé", "AbortError");
+    } finally {
+      if (delaiArretRef.current !== null) {
+        clearTimeout(delaiArretRef.current);
+        delaiArretRef.current = null;
+      }
+      arretDemandeeRef.current = false;
+      setArretEnCours(false);
+    }
+  }
+
   function traiterEvenement(evenement: any) {
+    // Arrêt demandé : plus rien ne s'écrit à l'écran. L'état de reprise envoyé par le serveur
+    // (événement arret_tour) est gardé, puis la connexion est coupée sans attendre le délai.
+    if (arretDemandeeRef.current) {
+      if (evenement.type === "arret_tour") {
+        if (evenement.etat_reprise) {
+          majMessages((prec) => {
+            const copie = [...prec];
+            copie[copie.length - 1] = {
+              ...copie[copie.length - 1],
+              repriseDisponible: { type: "arret", etatReprise: evenement.etat_reprise },
+            };
+            return copie;
+          });
+        }
+        controleurAbandonRef.current?.abort();
+      }
+      return;
+    }
     // Voix en direct (02/10/2026) : pendant un tour demandé par la voix, on
     // garde le texte écrit de la réponse pour le lui renvoyer, sans rien
     // changer à l'affichage du chat ci-dessous.
@@ -875,7 +925,7 @@ export function ChatIA({
     // (ou un double-envoi) qui relancerait deux fois le même état.
     majMessages((prec) => {
       const copie = [...prec];
-      copie[indexMessage] = { ...copie[indexMessage], repriseDisponible: null, erreurTour: null };
+      copie[indexMessage] = { ...copie[indexMessage], repriseDisponible: null, erreurTour: null, interrompue: false };
       const suite: MessageAffiche[] = messageUtilisateur
         ? [
             { id: null, role: "user", content: messageUtilisateur, created_at: new Date().toISOString() },
@@ -893,8 +943,7 @@ export function ChatIA({
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
-      await appelerApiStream(
-        "/api/chat",
+      await lireFluxChat(
         {
           erreurs_typees: true,
           reprise: {
@@ -1262,8 +1311,7 @@ export function ChatIA({
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
-      await appelerApiStream(
-        "/api/chat",
+      await lireFluxChat(
         {
           erreurs_typees: true,
           message: texteEnrichi,
@@ -1412,8 +1460,7 @@ export function ChatIA({
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
-      await appelerApiStream(
-        "/api/chat",
+      await lireFluxChat(
         {
           erreurs_typees: true,
           message: messageUtilisateur.content,
@@ -1510,8 +1557,7 @@ export function ChatIA({
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
-      await appelerApiStream(
-        "/api/chat",
+      await lireFluxChat(
         {
           erreurs_typees: true,
           message: nouveauTexte,
@@ -1659,8 +1705,23 @@ export function ChatIA({
           )
         : prec
     );
+    // Pas de génération en cours : rien à attendre, on arrête seulement ce qui tourne à côté.
+    if (!controleurAbandonRef.current || arretDemandeeRef.current) {
+      arreterToutLocalEtServeur();
+      return;
+    }
+    // Retour immédiat : le message passe en « interrompue » tout de suite, même si le serveur met
+    // un instant à fermer le flux (voir lireFluxChat).
+    arretDemandeeRef.current = true;
+    setArretEnCours(true);
+    majMessages((prec) => {
+      const copie = [...prec];
+      const dernier = copie.length - 1;
+      if (dernier >= 0 && copie[dernier].role === "assistant") copie[dernier] = { ...copie[dernier], interrompue: true };
+      return copie;
+    });
     arreterToutLocalEtServeur();
-    controleurAbandonRef.current?.abort();
+    delaiArretRef.current = setTimeout(() => controleurAbandonRef.current?.abort(), DELAI_ATTENTE_ARRET_MS);
   }
 
   function continuerApresInterruption() {
@@ -1680,7 +1741,11 @@ export function ChatIA({
   });
   actionsTacheCanalRef.current = {
     arreter: arreterGeneration,
-    continuer: continuerApresInterruption,
+    continuer: () => {
+      const dernier = messages.length - 1;
+      if (messages[dernier]?.repriseDisponible) reprendreAgent(dernier);
+      else continuerApresInterruption();
+    },
     reessayer: () => regenererDepuis(messages.length - 1),
   };
   const derniereReponseInterrompue = !genEnCours && messages.length > 1 && messages[messages.length - 1]?.interrompue === true;
@@ -1722,8 +1787,7 @@ export function ChatIA({
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
-      await appelerApiStream(
-        "/api/chat",
+      await lireFluxChat(
         { erreurs_typees: true, reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve } },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -2068,7 +2132,7 @@ export function ChatIA({
               }
               onExpliquerSelection={message.role === "assistant" ? expliquerSelection : undefined}
               />
-              {message.repriseDisponible && message.repriseDisponible.type !== "erreur" && (
+              {message.repriseDisponible && (message.repriseDisponible.type === "limite" || message.repriseDisponible.type === "repetition") && (
                 <BoutonRepriseAgent
                   type={message.repriseDisponible.type}
                   enAttente={genEnCours}
@@ -2084,11 +2148,12 @@ export function ChatIA({
                   onReessayer={() => regenererDepuis(index)}
                 />
               )}
-              {message.interrompue && !genEnCours && (
+              {message.interrompue && (!genEnCours || arretEnCours) && (
                 <BandeauReponseInterrompue
                   enAttente={genEnCours}
+                  arretEnCours={arretEnCours}
                   onModifier={() => modifierApresInterruption(index)}
-                  onContinuer={() => continuerApresInterruption()}
+                  onContinuer={() => (message.repriseDisponible ? reprendreAgent(index) : continuerApresInterruption())}
                   onReessayer={() => regenererDepuis(index)}
                 />
               )}

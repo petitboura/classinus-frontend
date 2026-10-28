@@ -56,4 +56,14 @@ for (const code of ["delai", "forte_demande", "serveur", "reseau", "session", "c
   assert.equal((bandeau.match(new RegExp(`\\b${code}:`, "g")) || []).length, 2, `${code} existe en français et en anglais`);
 }
 assert.ok(!/--/.test(bandeau.replace(/\/\/[^\n]*/g, "")), "pas de double tiret dans les textes affichés");
+// Arrêter : retour immédiat, attente de l'état envoyé par le serveur, puis coupure.
+assert.ok(chat.includes("DELAI_ATTENTE_ARRET_MS"), "délai d'attente borné");
+assert.equal((chat.match(/await lireFluxChat\(/g) || []).length, 5, "les 5 envois passent par lireFluxChat");
+assert.ok(/evenement\.type === "arret_tour"/.test(chat), "l'état envoyé à l'arrêt est gardé");
+assert.ok(/message\.interrompue && \(!genEnCours \|\| arretEnCours\)/.test(chat), "le bandeau d'arrêt est visible dès le clic");
+assert.ok(/message\.repriseDisponible \? reprendreAgent\(index\) : continuerApresInterruption\(\)/.test(chat), "Continuer reprend avec l'état");
+const interrompue = await readFile(new URL("../components/chat/BandeauReponseInterrompue.tsx", import.meta.url), "utf8");
+for (const mot of ["interrompue", "arretEnCours", "modifier", "continuer", "reessayer"]) {
+  assert.equal((interrompue.match(new RegExp(`\\b${mot}:`, "g")) || []).length, 2, `${mot} existe en français et en anglais`);
+}
 console.log("OK : erreur en plein tour, code choisi selon l'erreur, bandeau et reprise branchés");
