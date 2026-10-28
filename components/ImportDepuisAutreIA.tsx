@@ -4,7 +4,7 @@ import {
   deposerZipImportIa,
   lireStatutImportIa,
   obtenirConfigImportIa,
-  type CibleImportIa,
+  type OrigineImportIa,
   type ConfigImportIa,
   type EtatImportIa,
 } from "@/lib/api";
@@ -21,46 +21,51 @@ import { Skeleton } from "@/components/Skeleton";
 // Tous les textes, le prompt et la liste des IA viennent du serveur ou du dictionnaire de traduction.
 
 const DELAI_SUIVI_MS = 2500;
-const cleStockage = (cible: CibleImportIa) => `classinus-import-ia-${cible}`;
+// Un seul import à la fois pour tous les boutons : une seule clé de suivi, reprise d'une page à l'autre.
+const CLE_STOCKAGE = "classinus-import-ia";
 
-const TITRES: Record<CibleImportIa, string> = {
+// Seuls ces textes changent selon la section : l'import, lui, est le même partout.
+const TITRES: Record<OrigineImportIa, string> = {
   memoire: "Importer ma mémoire depuis une autre IA",
   skills: "Importer mes skills depuis une autre IA",
   configuration: "Importer ma configuration depuis une autre IA",
+  chat: "Importer depuis une autre IA",
 };
 
-const ETAPE_OUVRIR: Record<CibleImportIa, string> = {
+const ETAPE_OUVRIR: Record<OrigineImportIa, string> = {
   memoire: "1. Ouvre l'IA où se trouve ta mémoire. Le prompt est déjà prêt.",
   skills: "1. Ouvre l'IA où se trouvent tes skills. Le prompt est déjà prêt.",
   configuration: "1. Ouvre l'IA où se trouve ta configuration. Le prompt est déjà prêt.",
+  chat: "1. Ouvre l'IA où se trouve ton contenu. Le prompt est déjà prêt.",
 };
 
-function lireImportEnCours(cible: CibleImportIa): string | null {
+function lireImportEnCours(): string | null {
   try {
-    return sessionStorage.getItem(cleStockage(cible));
+    return sessionStorage.getItem(CLE_STOCKAGE);
   } catch {
     return null;
   }
 }
 
-function memoriserImport(cible: CibleImportIa, id: string | null) {
+function memoriserImport(id: string | null) {
   try {
-    if (id) sessionStorage.setItem(cleStockage(cible), id);
-    else sessionStorage.removeItem(cleStockage(cible));
+    if (id) sessionStorage.setItem(CLE_STOCKAGE, id);
+    else sessionStorage.removeItem(CLE_STOCKAGE);
   } catch {
     // Stockage indisponible : le suivi reprendra simplement à zéro au prochain chargement.
   }
 }
 
 type Props = {
-  cible: CibleImportIa;
+  /** Section où le bouton est posé : change seulement les textes affichés. */
+  origine: OrigineImportIa;
   /** Panneau déjà déplié (utilisé par le bandeau du chat). */
   ouvertParDefaut?: boolean;
   /** Sans bouton de titre : le panneau reste ouvert, le parent le contrôle (bandeau du chat). */
   sansBouton?: boolean;
 };
 
-export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton = false }: Props) {
+export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBouton = false }: Props) {
   const locale = useLocale();
   const t = useCallback((texte: string) => traduireTexteInterface(texte, locale), [locale]);
   const [ouvert, setOuvert] = useState(ouvertParDefaut);
@@ -76,24 +81,24 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
 
   // Reprend le suivi d'un import commencé avant un changement de page.
   useEffect(() => {
-    const id = lireImportEnCours(cible);
+    const id = lireImportEnCours();
     if (id) {
       setImportId(id);
       setOuvert(true);
     }
-  }, [cible]);
+  }, []);
 
   // Prompt et liste des IA : demandés au serveur à la première ouverture, dans la langue active.
   useEffect(() => {
     if (!ouvert || config || chargement) return;
     let actif = true;
     setChargement(true);
-    obtenirConfigImportIa(cible)
+    obtenirConfigImportIa()
       .then((c) => { if (actif) setConfig(c); })
       .catch((e) => { if (actif) setErreur(messageErreur(e)); })
       .finally(() => { if (actif) setChargement(false); });
     return () => { actif = false; };
-  }, [ouvert, config, chargement, cible, locale]);
+  }, [ouvert, config, chargement, locale]);
 
   // Suivi du travail fait côté serveur.
   useEffect(() => {
@@ -105,14 +110,15 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
         if (!actif) return;
         setEtat(e);
         if (e.statut !== "en_cours") {
-          memoriserImport(cible, null);
-          if (cible === "skills") emettreDonneesModifieesPourOutil("gerer_skill");
-          if (cible === "configuration") emettreDonneesModifieesPourOutil("gerer_configuration");
+          memoriserImport(null);
+          // Le même import range mémoire, skills et configuration : les listes affichées sont relues.
+          emettreDonneesModifieesPourOutil("gerer_skill");
+          emettreDonneesModifieesPourOutil("gerer_configuration");
         }
       } catch {
         if (!actif) return;
         // Le serveur ne connaît plus cet import (redémarrage) : on arrête de le suivre sans rien inventer.
-        memoriserImport(cible, null);
+        memoriserImport(null);
         setSuiviPerdu(true);
         setImportId(null);
       }
@@ -123,7 +129,7 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
     }, DELAI_SUIVI_MS);
     return () => { actif = false; clearInterval(minuteur); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [importId, cible]);
+  }, [importId]);
 
   async function copierPrompt(): Promise<boolean> {
     if (!config) return false;
@@ -153,8 +159,8 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
     setSuiviPerdu(false);
     setEtat(null);
     try {
-      const r = await deposerZipImportIa(cible, fichier);
-      memoriserImport(cible, r.import_id);
+      const r = await deposerZipImportIa(origine, fichier);
+      memoriserImport(r.import_id);
       setImportId(r.import_id);
     } catch (e) {
       setErreur(messageErreur(e));
@@ -165,7 +171,7 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
   }
 
   function recommencer() {
-    memoriserImport(cible, null);
+    memoriserImport(null);
     setImportId(null);
     setEtat(null);
     setSuiviPerdu(false);
@@ -185,7 +191,7 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
           onClick={() => setOuvert((v) => !v)}
           className="rounded-lg border border-dj-bordure px-3 py-2 text-sm transition-colors hover:border-dj-bordure-forte"
         >
-          {t(TITRES[cible])}
+          {t(TITRES[origine])}
         </button>
       )}
       <div className={`grid transition-[grid-template-rows] duration-300 ease-cgpt-doux ${ouvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
@@ -196,7 +202,7 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
             {!importId && !fini && (
               <>
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-dj-texte">{t(ETAPE_OUVRIR[cible])}</p>
+                  <p className="text-sm font-medium text-dj-texte">{t(ETAPE_OUVRIR[origine])}</p>
                   {chargement && <div aria-busy="true" className="flex gap-2"><Skeleton className="h-9 w-24" /><Skeleton className="h-9 w-24" /><Skeleton className="h-9 w-24" /></div>}
                   {config && (
                     <div className="flex flex-wrap gap-2 animate-dj-fade-in-rapide">
@@ -218,6 +224,7 @@ export function ImportDepuisAutreIA({ cible, ouvertParDefaut = false, sansBouton
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium text-dj-texte">{t("2. Récupère le zip qu'elle te donne, puis dépose-le ici.")}</p>
+                  <p className="text-xs text-dj-texte-muet">{t("Classinus range tout ce que contient le zip au bon endroit : mémoire, skills, configuration. Les applications connectées sont gardées pour te rappeler de les connecter dans le chat.")}</p>
                   <div>
                     <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={(e) => void envoyerZip(e.target.files?.[0])} />
                     <button type="button" disabled={envoiEnCours} onClick={() => champZip.current?.click()} className="rounded-lg bg-dj-primaire px-3 py-2 text-sm text-white transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50">

@@ -34,7 +34,7 @@ export function ConfigurationBureau() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ImportDepuisAutreIA cible="configuration" />
+      <ImportDepuisAutreIA origine="configuration" />
       <OngletsSegment
         ariaLabel={texteConfiguration("ariaCategorie")}
         valeur={onglet}

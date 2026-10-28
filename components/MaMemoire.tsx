@@ -365,7 +365,7 @@ export function MaMemoire() {
 
   return (
     <div className="flex flex-col gap-2">
-      <ImportDepuisAutreIA cible="memoire" />
+      <ImportDepuisAutreIA origine="memoire" />
       {/* Skeleton fidèle à la forme réelle : 4 catégories repliées, chacune
           avec son titre, sa date de mise à jour, puis à droite la flèche et
           le menu à trois points. */}

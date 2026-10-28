@@ -1,21 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import type { CibleImportIa } from "@/lib/api";
 import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { ImportDepuisAutreIA } from "@/components/ImportDepuisAutreIA";
 
 // 27/10/2026, demande Bourama : un CTA posé juste au-dessus de la barre de saisie du chat, avec un bouton
-// pour l'enlever. Il ouvre le même import que les pages Mémoire, Skills et Configuration (voir
-// components/ImportDepuisAutreIA.tsx), au choix de l'utilisateur. Une fois enlevé, il ne revient pas :
-// les boutons des pages restent le moyen de le retrouver.
+// pour l'enlever. Il fait le même import que les boutons des pages Mémoire, Skills et Configuration (voir
+// components/ImportDepuisAutreIA.tsx). Une fois enlevé, il ne revient pas : les boutons des pages
+// restent le moyen de le retrouver.
 
 const CLE_FERME = "classinus-cta-import-ia-ferme";
-const CIBLES: { cible: CibleImportIa; libelle: string }[] = [
-  { cible: "memoire", libelle: "Ma mémoire" },
-  { cible: "skills", libelle: "Mes skills" },
-  { cible: "configuration", libelle: "Ma configuration" },
-];
 
 function dejaFerme(): boolean {
   try {
@@ -31,7 +25,6 @@ export function CtaImportIa() {
   // Caché tant que la préférence n'est pas lue : évite un clignotement au chargement.
   const [visible, setVisible] = useState(false);
   const [deplie, setDeplie] = useState(false);
-  const [cible, setCible] = useState<CibleImportIa>("memoire");
 
   useEffect(() => { setVisible(!dejaFerme()); }, []);
 
@@ -59,22 +52,7 @@ export function CtaImportIa() {
           </div>
           <div className={`grid transition-[grid-template-rows] duration-300 ease-cgpt-doux ${deplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
             <div className="min-h-0 overflow-hidden">
-              <div className="flex flex-col gap-3 pt-3">
-                <div className="flex flex-wrap gap-2" role="group" aria-label={t("Que veux-tu importer ?")}>
-                  {CIBLES.map((c) => (
-                    <button
-                      key={c.cible}
-                      type="button"
-                      aria-pressed={cible === c.cible}
-                      onClick={() => setCible(c.cible)}
-                      className={`rounded-full border px-3 py-1 text-sm transition-colors ${cible === c.cible ? "border-dj-bordure-forte bg-dj-surface-haute text-dj-texte" : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"}`}
-                    >
-                      {t(c.libelle)}
-                    </button>
-                  ))}
-                </div>
-                {deplie && <ImportDepuisAutreIA key={cible} cible={cible} ouvertParDefaut sansBouton />}
-              </div>
+              <div className="pt-3">{deplie && <ImportDepuisAutreIA origine="chat" ouvertParDefaut sansBouton />}</div>
             </div>
           </div>
         </section>

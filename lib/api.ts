@@ -3039,20 +3039,21 @@ export async function supprimerSkillIndependant(id: string) { return appelerApi(
 export async function importerSkillZip(fichier: File) { return appelerApiFichier("/api/skills/import-zip", fichier) as Promise<SkillIndependant>; }
 
 // Import depuis une autre IA (27/10/2026, demande Bourama) : le prompt à envoyer à l'autre IA, le dépôt
-// du zip obtenu (le serveur fait travailler le LLM en arrière-plan) et l'état de ce travail.
-export type CibleImportIa = "memoire" | "skills" | "configuration";
+// du zip obtenu (le serveur fait travailler le LLM en arrière-plan) et l'état de ce travail. Tous les
+// boutons font le même import, `origine` ne sert qu'à renvoyer l'utilisateur à sa section à la fin.
+export type OrigineImportIa = "memoire" | "skills" | "configuration" | "chat";
 export type IaImport = { id: string; nom: string; url: string; prerempli: boolean };
-export type ConfigImportIa = { cible: CibleImportIa; prompt: string; ias: IaImport[] };
+export type ConfigImportIa = { prompt: string; ias: IaImport[] };
 export type EtatImportIa = {
   import_id: string;
-  cible: CibleImportIa;
+  cible: OrigineImportIa;
   statut: "en_cours" | "termine" | "echec";
   etape: string;
   reponse: string;
   conversation_id: string;
 };
-export async function obtenirConfigImportIa(cible: CibleImportIa) { return appelerApi(`/api/import-ia/${cible}`) as Promise<ConfigImportIa>; }
-export async function deposerZipImportIa(cible: CibleImportIa, fichier: File) { return appelerApiFichier(`/api/import-ia/${cible}/zip`, fichier) as Promise<{ import_id: string; conversation_id: string }>; }
+export async function obtenirConfigImportIa() { return appelerApi("/api/import-ia") as Promise<ConfigImportIa>; }
+export async function deposerZipImportIa(origine: OrigineImportIa, fichier: File) { return appelerApiFichier(`/api/import-ia/zip?origine=${origine}`, fichier) as Promise<{ import_id: string; conversation_id: string }>; }
 export async function lireStatutImportIa(importId: string) { return appelerApi(`/api/import-ia/statut/${importId}`) as Promise<EtatImportIa>; }
 
 export type AuthTypeMcpPersonnalise = "none" | "bearer" | "oauth";

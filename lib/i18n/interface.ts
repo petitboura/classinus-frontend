@@ -2641,11 +2641,11 @@ const EN: Record<string, string> = {
   "Faire un autre import": "Do another import",
   "L'import s'est arrêté avant la fin.": "The import stopped before the end.",
   "Rien n'est perdu, tu peux réessayer.": "Nothing is lost, you can try again.",
-  "Ma configuration": "My configuration",
   "Importer depuis une autre IA": "Import from another AI",
+  "1. Ouvre l'IA où se trouve ton contenu. Le prompt est déjà prêt.": "1. Open the AI where your content is. The prompt is already ready.",
+  "Classinus range tout ce que contient le zip au bon endroit : mémoire, skills, configuration. Les applications connectées sont gardées pour te rappeler de les connecter dans le chat.": "Classinus puts everything in the zip in the right place: memory, skills, configuration. Connected apps are kept to remind you to connect them in the chat.",
   "Tu viens d'une autre IA ? Retrouve ici ta mémoire, tes skills et ta configuration.": "Coming from another AI? Bring your memory, skills and configuration here.",
   "Enlever ce bandeau": "Remove this banner",
-  "Que veux-tu importer ?": "What do you want to import?",
 };
 
 function normaliserCasse(texte: string): string {

@@ -143,7 +143,7 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
       {
         question: "Puis-je importer ma mémoire, mes skills ou ma configuration depuis une autre IA ?",
         reponse:
-          "Oui. Les pages Mémoire, Skills et Configuration ont chacune un bouton d'import, et un bandeau au dessus de la barre de saisie du chat y mène aussi. Le bouton ouvre l'autre IA avec un prompt déjà prêt. Elle te donne un zip, tu le déposes dans Classinus, qui le traite en arrière-plan puis te prévient à la fin. Les connexions aux applications ne sont pas incluses.",
+          "Oui. Les pages Mémoire, Skills et Configuration ont chacune un bouton d'import, et un bandeau au dessus de la barre de saisie du chat y mène aussi. Tous font le même import. Le bouton ouvre l'autre IA avec un prompt déjà prêt. Elle te donne un zip, tu le déposes dans Classinus, qui range la mémoire, les skills et la configuration au bon endroit en arrière-plan, puis te prévient à la fin. Les applications connectées ne peuvent pas être reliées depuis l'import : Classinus en garde la liste pour te rappeler de les connecter quand tu discuteras avec lui.",
       },
     ],
   },
