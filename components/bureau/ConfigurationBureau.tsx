@@ -1,5 +1,6 @@
 "use client";
 
+import { ImportDepuisAutreIA } from "@/components/ImportDepuisAutreIA";
 import { useState } from "react";
 import { ListOrdered, Scale, UserCog, Feather } from "lucide-react";
 import { OngletsSegment } from "@/components/OngletsSegment";
@@ -33,6 +34,7 @@ export function ConfigurationBureau() {
 
   return (
     <div className="flex flex-col gap-4">
+      <ImportDepuisAutreIA origine="configuration" />
       <OngletsSegment
         ariaLabel={texteConfiguration("ariaCategorie")}
         valeur={onglet}

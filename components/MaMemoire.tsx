@@ -1,5 +1,6 @@
 "use client";
 
+import { ImportDepuisAutreIA } from "@/components/ImportDepuisAutreIA";
 import { useState } from "react";
 import { ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -364,6 +365,7 @@ export function MaMemoire() {
 
   return (
     <div className="flex flex-col gap-2">
+      <ImportDepuisAutreIA origine="memoire" />
       {/* Skeleton fidèle à la forme réelle : 4 catégories repliées, chacune
           avec son titre, sa date de mise à jour, puis à droite la flèche et
           le menu à trois points. */}
