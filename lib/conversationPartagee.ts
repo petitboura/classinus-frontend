@@ -20,6 +20,8 @@ type MessageDuChat = {
   id: IdMessage | null;
   role: "user" | "assistant";
   content: string;
+  // Texte parti au serveur avec les blocs des pièces jointes (voir MessageAffiche.contenuEnvoye).
+  contenuEnvoye?: string;
   outilsResultats?: { nomOutil: string; nomLisible: string; resultat: unknown }[];
 };
 
@@ -83,7 +85,7 @@ export function ecrireEtatDepuisChat(conversationId: string, messages: MessageDu
   etats.set(conversationId, {
     historique: messages.map((m) => ({
       role: m.role,
-      content: m.content,
+      content: m.contenuEnvoye ?? m.content,
       outils:
         m.role === "assistant" && m.outilsResultats?.length
           ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))

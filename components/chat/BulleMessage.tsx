@@ -208,6 +208,14 @@ export interface MessageAffiche {
   id: number | null; // id historique_conversations (null tant que non persisté, ex: pendant le streaming)
   role: "user" | "assistant";
   content: string;
+  // Ajouté 29/10/2026 (bug signalé par Bourama : un document joint n'était plus
+  // retrouvé dès le message suivant). `content` reste le texte AFFICHÉ dans la
+  // bulle. Ce champ porte le texte tel qu'il est parti au serveur et enregistré
+  // en base, avec les petits blocs des pièces jointes (nom, lien réel du
+  // fichier). C'est lui, et non `content`, qui sert à refaire l'historique envoyé
+  // au modèle, sans quoi l'outil de lecture des documents n'est plus branché.
+  // Absent quand le message n'a ni pièce jointe ni texte collé.
+  contenuEnvoye?: string;
   created_at?: string;
   // Ajouté 20/09/2026 (minuteurs du chat, demande Bourama) : message envoyé
   // par l'appli et non par l'étudiant (fin d'un minuteur). Gardé dans la
@@ -524,6 +532,8 @@ function ligneVersMessage(l: LigneHistorique): MessageAffiche {
     id: l.id ?? null,
     role: l.role,
     content: texte,
+    // Texte brut enregistré (avec les blocs des pièces jointes) : voir MessageAffiche.contenuEnvoye.
+    contenuEnvoye: l.content !== texte ? l.content : undefined,
     created_at: l.created_at,
     piecesJointes: piecesJointes ?? l.meta?.pieces_jointes ?? undefined,
     automatique: l.meta?.automatique === true ? true : undefined,
