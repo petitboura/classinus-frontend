@@ -88,28 +88,44 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
     }
   }, []);
 
-  // Prompt et liste des IA : demandés au serveur à la première ouverture, dans la langue active.
-  useEffect(() => {
-    if (!ouvert || config || chargement) return;
-    let actif = true;
-    setChargement(true);
-    obtenirConfigImportIa()
-      .then((c) => { if (actif) setConfig(c); })
-      .catch((e) => { if (actif) setErreur(messageErreur(e)); })
-      .finally(() => { if (actif) setChargement(false); });
-    return () => { actif = false; };
-  }, [ouvert, config, chargement, locale]);
+  // Le prompt change avec la langue : on le redemande si elle change.
+  useEffect(() => { setConfig(null); }, [locale]);
 
-  // Suivi du travail fait côté serveur.
+  // Prompt et liste des IA : demandés au serveur à la première ouverture, dans la langue active.
+  // `chargement` n'est volontairement PAS une dépendance : la changer relançait l'effet, dont le nettoyage
+  // annulait la réponse en route et laissait l'écran bloqué sur le chargement (bug vu en staging le 28/10).
+  const demandeEnCours = useRef(false);
+  const monte = useRef(true);
+  useEffect(() => {
+    monte.current = true;
+    return () => { monte.current = false; };
+  }, []);
+  useEffect(() => {
+    if (!ouvert || config || demandeEnCours.current) return;
+    demandeEnCours.current = true;
+    setChargement(true);
+    setErreur("");
+    obtenirConfigImportIa()
+      .then((c) => { if (monte.current) setConfig(c); })
+      .catch((e) => { if (monte.current) setErreur(messageErreur(e)); })
+      .finally(() => {
+        demandeEnCours.current = false;
+        if (monte.current) setChargement(false);
+      });
+  }, [ouvert, config]);
+
+  // Suivi du travail fait côté serveur. S'arrête dès que l'import est terminé ou perdu.
   useEffect(() => {
     if (!importId) return;
     let actif = true;
+    let fini = false;
     async function lire() {
       try {
         const e = await lireStatutImportIa(importId as string);
         if (!actif) return;
         setEtat(e);
         if (e.statut !== "en_cours") {
+          fini = true;
           memoriserImport(null);
           // Le même import range mémoire, skills et configuration : les listes affichées sont relues.
           emettreDonneesModifieesPourOutil("gerer_skill");
@@ -118,6 +134,7 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
       } catch {
         if (!actif) return;
         // Le serveur ne connaît plus cet import (redémarrage) : on arrête de le suivre sans rien inventer.
+        fini = true;
         memoriserImport(null);
         setSuiviPerdu(true);
         setImportId(null);
@@ -125,10 +142,10 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
     }
     void lire();
     const minuteur = setInterval(() => {
-      if (!etat || etat.statut === "en_cours") void lire();
+      if (fini) clearInterval(minuteur);
+      else void lire();
     }, DELAI_SUIVI_MS);
     return () => { actif = false; clearInterval(minuteur); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importId]);
 
   async function copierPrompt(): Promise<boolean> {
