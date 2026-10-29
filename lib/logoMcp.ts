@@ -57,3 +57,15 @@ export function initialesMcp(nom: string, autresNoms: string[] = []): string {
   }
   return miennes.slice(0, plafond).join("");
 }
+
+/**
+ * Lettre de secours du logo d'un site visé par un outil du chat (29/10/2026) : la première lettre
+ * du nom du site, en majuscule ("N" pour netlify-mcp.netlify.app, "W" pour fr.wikipedia.org).
+ */
+export function lettreDeSite(domaine: string): string {
+  const site = domaineSiteMcp(`https://${domaine}`);
+  // Un nom accentué (école.fr) est converti en code interne (xn--...) par le navigateur : on garde alors
+  // le nom d'origine pour que la lettre soit "E" et non "X".
+  const utile = !site || site.startsWith("xn--") ? domaine.trim().replace(/^www\./i, "") : site;
+  return lettresDe(utile)[0] ?? "?";
+}

@@ -3,6 +3,7 @@ import { IconeYoutube } from "@/components/icons/IconeYoutube";
 import { IconeInternetArchive } from "@/components/icons/IconeInternetArchive";
 import { IconeArxiv } from "@/components/icons/IconeArxiv";
 import { IconeHal } from "@/components/icons/IconeHal";
+import { API_URL } from "@/lib/api";
 
 // Vrais logos des sites et sources que les outils du chat peuvent viser
 // (21/10/2026, demande Bourama : la ligne d'un outil montre le logo du site
@@ -25,6 +26,16 @@ const LOGOS: { domaines: string[]; Icone: LucideIcon }[] = [
 /** Normalise un nom de domaine : minuscules, sans espaces ni "www.". */
 export function normaliserDomaine(domaine: string): string {
   return domaine.trim().toLowerCase().replace(/^www\./, "");
+}
+
+/**
+ * Adresse de l'icône publiée par un site, demandée au serveur de Classinus (29/10/2026).
+ * Le serveur répond 404 quand le site n'a pas d'icône, ce qui laisse la lettre de secours
+ * (components/LogoDeSite.tsx). Ne jamais appeler directement le service d'icônes de Google
+ * depuis l'écran : il envoie un globe générique que rien ne permet de reconnaître.
+ */
+export function urlLogoSite(domaine: string): string {
+  return `${API_URL}/api/logos-sites/${encodeURIComponent(normaliserDomaine(domaine))}`;
 }
 
 /** Vrai logo du site, ou null si on n'en a pas (le repli est l'icône publiée par le site). */

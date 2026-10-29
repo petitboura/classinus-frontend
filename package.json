@@ -43,7 +43,8 @@
     "test:i18n": "node tests/verifier-i18n.mjs",
     "audit:i18n": "node tests/auditer-i18n.mjs",
     "test:montage-video": "node tests/verifier-montage-video.mjs",
-    "test:carte-connecteur": "node tests/verifier-carte-connecteur.mjs"
+    "test:carte-connecteur": "node tests/verifier-carte-connecteur.mjs",
+    "test:logos-sites": "node tests/verifier-logos-sites.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "3.7.1",
