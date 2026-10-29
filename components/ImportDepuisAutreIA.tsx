@@ -13,6 +13,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { Skeleton } from "@/components/Skeleton";
+import { IconeFournisseur } from "@/components/chat/IconeFournisseur";
 
 // 27/10/2026, demande Bourama : un bouton par page (Mémoire, Skills, Configuration) et un dans le chat.
 // L'utilisateur ouvre l'autre IA avec un prompt prêt, récupère un zip, le dépose ici. Le travail est
@@ -21,6 +22,10 @@ import { Skeleton } from "@/components/Skeleton";
 // Tous les textes, le prompt et la liste des IA viennent du serveur ou du dictionnaire de traduction.
 
 const DELAI_SUIVI_MS = 2500;
+// 29/10/2026, demande Bourama : le logo de chaque IA sur son bouton. Les icônes existantes sont rangées sous
+// la clé "distributeur" (voir IconeFournisseur) : cette table fait le lien avec l'id renvoyé par le serveur.
+// Une IA sans logo connu s'affiche simplement avec son nom.
+const DISTRIBUTEUR_PAR_IA: Record<string, string> = { claude: "claude", chatgpt: "gpt", gemini: "gemini" };
 // Un seul import à la fois pour tous les boutons : une seule clé de suivi, reprise d'une page à l'autre.
 const CLE_STOCKAGE = "classinus-import-ia";
 
@@ -224,7 +229,8 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
                   {config && (
                     <div className="flex flex-wrap gap-2 animate-dj-fade-in-rapide">
                       {config.ias.map((ia) => (
-                        <button key={ia.id} type="button" onClick={() => void ouvrirIa(ia)} className="rounded-lg border border-dj-bordure px-3 py-2 text-sm transition-colors hover:border-dj-bordure-forte">
+                        <button key={ia.id} type="button" onClick={() => void ouvrirIa(ia)} className="flex items-center gap-2 rounded-lg border border-dj-bordure px-3 py-2 text-sm transition-colors hover:border-dj-bordure-forte">
+                          {DISTRIBUTEUR_PAR_IA[ia.id] && <IconeFournisseur distributeur={DISTRIBUTEUR_PAR_IA[ia.id]} taille={16} />}
                           {ia.nom}
                         </button>
                       ))}
