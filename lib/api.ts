@@ -4,6 +4,13 @@ import { obtenirOrigineAppareil } from "./origineAppareil";
 import { obtenirLocale } from "./i18n/locale";
 import { lireReponseJsonOuNulle } from "./reponseApi";
 import { textesEditeurVideo } from "./textesEditeurVideo";
+import {
+  demontageDemande,
+  lireFluxSse,
+  reprendreFluxApresCoupure,
+  type CompteurFlux,
+  type EtatTourEnCours,
+} from "./repriseFluxChat";
 
 // URL du backend FastAPI (voir api/main.py). En local pendant le dev :
 // http://localhost:8000. Une fois déployé sur Railway : l'URL publique de
@@ -138,6 +145,22 @@ export async function appelerApiStream(
   surEvenement: (evenement: any) => void,
   signal?: AbortSignal
 ) {
+  try {
+    await appelerApiStreamInterne(chemin, corps, surEvenement, signal);
+  } catch (e) {
+    // La page a quitté la conversation (28/10/2026) : le travail continue sur le serveur, rien à
+    // afficher ici. Le composant qui revient se rattache au tour (voir suivreTourEnCours).
+    if (demontageDemande(signal)) return;
+    throw e;
+  }
+}
+
+async function appelerApiStreamInterne(
+  chemin: string,
+  corps: unknown,
+  surEvenement: (evenement: any) => void,
+  signal?: AbortSignal
+) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -168,49 +191,87 @@ export async function appelerApiStream(
     throw await construireErreurApi(reponse, chemin);
   }
 
-  const lecteur = reponse.body.getReader();
-  const decodeur = new TextDecoder();
-  let tampon = "";
+  // Un compte connecté reçoit l'identifiant de son tour (28/10/2026, voir core/tours_detaches.py
+  // côté serveur) : le travail continue même si cette connexion tombe, et on peut s'y rattacher.
+  // Un visiteur n'en reçoit pas : son flux reste direct, comme avant.
+  const idTour = chemin === "/api/chat" ? reponse.headers.get("X-Tour-Id") : null;
+  const compteur: CompteurFlux = { recus: 0 };
 
+  // Sans identifiant de tour (visiteur), lireFluxSse garde le comportement d'origine : une erreur de
+  // lecture est relancée telle quelle et une fin de flux compte comme une fin normale.
+  const issue = await lireFluxSse(reponse, surEvenement, signal, compteur, !!idTour);
+  if (issue === "fini" || !idTour) return;
+
+  await reprendreFluxApresCoupure({
+    compteur,
+    ouvrirFlux: (depuis, signalReprise) => ouvrirFluxTour(idTour, depuis, signalReprise),
+    surEvenement,
+    signal,
+  });
+}
+
+// GET /api/chat/flux/{tour_id}?depuis=N : rejoue le tour à partir de l'événement N. Jeton et langue
+// relus à chaque appel : une longue coupure peut avoir fait expirer le jeton de départ.
+async function ouvrirFluxTour(idTour: string, depuis: number, signal?: AbortSignal): Promise<Response> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const entetes = new Headers();
+  entetes.set("Accept-Language", obtenirLocale());
+  if (session?.access_token) {
+    entetes.set("Authorization", `Bearer ${session.access_token}`);
+  }
+  return fetch(`${API_URL}/api/chat/flux/${encodeURIComponent(idTour)}?depuis=${Math.max(0, Math.floor(depuis))}`, {
+    method: "GET",
+    headers: entetes,
+    signal,
+  });
+}
+
+/**
+ * État du dernier tour de chat de cette conversation côté serveur (28/10/2026). Sert à la page qui
+ * se rouvre après un rechargement ou un changement de conversation : si le tour tourne encore, elle
+ * s'y rattache avec suivreTourEnCours. En cas d'échec, "aucun" : l'historique sauvegardé fait foi.
+ */
+export async function lireEtatTourEnCours(conversationId: string): Promise<EtatTourEnCours> {
   try {
-    while (true) {
-      // Un arrêt peut arriver entre deux morceaux reçus : annuler aussi
-      // explicitement le lecteur libère la connexion sans attendre un chunk.
-      if (signal?.aborted) {
-        await lecteur.cancel().catch(() => {});
-        return;
-      }
-      const { done, value } = await lecteur.read();
-      if (done) break;
-      tampon += decodeur.decode(value, { stream: true });
+    const etat = (await appelerApi(`/api/chat/tour-en-cours?conversation_id=${encodeURIComponent(conversationId)}`)) as
+      | EtatTourEnCours
+      | null;
+    return etat && typeof etat.statut === "string" ? etat : { statut: "aucun" };
+  } catch {
+    return { statut: "aucun" };
+  }
+}
 
-      // Un événement SSE = une ligne "data: {...}", séparée par \n\n.
-      const morceaux = tampon.split("\n\n");
-      tampon = morceaux.pop() ?? "";
-
-      for (const morceau of morceaux) {
-        const ligne = morceau.trim();
-        if (!ligne.startsWith("data:")) continue;
-        const contenu = ligne.slice("data:".length).trim();
-        if (contenu === "[DONE]") {
-          await lecteur.cancel().catch(() => {});
-          return;
-        }
-        try {
-          surEvenement(JSON.parse(contenu));
-        } catch {
-          // Ligne mal formée : on l'ignore plutôt que de casser tout le flux.
-        }
-      }
+/**
+ * Rejoue un tour de chat encore en cours (ou fini depuis peu) depuis son tout premier événement,
+ * puis suit la suite en direct. Mêmes événements que POST /api/chat, remis à `surEvenement` dans le
+ * même ordre. Gère elle-même les coupures : se reconnecte et reprend après le dernier événement reçu.
+ * Lève une erreur si le tour n'existe plus ou si la reconnexion échoue pour de bon.
+ */
+export async function suivreTourEnCours(
+  idTour: string,
+  surEvenement: (evenement: any) => void,
+  signal?: AbortSignal
+): Promise<void> {
+  try {
+    const compteur: CompteurFlux = { recus: 0 };
+    const reponse = await ouvrirFluxTour(idTour, 0, signal);
+    if (!reponse.ok || !reponse.body) {
+      throw await construireErreurApi(reponse, "/api/chat/flux");
     }
-  } finally {
-    // Chaque tour de chat acquiert un reader : ne pas conserver le verrou
-    // après [DONE], annulation, fin du flux ou erreur de lecture.
-    try {
-      lecteur.releaseLock();
-    } catch {
-      // Un reader déjà libéré/annulé ne doit pas masquer l'erreur initiale.
-    }
+    const issue = await lireFluxSse(reponse, surEvenement, signal, compteur, true);
+    if (issue === "fini") return;
+    await reprendreFluxApresCoupure({
+      compteur,
+      ouvrirFlux: (depuis, signalReprise) => ouvrirFluxTour(idTour, depuis, signalReprise),
+      surEvenement,
+      signal,
+    });
+  } catch (e) {
+    if (demontageDemande(signal)) return;
+    throw e;
   }
 }
 /**

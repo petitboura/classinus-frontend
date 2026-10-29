@@ -107,7 +107,8 @@ export function signalerArretTache() {
 
 // Appelé par les boutons Arrêter (chat et canal) : coupe le local ET demande au serveur
 // d'arrêter les outils et la boucle d'agent.
-export function arreterToutLocalEtServeur() {
+// `conversationId` : limite l'arrêt serveur au tour de cette conversation (28/10/2026).
+export function arreterToutLocalEtServeur(conversationId?: string) {
   signalerArretTache();
-  demanderArretServeur();
+  demanderArretServeur(conversationId);
 }

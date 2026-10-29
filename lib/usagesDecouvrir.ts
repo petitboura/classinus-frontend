@@ -310,6 +310,11 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
       "Ouvre une conversation dans l'historique ou sélectionne-la dans l'activité récente pour revenir à son fil et poursuivre l'échange.",
   },
   {
+    question: "Que se passe-t-il si je recharge la page ou change de conversation pendant que Classinus travaille ?",
+    reponse:
+      "Le travail continue sur le serveur. En revenant dans la conversation, la réponse en cours se réaffiche depuis le début puis se poursuit en direct, ou apparaît terminée si elle est finie entre-temps. Si ta connexion est perturbée, un bandeau indique que Classinus se reconnecte et la suite s'affiche dès le retour du réseau. Le bouton Arrêter n'arrête que la conversation affichée. Limites : une action qui a besoin de ton écran ou de ton appareil (exécution de code dans la page, vision de l'écran du téléphone, voix) attend que la page soit de nouveau ouverte, et une réponse n'est retrouvable que pendant environ 30 minutes.",
+  },
+  {
     question: "Puis-je retrouver mes conversations précédentes ?",
     reponse:
       "Oui. Ouvre l'historique ou une conversation récente pour reprendre le fil et continuer ton travail. L'accueil peut aussi afficher les fichiers récemment ajoutés à ta bibliothèque personnelle.",
