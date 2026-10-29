@@ -16,8 +16,10 @@ import { Skeleton } from "./Skeleton";
 
 /**
  * Créé le 28/10/2026, demande Bourama : relais téléphone embarqué dans
- * l'appli PC (décision D31). L'étudiant lance et arrête ici le relais qui
- * relie son téléphone branché en USB, et ouvre sa page de santé.
+ * l'appli PC (décision D31). Depuis D37 (29/10/2026 : relais 100 % automatique,
+ * aucun réglage à ouvrir), le relais démarre tout seul avec l'appli : cette
+ * carte n'est qu'un voyant d'état, et ouvre la page de santé. Les boutons
+ * Lancer et Arrêter restent en secours manuel, jamais obligatoires.
  *
  * Carte autonome, même principe que MiseAJourPcCarte.tsx : absente sur web
  * et mobile, elle gère elle même son état. Pas de mécanisme i18n branché dans
@@ -29,7 +31,7 @@ function texteEtat(e: EtatRelaisPc): string {
     case "indisponible":
       return e.message ?? "Le relais téléphone n'est pas dans cette installation de Classinus.";
     case "arrete":
-      return "Le relais est arrêté. Lance-le pour relier ton téléphone branché en USB.";
+      return "Le relais est arrêté. Il repart tout seul au prochain lancement de Classinus, ou relance-le ici.";
     case "demarrage":
       return "Le relais démarre...";
     case "enmarche":

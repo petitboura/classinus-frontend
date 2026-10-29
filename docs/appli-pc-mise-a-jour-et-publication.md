@@ -31,11 +31,13 @@ de Classinus et la mettre à jour toute seule, et ce qu'il reste à faire à la 
   `userData/relais` et y pose `reglages.json` seulement au premier lancement
   (les réglages de l'étudiant survivent aux mises à jour). Le plugin
   `RelaisPc` (`packages/capacitor-relais-pc-electron`, `lib/relaisPc.ts`)
-  lance et arrête l'exe sans fenêtre console, lit sa page de santé locale, et
-  l'arrête avec l'appli. La carte « Relais téléphone »
+  lance tout seul l'exe au démarrage de l'appli (29/10/2026, décision D37 :
+  aucun réglage à ouvrir), sans fenêtre console, lit sa page de santé locale,
+  et l'arrête avec l'appli. La carte « Relais téléphone »
   (`components/RelaisPcCarte.tsx`), dans Paramètres, Préférences, à côté de
-  la carte de mise à jour, montre l'état et les boutons Lancer, Arrêter et
-  Page de santé. Test : `npm run test:relais-pc` (noyau, sans Electron).
+  la carte de mise à jour, montre l'état (simple voyant) et les boutons Lancer,
+  Arrêter (secours manuel) et Page de santé. Test : `npm run test:relais-pc`
+  (noyau, sans Electron).
 
 ## À faire une seule fois (toi)
 

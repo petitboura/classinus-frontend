@@ -18,11 +18,13 @@
 // import entre eux serait fragile). Le test tests/verifier-relais-pc.mjs
 // vérifie que les deux copies restent identiques.
 //
-// Le lancement cache la fenêtre console de l'exe (windowsHide) : l'étudiant
-// pilote tout depuis la carte Paramètres. La page de santé que l'exe ouvrirait
-// toute seule dans le navigateur est repoussée à demain (RELAIS_PC_DELAI_PAGE,
-// voir demarrage_1clic.py dans class-tech) : c'est la carte qui l'ouvre, sur
-// demande, avec ouvrirPageSante.
+// Le lancement cache la fenêtre console de l'exe (windowsHide) et part tout
+// seul au démarrage de l'appli (D37, 29/10/2026, demande Bourama : aucun réglage
+// à ouvrir, voir load ci-dessous) : la carte Paramètres n'est qu'un voyant,
+// ses boutons Lancer et Arrêter restant en secours manuel. La page de santé que
+// l'exe ouvrirait toute seule dans le navigateur est repoussée à demain
+// (RELAIS_PC_DELAI_PAGE, voir demarrage_1clic.py dans class-tech) : c'est la
+// carte qui l'ouvre, sur demande, avec ouvrirPageSante.
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -45,6 +47,15 @@ const DELAI_PAGE_RELAIS_S = "86400";
 
 // Un contrôle de santé ne doit jamais attendre longtemps : le relais est local.
 const DELAI_SANTE_HTTP_MS = 3000;
+
+// Démarrage automatique (D37) : la première tentative attend un peu, pour
+// laisser electron/relais.ts recopier l'exe neuf dans le dossier de données
+// (au premier lancement, il n'y est pas encore). Tant que l'exe est absent, on
+// réessaie à cet intervalle, puis on abandonne (la carte Paramètres garde le
+// bouton Lancer en secours manuel).
+const DELAI_PREMIER_DEMARRAGE_MS = 2000;
+const INTERVALLE_REESSAI_DEMARRAGE_MS = 2000;
+const ESSAIS_DEMARRAGE_AUTO = 15;
 
 function dossierRelaisDonnees(): string {
   return join(app.getPath("userData"), NOM_DOSSIER_RELAIS);
@@ -156,7 +167,9 @@ function lireSanteHttp(url: string): Promise<boolean> {
 
 class RelaisPcImpl extends ElectronPlugin {
   private noyau = creerRelaisPc({
-    cheminExe: cheminExe(),
+    // En fonction, relu à chaque démarrage et à chaque lecture d'état : l'exe
+    // que electron/relais.ts recopie au lancement est vu même s'il arrive après.
+    cheminExe: () => cheminExe(),
     dossierTravail: dossierRelaisDonnees(),
     urlSante: pageSante,
     lancer: (cheminExe, dossierTravail) =>
@@ -182,6 +195,34 @@ class RelaisPcImpl extends ElectronPlugin {
         // On quitte de toute façon.
       }
     });
+    // Démarrage automatique (D37) : le relais part tout seul avec l'appli,
+    // sans aucun réglage à ouvrir. Comme la vérification de mise à jour
+    // (plugin MiseAJourPc), load ne fait que planifier : il ne ralentit donc
+    // pas le démarrage. Ne lève jamais.
+    try {
+      const minuteur = setTimeout(() => this.demarrerToutSeul(ESSAIS_DEMARRAGE_AUTO), DELAI_PREMIER_DEMARRAGE_MS);
+      minuteur.unref?.();
+    } catch {
+      // Sans minuteur, le relais reste manuel : la carte Paramètres garde le bouton Lancer.
+    }
+  }
+
+  /** Lance le relais, en réessayant tant que l'exe n'est pas encore copié. Ne lève jamais. */
+  private demarrerToutSeul(restants: number): void {
+    if (restants <= 0) return;
+    let etat: EtatRelaisPc;
+    try {
+      etat = this.noyau.demarrer();
+    } catch {
+      return;
+    }
+    if (etat.etat !== "indisponible") return;
+    try {
+      const minuteur = setTimeout(() => this.demarrerToutSeul(restants - 1), INTERVALLE_REESSAI_DEMARRAGE_MS);
+      minuteur.unref?.();
+    } catch {
+      // Plus de réessai possible : la carte Paramètres garde le bouton Lancer en secours.
+    }
   }
 
   async lireEtat(): Promise<EtatRelaisPc> {

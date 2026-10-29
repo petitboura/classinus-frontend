@@ -292,7 +292,27 @@ try {
     }
   }
 
-  console.log('verifier-relais-pc : OK (17 groupes de verifications)');
+  // 18. Chemin de l'exe en fonction (demarrage automatique, D37) : l'exe
+  // copie apres la creation du noyau est vu, le relais passe a "arrete" puis demarre.
+  {
+    let exePresent = false;
+    const { noyau, lanceur, planificateur } = creer({
+      cheminExe: () => (exePresent ? 'C:/relais/Relais-Class-Tech.exe' : null),
+    });
+    assert.equal((await noyau.lireEtat()).etat, 'indisponible');
+    noyau.demarrer();
+    assert.deepEqual(lanceur.appels, []);
+    exePresent = true;
+    assert.equal((await noyau.lireEtat()).etat, 'arrete');
+    const etat = noyau.demarrer();
+    assert.equal(etat.etat, 'demarrage');
+    assert.equal(lanceur.appels.length, 1);
+    planificateur.taches[0].rappel();
+    await laisserPasser();
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+  }
+
+  console.log('verifier-relais-pc : OK (18 groupes de verifications)');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }
