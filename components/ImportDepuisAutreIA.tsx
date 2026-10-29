@@ -250,7 +250,7 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
                   <p className="text-xs text-dj-texte-muet">{t("Classinus range tout ce que contient le zip au bon endroit : mémoire, skills, configuration. Les applications connectées sont gardées pour te rappeler de les connecter dans le chat.")}</p>
                   <div>
                     <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={(e) => void envoyerZip(e.target.files?.[0])} />
-                    <button type="button" disabled={envoiEnCours} onClick={() => champZip.current?.click()} className="rounded-lg bg-dj-primaire px-3 py-2 text-sm text-white transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50">
+                    <button type="button" disabled={envoiEnCours} onClick={() => champZip.current?.click()} className="rounded-lg bg-dj-accent-1 px-3 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:cursor-wait disabled:opacity-50">
                       {envoiEnCours ? t("Envoi du zip…") : t("Déposer le zip")}
                     </button>
                   </div>

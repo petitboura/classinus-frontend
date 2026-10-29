@@ -120,3 +120,17 @@ Ce que Claude doit faire :
   Classinus dans le chat, avec une confirmation avant chaque exécution.
 - Ne pas confondre avec le bouton Applications et le bouton "+" de la barre
   de saisie, qui restent.
+
+## Couleurs du thème : jamais une couleur qui n'existe pas
+
+Décision de Bourama (29/10/2026), à ne jamais défaire. Une classe comme
+`bg-dj-primaire` ne produit rien quand `primaire` n'est pas défini : le bouton
+n'a plus de fond, son texte blanc devient invisible (c'est arrivé au bouton
+"Nouveau skill", blanc en thème sombre).
+- Les seules couleurs `dj-...` permises sont celles de `tailwind.config.ts`
+  (bloc `colors.dj` et `backgroundImage`).
+- Bouton principal : `bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2`.
+- `tests/verifier-couleurs-theme.mjs` tourne avant chaque build (`prebuild`, et
+  les builds Capacitor) et l'arrête avec le fichier et la ligne fautifs. Ne pas
+  le contourner ni l'assouplir. Pour une vraie nouvelle couleur, l'ajouter
+  d'abord dans `tailwind.config.ts` et `app/globals.css` (clair et sombre).

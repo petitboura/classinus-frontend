@@ -106,7 +106,7 @@ export function NomAppareilCarte() {
         {!enEdition && (
           <button
             onClick={ouvrirEdition}
-            className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface-hover"
+            className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
             <Pencil size={13} />
             {infos?.nomPersonnalise ? infos.appareilNom : infos?.appareilNom ?? "Renommer"}
@@ -122,18 +122,18 @@ export function NomAppareilCarte() {
             onChange={(e) => setValeurSaisie(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && enregistrer()}
             placeholder="Ex. Mon Android, iPhone d'Amadou"
-            className="flex-1 rounded-lg border border-dj-bordure bg-transparent px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent"
+            className="flex-1 rounded-lg border border-dj-bordure bg-transparent px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
           />
           <button
             onClick={enregistrer}
             disabled={enregistrement || !valeurSaisie.trim()}
-            className="flex-shrink-0 rounded-lg border border-dj-bordure p-1.5 text-dj-texte transition-colors hover:bg-dj-surface-hover disabled:opacity-50"
+            className="flex-shrink-0 rounded-lg border border-dj-bordure p-1.5 text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
           >
             <Check size={15} />
           </button>
           <button
             onClick={() => setEnEdition(false)}
-            className="flex-shrink-0 rounded-lg border border-dj-bordure p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-hover"
+            className="flex-shrink-0 rounded-lg border border-dj-bordure p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
           >
             <X size={15} />
           </button>
