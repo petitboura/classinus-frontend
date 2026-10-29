@@ -1,6 +1,8 @@
 // Créé le 28/10/2026, demande Bourama : relais téléphone embarqué dans
-// l'appli PC (décision D31). L'étudiant lance et arrête Relais-Class-Tech.exe
-// depuis les Paramètres, sans deuxième téléchargement.
+// l'appli PC (décision D31). Depuis D37 (29/10/2026 : relais 100 % automatique,
+// aucun réglage à ouvrir), l'appli lance toute seule Relais-Class-Tech.exe au
+// démarrage, sans deuxième téléchargement ; les boutons de la carte Paramètres
+// restent en secours manuel.
 //
 // Noyau PUR : aucune importation d'Electron ni de node:child_process ici. Le
 // lancement, la lecture de santé et les minuteurs sont injectés. Le test
@@ -50,8 +52,12 @@ export interface TacheMinuteurRelais {
 }
 
 export interface OptionsRelaisPc {
-  /** Chemin complet de l'exe, ou null quand il est absent (indisponible). */
-  cheminExe: string | null;
+  /** Chemin complet de l'exe, ou null quand il est absent (indisponible).
+   * En fonction, il est relu à chaque démarrage et à chaque lecture d'état :
+   * l'exe copié après la création du noyau est vu sans rien relancer (démarrage
+   * automatique, D37 : electron/relais.ts recopie l'exe au lancement de l'appli,
+   * parfois après la création du noyau). */
+  cheminExe: string | null | (() => string | null);
   dossierTravail: string;
   /** Page de santé complète, lue dans les réglages (hôte et port à jour). */
   urlSante: () => string;
@@ -105,10 +111,19 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
     intervalleEssaiMs = INTERVALLE_ESSAI_MS,
   } = options;
 
+  function lireCheminExe(): string | null {
+    try {
+      return typeof cheminExe === "function" ? cheminExe() : cheminExe;
+    } catch {
+      return null;
+    }
+  }
+
+  const exeInitial = lireCheminExe();
   let etat: EtatRelaisPc = {
-    etat: cheminExe ? "arrete" : "indisponible",
+    etat: exeInitial ? "arrete" : "indisponible",
     urlSante: null,
-    message: cheminExe ? null : MESSAGE_INDISPONIBLE,
+    message: exeInitial ? null : MESSAGE_INDISPONIBLE,
     pid: null,
   };
   let processus: ProcessusRelais | null = null;
@@ -177,14 +192,20 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
 
   /** Lance l'exe. Renvoie l'état (démarrage en cours, santé à confirmer). */
   function demarrer(): EtatRelaisPc {
-    if (!cheminExe) return { ...etat };
     if (processus && !processus.quitte) return { ...etat };
+    const exe = lireCheminExe();
+    if (!exe) {
+      if (etat.etat !== "indisponible") {
+        changer({ etat: "indisponible", urlSante: null, message: MESSAGE_INDISPONIBLE, pid: null });
+      }
+      return { ...etat };
+    }
     annulerControleSante();
     processus = null;
     arretDemande = false;
     let proc: ProcessusRelais;
     try {
-      proc = lancer(cheminExe, dossierTravail);
+      proc = lancer(exe, dossierTravail);
     } catch (erreur) {
       journaliser(`lancement impossible : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
       changer({ etat: "erreur", message: MESSAGE_LANCEMENT_IMPOSSIBLE, pid: null });
@@ -223,11 +244,15 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
 
   /** Relit l'état réel (processus parti entre-temps, santé à jour) puis le renvoie. */
   async function lireEtat(): Promise<EtatRelaisPc> {
-    if (!cheminExe) {
+    const exe = lireCheminExe();
+    if (!exe) {
       if (etat.etat !== "indisponible") {
         changer({ etat: "indisponible", urlSante: null, message: MESSAGE_INDISPONIBLE, pid: null });
       }
       return { ...etat };
+    }
+    if (etat.etat === "indisponible") {
+      changer({ etat: "arrete", message: null, pid: null });
     }
     const proc = processus;
     if (!proc || proc.quitte) {

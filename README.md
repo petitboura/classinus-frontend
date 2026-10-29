@@ -503,8 +503,9 @@ publie par une étiquette `pc-vX.Y.Z` (workflow `.github/workflows/publier-pc.ym
 releases du dépôt public `petitboura/classinus-updates-pc`). C'est indépendant de l'OTA
 mobile ci dessous. Depuis la 1.0.5, l'installeur embarque aussi le relais
 téléphone (`Relais-Class-Tech.exe`, construit pendant le workflow depuis le
-dépôt `class-tech`, piloté depuis la carte « Relais téléphone » des
-Paramètres). Mode d'emploi, réglages à faire une fois et limites :
+dépôt `class-tech`), qui démarre tout seul avec l'appli (la carte « Relais
+téléphone » des Paramètres n'est qu'un voyant d'état). Mode d'emploi, réglages
+à faire une fois et limites :
 `docs/appli-pc-mise-a-jour-et-publication.md`.
 
 ## Appli Android : publication de l'APK (release à télécharger)
