@@ -39,6 +39,7 @@
     "test:lecteur-youtube": "node tests/verifier-lecteur-youtube.mjs",
     "test:liens-entrants": "node tests/verifier-liens-entrants.mjs",
     "test:gestion-erreurs": "node tests/verifier-gestion-erreurs.mjs",
+    "test:reprise-flux-chat": "node tests/verifier-reprise-flux-chat.mjs",
     "postinstall": "node scripts/appliquer-correctif-lector.mjs",
     "test:i18n": "node tests/verifier-i18n.mjs",
     "audit:i18n": "node tests/auditer-i18n.mjs",

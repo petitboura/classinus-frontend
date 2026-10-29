@@ -245,7 +245,7 @@ async function envoyerTourCanalDirect(texte: string, options?: { automatique?: b
     interrompue: false,
     arreter: () => {
       // 12/10/2026 : « arrêter c'est arrêter », le serveur et l'appli s'arrêtent aussi, pas seulement le flux.
-      arreterToutLocalEtServeur();
+      arreterToutLocalEtServeur(conversationId);
       controleur.abort();
     },
   });

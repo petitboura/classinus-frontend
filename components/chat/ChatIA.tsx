@@ -2,7 +2,8 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { appelerApi, appelerApiStream, signalerPedagogique } from "@/lib/api";
+import { appelerApi, appelerApiStream, lireEtatTourEnCours, signalerPedagogique, suivreTourEnCours } from "@/lib/api";
+import { RAISON_DEMONTAGE, demontageDemande } from "@/lib/repriseFluxChat";
 import { dernierIdEnregistre, versionsAvecActiveMiseAJour, versionsExistantesPour } from "@/lib/versionsConversation";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
 import { BulleMessage, MessageAffiche, SegmentMessage } from "./BulleMessage";
@@ -21,6 +22,7 @@ import { BandeauReponseInterrompue } from "./BandeauReponseInterrompue";
 import { BandeauErreurReponse } from "./BandeauErreurReponse";
 import { codeDepuisException, codeErreurValide } from "@/lib/erreurTour";
 import { CtaImportIa } from "./CtaImportIa";
+import { BandeauReconnexionFlux } from "./BandeauReconnexionFlux";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
@@ -724,12 +726,16 @@ export function ChatIA({
   async function lireFluxChat(
     corps: Parameters<typeof appelerApiStream>[1],
     surEvenement: (evenement: any) => void,
-    signal: AbortSignal
+    signal: AbortSignal,
+    // Rattachement à un tour déjà en cours côté serveur (retour sur la conversation) : rejoue le
+    // tour au lieu d'envoyer un message. `corps` est alors ignoré.
+    idTourARejoindre?: string
   ) {
     try {
       // Arrêt cliqué avant même l'ouverture du flux (envoi de fichiers en cours) : rien à lire.
       if (arretDemandeeRef.current) throw new DOMException("Arrêt demandé", "AbortError");
-      await appelerApiStream("/api/chat", corps, surEvenement, signal);
+      if (idTourARejoindre) await suivreTourEnCours(idTourARejoindre, surEvenement, signal);
+      else await appelerApiStream("/api/chat", corps, surEvenement, signal);
       if (arretDemandeeRef.current) throw new DOMException("Arrêt demandé", "AbortError");
     } finally {
       if (delaiArretRef.current !== null) {
@@ -1376,7 +1382,7 @@ export function ChatIA({
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
-      if (tourEcritSuiviRef.current) voixDirecte?.annoncerReponse(conversationId, texteTourVoixRef.current.slice(positionVoixRef.current));
+      if (tourEcritSuiviRef.current && !demontageDemande(controleur.signal)) voixDirecte?.annoncerReponse(conversationId, texteTourVoixRef.current.slice(positionVoixRef.current));
     } catch (e) {
       reinitialiserAffichageControle();
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1707,7 +1713,7 @@ export function ChatIA({
     );
     // Pas de génération en cours : rien à attendre, on arrête seulement ce qui tourne à côté.
     if (!controleurAbandonRef.current || arretDemandeeRef.current) {
-      arreterToutLocalEtServeur();
+      arreterToutLocalEtServeur(conversationId);
       return;
     }
     // Retour immédiat : le message passe en « interrompue » tout de suite, même si le serveur met
@@ -1720,9 +1726,95 @@ export function ChatIA({
       if (dernier >= 0 && copie[dernier].role === "assistant") copie[dernier] = { ...copie[dernier], interrompue: true };
       return copie;
     });
-    arreterToutLocalEtServeur();
+    arreterToutLocalEtServeur(conversationId);
     delaiArretRef.current = setTimeout(() => controleurAbandonRef.current?.abort(), DELAI_ATTENTE_ARRET_MS);
   }
+
+  // Le travail continue sur le serveur quand on quitte la conversation (28/10/2026, demande de
+  // Bourama : changer de conversation ou recharger ne doit plus tout arrêter). Ici on coupe
+  // seulement la lecture locale, avec une raison qui la distingue d'un arrêt voulu : aucun
+  // bandeau « interrompue », et le serveur n'est pas prévenu.
+  useEffect(
+    () => () => {
+      controleurAbandonRef.current?.abort(RAISON_DEMONTAGE);
+    },
+    []
+  );
+
+  // Dernier état des messages, lu par le rattachement ci dessous sans le rejouer à chaque rendu.
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
+  // Retour sur une conversation dont le travail tourne encore (ou vient de finir) côté serveur :
+  // rechargement de la page ou retour après un changement de conversation. On rejoue le tour depuis
+  // son premier événement, puis on suit la suite en direct. Voir GET /api/chat/tour-en-cours.
+  useEffect(() => {
+    if (!conversationId) return;
+    let annule = false;
+    (async () => {
+      const etat = await lireEtatTourEnCours(conversationId);
+      if (annule || !etat.tour_id || etat.statut === "aucun") return;
+      // L'utilisateur a déjà relancé quelque chose depuis : rien à rattacher.
+      if (controleurAbandonRef.current) return;
+      const resume = etat.resume;
+      // Une régénération n'est pas rejouée en direct : son résultat apparaît au rechargement suivant.
+      if (resume?.type === "regeneration") return;
+      const idAssistant = etat.ids?.message_id_assistant ?? null;
+      if (etat.statut === "termine") {
+        // Fini et déjà dans l'historique chargé, ou jamais sauvegardé : rien à remontrer.
+        if (!idAssistant || messagesRef.current.some((m) => m.id === idAssistant)) return;
+      }
+
+      // Si la conversation a été gardée en mémoire avec l'échange à moitié écrit de CE tour
+      // (id null), on le remplace par le rejeu complet plutôt que de l'afficher deux fois.
+      const base = [...messagesRef.current];
+      if (base.length && base[base.length - 1].role === "assistant" && base[base.length - 1].id == null) {
+        base.pop();
+        if (resume?.message && base.length && base[base.length - 1].role === "user" && base[base.length - 1].id == null) {
+          base.pop();
+        }
+      }
+      const suite: MessageAffiche[] = [];
+      if (resume?.message && !resume.automatique) {
+        suite.push({ id: null, role: "user", content: resume.message, created_at: new Date().toISOString() });
+      }
+      suite.push({ id: null, role: "assistant", content: "", segments: [] });
+
+      const controleur = new AbortController();
+      controleurAbandonRef.current = controleur;
+      majMessages(() => base.concat(suite));
+      reinitialiserAffichageControle();
+      setGenEnCours(true);
+      setStatuts([]);
+      textesTermineRef.current.clear();
+      setRaisonnementEnCours(false);
+      try {
+        await lireFluxChat({}, (evenement) => traiterEvenement(evenement), controleur.signal, etat.tour_id);
+      } catch (e) {
+        reinitialiserAffichageControle();
+        if (!(e instanceof DOMException && e.name === "AbortError")) {
+          // Le travail n'existe plus côté serveur (redémarrage) ou la reconnexion a échoué trop
+          // longtemps : le texte déjà reçu reste, avec les boutons Continuer et Réessayer.
+          majMessages((prec) => {
+            const copie = [...prec];
+            copie[copie.length - 1] = { ...copie[copie.length - 1], interrompue: true };
+            return copie;
+          });
+        }
+      } finally {
+        if (controleurAbandonRef.current === controleur) controleurAbandonRef.current = null;
+        if (!demontageDemande(controleur.signal)) {
+          setGenEnCours(false);
+          setRaisonnementEnCours(false);
+        }
+      }
+    })();
+    return () => {
+      annule = true;
+    };
+    // Une seule fois par conversation affichée : le composant est remonté à chaque changement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   function continuerApresInterruption() {
     // Le nettoyage de `interrompue` est déjà géré par envoyerMessage
@@ -2160,6 +2252,8 @@ export function ChatIA({
             </div>
           );
         })}
+
+        <BandeauReconnexionFlux />
 
         {statutsFlottants.length > 0 && (
           <div className="max-w-[80%]">

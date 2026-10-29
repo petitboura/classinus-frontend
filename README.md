@@ -207,6 +207,8 @@ components/
                           variante texte : même icône dans l'en-tête de l'aperçu (VisionneurPositionGlobal), pour
                           tous les types sauf la carte de site, qui a la sienne sous la carte
   lib/arretServeur.ts     appel POST /api/chat/arreter : demande au serveur d'arrêter les outils et la boucle d'agent du tour (12/10/2026)
+  lib/repriseFluxChat.ts  lecture du flux du chat, comptage des événements et reconnexion au tour qui continue sur le serveur (28/10/2026) ;
+                          lib/api.ts (suivreTourEnCours, lireEtatTourEnCours) et ChatIA.tsx s'en servent au rechargement ou au retour sur une conversation
   lib/tacheCanal.ts       état de la tâche du canal et signal d'arrêt commun : le bouton Arrêter (chat ou canal) coupe aussi la
                           voix, le commentaire affiché et la frappe simulée, et prévient le serveur (abonnerArretTache,
                           arreterToutLocalEtServeur)
