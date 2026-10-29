@@ -162,13 +162,13 @@ export function SkillsIndependants() {
         <div className="flex flex-wrap gap-2">
           <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={e => void envoyerZip(e.target.files?.[0])} />
           <button type="button" disabled={zipEnCours} onClick={() => champZip.current?.click()} className={`border border-dj-bordure ${bouton}`}>{zipEnCours ? "Envoi du zip…" : "Envoyer un zip"}</button>
-          <button type="button" onClick={nouveau} className={`bg-dj-primaire text-white ${bouton}`}>Nouveau skill</button>
+          <button type="button" onClick={nouveau} className={`bg-dj-accent-1 font-semibold text-[#1A0D02] hover:bg-dj-accent-2 ${bouton}`}>Nouveau skill</button>
         </div>
       </header>
       <div className="flex min-w-0 flex-col" aria-busy={chargementListe}>
         {chargementListe && [0, 1, 2, 3].map(i => <Skeleton key={i} className="my-1 h-5 w-2/3" />)}
         {!chargementListe && liste.length === 0 && <p className="animate-dj-fade-in-rapide text-sm text-dj-texte-muet">Aucun skill pour le moment.</p>}
-        {!chargementListe && liste.map(s => <button key={s.id} type="button" disabled={!!ouverture} onClick={() => void ouvrir(s.id)} className={`block w-full animate-dj-fade-in-rapide truncate py-2 text-left text-sm transition-colors hover:text-dj-primaire disabled:cursor-wait ${s.actif ? "" : "text-dj-texte-muet"} ${ouverture === s.id ? "opacity-60" : ""}`}>{s.nom}</button>)}
+        {!chargementListe && liste.map(s => <button key={s.id} type="button" disabled={!!ouverture} onClick={() => void ouvrir(s.id)} aria-busy={ouverture === s.id} className={`block w-full animate-dj-fade-in-rapide truncate py-2 text-left text-sm transition-colors hover:text-dj-accent-1-texte disabled:cursor-wait ${s.actif ? "" : "text-dj-texte-muet"}`}>{ouverture === s.id ? <span className="animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent">{s.nom}</span> : s.nom}</button>)}
       </div>
     </div> : <div key="editeur" className="flex min-w-0 animate-dj-fade-in-rapide flex-col gap-4">
       <div>
@@ -202,7 +202,7 @@ export function SkillsIndependants() {
           </div>
         </div>
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-primaire px-4 py-2 text-sm text-white transition-opacity hover:opacity-90 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
+          <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
         </div>
       </div>
     </div>}
