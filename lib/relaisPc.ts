@@ -26,11 +26,15 @@ export interface EtatRelaisPc {
   pid: number | null;
 }
 
+/** Réponse d'un outil téléphone : le texte du résultat, ou une erreur claire. */
+export type ReponseOutilRelaisPc = { texte: string } | { erreur: string };
+
 interface PluginRelaisPc {
   lireEtat(): Promise<EtatRelaisPc>;
   demarrer(): Promise<EtatRelaisPc>;
   arreter(): Promise<EtatRelaisPc>;
   ouvrirPageSante(): Promise<{ ouvert: boolean }>;
+  appelerOutil(options: { nom: string; args: Record<string, unknown> }): Promise<ReponseOutilRelaisPc>;
   addListener(
     nomEvenement: "etat",
     rappel: (etat: EtatRelaisPc) => void
@@ -49,6 +53,11 @@ export function demarrerRelaisPc() {
 
 export function arreterRelaisPc() {
   return RelaisPc.arreter();
+}
+
+/** Exécute un outil téléphone via le relais local. Réservé à l'appli PC. */
+export function appelerOutilRelaisPc(nom: string, args: Record<string, unknown>) {
+  return RelaisPc.appelerOutil({ nom, args });
 }
 
 /** Ouvre la page de santé dans le navigateur. `ouvert` est faux quand le relais est indisponible. */

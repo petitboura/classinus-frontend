@@ -105,6 +105,7 @@ import { consommerReglagesUniquesProchainMessage, lireReglagesProchainMessage } 
 import { modeleActifProchainMessage } from "./modeleActif";
 import { ajouterTourDirect, conversationActive, lireEtatConversation, messagePasseParLeChat, type IdMessage } from "./conversationPartagee";
 import { messageErreurPlugin } from "./usePluginNatif";
+import { appelerOutilRelaisPc } from "./relaisPc";
 
 const ATTRIBUT_AGENT_ID = "data-agent-id";
 
@@ -819,6 +820,52 @@ function traiterFermetureCanal() {
   setTimeout(() => desactiverCanalDepuisAgent(), 300);
 }
 
+/**
+ * Pont téléphone (29/10/2026) : le serveur demande d'exécuter un outil
+ * téléphone via le relais local ({id, action_systeme: "outil_telephone",
+ * parametres: {nom, args}}). Répond toujours {texte} ou {erreur}, jamais
+ * "ignore" : une seule appli PC exécute, pas de doublon possible.
+ */
+async function traiterDemandeOutilTelephone(id: string, parametres: unknown) {
+  const p = (parametres && typeof parametres === "object" ? parametres : {}) as {
+    nom?: unknown;
+    args?: unknown;
+  };
+  if (typeof p.nom !== "string" || !p.nom.trim()) {
+    envoyerReponse(id, { erreur: "Nom d'outil téléphone manquant ou invalide." });
+    return;
+  }
+  let args: Record<string, unknown>;
+  if (p.args === undefined || p.args === null) {
+    args = {};
+  } else if (typeof p.args === "object" && !Array.isArray(p.args)) {
+    args = p.args as Record<string, unknown>;
+  } else {
+    envoyerReponse(id, { erreur: "Arguments d'outil téléphone invalides." });
+    return;
+  }
+  const nom = p.nom.trim();
+  const idJournal = pousserJournalDepuisAgent(`Outil téléphone : ${nom}`);
+  try {
+    const reponse = await appelerOutilRelaisPc(nom, args);
+    if (reponse && typeof reponse === "object" && "texte" in reponse && typeof reponse.texte === "string") {
+      if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "succes");
+      envoyerReponse(id, { texte: reponse.texte });
+      return;
+    }
+    const erreur =
+      reponse && typeof reponse === "object" && "erreur" in reponse && typeof reponse.erreur === "string"
+        ? reponse.erreur
+        : "L'outil téléphone n'a pas renvoyé de réponse lisible.";
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+    envoyerReponse(id, { erreur });
+  } catch (e) {
+    if (idJournal) mettreAJourJournalDepuisAgent(idJournal, "erreur");
+    console.warn("Échec d’un outil téléphone du relais :", e);
+    envoyerReponse(id, { erreur: "L'outil téléphone n'a pas pu être exécuté. Vérifie que le relais est lancé, puis réessaie." });
+  }
+}
+
 function traiterMessage(message: unknown) {
   if (estDansFenetreSuperposition()) return;
   if (!message || typeof message !== "object") return;
@@ -861,6 +908,12 @@ function traiterMessage(message: unknown) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
   } else if (m.fermer_canal_en_direct !== undefined) {
     traiterFermetureCanal();
+  } else if (m.id && m.action_systeme === "outil_telephone") {
+    // Pont téléphone (29/10/2026) : AVANT le portillon du canal en direct --
+    // l'outil s'exécute même canal désactivé. Sur Electron on répond toujours
+    // ({texte} ou {erreur}, jamais "ignore"). Hors Electron : silence, c'est
+    // l'appli PC du compte qui répond.
+    if (surElectron()) void traiterDemandeOutilTelephone(m.id, m.parametres);
   } else if (
     m.id &&
     !canalEnDirectEstActif() &&

@@ -28,7 +28,7 @@
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { get } from "node:http";
+import { get, request } from "node:http";
 import { join } from "node:path";
 import { app, shell } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
@@ -47,6 +47,13 @@ const DELAI_PAGE_RELAIS_S = "86400";
 
 // Un contrôle de santé ne doit jamais attendre longtemps : le relais est local.
 const DELAI_SANTE_HTTP_MS = 3000;
+
+// Un outil téléphone peut prendre du temps (le téléphone répond lentement) : 100 s au maximum.
+const DELAI_OUTIL_HTTP_MS = 100000;
+
+// Relais relancé juste avant l'appel : on attend qu'il réponde, 15 contrôles d'1 s au maximum.
+const ESSAIS_REVEIL_RELAIS = 15;
+const INTERVALLE_REVEIL_RELAIS_MS = 1000;
 
 // Démarrage automatique (D37) : la première tentative attend un peu, pour
 // laisser electron/relais.ts recopier l'exe neuf dans le dossier de données
@@ -165,6 +172,94 @@ function lireSanteHttp(url: string): Promise<boolean> {
   });
 }
 
+function attendre(ms: number): Promise<void> {
+  return new Promise((resoudre) => setTimeout(resoudre, ms));
+}
+
+/** Réponse d'un outil téléphone : le texte du résultat, ou une erreur claire. */
+type ReponseOutil = { texte: string } | { erreur: string };
+
+/**
+ * Exécute un outil sur le relais local (POST /relais/outil/{nom} avec {"args": ...}).
+ * Le relais répond {ok, resultat} ou {ok: false, erreur}. Ne lève jamais.
+ */
+function posterOutilHttp(url: string, args: Record<string, unknown>): Promise<ReponseOutil> {
+  return new Promise((resolve) => {
+    let termine = false;
+    const finir = (reponse: ReponseOutil) => {
+      if (!termine) {
+        termine = true;
+        resolve(reponse);
+      }
+    };
+    let corps: string;
+    try {
+      corps = JSON.stringify({ args });
+    } catch {
+      finir({ erreur: "Les arguments de cet outil téléphone sont invalides." });
+      return;
+    }
+    try {
+      const requete = request(
+        url,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json", "content-length": Buffer.byteLength(corps) },
+          timeout: DELAI_OUTIL_HTTP_MS,
+        },
+        (reponse) => {
+          let texte = "";
+          reponse.on("data", (morceau: unknown) => {
+            texte += String(morceau);
+          });
+          reponse.on("end", () => {
+            if (reponse.statusCode !== 200) {
+              finir({ erreur: `Le relais téléphone a refusé cet outil (erreur ${reponse.statusCode ?? "inconnue"}).` });
+              return;
+            }
+            let donnees: unknown;
+            try {
+              donnees = JSON.parse(texte);
+            } catch {
+              finir({ erreur: "Le relais téléphone a renvoyé une réponse illisible." });
+              return;
+            }
+            if (!donnees || typeof donnees !== "object") {
+              finir({ erreur: "Le relais téléphone a renvoyé une réponse illisible." });
+              return;
+            }
+            const objet = donnees as Partial<{ ok: unknown; resultat: unknown; erreur: unknown }>;
+            if (objet.ok === true) {
+              const resultat = objet.resultat;
+              finir({
+                texte: typeof resultat === "string" ? resultat : JSON.stringify(resultat ?? null),
+              });
+              return;
+            }
+            finir({
+              erreur:
+                typeof objet.erreur === "string" && objet.erreur.trim()
+                  ? objet.erreur
+                  : "Le relais téléphone n'a pas pu exécuter cet outil.",
+            });
+          });
+          reponse.on("error", () => finir({ erreur: "La réponse du relais téléphone a été coupée." }));
+        }
+      );
+      requete.on("timeout", () => {
+        requete.destroy();
+        finir({ erreur: "Le relais téléphone met trop longtemps à répondre (plus de 100 secondes)." });
+      });
+      requete.on("error", () =>
+        finir({ erreur: "Le relais téléphone ne répond pas. Vérifie qu'il est lancé, puis réessaie." })
+      );
+      requete.end(corps);
+    } catch {
+      finir({ erreur: "Le relais téléphone ne répond pas. Vérifie qu'il est lancé, puis réessaie." });
+    }
+  });
+}
+
 class RelaisPcImpl extends ElectronPlugin {
   private noyau = creerRelaisPc({
     // En fonction, relu à chaque démarrage et à chaque lecture d'état : l'exe
@@ -237,6 +332,38 @@ class RelaisPcImpl extends ElectronPlugin {
     return this.noyau.arreter();
   }
 
+  /**
+   * Exécute un outil téléphone sur le relais local. Si le relais est arrêté,
+   * il est relancé au mieux avant l'appel. Ne lève jamais.
+   */
+  async appelerOutil(options: { nom: string; args?: Record<string, unknown> }): Promise<ReponseOutil> {
+    try {
+      const nom = typeof options?.nom === "string" ? options.nom.trim() : "";
+      if (!nom) return { erreur: "Nom d'outil téléphone manquant." };
+      const args = options?.args && typeof options.args === "object" ? options.args : {};
+      try {
+        const etat = await this.noyau.lireEtat();
+        if (etat.etat === "arrete" || etat.etat === "erreur") {
+          this.noyau.demarrer();
+          for (let i = 0; i < ESSAIS_REVEIL_RELAIS; i++) {
+            if (await lireSanteHttp(pageSante())) break;
+            await attendre(INTERVALLE_REVEIL_RELAIS_MS);
+          }
+        } else if (etat.etat === "demarrage") {
+          for (let i = 0; i < ESSAIS_REVEIL_RELAIS; i++) {
+            if (await lireSanteHttp(pageSante())) break;
+            await attendre(INTERVALLE_REVEIL_RELAIS_MS);
+          }
+        }
+      } catch {
+        // Au mieux : l'appel décidera.
+      }
+      return await posterOutilHttp(`${adresseBase()}/relais/outil/${encodeURIComponent(nom)}`, args);
+    } catch {
+      return { erreur: "L'outil téléphone n'a pas pu être exécuté. Réessaie dans un moment." };
+    }
+  }
+
   /** Ouvre la page de santé dans le navigateur. Faux quand le relais est indisponible. */
   async ouvrirPageSante(): Promise<{ ouvert: boolean }> {
     if (!cheminExe()) return { ouvert: false };
@@ -250,6 +377,6 @@ class RelaisPcImpl extends ElectronPlugin {
 }
 
 export const RelaisPc = defineElectronPlugin(
-  { name: "RelaisPc", methods: ["lireEtat", "demarrer", "arreter", "ouvrirPageSante"] },
+  { name: "RelaisPc", methods: ["lireEtat", "demarrer", "arreter", "ouvrirPageSante", "appelerOutil"] },
   RelaisPcImpl
 );
