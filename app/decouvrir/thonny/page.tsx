@@ -153,7 +153,7 @@ export default function PageDecouvrirThonny() {
         <h2 className="font-display text-lg font-semibold text-dj-texte">Choisir un modèle et régler les réponses</h2>
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">
           Le bouton Modèle, en haut du panneau, affiche les modèles que le serveur rend disponibles et les regroupe
-          par fournisseur : Claude, GPT, Gemini, DeepSeek ou Grok selon l’offre en cours. La liste n’est pas fixe :
+          par fournisseur : Claude, GPT, Gemini, DeepSeek, Grok ou Meta selon l’offre en cours. La liste n’est pas fixe :
           seuls les modèles proposés par Classinus sont sélectionnables, et les modèles indiqués « Bientôt » restent
           désactivés.
         </p>
