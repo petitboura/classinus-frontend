@@ -6,11 +6,11 @@ import { Sparkles } from "lucide-react";
 // backend (claude, gpt, gemini, deepseek, grok, meta). Pour ajouter un fournisseur : déposer son
 // SVG dans ce dossier, puis l'ajouter ici.
 //
-// Les icônes Claude, Gemini et DeepSeek sont en couleur. Celles de GPT, de Grok et de Meta sont d'une seule
+// Les icônes Claude, Gemini, DeepSeek et Meta sont en couleur. Celles de GPT et de Grok sont d'une seule
 // couleur : elle est posée comme masque et prend la couleur du texte, pour rester
 // visible en thème clair comme en thème sombre.
-const ICONES_COULEUR = new Set(["claude", "gemini", "deepseek"]);
-const ICONES_MONOCHROME = new Set(["gpt", "grok", "meta"]);
+const ICONES_COULEUR = new Set(["claude", "gemini", "deepseek", "meta"]);
+const ICONES_MONOCHROME = new Set(["gpt", "grok"]);
 
 export function IconeFournisseur({ distributeur, taille = 16 }: { distributeur: string | null; taille?: number }) {
   const dimension = { width: taille, height: taille };
