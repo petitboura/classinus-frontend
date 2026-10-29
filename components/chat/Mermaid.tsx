@@ -102,7 +102,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
             tertiaryColor: v("--dj-fond"),
             textColor: v("--dj-texte"),
           },
-          fontFamily: "var(--font-work-sans), sans-serif",
+          fontFamily: "var(--font-inter), sans-serif",
         });
         const { svg: svgRendu } = await mermaid.render(`mermaid-${++compteurMermaid}`, definition);
         if (!annule) {

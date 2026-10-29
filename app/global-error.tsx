@@ -35,7 +35,7 @@ export default function ErreurGlobale({ error, reset }: PropsErreurGlobale) {
             padding: "24px",
             background: "var(--dj-fond, #f8f7f4)",
             color: "var(--dj-texte, #202020)",
-            fontFamily: "var(--font-work-sans, system-ui, sans-serif)",
+            fontFamily: "var(--font-inter, system-ui, sans-serif)",
           }}
         >
           <section style={{ width: "100%", maxWidth: "460px" }}>
