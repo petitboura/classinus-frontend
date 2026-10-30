@@ -43,10 +43,10 @@ export type ModeleDisponible = {
 
 // Regroupement du sélecteur de modèle premium par distributeur (02/08/2026,
 // voir ModelesPremiumAgent.tsx côté dashboard pour le même mapping). Ordre
-// d'affichage seulement : identique à la hiérarchie backend
-// (core/fournisseurs_llm.py:ORDRE_DISTRIBUTEURS) sauf Meta, placé avant Grok
-// à la demande de Bourama (29/10/2026). La hiérarchie d'accès, elle, ne change pas.
-export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["claude", "gpt", "gemini", "deepseek", "meta", "grok"];
+// d'affichage seulement : Meta puis DeepSeek en haut de la liste, à la demande de
+// Bourama (30/10/2026), suivis des autres fournisseurs dans l'ordre d'avant. Même ordre que
+// la colonne ordre de fournisseurs_llm côté base de données.
+export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["meta", "deepseek", "claude", "gpt", "gemini", "grok"];
 
 export const LABELS_DISTRIBUTEUR: Record<string, string> = {
   claude: "Claude",
