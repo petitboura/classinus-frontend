@@ -81,7 +81,7 @@ const config: Config = {
       },
       fontFamily: {
         display: ["var(--font-fraunces)", "serif"],
-        sans: ["var(--font-work-sans)", "sans-serif"],
+        sans: ["var(--font-inter)", "sans-serif"],
         mono: ["var(--font-jetbrains-mono)", "monospace"],
         // Corps des réponses de l'IA uniquement (09/08, façon Claude) --
         // voir commentaire dans app/layout.tsx. Non concerné par le

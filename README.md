@@ -300,7 +300,10 @@ lib/
   erreurs.ts              messages d'erreur centralisés, miroir de core/erreurs.py côté backend
   textesPagesErreur.ts    textes (français et anglais) des écrans d'erreur et du lien de réinitialisation impossible à vérifier
   logosSites.ts           vrais logos des sites et sources visés par un outil du chat (YouTube, Internet Archive, arXiv, HAL) ;
-                          tout autre site montre l'icône qu'il publie lui-même (components/chat/LogoSite.tsx).
+                          tout autre site montre l'icône qu'il publie lui-même, demandée au serveur (route /api/logos-sites,
+                          core/logos_sites.py côté backend) qui répond 404 quand il n'y en a pas, et dans ce cas la première
+                          lettre du nom s'affiche, jamais un globe générique (components/LogoDeSite.tsx, partagé par
+                          components/chat/LogoSite.tsx et components/connexions/LogoMcp.tsx).
                           Les domaines viennent du champ "domaines" des événements d'outil (core/domaines_affichage.py côté backend)
   outils.ts, matieres.ts, coloration.ts, dateRelative.ts, formatageHeure.ts, salutations.ts  utilitaires
 
@@ -503,7 +506,11 @@ la base Supabase de test, utiliser `npm run build:capacitor:test` : il ajoute
 L'appli PC (Electron) se met à jour toute seule avec `electron-updater` et se
 publie par une étiquette `pc-vX.Y.Z` (workflow `.github/workflows/publier-pc.yml`,
 releases du dépôt public `petitboura/classinus-updates-pc`). C'est indépendant de l'OTA
-mobile ci dessous. Mode d'emploi, réglages à faire une fois et limites :
+mobile ci dessous. Depuis la 1.0.5, l'installeur embarque aussi le relais
+téléphone (`Relais-Class-Tech.exe`, construit pendant le workflow depuis le
+dépôt `class-tech`), qui démarre tout seul avec l'appli (la carte « Relais
+téléphone » des Paramètres n'est qu'un voyant d'état). Mode d'emploi, réglages
+à faire une fois et limites :
 `docs/appli-pc-mise-a-jour-et-publication.md`.
 
 ## Appli Android : publication de l'APK (release à télécharger)

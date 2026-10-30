@@ -16,6 +16,7 @@
     "test:entete-skill": "node tests/verifier-entete-skill.mjs",
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:mise-a-jour-pc": "node tests/verifier-mise-a-jour-pc.mjs",
+    "test:relais-pc": "node tests/verifier-relais-pc.mjs",
     "test:pointage-ecran": "node tests/verifier-pointage-ecran.mjs",
     "test:barre-des-taches": "node tests/verifier-barre-des-taches.mjs",
     "test:premier-plan-bureau": "node tests/verifier-premier-plan-bureau.mjs",
@@ -43,7 +44,8 @@
     "test:i18n": "node tests/verifier-i18n.mjs",
     "audit:i18n": "node tests/auditer-i18n.mjs",
     "test:montage-video": "node tests/verifier-montage-video.mjs",
-    "test:carte-connecteur": "node tests/verifier-carte-connecteur.mjs"
+    "test:carte-connecteur": "node tests/verifier-carte-connecteur.mjs",
+    "test:logos-sites": "node tests/verifier-logos-sites.mjs"
   },
   "dependencies": {
     "@anaralabs/lector": "3.7.1",
@@ -83,6 +85,7 @@
     "capacitor-dossiers-electron": "file:./packages/capacitor-dossiers-electron",
     "capacitor-mise-a-jour-pc-electron": "file:./packages/capacitor-mise-a-jour-pc-electron",
     "capacitor-pont-natif-electron": "file:./packages/capacitor-pont-natif-electron",
+    "capacitor-relais-pc-electron": "file:./packages/capacitor-relais-pc-electron",
     "capacitor-superposition-electron": "file:./packages/capacitor-superposition-electron",
     "@uiw/codemirror-theme-vscode": "^4.25.12",
     "@uiw/react-codemirror": "^4.25.12",

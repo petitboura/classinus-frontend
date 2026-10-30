@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Work_Sans, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import { Fraunces, Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import "./polices-lecture.css";
 // KaTeX/MathLive (rendu de formules dans BulleMessage.tsx et
@@ -33,14 +33,15 @@ import { RESUME_CLASSINUS } from "@/lib/usagesDecouvrir";
 // Djiguignè (jugée trop générique "IA" -- palette + paire de polices
 // Bricolage Grotesque/Inter, devenue elle-même un choix par défaut des
 // produits IA/SaaS actuels) au profit d'une identité propre à Classinus :
-// Work Sans (texte courant). Portée CLOVIS UNIQUEMENT -- djiguigne-frontend
+// Inter (texte courant, remplace Work Sans le 29/10/2026 sur demande de
+// Bourama). Portée CLOVIS UNIQUEMENT, djiguigne-frontend
 // garde Bricolage Grotesque/Inter, ce fichier n'est donc plus dérivé à
 // l'identique de son homologue.
 //
 // CORRECTIF (27/08) -- Space Grotesk (titres/UI) remplacé par Fraunces
 // (serif éditoriale, dans l'esprit de la police maison de Perplexity)
 // sur demande explicite de Bourama. Portée : titres/UI (font-display)
-// uniquement -- Work Sans reste inchangé pour le texte courant.
+// uniquement. Le texte courant est en Inter.
 //
 // Volontairement ABSENT ici : SessionSyncVitrine (synchronisation de
 // session avec djiguigne-ai.vercel.app). Classinus ne doit jamais
@@ -61,10 +62,10 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
-const workSans = Work_Sans({
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-work-sans",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -151,7 +152,7 @@ export default function RacineLayout({
       // (avec data-theme posé par le script) et log un avertissement
       // d'hydratation à chaque chargement, alors que c'est volontaire.
       suppressHydrationWarning
-      className={`${fraunces.variable} ${workSans.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
+      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
       <head>
         {/* Fiche d'identité de Classinus pour les moteurs de recherche et les

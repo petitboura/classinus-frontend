@@ -1172,7 +1172,7 @@ export function ChatIA({
     // réinjection effective.
     const historiquePourApi = messages.filter(garderDansHistorique).map((m) => ({
       role: m.role,
-      content: m.content,
+      content: m.contenuEnvoye ?? m.content,
       outils:
         m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
           ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
@@ -1303,6 +1303,22 @@ export function ChatIA({
         setGenEnCours(false);
         return;
       }
+    }
+
+    // Le texte parti au serveur (avec les blocs des pièces jointes : nom, lien réel)
+    // est gardé sur le message, à côté de son texte affiché. C'est lui qui refait
+    // l'historique des tours suivants, identique à ce qui est enregistré en base :
+    // sans ça le modèle ne retrouvait plus le document dès le message d'après.
+    // Repéré par sa position (le message de la personne est juste avant la réponse
+    // vide), car l'objet a pu être remplacé plus haut par une copie.
+    if (texteEnrichi !== texte) {
+      majMessages((prec) => {
+        const indexMessage = prec.length - 2;
+        if (indexMessage < 0 || prec[indexMessage].role !== "user") return prec;
+        const copie = [...prec];
+        copie[indexMessage] = { ...copie[indexMessage], contenuEnvoye: texteEnrichi };
+        return copie;
+      });
     }
 
     // Les messages automatiques (fin d'un minuteur) sont suivis eux aussi :
@@ -1442,7 +1458,7 @@ export function ChatIA({
     const nouvelIndex = versionsExistantes.length;
     const historiquePourApi = messages.slice(0, index - 1).filter(garderDansHistorique).map((m) => ({
       role: m.role,
-      content: m.content,
+      content: m.contenuEnvoye ?? m.content,
       outils:
         m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
           ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
@@ -1469,7 +1485,7 @@ export function ChatIA({
       await lireFluxChat(
         {
           erreurs_typees: true,
-          message: messageUtilisateur.content,
+          message: messageUtilisateur.contenuEnvoye ?? messageUtilisateur.content,
           agent_id: agentId,
           historique: historiquePourApi,
           conversation_id: conversationId,
@@ -1539,7 +1555,7 @@ export function ChatIA({
     const nouvelIndex = versionsExistantes.length;
     const historiquePourApi = messages.slice(0, index).filter(garderDansHistorique).map((m) => ({
       role: m.role,
-      content: m.content,
+      content: m.contenuEnvoye ?? m.content,
       outils:
         m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
           ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
