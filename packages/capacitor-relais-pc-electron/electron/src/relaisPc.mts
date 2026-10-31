@@ -95,6 +95,7 @@ export const MESSAGE_ARRET_INATTENDU =
 
 function planifierParDefaut(rappel: () => void, delaiMs: number): TacheMinuteurRelais {
   const minuteur = setTimeout(rappel, delaiMs);
+  // Un minuteur ne doit jamais empêcher le processus de s'arrêter.
   minuteur.unref?.();
   return { arreter: () => clearTimeout(minuteur) };
 }
@@ -141,7 +142,9 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
     etat = { ...etat, ...partiel };
     try {
       surChangement({ ...etat });
-    } catch {}
+    } catch {
+      // Un écouteur qui échoue ne doit jamais casser le relais.
+    }
   }
 
   function annulerControleSante(): void {
@@ -155,11 +158,10 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
   }
 
   function programmerRedemarrage(): void {
-    if (redemarragesRestants <= 0) return;
-    if (arretDemande) return;
+    if (redemarragesRestants <= 0 || arretDemande) return;
     const tentative = tentativesRedemarrage - redemarragesRestants + 1;
     redemarragesRestants -= 1;
-    journaliser(`redémarrage automatique ${tentative}/${tentativesRedemarrage} dans ${delaiRedemarrageMs}ms`);
+    journaliser(`redemarrage automatique ${tentative}/${tentativesRedemarrage} dans ${delaiRedemarrageMs}ms`);
     changer({ etat: "demarrage", message: `Nouvelle tentative ${tentative}/${tentativesRedemarrage}…`, pid: null });
     tacheRedemarrage = planifier(() => {
       tacheRedemarrage = null;
@@ -211,16 +213,13 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
         changer({ etat: "arrete", message: null, pid: null });
       } else if (etat.etat === "demarrage" || etat.etat === "enmarche") {
         journaliser(`le relais est parti tout seul (code ${proc.codeSortie ?? "inconnu"})`);
-        if (redemarragesRestants > 0) {
-          programmerRedemarrage();
-        } else {
-          annulerRedemarrage();
-          changer({ etat: "erreur", message: MESSAGE_ARRET_INATTENDU, pid: null });
-        }
+        if (redemarragesRestants > 0) programmerRedemarrage();
+        else changer({ etat: "erreur", message: MESSAGE_ARRET_INATTENDU, pid: null });
       }
     });
   }
 
+  /** Lance l'exe. Renvoie l'état (démarrage en cours, santé à confirmer). */
   function demarrer(): EtatRelaisPc {
     if (processus && !processus.quitte) return { ...etat };
     const exe = lireCheminExe();
@@ -231,8 +230,9 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
       return { ...etat };
     }
     annulerControleSante();
+    // Un redemarrage auto arrive en etat "demarrage" : ne pas remettre le compteur a zero, sinon boucle infinie si l'exe crashe en boucle.
+    if (etat.etat !== "demarrage") redemarragesRestants = tentativesRedemarrage;
     annulerRedemarrage();
-    if (!processus || processus.quitte) redemarragesRestants = tentativesRedemarrage;
     processus = null;
     arretDemande = false;
     let proc: ProcessusRelais;
@@ -250,6 +250,7 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
     return { ...etat };
   }
 
+  /** Arrête l'exe lancé. Sans effet quand rien ne tourne. */
   function arreter(): EtatRelaisPc {
     annulerControleSante();
     annulerRedemarrage();
@@ -263,6 +264,9 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
       }
       return { ...etat };
     }
+    // Le processus est gardé jusqu'à sa sortie : c'est elle qui confirme
+    // l'arrêt (surveillerSortie). En attendant, un nouveau demarrer() ne
+    // lance pas de deuxième processus.
     arretDemande = true;
     try {
       proc.tuer();
@@ -272,6 +276,7 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
     return { ...etat };
   }
 
+  /** Relit l'état réel (processus parti entre-temps, santé à jour) puis le renvoie. */
   async function lireEtat(): Promise<EtatRelaisPc> {
     const exe = lireCheminExe();
     if (!exe) {
