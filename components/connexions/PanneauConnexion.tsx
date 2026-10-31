@@ -6,6 +6,7 @@ import type { AppliDisponible } from "@/lib/outils";
 import { JETONS } from "@/lib/connexionsApplis";
 import { messageErreur } from "@/lib/erreurs";
 import { CadrePanneau } from "@/components/connexions/CadrePanneau";
+import { ActionsToujoursAutorisees } from "@/components/connexions/ActionsToujoursAutorisees";
 import { BadgePreversion, IndicateurEtatConnexion, type EtatConnexion } from "@/components/connexions/CarteConnexion";
 
 const BOUTON_PRINCIPAL = "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50";
@@ -86,6 +87,8 @@ export function PanneauConnexion({
           </div>
 
           <p className="text-sm leading-6 text-dj-texte-muet">{description}</p>
+
+          <ActionsToujoursAutorisees filtre={(a) => a.appli === app.nom} />
 
           {saisieJeton && parametresJeton && (
             <form onSubmit={(e) => valider(e, fermer)} className="flex flex-col gap-2">

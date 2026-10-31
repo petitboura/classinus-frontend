@@ -293,6 +293,7 @@ export function ChatIA({
     agentNom?: string | null;
     arguments: Record<string, unknown>;
     etatReprise: unknown;
+    cleAutorisation?: string | null;
   } | null>(null);
   const [confirmationEnAttente, setConfirmationEnAttente] = useState(false);
   const [popupFeedback, setPopupFeedback] = useState<{
@@ -885,6 +886,7 @@ export function ChatIA({
         agentNom: evenement.agent_nom,
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,
+        cleAutorisation: evenement.cle_autorisation ?? null,
       });
     } else if (evenement.type === "erreur_tour") {
       // Le serveur a échoué en plein tour (voir classinus-backend core/erreur_tour.py). Le texte
@@ -1892,7 +1894,7 @@ export function ChatIA({
     setJetonEdition((j) => j + 1);
   }
 
-  async function repriseApresConfirmation(approuve: boolean) {
+  async function repriseApresConfirmation(approuve: boolean, toujoursAutoriser = false) {
     if (!confirmation) return;
     // Demande traitée par ce clic : si la reprise en fait apparaître une nouvelle
     // (deuxième outil à approuver), elle doit rester affichée à la fin du flux.
@@ -1909,7 +1911,7 @@ export function ChatIA({
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
       await lireFluxChat(
-        { erreurs_typees: true, reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve } },
+        { erreurs_typees: true, reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve, ...(approuve && toujoursAutoriser ? { toujours_autoriser: true } : {}) } },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
@@ -2300,6 +2302,7 @@ export function ChatIA({
             arguments={confirmation.arguments}
             enAttente={confirmationEnAttente}
             onConfirmer={() => repriseApresConfirmation(true)}
+            onToujoursAutoriser={confirmation.cleAutorisation ? () => repriseApresConfirmation(true, true) : undefined}
             onAnnuler={() => repriseApresConfirmation(false)}
           />
         )}

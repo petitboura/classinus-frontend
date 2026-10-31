@@ -3205,3 +3205,18 @@ export async function sonderMcpPersonnalise(url: string, siteOfficiel?: string |
     body: JSON.stringify({ url, site_officiel: siteOfficiel || null, lien_jeton: lienJeton || null }),
   }) as Promise<SondageMcpPersonnalise>;
 }
+
+export type AutorisationOutil = {
+  cle: string;
+  nom_lisible: string;
+  created_at: string;
+  appli: string | null;
+};
+
+export async function listerAutorisationsOutils() {
+  return appelerApi("/api/autorisations-outils") as Promise<{ autorisations: AutorisationOutil[] }>;
+}
+
+export async function retirerAutorisationOutil(cle: string) {
+  await appelerApi(`/api/autorisations-outils?cle=${encodeURIComponent(cle)}`, { method: "DELETE" });
+}
