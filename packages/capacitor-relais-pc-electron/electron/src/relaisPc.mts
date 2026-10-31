@@ -306,7 +306,15 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
       journaliser(`lecture de sante impossible : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
     }
     if (!processus || processus.quitte) return { ...etat };
-    changer(ok ? { etat: "enmarche", message: null } : { etat: "demarrage" });
+    if (ok) {
+      changer({ etat: "enmarche", message: null });
+    } else if (etat.etat !== "enmarche") {
+      // Un seul échec de santé ne rétrograde jamais un relais déjà en marche :
+      // la santé peut dépasser le délai HTTP quand ADB hésite (USB, pilote),
+      // alors que le processus est toujours vivant. Seule sa mort réelle
+      // (surveillerSortie) peut sortir de "enmarche".
+      changer({ etat: "demarrage" });
+    }
     return { ...etat };
   }
 
