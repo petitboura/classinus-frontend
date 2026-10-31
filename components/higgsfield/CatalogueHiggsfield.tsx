@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Play } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
+import { VisionneurHiggsfield } from "@/components/higgsfield/VisionneurHiggsfield";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
@@ -122,9 +123,10 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
         <span className="absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white backdrop-blur">
           {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
         </span>
-        {isVideo && !mediaError && (
-          <span className="absolute bottom-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-black shadow">
-            <Play className="h-3.5 w-3.5 translate-x-px fill-black" />
+        {!mediaError && (
+          <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-bold leading-none text-black shadow">
+            <Sparkles className="h-3.5 w-3.5" />
+            Générer
           </span>
         )}
       </div>
@@ -148,6 +150,7 @@ export function CatalogueHiggsfield() {
   const ouvrirChat = useOuvrirChatAvecTexte();
   const [typeFiltre, setTypeFiltre] = useState<string>("tous");
   const [styleFiltre, setStyleFiltre] = useState<string>("tous");
+  const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
   const filtres = useMemo(
     () =>
       EFFETS_HIGGSFIELD.filter((e) => {
@@ -157,7 +160,8 @@ export function CatalogueHiggsfield() {
       }),
     [typeFiltre, styleFiltre]
   );
-  function auClic(effet: EffetHiggsfield) {
+  function generer(effet: EffetHiggsfield) {
+    setIndexVisionneur(null);
     const besoin =
       effet.type === "image"
         ? "une image"
@@ -171,8 +175,8 @@ export function CatalogueHiggsfield() {
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
       <p className="max-w-2xl text-sm leading-relaxed text-dj-texte-muet">
-        Scrolle, filtre par type et style, clique — la carte demande d&apos;abord l&apos;image ou la vidéo dont
-        l&apos;effet a besoin, puis t&apos;envoie au chat.
+        Filtre par type et style, clique sur un effet pour l&apos;ouvrir en plein écran, scrolle de vidéo en
+        vidéo, puis Générer t&apos;envoie au chat.
       </p>
       <div className="sticky top-0 z-10 -mx-4 flex flex-col gap-2 border-b border-dj-bordure bg-dj-fond/80 px-4 py-3 backdrop-blur md:mx-0 md:rounded-xl md:border md:px-4">
         <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
@@ -183,10 +187,18 @@ export function CatalogueHiggsfield() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
           {filtres.map((e, i) => (
-            <CarteEffet key={e.id} effet={e} index={i} onClick={() => auClic(e)} />
+            <CarteEffet key={e.id} effet={e} index={i} onClick={() => setIndexVisionneur(i)} />
           ))}
         </div>
       )}
+      {indexVisionneur !== null && filtres[indexVisionneur] ? (
+        <VisionneurHiggsfield
+          effets={filtres}
+          indexDepart={indexVisionneur}
+          onClose={() => setIndexVisionneur(null)}
+          onGenerer={generer}
+        />
+      ) : null}
     </div>
   );
 }
