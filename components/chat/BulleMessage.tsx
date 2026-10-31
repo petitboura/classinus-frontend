@@ -558,6 +558,35 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
     enfantsParParent.get(cle)!.push(l);
   }
 
+  const momentPropre = (l: LigneHistorique) => {
+    const t = Date.parse(l.selectionne_le ?? l.created_at);
+    return Number.isNaN(t) ? 0 : t;
+  };
+  // Dernier moment d'activite d'une branche entiere, descendants compris
+  // (31/10/2026, bug remonte par Bourama : dernier echange invisible a la
+  // reouverture). Choisir la version affichee sur le seul created_at du
+  // premier message d'une branche trompe des qu'une deuxieme racine
+  // parasite existe : la branche courte et recente passait devant la
+  // branche longue qui porte pourtant l'echange le plus recent. Le
+  // choix se fait donc sur l'activite la plus recente de toute la
+  // branche. Memoise par id, avec garde anti-cycle (donnees abimees).
+  const momentsBranche = new Map<string, number>();
+  function momentBranche(l: LigneHistorique, enCours: ReadonlySet<string> = new Set()): number {
+    const cle = l.id !== null && l.id !== undefined ? String(l.id) : null;
+    if (cle === null) return momentPropre(l);
+    const connu = momentsBranche.get(cle);
+    if (connu !== undefined) return connu;
+    if (enCours.has(cle)) return momentPropre(l);
+    const suite = new Set(enCours);
+    suite.add(cle);
+    let max = momentPropre(l);
+    for (const enfant of enfantsParParent.get(cle) ?? []) {
+      max = Math.max(max, momentBranche(enfant, suite));
+    }
+    momentsBranche.set(cle, max);
+    return max;
+  }
+
   // Résout la suite affichée à partir d'un point de l'arbre (racine ou
   // n'importe quel id de message) : choisit le frère le plus récent comme
   // version active, et si plusieurs frères existent, construit le
@@ -570,18 +599,15 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
       .sort((a, b) => a.created_at.localeCompare(b.created_at));
     if (candidats.length === 0) return [];
 
-    // Version affichée : celle dont le dernier "moment d'intérêt" est le plus
-    // récent, soit son choix avec les flèches (selectionne_le), soit sa
-    // création. Une version neuve passe donc devant, et un retour volontaire
-    // vers une ancienne version la fait repasser devant après rechargement.
+    // Version affichée : celle dont la BRANCHE a l'activité la plus
+    // récente (voir momentBranche), jamais le seul premier message. Un
+    // retour volontaire vers une ancienne version reste prioritaire :
+    // son selectionne_le, ou la suite ecrite depuis ce retour, fait
+    // repasser sa branche devant après rechargement.
     // L'ordre du compteur (1/N) reste celui de la création.
-    const momentDInteret = (l: LigneHistorique) => {
-      const t = Date.parse(l.selectionne_le ?? l.created_at);
-      return Number.isNaN(t) ? 0 : t;
-    };
     let indexActif = candidats.length - 1;
     for (let i = candidats.length - 2; i >= 0; i--) {
-      if (momentDInteret(candidats[i]) > momentDInteret(candidats[indexActif])) indexActif = i;
+      if (momentBranche(candidats[i]) > momentBranche(candidats[indexActif])) indexActif = i;
     }
     if (candidats.length === 1) {
       const seul = ligneVersMessage(candidats[0]);
@@ -601,7 +627,53 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
     return [messageActif, ...suiteActive];
   }
 
-  return resoudreSuite("__racine__");
+  const affichees = resoudreSuite("__racine__");
+
+  // Filet de securite (31/10/2026) : une ligne dont le parent est absent
+  // de la reponse (ligne supprimee, ancien parent casse) n'est atteinte
+  // par aucun chemin depuis la racine. Avant, elle disparaissait en
+  // silence a la reouverture alors qu'elle est bien en base. On la
+  // rattache donc en fin de fil, dans l'ordre chronologique, avec toute
+  // sa suite. Les versions inactives ne sont pas concernees : elles sont
+  // deja rangees dans message.versions, donc marquees comme presentes.
+  const idsPresents = new Set<number>();
+  const dejaVus = new Set<MessageAffiche>();
+  const marquerPresents = (messages: MessageAffiche[]) => {
+    for (const m of messages) {
+      // La version active se reference elle-meme dans ses versions :
+      // sans ce garde, le parcours boucle a l'infini.
+      if (dejaVus.has(m)) continue;
+      dejaVus.add(m);
+      if (m.id !== null && m.id !== undefined) idsPresents.add(m.id);
+      for (const v of m.versions ?? []) {
+        marquerPresents([v.message]);
+        marquerPresents(v.suite);
+      }
+    }
+  };
+  marquerPresents(affichees);
+
+  const clesOrphelines = [...enfantsParParent.keys()]
+    .filter((cle) => cle !== "__racine__")
+    .filter((cle) => {
+      const parentConnu = lignes.some((l) => l.id !== null && l.id !== undefined && String(l.id) === cle);
+      if (parentConnu) return false;
+      return (enfantsParParent.get(cle) ?? []).some(
+        (l) => l.id === null || l.id === undefined || !idsPresents.has(l.id),
+      );
+    })
+    .sort((a, b) => {
+      const premiere = (cle: string) =>
+        Math.min(...(enfantsParParent.get(cle) ?? []).map((l) => Date.parse(l.created_at) || 0));
+      return premiere(a) - premiere(b);
+    });
+
+  for (const cle of clesOrphelines) {
+    const rattachees = resoudreSuite(cle);
+    marquerPresents(rattachees);
+    affichees.push(...rattachees);
+  }
+  return affichees;
 }
 
 // - heure affichée sous le message UTILISATEUR uniquement
