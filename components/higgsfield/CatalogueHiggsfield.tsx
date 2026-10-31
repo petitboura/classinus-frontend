@@ -18,13 +18,13 @@ function FiltreChips({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs font-semibold text-dj-texte-muet">{label}</span>
+    <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
+      <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">{label}</span>
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+          className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
             valeur === o.value
               ? "border-dj-texte bg-dj-texte text-dj-fond"
               : "border-dj-bordure bg-transparent text-dj-texte-muet hover:border-dj-texte-muet hover:text-dj-texte"
@@ -82,7 +82,7 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
       ref={ref}
       onClick={onClick}
       style={{ transitionDelay: `${Math.min(index * 40, 300)}ms` }}
-      className={`group flex flex-col overflow-hidden rounded-[20px] border border-dj-bordure bg-dj-surface text-left shadow-sm transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl ${
+      className={`group flex touch-manipulation flex-col overflow-hidden rounded-[20px] border border-dj-bordure bg-dj-surface text-left shadow-sm transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] ${
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
       }`}
     >
@@ -97,7 +97,7 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
               loop
               autoPlay
               playsInline
-              preload="metadata"
+              preload="none"
               onError={() => setMediaError(true)}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
@@ -106,6 +106,8 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
             <img
               src={effet.preview}
               alt={effet.nom}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               onError={() => setMediaError(true)}
             />
@@ -124,22 +126,22 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
           {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
         </span>
         {!mediaError && (
-          <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-bold leading-none text-black shadow">
+          <span className="absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white/95 px-3 py-2 text-[11px] font-bold leading-none text-black shadow">
             <Sparkles className="h-3.5 w-3.5" />
             Générer
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-4">
+      <div className="flex flex-1 flex-col gap-1.5 p-3 sm:p-4">
         <div className="flex items-center gap-2">
-          <span className="truncate text-[15px] font-bold leading-tight text-dj-texte">{effet.nom}</span>
+          <span className="truncate text-sm font-bold leading-tight text-dj-texte sm:text-[15px]">{effet.nom}</span>
           {effet.badge ? (
-            <span className="shrink-0 rounded-full bg-dj-texte px-2 py-0.5 text-[10px] font-bold leading-none text-dj-fond">
+            <span className="hidden shrink-0 rounded-full bg-dj-texte px-2 py-0.5 text-[10px] font-bold leading-none text-dj-fond min-[480px]:block">
               {effet.badge}
             </span>
           ) : null}
         </div>
-        <span className="line-clamp-2 text-[13px] leading-snug text-dj-texte-muet">{effet.description}</span>
+        <span className="line-clamp-2 text-xs leading-snug text-dj-texte-muet sm:text-[13px]">{effet.description}</span>
         <span className="mt-1 text-[11px] font-semibold uppercase tracking-widest text-dj-texte-muet">{effet.style}</span>
       </div>
     </button>
@@ -173,7 +175,7 @@ export function CatalogueHiggsfield() {
     ouvrirChat(effet.promptChat + "\n\nFormat: " + effet.type + " · Modèle: " + effet.modele + "\nBesoin pour démarrer: " + besoin);
   }
   return (
-    <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+    <div className="flex flex-col gap-4 py-4 md:py-6">
       <div className="flex flex-col gap-1 rounded-[20px] border border-dj-bordure bg-dj-surface px-4 py-3.5">
         <span className="inline-flex w-fit items-center rounded-full bg-dj-texte px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-dj-fond">
           BIENTÔT DISPONIBLE
@@ -193,7 +195,7 @@ export function CatalogueHiggsfield() {
       {filtres.length === 0 ? (
         <p className="py-12 text-center text-sm text-dj-texte-muet">Aucun effet pour ces filtres.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {filtres.map((e, i) => (
             <CarteEffet key={e.id} effet={e} index={i} onClick={() => setIndexVisionneur(i)} />
           ))}
