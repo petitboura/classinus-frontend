@@ -1350,8 +1350,15 @@ export function BarreDeSaisie({
     }
   }
 
+  // Garde-fou anti double POST (31/10/2026, boumiservice@gmail.com : double-Enter → 422 vide → bandeau "Modifie ton message") : bloque le 2e appui tant que le 1er n'a pas vidé le champ.
+  const envoiEnCoursRef = useRef(false);
   function envoyer() {
-    if ((!texte.trim() && textesColles.length === 0) || desactive) return;
+    if (envoiEnCoursRef.current) return;
+    // Fix 31/10/2026 (Demande Bourama — staging uniquement, fix 1) : n'envoyer QUE si utile — texte non vide OU pièce jointe OU localisation. Avant, texte vide + Enter → POST /api/chat vide → 422 → bandeau "Cette demande n'a pas pu être traitée" pour un simple message.
+    const aDuContenu = texte.trim() || textesColles.length > 0 || fichiers.length > 0 || !!localisation;
+    if (!aDuContenu || desactive || genererEnCours) return;
+    envoiEnCoursRef.current = true;
+    // Libération à la prochaine tick : le champ est vidé juste après onEnvoyer, donc un 2e Enter immédiat retombera sur !aDuContenu.
     onEnvoyer(
       texte,
       longueur,
@@ -1373,6 +1380,7 @@ export function BarreDeSaisie({
     setRechercheForcee(false);
     setSansEnseignant(false);
     requestAnimationFrame(ajusterHauteurTexte);
+    setTimeout(() => { envoiEnCoursRef.current = false; }, 600);
   }
 
   async function demarrerDictee() {
@@ -1961,10 +1969,10 @@ export function BarreDeSaisie({
               >
                 <Square size={14} />
               </button>
-            ) : texte.trim() || textesColles.length > 0 ? (
+            ) : texte.trim() || textesColles.length > 0 || fichiers.length > 0 || !!localisation ? (
               <button
                 onClick={envoyer}
-                disabled={desactive}
+                disabled={desactive || genererEnCours}
                 aria-label="Envoyer"
                 className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
               >
@@ -2127,10 +2135,10 @@ export function BarreDeSaisie({
           >
             <Square size={14} />
           </button>
-        ) : texte.trim() || textesColles.length > 0 ? (
+        ) : texte.trim() || textesColles.length > 0 || fichiers.length > 0 || !!localisation ? (
           <button
             onClick={envoyer}
-            disabled={desactive}
+            disabled={desactive || genererEnCours}
             aria-label="Envoyer"
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
           >
@@ -2510,7 +2518,7 @@ export function BarreDeSaisie({
                 envoyer();
                 fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));
               }}
-              disabled={(!texte.trim() && textesColles.length === 0) || desactive}
+              disabled={(!texte.trim() && textesColles.length === 0 && fichiers.length === 0 && !localisation) || desactive || genererEnCours}
               aria-label="Envoyer"
               className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >
