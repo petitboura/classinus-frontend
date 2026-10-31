@@ -21,8 +21,9 @@ name: Publier l'appli PC (Windows)
 #   electron-builder l'embarque dans l'installeur (extraResources). Il faut
 #   donc aussi le secret CLASS_TECH_LECTURE (lecture seule du dépôt class-tech),
 #   en plus de PC_RELEASES_TOKEN ;
-# - la release est créée en BROUILLON avant electron-builder, puis publiée à la fin
-#   seulement si l'installeur et latest.yml y sont bien (22/10/2026). Sans cela,
+# - la release est créée en BROUILLON avant electron-builder, et RESTE en
+#   brouillon à la fin (invisible pour les utilisateurs) : publication manuelle
+#   uniquement après test et validation de Bourama. Sans cela,
 #   electron-builder envoyait les fichiers en parallèle et chacun tentait de créer
 #   la release : GitHub refusait (erreur 422) ou créait deux releases du même nom,
 #   et latest.yml devenait introuvable pour les appareils installés.
@@ -202,9 +203,9 @@ jobs:
           echo "Fichiers produits :"
           ls -la dist
 
-      # Étape 3 : ne publier que si tout est là. Les appareils installés ne voient
-      # jamais une release à moitié remplie.
-      - name: Vérifier puis publier la release
+      # Étape 3 : vérifier que tout est là, sans publier. La release reste en
+      # brouillon tant que Bourama n'a pas testé et donné son accord.
+      - name: Vérifier le brouillon sans publier
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
@@ -224,25 +225,24 @@ jobs:
               exit 1
             fi
           done
-          gh api -X PATCH "repos/$DEPOT_RELEASES/releases/$ID_RELEASE_PC" -F draft=false -f make_latest=true --jq '.html_url'
-          echo "Release $tag publiée."
+          echo "Release $tag vérifiée et laissée en BROUILLON (invisible pour les utilisateurs)."
+          echo "Publication manuelle uniquement après test et validation de Bourama."
 
-      # Contrôle final : l'adresse que lisent les appareils installés répond bien.
-      - name: Contrôler l'adresse de mise à jour
+      # Contrôle final : la release doit toujours être un brouillon invisible.
+      # On ne contrôle plus l'adresse publique latest/download : elle sert
+      # encore la version précédente tant que Bourama n'a pas publié.
+      - name: Contrôler le brouillon (invisible pour les utilisateurs)
         shell: bash
         env:
+          GH_TOKEN: ${{ secrets.PC_RELEASES_TOKEN }}
           DEPOT_RELEASES: petitboura/classinus-updates-pc
         run: |
-          for essai in 1 2 3 4 5; do
-            if curl -fsSL "https://github.com/$DEPOT_RELEASES/releases/latest/download/latest.yml" | grep -q "^version: $VERSION_PC\$"; then
-              echo "latest.yml répond avec la version $VERSION_PC."
-              exit 0
-            fi
-            echo "Essai $essai : latest.yml ne répond pas encore avec la version $VERSION_PC, nouvel essai dans 10 secondes."
-            sleep 10
-          done
-          echo "latest.yml ne répond pas avec la version $VERSION_PC. La release est publiée mais à vérifier à la main."
-          exit 1
+          brouillon=$(gh api "repos/$DEPOT_RELEASES/releases/$ID_RELEASE_PC" --jq '.draft')
+          if [ "$brouillon" != "true" ]; then
+            echo "La release v$VERSION_PC n'est plus en brouillon. Arrêt."
+            exit 1
+          fi
+          echo "Brouillon v$VERSION_PC confirmé invisible pour les utilisateurs."
 
       # En cas d'échec avant la publication : supprimer le brouillon, pour qu'une
       # relance du même numéro reparte propre. Une release déjà publiée n'est jamais touchée.
