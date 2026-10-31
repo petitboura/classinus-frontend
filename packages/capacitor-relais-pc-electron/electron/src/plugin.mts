@@ -27,7 +27,7 @@
 // carte qui l'ouvre, sur demande, avec ouvrirPageSante.
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { get } from "node:http";
 import { join } from "node:path";
 import { app, shell } from "electron";
@@ -47,6 +47,8 @@ const DELAI_PAGE_RELAIS_S = "86400";
 
 // Un contrôle de santé ne doit jamais attendre longtemps : le relais est local.
 const DELAI_SANTE_HTTP_MS = 3000;
+const NOM_FICHIER_JOURNAL_RELAIS = "relais.log";
+const TAILLE_MAX_JOURNAL_RELAIS = 500 * 1024;
 
 // Démarrage automatique (D37) : la première tentative attend un peu, pour
 // laisser electron/relais.ts recopier l'exe neuf dans le dossier de données
@@ -59,6 +61,28 @@ const ESSAIS_DEMARRAGE_AUTO = 15;
 
 function dossierRelaisDonnees(): string {
   return join(app.getPath("userData"), NOM_DOSSIER_RELAIS);
+}
+
+function cheminJournalRelais(): string {
+  return join(dossierRelaisDonnees(), NOM_FICHIER_JOURNAL_RELAIS);
+}
+
+function ecrireJournalRelais(texte: string): void {
+  try {
+    const chemin = cheminJournalRelais();
+    try {
+      if (statSync(chemin).size > TAILLE_MAX_JOURNAL_RELAIS) {
+        const contenu = readFileSync(chemin, "utf8");
+        writeFileSync(chemin, contenu.slice(-Math.floor(TAILLE_MAX_JOURNAL_RELAIS / 2)), "utf8");
+      }
+    } catch {}
+    appendFileSync(chemin, `[${new Date().toISOString()}] ${texte}\n`, "utf8");
+  } catch {}
+}
+
+function journaliserRelais(texte: string): void {
+  try { console.error(`[relais-pc] ${texte}`); } catch {}
+  ecrireJournalRelais(texte);
 }
 
 function cheminExe(): string | null {
@@ -172,18 +196,22 @@ class RelaisPcImpl extends ElectronPlugin {
     cheminExe: () => cheminExe(),
     dossierTravail: dossierRelaisDonnees(),
     urlSante: pageSante,
-    lancer: (cheminExe, dossierTravail) =>
-      emballerProcessus(
-        spawn(cheminExe, [], {
-          cwd: dossierTravail,
-          stdio: "ignore",
-          windowsHide: true,
-          env: { ...process.env, RELAIS_PC_DELAI_PAGE: DELAI_PAGE_RELAIS_S },
-        })
-      ),
+    lancer: (cheminExe, dossierTravail) => {
+      const proc = spawn(cheminExe, [], {
+        cwd: dossierTravail,
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+        env: { ...process.env, RELAIS_PC_DELAI_PAGE: DELAI_PAGE_RELAIS_S },
+      });
+      journaliserRelais(`relais lance pid=${proc.pid ?? "?"}`);
+      proc.stdout?.on("data", (d: unknown) => { for (const l of String(d).split(/\r?\n/)) if (l) ecrireJournalRelais(`[stdout] ${l}`); });
+      proc.stderr?.on("data", (d: unknown) => { for (const l of String(d).split(/\r?\n/)) if (l) ecrireJournalRelais(`[stderr] ${l}`); });
+      proc.on("error", (e: Error) => journaliserRelais(`spawn error: ${e?.message ?? e}`));
+      return emballerProcessus(proc);
+    },
     lireSante: lireSanteHttp,
     surChangement: (etat) => this.context.notifyListeners("etat", etat),
-    journaliser: (texte) => console.error(`[relais-pc] ${texte}`),
+    journaliser: journaliserRelais,
   });
 
   load(): void {
