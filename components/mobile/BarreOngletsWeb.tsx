@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Library, Hourglass, Briefcase, Wand2, type LucideIcon } from "lucide-react";
+import { IconeHiggsfield } from "@/components/icons/IconeHiggsfield";
 import { correspondARoute, estPageChat } from "@/lib/routesApp";
 import { useClavierOuvert } from "@/lib/useClavierOuvert";
 // Créé le 28/08/2026, Bourama : chantier "web mobile façon appli",
@@ -41,14 +42,16 @@ import { useClavierOuvert } from "@/lib/useClavierOuvert";
 // app/(app)/chat/page.tsx et components/chat/ChatSection.tsx, étape 2)
 // au lieu d'ouvrirChat("plein_ecran") sur ChatFlottant.tsx -- même
 // mécanisme que les autres onglets, y compris l'état actif visuel.
-// 20/10/2026, demande Bourama : l'onglet Chat n'est plus dans cette barre, qui
-// passe à 4 onglets répartis sur toute la largeur. Le chat devient la bulle
-// oiseau flottante en bas à droite (voir ChatFlottant.tsx).
+// 20/10/2026, demande Bourama : l'onglet Chat n'est plus dans cette barre. Le
+// chat devient la bulle oiseau flottante en bas à droite (voir
+// ChatFlottant.tsx). 31/10/2026 : Higgsfield au milieu de la barre mobile,
+// toujours visible comme dans le rail ordinateur.
 const ONGLETS_WEB: { href: string; label: string; Icone: LucideIcon }[] = [
   { href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
   { href: "/controle-session", label: "Concentration", Icone: Hourglass },
+  { href: "/higgsfield", label: "Higgsfield", Icone: IconeHiggsfield as unknown as LucideIcon },
   { href: "/bureau", label: "Bureau", Icone: Briefcase },
-  { href: "/personnaliser", label: "Personnaliser Classinus", Icone: Wand2 },
+  { href: "/personnaliser", label: "Personnaliser", Icone: Wand2 },
 ];
 
 export function BarreOngletsWeb() {
@@ -90,7 +93,7 @@ export function BarreOngletsWeb() {
             }`}
           >
             <o.Icone size={20} className="flex-shrink-0" />
-            <span className="text-[11px] leading-none">{o.label}</span>
+            <span className="max-w-full truncate px-0.5 text-[11px] leading-none">{o.label}</span>
           </Link>
         );
       })}
