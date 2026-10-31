@@ -81,6 +81,13 @@ export function conversationPourVoix(conversationIdSession: string): string {
 
 // Le chat recopie ici sa conversation à chaque changement, pour que les tours
 // directs (chat masqué ou fermé) la poursuivent à l'identique.
+// Même borne que ChatIA.tsx : le serveur refuse en 422 un message avec plus de
+// 50 outils ou des libellés trop longs, donc cet historique partagé est borné
+// de la même façon, en gardant les outils les plus récents.
+const PLAFOND_OUTILS_PAR_MESSAGE_API = 50;
+const PLAFOND_NOM_OUTIL_API = 120;
+const PLAFOND_NOM_LISIBLE_OUTIL_API = 160;
+
 export function ecrireEtatDepuisChat(conversationId: string, messages: MessageDuChat[]) {
   etats.set(conversationId, {
     historique: messages.map((m) => ({
@@ -88,9 +95,9 @@ export function ecrireEtatDepuisChat(conversationId: string, messages: MessageDu
       content: m.contenuEnvoye ?? m.content,
       outils:
         m.role === "assistant" && m.outilsResultats?.length
-          ? m.outilsResultats.map((r) => ({
-              nomOutil: r.nomOutil,
-              nomLisible: r.nomLisible,
+          ? m.outilsResultats.slice(-PLAFOND_OUTILS_PAR_MESSAGE_API).map((r) => ({
+              nomOutil: r.nomOutil.slice(0, PLAFOND_NOM_OUTIL_API),
+              nomLisible: r.nomLisible.slice(0, PLAFOND_NOM_LISIBLE_OUTIL_API),
               resultat: r.resultat,
               ...(r.resultatComplet ? { resultatComplet: r.resultatComplet } : {}),
               ...(r.arguments ? { arguments: r.arguments } : {}),
