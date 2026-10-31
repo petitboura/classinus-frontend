@@ -1016,15 +1016,22 @@ export function ChatIA({
         // échoue, l'état ne doit JAMAIS être perdu. On le restaure sur le message d'origine
         // (son bouton Continuer/Réessayer réapparaît) ET on le pose sur le nouveau message en
         // erreur, pour que son bandeau propose Continuer avec ce même contexte.
+        // Exception (même jour, conversation bloquée sur « modifie ton message ») : quand le
+        // serveur refuse la demande elle-même (code "requete" : 400/413/422), renvoyer cet
+        // état à l'identique échouera toujours -- le restaurer faisait boucler Continuer et
+        // chaque nouveau message tapé (détourné ici par envoyerMessage) sur la même erreur,
+        // indéfiniment. Dans ce seul cas, on ne le restaure pas : le prochain message part
+        // en envoi normal, avec l'historique affiché.
+        const reprisePerimee = codeDepuisException(e) === "requete";
         majMessages((prec) => {
           const copie = [...prec];
-          if (copie[indexMessage]) {
+          if (!reprisePerimee && copie[indexMessage]) {
             copie[indexMessage] = { ...copie[indexMessage], repriseDisponible: reprise };
           }
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
             erreurTour: { code: codeDepuisException(e) },
-            repriseDisponible: reprise,
+            repriseDisponible: reprisePerimee ? null : reprise,
           };
           return copie;
         });
