@@ -855,7 +855,7 @@ export function ChatIA({
           qualiteReduite: evenement.modele_qualite_reduite === true,
           modele: modeleLabel,
         };
-        if (iUser >= 0) copie[iUser] = { ...copie[iUser], id: evenement.message_id_user };
+        if (iUser >= 0 && copie[iUser]?.role === "user" && evenement.message_id_user) copie[iUser] = { ...copie[iUser], id: evenement.message_id_user };
         return copie;
       });
     } else if (

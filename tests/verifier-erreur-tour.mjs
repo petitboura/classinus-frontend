@@ -58,7 +58,7 @@ for (const code of ["delai", "forte_demande", "serveur", "reseau", "session", "c
 assert.ok(!/--/.test(bandeau.replace(/\/\/[^\n]*/g, "")), "pas de double tiret dans les textes affichés");
 // Arrêter : retour immédiat, attente de l'état envoyé par le serveur, puis coupure.
 assert.ok(chat.includes("DELAI_ATTENTE_ARRET_MS"), "délai d'attente borné");
-assert.equal((chat.match(/await lireFluxChat\(/g) || []).length, 5, "les 5 envois passent par lireFluxChat");
+assert.equal((chat.match(/await lireFluxChat\(/g) || []).length, 6, "les 6 envois passent par lireFluxChat");
 assert.ok(/evenement\.type === "arret_tour"/.test(chat), "l'état envoyé à l'arrêt est gardé");
 assert.ok(/message\.interrompue && \(!genEnCours \|\| arretEnCours\)/.test(chat), "le bandeau d'arrêt est visible dès le clic");
 assert.ok(/message\.repriseDisponible \? reprendreAgent\(index\) : continuerApresInterruption\(\)/.test(chat), "Continuer reprend avec l'état");
