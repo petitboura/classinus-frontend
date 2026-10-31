@@ -873,7 +873,9 @@ function traiterMessage(message: unknown) {
     const argsBrutsTel = parametresTel.args;
     const argsTel = argsBrutsTel && typeof argsBrutsTel === "object" && !Array.isArray(argsBrutsTel) ? (argsBrutsTel as Record<string, unknown>) : {};
     if (!surElectron()) {
-      envoyerReponse(idTel, { erreur: "Le diagnostic téléphone demande l'appli Classinus sur PC, avec le téléphone branché en USB." });
+      // Pas l'appli PC : se taire pour laisser l'appli PC du même compte
+      // répondre, au lieu de gagner la course avec une erreur.
+      envoyerReponse(idTel, { ignore: true });
     } else {
       void import("./relaisPc").then(({ executerOutilRelaisPc }) => executerOutilRelaisPc(nomTel, argsTel)).then((resultat) => {
         envoyerReponse(idTel, resultat);
@@ -997,10 +999,13 @@ async function ouvrirCanal() {
       // Authentification applicative après l'ouverture : le bearer token
       // ne transite plus dans l'URL.
       const appareilId = await obtenirAppareilIdPourCanal();
-      const { Capacitor } = await import("@capacitor/core");
       if (ws.readyState !== WebSocket.OPEN) return;
+      // Sur Electron, le renderer est le relais système : il joint PontNatif
+      // et RelaisPc par IPC. Ne pas conditionner cette déclaration à la
+      // disponibilité déclarée d'un plugin, sinon le backend croit l'appli
+      // PC absente et refuse les outils téléphone sans même essayer.
       ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId,
-        actions_systeme_via_renderer: surElectron() && Capacitor.isPluginAvailable("PontNatif") }));
+        actions_systeme_via_renderer: surElectron() }));
       
       // Etat initial des actions disponibles pour CETTE connexion, sans
       // attendre un changement (chantier D), sinon le backend n'a rien
