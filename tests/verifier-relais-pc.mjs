@@ -208,11 +208,18 @@ try {
     assert.equal((await noyau.lireEtat()).etat, 'arrete');
   }
 
-  // 10. Processus parti tout seul : "erreur" avec un message clair, détail au journal.
+  // 10. Processus parti tout seul : redemarrages auto (watchdog), puis
+  // "erreur" avec un message clair quand les tentatives sont epuisees.
   {
-    const { noyau, lanceur, journaux } = creer();
+    const { noyau, lanceur, planificateur, journaux } = creer();
     noyau.demarrer();
-    lanceur.processus[0].partir(1);
+    for (let i = 0; i < 4; i++) {
+      lanceur.processus[lanceur.processus.length - 1].partir(1);
+      const tache = planificateur.taches[planificateur.taches.length - 1];
+      if (tache && !tache.arretee) tache.rappel();
+      await laisserPasser();
+    }
+    assert.equal(lanceur.appels.length, 4);
     const etat = await noyau.lireEtat();
     assert.equal(etat.etat, 'erreur');
     assert.equal(etat.message, MESSAGE_ARRET_INATTENDU);
@@ -312,7 +319,23 @@ try {
     assert.equal((await noyau.lireEtat()).etat, 'enmarche');
   }
 
-  console.log('verifier-relais-pc : OK (18 groupes de verifications)');
+  // 19. Echec de sante transitoire apres "enmarche" : l'etat ne redescend
+  // jamais en "demarrage" tant que le processus est vivant (fini l'alternance).
+  {
+    let repond = true;
+    const { noyau, planificateur } = creer({ sante: async () => repond });
+    noyau.demarrer();
+    planificateur.taches[0].rappel();
+    await laisserPasser();
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+    repond = false;
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+    repond = true;
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+  }
+
+  console.log('verifier-relais-pc : OK (19 groupes de verifications)');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }
