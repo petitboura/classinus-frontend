@@ -66,7 +66,7 @@ export const GROUPE_PERSONNALISER: GroupeRail = {
 };
 
 /** Ordre du rail desktop (hors chat : les quatre dans le rail). */
-export const GROUPES_RAIL: GroupeRail[] = [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPE_HIGGSFIELD];
+export const GROUPES_RAIL: GroupeRail[] = [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_HIGGSFIELD, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER];
 
 /** Les sections à montrer dans le menu d'un groupe, selon le statut prof. */
 export function sectionsVisiblesDuGroupe(groupe: GroupeRail, estProfesseur: boolean | null): SectionDeGroupe[] {
