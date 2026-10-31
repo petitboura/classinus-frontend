@@ -71,19 +71,14 @@ function garderDansHistorique(m: MessageAffiche) {
 // Ce que le modèle doit revoir d'un message assistant au tour suivant : pour chaque outil, son résultat
 // et, quand ils existent, les arguments de l'appel et le résultat complet (celui qui est affiché à
 // l'écran est coupé). Sans eux, le modèle ne sait plus ce qu'il a lancé et le refait.
-// Borné aux plafonds du modèle de requête api/chat.py : au delà de 50 outils par message, ou avec des
-// libellés trop longs, le serveur refuse tout l'envoi en 422 et la conversation reste bloquée pour
-// toujours, puisque tout l'historique est renvoyé à chaque message. On garde les outils les plus
-// récents et on tronque les libellés. L'affichage local et les données enregistrées ne changent pas.
-const PLAFOND_OUTILS_PAR_MESSAGE_API = 50;
-const PLAFOND_NOM_OUTIL_API = 120;
-const PLAFOND_NOM_LISIBLE_OUTIL_API = 160;
+// Aucune troncature (demande Bourama 31/10/2026) : tous les outils et leurs libellés complets
+// sont renvoyés, le plafond serveur est relevé à 10000 par message (api/chat.py).
 
 function outilsPourHistorique(m: MessageAffiche) {
   if (m.role !== "assistant" || !m.outilsResultats || m.outilsResultats.length === 0) return undefined;
-  return m.outilsResultats.slice(-PLAFOND_OUTILS_PAR_MESSAGE_API).map((r) => ({
-    nomOutil: r.nomOutil.slice(0, PLAFOND_NOM_OUTIL_API),
-    nomLisible: r.nomLisible.slice(0, PLAFOND_NOM_LISIBLE_OUTIL_API),
+  return m.outilsResultats.map((r) => ({
+    nomOutil: r.nomOutil,
+    nomLisible: r.nomLisible,
     resultat: r.resultat,
     ...(r.resultatComplet ? { resultatComplet: r.resultatComplet } : {}),
     ...(r.arguments ? { arguments: r.arguments } : {}),
