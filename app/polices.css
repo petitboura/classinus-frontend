@@ -1,0 +1,12 @@
+/* Polices principales embarquees via Fontsource (paquets npm officiels).
+   Aucun telechargement chez Google pendant la construction : les fichiers
+   woff2 sont fournis par les dependances et bundles avec l application.
+   Graisses identiques a l ancien chargement : Fraunces 500, 600, 700 ;
+   Inter 400, 500, 600 ; JetBrains Mono 400, 500. Sous ensemble latin,
+   comme avant. La police de lecture reste geree par polices-lecture.css. */
+:root {
+  --font-fraunces: "Fraunces", Georgia, serif;
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-lecture: "Classinus Lecture", Georgia, serif;
+}
