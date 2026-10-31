@@ -38,9 +38,12 @@ function FiltreChips({
 
 function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: number; onClick: () => void }) {
   const ref = useRef<HTMLButtonElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [visible, setVisible] = useState(false);
   const [mediaError, setMediaError] = useState(false);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
+
+  // 1. apparition entree (fade-in)
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -56,6 +59,23 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  // 2. autoplay quand la video entre a l'ecran, pause quand elle sort (comme higgsfield.ai)
+  useEffect(() => {
+    if (!isVideo || mediaError) return;
+    const v = videoRef.current;
+    if (!v) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) v.play().catch(() => {});
+        else v.pause();
+      },
+      { threshold: 0.25 }
+    );
+    obs.observe(v);
+    return () => obs.disconnect();
+  }, [isVideo, mediaError]);
+
   return (
     <button
       ref={ref}
@@ -69,18 +89,14 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
         {!mediaError ? (
           isVideo ? (
             <video
+              ref={videoRef}
               src={effet.preview}
               poster={effet.poster}
               muted
               loop
+              autoPlay
               playsInline
               preload="metadata"
-              onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {})}
-              onMouseLeave={(e) => {
-                const v = e.currentTarget as HTMLVideoElement;
-                v.pause();
-                v.currentTime = 0;
-              }}
               onError={() => setMediaError(true)}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
@@ -155,8 +171,8 @@ export function CatalogueHiggsfield() {
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
       <p className="max-w-2xl text-sm leading-relaxed text-dj-texte-muet">
-        Scrolle, filtre par type et style, survole pour prévisualiser la vidéo, clique — la carte demande d&apos;abord
-        l&apos;image ou la vidéo dont l&apos;effet a besoin, puis t&apos;envoie au chat.
+        Scrolle, filtre par type et style, clique — la carte demande d&apos;abord l&apos;image ou la vidéo dont
+        l&apos;effet a besoin, puis t&apos;envoie au chat.
       </p>
       <div className="sticky top-0 z-10 -mx-4 flex flex-col gap-2 border-b border-dj-bordure bg-dj-fond/80 px-4 py-3 backdrop-blur md:mx-0 md:rounded-xl md:border md:px-4">
         <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
