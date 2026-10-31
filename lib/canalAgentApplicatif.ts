@@ -861,6 +861,27 @@ function traiterMessage(message: unknown) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
   } else if (m.fermer_canal_en_direct !== undefined) {
     traiterFermetureCanal();
+  } else if (m.id && m.action_systeme === "outil_telephone") {
+    // Pont téléphone (31/10/2026) : le LLM demande un outil diagnostic
+    // (detecter_telephone, lire_batterie...). Seul le relais local de
+    // l'appli PC voit le téléphone en USB : on contourne volontairement
+    // le blocage "canal en direct inactif" et PontNatif (qui ne connaît
+    // pas cet outil), et on appelle RelaisPc -> POST /relais/outil/{nom}.
+    const idTel = m.id;
+    const parametresTel = (m.parametres ?? {}) as Record<string, unknown>;
+    const nomTel = typeof parametresTel.nom === "string" ? parametresTel.nom : "";
+    const argsBrutsTel = parametresTel.args;
+    const argsTel = argsBrutsTel && typeof argsBrutsTel === "object" && !Array.isArray(argsBrutsTel) ? (argsBrutsTel as Record<string, unknown>) : {};
+    if (!surElectron()) {
+      envoyerReponse(idTel, { erreur: "Le diagnostic téléphone demande l'appli Classinus sur PC, avec le téléphone branché en USB." });
+    } else {
+      void import("./relaisPc").then(({ executerOutilRelaisPc }) => executerOutilRelaisPc(nomTel, argsTel)).then((resultat) => {
+        envoyerReponse(idTel, resultat);
+      }).catch((e) => {
+        console.warn("Échec de l'outil téléphone via le relais PC :", e);
+        envoyerReponse(idTel, { erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est à jour, puis réessaie." });
+      });
+    }
   } else if (
     m.id &&
     !canalEnDirectEstActif() &&

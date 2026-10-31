@@ -76,7 +76,7 @@ try {
     };
   }
 
-  function creer({ cheminExe = 'C:/relais/Relais-Class-Tech.exe', sante = async () => true, lancement, surChangement, journal } = {}) {
+  function creer({ cheminExe = 'C:/relais/Relais-Class-Tech.exe', sante = async () => true, lancement, surChangement, journal, appelerOutil } = {}) {
     const lanceur = fauxLanceur(lancement ? { lancement } : {});
     const planificateur = fauxPlanificateur();
     const etats = [];
@@ -87,6 +87,7 @@ try {
       urlSante: () => 'http://127.0.0.1:8765/relais/sante',
       lancer: lanceur.lancer,
       lireSante: sante,
+      appelerOutil: appelerOutil === null ? undefined : (appelerOutil ?? (async () => ({ ok: true, resultat: 'Batterie : 80 %' }))),
       surChangement: surChangement ?? ((e) => etats.push(e)),
       journaliser: journal ?? ((t) => journaux.push(t)),
       planifier: planificateur.planifier,
@@ -335,7 +336,57 @@ try {
     assert.equal((await noyau.lireEtat()).etat, 'enmarche');
   }
 
-  console.log('verifier-relais-pc : OK (19 groupes de verifications)');
+  // 20. executerOutil : URL derivee de la sante, nom et args transmis, texte rendu.
+  {
+    const appels = [];
+    const { noyau } = creer({ appelerOutil: async (url, nom, args) => { appels.push([url, nom, args]); return { ok: true, resultat: 'Batterie : 80 %' }; } });
+    const resultat = await noyau.executerOutil('lire_batterie', { detail: true });
+    assert.deepEqual(resultat, { texte: 'Batterie : 80 %' });
+    assert.deepEqual(appels, [['http://127.0.0.1:8765/relais/outil/lire_batterie', 'lire_batterie', { detail: true }]]);
+  }
+
+  // 21. executerOutil : erreur du relais rendue telle quelle (outil refuse/inconnu).
+  {
+    const { noyau } = creer({ appelerOutil: async () => ({ ok: false, erreur: 'Outil refuse par le relais : lecture seule ici.' }) });
+    assert.deepEqual(await noyau.executerOutil('root_reinitialiser'), { erreur: 'Outil refuse par le relais : lecture seule ici.' });
+  }
+
+  // 22. executerOutil : nom vide et relais non branche = erreurs lisibles, aucun appel.
+  {
+    let appeles = 0;
+    const { noyau } = creer({ appelerOutil: async () => { appeles++; return { ok: true, resultat: 'x' }; } });
+    assert.ok((await noyau.executerOutil('')).erreur);
+    assert.equal(appeles, 0);
+    const sansOutil = creer({ appelerOutil: null });
+    assert.ok((await sansOutil.noyau.executerOutil('lire_batterie')).erreur.includes("pas disponible"));
+  }
+
+  // 23. executerOutil : relais injoignable (exception reseau) = erreur lisible, jamais levee.
+  {
+    const { noyau, journaux } = creer({ appelerOutil: async () => { throw new Error('ECONNREFUSED'); } });
+    const resultat = await noyau.executerOutil('detecter_telephone');
+    assert.ok(resultat.erreur.includes('ne répond pas'));
+    assert.ok(journaux.some((j) => j.includes('ECONNREFUSED')));
+  }
+
+  // 24. Cablage complet : le plugin expose executerOutil (HTTP local) et le
+  // canal route outil_telephone vers RelaisPc AVANT le blocage canal inactif.
+  {
+    const racine = resolve(import.meta.dirname, '..');
+    const plugin = readFileSync(join(racine, 'packages/capacitor-relais-pc-electron/electron/src/plugin.mts'), 'utf8');
+    assert.ok(plugin.includes('"executerOutil"'), 'plugin RelaisPc sans methode executerOutil');
+    assert.ok(plugin.includes('appelerOutilHttp'), 'plugin sans appel HTTP outil');
+    const canal = readFileSync(join(racine, 'lib/canalAgentApplicatif.ts'), 'utf8');
+    const idxOutil = canal.indexOf('m.action_systeme === "outil_telephone"');
+    const idxIgnore = canal.indexOf('envoyerReponse(m.id, { ignore: true })');
+    assert.ok(idxOutil >= 0, 'canal sans branche outil_telephone');
+    assert.ok(idxIgnore > idxOutil, 'outil_telephone doit passer avant le blocage ignore');
+    assert.ok(canal.includes('executerOutilRelaisPc'), 'canal sans appel au relais PC');
+    const lib = readFileSync(join(racine, 'lib/relaisPc.ts'), 'utf8');
+    assert.ok(lib.includes('executerOutilRelaisPc'), 'lib relaisPc sans executerOutilRelaisPc');
+  }
+
+  console.log('verifier-relais-pc : OK (24 groupes de verifications)');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }

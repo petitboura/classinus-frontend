@@ -37,6 +37,12 @@ export interface EtatRelaisPc {
   pid: number | null;
 }
 
+/** Résultat d'un outil téléphone, au format attendu par le backend : {texte} ou {erreur}. */
+export interface ResultatOutilRelais {
+  texte?: string;
+  erreur?: string;
+}
+
 /** Ce que le noyau utilise du processus lancé (spawn emballé côté plugin). */
 export interface ProcessusRelais {
   pid: number | null;
@@ -64,6 +70,8 @@ export interface OptionsRelaisPc {
   lancer: (cheminExe: string, dossierTravail: string) => ProcessusRelais;
   /** Vrai quand la page de santé répond ok:true. */
   lireSante: (url: string) => Promise<boolean>;
+  /** Appelle un outil du relais local (POST /relais/outil/{nom}) et rend sa réponse brute. Injecté côté plugin (HTTP local). */
+  appelerOutil?: (urlOutil: string, nom: string, args: Record<string, unknown>) => Promise<{ ok?: unknown; resultat?: unknown; erreur?: unknown }>;
   surChangement: (etat: EtatRelaisPc) => void;
   /** Détail technique, réservé au journal du processus principal. */
   journaliser?: (texte: string) => void;
@@ -107,6 +115,7 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
     urlSante,
     lancer,
     lireSante,
+    appelerOutil,
     surChangement,
     journaliser = () => {},
     planifier = planifierParDefaut,
@@ -318,5 +327,29 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
     return { ...etat };
   }
 
-  return { demarrer, arreter, lireEtat };
+  /** Exécute un outil téléphone via le relais local. Ne lève jamais : {texte} ou {erreur} lisible. */
+  async function executerOutil(nom: string, args: Record<string, unknown> = {}): Promise<ResultatOutilRelais> {
+    const nomPropre = typeof nom === "string" ? nom.trim() : "";
+    if (!nomPropre) return { erreur: "Outil téléphone sans nom." };
+    if (!appelerOutil) return { erreur: "Le relais téléphone n'est pas disponible dans cette installation." };
+    const sante = pageSante();
+    const base = sante.replace(/\/relais\/sante\/?$/, "");
+    if (!sante || base === sante) return { erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." };
+    const url = `${base}/relais/outil/${encodeURIComponent(nomPropre)}`;
+    const argsPropres = args && typeof args === "object" && !Array.isArray(args) ? args : {};
+    let reponse: { ok?: unknown; resultat?: unknown; erreur?: unknown };
+    try {
+      reponse = await appelerOutil(url, nomPropre, argsPropres);
+    } catch (erreur) {
+      journaliser(`appel outil ${nomPropre} impossible : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
+      return { erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." };
+    }
+    if (reponse && reponse.ok === true) {
+      return { texte: typeof reponse.resultat === "string" ? reponse.resultat : String(reponse.resultat ?? "") };
+    }
+    if (reponse && typeof reponse.erreur === "string" && reponse.erreur) return { erreur: reponse.erreur };
+    return { erreur: "Le relais téléphone a répondu sans résultat. Réessaie dans un moment." };
+  }
+
+  return { demarrer, arreter, lireEtat, executerOutil };
 }
