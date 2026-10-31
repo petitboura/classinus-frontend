@@ -41,6 +41,7 @@ import {
   Wrench,
   HardDrive,
   Camera,
+  Scissors,
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { IconeGithub } from "@/components/icons/IconeGithub";
@@ -328,6 +329,7 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   { nom: "generer_site_zip", label: "Générer un site (zip)", Icone: Package, onglet: "generer" },
   { nom: "generer_bundle", label: "Générer une archive", Icone: Archive, onglet: "generer" },
   { nom: "generer_image", label: "Générer une image", Icone: IconImage, onglet: "generer" },
+  { nom: "detourer_objet_image", label: "Détourer un objet (SAM)", Icone: Scissors, onglet: "generer" },
   { nom: "calculer_symbolique", label: "Calcul symbolique (résoudre, dériver, intégrer)", Icone: Divide, onglet: "generer" },
 
   { nom: "tavily_search", label: "Recherche web", Icone: Search, onglet: "rechercher" },
