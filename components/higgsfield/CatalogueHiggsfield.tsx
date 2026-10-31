@@ -174,6 +174,14 @@ export function CatalogueHiggsfield() {
   }
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+      <div className="flex flex-col gap-1 rounded-[20px] border border-dj-bordure bg-dj-surface px-4 py-3.5">
+        <span className="inline-flex w-fit items-center rounded-full bg-dj-texte px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-dj-fond">
+          BIENTÔT DISPONIBLE
+        </span>
+        <p className="text-sm leading-relaxed text-dj-texte-muet">
+          La génération arrive bientôt. En attendant, explore le catalogue et ouvre un effet en plein écran pour préparer ton idée.
+        </p>
+      </div>
       <p className="max-w-2xl text-sm leading-relaxed text-dj-texte-muet">
         Filtre par type et style, clique sur un effet pour l&apos;ouvrir en plein écran, scrolle de vidéo en
         vidéo, puis Générer t&apos;envoie au chat.
