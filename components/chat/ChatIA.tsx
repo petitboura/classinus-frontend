@@ -923,6 +923,13 @@ export function ChatIA({
     const reprise = message?.repriseDisponible;
     if (!reprise) return;
 
+    // Rattachement à la conversation (31/10/2026, correctif bouton Continuer) : la reprise doit
+    // partir avec la conversation et l'agent, sinon le backend la traite hors fil et ne la
+    // sauvegarde pas. parent_id chaine la suite : le message tapé (s'il y en a un) se rattache
+    // à la réponse interrompue, la continuation sans texte à la question d'origine.
+    const idQuestionOrigine = messages[indexMessage - 1]?.id ?? null;
+    const parentIdReprise = messageUtilisateur ? (message.id ?? idQuestionOrigine) : idQuestionOrigine;
+
     if (avantEnvoi && !avantEnvoi()) {
       return;
     }
@@ -951,6 +958,9 @@ export function ChatIA({
       controleurAbandonRef.current = controleur;
       await lireFluxChat(
         {
+          conversation_id: conversationId,
+          agent_id: agentId,
+          parent_id: parentIdReprise,
           erreurs_typees: true,
           reprise: {
             etat_reprise: reprise.etatReprise,
@@ -970,11 +980,19 @@ export function ChatIA({
           return copie;
         });
       } else {
+        // Correctif 31/10/2026 (bouton Continuer qui cassait la conversation) : si la reprise
+        // échoue, l'état ne doit JAMAIS être perdu. On le restaure sur le message d'origine
+        // (son bouton Continuer/Réessayer réapparaît) ET on le pose sur le nouveau message en
+        // erreur, pour que son bandeau propose Continuer avec ce même contexte.
         majMessages((prec) => {
           const copie = [...prec];
+          if (copie[indexMessage]) {
+            copie[indexMessage] = { ...copie[indexMessage], repriseDisponible: reprise };
+          }
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
             erreurTour: { code: codeDepuisException(e) },
+            repriseDisponible: reprise,
           };
           return copie;
         });

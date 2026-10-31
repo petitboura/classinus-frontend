@@ -43,8 +43,10 @@ const CLASSE_BOUTON =
 // Bandeau sous une réponse coupée par une erreur. Le message dit ce qui s'est passé et les
 // boutons dépendent de la situation : « Continuer » seulement quand il reste quelque chose à
 // poursuivre (texte déjà écrit ou résultats d'outils gardés), « Réessayer » qui repart de la
-// question, « Se connecter » quand c'est la session qui est en cause, aucun bouton quand la
-// demande elle-même est refusée (le même envoi échouerait de nouveau).
+// question, « Se connecter » quand c'est la session qui est en cause. Quand la demande elle-même
+// est refusée (code « requete »), Réessayer repartirait sur le même échec : il est masqué, mais
+// Continuer reste affiché si un état de reprise existe (correctif 31/10/2026 : sinon la
+// conversation était cassée, plus aucun moyen de reprendre le contexte déjà accumulé).
 export function BandeauErreurReponse({
   code,
   peutContinuer,
@@ -74,7 +76,8 @@ export function BandeauErreurReponse({
   }, []);
 
   const doitSeConnecter = code === "session" || code === "connexion";
-  const peutRelancer = !doitSeConnecter && code !== "requete";
+  const peutContinuerBouton = !doitSeConnecter && peutContinuer;
+  const peutReessayerBouton = !doitSeConnecter && code !== "requete";
   const bloque = enAttente || !enLigne;
 
   return (
@@ -89,13 +92,13 @@ export function BandeauErreurReponse({
           {textes.seConnecter}
         </button>
       )}
-      {peutRelancer && peutContinuer && (
+      {peutContinuerBouton && (
         <button onClick={onContinuer} disabled={bloque} className={CLASSE_BOUTON}>
           <ArrowRight size={13} />
           {textes.continuer}
         </button>
       )}
-      {peutRelancer && (
+      {peutReessayerBouton && (
         <button onClick={onReessayer} disabled={bloque} className={CLASSE_BOUTON}>
           <RotateCw size={13} />
           {textes.reessayer}
