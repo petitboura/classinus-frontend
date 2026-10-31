@@ -593,11 +593,36 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
   // tableau `versions` complet (chacun avec SA PROPRE suite, résolue
   // récursivement de la même façon, donc même une version inactive garde
   // ses propres embranchements internes s'il y en avait).
-  function resoudreSuite(cleParent: string): MessageAffiche[] {
+  function resoudreSuite(cleParent: string, enCours: ReadonlySet<string> = new Set()): MessageAffiche[] {
+    // Garde anti-cycle (31/10/2026) : des donnees abimees (A parent de B,
+    // B parent de A) faisaient boucler la reconstruction a l'infini. On
+    // coupe le cycle ici, et le filet plus bas affiche les lignes coupees.
+    if (enCours.has(cleParent)) return [];
+    const suiteEnCours = new Set(enCours);
+    suiteEnCours.add(cleParent);
     const candidats = (enfantsParParent.get(cleParent) ?? [])
       .slice()
-      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+      // Tri stable : a horodatage egal (question et reponse inserees
+      // ensemble, cas frequent en base), c'est l'id qui departage,
+      // jamais l'ordre d'arrivee de la reponse reseau.
+      .sort((a, b) => a.created_at.localeCompare(b.created_at) || ((a.id ?? 0) - (b.id ?? 0)));
     if (candidats.length === 0) return [];
+
+    // Freres de roles differents (31/10/2026) : ce ne sont PAS des
+    // versions alternatives. Une question et une reponse qui partagent
+    // le meme parent (ancien rattachement fautif, voir la migration de
+    // rechainage du meme jour) sont des messages qui se suivent : on les
+    // affiche en sequence, dans l'ordre, chacun avec sa propre suite, au
+    // lieu de ranger l'un derriere les fleches de version de l'autre.
+    const roles = new Set(candidats.map((c) => c.role));
+    if (roles.size > 1) {
+      const affichees: MessageAffiche[] = [];
+      for (const candidat of candidats) {
+        const cle = candidat.id !== null && candidat.id !== undefined ? String(candidat.id) : "__sans_id__";
+        affichees.push(ligneVersMessage(candidat), ...resoudreSuite(cle, suiteEnCours));
+      }
+      return affichees;
+    }
 
     // Version affichée : celle dont la BRANCHE a l'activité la plus
     // récente (voir momentBranche), jamais le seul premier message. Un
@@ -611,16 +636,16 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
     }
     if (candidats.length === 1) {
       const seul = ligneVersMessage(candidats[0]);
-      return [seul, ...resoudreSuite(candidats[0].id !== null && candidats[0].id !== undefined ? String(candidats[0].id) : "__sans_id__")];
+      return [seul, ...resoudreSuite(candidats[0].id !== null && candidats[0].id !== undefined ? String(candidats[0].id) : "__sans_id__", suiteEnCours)];
     }
 
     const cleActif = candidats[indexActif].id !== null && candidats[indexActif].id !== undefined ? String(candidats[indexActif].id) : "__sans_id__";
-    const suiteActive = resoudreSuite(cleActif);
+    const suiteActive = resoudreSuite(cleActif, suiteEnCours);
     const messageActif = ligneVersMessage(candidats[indexActif]);
     const versions: VersionAlternative[] = candidats.map((c, i) => {
       if (i === indexActif) return { message: messageActif, suite: suiteActive };
       const cle = c.id !== null && c.id !== undefined ? String(c.id) : "__sans_id__";
-      return { message: ligneVersMessage(c), suite: resoudreSuite(cle) };
+      return { message: ligneVersMessage(c), suite: resoudreSuite(cle, suiteEnCours) };
     });
     messageActif.versions = versions;
     messageActif.versionActive = indexActif;
@@ -672,6 +697,19 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
     const rattachees = resoudreSuite(cle);
     marquerPresents(rattachees);
     affichees.push(...rattachees);
+  }
+
+  // Dernier filet (31/10/2026) : toute ligne encore absente apres le
+  // parcours (cycle coupe par le garde plus haut, cas non prevu) est
+  // affichee a plat, en ordre chronologique stable, plutot que perdue.
+  const restantes = lignes
+    .filter((l) => l.id === null || l.id === undefined || !idsPresents.has(l.id))
+    .slice()
+    .sort((a, b) => a.created_at.localeCompare(b.created_at) || ((a.id ?? 0) - (b.id ?? 0)));
+  for (const l of restantes) {
+    const message = ligneVersMessage(l);
+    affichees.push(message);
+    marquerPresents([message]);
   }
   return affichees;
 }

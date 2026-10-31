@@ -70,4 +70,28 @@ const ids = (messages) => messages.map((x) => x.id);
   assert.deepEqual(ids(m.construireMessagesDepuisHistorique(lignes)), [1, 2, 3]);
 }
 
+// 5. Freres de roles differents : pas des versions, ils se suivent.
+{
+  const lignes = [
+    L(1, null, "user", "01"), L(2, 1, "assistant", "01"),
+    L(3, 1, "user", "02"), L(4, 3, "assistant", "02"),
+  ];
+  const messages = m.construireMessagesDepuisHistorique(lignes);
+  assert.deepEqual(ids(messages), [1, 2, 3, 4]);
+  assert.equal(messages[1].versions, undefined);
+}
+
+// 6. Cycle de parents : pas de boucle infinie, aucune ligne perdue.
+{
+  const lignes = [L(1, 2, "user", "01"), L(2, 1, "assistant", "02")];
+  const messages = m.construireMessagesDepuisHistorique(lignes);
+  assert.deepEqual(ids(messages), [1, 2]);
+}
+
+// 7. Horodatages egaux : l'id departage, dans les deux sens d'arrivee.
+{
+  const lignes = [L(2, 1, "assistant", "01"), L(1, null, "user", "01"), L(3, 2, "user", "01")];
+  assert.deepEqual(ids(m.construireMessagesDepuisHistorique(lignes)), [1, 2, 3]);
+}
+
 console.log("Historique du chat (branches et orphelins) : tous les tests passent.");
