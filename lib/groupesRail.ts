@@ -1,4 +1,5 @@
 import { Briefcase, Hourglass, Library, Wand2, type LucideIcon } from "lucide-react";
+import { IconeHiggsfield } from "@/components/icons/IconeHiggsfield";
 import { ROUTES_BUREAU } from "./routesBureau";
 import { ROUTES_BIBLIOTHEQUE } from "./routesBibliotheque";
 import { ROUTES_CONCENTRATION } from "./routesConcentration";
@@ -7,6 +8,8 @@ import { SECTIONS_BUREAU, sectionsBureauVisibles } from "./sectionsBureau";
 import { SECTIONS_BIBLIOTHEQUE } from "./sectionsBibliotheque";
 import { SECTIONS_CONCENTRATION } from "./sectionsConcentration";
 import { SECTIONS_PERSONNALISER } from "./sectionsPersonnaliser";
+import { SECTIONS_HIGGSFIELD } from "./sectionsHiggsfield";
+import { ROUTES_HIGGSFIELD } from "./routesHiggsfield";
 import type { SectionDeGroupe } from "./groupeSections";
 
 // Les quatre sections du rail qui ont des sous-sections (Bureau,
@@ -15,7 +18,7 @@ import type { SectionDeGroupe } from "./groupeSections";
 // flottantes du chat : les sous-sections viennent des mêmes listes que les
 // vraies pages (lib/sections*.tsx), jamais d'une copie.
 export type GroupeRail = {
-  id: "bureau" | "bibliotheque" | "controle-session" | "personnaliser";
+  id: "bureau" | "bibliotheque" | "controle-session" | "personnaliser" | "higgsfield";
   href: string;
   label: string;
   Icone: LucideIcon;
@@ -46,6 +49,14 @@ export const GROUPE_CONCENTRATION: GroupeRail = {
   sections: SECTIONS_CONCENTRATION,
 };
 
+export const GROUPE_HIGGSFIELD: GroupeRail = {
+  id: "higgsfield",
+  href: ROUTES_HIGGSFIELD.accueil,
+  label: "Higgsfield",
+  Icone: IconeHiggsfield as unknown as LucideIcon,
+  sections: SECTIONS_HIGGSFIELD,
+};
+
 export const GROUPE_PERSONNALISER: GroupeRail = {
   id: "personnaliser",
   href: ROUTES_PERSONNALISER.accueil,
@@ -55,7 +66,7 @@ export const GROUPE_PERSONNALISER: GroupeRail = {
 };
 
 /** Ordre du rail desktop (hors chat : les quatre dans le rail). */
-export const GROUPES_RAIL: GroupeRail[] = [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER];
+export const GROUPES_RAIL: GroupeRail[] = [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_HIGGSFIELD, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER];
 
 /** Les sections à montrer dans le menu d'un groupe, selon le statut prof. */
 export function sectionsVisiblesDuGroupe(groupe: GroupeRail, estProfesseur: boolean | null): SectionDeGroupe[] {

@@ -9,7 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useFenetres } from "@/lib/contexteFenetres";
 import { MenuGroupe } from "@/components/MenuGroupeRail";
-import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
+import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_HIGGSFIELD, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
 import { Logo } from "@/components/Logo";
 import {
   UserRound,
@@ -515,16 +515,16 @@ export function AppSidebar({
   // liste sur le côté.
   const idsPlusFlat: OngletId[] = ["claude", "thonny"];
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
-  const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_PERSONNALISER] : GROUPES_RAIL;
+  const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_HIGGSFIELD, GROUPE_PERSONNALISER] : GROUPES_RAIL;
   const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
 
-  // Tiroir mobile du chat : les quatre groupes de la barre d'onglets mobile,
+  // Tiroir mobile du chat : les groupes de la barre d'onglets mobile,
   // dans l'ordre Bibliothèque, Concentration, Bureau, Personnaliser Classinus,
-  // chacun avec ses sous-sections (MenuGroupe, variante mobile). Sans Accueil
+  // Higgsfield, chacun avec ses sous-sections (MenuGroupe, variante mobile). Sans Accueil
   // (rejoint le "Plus" unifié) ni Chat (on y est déjà). Mobile uniquement :
   // ne touche pas navComplete/groupesDuRail ci-dessus, qui restent la version
   // ordinateur.
-  const groupesTiroirMobile = [GROUPE_BIBLIOTHEQUE, GROUPE_CONCENTRATION, GROUPE_BUREAU, GROUPE_PERSONNALISER];
+  const groupesTiroirMobile = [GROUPE_BIBLIOTHEQUE, GROUPE_CONCENTRATION, GROUPE_HIGGSFIELD, GROUPE_BUREAU, GROUPE_PERSONNALISER];
 
   // Navigation depuis le "Plus" unifié du tiroir mobile (BlocsMenuPlus
   // + SECTIONS_BASE, voir plus bas) : "Connecter Claude" a un vrai id

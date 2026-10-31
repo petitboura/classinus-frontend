@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import "@fontsource/fraunces/latin-500.css";
+import "@fontsource/fraunces/latin-600.css";
+import "@fontsource/fraunces/latin-700.css";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "@fontsource/jetbrains-mono/latin-400.css";
+import "@fontsource/jetbrains-mono/latin-500.css";
 import "./globals.css";
+import "./polices.css";
 import "./polices-lecture.css";
 // KaTeX/MathLive (rendu de formules dans BulleMessage.tsx et
 // EditeurMathsRiche.tsx) : dans djiguigne-frontend ce CSS est scopé à la
@@ -55,38 +63,11 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-});
-
 // Police serif éditoriale pour le corps des réponses de l'IA uniquement
 // (09/08, demande Bourama : "façon Claude" pour le texte des réponses --
 // pas pour les titres, qui restent en display, juste agrandis). Distincte
 // de la police display (Fraunces depuis le 27/08) -- reste Source Serif 4,
 // partagée avec djiguigne-frontend pour ce seul élément.
-const sourceSerif = Source_Serif_4({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-lecture",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
@@ -152,7 +133,6 @@ export default function RacineLayout({
       // (avec data-theme posé par le script) et log un avertissement
       // d'hydratation à chaque chargement, alors que c'est volontaire.
       suppressHydrationWarning
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
       <head>
         {/* Fiche d'identité de Classinus pour les moteurs de recherche et les
