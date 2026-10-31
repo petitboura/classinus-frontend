@@ -386,7 +386,24 @@ try {
     assert.ok(lib.includes('executerOutilRelaisPc'), 'lib relaisPc sans executerOutilRelaisPc');
   }
 
-  console.log('verifier-relais-pc : OK (24 groupes de verifications)');
+  // 25. Declaration du relais au backend : sur Electron, le renderer se
+  // declare relais systeme sans dependre d'un plugin declare disponible
+  // (sinon le backend refuse l'outil telephone sans essayer), et hors
+  // Electron la connexion se tait au lieu de repondre une erreur.
+  {
+    const racine = resolve(import.meta.dirname, '..');
+    const canal = readFileSync(join(racine, 'lib/canalAgentApplicatif.ts'), 'utf8');
+    assert.ok(
+      canal.includes('actions_systeme_via_renderer: surElectron() }'),
+      'declaration relais conditionnee a un plugin : le backend croira l appli PC absente'
+    );
+    assert.ok(
+      canal.includes('envoyerReponse(idTel, { ignore: true })'),
+      'hors Electron, outil_telephone doit ignorer au lieu de repondre une erreur'
+    );
+  }
+
+  console.log('verifier-relais-pc : OK (25 groupes de verifications)');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }
