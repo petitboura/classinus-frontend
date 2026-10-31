@@ -10,7 +10,7 @@
 export type MessageHistorique = {
   role: "user" | "assistant";
   content: string;
-  outils?: { nomOutil: string; nomLisible: string; resultat: unknown }[];
+  outils?: { nomOutil: string; nomLisible: string; resultat: unknown; arguments?: string; resultatComplet?: string }[];
 };
 
 // Identifiant d'un message sauvegardé, tel que le serveur le renvoie.
@@ -22,7 +22,7 @@ type MessageDuChat = {
   content: string;
   // Texte parti au serveur avec les blocs des pièces jointes (voir MessageAffiche.contenuEnvoye).
   contenuEnvoye?: string;
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: unknown }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: unknown; arguments?: string; resultatComplet?: string }[];
 };
 
 type EtatConversation = { historique: MessageHistorique[]; dernierMessageId: IdMessage | null };
@@ -88,7 +88,13 @@ export function ecrireEtatDepuisChat(conversationId: string, messages: MessageDu
       content: m.contenuEnvoye ?? m.content,
       outils:
         m.role === "assistant" && m.outilsResultats?.length
-          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
+          ? m.outilsResultats.map((r) => ({
+              nomOutil: r.nomOutil,
+              nomLisible: r.nomLisible,
+              resultat: r.resultat,
+              ...(r.resultatComplet ? { resultatComplet: r.resultatComplet } : {}),
+              ...(r.arguments ? { arguments: r.arguments } : {}),
+            }))
           : undefined,
     })),
     dernierMessageId: messages[messages.length - 1]?.id ?? null,

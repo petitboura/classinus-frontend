@@ -68,6 +68,20 @@ function garderDansHistorique(m: MessageAffiche) {
   return !(m.erreurTour && !m.content.trim());
 }
 
+// Ce que le modèle doit revoir d'un message assistant au tour suivant : pour chaque outil, son résultat
+// et, quand ils existent, les arguments de l'appel et le résultat complet (celui qui est affiché à
+// l'écran est coupé). Sans eux, le modèle ne sait plus ce qu'il a lancé et le refait.
+function outilsPourHistorique(m: MessageAffiche) {
+  if (m.role !== "assistant" || !m.outilsResultats || m.outilsResultats.length === 0) return undefined;
+  return m.outilsResultats.map((r) => ({
+    nomOutil: r.nomOutil,
+    nomLisible: r.nomLisible,
+    resultat: r.resultat,
+    ...(r.resultatComplet ? { resultatComplet: r.resultatComplet } : {}),
+    ...(r.arguments ? { arguments: r.arguments } : {}),
+  }));
+}
+
 export function ChatIA({
   agentId,
   nomAgent,
@@ -627,9 +641,17 @@ export function ChatIA({
           idAppel: evenement.id_appel as string | undefined,
           texteTermine,
         };
+        // Arguments de l'appel et résultat complet : gardés dans outilsResultats seulement (renvoyés au
+        // modèle au tour suivant), pas dans les segments d'affichage.
+        const entreeAvecHistorique = {
+          ...nouvelEntree,
+          arguments: typeof evenement.arguments === "string" && evenement.arguments ? evenement.arguments : undefined,
+          resultatComplet:
+            typeof evenement.resultat_complet === "string" && evenement.resultat_complet ? evenement.resultat_complet : undefined,
+        };
         copie[copie.length - 1] = {
           ...dernier,
-          outilsResultats: [...existants, nouvelEntree],
+          outilsResultats: [...existants, entreeAvecHistorique],
           segments: [...(dernier.segments || []), { type: "outil" as const, ...nouvelEntree }],
         };
         return copie;
@@ -1173,10 +1195,7 @@ export function ChatIA({
     const historiquePourApi = messages.filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils:
-        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
-          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
-          : undefined,
+      outils: outilsPourHistorique(m),
     }));
 
     // L'éditeur ne dépend plus du WebSocket pour être visible par le modèle
@@ -1459,10 +1478,7 @@ export function ChatIA({
     const historiquePourApi = messages.slice(0, index - 1).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils:
-        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
-          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
-          : undefined,
+      outils: outilsPourHistorique(m),
     }));
 
     majMessages((prec) => [
@@ -1556,10 +1572,7 @@ export function ChatIA({
     const historiquePourApi = messages.slice(0, index).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils:
-        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
-          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
-          : undefined,
+      outils: outilsPourHistorique(m),
     }));
 
     majMessages((prec) => [
