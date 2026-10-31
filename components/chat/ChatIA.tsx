@@ -68,6 +68,27 @@ function garderDansHistorique(m: MessageAffiche) {
   return !(m.erreurTour && !m.content.trim());
 }
 
+// Plafonds du modèle de requête api/chat.py (OutilHistorique/MessageHistorique,
+// PLAFOND_OUTILS_PAR_MESSAGE=50 par défaut côté backend) : un ancien message
+// assistant qui dépasse ces limites faisait refuser TOUT nouvel envoi de la
+// conversation en 422, pour toujours, puisque le frontend renvoie tout
+// l'historique à chaque message. On borne donc ici, avant l'envoi : on garde
+// les outils les plus récents (même préférence que core/historique_outils.py
+// côté backend) et on tronque les libellés trop longs. L'affichage local et
+// les données enregistrées ne sont pas touchés.
+const PLAFOND_OUTILS_PAR_MESSAGE_API = 50;
+const PLAFOND_NOM_OUTIL_API = 120;
+const PLAFOND_NOM_LISIBLE_OUTIL_API = 160;
+
+function outilsPourApi(m: MessageAffiche) {
+  if (m.role !== "assistant" || !m.outilsResultats?.length) return undefined;
+  return m.outilsResultats.slice(-PLAFOND_OUTILS_PAR_MESSAGE_API).map((r) => ({
+    nomOutil: r.nomOutil.slice(0, PLAFOND_NOM_OUTIL_API),
+    nomLisible: r.nomLisible.slice(0, PLAFOND_NOM_LISIBLE_OUTIL_API),
+    resultat: r.resultat,
+  }));
+}
+
 export function ChatIA({
   agentId,
   nomAgent,
@@ -1191,10 +1212,7 @@ export function ChatIA({
     const historiquePourApi = messages.filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils:
-        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
-          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
-          : undefined,
+      outils: outilsPourApi(m),
     }));
 
     // L'éditeur ne dépend plus du WebSocket pour être visible par le modèle
@@ -1477,10 +1495,7 @@ export function ChatIA({
     const historiquePourApi = messages.slice(0, index - 1).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils:
-        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
-          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
-          : undefined,
+      outils: outilsPourApi(m),
     }));
 
     majMessages((prec) => [
@@ -1574,10 +1589,7 @@ export function ChatIA({
     const historiquePourApi = messages.slice(0, index).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils:
-        m.role === "assistant" && m.outilsResultats && m.outilsResultats.length
-          ? m.outilsResultats.map((r) => ({ nomOutil: r.nomOutil, nomLisible: r.nomLisible, resultat: r.resultat }))
-          : undefined,
+      outils: outilsPourApi(m),
     }));
 
     majMessages((prec) => [
