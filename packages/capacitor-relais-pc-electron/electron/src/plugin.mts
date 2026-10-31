@@ -28,7 +28,7 @@
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { get } from "node:http";
+import { get, request } from "node:http";
 import { join } from "node:path";
 import { app, shell } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
@@ -47,6 +47,8 @@ const DELAI_PAGE_RELAIS_S = "86400";
 
 // Un contrôle de santé ne doit jamais attendre longtemps : le relais est local.
 const DELAI_SANTE_HTTP_MS = 3000;
+// Un outil ADB (batterie, stockage...) peut prendre du temps : on laisse le relais travailler.
+const DELAI_OUTIL_HTTP_MS = 60000;
 const NOM_FICHIER_JOURNAL_RELAIS = "relais.log";
 const TAILLE_MAX_JOURNAL_RELAIS = 500 * 1024;
 
@@ -189,6 +191,32 @@ function lireSanteHttp(url: string): Promise<boolean> {
   });
 }
 
+/** POST /relais/outil/{nom} en HTTP local. Rend la réponse JSON brute du relais, jamais d'erreur levée. */
+function appelerOutilHttp(url: string, nom: string, args: Record<string, unknown>): Promise<{ ok?: unknown; resultat?: unknown; erreur?: unknown }> {
+  return new Promise((resolve) => {
+    let termine = false;
+    const finir = (valeur: { ok?: unknown; resultat?: unknown; erreur?: unknown }) => { if (!termine) { termine = true; resolve(valeur); } };
+    try {
+      const corpsEnvoi = JSON.stringify({ args });
+      const requete = request(url, { method: "POST", timeout: DELAI_OUTIL_HTTP_MS, headers: { "content-type": "application/json", "content-length": Buffer.byteLength(corpsEnvoi) } }, (reponse) => {
+        let corps = "";
+        reponse.on("data", (morceau: unknown) => { corps += String(morceau); });
+        reponse.on("end", () => {
+          try { finir(JSON.parse(corps) as { ok?: unknown; resultat?: unknown; erreur?: unknown }); }
+          catch { finir({ ok: false, erreur: "Le relais téléphone a répondu un format illisible. Réessaie dans un moment." }); }
+        });
+        reponse.on("error", () => finir({ ok: false, erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." }));
+      });
+      requete.on("timeout", () => { requete.destroy(); finir({ ok: false, erreur: "Le diagnostic téléphone a pris trop de temps. Réessaie dans un moment." }); });
+      requete.on("error", () => finir({ ok: false, erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." }));
+      requete.write(corpsEnvoi);
+      requete.end();
+    } catch {
+      finir({ ok: false, erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." });
+    }
+  });
+}
+
 class RelaisPcImpl extends ElectronPlugin {
   private noyau = creerRelaisPc({
     // En fonction, relu à chaque démarrage et à chaque lecture d'état : l'exe
@@ -210,6 +238,7 @@ class RelaisPcImpl extends ElectronPlugin {
       return emballerProcessus(proc);
     },
     lireSante: lireSanteHttp,
+    appelerOutil: appelerOutilHttp,
     surChangement: (etat) => this.context.notifyListeners("etat", etat),
     journaliser: journaliserRelais,
   });
@@ -265,6 +294,14 @@ class RelaisPcImpl extends ElectronPlugin {
     return this.noyau.arreter();
   }
 
+  /** Exécute un outil téléphone via le relais local (POST /relais/outil/{nom}). */
+  async executerOutil(options: { nom?: unknown; args?: unknown } = {}): Promise<{ texte?: string; erreur?: string }> {
+    const nom = typeof options?.nom === "string" ? options.nom : "";
+    const argsBruts = options?.args;
+    const args = argsBruts && typeof argsBruts === "object" && !Array.isArray(argsBruts) ? (argsBruts as Record<string, unknown>) : {};
+    return this.noyau.executerOutil(nom, args);
+  }
+
   /** Ouvre la page de santé dans le navigateur. Faux quand le relais est indisponible. */
   async ouvrirPageSante(): Promise<{ ouvert: boolean }> {
     if (!cheminExe()) return { ouvert: false };
@@ -278,6 +315,6 @@ class RelaisPcImpl extends ElectronPlugin {
 }
 
 export const RelaisPc = defineElectronPlugin(
-  { name: "RelaisPc", methods: ["lireEtat", "demarrer", "arreter", "ouvrirPageSante"] },
+  { name: "RelaisPc", methods: ["lireEtat", "demarrer", "arreter", "ouvrirPageSante", "executerOutil"] },
   RelaisPcImpl
 );
