@@ -191,7 +191,8 @@ export function CatalogueHiggsfield() {
         Filtre par type et style, clique sur un effet pour l&apos;ouvrir en plein écran, scrolle de vidéo en
         vidéo, puis Générer t&apos;envoie au chat.
       </p>
-      <div className="-mx-4 flex flex-col gap-2 border-b border-dj-bordure bg-dj-fond px-4 py-3 md:mx-0 md:rounded-xl md:border md:px-4">
+      {/* Filtres : restent dans la page, ne montent jamais sous la barre du haut */}
+      <div className="flex flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
         <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
         <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
       </div>

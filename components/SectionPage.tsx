@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useSurAppliPc } from "@/lib/useSurAppliPc";
-import { OngletsLiens } from "./OngletsSegment";
-import { useEnTeteApp, useDefinirBarreSousSections } from "@/lib/contexteEnTete";
+import { useEnTeteApp } from "@/lib/contexteEnTete";
 
 const ContexteInfoSection = createContext<(id: string | null) => void>(() => {});
 
@@ -44,21 +43,6 @@ export function SectionPage({
     definir({ titre: titreHaut, retour: retourHaut, infoId: infoRubriqueId });
   }, [titreHaut, retourHaut, infoRubriqueId, definir]);
 
-  // Barre 1 = rangée de navigation entre pages sœurs (ex: Perso/Publique/Téléphone)
-  // Elle doit rester FIXE en haut comme ton bouton notif, pas glisser dans le scroll.
-  // Sur téléphone elle est au-dessus du contenu, sur ordi c'est le rail à gauche qui prend le relais.
-  // groupe peut être un nouvel objet à chaque rendu parent (Server Component ou Bureau)
-  // On dérive des clés primitives stables pour éviter une boucle : setBarreSousSections -> re-render -> nouveau groupe object -> nouveau noeud -> set...
-  const groupeHref = groupe?.href ?? null;
-  const groupeLabel = groupe?.label ?? null;
-  const soeursKey = groupe ? groupe.soeurs.map((s) => s.href + s.label + (s.masqueSurPc ? "1" : "0")).join("|") : "";
-  const soeursFiltrees = useMemo(() => (groupe ? groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc)) : []), [surAppliPc, soeursKey]);
-  const noeudSousSections = useMemo(() => {
-    if (!groupe || soeursFiltrees.length === 0) return null;
-    return <OngletsLiens ariaLabel={groupe.label} onglets={soeursFiltrees.map((s) => ({ href: s.href, libelle: s.label }))} />;
-  }, [groupeLabel, groupeHref, soeursFiltrees]);
-  useDefinirBarreSousSections(noeudSousSections);
-
   if (!groupe) {
     return (
       <ContexteInfoSection.Provider value={setInfoRubriqueId}>
@@ -70,8 +54,28 @@ export function SectionPage({
   return (
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
       <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
+        {/* Téléphone : navigation entre pages soeurs, dans la page (pas fixée en haut) */}
+        <nav className="mt-4 flex flex-wrap gap-1.5 md:hidden" aria-label={groupe.label}>
+          {groupe.soeurs
+            .filter((s) => !(surAppliPc && s.masqueSurPc))
+            .map((s) => {
+              const actif = pathname === s.href;
+              return (
+                <Link
+                  key={s.href}
+                  href={s.href}
+                  replace
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    actif ? "border-dj-texte bg-dj-texte text-dj-fond" : "border-dj-bordure bg-dj-surface text-dj-texte-muet"
+                  }`}
+                >
+                  {s.label}
+                </Link>
+              );
+            })}
+        </nav>
         <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
-          {/* Ordi : rail latéral fixe à gauche, reste visible quand on défile à droite */}
+          {/* Ordi : rail latéral à gauche, reste visible quand on défile */}
           <nav className="hidden w-48 flex-shrink-0 flex-col gap-1 self-start md:sticky md:top-4 md:flex">
             {groupe.soeurs
               .filter((s) => !(surAppliPc && s.masqueSurPc))
