@@ -56,7 +56,7 @@ import { telecharger } from "@/lib/telecharger";
 import { BibliothequePublique } from "./BibliothequePublique";
 import { EspaceDossiers } from "./EspaceDossiers";
 import { OngletsSegment } from "./OngletsSegment";
-import { useDefinirBarreSousSousSections, useEnTeteApp } from "@/lib/contexteEnTete";
+import { useEnTeteApp } from "@/lib/contexteEnTete";
 import { useInfoSection } from "./SectionPage";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { MenuActionsCarte } from "./MenuActionsCarte";
@@ -221,7 +221,6 @@ export function EspaceBibliotheque({
   );
   const { barreSousSections: pageAUnHeaderGroupe } = useEnTeteApp();
   const enVraiePage = pageAUnHeaderGroupe !== null;
-  useDefinirBarreSousSousSections(enVraiePage && vue === "perso" ? noeudOrigineFiltre : null);
   // 17/09/2026 (chantier persistance/cache, demande Bourama) :
   // `fichiers`/`dossiers` viennent maintenant de React Query au lieu
   // d'un useState local -- la donnée est partagée entre TOUTES les
@@ -1047,9 +1046,8 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           (SOUS_ONGLETS) ne disparaît pas, il passe dans le bouton Filtre
           juste à côté, toujours visible et applicable quel que soit
           l'onglet d'origine actif. */}
-      {/* Fenêtre flottante (sans groupe) : rangée Origine+Filtre reste dans le contenu qui défile.
-          En vraie page elle est en barre fixe au-dessus (voir hook plus haut). */}
-      {!enVraiePage && vue === "perso" && (
+      {/* Rangée Origine+Filtre : sur téléphone elle est aussi en haut (md:hidden), sur ordi ici */}
+      {vue === "perso" && (
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <OngletsSegment

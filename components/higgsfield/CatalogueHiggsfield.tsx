@@ -5,7 +5,7 @@ import { Play, Sparkles } from "lucide-react";
 import { VisionneurHiggsfield } from "@/components/higgsfield/VisionneurHiggsfield";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
-import { useEnTeteApp, useDefinirBarreSousSousSections } from "@/lib/contexteEnTete";
+
 
 function FiltreChips({
   label,
@@ -154,19 +154,7 @@ export function CatalogueHiggsfield() {
   const [typeFiltre, setTypeFiltre] = useState<string>("tous");
   const [styleFiltre, setStyleFiltre] = useState<string>("tous");
 
-  // Filtres Type/Style : étaient dans le scroll -> maintenant FIXES en haut comme ta cloche (vraie page). Fenêtre garde son filtre dans le contenu.
-  const { barreSousSections: higgsAUnHeader } = useEnTeteApp();
-  const higgsEnVraiePage = higgsAUnHeader !== null;
-  const noeudFiltresHiggs = useMemo(
-    () => (
-      <div className="flex flex-col gap-2">
-        <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
-        <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
-      </div>
-    ),
-    [typeFiltre, styleFiltre],
-  );
-  useDefinirBarreSousSousSections(higgsEnVraiePage ? noeudFiltresHiggs : null);
+
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
   const filtres = useMemo(
     () =>
@@ -203,12 +191,10 @@ export function CatalogueHiggsfield() {
         Filtre par type et style, clique sur un effet pour l&apos;ouvrir en plein écran, scrolle de vidéo en
         vidéo, puis Générer t&apos;envoie au chat.
       </p>
-      {!higgsEnVraiePage && (
-        <div className="-mx-4 flex flex-col gap-2 border-b border-dj-bordure bg-dj-fond px-4 py-3 md:mx-0 md:rounded-xl md:border md:px-4">
-          <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
-          <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
-        </div>
-      )}
+      <div className="-mx-4 flex flex-col gap-2 border-b border-dj-bordure bg-dj-fond px-4 py-3 md:mx-0 md:rounded-xl md:border md:px-4">
+        <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
+        <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
+      </div>
       {filtres.length === 0 ? (
         <p className="py-12 text-center text-sm text-dj-texte-muet">Aucun effet pour ces filtres.</p>
       ) : (

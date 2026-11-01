@@ -47,7 +47,7 @@ export function SectionPage({
   // Barre 1 = rangée de navigation entre pages sœurs (ex: Perso/Publique/Téléphone)
   // Elle doit rester FIXE en haut comme ton bouton notif, pas glisser dans le scroll.
   // Sur téléphone elle est au-dessus du contenu, sur ordi c'est le rail à gauche qui prend le relais.
-  const soeursFiltrees = groupe ? groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc)) : [];
+  const soeursFiltrees = useMemo(() => (groupe ? groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc)) : []), [groupe, surAppliPc]);
   const noeudSousSections = useMemo(() => {
     if (!groupe || soeursFiltrees.length === 0) return null;
     return <OngletsLiens ariaLabel={groupe.label} onglets={soeursFiltrees.map((s) => ({ href: s.href, libelle: s.label }))} />;
