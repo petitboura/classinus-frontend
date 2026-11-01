@@ -868,6 +868,7 @@ function traiterMessage(message: unknown) {
     // le blocage "canal en direct inactif" et PontNatif (qui ne connaît
     // pas cet outil), et on appelle RelaisPc -> POST /relais/outil/{nom}.
     const idTel = m.id;
+    console.info(`[Canal agent] outil téléphone demandé par le serveur : ${typeof (m.parametres as Record<string, unknown> | undefined)?.nom === "string" ? (m.parametres as Record<string, unknown>).nom : "(sans nom)"}, appli PC (Electron)=${surElectron()}`);
     const parametresTel = (m.parametres ?? {}) as Record<string, unknown>;
     const nomTel = typeof parametresTel.nom === "string" ? parametresTel.nom : "";
     const argsBrutsTel = parametresTel.args;
@@ -878,6 +879,7 @@ function traiterMessage(message: unknown) {
       envoyerReponse(idTel, { ignore: true });
     } else {
       void import("./relaisPc").then(({ executerOutilRelaisPc }) => executerOutilRelaisPc(nomTel, argsTel)).then((resultat) => {
+        console.info(`[Canal agent] relais téléphone a répondu pour ${nomTel} : ${resultat && typeof resultat === "object" && "erreur" in resultat ? `erreur = ${String((resultat as { erreur?: unknown }).erreur)}` : "résultat reçu"}`);
         envoyerReponse(idTel, resultat);
       }).catch((e) => {
         console.warn("Échec de l'outil téléphone via le relais PC :", e);
@@ -1006,6 +1008,8 @@ async function ouvrirCanal() {
       // PC absente et refuse les outils téléphone sans même essayer.
       ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId,
         actions_systeme_via_renderer: surElectron() }));
+      // Diagnostic 01/11/2026 (« Téléphone injoignable ») : ce que cette appli déclare au serveur.
+      console.info(`[Canal agent] connexion ouverte vers ${API_URL} : appli PC (Electron)=${surElectron()}, appareil=${appareilId ?? "(aucun)"}, relais déclaré=${surElectron()}`);
       
       // Etat initial des actions disponibles pour CETTE connexion, sans
       // attendre un changement (chantier D), sinon le backend n'a rien
@@ -1022,7 +1026,8 @@ async function ouvrirCanal() {
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (evenementFermeture) => {
+      console.info(`[Canal agent] connexion fermée : code=${evenementFermeture.code}${evenementFermeture.code === 4401 ? " (jeton de connexion refusé par le serveur)" : ""}, voulue=${fermetureVoulue}`);
       if (socket !== ws) return;
       socket = null;
       arreterObservationDom();
