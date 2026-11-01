@@ -268,7 +268,7 @@ export interface MessageAffiche {
   // séparé du message) : elles doivent apparaître juste après le
   // résultat de leur outil, pas dans un bloc "Sources" à part à la fin
   // -- voir OutilResultatBulle.tsx.
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; arguments?: string; resultatComplet?: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
   // Réponse coupée par une erreur (serveur ou connexion) : le texte déjà reçu reste affiché,
   // ce champ affiche le bandeau d'erreur adapté sous ce message (BandeauErreurReponse.tsx).
   // Il découple aussi "action possible" de "réponse persistée en base" : une réponse en
@@ -558,50 +558,160 @@ export function construireMessagesDepuisHistorique(lignes: LigneHistorique[]): M
     enfantsParParent.get(cle)!.push(l);
   }
 
+  const momentPropre = (l: LigneHistorique) => {
+    const t = Date.parse(l.selectionne_le ?? l.created_at);
+    return Number.isNaN(t) ? 0 : t;
+  };
+  // Dernier moment d'activite d'une branche entiere, descendants compris
+  // (31/10/2026, bug remonte par Bourama : dernier echange invisible a la
+  // reouverture). Choisir la version affichee sur le seul created_at du
+  // premier message d'une branche trompe des qu'une deuxieme racine
+  // parasite existe : la branche courte et recente passait devant la
+  // branche longue qui porte pourtant l'echange le plus recent. Le
+  // choix se fait donc sur l'activite la plus recente de toute la
+  // branche. Memoise par id, avec garde anti-cycle (donnees abimees).
+  const momentsBranche = new Map<string, number>();
+  function momentBranche(l: LigneHistorique, enCours: ReadonlySet<string> = new Set()): number {
+    const cle = l.id !== null && l.id !== undefined ? String(l.id) : null;
+    if (cle === null) return momentPropre(l);
+    const connu = momentsBranche.get(cle);
+    if (connu !== undefined) return connu;
+    if (enCours.has(cle)) return momentPropre(l);
+    const suite = new Set(enCours);
+    suite.add(cle);
+    let max = momentPropre(l);
+    for (const enfant of enfantsParParent.get(cle) ?? []) {
+      max = Math.max(max, momentBranche(enfant, suite));
+    }
+    momentsBranche.set(cle, max);
+    return max;
+  }
+
   // Résout la suite affichée à partir d'un point de l'arbre (racine ou
   // n'importe quel id de message) : choisit le frère le plus récent comme
   // version active, et si plusieurs frères existent, construit le
   // tableau `versions` complet (chacun avec SA PROPRE suite, résolue
   // récursivement de la même façon, donc même une version inactive garde
   // ses propres embranchements internes s'il y en avait).
-  function resoudreSuite(cleParent: string): MessageAffiche[] {
+  function resoudreSuite(cleParent: string, enCours: ReadonlySet<string> = new Set()): MessageAffiche[] {
+    // Garde anti-cycle (31/10/2026) : des donnees abimees (A parent de B,
+    // B parent de A) faisaient boucler la reconstruction a l'infini. On
+    // coupe le cycle ici, et le filet plus bas affiche les lignes coupees.
+    if (enCours.has(cleParent)) return [];
+    const suiteEnCours = new Set(enCours);
+    suiteEnCours.add(cleParent);
     const candidats = (enfantsParParent.get(cleParent) ?? [])
       .slice()
-      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+      // Tri stable : a horodatage egal (question et reponse inserees
+      // ensemble, cas frequent en base), c'est l'id qui departage,
+      // jamais l'ordre d'arrivee de la reponse reseau.
+      .sort((a, b) => a.created_at.localeCompare(b.created_at) || ((a.id ?? 0) - (b.id ?? 0)));
     if (candidats.length === 0) return [];
 
-    // Version affichée : celle dont le dernier "moment d'intérêt" est le plus
-    // récent, soit son choix avec les flèches (selectionne_le), soit sa
-    // création. Une version neuve passe donc devant, et un retour volontaire
-    // vers une ancienne version la fait repasser devant après rechargement.
+    // Freres de roles differents (31/10/2026) : ce ne sont PAS des
+    // versions alternatives. Une question et une reponse qui partagent
+    // le meme parent (ancien rattachement fautif, voir la migration de
+    // rechainage du meme jour) sont des messages qui se suivent : on les
+    // affiche en sequence, dans l'ordre, chacun avec sa propre suite, au
+    // lieu de ranger l'un derriere les fleches de version de l'autre.
+    const roles = new Set(candidats.map((c) => c.role));
+    if (roles.size > 1) {
+      const affichees: MessageAffiche[] = [];
+      for (const candidat of candidats) {
+        const cle = candidat.id !== null && candidat.id !== undefined ? String(candidat.id) : "__sans_id__";
+        affichees.push(ligneVersMessage(candidat), ...resoudreSuite(cle, suiteEnCours));
+      }
+      return affichees;
+    }
+
+    // Version affichée : celle dont la BRANCHE a l'activité la plus
+    // récente (voir momentBranche), jamais le seul premier message. Un
+    // retour volontaire vers une ancienne version reste prioritaire :
+    // son selectionne_le, ou la suite ecrite depuis ce retour, fait
+    // repasser sa branche devant après rechargement.
     // L'ordre du compteur (1/N) reste celui de la création.
-    const momentDInteret = (l: LigneHistorique) => {
-      const t = Date.parse(l.selectionne_le ?? l.created_at);
-      return Number.isNaN(t) ? 0 : t;
-    };
     let indexActif = candidats.length - 1;
     for (let i = candidats.length - 2; i >= 0; i--) {
-      if (momentDInteret(candidats[i]) > momentDInteret(candidats[indexActif])) indexActif = i;
+      if (momentBranche(candidats[i]) > momentBranche(candidats[indexActif])) indexActif = i;
     }
     if (candidats.length === 1) {
       const seul = ligneVersMessage(candidats[0]);
-      return [seul, ...resoudreSuite(candidats[0].id !== null && candidats[0].id !== undefined ? String(candidats[0].id) : "__sans_id__")];
+      return [seul, ...resoudreSuite(candidats[0].id !== null && candidats[0].id !== undefined ? String(candidats[0].id) : "__sans_id__", suiteEnCours)];
     }
 
     const cleActif = candidats[indexActif].id !== null && candidats[indexActif].id !== undefined ? String(candidats[indexActif].id) : "__sans_id__";
-    const suiteActive = resoudreSuite(cleActif);
+    const suiteActive = resoudreSuite(cleActif, suiteEnCours);
     const messageActif = ligneVersMessage(candidats[indexActif]);
     const versions: VersionAlternative[] = candidats.map((c, i) => {
       if (i === indexActif) return { message: messageActif, suite: suiteActive };
       const cle = c.id !== null && c.id !== undefined ? String(c.id) : "__sans_id__";
-      return { message: ligneVersMessage(c), suite: resoudreSuite(cle) };
+      return { message: ligneVersMessage(c), suite: resoudreSuite(cle, suiteEnCours) };
     });
     messageActif.versions = versions;
     messageActif.versionActive = indexActif;
     return [messageActif, ...suiteActive];
   }
 
-  return resoudreSuite("__racine__");
+  const affichees = resoudreSuite("__racine__");
+
+  // Filet de securite (31/10/2026) : une ligne dont le parent est absent
+  // de la reponse (ligne supprimee, ancien parent casse) n'est atteinte
+  // par aucun chemin depuis la racine. Avant, elle disparaissait en
+  // silence a la reouverture alors qu'elle est bien en base. On la
+  // rattache donc en fin de fil, dans l'ordre chronologique, avec toute
+  // sa suite. Les versions inactives ne sont pas concernees : elles sont
+  // deja rangees dans message.versions, donc marquees comme presentes.
+  const idsPresents = new Set<number>();
+  const dejaVus = new Set<MessageAffiche>();
+  const marquerPresents = (messages: MessageAffiche[]) => {
+    for (const m of messages) {
+      // La version active se reference elle-meme dans ses versions :
+      // sans ce garde, le parcours boucle a l'infini.
+      if (dejaVus.has(m)) continue;
+      dejaVus.add(m);
+      if (m.id !== null && m.id !== undefined) idsPresents.add(m.id);
+      for (const v of m.versions ?? []) {
+        marquerPresents([v.message]);
+        marquerPresents(v.suite);
+      }
+    }
+  };
+  marquerPresents(affichees);
+
+  const clesOrphelines = [...enfantsParParent.keys()]
+    .filter((cle) => cle !== "__racine__")
+    .filter((cle) => {
+      const parentConnu = lignes.some((l) => l.id !== null && l.id !== undefined && String(l.id) === cle);
+      if (parentConnu) return false;
+      return (enfantsParParent.get(cle) ?? []).some(
+        (l) => l.id === null || l.id === undefined || !idsPresents.has(l.id),
+      );
+    })
+    .sort((a, b) => {
+      const premiere = (cle: string) =>
+        Math.min(...(enfantsParParent.get(cle) ?? []).map((l) => Date.parse(l.created_at) || 0));
+      return premiere(a) - premiere(b);
+    });
+
+  for (const cle of clesOrphelines) {
+    const rattachees = resoudreSuite(cle);
+    marquerPresents(rattachees);
+    affichees.push(...rattachees);
+  }
+
+  // Dernier filet (31/10/2026) : toute ligne encore absente apres le
+  // parcours (cycle coupe par le garde plus haut, cas non prevu) est
+  // affichee a plat, en ordre chronologique stable, plutot que perdue.
+  const restantes = lignes
+    .filter((l) => l.id === null || l.id === undefined || !idsPresents.has(l.id))
+    .slice()
+    .sort((a, b) => a.created_at.localeCompare(b.created_at) || ((a.id ?? 0) - (b.id ?? 0)));
+  for (const l of restantes) {
+    const message = ligneVersMessage(l);
+    affichees.push(message);
+    marquerPresents([message]);
+  }
+  return affichees;
 }
 
 // - heure affichée sous le message UTILISATEUR uniquement
@@ -685,7 +795,7 @@ function BulleMessageInterne({
   estEnCoursDeGeneration?: boolean;
   raisonnement?: string;
   raisonnementEnCours?: boolean;
-  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
+  outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; arguments?: string; resultatComplet?: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[] }[];
   outilsEnCours?: OutilEnCours[];
   // Persona pédagogique / jonction "QCM complet" (14/09/2026) : transmis
   // tel quel à QCMInteractif (voir le case "qcm" du switch plus bas) --

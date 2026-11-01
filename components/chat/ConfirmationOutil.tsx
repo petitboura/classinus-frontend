@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Check, ChevronDown, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ShieldCheck, X } from "lucide-react";
 import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { useLocale } from "@/lib/i18n/useLocale";
 
@@ -22,6 +22,7 @@ export function ConfirmationOutil({
   arguments: args,
   enAttente,
   onConfirmer,
+  onToujoursAutoriser,
   onAnnuler,
 }: {
   nomLisible: string;
@@ -30,6 +31,8 @@ export function ConfirmationOutil({
   arguments: Record<string, unknown>;
   enAttente: boolean;
   onConfirmer: () => void;
+  // Absent : le bouton « Toujours autoriser » n'est pas proposé pour cette action.
+  onToujoursAutoriser?: () => void;
   onAnnuler: () => void;
 }) {
   const locale = useLocale();
@@ -84,7 +87,7 @@ export function ConfirmationOutil({
               </div>
             </div>
           )}
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <button
               onClick={onConfirmer}
               disabled={enAttente}
@@ -92,6 +95,15 @@ export function ConfirmationOutil({
             >
               <Check size={13} /> {t("Confirmer")}
             </button>
+            {onToujoursAutoriser && (
+              <button
+                onClick={onToujoursAutoriser}
+                disabled={enAttente}
+                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface-haute disabled:opacity-50"
+              >
+                <ShieldCheck size={13} /> {t("Toujours autoriser")}
+              </button>
+            )}
             <button
               onClick={onAnnuler}
               disabled={enAttente}

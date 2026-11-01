@@ -122,7 +122,7 @@ export function VisionneurHiggsfield({
 }) {
   const conteneurRef = useRef<HTMLDivElement>(null);
   const [indexCourant, setIndexCourant] = useState(indexDepart);
-  const [sonActif, setSonActif] = useState(false);
+  const [sonActif, setSonActif] = useState(true);
 
   useEffect(() => {
     const el = conteneurRef.current;

@@ -3,6 +3,7 @@
 import { Check, CircleAlert, LoaderCircle, MoreHorizontal, Pencil, PlugZap, RefreshCw, Trash2, Unplug } from "lucide-react";
 import type { AuthTypeMcpPersonnalise, McpPersonnalise } from "@/lib/api";
 import { CadrePanneau } from "@/components/connexions/CadrePanneau";
+import { ActionsToujoursAutorisees } from "@/components/connexions/ActionsToujoursAutorisees";
 import { LogoMcp } from "@/components/connexions/LogoMcp";
 
 export type ResultatTestMcp = {
@@ -149,6 +150,8 @@ export function PanneauMcpPersonnalise({
               <dd className="mt-0.5 text-dj-texte-muet">{ETIQUETTES_AUTH[serveur.auth_type]}</dd>
             </div>
           </dl>
+
+          <ActionsToujoursAutorisees filtre={(a) => a.appli === "mcp_personnalise" && a.cle.includes("_" + serveur.id.replace(/-/g, "").slice(0, 6) + "_")} />
 
           {erreur && <div role="alert" className="flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]"><CircleAlert size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 break-words">{erreur}</span></div>}
           {message && <p role="status" className="rounded-xl border border-dj-bordure p-3 text-sm text-dj-texte">{message}</p>}

@@ -68,24 +68,25 @@ function garderDansHistorique(m: MessageAffiche) {
   return !(m.erreurTour && !m.content.trim());
 }
 
-// Plafonds du modèle de requête api/chat.py (OutilHistorique/MessageHistorique,
-// PLAFOND_OUTILS_PAR_MESSAGE=50 par défaut côté backend) : un ancien message
-// assistant qui dépasse ces limites faisait refuser TOUT nouvel envoi de la
-// conversation en 422, pour toujours, puisque le frontend renvoie tout
-// l'historique à chaque message. On borne donc ici, avant l'envoi : on garde
-// les outils les plus récents (même préférence que core/historique_outils.py
-// côté backend) et on tronque les libellés trop longs. L'affichage local et
-// les données enregistrées ne sont pas touchés.
+// Ce que le modèle doit revoir d'un message assistant au tour suivant : pour chaque outil, son résultat
+// et, quand ils existent, les arguments de l'appel et le résultat complet (celui qui est affiché à
+// l'écran est coupé). Sans eux, le modèle ne sait plus ce qu'il a lancé et le refait.
+// Borné aux plafonds du modèle de requête api/chat.py : au delà de 50 outils par message, ou avec des
+// libellés trop longs, le serveur refuse tout l'envoi en 422 et la conversation reste bloquée pour
+// toujours, puisque tout l'historique est renvoyé à chaque message. On garde les outils les plus
+// récents et on tronque les libellés. L'affichage local et les données enregistrées ne changent pas.
 const PLAFOND_OUTILS_PAR_MESSAGE_API = 50;
 const PLAFOND_NOM_OUTIL_API = 120;
 const PLAFOND_NOM_LISIBLE_OUTIL_API = 160;
 
-function outilsPourApi(m: MessageAffiche) {
-  if (m.role !== "assistant" || !m.outilsResultats?.length) return undefined;
+function outilsPourHistorique(m: MessageAffiche) {
+  if (m.role !== "assistant" || !m.outilsResultats || m.outilsResultats.length === 0) return undefined;
   return m.outilsResultats.slice(-PLAFOND_OUTILS_PAR_MESSAGE_API).map((r) => ({
     nomOutil: r.nomOutil.slice(0, PLAFOND_NOM_OUTIL_API),
     nomLisible: r.nomLisible.slice(0, PLAFOND_NOM_LISIBLE_OUTIL_API),
     resultat: r.resultat,
+    ...(r.resultatComplet ? { resultatComplet: r.resultatComplet } : {}),
+    ...(r.arguments ? { arguments: r.arguments } : {}),
   }));
 }
 
@@ -300,6 +301,7 @@ export function ChatIA({
     agentNom?: string | null;
     arguments: Record<string, unknown>;
     etatReprise: unknown;
+    cleAutorisation?: string | null;
   } | null>(null);
   const [confirmationEnAttente, setConfirmationEnAttente] = useState(false);
   const [popupFeedback, setPopupFeedback] = useState<{
@@ -648,9 +650,17 @@ export function ChatIA({
           idAppel: evenement.id_appel as string | undefined,
           texteTermine,
         };
+        // Arguments de l'appel et résultat complet : gardés dans outilsResultats seulement (renvoyés au
+        // modèle au tour suivant), pas dans les segments d'affichage.
+        const entreeAvecHistorique = {
+          ...nouvelEntree,
+          arguments: typeof evenement.arguments === "string" && evenement.arguments ? evenement.arguments : undefined,
+          resultatComplet:
+            typeof evenement.resultat_complet === "string" && evenement.resultat_complet ? evenement.resultat_complet : undefined,
+        };
         copie[copie.length - 1] = {
           ...dernier,
-          outilsResultats: [...existants, nouvelEntree],
+          outilsResultats: [...existants, entreeAvecHistorique],
           segments: [...(dernier.segments || []), { type: "outil" as const, ...nouvelEntree }],
         };
         return copie;
@@ -884,6 +894,7 @@ export function ChatIA({
         agentNom: evenement.agent_nom,
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,
+        cleAutorisation: evenement.cle_autorisation ?? null,
       });
     } else if (evenement.type === "erreur_tour") {
       // Le serveur a échoué en plein tour (voir classinus-backend core/erreur_tour.py). Le texte
@@ -1005,15 +1016,22 @@ export function ChatIA({
         // échoue, l'état ne doit JAMAIS être perdu. On le restaure sur le message d'origine
         // (son bouton Continuer/Réessayer réapparaît) ET on le pose sur le nouveau message en
         // erreur, pour que son bandeau propose Continuer avec ce même contexte.
+        // Exception (même jour, conversation bloquée sur « modifie ton message ») : quand le
+        // serveur refuse la demande elle-même (code "requete" : 400/413/422), renvoyer cet
+        // état à l'identique échouera toujours -- le restaurer faisait boucler Continuer et
+        // chaque nouveau message tapé (détourné ici par envoyerMessage) sur la même erreur,
+        // indéfiniment. Dans ce seul cas, on ne le restaure pas : le prochain message part
+        // en envoi normal, avec l'historique affiché.
+        const reprisePerimee = codeDepuisException(e) === "requete";
         majMessages((prec) => {
           const copie = [...prec];
-          if (copie[indexMessage]) {
+          if (!reprisePerimee && copie[indexMessage]) {
             copie[indexMessage] = { ...copie[indexMessage], repriseDisponible: reprise };
           }
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
             erreurTour: { code: codeDepuisException(e) },
-            repriseDisponible: reprise,
+            repriseDisponible: reprisePerimee ? null : reprise,
           };
           return copie;
         });
@@ -1212,7 +1230,7 @@ export function ChatIA({
     const historiquePourApi = messages.filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils: outilsPourApi(m),
+      outils: outilsPourHistorique(m),
     }));
 
     // L'éditeur ne dépend plus du WebSocket pour être visible par le modèle
@@ -1495,7 +1513,7 @@ export function ChatIA({
     const historiquePourApi = messages.slice(0, index - 1).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils: outilsPourApi(m),
+      outils: outilsPourHistorique(m),
     }));
 
     majMessages((prec) => [
@@ -1589,7 +1607,7 @@ export function ChatIA({
     const historiquePourApi = messages.slice(0, index).filter(garderDansHistorique).map((m) => ({
       role: m.role,
       content: m.contenuEnvoye ?? m.content,
-      outils: outilsPourApi(m),
+      outils: outilsPourHistorique(m),
     }));
 
     majMessages((prec) => [
@@ -1909,7 +1927,7 @@ export function ChatIA({
     setJetonEdition((j) => j + 1);
   }
 
-  async function repriseApresConfirmation(approuve: boolean) {
+  async function repriseApresConfirmation(approuve: boolean, toujoursAutoriser = false) {
     if (!confirmation) return;
     // Demande traitée par ce clic : si la reprise en fait apparaître une nouvelle
     // (deuxième outil à approuver), elle doit rester affichée à la fin du flux.
@@ -1926,7 +1944,7 @@ export function ChatIA({
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
       await lireFluxChat(
-        { erreurs_typees: true, reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve } },
+        { erreurs_typees: true, reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve, ...(approuve && toujoursAutoriser ? { toujours_autoriser: true } : {}) } },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
@@ -2317,6 +2335,7 @@ export function ChatIA({
             arguments={confirmation.arguments}
             enAttente={confirmationEnAttente}
             onConfirmer={() => repriseApresConfirmation(true)}
+            onToujoursAutoriser={confirmation.cleAutorisation ? () => repriseApresConfirmation(true, true) : undefined}
             onAnnuler={() => repriseApresConfirmation(false)}
           />
         )}

@@ -26,11 +26,17 @@ export interface EtatRelaisPc {
   pid: number | null;
 }
 
+export interface ResultatOutilRelaisPc {
+  texte?: string;
+  erreur?: string;
+}
+
 interface PluginRelaisPc {
   lireEtat(): Promise<EtatRelaisPc>;
   demarrer(): Promise<EtatRelaisPc>;
   arreter(): Promise<EtatRelaisPc>;
   ouvrirPageSante(): Promise<{ ouvert: boolean }>;
+  executerOutil(options: { nom: string; args: Record<string, unknown> }): Promise<ResultatOutilRelaisPc>;
   addListener(
     nomEvenement: "etat",
     rappel: (etat: EtatRelaisPc) => void
@@ -49,6 +55,11 @@ export function demarrerRelaisPc() {
 
 export function arreterRelaisPc() {
   return RelaisPc.arreter();
+}
+
+/** Exécute un outil téléphone via le relais local de l'appli PC (diagnostic Class-Tech). */
+export function executerOutilRelaisPc(nom: string, args: Record<string, unknown> = {}) {
+  return RelaisPc.executerOutil({ nom, args });
 }
 
 /** Ouvre la page de santé dans le navigateur. `ouvert` est faux quand le relais est indisponible. */

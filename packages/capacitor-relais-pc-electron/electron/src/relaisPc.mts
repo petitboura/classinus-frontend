@@ -37,6 +37,12 @@ export interface EtatRelaisPc {
   pid: number | null;
 }
 
+/** Résultat d'un outil téléphone, au format attendu par le backend : {texte} ou {erreur}. */
+export interface ResultatOutilRelais {
+  texte?: string;
+  erreur?: string;
+}
+
 /** Ce que le noyau utilise du processus lancé (spawn emballé côté plugin). */
 export interface ProcessusRelais {
   pid: number | null;
@@ -64,10 +70,14 @@ export interface OptionsRelaisPc {
   lancer: (cheminExe: string, dossierTravail: string) => ProcessusRelais;
   /** Vrai quand la page de santé répond ok:true. */
   lireSante: (url: string) => Promise<boolean>;
+  /** Appelle un outil du relais local (POST /relais/outil/{nom}) et rend sa réponse brute. Injecté côté plugin (HTTP local). */
+  appelerOutil?: (urlOutil: string, nom: string, args: Record<string, unknown>) => Promise<{ ok?: unknown; resultat?: unknown; erreur?: unknown }>;
   surChangement: (etat: EtatRelaisPc) => void;
   /** Détail technique, réservé au journal du processus principal. */
   journaliser?: (texte: string) => void;
   planifier?: (rappel: () => void, delaiMs: number) => TacheMinuteurRelais;
+  tentativesRedemarrage?: number;
+  delaiRedemarrageMs?: number;
   /** Attente avant le premier contrôle de santé (le serveur Python démarre). */
   delaiSanteMs?: number;
   /** Contrôles de santé au maximum pendant le démarrage. */
@@ -79,6 +89,8 @@ export interface OptionsRelaisPc {
 export const DELAI_SANTE_MS = 3000;
 export const ESSAIS_SANTE = 10;
 export const INTERVALLE_ESSAI_MS = 2000;
+export const TENTATIVES_REDEMARRAGE = 3;
+export const DELAI_REDEMARRAGE_MS = 2000;
 
 export const MESSAGE_INDISPONIBLE =
   "Le relais téléphone n'est pas dans cette installation de Classinus.";
@@ -103,9 +115,12 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
     urlSante,
     lancer,
     lireSante,
+    appelerOutil,
     surChangement,
     journaliser = () => {},
     planifier = planifierParDefaut,
+    tentativesRedemarrage = TENTATIVES_REDEMARRAGE,
+    delaiRedemarrageMs = DELAI_REDEMARRAGE_MS,
     delaiSanteMs = DELAI_SANTE_MS,
     essaisSante = ESSAIS_SANTE,
     intervalleEssaiMs = INTERVALLE_ESSAI_MS,
@@ -129,6 +144,8 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
   let processus: ProcessusRelais | null = null;
   let arretDemande = false;
   let tacheSante: TacheMinuteurRelais | null = null;
+  let tacheRedemarrage: TacheMinuteurRelais | null = null;
+  let redemarragesRestants = tentativesRedemarrage;
 
   function changer(partiel: Partial<EtatRelaisPc>): void {
     etat = { ...etat, ...partiel };
@@ -142,6 +159,24 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
   function annulerControleSante(): void {
     tacheSante?.arreter();
     tacheSante = null;
+  }
+
+  function annulerRedemarrage(): void {
+    tacheRedemarrage?.arreter();
+    tacheRedemarrage = null;
+  }
+
+  function programmerRedemarrage(): void {
+    if (redemarragesRestants <= 0 || arretDemande) return;
+    const tentative = tentativesRedemarrage - redemarragesRestants + 1;
+    redemarragesRestants -= 1;
+    journaliser(`redemarrage automatique ${tentative}/${tentativesRedemarrage} dans ${delaiRedemarrageMs}ms`);
+    changer({ etat: "demarrage", message: `Nouvelle tentative ${tentative}/${tentativesRedemarrage}…`, pid: null });
+    tacheRedemarrage = planifier(() => {
+      tacheRedemarrage = null;
+      if (arretDemande) return;
+      demarrer();
+    }, delaiRedemarrageMs);
   }
 
   function pageSante(): string {
@@ -163,6 +198,8 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
       .then((ok) => {
         if (!processus || processus.quitte) return;
         if (ok) {
+          redemarragesRestants = tentativesRedemarrage;
+          annulerRedemarrage();
           changer({ etat: "enmarche", message: null });
           return;
         }
@@ -185,7 +222,8 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
         changer({ etat: "arrete", message: null, pid: null });
       } else if (etat.etat === "demarrage" || etat.etat === "enmarche") {
         journaliser(`le relais est parti tout seul (code ${proc.codeSortie ?? "inconnu"})`);
-        changer({ etat: "erreur", message: MESSAGE_ARRET_INATTENDU, pid: null });
+        if (redemarragesRestants > 0) programmerRedemarrage();
+        else changer({ etat: "erreur", message: MESSAGE_ARRET_INATTENDU, pid: null });
       }
     });
   }
@@ -201,6 +239,9 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
       return { ...etat };
     }
     annulerControleSante();
+    // Un redemarrage auto arrive en etat "demarrage" : ne pas remettre le compteur a zero, sinon boucle infinie si l'exe crashe en boucle.
+    if (etat.etat !== "demarrage") redemarragesRestants = tentativesRedemarrage;
+    annulerRedemarrage();
     processus = null;
     arretDemande = false;
     let proc: ProcessusRelais;
@@ -221,6 +262,8 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
   /** Arrête l'exe lancé. Sans effet quand rien ne tourne. */
   function arreter(): EtatRelaisPc {
     annulerControleSante();
+    annulerRedemarrage();
+    redemarragesRestants = tentativesRedemarrage;
     const proc = processus;
     if (!proc || proc.quitte) {
       processus = null;
@@ -272,9 +315,41 @@ export function creerRelaisPc(options: OptionsRelaisPc) {
       journaliser(`lecture de sante impossible : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
     }
     if (!processus || processus.quitte) return { ...etat };
-    changer(ok ? { etat: "enmarche", message: null } : { etat: "demarrage" });
+    if (ok) {
+      changer({ etat: "enmarche", message: null });
+    } else if (etat.etat !== "enmarche") {
+      // Un seul échec de santé ne rétrograde jamais un relais déjà en marche :
+      // la santé peut dépasser le délai HTTP quand ADB hésite (USB, pilote),
+      // alors que le processus est toujours vivant. Seule sa mort réelle
+      // (surveillerSortie) peut sortir de "enmarche".
+      changer({ etat: "demarrage" });
+    }
     return { ...etat };
   }
 
-  return { demarrer, arreter, lireEtat };
+  /** Exécute un outil téléphone via le relais local. Ne lève jamais : {texte} ou {erreur} lisible. */
+  async function executerOutil(nom: string, args: Record<string, unknown> = {}): Promise<ResultatOutilRelais> {
+    const nomPropre = typeof nom === "string" ? nom.trim() : "";
+    if (!nomPropre) return { erreur: "Outil téléphone sans nom." };
+    if (!appelerOutil) return { erreur: "Le relais téléphone n'est pas disponible dans cette installation." };
+    const sante = pageSante();
+    const base = sante.replace(/\/relais\/sante\/?$/, "");
+    if (!sante || base === sante) return { erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." };
+    const url = `${base}/relais/outil/${encodeURIComponent(nomPropre)}`;
+    const argsPropres = args && typeof args === "object" && !Array.isArray(args) ? args : {};
+    let reponse: { ok?: unknown; resultat?: unknown; erreur?: unknown };
+    try {
+      reponse = await appelerOutil(url, nomPropre, argsPropres);
+    } catch (erreur) {
+      journaliser(`appel outil ${nomPropre} impossible : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
+      return { erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." };
+    }
+    if (reponse && reponse.ok === true) {
+      return { texte: typeof reponse.resultat === "string" ? reponse.resultat : String(reponse.resultat ?? "") };
+    }
+    if (reponse && typeof reponse.erreur === "string" && reponse.erreur) return { erreur: reponse.erreur };
+    return { erreur: "Le relais téléphone a répondu sans résultat. Réessaie dans un moment." };
+  }
+
+  return { demarrer, arreter, lireEtat, executerOutil };
 }

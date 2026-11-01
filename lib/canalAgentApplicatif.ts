@@ -861,6 +861,31 @@ function traiterMessage(message: unknown) {
     traiterOuvertureCanal(m.ouvrir_canal_en_direct);
   } else if (m.fermer_canal_en_direct !== undefined) {
     traiterFermetureCanal();
+  } else if (m.id && m.action_systeme === "outil_telephone") {
+    // Pont téléphone (31/10/2026) : le LLM demande un outil diagnostic
+    // (detecter_telephone, lire_batterie...). Seul le relais local de
+    // l'appli PC voit le téléphone en USB : on contourne volontairement
+    // le blocage "canal en direct inactif" et PontNatif (qui ne connaît
+    // pas cet outil), et on appelle RelaisPc -> POST /relais/outil/{nom}.
+    const idTel = m.id;
+    console.info(`[Canal agent] outil téléphone demandé par le serveur : ${typeof (m.parametres as Record<string, unknown> | undefined)?.nom === "string" ? (m.parametres as Record<string, unknown>).nom : "(sans nom)"}, appli PC (Electron)=${surElectron()}`);
+    const parametresTel = (m.parametres ?? {}) as Record<string, unknown>;
+    const nomTel = typeof parametresTel.nom === "string" ? parametresTel.nom : "";
+    const argsBrutsTel = parametresTel.args;
+    const argsTel = argsBrutsTel && typeof argsBrutsTel === "object" && !Array.isArray(argsBrutsTel) ? (argsBrutsTel as Record<string, unknown>) : {};
+    if (!surElectron()) {
+      // Pas l'appli PC : se taire pour laisser l'appli PC du même compte
+      // répondre, au lieu de gagner la course avec une erreur.
+      envoyerReponse(idTel, { ignore: true });
+    } else {
+      void import("./relaisPc").then(({ executerOutilRelaisPc }) => executerOutilRelaisPc(nomTel, argsTel)).then((resultat) => {
+        console.info(`[Canal agent] relais téléphone a répondu pour ${nomTel} : ${resultat && typeof resultat === "object" && "erreur" in resultat ? `erreur = ${String((resultat as { erreur?: unknown }).erreur)}` : "résultat reçu"}`);
+        envoyerReponse(idTel, resultat);
+      }).catch((e) => {
+        console.warn("Échec de l'outil téléphone via le relais PC :", e);
+        envoyerReponse(idTel, { erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est à jour, puis réessaie." });
+      });
+    }
   } else if (
     m.id &&
     !canalEnDirectEstActif() &&
@@ -976,10 +1001,15 @@ async function ouvrirCanal() {
       // Authentification applicative après l'ouverture : le bearer token
       // ne transite plus dans l'URL.
       const appareilId = await obtenirAppareilIdPourCanal();
-      const { Capacitor } = await import("@capacitor/core");
       if (ws.readyState !== WebSocket.OPEN) return;
+      // Sur Electron, le renderer est le relais système : il joint PontNatif
+      // et RelaisPc par IPC. Ne pas conditionner cette déclaration à la
+      // disponibilité déclarée d'un plugin, sinon le backend croit l'appli
+      // PC absente et refuse les outils téléphone sans même essayer.
       ws.send(JSON.stringify({ auth_token: session.access_token, appareil_id: appareilId,
-        actions_systeme_via_renderer: surElectron() && Capacitor.isPluginAvailable("PontNatif") }));
+        actions_systeme_via_renderer: surElectron() }));
+      // Diagnostic 01/11/2026 (« Téléphone injoignable ») : ce que cette appli déclare au serveur.
+      console.info(`[Canal agent] connexion ouverte vers ${API_URL} : appli PC (Electron)=${surElectron()}, appareil=${appareilId ?? "(aucun)"}, relais déclaré=${surElectron()}`);
       
       // Etat initial des actions disponibles pour CETTE connexion, sans
       // attendre un changement (chantier D), sinon le backend n'a rien
@@ -996,7 +1026,8 @@ async function ouvrirCanal() {
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (evenementFermeture) => {
+      console.info(`[Canal agent] connexion fermée : code=${evenementFermeture.code}${evenementFermeture.code === 4401 ? " (jeton de connexion refusé par le serveur)" : ""}, voulue=${fermetureVoulue}`);
       if (socket !== ws) return;
       socket = null;
       arreterObservationDom();

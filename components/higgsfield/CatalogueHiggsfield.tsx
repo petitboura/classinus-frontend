@@ -44,6 +44,7 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [visible, setVisible] = useState(false);
   const [mediaError, setMediaError] = useState(false);
+  const [survolActif, setSurvolActif] = useState(false);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
 
   // 1. apparition entree (fade-in)
@@ -79,73 +80,101 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
     return () => obs.disconnect();
   }, [isVideo, mediaError]);
 
+  // 3. son direct au survol (desktop) — mute par defaut, unmute au hover
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !isVideo || mediaError) return;
+    v.muted = !survolActif;
+    if (survolActif) v.play().catch(() => {});
+  }, [survolActif, isVideo, mediaError]);
+
+  function activerSon() {
+    if (!isVideo || mediaError) return;
+    setSurvolActif(true);
+  }
+  function couperSon() {
+    if (!isVideo || mediaError) return;
+    setSurvolActif(false);
+  }
+
   return (
     <button
       ref={ref}
       onClick={onClick}
+      onMouseEnter={activerSon}
+      onMouseLeave={couperSon}
+      onFocus={activerSon}
+      onBlur={couperSon}
       style={{ transitionDelay: `${Math.min(index * 40, 300)}ms` }}
-      className={`group flex touch-manipulation flex-col overflow-hidden rounded-[20px] border border-dj-bordure bg-dj-surface text-left shadow-sm transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] ${
+      className={`group relative flex aspect-[3/4] touch-manipulation flex-col justify-end overflow-hidden rounded-[20px] border border-dj-bordure text-left shadow-sm transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] ${
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
       }`}
     >
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-dj-fond">
-        {!mediaError ? (
-          isVideo ? (
-            <video
-              ref={videoRef}
-              src={effet.preview}
-              poster={effet.poster}
-              muted
-              loop
-              autoPlay
-              playsInline
-              preload="none"
-              onError={() => setMediaError(true)}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={effet.preview}
-              alt={effet.nom}
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-              onError={() => setMediaError(true)}
-            />
-          )
+      {/* video full-bleed prend toute la carte */}
+      {!mediaError ? (
+        isVideo ? (
+          <video
+            ref={videoRef}
+            src={effet.preview}
+            poster={effet.poster}
+            muted={!survolActif}
+            loop
+            autoPlay
+            playsInline
+            preload="metadata"
+            onError={() => setMediaError(true)}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-dj-texte/10 via-dj-surface-haute to-dj-fond p-6">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-dj-texte text-dj-fond">
-                <Play className="h-5 w-5 translate-x-px" />
-              </div>
-              <span className="text-xs font-semibold text-dj-texte-muet">Preview bientôt</span>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={effet.preview}
+            alt={effet.nom}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            onError={() => setMediaError(true)}
+          />
+        )
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-dj-texte/10 via-dj-surface-haute to-dj-fond p-6">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-dj-texte text-dj-fond">
+              <Play className="h-5 w-5 translate-x-px" />
             </div>
+            <span className="text-xs font-semibold text-dj-texte-muet">Preview bientôt</span>
           </div>
-        )}
-        <span className="absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white backdrop-blur">
-          {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
-        </span>
-        {!mediaError && (
-          <span className="absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white/95 px-3 py-2 text-[11px] font-bold leading-none text-black shadow">
-            <Sparkles className="h-3.5 w-3.5" />
-            Générer
-          </span>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-3 sm:p-4">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-bold leading-tight text-dj-texte sm:text-[15px]">{effet.nom}</span>
-          {effet.badge ? (
-            <span className="hidden shrink-0 rounded-full bg-dj-texte px-2 py-0.5 text-[10px] font-bold leading-none text-dj-fond min-[480px]:block">
-              {effet.badge}
-            </span>
-          ) : null}
         </div>
-        <span className="line-clamp-2 text-xs leading-snug text-dj-texte-muet sm:text-[13px]">{effet.description}</span>
-        <span className="mt-1 text-[11px] font-semibold uppercase tracking-widest text-dj-texte-muet">{effet.style}</span>
+      )}
+
+      {/* badge type en haut */}
+      <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white backdrop-blur">
+        {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
+      </span>
+
+      {/* fond transparent : degrade noir leger pour lisibilite */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-12 sm:px-3.5 sm:pb-3.5">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-bold leading-tight text-white sm:text-[15px]">{effet.nom}</span>
+            {effet.badge ? (
+              <span className="hidden shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold leading-none text-black min-[480px]:inline-flex">
+                {effet.badge}
+              </span>
+            ) : null}
+          </div>
+          <span className="line-clamp-2 text-xs leading-snug text-white/80 sm:text-[13px]">{effet.description}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">{effet.style}</span>
+        </div>
       </div>
+
+      {/* bouton generer flottant */}
+      {!mediaError && (
+        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white/95 px-3 py-2 text-[11px] font-bold leading-none text-black shadow backdrop-blur">
+          <Sparkles className="h-3.5 w-3.5" />
+          Générer
+        </span>
+      )}
     </button>
   );
 }

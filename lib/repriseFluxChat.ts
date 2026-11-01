@@ -39,7 +39,7 @@ export interface CompteurFlux {
 
 /** Réponse de GET /api/chat/tour-en-cours (api/chat.py). */
 export interface EtatTourEnCours {
-  statut: "aucun" | "en_cours" | "termine";
+  statut: "aucun" | "en_cours" | "termine" | "interrompu";
   tour_id?: string;
   nb_evenements?: number;
   // Identifiants de l'échange une fois sauvegardé côté serveur, absents tant qu'il ne l'est pas.

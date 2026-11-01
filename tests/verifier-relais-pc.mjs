@@ -76,7 +76,7 @@ try {
     };
   }
 
-  function creer({ cheminExe = 'C:/relais/Relais-Class-Tech.exe', sante = async () => true, lancement, surChangement, journal } = {}) {
+  function creer({ cheminExe = 'C:/relais/Relais-Class-Tech.exe', sante = async () => true, lancement, surChangement, journal, appelerOutil } = {}) {
     const lanceur = fauxLanceur(lancement ? { lancement } : {});
     const planificateur = fauxPlanificateur();
     const etats = [];
@@ -87,6 +87,7 @@ try {
       urlSante: () => 'http://127.0.0.1:8765/relais/sante',
       lancer: lanceur.lancer,
       lireSante: sante,
+      appelerOutil: appelerOutil === null ? undefined : (appelerOutil ?? (async () => ({ ok: true, resultat: 'Batterie : 80 %' }))),
       surChangement: surChangement ?? ((e) => etats.push(e)),
       journaliser: journal ?? ((t) => journaux.push(t)),
       planifier: planificateur.planifier,
@@ -208,11 +209,18 @@ try {
     assert.equal((await noyau.lireEtat()).etat, 'arrete');
   }
 
-  // 10. Processus parti tout seul : "erreur" avec un message clair, détail au journal.
+  // 10. Processus parti tout seul : redemarrages auto (watchdog), puis
+  // "erreur" avec un message clair quand les tentatives sont epuisees.
   {
-    const { noyau, lanceur, journaux } = creer();
+    const { noyau, lanceur, planificateur, journaux } = creer();
     noyau.demarrer();
-    lanceur.processus[0].partir(1);
+    for (let i = 0; i < 4; i++) {
+      lanceur.processus[lanceur.processus.length - 1].partir(1);
+      const tache = planificateur.taches[planificateur.taches.length - 1];
+      if (tache && !tache.arretee) tache.rappel();
+      await laisserPasser();
+    }
+    assert.equal(lanceur.appels.length, 4);
     const etat = await noyau.lireEtat();
     assert.equal(etat.etat, 'erreur');
     assert.equal(etat.message, MESSAGE_ARRET_INATTENDU);
@@ -312,7 +320,90 @@ try {
     assert.equal((await noyau.lireEtat()).etat, 'enmarche');
   }
 
-  console.log('verifier-relais-pc : OK (18 groupes de verifications)');
+  // 19. Echec de sante transitoire apres "enmarche" : l'etat ne redescend
+  // jamais en "demarrage" tant que le processus est vivant (fini l'alternance).
+  {
+    let repond = true;
+    const { noyau, planificateur } = creer({ sante: async () => repond });
+    noyau.demarrer();
+    planificateur.taches[0].rappel();
+    await laisserPasser();
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+    repond = false;
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+    repond = true;
+    assert.equal((await noyau.lireEtat()).etat, 'enmarche');
+  }
+
+  // 20. executerOutil : URL derivee de la sante, nom et args transmis, texte rendu.
+  {
+    const appels = [];
+    const { noyau } = creer({ appelerOutil: async (url, nom, args) => { appels.push([url, nom, args]); return { ok: true, resultat: 'Batterie : 80 %' }; } });
+    const resultat = await noyau.executerOutil('lire_batterie', { detail: true });
+    assert.deepEqual(resultat, { texte: 'Batterie : 80 %' });
+    assert.deepEqual(appels, [['http://127.0.0.1:8765/relais/outil/lire_batterie', 'lire_batterie', { detail: true }]]);
+  }
+
+  // 21. executerOutil : erreur du relais rendue telle quelle (outil refuse/inconnu).
+  {
+    const { noyau } = creer({ appelerOutil: async () => ({ ok: false, erreur: 'Outil refuse par le relais : lecture seule ici.' }) });
+    assert.deepEqual(await noyau.executerOutil('root_reinitialiser'), { erreur: 'Outil refuse par le relais : lecture seule ici.' });
+  }
+
+  // 22. executerOutil : nom vide et relais non branche = erreurs lisibles, aucun appel.
+  {
+    let appeles = 0;
+    const { noyau } = creer({ appelerOutil: async () => { appeles++; return { ok: true, resultat: 'x' }; } });
+    assert.ok((await noyau.executerOutil('')).erreur);
+    assert.equal(appeles, 0);
+    const sansOutil = creer({ appelerOutil: null });
+    assert.ok((await sansOutil.noyau.executerOutil('lire_batterie')).erreur.includes("pas disponible"));
+  }
+
+  // 23. executerOutil : relais injoignable (exception reseau) = erreur lisible, jamais levee.
+  {
+    const { noyau, journaux } = creer({ appelerOutil: async () => { throw new Error('ECONNREFUSED'); } });
+    const resultat = await noyau.executerOutil('detecter_telephone');
+    assert.ok(resultat.erreur.includes('ne répond pas'));
+    assert.ok(journaux.some((j) => j.includes('ECONNREFUSED')));
+  }
+
+  // 24. Cablage complet : le plugin expose executerOutil (HTTP local) et le
+  // canal route outil_telephone vers RelaisPc AVANT le blocage canal inactif.
+  {
+    const racine = resolve(import.meta.dirname, '..');
+    const plugin = readFileSync(join(racine, 'packages/capacitor-relais-pc-electron/electron/src/plugin.mts'), 'utf8');
+    assert.ok(plugin.includes('"executerOutil"'), 'plugin RelaisPc sans methode executerOutil');
+    assert.ok(plugin.includes('appelerOutilHttp'), 'plugin sans appel HTTP outil');
+    const canal = readFileSync(join(racine, 'lib/canalAgentApplicatif.ts'), 'utf8');
+    const idxOutil = canal.indexOf('m.action_systeme === "outil_telephone"');
+    const idxIgnore = canal.indexOf('envoyerReponse(m.id, { ignore: true })');
+    assert.ok(idxOutil >= 0, 'canal sans branche outil_telephone');
+    assert.ok(idxIgnore > idxOutil, 'outil_telephone doit passer avant le blocage ignore');
+    assert.ok(canal.includes('executerOutilRelaisPc'), 'canal sans appel au relais PC');
+    const lib = readFileSync(join(racine, 'lib/relaisPc.ts'), 'utf8');
+    assert.ok(lib.includes('executerOutilRelaisPc'), 'lib relaisPc sans executerOutilRelaisPc');
+  }
+
+  // 25. Declaration du relais au backend : sur Electron, le renderer se
+  // declare relais systeme sans dependre d'un plugin declare disponible
+  // (sinon le backend refuse l'outil telephone sans essayer), et hors
+  // Electron la connexion se tait au lieu de repondre une erreur.
+  {
+    const racine = resolve(import.meta.dirname, '..');
+    const canal = readFileSync(join(racine, 'lib/canalAgentApplicatif.ts'), 'utf8');
+    assert.ok(
+      canal.includes('actions_systeme_via_renderer: surElectron() }'),
+      'declaration relais conditionnee a un plugin : le backend croira l appli PC absente'
+    );
+    assert.ok(
+      canal.includes('envoyerReponse(idTel, { ignore: true })'),
+      'hors Electron, outil_telephone doit ignorer au lieu de repondre une erreur'
+    );
+  }
+
+  console.log('verifier-relais-pc : OK (25 groupes de verifications)');
 } finally {
   await rm(dossier, { recursive: true, force: true });
 }

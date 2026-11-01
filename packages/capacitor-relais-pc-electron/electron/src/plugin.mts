@@ -27,8 +27,8 @@
 // carte qui l'ouvre, sur demande, avec ouvrirPageSante.
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { get } from "node:http";
+import { appendFileSync, existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { get, request } from "node:http";
 import { join } from "node:path";
 import { app, shell } from "electron";
 import { ElectronPlugin, defineElectronPlugin } from "@capawesome/capacitor-electron/plugin";
@@ -47,6 +47,10 @@ const DELAI_PAGE_RELAIS_S = "86400";
 
 // Un contrôle de santé ne doit jamais attendre longtemps : le relais est local.
 const DELAI_SANTE_HTTP_MS = 3000;
+// Un outil ADB (batterie, stockage...) peut prendre du temps : on laisse le relais travailler.
+const DELAI_OUTIL_HTTP_MS = 60000;
+const NOM_FICHIER_JOURNAL_RELAIS = "relais.log";
+const TAILLE_MAX_JOURNAL_RELAIS = 500 * 1024;
 
 // Démarrage automatique (D37) : la première tentative attend un peu, pour
 // laisser electron/relais.ts recopier l'exe neuf dans le dossier de données
@@ -59,6 +63,28 @@ const ESSAIS_DEMARRAGE_AUTO = 15;
 
 function dossierRelaisDonnees(): string {
   return join(app.getPath("userData"), NOM_DOSSIER_RELAIS);
+}
+
+function cheminJournalRelais(): string {
+  return join(dossierRelaisDonnees(), NOM_FICHIER_JOURNAL_RELAIS);
+}
+
+function ecrireJournalRelais(texte: string): void {
+  try {
+    const chemin = cheminJournalRelais();
+    try {
+      if (statSync(chemin).size > TAILLE_MAX_JOURNAL_RELAIS) {
+        const contenu = readFileSync(chemin, "utf8");
+        writeFileSync(chemin, contenu.slice(-Math.floor(TAILLE_MAX_JOURNAL_RELAIS / 2)), "utf8");
+      }
+    } catch {}
+    appendFileSync(chemin, `[${new Date().toISOString()}] ${texte}\n`, "utf8");
+  } catch {}
+}
+
+function journaliserRelais(texte: string): void {
+  try { console.error(`[relais-pc] ${texte}`); } catch {}
+  ecrireJournalRelais(texte);
 }
 
 function cheminExe(): string | null {
@@ -165,6 +191,32 @@ function lireSanteHttp(url: string): Promise<boolean> {
   });
 }
 
+/** POST /relais/outil/{nom} en HTTP local. Rend la réponse JSON brute du relais, jamais d'erreur levée. */
+function appelerOutilHttp(url: string, nom: string, args: Record<string, unknown>): Promise<{ ok?: unknown; resultat?: unknown; erreur?: unknown }> {
+  return new Promise((resolve) => {
+    let termine = false;
+    const finir = (valeur: { ok?: unknown; resultat?: unknown; erreur?: unknown }) => { if (!termine) { termine = true; resolve(valeur); } };
+    try {
+      const corpsEnvoi = JSON.stringify({ args });
+      const requete = request(url, { method: "POST", timeout: DELAI_OUTIL_HTTP_MS, headers: { "content-type": "application/json", "content-length": Buffer.byteLength(corpsEnvoi) } }, (reponse) => {
+        let corps = "";
+        reponse.on("data", (morceau: unknown) => { corps += String(morceau); });
+        reponse.on("end", () => {
+          try { finir(JSON.parse(corps) as { ok?: unknown; resultat?: unknown; erreur?: unknown }); }
+          catch { finir({ ok: false, erreur: "Le relais téléphone a répondu un format illisible. Réessaie dans un moment." }); }
+        });
+        reponse.on("error", () => finir({ ok: false, erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." }));
+      });
+      requete.on("timeout", () => { requete.destroy(); finir({ ok: false, erreur: "Le diagnostic téléphone a pris trop de temps. Réessaie dans un moment." }); });
+      requete.on("error", () => finir({ ok: false, erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." }));
+      requete.write(corpsEnvoi);
+      requete.end();
+    } catch {
+      finir({ ok: false, erreur: "Le relais téléphone ne répond pas sur ce PC. Vérifie que Classinus PC est ouvert, puis réessaie." });
+    }
+  });
+}
+
 class RelaisPcImpl extends ElectronPlugin {
   private noyau = creerRelaisPc({
     // En fonction, relu à chaque démarrage et à chaque lecture d'état : l'exe
@@ -172,18 +224,23 @@ class RelaisPcImpl extends ElectronPlugin {
     cheminExe: () => cheminExe(),
     dossierTravail: dossierRelaisDonnees(),
     urlSante: pageSante,
-    lancer: (cheminExe, dossierTravail) =>
-      emballerProcessus(
-        spawn(cheminExe, [], {
-          cwd: dossierTravail,
-          stdio: "ignore",
-          windowsHide: true,
-          env: { ...process.env, RELAIS_PC_DELAI_PAGE: DELAI_PAGE_RELAIS_S },
-        })
-      ),
+    lancer: (cheminExe, dossierTravail) => {
+      const proc = spawn(cheminExe, [], {
+        cwd: dossierTravail,
+        stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
+        env: { ...process.env, RELAIS_PC_DELAI_PAGE: DELAI_PAGE_RELAIS_S },
+      });
+      journaliserRelais(`relais lance pid=${proc.pid ?? "?"}`);
+      proc.stdout?.on("data", (d: unknown) => { for (const l of String(d).split(/\r?\n/)) if (l) ecrireJournalRelais(`[stdout] ${l}`); });
+      proc.stderr?.on("data", (d: unknown) => { for (const l of String(d).split(/\r?\n/)) if (l) ecrireJournalRelais(`[stderr] ${l}`); });
+      proc.on("error", (e: Error) => journaliserRelais(`spawn error: ${e?.message ?? e}`));
+      return emballerProcessus(proc);
+    },
     lireSante: lireSanteHttp,
+    appelerOutil: appelerOutilHttp,
     surChangement: (etat) => this.context.notifyListeners("etat", etat),
-    journaliser: (texte) => console.error(`[relais-pc] ${texte}`),
+    journaliser: journaliserRelais,
   });
 
   load(): void {
@@ -237,6 +294,14 @@ class RelaisPcImpl extends ElectronPlugin {
     return this.noyau.arreter();
   }
 
+  /** Exécute un outil téléphone via le relais local (POST /relais/outil/{nom}). */
+  async executerOutil(options: { nom?: unknown; args?: unknown } = {}): Promise<{ texte?: string; erreur?: string }> {
+    const nom = typeof options?.nom === "string" ? options.nom : "";
+    const argsBruts = options?.args;
+    const args = argsBruts && typeof argsBruts === "object" && !Array.isArray(argsBruts) ? (argsBruts as Record<string, unknown>) : {};
+    return this.noyau.executerOutil(nom, args);
+  }
+
   /** Ouvre la page de santé dans le navigateur. Faux quand le relais est indisponible. */
   async ouvrirPageSante(): Promise<{ ouvert: boolean }> {
     if (!cheminExe()) return { ouvert: false };
@@ -250,6 +315,6 @@ class RelaisPcImpl extends ElectronPlugin {
 }
 
 export const RelaisPc = defineElectronPlugin(
-  { name: "RelaisPc", methods: ["lireEtat", "demarrer", "arreter", "ouvrirPageSante"] },
+  { name: "RelaisPc", methods: ["lireEtat", "demarrer", "arreter", "ouvrirPageSante", "executerOutil"] },
   RelaisPcImpl
 );
