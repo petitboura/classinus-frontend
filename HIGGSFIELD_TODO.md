@@ -7,7 +7,7 @@
 ### Frontend `classinus-frontend`
 - `components/higgsfield/CatalogueHiggsfield.tsx` : recherche texte (normalisée), compteur `X effets / N au total`, chips Type/Style, bandeau BIENTÔT retiré, grid 2→3 cols, état vide + reset.
 - `components/higgsfield/VisionneurHiggsfield.tsx` : snap vertical, flèches ← → / ↑ ↓, dots en bas, clavier supporté, bouton Générer → callback `onGenerer`.
-- `lib/higgsfieldApi.ts` : helpers `higgsfieldDisponible`, `lancerHiggsfieldVideo/Image/Genjutsu`, `higgsfieldStatut`, `higgsfieldAnnuler`, `higgsfieldEstimation` (fetch sur `NEXT_PUBLIC_API_URL` + `Bearer`).
+- `lib/higgsfieldApi.ts` : helpers `higgsfieldDisponible`, `lancerVideoHiggsfield`, `lancerImageHiggsfield`, `lancerGenjutsuHiggsfield`, `statutHiggsfield`, `annulerHiggsfield`, `estimerHiggsfield`, `uploaderFichierHiggsfield`.
 - `components/higgsfield/GenererHiggsfield.tsx` : **placeholder** (présent pour que le build passe, à remplacer).
 
 ### Backend `classinus-backend`
@@ -22,29 +22,19 @@ Fichier à finaliser : `components/higgsfield/GenererHiggsfield.tsx`
 - Upload :
   - `image → video` : 1 image (jpg/png/webp, ≤ ~20 Mo) + option `image_fin_url`.
   - `video → video` + `genjutsu` : 1 vidéo mp4/webm (≤ ~100 Mo, ≤ 15-30s conseillée).
-  - `image` / `avatar` : image(s) de référence.
-  - Utiliser `POST /api/fichiers/presign` ou `POST /api/uploads` existant pour obtenir une URL publique avant d'appeler Higgsfield (Higgsfield exige des URLs, pas des blobs).
+  - Utiliser `POST /api/uploads/fichier-chat` existant pour obtenir une URL publique avant d'appeler Higgsfield (Higgsfield exige des URLs, pas des blobs).
 - Formulaire : `titre` (requis, max 120), `prompt` (optionnel selon effet), `modele` (défaut : `genjutsu-motion` pour genjutsu, `seedance` sinon), `duree`/`format`/`qualite`/`son` selon type.
-- Appel : `lancerHiggsfieldVideo/Image/Genjutsu` → récupère `request_id`.
-- Polling : `higgsfieldStatut(requestId, titre)` toutes les 4-6 s (`setInterval`), afficher `en_cours` + progression. Prévoir `annuler` (`POST /annuler/{id}`).
+- Appel : `lancerVideoHiggsfield` / `lancerImageHiggsfield` / `lancerGenjutsuHiggsfield` → récupère `request_id`.
+- Polling : `statutHiggsfield(requestId, titre)` toutes les 4-6 s (`setInterval`), afficher `en_cours` + progression. Prévoir `annuler` (`POST /annuler/{id}`).
 - Succès : afficher `url` (video ou image), bouton `Ouvrir` + `Télécharger`, lien vers bibliothèque. La sauvegarde bibliothèque est déjà faite côté backend (best-effort), mais prévoir aussi un toast.
-- Erreurs : `HIGGSFIELD_NON_CONFIGURE` (503) → CTA "Configurer clé Higgsfield" / doc ; `429` / quota jour → message limite ; `400` → afficher `message`.
+- Erreurs : `HIGGSFIELD_NON_CONFIGURE` (503) → CTA "Configurer clé" ; `429` / quota jour → message limite ; `400` → afficher `message`.
 - A11y : focus trap, `Esc` ferme, safe areas.
 
-### 2. Page wrapper
-- `app/(app)/higgsfield/page.tsx` : wrapper `SectionPage` ok, rien à faire sauf retirer tout bandeau restant s'il en reste un.
-
-### 3. Tests manuels à faire avant merge
+### 2. Tests manuels à faire avant merge
 - [ ] Catalogue : recherche, filtres, compteur, reset, carte hover son, fallback preview HS.
 - [ ] Visionneur : scroll snap, flèches, clavier, dots, son toggle, Générer ouvre bien le panneau.
 - [ ] Backend : `GET /api/higgsfield/disponible` → `{disponible: true/false}` selon env (`HIGGSFIELD_API_KEY`).
 - [ ] Générer : upload → lancer → statut → annuler → terminé → bibliothèque.
-
-### 4. Polish / dette mineure
-- Skeletons synchronisés catalogue / visionneur.
-- Retry si `onError` preview (déjà partiel).
-- Vérif `lib/api.ts` : base URL et auth cohérentes avec `lib/higgsfieldApi.ts` (éviter double config).
-- Supprimer imports morts si besoin après finalisation du panneau.
 
 ## Références
 - Endpoints backend : `api/higgsfield.py`
