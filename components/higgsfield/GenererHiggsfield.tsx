@@ -3,10 +3,6 @@
 import { X, Sparkles, Upload, Clock } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
-// Placeholder branch feature/higgsfield-catalogue-generation
-// Ce panneau sera remplacé par le vrai composant upload + polling Higgsfield.
-// Voir HIGGSFIELD_TODO.md à la racine du frontend pour la suite.
-
 export function PanneauGenererHiggsfield({
   effet,
   onClose,
