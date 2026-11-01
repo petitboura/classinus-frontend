@@ -972,8 +972,9 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           mobile" (usePluginNatif), donc pas de logique conditionnelle à
           dupliquer ici. */}
       {!sansOnglets && (
-        <OngletsSegment
-          ariaLabel="Section de la bibliothèque"
+        <div className="sticky top-0 z-[9] -mx-4 border-b border-dj-bordure bg-dj-fond px-4 py-2 md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
+          <OngletsSegment
+            ariaLabel="Section de la bibliothèque"
           valeur={vue}
           onChange={(v) => setVue(v as typeof vue)}
           onglets={[
@@ -981,7 +982,8 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
             { valeur: "publique", libelle: "Publique" },
             { valeur: "dossiers", libelle: "Dossiers du téléphone" },
           ]}
-        />
+          />
+        </div>
       )}
 
       {vue === "publique" ? (
@@ -1017,10 +1019,11 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           (SOUS_ONGLETS) ne disparaît pas, il passe dans le bouton Filtre
           juste à côté, toujours visible et applicable quel que soit
           l'onglet d'origine actif. */}
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <OngletsSegment
-            ariaLabel="Origine des fichiers"
+      <div className="sticky top-[2.75rem] z-[9] -mx-4 border-b border-dj-bordure bg-dj-fond px-4 py-2 md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <OngletsSegment
+              ariaLabel="Origine des fichiers"
             valeur={origineOnglet}
             onChange={(v) => setOrigineOnglet(v as OrigineOnglet)}
             onglets={ORIGINE_ONGLETS.map((o) => ({ valeur: o.id, libelle: o.label }))}
@@ -1067,6 +1070,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
 

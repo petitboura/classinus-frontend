@@ -58,13 +58,13 @@ export function SectionPage({
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
       <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
         <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
-          <div className="sticky top-0 z-10 -mb-2 bg-dj-fond py-2 md:hidden">
+          <div className="sticky top-0 z-10 -mx-4 border-b border-dj-bordure bg-dj-fond px-4 py-2 md:hidden">
             <OngletsLiens
               ariaLabel={groupe.label}
               onglets={soeurs.map((s) => ({ href: s.href, libelle: s.label }))}
             />
           </div>
-          <nav className="hidden w-48 flex-shrink-0 flex-col gap-1 md:flex">
+          <nav className="hidden w-48 flex-shrink-0 flex-col gap-1 self-start md:sticky md:top-4 md:flex">
             {soeurs.map((s) => {
               const actif = pathname === s.href;
               return (
