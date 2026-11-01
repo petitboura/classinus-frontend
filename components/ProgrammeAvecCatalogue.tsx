@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { listerMesCodes, type CodePartage } from "@/lib/api";
 import { OngletsSegment } from "@/components/OngletsSegment";
+import { useDefinirBarreSousSousSections, useEnTeteApp } from "@/lib/contexteEnTete";
 import { ProgrammeNotions } from "@/components/ProgrammeNotions";
 import { ProgrammesCataloguePublic } from "@/components/ProgrammesCataloguePublic";
 
@@ -15,23 +16,25 @@ import { ProgrammesCataloguePublic } from "@/components/ProgrammesCataloguePubli
 // MesCodes.tsx (clesRequetes.codes), pas de requête en double.
 export function ProgrammeAvecCatalogue() {
   const [vue, setVue] = useState<"mon-programme" | "public">("mon-programme");
+  const { barreSousSections: progAUnHeader } = useEnTeteApp();
+  const progEnVraiePage = progAUnHeader !== null;
+  const noeudProg = (
+    <OngletsSegment ariaLabel="Section du Programme" valeur={vue} onChange={(v) => setVue(v as typeof vue)} onglets={[{ valeur: "mon-programme", libelle: "Mon Programme" }, { valeur: "public", libelle: "Catalogue public" }]} />
+  );
+  useDefinirBarreSousSousSections(progEnVraiePage ? noeudProg : null);
+
   const { data: codes } = useQuery({
     queryKey: clesRequetes.codes,
     queryFn: () => listerMesCodes().catch(() => [] as CodePartage[]),
   });
 
-  return (
-    <>
-      <OngletsSegment
-        ariaLabel="Section du Programme"
-        valeur={vue}
-        onChange={(v) => setVue(v as typeof vue)}
-        onglets={[
-          { valeur: "mon-programme", libelle: "Mon Programme" },
-          { valeur: "public", libelle: "Catalogue public" },
-        ]}
-      />
-      {vue === "public" ? <ProgrammesCataloguePublic mesCodes={codes} /> : <ProgrammeNotions />}
-    </>
-  );
+  if (!progEnVraiePage) {
+    return (
+      <>
+        <OngletsSegment ariaLabel="Section du Programme" valeur={vue} onChange={(v) => setVue(v as typeof vue)} onglets={[{ valeur: "mon-programme", libelle: "Mon Programme" }, { valeur: "public", libelle: "Catalogue public" }]} />
+        {vue === "public" ? <ProgrammesCataloguePublic mesCodes={codes} /> : <ProgrammeNotions />}
+      </>
+    );
+  }
+  return vue === "public" ? <ProgrammesCataloguePublic mesCodes={codes} /> : <ProgrammeNotions />;
 }

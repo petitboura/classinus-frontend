@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSurAppliPc } from "@/lib/useSurAppliPc";
 import { OngletsLiens } from "./OngletsSegment";
-import { useEnTeteApp } from "@/lib/contexteEnTete";
+import { useEnTeteApp, useDefinirBarreSousSections } from "@/lib/contexteEnTete";
 
 const ContexteInfoSection = createContext<(id: string | null) => void>(() => {});
 
@@ -44,6 +44,16 @@ export function SectionPage({
     definir({ titre: titreHaut, retour: retourHaut, infoId: infoRubriqueId });
   }, [titreHaut, retourHaut, infoRubriqueId, definir]);
 
+  // Barre 1 = rangée de navigation entre pages sœurs (ex: Perso/Publique/Téléphone)
+  // Elle doit rester FIXE en haut comme ton bouton notif, pas glisser dans le scroll.
+  // Sur téléphone elle est au-dessus du contenu, sur ordi c'est le rail à gauche qui prend le relais.
+  const soeursFiltrees = groupe ? groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc)) : [];
+  const noeudSousSections = useMemo(() => {
+    if (!groupe || soeursFiltrees.length === 0) return null;
+    return <OngletsLiens ariaLabel={groupe.label} onglets={soeursFiltrees.map((s) => ({ href: s.href, libelle: s.label }))} />;
+  }, [groupe, soeursFiltrees]);
+  useDefinirBarreSousSections(noeudSousSections);
+
   if (!groupe) {
     return (
       <ContexteInfoSection.Provider value={setInfoRubriqueId}>
@@ -52,37 +62,32 @@ export function SectionPage({
     );
   }
 
-  const soeurs = groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc));
-
   return (
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
       <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
         <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
-          <div className="sticky top-0 z-10 -mx-4 border-b border-dj-bordure bg-dj-fond px-4 py-2 md:hidden">
-            <OngletsLiens
-              ariaLabel={groupe.label}
-              onglets={soeurs.map((s) => ({ href: s.href, libelle: s.label }))}
-            />
-          </div>
+          {/* Ordi : rail latéral fixe à gauche, reste visible quand on défile à droite */}
           <nav className="hidden w-48 flex-shrink-0 flex-col gap-1 self-start md:sticky md:top-4 md:flex">
-            {soeurs.map((s) => {
-              const actif = pathname === s.href;
-              return (
-                <Link
-                  key={s.href}
-                  href={s.href}
-                  replace
-                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
-                    actif
-                      ? "bg-dj-surface-haute font-medium text-dj-texte"
-                      : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-                  }`}
-                >
-                  {s.icone}
-                  {s.label}
-                </Link>
-              );
-            })}
+            {groupe.soeurs
+              .filter((s) => !(surAppliPc && s.masqueSurPc))
+              .map((s) => {
+                const actif = pathname === s.href;
+                return (
+                  <Link
+                    key={s.href}
+                    href={s.href}
+                    replace
+                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors ${
+                      actif
+                        ? "bg-dj-surface-haute font-medium text-dj-texte"
+                        : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                    }`}
+                  >
+                    {s.icone}
+                    {s.label}
+                  </Link>
+                );
+              })}
           </nav>
           <div className="min-w-0 flex-1 space-y-4">{children}</div>
         </div>

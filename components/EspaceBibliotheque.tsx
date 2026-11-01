@@ -56,6 +56,7 @@ import { telecharger } from "@/lib/telecharger";
 import { BibliothequePublique } from "./BibliothequePublique";
 import { EspaceDossiers } from "./EspaceDossiers";
 import { OngletsSegment } from "./OngletsSegment";
+import { useDefinirBarreSousSousSections, useEnTeteApp } from "@/lib/contexteEnTete";
 import { useInfoSection } from "./SectionPage";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { MenuActionsCarte } from "./MenuActionsCarte";
@@ -182,7 +183,45 @@ export function EspaceBibliotheque({
   // bouton Filtre séparé, voir filtreOuvert -- les deux filtres se
   // combinent (une origine ET un type à la fois).
   const [origineOnglet, setOrigineOnglet] = useState<OrigineOnglet>("privee");
+  // Cette rangée (Origine + bouton Filtre) était dans le contenu qui défilait -> elle
+  // bougeait un peu avant de se coller. Maintenant elle est FIXE en haut comme ta
+  // cloche/notif : elle ne bouge jamais, seul le contenu en dessous défile.
   const [filtreOuvert, setFiltreOuvert] = useState(false);
+  const noeudOrigineFiltre = useMemo(
+    () => (
+      <div className="flex w-full items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <OngletsSegment
+            ariaLabel="Origine des fichiers"
+            valeur={origineOnglet}
+            onChange={(v) => setOrigineOnglet(v as OrigineOnglet)}
+            onglets={ORIGINE_ONGLETS.map((o) => ({ valeur: o.id, libelle: o.label }))}
+            taille="compact"
+          />
+        </div>
+        <div className="relative shrink-0">
+          <button type="button" onClick={() => setFiltreOuvert((v) => !v)} aria-label={filtreOuvert ? "Fermer le filtre" : "Filtrer par type"} aria-expanded={filtreOuvert} className={`flex items-center gap-1 rounded-cgpt-bouton border px-3 py-1.5 text-xs font-semibold transition-colors ${sousOnglet !== "tous" ? "border-dj-accent-1 bg-dj-accent-1-conteneur text-dj-accent-1-texte" : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"}`}>
+            Filtre
+            {sousOnglet !== "tous" && <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-[#1A0D02]">{SOUS_ONGLETS.find((s) => s.id === sousOnglet)?.label}</span>}
+          </button>
+          {filtreOuvert && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setFiltreOuvert(false)} />
+              <div className="absolute right-0 top-full z-40 mt-1 flex w-40 flex-col gap-0.5 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface p-1 shadow-lg">
+                {SOUS_ONGLETS.map((s) => (
+                  <button key={s.id} onClick={() => { setSousOnglet(s.id); setFiltreOuvert(false); }} className={`rounded-cgpt-bouton px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${sousOnglet === s.id ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"}`}>{s.label}</button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    ),
+    [origineOnglet, sousOnglet, filtreOuvert],
+  );
+  const { barreSousSections: pageAUnHeaderGroupe } = useEnTeteApp();
+  const enVraiePage = pageAUnHeaderGroupe !== null;
+  useDefinirBarreSousSousSections(enVraiePage && vue === "perso" ? noeudOrigineFiltre : null);
   // 17/09/2026 (chantier persistance/cache, demande Bourama) :
   // `fichiers`/`dossiers` viennent maintenant de React Query au lieu
   // d'un useState local -- la donnée est partagée entre TOUTES les
@@ -971,20 +1010,9 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           composant lui-même gère déjà son état "disponible seulement sur
           mobile" (usePluginNatif), donc pas de logique conditionnelle à
           dupliquer ici. */}
-      {!sansOnglets && (
-        <div className="sticky top-0 z-[9] -mx-4 border-b border-dj-bordure bg-dj-fond px-4 py-2 md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
-          <OngletsSegment
-            ariaLabel="Section de la bibliothèque"
-          valeur={vue}
-          onChange={(v) => setVue(v as typeof vue)}
-          onglets={[
-            { valeur: "perso", libelle: "Perso" },
-            { valeur: "publique", libelle: "Publique" },
-            { valeur: "dossiers", libelle: "Dossiers du téléphone" },
-          ]}
-          />
-        </div>
-      )}
+      {/* Rangée Perso/Publique/Dossiers : doublon avec les pastilles
+          fixes de SectionPage (voir lib/sectionsBibliotheque.tsx) -> retirée.
+          Les pastilles de la grande barre font le même travail, sans bouger. */}
 
       {vue === "publique" ? (
         <BibliothequePublique />
@@ -1019,60 +1047,37 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           (SOUS_ONGLETS) ne disparaît pas, il passe dans le bouton Filtre
           juste à côté, toujours visible et applicable quel que soit
           l'onglet d'origine actif. */}
-      <div className="sticky top-[2.75rem] z-[9] -mx-4 border-b border-dj-bordure bg-dj-fond px-4 py-2 md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0">
+      {/* Fenêtre flottante (sans groupe) : rangée Origine+Filtre reste dans le contenu qui défile.
+          En vraie page elle est en barre fixe au-dessus (voir hook plus haut). */}
+      {!enVraiePage && vue === "perso" && (
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <OngletsSegment
               ariaLabel="Origine des fichiers"
-            valeur={origineOnglet}
-            onChange={(v) => setOrigineOnglet(v as OrigineOnglet)}
-            onglets={ORIGINE_ONGLETS.map((o) => ({ valeur: o.id, libelle: o.label }))}
-            taille="compact"
-          />
-        </div>
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            onClick={() => setFiltreOuvert((v) => !v)}
-            aria-label={filtreOuvert ? "Fermer le filtre" : "Filtrer par type"}
-            aria-expanded={filtreOuvert}
-            className={`flex items-center gap-1 rounded-cgpt-bouton border px-3 py-1.5 text-xs font-semibold transition-colors ${
-              sousOnglet !== "tous"
-                ? "border-dj-accent-1 bg-dj-accent-1-conteneur text-dj-accent-1-texte"
-                : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
-            }`}
-          >
-            Filtre
-            {sousOnglet !== "tous" && (
-              <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-[#1A0D02]">
-                {SOUS_ONGLETS.find((s) => s.id === sousOnglet)?.label}
-              </span>
+              valeur={origineOnglet}
+              onChange={(v) => setOrigineOnglet(v as OrigineOnglet)}
+              onglets={ORIGINE_ONGLETS.map((o) => ({ valeur: o.id, libelle: o.label }))}
+              taille="compact"
+            />
+          </div>
+          <div className="relative shrink-0">
+            <button type="button" onClick={() => setFiltreOuvert((v) => !v)} aria-label={filtreOuvert ? "Fermer le filtre" : "Filtrer par type"} aria-expanded={filtreOuvert} className={`flex items-center gap-1 rounded-cgpt-bouton border px-3 py-1.5 text-xs font-semibold transition-colors ${sousOnglet !== "tous" ? "border-dj-accent-1 bg-dj-accent-1-conteneur text-dj-accent-1-texte" : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"}`}>
+              Filtre
+              {sousOnglet !== "tous" && <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-[#1A0D02]">{SOUS_ONGLETS.find((s) => s.id === sousOnglet)?.label}</span>}
+            </button>
+            {filtreOuvert && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setFiltreOuvert(false)} />
+                <div className="absolute right-0 top-full z-40 mt-1 flex w-40 flex-col gap-0.5 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface p-1 shadow-lg">
+                  {SOUS_ONGLETS.map((s) => (
+                    <button key={s.id} onClick={() => { setSousOnglet(s.id); setFiltreOuvert(false); }} className={`rounded-cgpt-bouton px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${sousOnglet === s.id ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"}`}>{s.label}</button>
+                  ))}
+                </div>
+              </>
             )}
-          </button>
-          {filtreOuvert && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setFiltreOuvert(false)} />
-              <div className="absolute right-0 top-full z-40 mt-1 flex w-40 flex-col gap-0.5 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface p-1 shadow-lg">
-                {SOUS_ONGLETS.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => {
-                      setSousOnglet(s.id);
-                      setFiltreOuvert(false);
-                    }}
-                    className={`rounded-cgpt-bouton px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
-                      sousOnglet === s.id ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          </div>
         </div>
-        </div>
-      </div>
+      )}
 
       {/* Fil d'ariane (03/09/2026, refonte demandée par Bourama) : plus de
           label racine affiché seul ("Bibliothèque") quand on n'est nulle
