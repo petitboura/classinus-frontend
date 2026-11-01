@@ -20,6 +20,8 @@ import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
 import { BoutonDecouvrir } from "@/components/BoutonDecouvrir";
+import { EnTeteApp } from "@/components/EnTeteApp";
+import { ContexteEnTete, useFournirEnTete } from "@/lib/contexteEnTete";
 import { SyncTempsReelCache } from "@/components/SyncTempsReelCache";
 import { DockMinuteurs } from "@/components/chat/minuteurs/DockMinuteurs";
 import { ContexteMinuteurs, useFournirMinuteurs } from "@/lib/contexteMinuteurs";
@@ -79,6 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const dossiersCataloguePublicValeur = useFournirDossiersCataloguePublic();
   // Minuteurs du chat (20/09/2026, demande Bourama) : état global, lu par
   // la zone des minuteurs de chaque chat (components/chat/minuteurs/).
+  const enTeteValeur = useFournirEnTete();
   const minuteursValeur = useFournirMinuteurs(connecte);
   // 26/09/2026, demande Bourama : est_professeur ("Es-tu prof ?", voir
   // BureauAccueil.tsx) lu UNE SEULE FOIS ici pour toute la session
@@ -205,6 +208,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ContexteCatalogue.Provider value={{ ouvrir: () => setCatalogueOuvert(true) }}>
     <ContexteDossiersCataloguePublic.Provider value={dossiersCataloguePublicValeur}>
+    <ContexteEnTete.Provider value={enTeteValeur}>
     <ContexteMinuteurs.Provider value={minuteursValeur}>
     <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
@@ -282,23 +286,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               desktop/appareil sans encoche, donc sans effet là où ce
               n'est pas nécessaire, même logique que le padding-bottom
               déjà posé sur la barre de saisie (ChatIA.tsx). */}
-          <main
-            data-agent-zone="Page"
-            className="flex-1 overflow-y-auto"
-            style={{
-              // Correctif 01/11/2026 : plus de paddingTop ici. L'en-tête
-              // SectionPage est désormais un sticky top-0 DANS le scroll,
-              // avec sa propre hauteur (2.5rem + safe-top) et son fond qui
-              // cache le contenu dessous. Réserver --dj-hamburger-espace
-              // + --safe-top en paddingTop + compenser en -mt/-top dans
-              // SectionPage était le hack fragile à la base du bug.
-              // Seul le bas est encore réservé (barre d'onglets web).
-              paddingTop: "0px",
-              paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
-            }}
-          >
-            <TransitionPage>{children}</TransitionPage>
-          </main>
+          {/* Colonne de droite : barre fixe du haut + contenu qui défile.
+              Avant l'en-tête vivait DANS le scroll (sticky bricolé) -> les
+              cartes passaient dessous avec leur bord carré visible. Maintenant
+              l'en-tête est AU-DESSUS du scroll, il ne bouge jamais. */}
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            {!estPageChat(pathname) && <EnTeteApp />}
+            <main
+              data-agent-zone="Page"
+              className="flex-1 overflow-y-auto"
+              style={{
+                paddingTop: "0px",
+                paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
+              }}
+            >
+              <TransitionPage>{children}</TransitionPage>
+            </main>
+          </div>
           <ChatFlottant
             connecte={connecte}
             etat={etatChat}
@@ -320,6 +324,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </ContexteFenetres.Provider>
     </ContexteStatutUtilisateur.Provider>
     </ContexteMinuteurs.Provider>
+    </ContexteEnTete.Provider>
     </ContexteDossiersCataloguePublic.Provider>
     </ContexteCatalogue.Provider>
   );
