@@ -5,6 +5,7 @@ import { Play, Sparkles } from "lucide-react";
 import { VisionneurHiggsfield } from "@/components/higgsfield/VisionneurHiggsfield";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { useEnTeteApp, useDefinirBarreSousSousSections } from "@/lib/contexteEnTete";
 
 function FiltreChips({
   label,
