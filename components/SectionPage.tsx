@@ -70,33 +70,22 @@ export function useInfoSection(id: string | null) {
 
 // Ligne d'en-tête unique de chaque page (refonte du 13/10/2026, demande
 // Bourama : un seul titre tout en haut, plus de fil d'Ariane ni de second
-// gros titre, plus d'espace vide au dessus). Elle se pose sur la même
-// ligne que les boutons flottants du haut (hamburger à gauche sur
-// téléphone, cloche et minuteurs à droite) : même décalage haut
-// (0.5rem + safe-top) et même hauteur (h-8) que ces boutons : la marge
-// négative remonte la ligne dans la bande que <main> réserve au
-// hamburger (--dj-hamburger-espace, voir app/globals.css), qui vaut 0px
-// sur PC. Les pages qui n'ont pas cette ligne (chat, tableau de bord)
-// gardent cette bande telle quelle. Les deux conteneurs de page sont en
-// flow-root : sans cela, cette marge négative remontait à travers les
-// couches de TransitionPage (la page entrante et la page sortante, en
-// position absolue, ne la traitaient pas pareil) et toute la page sautait
-// à chaque changement de sous-section. Sur
-// téléphone, pl-8 laisse la place du hamburger, et pr-20 laisse celle de
-// la cloche et du bouton minuteur sur toute la largeur.
+// gros titre). Correctif 01/11/2026 : exit le hack à marge négative
+// (-mt + top négatif) qui bricolait l'en-tête hors de <main>. Désormais
+// l'en-tête est un vrai sticky top-0 DANS le conteneur qui scroll
+// (<main overflow-y-auto> dans AppShell.tsx, qui n'a plus de paddingTop).
+// Sa propre hauteur inclut déjà la zone sûre (safe-top) + 0.5rem de
+// décalage, son fond bg-dj-fond cache le contenu qui défile dessous.
+// Sur téléphone pl-8/pr-20 réservent hamburger/cloche/minuteurs.
 // En-tête qui reste en place quand la page défile (17/10/2026, demande
 // Bourama : les titres et boutons du haut ne doivent plus monter avec leur
-// section). Collé à la même hauteur que sa place d'origine (0.5rem + marge
-// haute de sécurité), avec le fond de la page pour que le contenu qui passe
-// dessous ne se voie pas. L'ombre pleine sans flou, décalée vers le haut,
-// couvre la bande au dessus de la ligne (encoche, barre d'état) où le
-// contenu passerait sinon.
-const ENTETE_FIXE = "sticky top-[calc((var(--safe-top,0px)_+_var(--dj-hamburger-espace))_*_-1)] z-30 bg-dj-fond";
+// section).
+const ENTETE_FIXE = "sticky top-0 z-30 bg-dj-fond";
 
 function TitreSection({ title, infoRubriqueId, retour }: { title: string; infoRubriqueId: string | null; retour?: string }) {
   const rubrique = infoRubriqueId ? trouverRubriqueAide(infoRubriqueId) : undefined;
   return (
-    <div className={`-mt-[calc(var(--safe-top,0px)_+_var(--dj-hamburger-espace))] flex h-[calc(2.5rem_+_var(--safe-top,0px))] items-center gap-1.5 pt-[calc(0.5rem_+_var(--safe-top,0px))] pl-8 pr-20 md:pl-0 ${ENTETE_FIXE}`}>
+    <div className={`flex h-[calc(2.5rem_+_var(--safe-top,0px))] items-center gap-1.5 pt-[calc(0.5rem_+_var(--safe-top,0px))] pl-8 pr-20 md:pl-0 ${ENTETE_FIXE}`}>
       {retour && <BoutonRetour href={retour} padding="p-1" className="-ml-1" />}
       <h1 className="truncate font-display text-xl font-bold text-dj-texte">{title}</h1>
       {rubrique && (
@@ -180,9 +169,9 @@ export function SectionPage({
       <TitreSection title={groupe.label} infoRubriqueId={infoRubriqueId} retour={groupe.href} />
 
       <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
-        {/* Les pastilles restent sous le titre pendant le défilement : la
-            ligne du titre fait 2rem de haut (h-8). */}
-        <div className="sticky top-[calc(2.5rem_-_var(--dj-hamburger-espace))] z-30 -mb-2 bg-dj-fond md:hidden">
+        {/* Pastilles mobile sous le titre au scroll : l'en-tête fait
+            2.5rem + safe-top, ce second sticky se colle juste dessous. */}
+        <div className="sticky top-[calc(2.5rem_+_var(--safe-top,0px))] z-20 -mb-2 bg-dj-fond md:hidden">
           <OngletsLiens
             ariaLabel={groupe.label}
             onglets={soeurs.map((s) => ({ href: s.href, libelle: s.label }))}

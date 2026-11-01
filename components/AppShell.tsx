@@ -286,22 +286,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             data-agent-zone="Page"
             className="flex-1 overflow-y-auto"
             style={{
-              // Refonte du 13/10/2026 (demande Bourama) : la capsule native
-              // flottante est supprimée, l'appli native et le site utilisent
-              // la même barre du bas (BarreOngletsWeb) et donc les mêmes
-              // marges, une seule branche. --dj-hamburger-espace réserve
-              // la hauteur du bouton hamburger flottant (voir
-              // app/globals.css). --dj-barre-onglets-web réserve la barre du
-              // bas (0px sur PC, voir app/globals.css) pour que le bas de
-              // chaque page ne soit pas caché derrière elle. Sur /chat la
-              // barre est masquée et ChatIA ajoute déjà son propre padding de
-              // sécurité (clavier, safe-bottom), rien à réserver.
-              // 18/10/2026, demande Bourama : sur le chat, rien n'est reserve en
-              // haut. Le chat va jusqu'au bord de l'ecran pour que le texte des
-              // messages passe derriere la rangee du haut (voile en fondu, voir
-              // ChatIA.tsx). Le chat reserve lui meme cette place avec
-              // --dj-chat-haut, et l'ecran d'accueil du chat la garde.
-              paddingTop: estPageChat(pathname) ? "0px" : "calc(var(--safe-top) + var(--dj-hamburger-espace))",
+              // Correctif 01/11/2026 : plus de paddingTop ici. L'en-tête
+              // SectionPage est désormais un sticky top-0 DANS le scroll,
+              // avec sa propre hauteur (2.5rem + safe-top) et son fond qui
+              // cache le contenu dessous. Réserver --dj-hamburger-espace
+              // + --safe-top en paddingTop + compenser en -mt/-top dans
+              // SectionPage était le hack fragile à la base du bug.
+              // Seul le bas est encore réservé (barre d'onglets web).
+              paddingTop: "0px",
               paddingBottom: estPageChat(pathname) ? "0px" : "var(--dj-barre-onglets-web, 0px)",
             }}
           >
