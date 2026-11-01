@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { listerMesCodes, type CodePartage } from "@/lib/api";
@@ -18,8 +18,11 @@ export function ProgrammeAvecCatalogue() {
   const [vue, setVue] = useState<"mon-programme" | "public">("mon-programme");
   const { barreSousSections: progAUnHeader } = useEnTeteApp();
   const progEnVraiePage = progAUnHeader !== null;
-  const noeudProg = (
-    <OngletsSegment ariaLabel="Section du Programme" valeur={vue} onChange={(v) => setVue(v as typeof vue)} onglets={[{ valeur: "mon-programme", libelle: "Mon Programme" }, { valeur: "public", libelle: "Catalogue public" }]} />
+  const noeudProg = useMemo(
+    () => (
+      <OngletsSegment ariaLabel="Section du Programme" valeur={vue} onChange={(v) => setVue(v as typeof vue)} onglets={[{ valeur: "mon-programme", libelle: "Mon Programme" }, { valeur: "public", libelle: "Catalogue public" }]} />
+    ),
+    [vue],
   );
   useDefinirBarreSousSousSections(progEnVraiePage ? noeudProg : null);
 
