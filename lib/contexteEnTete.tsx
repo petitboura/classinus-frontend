@@ -1,10 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-
-// Remonte le titre de la page vers la barre fixe du haut (AppShell).
-// Sans ça le titre vivait DANS le contenu qui défile (sticky) -> les
-// cartes passaient dessous avec leur bord carré visible, c'était le bug.
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type EnTeteValeur = {
   titre: string | null;
@@ -30,20 +26,22 @@ export function useFournirEnTete() {
     retour: undefined,
     infoId: null,
   });
-  return {
-    titre: etat.titre,
-    retour: etat.retour,
-    infoId: etat.infoId,
-    definir: (v: { titre: string | null; retour?: string; infoId?: string | null }) =>
-      setEtat({ titre: v.titre, retour: v.retour, infoId: v.infoId ?? null }),
-  };
+
+  const definir = useCallback((v: { titre: string | null; retour?: string; infoId?: string | null }) => {
+    setEtat((prev) => {
+      if (prev.titre === v.titre && prev.retour === v.retour && prev.infoId === (v.infoId ?? null)) return prev;
+      return { titre: v.titre, retour: v.retour, infoId: v.infoId ?? null };
+    });
+  }, []);
+
+  const valeur = useMemo(() => ({ titre: etat.titre, retour: etat.retour, infoId: etat.infoId, definir }), [etat.titre, etat.retour, etat.infoId, definir]);
+  return valeur;
 }
 
 // À appeler DANS la page pour dire "voilà mon titre" à la barre du haut.
 export function useDefinirEnTete(titre: string | null, retour?: string, infoId?: string | null) {
   const { definir } = useContext(ContexteEnTete);
   useEffect(() => {
-    definir({ titre, retour, infoId: infoId ?? null });
-    return () => definir({ titre: null, retour: undefined, infoId: null });
+    if (titre) definir({ titre, retour, infoId: infoId ?? null });
   }, [titre, retour, infoId, definir]);
 }

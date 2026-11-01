@@ -7,9 +7,6 @@ import { useSurAppliPc } from "@/lib/useSurAppliPc";
 import { OngletsLiens } from "./OngletsSegment";
 import { useEnTeteApp } from "@/lib/contexteEnTete";
 
-// La page dit à la barre du haut quel titre afficher. Avant le titre
-// vivait DANS la page (qui défile) -> les cartes passaient dessous avec
-// leur bord carré visible. Maintenant la barre est au-dessus du défilement.
 const ContexteInfoSection = createContext<(id: string | null) => void>(() => {});
 
 export function useInfoSection(id: string | null) {
@@ -40,13 +37,11 @@ export function SectionPage({
   const { definir } = useEnTeteApp();
   const [infoRubriqueId, setInfoRubriqueId] = useState<string | null>(null);
 
-  // Quel titre montrer en haut ? Soit celui de la page, soit celui du groupe.
   const titreHaut = groupe ? groupe.label : title;
   const retourHaut = groupe ? groupe.href : retour;
 
   useEffect(() => {
     definir({ titre: titreHaut, retour: retourHaut, infoId: infoRubriqueId });
-    return () => definir({ titre: null, retour: undefined, infoId: null });
   }, [titreHaut, retourHaut, infoRubriqueId, definir]);
 
   if (!groupe) {
@@ -63,9 +58,6 @@ export function SectionPage({
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
       <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
         <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-start">
-          {/* Sur téléphone : rangée de pastilles qui reste visible en haut
-              du contenu quand on défile (la grande barre du haut, elle,
-              ne bouge jamais car elle est au-dessus du défilement). */}
           <div className="sticky top-0 z-10 -mb-2 bg-dj-fond py-2 md:hidden">
             <OngletsLiens
               ariaLabel={groupe.label}
