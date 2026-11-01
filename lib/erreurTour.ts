@@ -1,11 +1,11 @@
 import { ErreurApi } from "@/lib/erreurs";
 
-// Sorte d'erreur qui a coupé une réponse du chat. Les trois premières viennent du serveur
+// Sorte d'erreur qui a coupé une réponse du chat. Les quatre premières viennent du serveur
 // (événement "erreur_tour", voir classinus-backend core/erreur_tour.py), les autres sont
 // décidées ici quand l'appel au serveur lui-même échoue.
-export type CodeErreurTour = "delai" | "forte_demande" | "serveur" | "reseau" | "session" | "connexion" | "requete";
+export type CodeErreurTour = "delai" | "forte_demande" | "vide" | "serveur" | "reseau" | "session" | "connexion" | "requete";
 
-const CODES: CodeErreurTour[] = ["delai", "forte_demande", "serveur", "reseau", "session", "connexion", "requete"];
+const CODES: CodeErreurTour[] = ["delai", "forte_demande", "vide", "serveur", "reseau", "session", "connexion", "requete"];
 
 /** Code reçu du serveur, "serveur" si le code est inconnu. */
 export function codeErreurValide(code: unknown): CodeErreurTour {
