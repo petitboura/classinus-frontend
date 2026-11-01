@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Play, Sparkles } from "lucide-react";
+import { Play, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { VisionneurHiggsfield } from "@/components/higgsfield/VisionneurHiggsfield";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { useDefinirActionEnTete } from "@/lib/contexteEnTete";
 
 
 function FiltreChips({
@@ -153,6 +154,37 @@ export function CatalogueHiggsfield() {
   const ouvrirChat = useOuvrirChatAvecTexte();
   const [typeFiltre, setTypeFiltre] = useState<string>("tous");
   const [styleFiltre, setStyleFiltre] = useState<string>("tous");
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
+
+  const actif = typeFiltre !== "tous" || styleFiltre !== "tous";
+  const badgeFiltres = [typeFiltre, styleFiltre].filter((v) => v !== "tous").length;
+
+  const boutonFiltres = useMemo(
+    () => (
+      <button
+        type="button"
+        onClick={() => setFiltresOuverts((v) => !v)}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+          filtresOuverts || actif
+            ? "border-dj-texte bg-dj-texte text-dj-fond"
+            : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+        }`}
+        aria-expanded={filtresOuverts}
+        aria-label="Filtres Higgsfield"
+      >
+        {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
+        Filtres
+        {badgeFiltres > 0 && (
+          <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
+            {badgeFiltres}
+          </span>
+        )}
+      </button>
+    ),
+    [filtresOuverts, actif, badgeFiltres],
+  );
+
+  useDefinirActionEnTete(boutonFiltres);
 
 
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
@@ -191,11 +223,12 @@ export function CatalogueHiggsfield() {
         Filtre par type et style, clique sur un effet pour l&apos;ouvrir en plein écran, scrolle de vidéo en
         vidéo, puis Générer t&apos;envoie au chat.
       </p>
-      {/* Filtres : restent dans la page, ne montent jamais sous la barre du haut */}
-      <div className="flex flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
-        <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
-        <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
-      </div>
+      {filtresOuverts && (
+        <div className="flex flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
+          <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
+          <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
+        </div>
+      )}
       {filtres.length === 0 ? (
         <p className="py-12 text-center text-sm text-dj-texte-muet">Aucun effet pour ces filtres.</p>
       ) : (
