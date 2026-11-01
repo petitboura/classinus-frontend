@@ -204,8 +204,8 @@ export function CatalogueHiggsfield() {
   return (
     <div className="flex flex-col gap-4 py-4 md:py-6">
       <p className="max-w-2xl text-sm leading-relaxed text-dj-texte-muet">
-        Explore les effets Higgsfield, filtre par type et style, ouvre en plein ecran pour comparer, puis lance la
-        generation directement avec tes images et videos.
+        Explore les effets Higgsfield, filtre par type et style, ouvre en plein écran pour comparer, puis lance la
+        génération directement avec tes images et vidéos.
       </p>
 
       <div className="sticky top-0 z-10 -mx-4 flex flex-col gap-3 border-b border-dj-bordure bg-dj-fond/80 px-4 py-3 backdrop-blur md:mx-0 md:rounded-xl md:border md:px-4">
@@ -229,7 +229,7 @@ export function CatalogueHiggsfield() {
             ) : null}
           </div>
           <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
-            {filtres.length} effet{filtres.length !== 1 ? "s" : ""} · {EFFETS_HIGGSFIELD.length} au total
+            {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${EFFETS_HIGGSFIELD.length} au total`}
           </span>
         </div>
         <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
@@ -254,7 +254,7 @@ export function CatalogueHiggsfield() {
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <p className="text-sm font-semibold text-dj-texte">Aucun effet pour ces filtres</p>
           <p className="max-w-md text-sm leading-relaxed text-dj-texte-muet">
-            Essaie un autre mot cle ou reinitialise les filtres pour revoir tout le catalogue.
+            Essaie un autre mot-clé ou réinitialise les filtres pour revoir tout le catalogue.
           </p>
           <button
             onClick={() => {
