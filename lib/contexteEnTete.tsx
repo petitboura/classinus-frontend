@@ -43,8 +43,14 @@ export function useFournirEnTete() {
       return { titre: v.titre, retour: v.retour, infoId: v.infoId ?? null };
     });
   }, []);
-  const definirBarreSousSections = useCallback((node: React.ReactNode | null) => setBarreSousSections(node), []);
-  const definirBarreSousSousSections = useCallback((node: React.ReactNode | null) => setBarreSousSousSections(node), []);
+  // Ne redéclenche pas un rendu si la valeur n'a pas réellement changé.
+  // Sans ça, un nouveau JSX identique à chaque rendu parent provoque setState -> re-render -> boucle.
+  const definirBarreSousSections = useCallback((node: React.ReactNode | null) => {
+    setBarreSousSections((prev) => (prev === node ? prev : node));
+  }, []);
+  const definirBarreSousSousSections = useCallback((node: React.ReactNode | null) => {
+    setBarreSousSousSections((prev) => (prev === node ? prev : node));
+  }, []);
 
   const valeur = useMemo(() => ({ titre: etat.titre, retour: etat.retour, infoId: etat.infoId, definir, barreSousSections, barreSousSousSections, definirBarreSousSections, definirBarreSousSousSections }), [etat.titre, etat.retour, etat.infoId, definir, barreSousSections, barreSousSousSections, definirBarreSousSections, definirBarreSousSousSections]);
   return valeur;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { SectionPage } from "./SectionPage";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { sectionsBureauVisibles } from "@/lib/sectionsBureau";
@@ -24,8 +24,8 @@ import { construireGroupe } from "@/lib/groupeSections";
 
 export function SectionPageBureau({ title, children }: { title: string; children: React.ReactNode }) {
   const { estProfesseur } = useContext(ContexteStatutUtilisateur);
-  const sections = sectionsBureauVisibles(estProfesseur);
-  const groupe = construireGroupe("Bureau", ROUTES_BUREAU.accueil, sections);
+  const sections = useMemo(() => sectionsBureauVisibles(estProfesseur), [estProfesseur]);
+  const groupe = useMemo(() => construireGroupe("Bureau", ROUTES_BUREAU.accueil, sections), [sections]);
 
   return (
     <SectionPage title={title} groupe={groupe}>

@@ -47,11 +47,16 @@ export function SectionPage({
   // Barre 1 = rangée de navigation entre pages sœurs (ex: Perso/Publique/Téléphone)
   // Elle doit rester FIXE en haut comme ton bouton notif, pas glisser dans le scroll.
   // Sur téléphone elle est au-dessus du contenu, sur ordi c'est le rail à gauche qui prend le relais.
-  const soeursFiltrees = useMemo(() => (groupe ? groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc)) : []), [groupe, surAppliPc]);
+  // groupe peut être un nouvel objet à chaque rendu parent (Server Component ou Bureau)
+  // On dérive des clés primitives stables pour éviter une boucle : setBarreSousSections -> re-render -> nouveau groupe object -> nouveau noeud -> set...
+  const groupeHref = groupe?.href ?? null;
+  const groupeLabel = groupe?.label ?? null;
+  const soeursKey = groupe ? groupe.soeurs.map((s) => s.href + s.label + (s.masqueSurPc ? "1" : "0")).join("|") : "";
+  const soeursFiltrees = useMemo(() => (groupe ? groupe.soeurs.filter((s) => !(surAppliPc && s.masqueSurPc)) : []), [surAppliPc, soeursKey]);
   const noeudSousSections = useMemo(() => {
     if (!groupe || soeursFiltrees.length === 0) return null;
     return <OngletsLiens ariaLabel={groupe.label} onglets={soeursFiltrees.map((s) => ({ href: s.href, libelle: s.label }))} />;
-  }, [groupe, soeursFiltrees]);
+  }, [groupeLabel, groupeHref, soeursFiltrees]);
   useDefinirBarreSousSections(noeudSousSections);
 
   if (!groupe) {

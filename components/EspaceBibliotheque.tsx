@@ -56,7 +56,6 @@ import { telecharger } from "@/lib/telecharger";
 import { BibliothequePublique } from "./BibliothequePublique";
 import { EspaceDossiers } from "./EspaceDossiers";
 import { OngletsSegment } from "./OngletsSegment";
-import { useEnTeteApp } from "@/lib/contexteEnTete";
 import { useInfoSection } from "./SectionPage";
 import { lienPartage, partagerOuCopierLien } from "./ButtonPartager";
 import { MenuActionsCarte } from "./MenuActionsCarte";
@@ -219,8 +218,6 @@ export function EspaceBibliotheque({
     ),
     [origineOnglet, sousOnglet, filtreOuvert],
   );
-  const { barreSousSections: pageAUnHeaderGroupe } = useEnTeteApp();
-  const enVraiePage = pageAUnHeaderGroupe !== null;
   // 17/09/2026 (chantier persistance/cache, demande Bourama) :
   // `fichiers`/`dossiers` viennent maintenant de React Query au lieu
   // d'un useState local -- la donnée est partagée entre TOUTES les

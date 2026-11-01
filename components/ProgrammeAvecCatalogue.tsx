@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { clesRequetes } from "@/lib/clesRequetes";
 import { listerMesCodes, type CodePartage } from "@/lib/api";
 import { OngletsSegment } from "@/components/OngletsSegment";
-import { useEnTeteApp } from "@/lib/contexteEnTete";
 import { ProgrammeNotions } from "@/components/ProgrammeNotions";
 import { ProgrammesCataloguePublic } from "@/components/ProgrammesCataloguePublic";
 
@@ -16,8 +15,6 @@ import { ProgrammesCataloguePublic } from "@/components/ProgrammesCataloguePubli
 // MesCodes.tsx (clesRequetes.codes), pas de requête en double.
 export function ProgrammeAvecCatalogue() {
   const [vue, setVue] = useState<"mon-programme" | "public">("mon-programme");
-  const { barreSousSections: progAUnHeader } = useEnTeteApp();
-  const progEnVraiePage = progAUnHeader !== null;
 
   const { data: codes } = useQuery({
     queryKey: clesRequetes.codes,
