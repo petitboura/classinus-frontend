@@ -55,7 +55,7 @@ export function SectionPage({
     <ContexteInfoSection.Provider value={setInfoRubriqueId}>
       <div className="mx-auto flow-root w-full max-w-5xl px-4 pb-24">
         {/* Téléphone : navigation entre pages soeurs, dans la page (pas fixée en haut) */}
-        <nav className="mt-4 flex flex-wrap gap-1.5 md:hidden" aria-label={groupe.label}>
+        <nav className="mt-4 flex flex-nowrap gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden" aria-label={groupe.label}>
           {groupe.soeurs
             .filter((s) => !(surAppliPc && s.masqueSurPc))
             .map((s) => {
@@ -65,7 +65,7 @@ export function SectionPage({
                   key={s.href}
                   href={s.href}
                   replace
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                     actif ? "border-dj-texte bg-dj-texte text-dj-fond" : "border-dj-bordure bg-dj-surface text-dj-texte-muet"
                   }`}
                 >
