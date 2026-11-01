@@ -1,0 +1,51 @@
+import { appelerApi, appelerApiFichier } from "./api";
+
+export type HiggsfieldStatut = {
+  etat: "en_cours" | "terminee" | "echec" | "bloquee" | "annulee";
+  url: string | null;
+  erreur: string | null;
+};
+
+export async function higgsfieldDisponible(): Promise<boolean> {
+  try {
+    const r = (await appelerApi("/api/higgsfield/disponible")) as { disponible: boolean };
+    return !!r.disponible;
+  } catch {
+    return false;
+  }
+}
+
+export async function lancerVideoHiggsfield(payload: Record<string, unknown>) {
+  return (await appelerApi("/api/higgsfield/video", { method: "POST", body: JSON.stringify(payload) })) as { request_id: string; titre: string };
+}
+
+export async function lancerImageHiggsfield(payload: Record<string, unknown>) {
+  return (await appelerApi("/api/higgsfield/image", { method: "POST", body: JSON.stringify(payload) })) as { request_id: string; titre: string };
+}
+
+export async function lancerGenjutsuHiggsfield(payload: Record<string, unknown>) {
+  return (await appelerApi("/api/higgsfield/genjutsu", { method: "POST", body: JSON.stringify(payload) })) as { request_id: string; titre: string };
+}
+
+export async function statutHiggsfield(request_id: string, titre = ""): Promise<HiggsfieldStatut> {
+  const q = titre ? `?titre=${encodeURIComponent(titre)}` : "";
+  return (await appelerApi(`/api/higgsfield/statut/${encodeURIComponent(request_id)}${q}`)) as HiggsfieldStatut;
+}
+
+export async function annulerHiggsfield(request_id: string) {
+  return (await appelerApi(`/api/higgsfield/annuler/${encodeURIComponent(request_id)}`, { method: "POST" })) as { annulee: boolean };
+}
+
+export async function estimerHiggsfield(payload: Record<string, unknown>) {
+  return (await appelerApi("/api/higgsfield/estimation", { method: "POST", body: JSON.stringify(payload) })) as { credits: number | null };
+}
+
+export async function uploaderFichierHiggsfield(fichier: File): Promise<string> {
+  const rep = (await appelerApiFichier("/api/uploads/fichier-chat", fichier)) as { url?: string };
+  if (!rep.url) throw new Error("Upload échoué");
+  return rep.url;
+}
+
+export async function uploaderVideoHiggsfield(fichier: File): Promise<string> {
+  return uploaderFichierHiggsfield(fichier);
+}
