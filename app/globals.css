@@ -738,3 +738,49 @@ html[data-ouverture-vue="1"] #clovis-splash {
 .dj-markdown li > p {
   filter: none;
 }
+
+/* Tableaux du chat (TableauMessage.tsx, FicheTableauComparatif.tsx) : une seule
+   couleur partout, pas de cadre exterieur, seules les lignes entre les cases
+   restent. Les bordures des quatre bords sont retirees. */
+.dj-table-chat {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dj-table-chat th,
+.dj-table-chat td {
+  border: 1px solid var(--dj-bordure);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  overflow-wrap: break-word;
+}
+.dj-table-chat thead tr:first-child > * {
+  border-top: 0;
+}
+.dj-table-chat tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.dj-table-chat tr > :first-child {
+  border-left: 0;
+}
+.dj-table-chat tr > :last-child {
+  border-right: 0;
+}
+/* Mode serre, voir lib/useTableSansDebordement.ts */
+.dj-table-chat[data-serre="1"] {
+  table-layout: fixed;
+}
+.dj-table-chat[data-serre="1"] th,
+.dj-table-chat[data-serre="1"] td {
+  overflow-wrap: anywhere;
+}
+
+/* Diagrammes Mermaid : coins arrondis sur les boites (noeuds, groupes,
+   acteurs et notes des diagrammes de sequence). */
+.dj-mermaid .node rect,
+.dj-mermaid .cluster rect,
+.dj-mermaid rect.actor,
+.dj-mermaid rect.note,
+.dj-mermaid .label-container {
+  rx: 12px;
+  ry: 12px;
+}

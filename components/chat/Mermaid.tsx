@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { BlocLarge } from "./BlocLarge";
 import { BoutonTelechargerImage } from "./BoutonTelechargerImage";
 import { telechargerImageElement } from "@/lib/telechargerImageElement";
 import { MESSAGES } from "@/lib/erreurs";
@@ -37,7 +36,7 @@ function largeurNaturelle(svg: string): number {
 // pas, et re-render en boucle est coûteux).
 // sansCadre : quand le diagramme est déjà dans un cadre parent (carte mentale
 // d'une fiche de révision), on ne dessine ni bordure ni marge ici, et c'est le
-// parent qui enveloppe son propre cadre dans BlocLarge.
+// parent qui enveloppe son propre cadre.
 export function Mermaid({ definition, sansCadre = false }: { definition: string; sansCadre?: boolean }) {
   const [svg, setSvg] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -130,15 +129,12 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
   return (
     <Enveloppe sansCadre={sansCadre}>
       {svg ? (
-        // Taille du diagramme (24/09/2026, bug remonté par Bourama : les
-        // cartes mentales des fiches restent dans un cadre et deviennent
-        // illisibles). Le SVG prend sa largeur naturelle, donc le texte
-        // garde une taille lisible, et le cadre s'élargit hors de la
-        // colonne de texte comme un tableau ou un bloc de code (voir
-        // BlocLarge.tsx). min-w-full : un petit diagramme remplit quand même
-        // le cadre. Si le diagramme dépasse la place disponible, le cadre
-        // défile. mermaid pose un style inline max-width sur le SVG : un
-        // style inline gagne sur une classe normale, d'où les variantes avec !.
+        // Taille du diagramme : le SVG prend sa largeur naturelle mais ne depasse
+        // jamais la colonne de texte, il rapetisse pour y tenir (jamais de
+        // defilement ni d'elargissement sur les cotes). min-w-full : un petit
+        // diagramme remplit quand meme le cadre. mermaid pose un style inline
+        // max-width sur le SVG : un style inline gagne sur une classe normale,
+        // d'ou les variantes avec !.
         <>
         {!sansCadre && (
           <div className="mb-1 flex justify-end">
@@ -183,11 +179,11 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
 }
 
 function Enveloppe({ sansCadre, children }: { sansCadre: boolean; children: ReactNode }) {
-  if (sansCadre) return <div>{children}</div>;
+  if (sansCadre) return <div className="dj-mermaid">{children}</div>;
   return (
-    <BlocLarge className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4">
+    <div className="dj-mermaid my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4">
       {children}
-    </BlocLarge>
+    </div>
   );
 }
 

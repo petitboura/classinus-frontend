@@ -302,7 +302,7 @@ export function ContenuMarkdown({
       )}
       {vueBrute ? (
         // [contain:inline-size] : un paragraphe très long ne doit pas
-        // décider de la largeur de la carte (voir BlocLarge.tsx), sinon
+        // décider de la largeur de la carte, sinon
         // toute carte s'élargirait au maximum. Sans effet ailleurs : un
         // bloc de texte se remplit de toute façon à la largeur disponible.
         <pre className="whitespace-pre-wrap break-words p-5 font-sans text-sm text-dj-texte [contain:inline-size]">{texte}</pre>

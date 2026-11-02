@@ -2155,13 +2155,11 @@ export function ChatIA({
   const statutsFlottants = statuts.filter((s) => !s.id);
 
   return (
-    // 20/09/2026, demande Bourama (blocs larges, voir BlocLarge.tsx) : le
-    // conteneur extérieur et la zone de défilement prennent toute la
+    // Le conteneur extérieur et la zone de défilement prennent toute la
     // largeur disponible, et la colonne de texte (48rem au plus) est
-    // recréée par le remplissage latéral de la zone de défilement, avec le
-    // même résultat visuel qu'avant pour le texte. L'espace libre de chaque
-    // côté sert aux tableaux et blocs de code plus larges que le texte. La
-    // barre de saisie garde, elle, sa propre colonne de 48rem centrée.
+    // recréée par le remplissage latéral de la zone de défilement. Plus aucun
+    // bloc ne s'élargit dans cet espace : tout reste dans la colonne de texte.
+    // La barre de saisie garde, elle, sa propre colonne de 48rem centrée.
     <div ref={racineMessagesRef} className="relative flex h-full w-full flex-col">
       {/* 14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
           15/10/2026 : sur téléphone (chat plein écran), posé tout en haut de l'écran, sur la

@@ -7,7 +7,6 @@ import hljs from "@/lib/coloration";
 import { PleinEcranApercu } from "./PleinEcranApercu";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telechargerContenuLocal } from "@/lib/telecharger";
-import { BlocLarge } from "./BlocLarge";
 import { FormulaireValeursPrealables, SortieExecutionCode } from "./SortieExecutionCode";
 import { useExecutionPython } from "@/lib/useExecutionPython";
 import { ROUTES_BUREAU } from "@/lib/routesBureau";
@@ -303,7 +302,7 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
   }`;
 
   return (
-    <BlocLarge className="dj-bloc-code group/code relative my-3 animate-dj-fade-in rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
+    <div className="dj-bloc-code group/code relative my-3 animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface">
       <div ref={topRowRef} className="flex items-center justify-between overflow-hidden rounded-t-xl border-b border-dj-bordure px-3 py-1.5">
         <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
           {langage || "texte"}
@@ -313,13 +312,13 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
         </div>
       </div>
 
-      {/* 26/09/2026 -- overflow-hidden ICI (pas sur BlocLarge au-dessus) :
+      {/* 26/09/2026, overflow-hidden ICI (pas sur le conteneur au-dessus) :
           Bourama a remonté que le rail sticky ne bougeait jamais, restait
           planté en haut. Cause : tout ancêtre avec un overflow différent
           de visible (même overflow-hidden, même sans jamais scroller
           lui-même) désactive position:sticky pour ses descendants -- ils
           se calent sur CET ancêtre-là plutôt que sur le vrai scroll de la
-          page. L'ancien overflow-hidden était sur BlocLarge, juste
+          page. L'ancien overflow-hidden était sur le conteneur, juste
           au-dessus, ancêtre direct du rail -- déplacé ici, sur un wrapper
           qui ne contient plus que blocPre+résultat (pas le rail), pour
           garder les coins arrondis en bas sans casser le sticky. */}
@@ -334,6 +333,6 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
           <div ref={resultatRef}>{sortieExecution}</div>
         </div>
       </div>
-    </BlocLarge>
+    </div>
   );
 }
