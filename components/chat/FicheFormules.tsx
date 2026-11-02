@@ -38,9 +38,10 @@ function rendreExpressionKatex(latex: string): string {
   }
 }
 
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function FicheFormules({ fiche }: { fiche: FicheFormulesData }) {
   return (
-    <div className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
+    <div className="my-3 animate-dj-fade-in">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur text-dj-accent-1-texte">
           <Sigma size={14} />
@@ -49,7 +50,7 @@ export function FicheFormules({ fiche }: { fiche: FicheFormulesData }) {
       </div>
       <div className="flex flex-col gap-2">
         {fiche.items.map((item, index) => (
-          <div key={index} className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute p-3">
+          <div key={index} className="py-1">
             <p className="text-xs font-medium text-dj-texte-muet">{item.nom}</p>
             <div
               className="mt-1 overflow-x-auto text-center text-sm text-dj-texte"

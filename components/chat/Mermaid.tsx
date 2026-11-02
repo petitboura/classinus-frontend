@@ -37,6 +37,7 @@ function largeurNaturelle(svg: string): number {
 // sansCadre : quand le diagramme est déjà dans un cadre parent (carte mentale
 // d'une fiche de révision), on ne dessine ni bordure ni marge ici, et c'est le
 // parent qui enveloppe son propre cadre.
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function Mermaid({ definition, sansCadre = false }: { definition: string; sansCadre?: boolean }) {
   const [svg, setSvg] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -137,7 +138,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
         // d'ou les variantes avec !.
         <>
         {!sansCadre && (
-          <div className="mb-1 flex justify-end">
+          <div className="absolute right-0 top-0 z-10 flex justify-end [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/nu:opacity-100 focus-within:!opacity-100 transition-opacity">
             <BoutonTelechargerImage
               exporter={() => telechargerImageElement(zoneDiagrammeRef.current, "diagramme.png")}
               libelleAria="Télécharger le diagramme en image"
@@ -181,7 +182,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
 function Enveloppe({ sansCadre, children }: { sansCadre: boolean; children: ReactNode }) {
   if (sansCadre) return <div className="dj-mermaid">{children}</div>;
   return (
-    <div className="dj-mermaid my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4">
+    <div className="dj-mermaid group/nu relative my-3">
       {children}
     </div>
   );

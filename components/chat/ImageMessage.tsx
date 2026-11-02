@@ -20,6 +20,7 @@ import { telecharger as telechargerFichier } from "@/lib/telecharger";
 //      grise vide, aucun signal que quelque chose s'est mal passé. Fallback
 //      explicite désormais : icône + lien pour ouvrir l'URL directement
 //      (utile si l'image existe mais que le domaine bloque l'intégration).
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function ImageMessage({ src, alt }: { src?: string; alt?: string }) {
   const [chargee, setChargee] = useState(false);
   const [enErreur, setEnErreur] = useState(false);
@@ -53,7 +54,7 @@ export function ImageMessage({ src, alt }: { src?: string; alt?: string }) {
     <>
       <button
         onClick={() => chargee && setOuverte(true)}
-        className="my-2 block max-h-96 overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface"
+        className="my-2 block max-h-96 overflow-hidden rounded-xl"
         aria-label={alt || "Agrandir l'image"}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique fournie par le modèle, pas un asset local optimisable */}

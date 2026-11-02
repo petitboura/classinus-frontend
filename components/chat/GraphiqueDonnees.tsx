@@ -47,6 +47,7 @@ type Chart = {
 // ici aurait forcé SchemaGeometrique.tsx à importer tout ce fichier (et
 // donc recharts) juste pour cette fonction de téléchargement PNG.
 
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function GraphiqueDonnees({ code }: { code: string }) {
   const conteneurRef = useRef<HTMLDivElement>(null);
   const [telecharge, setTelecharge] = useState(false);
@@ -78,13 +79,13 @@ export function GraphiqueDonnees({ code }: { code: string }) {
   if (!chart) {
     if (erreur) {
       return (
-        <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
+        <div className="my-3 text-xs text-dj-texte-muet">
           <span className="text-[var(--dj-erreur)]">Graphique invalide :</span> format JSON non reconnu.
         </div>
       );
     }
     return (
-      <div className="my-3 flex h-40 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface text-xs text-dj-texte-muet">
+      <div className="my-3 flex h-40 items-center justify-center text-xs text-dj-texte-muet">
         <span className="h-2 w-2 animate-dj-glow rounded-full bg-dj-texte-muet" />
         <span className="ml-2">Construction du graphique...</span>
       </div>
@@ -93,7 +94,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
 
   if (!Array.isArray(chart.data) || chart.data.length === 0) {
     return (
-      <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
+      <div className="my-3 text-xs text-dj-texte-muet">
         Graphique invalide (format non reconnu).
       </div>
     );
@@ -122,7 +123,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
 
   if (chart.type === "pie" && !pieValide) {
     return (
-      <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
+      <div className="my-3 text-xs text-dj-texte-muet">
         <span className="text-[var(--dj-erreur)]">Graphique invalide :</span> un camembert attend des paires{" "}
         <code className="text-dj-texte">{"{ name, value }"}</code> avec des valeurs numériques.
       </div>
@@ -140,7 +141,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
   const TYPES_SUPPORTES = ["line", "bar", "pie"] as const;
   if (!TYPES_SUPPORTES.includes(chart.type as (typeof TYPES_SUPPORTES)[number])) {
     return (
-      <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
+      <div className="my-3 text-xs text-dj-texte-muet">
         <span className="text-[var(--dj-erreur)]">Graphique invalide :</span> type "{String(chart.type)}" non pris en charge
         (attendu : line, bar ou pie).
       </div>
@@ -156,7 +157,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
       : clesSeries.map((cle, i) => ({ libelle: cle, couleur: COULEURS[i % COULEURS.length] }));
 
   return (
-    <div className="my-3 animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface p-4">
+    <div className="group/nu my-3 animate-dj-fade-in">
       <div className="mb-2 flex items-center justify-between gap-2">
         {chart.titre ? (
           <p className="text-sm font-semibold text-dj-texte">{chart.titre}</p>
@@ -176,7 +177,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
             )
           }
           aria-label="Télécharger le graphique en image"
-          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-dj-texte-muet hover:text-dj-texte focus-visible:!opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/nu:opacity-100 focus-within:!opacity-100 transition-opacity"
         >
           {telecharge ? (
             <>
