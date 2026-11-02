@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
 function libelleType(effet: EffetHiggsfield) {
@@ -93,9 +93,7 @@ function DiapoEffet({
           </div>
           <h2 className="text-xl font-bold leading-tight text-white sm:text-2xl">{effet.nom}</h2>
           <p className="line-clamp-3 text-sm leading-relaxed text-white/85 sm:line-clamp-none">{effet.description}</p>
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-white/60">
-            Modèle : {effet.modele}
-          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-white/60">Modèle : {effet.modele}</span>
           <button
             onClick={() => onGenerer(effet)}
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-black shadow-lg transition-transform duration-200 hover:scale-[1.03] active:scale-95 sm:w-auto sm:justify-start"
@@ -129,6 +127,15 @@ export function VisionneurHiggsfield({
     if (el) el.scrollTop = indexDepart * el.clientHeight;
   }, [indexDepart]);
 
+  const scrollerVers = useCallback(
+    (i: number) => {
+      const el = conteneurRef.current;
+      if (!el || i < 0 || i >= effets.length) return;
+      el.scrollTo({ top: i * el.clientHeight, behavior: "smooth" });
+    },
+    [effets.length]
+  );
+
   useEffect(() => {
     const precedent = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -140,10 +147,18 @@ export function VisionneurHiggsfield({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        e.preventDefault();
+        scrollerVers(Math.min(indexCourant + 1, effets.length - 1));
+      }
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        scrollerVers(Math.max(indexCourant - 1, 0));
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, indexCourant, effets.length, scrollerVers]);
 
   function onScroll() {
     const el = conteneurRef.current;
@@ -153,7 +168,12 @@ export function VisionneurHiggsfield({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex h-[100dvh] flex-col bg-black" role="dialog" aria-modal="true" aria-label="Effets Higgsfield en plein écran">
+    <div
+      className="fixed inset-0 z-[80] flex h-[100dvh] flex-col bg-black"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Effets Higgsfield en plein écran"
+    >
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent px-4 pb-8 pt-[calc(1rem+var(--safe-top,0px))]">
         <button
           onClick={onClose}
@@ -174,6 +194,21 @@ export function VisionneurHiggsfield({
         </button>
       </div>
 
+      <button
+        onClick={() => scrollerVers(indexCourant - 1)}
+        aria-label="Effet précédent"
+        className="pointer-events-auto absolute left-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 md:flex"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        onClick={() => scrollerVers(indexCourant + 1)}
+        aria-label="Effet suivant"
+        className="pointer-events-auto absolute right-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 md:flex"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+
       <div
         ref={conteneurRef}
         onScroll={onScroll}
@@ -181,6 +216,19 @@ export function VisionneurHiggsfield({
       >
         {effets.map((effet) => (
           <DiapoEffet key={effet.id} effet={effet} sonActif={sonActif} onGenerer={onGenerer} />
+        ))}
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-1.5 pb-[calc(0.75rem+var(--safe-bottom,0px))] pt-6">
+        {effets.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => scrollerVers(i)}
+            aria-label={`Aller à l'effet ${i + 1}`}
+            className={`pointer-events-auto h-1.5 rounded-full transition-all duration-300 ${
+              i === indexCourant ? "w-6 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
+            }`}
+          />
         ))}
       </div>
     </div>

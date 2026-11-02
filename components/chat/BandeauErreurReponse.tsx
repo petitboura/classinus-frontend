@@ -11,6 +11,7 @@ const TEXTES = {
     message: {
       delai: "La réponse a pris trop de temps.",
       forte_demande: "Beaucoup de monde en ce moment, la réponse n'a pas pu aboutir.",
+      vide: "Le modèle s'est arrêté sans donner de réponse.",
       serveur: "Un souci technique a interrompu la réponse.",
       reseau: "La connexion a été perdue.",
       session: "Ta session a expiré.",
@@ -25,6 +26,7 @@ const TEXTES = {
     message: {
       delai: "The reply took too long.",
       forte_demande: "Lots of people are using Classinus right now, the reply could not finish.",
+      vide: "The model stopped without giving an answer.",
       serveur: "A technical problem interrupted the reply.",
       reseau: "The connection was lost.",
       session: "Your session has expired.",
@@ -40,13 +42,14 @@ const TEXTES = {
 const CLASSE_BOUTON =
   "flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface disabled:opacity-50";
 
-// Bandeau sous une réponse coupée par une erreur. Le message dit ce qui s'est passé et les
-// boutons dépendent de la situation : « Continuer » seulement quand il reste quelque chose à
-// poursuivre (texte déjà écrit ou résultats d'outils gardés), « Réessayer » qui repart de la
-// question, « Se connecter » quand c'est la session qui est en cause. Quand la demande elle-même
-// est refusée (code « requete »), Réessayer repartirait sur le même échec : il est masqué, mais
-// Continuer reste affiché si un état de reprise existe (correctif 31/10/2026 : sinon la
-// conversation était cassée, plus aucun moyen de reprendre le contexte déjà accumulé).
+// Bandeau sous une réponse coupée par une erreur. Le message dit ce qui s'est passé. « Continuer »
+// et « Réessayer » sont toujours proposés ensemble (01/11/2026, demande de Bourama : « Réessayer »
+// repart de la question et refait tout, alors que des outils avaient déjà tourné ; « Continuer »
+// reprend avec leurs résultats quand un état de reprise existe, sinon il demande au modèle de
+// poursuivre). « Se connecter » remplace les deux quand c'est la session qui est en cause. Quand
+// la demande elle-même est refusée (code « requete »), Réessayer repartirait sur le même échec : il
+// est masqué, et Continuer n'est affiché que s'il y a quelque chose à poursuivre (correctif
+// 31/10/2026 : sinon la conversation était cassée, plus aucun moyen de reprendre le contexte).
 export function BandeauErreurReponse({
   code,
   peutContinuer,
@@ -76,7 +79,7 @@ export function BandeauErreurReponse({
   }, []);
 
   const doitSeConnecter = code === "session" || code === "connexion";
-  const peutContinuerBouton = !doitSeConnecter && peutContinuer;
+  const peutContinuerBouton = !doitSeConnecter && (code !== "requete" || peutContinuer);
   const peutReessayerBouton = !doitSeConnecter && code !== "requete";
   const bloque = enAttente || !enLigne;
 
