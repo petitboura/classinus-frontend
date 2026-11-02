@@ -15,6 +15,7 @@ import { VisionneuseImage } from "./VisionneuseImage";
 // flèches, balayage, et téléchargement de l'image affichée.
 type Image = { titre: string; url: string; miniature: string; credit?: string | null };
 
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function GalerieImagesBulle({ images }: { images?: Image[] }) {
   const [indexOuvert, setIndexOuvert] = useState<number | null>(null);
   if (!images || !images.length) return null;
@@ -28,7 +29,7 @@ export function GalerieImagesBulle({ images }: { images?: Image[] }) {
           type="button"
           onClick={() => setIndexOuvert(index)}
           title={image.credit ? `${image.titre} · ${image.credit}` : image.titre}
-          className="group relative h-44 w-56 shrink-0 overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface"
+          className="group relative h-44 w-56 shrink-0 overflow-hidden rounded-xl"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- image
               externe (Pixabay/Pexels), pas un asset local optimisable par

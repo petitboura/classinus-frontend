@@ -73,6 +73,7 @@ const COULEUR_TEXTE = "var(--dj-texte)";
 const COULEUR_GRILLE = "var(--dj-bordure)";
 const COULEUR_AXE = "var(--dj-texte-muet)";
 
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function SchemaGeometrique({ code }: { code: string }) {
   const conteneurRef = useRef<HTMLDivElement>(null);
   const [telecharge, setTelecharge] = useState(false);
@@ -102,13 +103,13 @@ export function SchemaGeometrique({ code }: { code: string }) {
   if (!schema) {
     if (erreur) {
       return (
-        <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
+        <div className="my-3 text-xs text-dj-texte-muet">
           <span className="text-[var(--dj-erreur)]">Schéma invalide :</span> format JSON non reconnu.
         </div>
       );
     }
     return (
-      <div className="my-3 flex h-40 items-center justify-center rounded-xl border border-dj-bordure bg-dj-surface text-xs text-dj-texte-muet">
+      <div className="my-3 flex h-40 items-center justify-center text-xs text-dj-texte-muet">
         <span className="h-2 w-2 animate-dj-glow rounded-full bg-dj-texte-muet" />
         <span className="ml-2">Construction du schéma...</span>
       </div>
@@ -117,7 +118,7 @@ export function SchemaGeometrique({ code }: { code: string }) {
 
   if (!Array.isArray(schema.points) || schema.points.length === 0) {
     return (
-      <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
+      <div className="my-3 text-xs text-dj-texte-muet">
         Schéma géométrique invalide (format non reconnu).
       </div>
     );
@@ -193,7 +194,7 @@ export function SchemaGeometrique({ code }: { code: string }) {
   const nomFichier = `${schema.titre ? schema.titre.replace(/[^a-z0-9-_]+/gi, "_") : "schema"}.png`;
 
   return (
-    <div className="my-3 animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface p-4">
+    <div className="group/nu my-3 animate-dj-fade-in">
       <div className="mb-2 flex items-center justify-between gap-2">
         {schema.titre ? (
           <p className="text-sm font-semibold text-dj-texte">{schema.titre}</p>
@@ -208,7 +209,7 @@ export function SchemaGeometrique({ code }: { code: string }) {
             })
           }
           aria-label="Télécharger le schéma en image"
-          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-dj-texte-muet hover:text-dj-texte focus-visible:!opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/nu:opacity-100 focus-within:!opacity-100 transition-opacity"
         >
           {telecharge ? (
             <>
