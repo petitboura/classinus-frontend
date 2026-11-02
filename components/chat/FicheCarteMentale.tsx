@@ -44,10 +44,9 @@ function construireDefinition(fiche: FicheCarteMentaleData): string {
   return lignes.join("\n");
 }
 
-// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function FicheCarteMentale({ fiche }: { fiche: FicheCarteMentaleData }) {
   return (
-    <div className="my-3 animate-dj-fade-in">
+    <div className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur text-dj-accent-1-texte">
           <Network size={14} />

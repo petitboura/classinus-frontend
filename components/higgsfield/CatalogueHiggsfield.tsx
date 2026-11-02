@@ -250,7 +250,13 @@ export function CatalogueHiggsfield() {
         génération directement avec tes images et vidéos.
       </p>
       {filtresOuverts && (
-        <div className="flex animate-dj-fade-in-rapide flex-col gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
+        // Le panneau reste visible en haut de la zone qui défile, où que l'on soit dans la liste.
+        // Fond du thème à 92 % avec flou : la transparence Tailwind (bg-dj-surface/90) ne s'applique
+        // pas aux couleurs du thème, qui sont des variables CSS.
+        <div
+          className="sticky top-2 z-20 flex max-h-[70dvh] animate-dj-fade-in-rapide flex-col gap-3 overflow-y-auto overscroll-contain rounded-xl border border-dj-bordure px-4 py-3 shadow-lg backdrop-blur-md"
+          style={{ backgroundColor: "color-mix(in srgb, var(--dj-surface) 92%, transparent)" }}
+        >
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex w-full max-w-md items-center">
               <Search className="pointer-events-none absolute left-3 h-4 w-4 text-dj-texte-muet" />

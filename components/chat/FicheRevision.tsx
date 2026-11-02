@@ -89,7 +89,7 @@ type Fiche =
 
 function EtatChargement({ texte }: { texte: string }) {
   return (
-    <div className="my-3 flex h-20 items-center gap-2 text-xs text-dj-texte-muet">
+    <div className="my-3 flex h-20 items-center gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 text-xs text-dj-texte-muet">
       <span className="h-2 w-2 animate-dj-glow rounded-full bg-dj-texte-muet" />
       {texte}
     </div>
@@ -98,7 +98,7 @@ function EtatChargement({ texte }: { texte: string }) {
 
 function EtatErreur({ texte }: { texte: string }) {
   return (
-    <div className="my-3 flex h-20 items-center gap-2 text-xs text-dj-texte-muet">
+    <div className="my-3 flex h-20 items-center gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 text-xs text-dj-texte-muet">
       <span className="text-[var(--dj-erreur)]">Fiche invalide :</span> {texte}
     </div>
   );
@@ -141,7 +141,6 @@ function rendreContenuFiche(fiche: Fiche): { valide: boolean; noeud: ReactNode }
   }
 }
 
-// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function FicheRevision({ code }: { code: string }) {
   const [fiche, setFiche] = useState<Fiche | null>(() => memoireFiches.lire(code) ?? null);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -180,8 +179,8 @@ export function FicheRevision({ code }: { code: string }) {
   // Le bouton est dans une ligne au-dessus de la fiche (jamais dans la zone
   // capturée) : on capture la carte elle-même, pas son parent.
   return (
-    <div className="group/nu relative">
-      <div className="absolute right-0 top-3 z-10 flex justify-end [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/nu:opacity-100 focus-within:!opacity-100 transition-opacity">
+    <div>
+      <div className="-mb-1 mt-3 flex justify-end">
         <BoutonTelechargerImage
           exporter={() =>
             telechargerImageElement(
