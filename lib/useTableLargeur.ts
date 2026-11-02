@@ -31,7 +31,9 @@ export function useTableLargeur(
   table: RefObject<HTMLTableElement | null>,
   boite: RefObject<HTMLElement | null>,
   piste: RefObject<HTMLElement | null>,
+  options: { elargir?: boolean } = {},
 ) {
+  const elargir = options.elargir !== false;
   useLayoutEffect(() => {
     const t = table.current;
     const b = boite.current;
@@ -67,7 +69,7 @@ export function useTableLargeur(
 
       const largeurColonne = b.clientWidth;
       const nbColonnes = t.rows[0]?.cells.length ?? 0;
-      const peutElargir = nbColonnes > COLONNES_AVANT_ELARGISSEMENT;
+      const peutElargir = elargir && nbColonnes > COLONNES_AVANT_ELARGISSEMENT;
 
       let extraMax = 0;
       if (peutElargir) {
@@ -109,5 +111,5 @@ export function useTableLargeur(
       observateur.disconnect();
       p.removeEventListener("scroll", majFondu);
     };
-  }, [table, boite, piste]);
+  }, [table, boite, piste, elargir]);
 }

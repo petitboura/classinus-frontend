@@ -7,10 +7,9 @@ import type { FicheDatesData } from "./FicheRevision";
 // général, le schéma JSON complet et ce qui est hors scope). Affiche une
 // fiche de dates sous forme de chronologie : une liste de
 // { date, texte, description? }, reliée par une ligne verticale.
-// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function FicheDates({ fiche }: { fiche: FicheDatesData }) {
   return (
-    <div className="my-3 animate-dj-fade-in">
+    <div className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur text-dj-accent-1-texte">
           <CalendarDays size={14} />
@@ -23,7 +22,7 @@ export function FicheDates({ fiche }: { fiche: FicheDatesData }) {
             {index < fiche.evenements.length - 1 && (
               <span className="absolute left-[6px] top-4 h-full w-px bg-dj-bordure" />
             )}
-            <span className="relative z-10 mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-dj-accent-1 bg-dj-fond" />
+            <span className="relative z-10 mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-dj-accent-1 bg-dj-surface" />
             <div>
               <p className="text-xs font-semibold text-dj-accent-1-texte">{evt.date}</p>
               <p className="mt-0.5 text-sm text-dj-texte">{evt.texte}</p>

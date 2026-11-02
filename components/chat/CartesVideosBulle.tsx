@@ -34,7 +34,7 @@ function idDeLaVideo(video: VideoTrouvee): string | null {
 
 function LecteurSurPlace({ idVideo, titre, onFermer }: { idVideo: string; titre: string; onFermer: () => void }) {
   return (
-    <div className="relative aspect-video w-full animate-dj-fade-in-rapide overflow-hidden rounded-xl bg-black">
+    <div className="relative aspect-video w-full animate-dj-fade-in-rapide overflow-hidden bg-black">
       <iframe
         src={`https://www.youtube.com/embed/${idVideo}?autoplay=1`}
         title={titre}
@@ -55,7 +55,6 @@ function LecteurSurPlace({ idVideo, titre, onFermer }: { idVideo: string; titre:
   );
 }
 
-// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function CartesVideosBulle({ videos }: { videos?: VideoTrouvee[] }) {
   const [idEnLecture, setIdEnLecture] = useState<string | null>(null);
 
@@ -73,7 +72,7 @@ export function CartesVideosBulle({ videos }: { videos?: VideoTrouvee[] }) {
         return (
           <div
             key={id}
-            className="w-72 shrink-0 snap-start sm:w-80"
+            className="w-72 shrink-0 snap-start overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface sm:w-80"
           >
             {enLecture ? (
               <LecteurSurPlace idVideo={id} titre={video.titre} onFermer={() => setIdEnLecture(null)} />
@@ -82,7 +81,7 @@ export function CartesVideosBulle({ videos }: { videos?: VideoTrouvee[] }) {
                 type="button"
                 onClick={() => setIdEnLecture(id)}
                 aria-label={`Lire la vidéo : ${video.titre}`}
-                className="group relative block aspect-video w-full overflow-hidden rounded-xl bg-black"
+                className="group relative block aspect-video w-full overflow-hidden bg-black"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -103,7 +102,7 @@ export function CartesVideosBulle({ videos }: { videos?: VideoTrouvee[] }) {
                 )}
               </button>
             )}
-            <div className="py-2">
+            <div className="px-2.5 py-2">
               <p className="line-clamp-2 break-words text-sm font-medium leading-snug text-dj-texte">{video.titre}</p>
               {video.chaine && <p className="mt-0.5 truncate text-xs text-dj-texte-muet">{video.chaine}</p>}
             </div>
