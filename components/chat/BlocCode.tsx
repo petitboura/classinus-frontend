@@ -186,9 +186,9 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
   }
 
   const blocPre = (
-    <pre className="whitespace-pre-wrap px-4 py-3 font-mono text-[13px] leading-relaxed [overflow-wrap:anywhere]">
+    <pre className="overflow-x-auto whitespace-pre px-4 py-3 font-code text-[13px] leading-relaxed">
       <code
-        className={`hljs whitespace-pre-wrap language-${langage || "plaintext"}`}
+        className={`hljs whitespace-pre language-${langage || "plaintext"}`}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </pre>
@@ -303,7 +303,7 @@ export function BlocCode({ langage, code, conversationId }: { langage: string; c
 
   return (
     <div className="dj-bloc-code group/code relative my-3 animate-dj-fade-in rounded-xl border border-dj-bordure bg-dj-surface">
-      <div ref={topRowRef} className="flex items-center justify-between overflow-hidden rounded-t-xl border-b border-dj-bordure px-3 py-1.5">
+      <div ref={topRowRef} className="flex items-center justify-between overflow-hidden rounded-t-xl px-3 py-1.5">
         <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
           {langage || "texte"}
         </span>
