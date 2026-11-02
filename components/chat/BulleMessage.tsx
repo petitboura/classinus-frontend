@@ -1204,8 +1204,8 @@ function BulleMessageInterne({
           className="grid transition-[grid-template-rows] duration-300 ease-in-out"
           style={{ gridTemplateRows: message.enRepli ? "0fr" : "1fr" }}
         >
-          {/* 20/09/2026, bug signalé par Bourama (blocs larges, voir
-              BlocLarge.tsx) : ce découpage rognait aussi les côtés, donc
+          {/* 20/09/2026, bug signalé par Bourama (blocs larges, retirés
+              depuis) : ce découpage rognait aussi les côtés, donc
               tout tableau ou bloc élargi hors de la colonne de texte était
               coupé (colonne de gauche invisible). inset(0 -100vw) ne
               découpe plus que le haut et le bas, ce qui suffit à l'animation
