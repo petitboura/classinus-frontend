@@ -177,8 +177,7 @@ export function FicheRevision({ code }: { code: string }) {
   if (!valide) return <>{noeud}</>;
 
   // Le bouton est dans une ligne au-dessus de la fiche (jamais dans la zone
-  // capturée) : la carte mentale s'élargit hors de la colonne du chat (voir
-  // BlocLarge.tsx), donc on capture la carte elle-même, pas son parent.
+  // capturée) : on capture la carte elle-même, pas son parent.
   return (
     <div>
       <div className="-mb-1 mt-3 flex justify-end">
