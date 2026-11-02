@@ -83,6 +83,10 @@ const config: Config = {
         display: ["var(--font-fraunces)", "serif"],
         sans: ["var(--font-inter)", "sans-serif"],
         mono: ["var(--font-jetbrains-mono)", "monospace"],
+        // 02/11/2026 : police des blocs de code du chat uniquement (BlocCode,
+        // FichierCode), choisie par Bourama d'après une capture. Le reste de
+        // l'appli garde font-mono.
+        code: ["var(--font-code)", "ui-monospace", "monospace"],
         // Corps des réponses de l'IA uniquement (09/08, façon Claude) --
         // voir commentaire dans app/layout.tsx. Non concerné par le
         // changement de palette/typo UI du 17/08.

@@ -96,7 +96,7 @@ export function FichierCode({ href, nom }: { href: string; nom: string }) {
         erreur ? (
           <p className="px-1 py-4 text-center text-xs text-dj-texte-muet">Aperçu indisponible, utilise Télécharger.</p>
         ) : contenu !== null ? (
-          <pre className="whitespace-pre-wrap rounded-lg bg-[var(--dj-fond)] px-4 py-3 font-mono text-[13px] leading-relaxed [overflow-wrap:anywhere]">
+          <pre className="overflow-x-auto whitespace-pre rounded-lg bg-[var(--dj-fond)] px-4 py-3 font-code text-[13px] leading-relaxed">
             <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} />
           </pre>
         ) : null
