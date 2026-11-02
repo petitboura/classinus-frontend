@@ -10,7 +10,7 @@ export function EnTeteApp() {
   if (!titre) return null;
   const rubrique = infoId ? trouverRubriqueAide(infoId) : undefined;
   return (
-    <header className="flex h-[calc(2.5rem_+_var(--safe-top,0px))] shrink-0 items-center gap-1.5 border-b border-dj-bordure bg-dj-fond px-4 pb-1 pt-[calc(0.5rem_+_var(--safe-top,0px))] pl-8 pr-20 md:pl-4">
+    <header className={`flex h-[calc(2.5rem_+_var(--safe-top,0px))] shrink-0 items-center gap-1.5 border-b border-dj-bordure bg-dj-fond px-4 pb-1 pt-[calc(0.5rem_+_var(--safe-top,0px))] pl-8 md:pl-4 ${action ? "pr-28" : "pr-20"}`}>
       {retour && <BoutonRetour href={retour} padding="p-1" className="-ml-1" />}
       <h1 className="truncate font-display text-xl font-bold text-dj-texte">{titre}</h1>
       {rubrique && (
