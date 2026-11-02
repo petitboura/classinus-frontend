@@ -15,9 +15,9 @@ import { useTableLargeur } from "@/lib/useTableLargeur";
 // fiche de révision, pas des données tabulaires à explorer.
 //
 // Regle de lisibilite (lib/lisibilite.ts), la meme que TableauMessage : le
-// tableau n'a pas de cartes. Texte des cases a la ligne, plus petit quand il y a
-// beaucoup de colonnes ; au dela de 7 colonnes il s'elargit vers les bords puis
-// defile de gauche a droite sans barre (lib/useTableLargeur.ts).
+// tableau n'a pas de cartes a l'interieur. Texte des cases a la ligne, plus petit
+// quand il y a beaucoup de colonnes ; s'il ne tient pas dans le cadre de la fiche
+// il defile de gauche a droite sans barre (lib/useTableLargeur.ts).
 // Style : une seule couleur, pas de cadre exterieur, lignes entre les cases.
 //
 // Correctif en-tetes decales : la premiere colonne (les noms de lignes) a
@@ -26,12 +26,13 @@ import { useTableLargeur } from "@/lib/useTableLargeur";
 // rapport aux valeurs et tous les titres glissent d'un cran vers la droite.
 // Si colonnes a exactement une entree de plus que le plus grand nombre de
 // valeurs, la premiere entree devient le titre de la colonne des noms.
-// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function FicheTableauComparatif({ fiche }: { fiche: FicheTableauComparatifData }) {
   const boiteRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const pisteRef = useRef<HTMLDivElement>(null);
-  useTableLargeur(tableRef, boiteRef, pisteRef);
+  // Dans la fiche, le tableau reste dans le cadre : il defile s'il ne tient pas,
+  // mais ne s'elargit jamais vers les bords.
+  useTableLargeur(tableRef, boiteRef, pisteRef, { elargir: false });
 
   const nbValeurs = fiche.lignes.reduce((max, ligne) => Math.max(max, ligne.valeurs.length), 0);
   const titreLabelFourni = nbValeurs > 0 && fiche.colonnes.length === nbValeurs + 1;
@@ -41,7 +42,7 @@ export function FicheTableauComparatif({ fiche }: { fiche: FicheTableauComparati
   const taille = classeTailleTableau(colonnes.length + 1);
 
   return (
-    <div className="my-3 animate-dj-fade-in">
+    <div className="my-3 animate-dj-fade-in rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur text-dj-accent-1-texte">
           <Table2 size={14} />
