@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, Children, isValidElement, ReactNode } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { classeTailleTableau } from "@/lib/lisibilite";
-import { useTableSansDebordement } from "@/lib/useTableSansDebordement";
+import { useTableLargeur } from "@/lib/useTableLargeur";
 
 // Remplace le <table> par défaut de ReactMarkdown (issu de remarkGfm) pour
 // permettre le tri par colonne -- seul point du bloc "Tableaux de
@@ -23,21 +23,25 @@ function texteDe(node: ReactNode): string {
   return "";
 }
 
-// Le tableau reste toujours dans la colonne du texte : pas de defilement
-// horizontal, pas d'elargissement, pas de cartes, pas d'en-tete colle. Le texte
-// des cases passe a la ligne et diminue quand il y a beaucoup de colonnes (voir
-// lib/lisibilite.ts). Style : une seule couleur, pas de cadre exterieur, seules
-// les lignes entre les cases restent (voir .dj-table-chat dans globals.css).
+// Pas de cartes, pas d'en-tete colle. Le texte des cases passe a la ligne et
+// diminue quand il y a beaucoup de colonnes (voir lib/lisibilite.ts). Au dela
+// de 7 colonnes le tableau s'elargit vers les bords, et s'il ne tient toujours
+// pas il defile de gauche a droite sans barre (voir lib/useTableLargeur.ts).
+// Style : une seule couleur, pas de cadre exterieur, seules les lignes entre
+// les cases restent (voir .dj-table-chat dans globals.css).
 function TableConteneur({ enfants, taille }: { enfants: ReactNode; taille: string }) {
   const boiteRef = useRef<HTMLDivElement>(null);
+  const pisteRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  useTableSansDebordement(tableRef, boiteRef);
+  useTableLargeur(tableRef, boiteRef, pisteRef);
 
   return (
-    <div ref={boiteRef} className={`my-2 overflow-hidden ${taille}`}>
-      <table ref={tableRef} className="dj-table-chat">
-        {enfants}
-      </table>
+    <div ref={boiteRef} className={`my-2 ${taille}`}>
+      <div ref={pisteRef} className="dj-table-piste">
+        <table ref={tableRef} className="dj-table-chat">
+          {enfants}
+        </table>
+      </div>
     </div>
   );
 }
