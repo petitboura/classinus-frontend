@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { RailVisionneur } from "@/components/higgsfield/RailVisionneur";
 
 function libelleType(effet: EffetHiggsfield) {
   return effet.type === "video-to-video"
@@ -78,7 +79,7 @@ function DiapoEffet({
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-4 pb-[calc(1.25rem+var(--safe-bottom,0px))] pt-24 sm:px-5 sm:pb-[calc(1.5rem+var(--safe-bottom,0px))]">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent pl-4 pr-14 pb-[calc(1.25rem+var(--safe-bottom,0px))] pt-24 sm:px-5 sm:pb-[calc(1.5rem+var(--safe-bottom,0px))]">
         <div className="pointer-events-auto flex w-full max-w-xl flex-col items-start gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-black">
@@ -127,11 +128,13 @@ export function VisionneurHiggsfield({
     if (el) el.scrollTop = indexDepart * el.clientHeight;
   }, [indexDepart]);
 
+  // instantane : utilisé quand on fait glisser le curseur de la colonne, où un défilement
+  // animé se battrait avec le doigt ; les flèches et les clics gardent l'animation.
   const scrollerVers = useCallback(
-    (i: number) => {
+    (i: number, instantane = false) => {
       const el = conteneurRef.current;
       if (!el || i < 0 || i >= effets.length) return;
-      el.scrollTo({ top: i * el.clientHeight, behavior: "smooth" });
+      el.scrollTo({ top: i * el.clientHeight, behavior: instantane ? "auto" : "smooth" });
     },
     [effets.length]
   );
@@ -194,20 +197,7 @@ export function VisionneurHiggsfield({
         </button>
       </div>
 
-      <button
-        onClick={() => scrollerVers(indexCourant - 1)}
-        aria-label="Effet précédent"
-        className="pointer-events-auto absolute left-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 md:flex"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <button
-        onClick={() => scrollerVers(indexCourant + 1)}
-        aria-label="Effet suivant"
-        className="pointer-events-auto absolute right-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 md:flex"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
+      <RailVisionneur total={effets.length} index={indexCourant} onAller={scrollerVers} />
 
       <div
         ref={conteneurRef}
@@ -216,19 +206,6 @@ export function VisionneurHiggsfield({
       >
         {effets.map((effet) => (
           <DiapoEffet key={effet.id} effet={effet} sonActif={sonActif} onGenerer={onGenerer} />
-        ))}
-      </div>
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-1.5 pb-[calc(0.75rem+var(--safe-bottom,0px))] pt-6">
-        {effets.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => scrollerVers(i)}
-            aria-label={`Aller à l'effet ${i + 1}`}
-            className={`pointer-events-auto h-1.5 rounded-full transition-all duration-300 ${
-              i === indexCourant ? "w-6 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
-            }`}
-          />
         ))}
       </div>
     </div>
