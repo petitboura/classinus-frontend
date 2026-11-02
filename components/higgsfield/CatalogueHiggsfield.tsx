@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Play, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { Play, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { VisionneurHiggsfield } from "@/components/higgsfield/VisionneurHiggsfield";
-import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
+import { PanneauGenererHiggsfield } from "@/components/higgsfield/GenererHiggsfield";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
 import { useDefinirActionEnTete } from "@/lib/contexteEnTete";
 
@@ -47,7 +47,6 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
   const [survolActif, setSurvolActif] = useState(false);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
 
-  // 1. apparition entree (fade-in)
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -64,7 +63,6 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
     return () => obs.disconnect();
   }, []);
 
-  // 2. autoplay quand la video entre a l'ecran, pause quand elle sort (comme higgsfield.ai)
   useEffect(() => {
     if (!isVideo || mediaError) return;
     const v = videoRef.current;
@@ -80,7 +78,6 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
     return () => obs.disconnect();
   }, [isVideo, mediaError]);
 
-  // 3. son direct au survol (desktop) — mute par defaut, unmute au hover
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !isVideo || mediaError) return;
@@ -110,7 +107,6 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
       }`}
     >
-      {/* video full-bleed prend toute la carte */}
       {!mediaError ? (
         isVideo ? (
           <video
@@ -147,12 +143,10 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
         </div>
       )}
 
-      {/* badge type en haut */}
       <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white backdrop-blur">
         {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
       </span>
 
-      {/* fond transparent : degrade noir leger pour lisibilite */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-12 sm:px-3.5 sm:pb-3.5">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
@@ -168,7 +162,6 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
         </div>
       </div>
 
-      {/* bouton generer flottant */}
       {!mediaError && (
         <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white/95 px-3 py-2 text-[11px] font-bold leading-none text-black shadow backdrop-blur">
           <Sparkles className="h-3.5 w-3.5" />
@@ -179,14 +172,21 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
   );
 }
 
+function normaliser(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 export function CatalogueHiggsfield() {
-  const ouvrirChat = useOuvrirChatAvecTexte();
   const [typeFiltre, setTypeFiltre] = useState<string>("tous");
   const [styleFiltre, setStyleFiltre] = useState<string>("tous");
   const [filtresOuverts, setFiltresOuverts] = useState(false);
+  const [recherche, setRecherche] = useState("");
 
-  const actif = typeFiltre !== "tous" || styleFiltre !== "tous";
-  const badgeFiltres = [typeFiltre, styleFiltre].filter((v) => v !== "tous").length;
+  const actif = typeFiltre !== "tous" || styleFiltre !== "tous" || recherche.trim() !== "";
+  const badgeFiltres = [typeFiltre, styleFiltre].filter((v) => v !== "tous").length + (recherche.trim() ? 1 : 0);
 
   const boutonFiltres = useMemo(
     () => (
@@ -215,51 +215,92 @@ export function CatalogueHiggsfield() {
 
   useDefinirActionEnTete(boutonFiltres);
 
-
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
-  const filtres = useMemo(
-    () =>
-      EFFETS_HIGGSFIELD.filter((e) => {
-        const okType = typeFiltre === "tous" || e.type === typeFiltre;
-        const okStyle = styleFiltre === "tous" || e.style === styleFiltre;
-        return okType && okStyle;
-      }),
-    [typeFiltre, styleFiltre]
-  );
-  function generer(effet: EffetHiggsfield) {
+  const [effetAGenerer, setEffetAGenerer] = useState<EffetHiggsfield | null>(null);
+
+  const filtres = useMemo(() => {
+    const q = normaliser(recherche.trim());
+    return EFFETS_HIGGSFIELD.filter((e) => {
+      const okType = typeFiltre === "tous" || e.type === typeFiltre;
+      const okStyle = styleFiltre === "tous" || e.style === styleFiltre;
+      if (!okType || !okStyle) return false;
+      if (!q) return true;
+      const hay = normaliser([e.nom, e.description, e.badge || "", e.style, e.type, e.id].join(" "));
+      return hay.includes(q);
+    });
+  }, [typeFiltre, styleFiltre, recherche]);
+
+  function ouvrirGenerer(effet: EffetHiggsfield) {
     setIndexVisionneur(null);
-    const besoin =
-      effet.type === "image"
-        ? "une image"
-        : effet.type === "image-to-video"
-          ? "une image"
-          : effet.type === "video-to-video"
-            ? "une vidéo"
-            : "un avatar / une image";
-    ouvrirChat(effet.promptChat + "\n\nFormat: " + effet.type + " · Modèle: " + effet.modele + "\nBesoin pour démarrer: " + besoin);
+    setEffetAGenerer(effet);
   }
+
   return (
     <div className="flex flex-col gap-4 py-4 md:py-6">
-      <div className="flex flex-col gap-1 rounded-[20px] border border-dj-bordure bg-dj-surface px-4 py-3.5">
-        <span className="inline-flex w-fit items-center rounded-full bg-dj-texte px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-dj-fond">
-          BIENTÔT DISPONIBLE
-        </span>
-        <p className="text-sm leading-relaxed text-dj-texte-muet">
-          La génération arrive bientôt. En attendant, explore le catalogue et ouvre un effet en plein écran pour préparer ton idée.
-        </p>
-      </div>
       <p className="max-w-2xl text-sm leading-relaxed text-dj-texte-muet">
-        Filtre par type et style, clique sur un effet pour l&apos;ouvrir en plein écran, scrolle de vidéo en
-        vidéo, puis Générer t&apos;envoie au chat.
+        Explore les effets Higgsfield, filtre par type et style, ouvre en plein écran pour comparer, puis lance la
+        génération directement avec tes images et vidéos.
       </p>
       {filtresOuverts && (
-        <div className="flex flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
+        <div className="flex animate-dj-fade-in-rapide flex-col gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative flex w-full max-w-md items-center">
+              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-dj-texte-muet" />
+              <input
+                value={recherche}
+                onChange={(e) => setRecherche(e.target.value)}
+                placeholder="Rechercher un effet…"
+                className="h-10 w-full rounded-full border border-dj-bordure bg-dj-fond py-2 pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-dj-texte-muet focus:border-dj-texte"
+              />
+              {recherche ? (
+                <button
+                  type="button"
+                  onClick={() => setRecherche("")}
+                  aria-label="Effacer la recherche"
+                  className="absolute right-1 flex h-8 w-8 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+            <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
+              {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${EFFETS_HIGGSFIELD.length} au total`}
+            </span>
+          </div>
           <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
           <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
+          {actif ? (
+            <button
+              type="button"
+              onClick={() => {
+                setRecherche("");
+                setTypeFiltre("tous");
+                setStyleFiltre("tous");
+              }}
+              className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              Réinitialiser les filtres
+            </button>
+          ) : null}
         </div>
       )}
       {filtres.length === 0 ? (
-        <p className="py-12 text-center text-sm text-dj-texte-muet">Aucun effet pour ces filtres.</p>
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <p className="text-sm font-semibold text-dj-texte">Aucun effet pour ces filtres</p>
+          <p className="max-w-md text-sm leading-relaxed text-dj-texte-muet">
+            Essaie un autre mot-clé ou réinitialise les filtres pour revoir tout le catalogue.
+          </p>
+          <button
+            onClick={() => {
+              setRecherche("");
+              setTypeFiltre("tous");
+              setStyleFiltre("tous");
+            }}
+            className="mt-1 inline-flex min-h-10 items-center justify-center rounded-full bg-dj-texte px-5 py-2 text-sm font-bold text-dj-fond transition-transform duration-200 active:scale-95"
+          >
+            Tout afficher
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {filtres.map((e, i) => (
@@ -267,13 +308,18 @@ export function CatalogueHiggsfield() {
           ))}
         </div>
       )}
+
       {indexVisionneur !== null && filtres[indexVisionneur] ? (
         <VisionneurHiggsfield
           effets={filtres}
           indexDepart={indexVisionneur}
           onClose={() => setIndexVisionneur(null)}
-          onGenerer={generer}
+          onGenerer={ouvrirGenerer}
         />
+      ) : null}
+
+      {effetAGenerer ? (
+        <PanneauGenererHiggsfield effet={effetAGenerer} onClose={() => setEffetAGenerer(null)} />
       ) : null}
     </div>
   );
