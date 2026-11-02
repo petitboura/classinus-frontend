@@ -38,6 +38,7 @@ export function typeMedia(href: string, texteLien?: string): "audio" | "video" |
 // même avec un lien qui fonctionne. Pas de vrai correctif possible côté
 // lecteur HTML5 pur (demanderait une conversion serveur) ; le bouton
 // télécharger ci-dessous reste la solution de repli fiable dans ce cas.
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function LecteurMedia({ href, type }: { href: string; type: "audio" | "video" }) {
   // 11/10/2026, demande Bourama : un fichier d'un site externe passe par le
   // relais (voir useLienRelaisExterne), comme les autres fichiers du chat. Le
@@ -103,7 +104,7 @@ export function LecteurMedia({ href, type }: { href: string; type: "audio" | "vi
   }
 
   return (
-    <span className="my-2 block animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface p-2">
+    <span className="my-2 block animate-dj-fade-in overflow-hidden rounded-xl">
       <span className="flex items-center gap-2">
         {type === "audio" ? (
           <audio controls src={source} onError={surErreur} style={{ colorScheme: "dark" }} className="w-full" />

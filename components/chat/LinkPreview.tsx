@@ -109,6 +109,7 @@ const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: bool
 // donné. Les vignettes YouTube gardent le titre de la vidéo et la ligne de la chaîne.
 // `detaille` (aperçu ouvert au clic) : description en entier, et titre
 // d'origine du site en petit s'il diffère de celui du modèle.
+// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function LinkPreview({
   href,
   texteLien,
@@ -212,7 +213,7 @@ export function LinkPreview({
   if (!charge) {
     if (compact) {
       return (
-        <span className="my-2 flex h-20 w-full max-w-sm items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-3">
+        <span className="my-2 flex h-20 w-full max-w-sm items-center gap-3">
           <Skeleton as="span" className="h-14 w-14 shrink-0 rounded-lg" />
           <span className="flex-1 space-y-2">
             <Skeleton as="span" className="block h-3 w-3/4 rounded" />
@@ -222,15 +223,15 @@ export function LinkPreview({
       );
     }
     return idVideo ? (
-      <span className="my-2 block w-full max-w-md overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface">
+      <span className="my-2 block w-full overflow-hidden rounded-xl">
         <Skeleton as="span" className="block aspect-video w-full" />
-        <span className="block space-y-2 p-3">
+        <span className="block space-y-2 pt-3">
           <Skeleton as="span" className="block h-3.5 w-3/4 rounded" />
           <Skeleton as="span" className="block h-3 w-1/3 rounded" style={{ animationDelay: "150ms" }} />
         </span>
       </span>
     ) : (
-      <span className="my-2 flex h-24 w-full max-w-md items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-3">
+      <span className="my-2 flex h-24 w-full max-w-md items-center gap-3">
         <Skeleton as="span" className="h-20 w-20 shrink-0 rounded-lg" />
         <span className="flex-1 space-y-2">
           <Skeleton as="span" className="block h-3.5 w-3/4 rounded" />
@@ -247,9 +248,9 @@ export function LinkPreview({
     // LecteurYoutubeInline pour revenir à la miniature.
     if (idVideo && enLecture) {
       return (
-        <span className="my-2 block w-full max-w-sm animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface">
+        <span className="my-2 block w-full max-w-sm animate-dj-fade-in overflow-hidden rounded-xl">
           <LecteurYoutubeInline idVideo={idVideo} onFermer={() => setEnLecture(false)} />
-          <span className="block truncate p-2 text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
+          <span className="block truncate pt-2 text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
         </span>
       );
     }
@@ -257,7 +258,7 @@ export function LinkPreview({
       <span className="group/lien relative my-2 block w-full max-w-sm animate-dj-fade-in">
       <button
         onClick={() => (idVideo ? setEnLecture(true) : traiterLienSortant(href, { titre: apercu?.titre || texteLien }))}
-        className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
+        className="flex w-full items-center gap-3 rounded-xl text-left transition-opacity hover:opacity-80"
       >
         {apercu!.image && (
           <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-dj-surface-haute">
@@ -295,9 +296,9 @@ export function LinkPreview({
     // pleine largeur, directement dans le fil de la conversation.
     if (enLecture) {
       return (
-        <span className="my-2 block w-full max-w-md animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface">
+        <span className="my-2 block w-full animate-dj-fade-in overflow-hidden rounded-xl">
           <LecteurYoutubeInline idVideo={idVideo} onFermer={() => setEnLecture(false)} />
-          <span className="block p-3">
+          <span className="block pt-2">
             <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
             <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
           </span>
@@ -305,13 +306,13 @@ export function LinkPreview({
       );
     }
     return (
-      <span className="group/lien relative my-2 block w-full max-w-md animate-dj-fade-in">
+      <span className="group/lien relative my-2 block w-full animate-dj-fade-in">
       <button
         onClick={() => setEnLecture(true)}
-        className="block w-full overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface text-left transition-colors hover:border-dj-bordure-forte"
+        className="block w-full text-left transition-opacity hover:opacity-90"
       >
         {apercu!.image && (
-          <span className="relative block aspect-video w-full overflow-hidden bg-dj-surface-haute">
+          <span className="relative block aspect-video w-full overflow-hidden rounded-xl bg-dj-surface-haute">
             {/* eslint-disable-next-line @next/next/no-img-element -- miniature YouTube externe, pas un asset local */}
             <img src={apercu!.image} alt="" className="h-full w-full object-cover" />
             <span className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -321,7 +322,7 @@ export function LinkPreview({
             </span>
           </span>
         )}
-        <span className="block p-3">
+        <span className="block pt-2">
           <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
           <span className="block truncate text-[12px] text-dj-texte-muet">{apercu!.description}</span>
         </span>
@@ -339,7 +340,7 @@ export function LinkPreview({
       rel="noopener noreferrer"
       data-titre-lien={titreDuModele}
       data-description-lien={descriptionLien}
-      className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2.5 no-underline transition-colors hover:border-dj-bordure-forte"
+      className="flex w-full items-center gap-3 rounded-xl no-underline transition-opacity hover:opacity-80"
     >
       {apercu!.image && (
         <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-dj-surface-haute">

@@ -255,7 +255,7 @@ function ImageGenereeChip({
     <>
       <button
         onClick={() => setOuverte(true)}
-        className="my-2 block max-h-96 overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface"
+        className="my-2 block max-h-96 overflow-hidden rounded-xl"
         aria-label={`Agrandir ${nom}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique (fichier généré), pas un asset local optimisable */}
