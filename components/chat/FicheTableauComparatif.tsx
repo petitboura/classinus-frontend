@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { Table2 } from "lucide-react";
 import type { FicheTableauComparatifData } from "./FicheRevision";
 import { classeTailleTableau } from "@/lib/lisibilite";
-import { useTableSansDebordement } from "@/lib/useTableSansDebordement";
+import { useTableLargeur } from "@/lib/useTableLargeur";
 
 // Sous-composant de FicheRevision.tsx (voir ce fichier pour le contexte
 // général, le schéma JSON complet et ce qui est hors scope). Affiche un
@@ -15,8 +15,9 @@ import { useTableSansDebordement } from "@/lib/useTableSansDebordement";
 // fiche de révision, pas des données tabulaires à explorer.
 //
 // Regle de lisibilite (lib/lisibilite.ts), la meme que TableauMessage : le
-// tableau reste dans la colonne, jamais de defilement horizontal ni de cartes.
-// Texte des cases a la ligne, plus petit quand il y a beaucoup de colonnes.
+// tableau n'a pas de cartes. Texte des cases a la ligne, plus petit quand il y a
+// beaucoup de colonnes ; au dela de 7 colonnes il s'elargit vers les bords puis
+// defile de gauche a droite sans barre (lib/useTableLargeur.ts).
 // Style : une seule couleur, pas de cadre exterieur, lignes entre les cases.
 //
 // Correctif en-tetes decales : la premiere colonne (les noms de lignes) a
@@ -29,7 +30,8 @@ import { useTableSansDebordement } from "@/lib/useTableSansDebordement";
 export function FicheTableauComparatif({ fiche }: { fiche: FicheTableauComparatifData }) {
   const boiteRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  useTableSansDebordement(tableRef, boiteRef);
+  const pisteRef = useRef<HTMLDivElement>(null);
+  useTableLargeur(tableRef, boiteRef, pisteRef);
 
   const nbValeurs = fiche.lignes.reduce((max, ligne) => Math.max(max, ligne.valeurs.length), 0);
   const titreLabelFourni = nbValeurs > 0 && fiche.colonnes.length === nbValeurs + 1;
@@ -46,7 +48,8 @@ export function FicheTableauComparatif({ fiche }: { fiche: FicheTableauComparati
         </span>
         <p className="text-sm font-semibold text-dj-texte">{fiche.titre || "Tableau comparatif"}</p>
       </div>
-      <div ref={boiteRef} className={`overflow-hidden ${taille}`}>
+      <div ref={boiteRef} className={taille}>
+        <div ref={pisteRef} className="dj-table-piste">
         <table ref={tableRef} className="dj-table-chat">
           <thead>
             <tr>
@@ -71,6 +74,7 @@ export function FicheTableauComparatif({ fiche }: { fiche: FicheTableauComparati
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

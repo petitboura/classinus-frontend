@@ -765,13 +765,22 @@ html[data-ouverture-vue="1"] #clovis-splash {
 .dj-table-chat tr > :last-child {
   border-right: 0;
 }
-/* Mode serre, voir lib/useTableSansDebordement.ts */
-.dj-table-chat[data-serre="1"] {
-  table-layout: fixed;
+/* Piste du tableau, voir lib/useTableLargeur.ts. Quand le tableau ne tient pas,
+   seule la piste defile de gauche a droite : pas de barre, un fondu sur les
+   bords (les variables --fondu-g et --fondu-d suivent le defilement). */
+.dj-table-piste {
+  position: relative;
 }
-.dj-table-chat[data-serre="1"] th,
-.dj-table-chat[data-serre="1"] td {
-  overflow-wrap: anywhere;
+.dj-table-piste[data-defile="1"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fondu-g, 0px), #000 calc(100% - var(--fondu-d, 24px)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--fondu-g, 0px), #000 calc(100% - var(--fondu-d, 24px)), transparent 100%);
+}
+.dj-table-piste[data-defile="1"]::-webkit-scrollbar {
+  display: none;
 }
 
 /* Diagrammes Mermaid : coins arrondis sur les boites (noeuds, groupes,
