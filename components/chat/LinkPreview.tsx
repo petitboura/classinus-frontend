@@ -123,7 +123,7 @@ function LienSouligne({
       rel="noopener noreferrer"
       data-titre-lien={titreDuModele}
       data-description-lien={descriptionLien}
-      className="break-words text-dj-accent-1-texte underline underline-offset-2 transition-opacity hover:opacity-80"
+      className="break-words text-dj-texte-muet underline transition-colors hover:text-dj-texte"
     >
       {texteLien}
     </a>

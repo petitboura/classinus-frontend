@@ -196,7 +196,7 @@ components/
                           (lib/useLienRelaisExterne.ts) ; si la lecture échoue, il retente avec l'adresse
                           d'origine puis affiche une carte de téléchargement
   chat/LinkPreview.tsx    lien du chat. Depuis le 03/11/2026, dans le texte du chat, un lien est un simple lien
-                          souligné dans la couleur de Classinus (plus de carte). La carte (aperçu du site) ne
+                          souligné, gris discret qui devient blanc au survol (plus de carte ; un lien encore incomplet pendant la génération est masqué, voir masquerFinLienIncomplet). La carte (aperçu du site) ne
                           s'affiche que dans l'aperçu ouvert au clic ; la vignette YouTube est inchangée. Le texte
                           du lien markdown écrit par le modèle devient le titre de la carte et l'attribut title
                           ([Titre](url "Description")) sa description (en entier dans l'aperçu ouvert au clic) ;
