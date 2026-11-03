@@ -68,11 +68,11 @@ npm run build:capacitor
 npm run build:capacitor:test
 ```
 
-Ces scripts construisent l’export statique puis exécutent la synchronisation Capacitor. La compilation finale Android/iOS se fait ensuite dans les outils natifs. La seconde commande utilise la cible de test prévue par `next.config.mjs).
+Ces scripts construisent l’export statique puis exécutent la synchronisation Capacitor. La compilation finale Android/iOS se fait ensuite dans les outils natifs. La seconde commande utilise la cible de test prévue par `next.config.mjs`.
 
 ## Repères en cas de problème
 
-- API inaccessible : vérifier `NEXT_PUBLIC_API_URL), puis le service backend.
+- API inaccessible : vérifier `NEXT_PUBLIC_API_URL`, puis le service backend.
 - Authentification : vérifier l’URL et la clé publique Supabase de l’environnement.
 - Différence Web / mobile : vérifier les conditions `CAPACITOR_BUILD` dans `next.config.mjs`.
 - Différence Web / Windows : vérifier les extensions Capacitor locales et la couche Electron.
