@@ -195,11 +195,12 @@ components/
   chat/LecteurMedia.tsx   lecteur audio et vidéo du chat. Un fichier d'un site externe passe par le relais
                           (lib/useLienRelaisExterne.ts) ; si la lecture échoue, il retente avec l'adresse
                           d'origine puis affiche une carte de téléchargement
-  chat/LinkPreview.tsx    carte d'un lien du chat (aperçu du site, vignette YouTube). Depuis le 12/10/2026, le texte
+  chat/LinkPreview.tsx    lien du chat. Depuis le 03/11/2026, dans le texte du chat, un lien est un simple lien
+                          souligné dans la couleur de Classinus (plus de carte). La carte (aperçu du site) ne
+                          s'affiche que dans l'aperçu ouvert au clic ; la vignette YouTube est inchangée. Le texte
                           du lien markdown écrit par le modèle devient le titre de la carte et l'attribut title
-                          ([Titre](url "Description")) sa description (2 lignes sur la carte, en entier dans l'aperçu
-                          ouvert au clic) ; le titre du site ne sert que de repli (les vignettes YouTube gardent le titre de la vidéo et
-                          la ligne de la chaîne). La carte porte data-titre-lien et
+                          ([Titre](url "Description")) sa description (en entier dans l'aperçu ouvert au clic) ;
+                          le titre du site ne sert que de repli. Le lien porte data-titre-lien et
                           data-description-lien, que GardienLiensSortants.tsx relit pour les passer à l'aperçu
   chat/BoutonCopierLien.tsx  bouton qui copie l'adresse d'un lien (11/10/2026). Icône nue (sans cadre ni
                           texte). Variante survol : posée à côté d'une carte de LinkPreview, visible seulement au

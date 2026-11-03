@@ -5,16 +5,17 @@ import { ExternalLink, Play, X } from "lucide-react";
 import { Skeleton } from "../Skeleton";
 import { creerMemoireElements } from "@/lib/memoireElementsRiches";
 import { API_URL } from "@/lib/api";
-import { traiterLienSortant } from "@/lib/liensSortants";
 import { FichierChip } from "./FichierChip";
 import { LecteurMedia, typeMedia } from "./LecteurMedia";
 import { BoutonCopierLien } from "./BoutonCopierLien";
 
-// Aperçu de lien dans le chat -- demande de Bourama (2026-07-20) : "n'importe
-// quel lien génère un aperçu... comme dans n'importe quelle plateforme"
-// (comparaison explicite avec la miniature YouTube). Utilisé par le
-// composant `a` custom de BulleMessage.tsx pour tout lien qui n'est ni un
-// fichier téléchargeable (FichierChip) ni un média direct (LecteurMedia).
+// Lien dans le chat. Utilisé par le composant `a` custom de BulleMessage.tsx pour tout lien qui
+// n'est ni un fichier téléchargeable (FichierChip) ni un média direct (LecteurMedia).
+//
+// 03/11/2026, demande de Bourama : dans le texte du chat, un lien est un simple lien souligné
+// (LienSouligne), plus une carte. La carte (image, titre, description, adresse du site) ne
+// s'affiche plus que dans l'aperçu ouvert au clic (`detaille`) ; la vignette YouTube ne change pas.
+// Les commentaires ci dessous qui parlent de "carte" valent donc pour ces deux cas.
 //
 // Deux chemins :
 //   - YouTube : l'oEmbed public (https://www.youtube.com/oembed) renvoie
@@ -100,6 +101,35 @@ function LecteurYoutubeInline({ idVideo, onFermer }: { idVideo: string; onFermer
 type FichierDetecte = { extension: string; nom: string | null; taille: number | null };
 const memoireApercus = creerMemoireElements<{ apercu: Apercu | null; echec: boolean; fichier?: FichierDetecte | null }>();
 
+// 03/11/2026, demande Bourama : dans le texte du chat, un lien n'est plus une carte mais un simple
+// lien souligné, dans la couleur de Classinus. La carte reste à deux endroits : l'aperçu ouvert au clic
+// (VisionneurPositionGlobal, qui passe `detaille`) et la vignette YouTube. Le clic est géré par
+// GardienLiensSortants.tsx, qui relit data-titre-lien et data-description-lien pour remplir l'aperçu.
+function LienSouligne({
+  href,
+  texteLien,
+  titreDuModele,
+  descriptionLien,
+}: {
+  href: string;
+  texteLien: string;
+  titreDuModele?: string;
+  descriptionLien?: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-titre-lien={titreDuModele}
+      data-description-lien={descriptionLien}
+      className="break-words text-dj-accent-1-texte underline underline-offset-2 transition-opacity hover:opacity-80"
+    >
+      {texteLien}
+    </a>
+  );
+}
+
 // `sansBoutonCopier` : l'aperçu (VisionneurPositionGlobal) a déjà son propre
 // bouton "Copier le lien" sous la carte, inutile de le doubler au survol.
 // 12/10/2026, demande Bourama : le titre que le modèle donne au lien et, en plus,
@@ -132,6 +162,8 @@ export function LinkPreview({
   const [enLecture, setEnLecture] = useState(false);
   const [fichier, setFichier] = useState<FichierDetecte | null>(() => memoireApercus.lire(href)?.fichier ?? null);
   const idVideo = idYoutube(href);
+  // Carte seulement pour YouTube et pour l'aperçu ouvert au clic ; partout ailleurs, un lien souligné.
+  const enTexte = !idVideo && !detaille;
   const classeTitreModele = detaille ? "break-words" : titreDuModele ? "line-clamp-2" : "truncate";
 
   useEffect(() => {
@@ -199,14 +231,12 @@ export function LinkPreview({
     return <FichierChip href={href} nom={nom} extensionForcee={fichier.extension} />;
   }
 
-  // Repli : lien texte classique, tant que rien n'est chargé ou si l'aperçu
-  // a échoué -- jamais de carte vide affichée.
-  if (echec || (charge && !apercu)) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="text-dj-texte-muet underline hover:text-dj-texte">
-        {texteLien}
-      </a>
-    );
+  // Lien souligné : affichage normal d'un lien dans le texte, et repli si l'aperçu a échoué
+  // (jamais de carte vide). Pendant le chargement, le lien est déjà là : la carte ne vient
+  // plus le remplacer, donc plus de saut à l'écran. L'appel réseau reste utile, il détecte
+  // les liens qui sont en réalité un fichier (voir plus haut) et remplit l'aperçu au clic.
+  if (enTexte || echec || (charge && !apercu)) {
+    return <LienSouligne href={href} texteLien={texteLien} titreDuModele={titreDuModele} descriptionLien={descriptionLien} />;
   }
 
   if (!charge) {
@@ -256,29 +286,24 @@ export function LinkPreview({
     return (
       <span className="group/lien relative my-2 block w-full max-w-sm animate-dj-fade-in">
       <button
-        onClick={() => (idVideo ? setEnLecture(true) : traiterLienSortant(href, { titre: apercu?.titre || texteLien }))}
+        onClick={() => setEnLecture(true)}
         className="flex w-full items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-2 text-left transition-colors hover:border-dj-bordure-forte"
       >
         {apercu!.image && (
           <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-dj-surface-haute">
             {/* eslint-disable-next-line @next/next/no-img-element -- aperçu externe (og:image / miniature YouTube), pas un asset local */}
             <img src={apercu!.image} alt="" className="h-full w-full object-cover" />
-            {idVideo && (
-              <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                <Play size={16} className="fill-white text-white" />
-              </span>
-            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+              <Play size={16} className="fill-white text-white" />
+            </span>
           </span>
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm text-dj-texte">{apercu!.titre || texteLien}</span>
-          <span className={`block truncate text-[11px] text-dj-texte-muet ${idVideo ? "" : "underline"}`}>{idVideo ? apercu!.siteName : adresseSite(href, apercu!.siteName)}</span>
+          <span className="block truncate text-[11px] text-dj-texte-muet">{apercu!.siteName}</span>
         </span>
-        {!idVideo && <ExternalLink size={13} className="shrink-0 text-dj-texte-muet" />}
       </button>
-      {!sansBoutonCopier && (
-        <BoutonCopierLien href={href} variante="survol" className={idVideo ? "right-2 top-2" : "right-8 top-1/2 -translate-y-1/2 bg-dj-surface"} />
-      )}
+      {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-2 top-2" />}
       </span>
     );
   }
