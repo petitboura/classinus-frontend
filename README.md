@@ -66,6 +66,7 @@ Le script de build exécute aussi les vérifications définies dans `prebuild`.
 | [Architecture](docs/ARCHITECTURE.md) | rôle du frontend, organisation du code et échanges avec le backend |
 | [Développement](docs/DEVELOPPEMENT.md) | installation, configuration, commandes et tests |
 | [Plateformes](docs/PLATEFORMES.md) | Web, Android, iOS et Windows |
+| [Inventaire technique détaillé](docs/INVENTAIRE_TECHNIQUE_2026-11-03.md) | inventaire transféré de l’ancien README, référence datée |
 | [Publication PC](docs/appli-pc-mise-a-jour-et-publication.md) | fabrication et mise à jour de l’application Windows |
 | [Suivi des stores](docs/soumission-stores.md) | checklist mobile, à revalider avant toute soumission |
 
