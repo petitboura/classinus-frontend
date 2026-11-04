@@ -1,12 +1,12 @@
-# Vérification du canal PC
+# PC channel verification
 
-`npm run test:canal-pc` exerce les vrais modules de lecture/scanning, le cycle
-de vie du canal, le plugin natif, la route WebSocket Python et le résultat de
-`lire_ecran` destiné au modèle. Seules les frontières externes sont simulées :
-session de test, contextes React, Win32/PowerShell et pilote nut-js.
+[English version] · [Français](README-canal-pc.fr.md)
 
-Préparation (Node 24, backend de la branche `fix/canal-pc-lecture-complete`
-dans le dossier voisin `classinus-backend`) :
+`npm run test:canal-pc` exercises the real reading/scanning modules, channel lifecycle, native plugin, Python WebSocket route, and the `lire_ecran` result sent to the model. Only external boundaries are simulated: test session, React contexts, Win32/PowerShell, and the nut-js driver.
+
+## Setup
+
+Requirements: Node 24 and the backend checkout for branch `fix/canal-pc-lecture-complete` in the neighboring `classinus-backend` directory.
 
 ```bash
 npm ci --ignore-scripts
@@ -15,54 +15,33 @@ python -m pip install fastapi uvicorn websockets
 npm run test:canal-pc
 ```
 
-`BACKEND_REPO`, `PYTHON`, `CHROMIUM_PATH` et `CHROMIUM_ARGS` permettent de
-choisir le checkout, l'interpréteur Python et le navigateur local.
+`BACKEND_REPO`, `PYTHON`, `CHROMIUM_PATH`, and `CHROMIUM_ARGS` can be used to select the checkout, Python interpreter, and local browser.
 
-Le test vérifie : texte et valeurs de la page, mots de passe masqués,
-popup visible, boutons du canal exclus, miroir sans connexion, renderer
-Electron caché toujours joignable, onglet web masqué fermé puis reconnecté,
-connexion système sur la même API, ouverture d'application sans attendre sa
-fermeture, erreur native renvoyée sans perdre la demande, lecture UIA
-indépendante du pilote souris/clavier, texte et coordonnées conservés par le
-backend. Le modèle LLM lui-même n'est pas appelé.
+The test checks page text and values, masked passwords, visible popups, exclusion of channel buttons, an offline mirror, a hidden but reachable Electron renderer, a hidden web tab that is closed and reconnected, the system connection using the same API, launching an app without waiting for it to exit, native errors returned without losing the request, UI Automation reading independently of the mouse/keyboard driver, and preservation of text and coordinates by the backend. The LLM itself is not called.
 
-Sur Windows avec une session de bureau :
+## Additional test on Windows
+
+With an active Windows desktop session:
 
 ```powershell
 node tests/verifier-uia-windows.mjs
 ```
 
-Ce second test crée une vraie fenêtre WinForms et utilise la vraie lecture
-PowerShell/UI Automation. Il vérifie texte, boutons, valeur, mot de passe,
-fenêtre sous la superposition et restitution du focus. Le workflow GitHub
-`Lecture PC Windows` exécute aussi les compilations TypeScript.
+This second test creates a real WinForms window and uses actual PowerShell/UI Automation reading. It verifies text, buttons, values, passwords, a window underneath the overlay, and focus restoration. The GitHub workflow **Windows PC reading** also runs TypeScript builds.
 
-Après modification, reconstruire les trois plugins locaux (`npm run build`
-dans `packages/capacitor-dossiers-electron`, puis
-`packages/capacitor-pont-natif-electron` et
-`packages/capacitor-superposition-electron`), refaire le build Capacitor et
-la synchronisation Electron, puis empaqueter l'application. Une application
-déjà installée garde son ancien code tant qu'elle n'est pas reconstruite.
-Les builds de cette branche ciblent toujours le backend de test existant.
-Il doit inclure le Lot V (lecture UIA structurée) et l'origine CORS Electron.
+## After a change
 
-## Base de la vision de l'écran (règle permanente)
+Rebuild the three local plugins (`npm run build` in `packages/capacitor-dossiers-electron`, then `packages/capacitor-pont-natif-electron` and `packages/capacitor-superposition-electron`), run the Capacitor build and Electron sync again, then package the app.
 
-L'IA ne doit rien perdre de ce qui est affiché, que les composants aient pensé ou
-non à se déclarer. Les quatre règles (détail dans `REGLE_VISION_ECRAN`, backend,
-`core/profils_agents.py`, envoyée à chaque message) sont tenues par le code :
+An already installed application keeps its old code until it is rebuilt. Builds on this branch always target the existing test backend, which must include Lot V (structured UIA reading) and the Electron CORS origin.
 
-1. Tout élément visible est listé, bouton par bouton, avec un nom. Sur le site :
-   `lib/structureEcran.ts` (nom de secours : libellés référencés, icône, position)
-   et `lib/scanElementsInteractifs.ts` (éléments qui réagissent au clic sans rôle,
-   boutons désactivés marqués). Sur le PC : les boutons sans nom restent dans la
-   lecture avec leur identifiant d'automatisation et leur aide, et les textes ont
-   un plafond à part pour ne plus prendre la place des boutons.
-2. Fenêtres et panneaux reconnus par leur structure (`zoneDeLElement`, panneau
-   UIA, fenêtres flottantes au-dessus). L'IA ouvre un panneau avant de cliquer dedans.
-3. Un bouton agrandir ou plein écran indique ce qu'il agrandit.
-4. `lire_ecran` lit aussi les fenêtres flottantes restées au-dessus ; `lire_page`
-   termine par la liste des fenêtres et panneaux affichés.
+## Core screen-vision rule (permanent)
 
-Garde-fou côté backend : `test_regle_vision_ecran.py` échoue si une règle disparaît
-du prompt ou si une ligne d'élément perd sa fin.
+The AI must not miss anything visible, whether or not a component explicitly registers itself. The four rules (details in `REGLE_VISION_ECRAN`, backend `core/profils_agents.py`, sent with every message) are enforced by code:
+
+1. Every visible element is listed, button by button, with a name. On the website this is handled by `lib/structureEcran.ts` (fallback names from referenced labels, icons, and position) and `lib/scanElementsInteractifs.ts` (elements that respond to clicks without a role, with disabled buttons marked). On PC, unnamed buttons remain in the reading with their automation ID and help text, while text content has a separate limit so it cannot crowd out buttons.
+2. Windows and panels are identified by their structure (`zoneDeLElement`, UIA panels, and floating windows above the target). The AI opens a panel before clicking inside it.
+3. An enlarge or full-screen button indicates what it enlarges.
+4. `lire_ecran` also reads floating windows that remain on top; `lire_page` ends with a list of visible windows and panels.
+
+Backend safeguard: `test_regle_vision_ecran.py` fails if a rule disappears from the prompt or if an element line loses its ending.

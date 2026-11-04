@@ -1,118 +1,120 @@
-# Cartographie technique du frontend
+# Frontend technical code map
 
-Ce document est une carte de navigation du code : il aide à trouver le bon fichier sans transformer la documentation en journal de développement.
+[English version] · [Français](CARTOGRAPHIE_TECHNIQUE.fr.md)
 
-## Trouver rapidement le bon endroit
+This document is a map of the codebase. It helps you find the right file without turning the documentation into a development diary.
 
-| Besoin | Point de départ |
+## Find the right place quickly
+
+| What you want to change | Start here |
 |---|---|
-| Page ou URL | **app/** |
-| Navigation générale | **components/AppShell.tsx**, **components/AppSidebar.tsx** |
-| Chat, saisie, messages | **components/chat/** |
-| État partagé et logique cliente | **lib/** |
-| Bibliothèque, notes, comportements | **app/(app)/** et composants associés |
-| Connexions externes | **components/connexions/**, **lib/connexionsApplis.ts** |
-| Android et iOS | **components/mobile/**, **android/**, **ios/** |
-| Application Windows | **electron/**, **packages/*-electron/** |
-| Couleurs et thème | **app/globals.css**, **lib/useTheme.ts** |
-| Tests de non-régression | **tests/** |
+| A page or URL | **app/** |
+| Global navigation | **components/AppShell.tsx**, **components/AppSidebar.tsx** |
+| Chat, input, and messages | **components/chat/** |
+| Shared state and client-side logic | **lib/** |
+| Library, notes, and behaviors | **app/(app)/** and related components |
+| External connections | **components/connexions/**, **lib/connexionsApplis.ts** |
+| Android and iOS | **components/mobile/**, **android/**, **ios/** |
+| Windows app | **electron/**, **packages/*-electron/** |
+| Colors and theme | **app/globals.css**, **lib/useTheme.ts** |
+| Regression tests | **tests/** |
 
-## 1. Organisation générale
+## 1. Overall structure
 
-| Dossier | Rôle |
+| Directory | Role |
 |---|---|
-| **app/** | routes, pages et layouts Next.js |
-| **components/** | interface visible et interactions |
-| **lib/** | logique cliente, accès aux services et état partagé |
-| **public/** | logos, icônes, polices et ressources statiques |
-| **android/**, **ios/** | projets natifs Capacitor |
-| **electron/** | intégration de l’application Windows |
-| **packages/** | extensions Capacitor locales, notamment pour Electron |
-| **tests/** | vérifications automatisées |
+| **app/** | Next.js routes, pages, and layouts |
+| **components/** | Visible interface and interactions |
+| **lib/** | Client-side logic, service access, and shared state |
+| **public/** | Logos, icons, fonts, and static assets |
+| **android/**, **ios/** | Capacitor native projects |
+| **electron/** | Windows application integration |
+| **packages/** | Local Capacitor extensions, especially for Electron |
+| **tests/** | Automated checks |
 
-Le frontend communique avec l’API Classinus pour les opérations métier. Il ne doit pas embarquer les secrets des fournisseurs IA.
+The frontend uses the Classinus API for business operations. It must not contain AI provider secrets.
 
-## 2. Routes et écrans
+## 2. Routes and screens
 
-Le dossier **app/** utilise l’App Router de Next.js.
+The **app/** directory uses the Next.js App Router.
 
-| Zone | Emplacement |
+| Area | Location |
 |---|---|
-| Application connectée | **app/(app)/** |
-| Connexion et inscription | **app/connexion/**, **app/inscription/** |
-| Pages publiques de découverte | **app/decouvrir/** |
-| Espace public | **app/mon-espace/** |
-| Retour et consentement OAuth | **app/oauth/** |
-| Téléchargements | **app/telecharger/** |
-| Pages légales | **app/cgu/**, **app/confidentialite/**, **app/copyright/** |
-| Superposition de l’agent PC | **app/agent-superposition/** |
+| Authenticated app | **app/(app)/** |
+| Sign-in and registration | **app/connexion/**, **app/inscription/** |
+| Public discovery pages | **app/decouvrir/** |
+| Public space | **app/mon-espace/** |
+| OAuth return and consent | **app/oauth/** |
+| Downloads | **app/telecharger/** |
+| Legal pages | **app/cgu/**, **app/confidentialite/**, **app/copyright/** |
+| Desktop agent overlay | **app/agent-superposition/** |
 
-Les chemins sont également centralisés dans les fichiers **lib/routes*.ts**. Avant de créer une URL, vérifier si une route ou une fonction de navigation existe déjà.
+Routes are also centralized in **lib/routes*.ts** files. Before creating a URL, check whether a route or navigation helper already exists.
 
-## 3. Composants
+## 3. Components
 
-Le dossier **components/** regroupe les éléments visuels par fonctionnalité.
+The **components/** directory groups visible interface elements by feature.
 
-| Dossier ou composant | Responsabilité |
+| Directory or component | Responsibility |
 |---|---|
-| **chat/** | conversation, saisie, messages, pièces jointes et rendu |
-| **mobile/** | navigation et contrôles mobiles |
-| **voix/** | interface de la voix en direct |
-| **connexions/** | cartes et écrans de connexion aux services |
-| **bureau/** | éléments de l’espace Bureau |
-| **higgsfield/** | interface des fonctions Higgsfield |
-| **icons/** et **icones/** | icônes |
-| **AppShell.tsx**, **AppSidebar.tsx** | structure et navigation générale |
-| **InteractionGlobale.tsx** | fournisseurs et interactions qui persistent entre les pages |
-| **Logo.tsx**, **ThemeToggle.tsx** | identité visuelle et changement de thème |
+| **chat/** | conversation, input, messages, attachments, and rendering |
+| **mobile/** | mobile navigation and controls |
+| **voix/** | live voice interface |
+| **connexions/** | service connection cards and screens |
+| **bureau/** | Workspace section components |
+| **higgsfield/** | Higgsfield feature interface |
+| **icons/** and **icones/** | icon components |
+| **AppShell.tsx**, **AppSidebar.tsx** | overall structure and navigation |
+| **InteractionGlobale.tsx** | providers and interactions that persist across pages |
+| **Logo.tsx**, **ThemeToggle.tsx** | brand identity and theme switching |
 
-La plupart des pages de **app/(app)/** délèguent leur interface à un composant. Chercher le composant rendu par la page avant de modifier le layout global.
+Most pages under **app/(app)/** delegate their interface to a component. Find the component rendered by the page before changing a global layout.
 
-## 4. Logique cliente
+## 4. Client-side logic
 
-Le dossier **lib/** contient la logique réutilisée entre les écrans.
+The **lib/** directory contains logic reused across screens.
 
-| Domaine | Fichiers de repère |
+| Area | Reference files |
 |---|---|
-| Appels API | **api.ts**, **reponseApi.ts** |
-| Authentification | **supabase.ts**, **authFallback.ts** |
+| API calls | **api.ts**, **reponseApi.ts** |
+| Authentication | **supabase.ts**, **authFallback.ts** |
 | Chat | **contexteChat.tsx**, **repriseFluxChat.ts** |
-| Navigation | **routesApp.ts** et autres **routes*.ts** |
-| Thème | **useTheme.ts**, **couleursIcones.ts** |
-| Temps réel | **canalTempsReel.ts**, **canalAgentApplicatif.ts** |
-| Voix | **geminiLive.ts**, **contexteVoixDirecte.tsx** |
-| Minuteurs | **minuteurs.ts**, **contexteMinuteurs.tsx** |
-| Mises à jour | **miseAJourOta.ts**, **miseAJourPcElectron.ts** |
-| Traductions | **lib/i18n/** |
+| Navigation | **routesApp.ts** and other **routes*.ts** files |
+| Theme | **useTheme.ts**, **couleursIcones.ts** |
+| Real-time communication | **canalTempsReel.ts**, **canalAgentApplicatif.ts** |
+| Voice | **geminiLive.ts**, **contexteVoixDirecte.tsx** |
+| Timers | **minuteurs.ts**, **contexteMinuteurs.tsx** |
+| Updates | **miseAJourOta.ts**, **miseAJourPcElectron.ts** |
+| Translations | **lib/i18n/** |
 
-Les contextes et hooks partagés coordonnent l’état entre plusieurs composants. Éviter de recréer localement un état déjà disponible.
+Shared contexts and hooks coordinate state across components. Avoid recreating local state that is already available through a shared context or hook.
 
-## 5. Plateformes
+## 5. Platforms
 
-**Web.** Le site utilise le build Next.js standard. Configuration : **next.config.mjs**.
+**Web.** The website uses the standard Next.js build. Configuration: **next.config.mjs**.
 
-**Android et iOS.** Capacitor réutilise l’interface du frontend dans les projets **android/** et **ios/**. La configuration se trouve dans **capacitor.config.ts**. Les éléments propres aux mobiles se trouvent dans **components/mobile/** et les extensions dans **packages/**.
+**Android and iOS.** Capacitor reuses the frontend interface in the **android/** and **ios/** native projects. Configuration is in **capacitor.config.ts**. Mobile-specific elements live in **components/mobile/** and native extensions in **packages/**.
 
-**Windows.** Electron est configuré dans **electron/**. Les extensions propres au bureau sont dans **packages/capacitor-*-electron/**. Les fonctions PC — relais, superposition, mises à jour et accès natif — sont réparties entre ces paquets et les modules correspondants de **lib/**.
+**Windows.** Electron is configured in **electron/**. Desktop-specific Capacitor extensions are in **packages/capacitor-*-electron/**. PC features such as the relay, overlay, updates, and native access are split between these packages and the corresponding modules in **lib/**.
 
-## 6. Identité visuelle
+## 6. Visual identity
 
-- Styles globaux : **app/globals.css**.
-- Thème et couleurs partagés : **lib/useTheme.ts** et les utilitaires de **lib/**.
-- Logo : **components/Logo.tsx** et ressources de **public/**.
+- Global styles: **app/globals.css**.
+- Shared theme and colors: **lib/useTheme.ts** and utilities in **lib/**.
+- Logo: **components/Logo.tsx** and assets in **public/**.
 
-Réutiliser les conventions visuelles existantes. Après une évolution, vérifier les thèmes clair et sombre ainsi que les formats d’écran concernés.
+Reuse the existing visual conventions. After a visual change, check both light and dark themes and the relevant screen sizes.
 
 ## 7. Tests
 
-Les tests sont dans **tests/** et leurs commandes dans **package.json**. Les vérifications automatiques avant le build comprennent **test:composants-natifs** et **test:couleurs-theme**.
+Tests are in **tests/** and their commands are declared in **package.json**. Automatic checks run before a build, including **test:composants-natifs** and **test:couleurs-theme**.
 
-D’autres scripts couvrent notamment le chat, les connexions, l’internationalisation, le canal PC, les mises à jour, le relais et les interactions natives. Exécuter les tests liés à la modification avant de valider un changement.
+Other scripts cover the chat, connections, internationalization, the PC channel, updates, the relay, and native interactions. Run the tests related to your change before validating it.
 
-## Guides associés
+## Related guides
 
 - [Architecture](ARCHITECTURE.md)
-- [Développement et commandes](DEVELOPPEMENT.md)
-- [Plateformes et builds](PLATEFORMES.md)
-- [Publication et mise à jour PC](appli-pc-mise-a-jour-et-publication.md)
-- [Suivi des stores](soumission-stores.md)
+- [Development and commands](DEVELOPPEMENT.md)
+- [Platforms and builds](PLATEFORMES.md)
+- [Windows app publishing and updates](appli-pc-mise-a-jour-et-publication.md)
+- [Store submission tracking](soumission-stores.md)

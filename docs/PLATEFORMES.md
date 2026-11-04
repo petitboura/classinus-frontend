@@ -1,31 +1,33 @@
-# Plateformes Classinus
+# Classinus platforms
+
+[English version] · [Français](PLATEFORMES.fr.md)
 
 ## Web
 
-Le frontend Web est une application Next.js. Le build standard conserve le fonctionnement serveur de Next.js et constitue la cible Web du dépôt.
+The web frontend is a Next.js application. The standard build retains Next.js server behavior and is the web target of this repository.
 
-Configuration principale : `next.config.mjs`, `package.json` et les variables décrites dans [.env.local.example](../.env.local.example).
+Main configuration: `next.config.mjs`, `package.json`, and the variables listed in [.env.local.example](../.env.local.example).
 
-## Android et iOS
+## Android and iOS
 
-Les applications mobiles sont produites depuis ce dépôt avec Capacitor. Elles réutilisent l’interface Web et ajoutent les capacités natives nécessaires à chaque système.
+The mobile apps are built from this repository with Capacitor. They reuse the web interface and add the native capabilities required by each operating system.
 
 ```bash
 npm run build:capacitor
 ```
 
-Le script génère l’export statique dans `out/`, puis lance `npx cap sync`. Les projets natifs se trouvent dans `android/` et `ios/`.
+The script generates the static export in `out/` and then runs `npx cap sync`. The native projects are in `android/` and `ios/`.
 
-La compilation finale nécessite les outils de la plateforme : Android Studio pour Android et Xcode sur macOS pour iOS.
+Final compilation requires the platform tools: Android Studio for Android and Xcode on macOS for iOS.
 
-Le build de test dédié est `npm run build:capacitor:test`. Il cible l’environnement de test configuré dans `next.config.mjs` et ne doit pas être utilisé pour une publication de production.
+The dedicated test build is `npm run build:capacitor:test`. It targets the test environment configured in `next.config.mjs` and must not be used for a production release.
 
 ## Windows
 
-L’application Windows repose sur Electron. Le projet et son processus principal se trouvent dans `electron/` ; les extensions Capacitor spécifiques au bureau sont dans `packages/`.
+The Windows app is built with Electron. The project and its main process are in `electron/`; desktop-specific Capacitor extensions are in `packages/`.
 
-La construction et la publication de l’installeur, les mises à jour et le relais téléphone sont documentés dans [Publication et mise à jour de l’application PC](appli-pc-mise-a-jour-et-publication.md).
+The installer build and release process, updates, and phone relay are documented in [Windows app publishing and updates](appli-pc-mise-a-jour-et-publication.md).
 
-## Publication mobile
+## Mobile release
 
-Le suivi de conformité, les permissions et les tâches de publication sont recensés dans [Suivi de soumission aux stores](soumission-stores.md). Ce document est une checklist datée : vérifier chaque point auprès des consoles Google Play et App Store avant une nouvelle soumission.
+Compliance, permissions, and release tasks are tracked in [Store submission tracking](soumission-stores.md). This is a dated checklist: verify every item in the Google Play and App Store consoles before a new submission.

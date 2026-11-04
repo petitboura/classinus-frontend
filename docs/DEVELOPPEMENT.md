@@ -1,12 +1,14 @@
-# Développement du frontend
+# Frontend development
 
-## Prérequis
+[English version] · [Français](DEVELOPPEMENT.fr.md)
 
-- Node.js et npm.
-- Un backend Classinus accessible.
-- Un projet Supabase autorisé pour l’environnement de travail.
+## Prerequisites
 
-Pour compiler les applications natives, installer aussi les outils de la plateforme : Android Studio pour Android, Xcode sur macOS pour iOS.
+- Node.js and npm.
+- An accessible Classinus backend.
+- A Supabase project authorized for the development environment.
+
+To build native applications, also install the platform tools: Android Studio for Android and Xcode on macOS for iOS.
 
 ## Installation
 
@@ -14,42 +16,42 @@ Pour compiler les applications natives, installer aussi les outils de la platefo
 npm install
 ```
 
-Copier le fichier de configuration :
+Copy the configuration file:
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Sous Windows PowerShell :
+On Windows PowerShell:
 
 ```powershell
 Copy-Item .env.local.example .env.local
 ```
 
-Renseigner au minimum `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` et `NEXT_PUBLIC_APP_URL`.
+At minimum, configure `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_APP_URL`.
 
-Ne pas placer de clé privée ou de secret de fournisseur dans une variable `NEXT_PUBLIC_*` : ces valeurs sont intégrées au code envoyé au navigateur.
+Never put private keys or provider secrets in a `NEXT_PUBLIC_*` variable: these values are bundled into the code sent to the browser.
 
-## Lancer l’application
+## Start the application
 
 ```bash
 npm run dev
 ```
 
-Ouvrir ensuite [http://localhost:3000](http://localhost:3000).
+Then open [http://localhost:3000](http://localhost:3000).
 
-L’API doit être démarrée séparément. Voir le [guide de développement du backend](https://github.com/petitboura/classinus-backend/blob/main/docs/DEVELOPPEMENT.md).
+The API must be started separately. See the [backend development guide](https://github.com/petitboura/classinus-backend/blob/main/docs/DEVELOPPEMENT.md).
 
-## Build et vérifications
+## Build and checks
 
 ```bash
 npm run build
 npm start
 ```
 
-Le script `prebuild` exécute automatiquement les vérifications des composants natifs et des couleurs de thème avant le build Next.js.
+The `prebuild` script automatically checks native components and theme colors before the Next.js build.
 
-Commandes de vérification disponibles :
+Available check commands:
 
 ```bash
 npm run test:composants-natifs
@@ -59,20 +61,20 @@ npm run test:i18n
 npm run audit:i18n
 ```
 
-D’autres scripts ciblent des fonctionnalités précises. La liste complète se trouve dans `package.json`.
+Other scripts target specific features. The complete list is in `package.json`.
 
-## Builds natifs
+## Native builds
 
 ```bash
 npm run build:capacitor
 npm run build:capacitor:test
 ```
 
-Ces scripts construisent l’export statique puis exécutent la synchronisation Capacitor. La compilation finale Android/iOS se fait ensuite dans les outils natifs. La seconde commande utilise la cible de test prévue par `next.config.mjs`.
+These scripts create the static export and run Capacitor sync. The final Android/iOS compilation is then performed with the native development tools. The second command uses the test target configured in `next.config.mjs`.
 
-## Repères en cas de problème
+## Troubleshooting pointers
 
-- API inaccessible : vérifier `NEXT_PUBLIC_API_URL`, puis le service backend.
-- Authentification : vérifier l’URL et la clé publique Supabase de l’environnement.
-- Différence Web / mobile : vérifier les conditions `CAPACITOR_BUILD` dans `next.config.mjs`.
-- Différence Web / Windows : vérifier les extensions Capacitor locales et la couche Electron.
+- API unavailable: check `NEXT_PUBLIC_API_URL`, then the backend service.
+- Authentication: check the Supabase URL and public key for the selected environment.
+- Web/mobile mismatch: check the `CAPACITOR_BUILD` conditions in `next.config.mjs`.
+- Web/Windows mismatch: check the local Capacitor extensions and Electron layer.

@@ -1,59 +1,63 @@
-# Architecture du frontend
+# Frontend architecture
 
-## Rôle
+[English version] · [Français](ARCHITECTURE.fr.md)
 
-Ce dépôt contient l’interface de Classinus. Il ne contient pas le moteur API principal : les opérations métier et les fonctions serveur sont exposées par [classinus-backend](https://github.com/petitboura/classinus-backend).
+[English version] · [Français](ARCHITECTURE.fr.md)
 
-Le projet Next.js sert l’application Web. Une configuration de build distincte produit une sortie statique destinée aux projets natifs Capacitor. L’application Windows s’appuie sur Electron et sur les mêmes composants d’interface.
+## Purpose
 
-## Vue d’ensemble
+This repository contains the Classinus interface. It does not contain the main API engine: business operations and server-side functions are provided by [classinus-backend](https://github.com/petitboura/classinus-backend).
+
+The Next.js project serves the web app. A separate build configuration produces a static export for the Capacitor native projects. The Windows app uses Electron and the same interface components.
+
+## Overview
 
 ```mermaid
 flowchart TD
-    U[Utilisateur] --> W[Frontend Next.js]
-    W -->|API HTTP et flux du chat| A[Backend FastAPI]
-    W -->|Auth et services autorisés| S[Supabase]
+    U[User] --> W[Next.js frontend]
+    W -->|HTTP API and chat stream| A[FastAPI backend]
+    W -->|Auth and permitted services| S[Supabase]
     W --> C[Capacitor Android / iOS]
     W --> E[Electron Windows]
     A --> S
 ```
 
-Le navigateur, les applications mobiles et l’application Windows partagent l’essentiel de l’interface. Les capacités propres à chaque plateforme passent par les couches natives correspondantes.
+The browser, mobile apps, and Windows app share most of the interface. Platform-specific capabilities are handled by the corresponding native layers.
 
-## Organisation du dépôt
+## Repository structure
 
-| Chemin | Responsabilité |
+| Path | Responsibility |
 |---|---|
-| `app/` | routes Next.js, pages publiques, écrans connectés et layouts |
-| `components/` | composants d’interface partagés |
-| `components/chat/` | conversation, saisie, pièces jointes et rendu des réponses |
-| `components/mobile/` | navigation et comportement propres aux interfaces mobiles |
-| `lib/` | logique cliente, état partagé, accès API, configuration et utilitaires |
-| `types/` | types TypeScript partagés |
-| `public/` | logos, icônes, polices et ressources statiques |
-| `android/`, `ios/` | projets natifs Capacitor |
-| `electron/` | processus et intégration de l’application Windows |
-| `packages/` | extensions Capacitor locales, notamment pour Electron |
-| `tests/` | vérifications automatisées et garde-fous du frontend |
+| `app/` | Next.js routes, public pages, authenticated screens, and layouts |
+| `components/` | Shared interface components |
+| `components/chat/` | Conversation, input, attachments, and response rendering |
+| `components/mobile/` | Navigation and behavior specific to mobile interfaces |
+| `lib/` | Client-side logic, shared state, API access, configuration, and utilities |
+| `types/` | Shared TypeScript types |
+| `public/` | Logos, icons, fonts, and static assets |
+| `android/`, `ios/` | Capacitor native projects |
+| `electron/` | Windows desktop integration and main process |
+| `packages/` | Local Capacitor extensions, including Electron plugins |
+| `tests/` | Automated checks and frontend safeguards |
 
-## Échanges avec les services
+## Service communication
 
-- `NEXT_PUBLIC_API_URL` définit l’adresse de l’API FastAPI.
-- `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` configurent le client Supabase du navigateur.
-- `NEXT_PUBLIC_APP_URL` sert notamment à construire les URLs absolues du site.
-- Les clés privées des fournisseurs IA et les secrets du backend ne doivent jamais être ajoutés au frontend.
+- `NEXT_PUBLIC_API_URL` defines the FastAPI address.
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` configure the browser Supabase client.
+- `NEXT_PUBLIC_APP_URL` is used to build absolute site URLs.
+- Private AI provider keys and backend secrets must never be added to the frontend.
 
-Les variables sont détaillées dans [.env.local.example](../.env.local.example) et dans le [guide de développement](DEVELOPPEMENT.md).
+The variables are listed in [.env.local.example](../.env.local.example) and the [development guide](DEVELOPPEMENT.md).
 
-## Configuration de build
+## Build configuration
 
-`next.config.mjs` distingue le build Web normal de l’export statique utilisé pour Capacitor. Sans `CAPACITOR_BUILD=true`, le comportement Web reste celui de Next.js. Le script `build:capacitor` active l’export, puis synchronise le résultat dans les projets natifs.
+`next.config.mjs` distinguishes the normal web build from the static export used by Capacitor. Without `CAPACITOR_BUILD=true`, Next.js keeps its standard web behavior. The `build:capacitor` script enables the export and then syncs the output into the native projects.
 
-La configuration Capacitor se trouve dans `capacitor.config.ts`. La configuration Electron est dans `electron/` et les extensions propres au bureau dans `packages/`.
+Capacitor is configured in `capacitor.config.ts`. Electron is configured in `electron/`, with desktop-specific extensions in `packages/`.
 
-## Règles de maintenance
+## Maintenance principles
 
-1. Une évolution d’interface partagée doit rester compatible avec les environnements qui réutilisent le frontend.
-2. Les appels métier et l’accès privilégié aux données restent côté backend.
-3. Toute nouvelle capacité native doit être vérifiée sur la plateforme cible, pas seulement dans le navigateur.
-4. Les détails propres à un composant doivent être documentés près du composant ou dans un guide spécialisé, pas dans le README racine.
+1. Shared interface changes must remain compatible with every environment that reuses the frontend.
+2. Business operations and privileged data access stay in the backend.
+3. Every new native capability must be tested on its target platform, not only in a browser.
+4. Component-level details belong near the component or in a specialized guide, not in the root README.

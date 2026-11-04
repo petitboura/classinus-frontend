@@ -1,9 +1,5 @@
-# Build resources
+# Electron assets
 
-Place your app icons here for packaging with electron-builder:
+[English version] · [Français](README.fr.md)
 
-- `icon.icns` — macOS (or a 1024x1024 `icon.png`, converted automatically)
-- `icon.ico` — Windows
-- `icon.png` — Linux (512x512 or larger)
-
-See https://www.electron.build/configuration/icons for details.
+This folder contains the image assets used by the Electron desktop application.

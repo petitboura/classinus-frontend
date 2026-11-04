@@ -1,78 +1,80 @@
 ![Classinus](public/logo-classinus.webp)
 
-# Classinus — Frontend
+# Classinus: Frontend
 
-Le dépôt du frontend de **[Classinus](https://classinus.com)** : l’interface de l’assistant IA et de l’espace de travail, accessible sur le Web et distribuée aussi sous forme d’applications installables.
+[English version] · [Français](README.fr.md)
 
-Le même socle d’interface alimente le navigateur, les applications mobiles Android/iOS et l’application Windows.
+The frontend repository for **[Classinus](https://classinus.com)**. It contains the AI assistant and workspace interface, available on the web and as installable applications.
 
-[Site officiel](https://classinus.com) · [Dépôt backend](https://github.com/petitboura/classinus-backend)
+The same interface foundation powers the browser experience, Android and iOS apps, and the Windows desktop app.
 
-## Ce que contient l’application
+[Official website](https://classinus.com) · [Backend repository](https://github.com/petitboura/classinus-backend) · [Français](README.fr.md)
 
-- **Assistant IA** : conversations, modèles et outils connectés.
-- **Espace personnel** : bibliothèque de fichiers, notes, historique et personnalisation.
-- **Contenus multimédias** : aperçu de documents, images, audio, vidéo et contenus interactifs.
-- **Connexions** : intégrations avec des services externes et des serveurs MCP.
-- **Applications installables** : Android et iOS avec Capacitor, Windows avec Electron.
+## What's included
 
-## Technologies
+- **AI assistant:** conversations, model selection, and connected tools.
+- **Personal workspace:** file library, notes, history, and personalization.
+- **Media:** previews for documents, images, audio, video, and interactive content.
+- **Connections:** integrations with external services and MCP servers.
+- **Installable apps:** Android and iOS with Capacitor, Windows with Electron.
+
+## Technology stack
 
 Next.js 14 · React 18 · TypeScript · Tailwind CSS · Supabase JS · Capacitor 8 · Electron
 
-## Démarrage local
+## Run locally
 
-Prérequis : Node.js et npm.
+Requirements: Node.js and npm.
 
 ```bash
 npm install
 ```
 
-Copier `.env.local.example` vers `.env.local`, puis renseigner les valeurs nécessaires :
+Copy `.env.local.example` to `.env.local`, then fill in the required values:
 
-| Variable | Rôle |
+| Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_API_URL` | URL de l’API Classinus |
-| `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | clé publique anon de Supabase |
-| `NEXT_PUBLIC_APP_URL` | URL du frontend |
+| `NEXT_PUBLIC_API_URL` | Classinus API URL |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public Supabase anon key |
+| `NEXT_PUBLIC_APP_URL` | Frontend URL |
 
-Lancer le serveur de développement :
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-L’application est alors disponible sur `http://localhost:3000`. Le backend doit être accessible à l’adresse définie dans `NEXT_PUBLIC_API_URL`.
+The app will be available at `http://localhost:3000`. The backend must be reachable at the address configured in `NEXT_PUBLIC_API_URL`.
 
-## Commandes utiles
+## Useful commands
 
-| Commande | Usage |
+| Command | Purpose |
 |---|---|
-| `npm run dev` | serveur local |
-| `npm run build` | build Web de production |
-| `npm start` | servir le build Web |
-| `npm run build:capacitor` | build statique et synchronisation Capacitor |
-| `npm run build:capacitor:test` | build Capacitor ciblant l’environnement de test configuré |
-| `npm run test:composants-natifs` | vérification des composants natifs |
-| `npm run test:couleurs-theme` | vérification des couleurs et du thème |
+| `npm run dev` | Start the local development server |
+| `npm run build` | Build the production web app |
+| `npm start` | Serve the web build |
+| `npm run build:capacitor` | Create the static build and sync Capacitor |
+| `npm run build:capacitor:test` | Build Capacitor for the configured test environment |
+| `npm run test:composants-natifs` | Check native components |
+| `npm run test:couleurs-theme` | Check theme colors |
 
-Le script de build exécute aussi les vérifications définies dans `prebuild`.
+The build script also runs the checks configured in `prebuild`.
 
 ## Documentation
 
-| Guide | Contenu |
+| Guide | What it covers |
 |---|---|
-| [Architecture](docs/ARCHITECTURE.md) | rôle du frontend, organisation du code et échanges avec le backend |
-| [Développement](docs/DEVELOPPEMENT.md) | installation, configuration, commandes et tests |
-| [Plateformes](docs/PLATEFORMES.md) | Web, Android, iOS et Windows |
-| [Cartographie technique](docs/CARTOGRAPHIE_TECHNIQUE.md) | inventaire transféré de l’ancien README, référence datée |
-| [Publication PC](docs/appli-pc-mise-a-jour-et-publication.md) | fabrication et mise à jour de l’application Windows |
-| [Suivi des stores](docs/soumission-stores.md) | checklist mobile, à revalider avant toute soumission |
+| [Architecture](docs/ARCHITECTURE.md) · [Français](docs/ARCHITECTURE.fr.md) | Frontend responsibilities, code organization, and backend communication |
+| [Development](docs/DEVELOPPEMENT.md) · [Français](docs/DEVELOPPEMENT.fr.md) | Setup, configuration, commands, and tests |
+| [Platforms](docs/PLATEFORMES.md) · [Français](docs/PLATEFORMES.fr.md) | Web, Android, iOS, and Windows |
+| [Technical code map](docs/CARTOGRAPHIE_TECHNIQUE.md) · [Français](docs/CARTOGRAPHIE_TECHNIQUE.fr.md) | Where to find code by feature |
+| [Windows app publishing](docs/appli-pc-mise-a-jour-et-publication.md) · [Français](docs/appli-pc-mise-a-jour-et-publication.fr.md) | Build and update the Windows app |
+| [Store submission tracking](docs/soumission-stores.md) · [Français](docs/soumission-stores.fr.md) | Mobile release checklist, to be revalidated before submission |
 
-## Dépôts liés
+## Related repositories
 
-- **Frontend — ce dépôt :** [petitboura/classinus-frontend](https://github.com/petitboura/classinus-frontend)
-- **Backend API :** [petitboura/classinus-backend](https://github.com/petitboura/classinus-backend)
+- **Frontend, this repository:** [petitboura/classinus-frontend](https://github.com/petitboura/classinus-frontend)
+- **Backend API:** [petitboura/classinus-backend](https://github.com/petitboura/classinus-backend)
 
-Les détails d’implémentation restent dans `docs/` et dans le code concerné. Ce README sert de point d’entrée au projet.
+Implementation details belong in `docs/` or next to the relevant code. This README is the project's entry point.

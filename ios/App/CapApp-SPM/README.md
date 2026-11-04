@@ -1,5 +1,5 @@
-# CapApp-SPM
+# Capacitor Swift Package Manager
 
-This package is used to host SPM dependencies for your Capacitor project
+[English version] · [Français](README.fr.md)
 
-Do not modify the contents of it or there may be unintended consequences.
+This directory is managed by Capacitor's Swift Package Manager integration. Avoid editing generated files manually unless the Capacitor documentation explicitly requires it.

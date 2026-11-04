@@ -1,152 +1,173 @@
-# Plan : le canal en direct sort de l'appli, sur PC
+# Plan: move the live channel outside the app on PC
 
-Document de contexte complet pour une IA qui va coder ce chantier sans repasser par Bourama pour des questions de base. Toutes les informations ci-dessous viennent d'une lecture réelle du code des dépôts (pas de suppositions). Vérifie quand même l'état actuel des fichiers cités avant de commencer : ce document date du 27/09/2026, et Bourama fait avancer plusieurs chantiers en parallèle.
+[English version] · [Français](plan-canal-en-direct-pc.fr.md)
 
-## Objectif demandé par Bourama
+Complete context for an AI implementing this project without asking Bourama basic questions again. All information below comes from an actual review of repository code, not assumptions. Still verify the current state of every referenced file before starting: this document dates from 27 September 2026, and Bourama works on several projects in parallel.
 
-Aujourd'hui, Clovis peut cliquer et écrire, mais uniquement à l'intérieur de sa propre page web (le "canal en direct" existant). Bourama veut que Clovis puisse sortir de cette page : agir sur tout le PC (pas seulement le navigateur), en gardant visibles et fonctionnels, où que Clovis navigue ou quelle que soit l'appli au premier plan :
-- le curseur virtuel et sa bulle de dialogue,
-- la barre de saisie et ses composants (bouton d'activation, dictée, écriture),
-- le journal des actions.
+## Goal requested by Bourama
 
-Ces trois éléments doivent pouvoir se déplacer sur n'importe quelle page ou appli, et rester au-dessus de tout (superposition système, pas seulement au-dessus du contenu d'une page web).
+Today, Classinus can click and type, but only inside its own web page (the existing "live channel"). Bourama wants Classinus to act outside that page, across the entire PC (not just the browser), while keeping the following visible and functional regardless of which page or application is in the foreground:
 
-Décisions déjà actées par Bourama pour ce chantier :
-- Périmètre : le PC entier, pas seulement le navigateur.
-- Techno retenue : Electron (confirmé, pas Tauri).
-- Pas d'étape de confirmation avant action pour ce premier temps de travail (sera ajoutée plus tard, voir la fin de ce document pour où l'accrocher).
-- Construction "solide dès maintenant", pas un prototype jetable.
-- Un test de faisabilité (script PowerShell : ouverture d'appli, écriture clavier, lecture d'écran, souris, capture d'écran) a été fait et confirmé réussi par Bourama en personne : Windows permet bien à un programme installé de faire tout ça.
+- The virtual cursor and its speech bubble.
+- The input bar and its controls (activation button, dictation, typing).
+- The action log.
 
-## Dépôts concernés
+These three elements must be able to move over any page or application and remain above everything else. This requires a system-level overlay, not merely an overlay above a web page.
 
-Deux dépôts GitHub, compte `petitboura` :
-- Backend : anciennement `clovis-backend`, redirige maintenant vers `petitboura/classinus-backend` (renommage du 23-25/09/2026).
-- Frontend : anciennement `clovis-frontend`, même mouvement vers `petitboura/classinus-frontend`.
+Decisions already approved by Bourama for this project:
 
-**Avant de cloner, vérifie le nom réel du dépôt** (redirection GitHub ou nom déjà changé une nouvelle fois) : ces renommages sont récents et peuvent avoir encore bougé.
+- Scope: the entire PC, not just the browser.
+- Chosen technology: Electron, confirmed instead of Tauri.
+- No confirmation step before actions in this first phase. It will be added later; see the end of this document for the integration point.
+- Build a robust solution from the beginning, not a disposable prototype.
+- A feasibility test was completed and personally confirmed as successful by Bourama. A PowerShell script tested launching applications, keyboard input, screen reading, mouse control, and screenshots. Windows allows an installed program to perform these operations.
 
-## Ce qui existe déjà : le canal agent applicatif ("canal en direct")
+## Repositories involved
 
-C'est le nom du système que Bourama appelle "canal en direct". Il ne cible jamais un appareil précis : toute demande est diffusée à **toutes** les connexions ouvertes du compte à la fois (PC, navigateur, mobile), et c'est la première connexion qui répond réellement (pas "ignore") qui l'emporte. Les autres ignorent silencieusement.
+Two GitHub repositories under the `petitboura` account:
 
-### Backend : `core/canal_agent_applicatif.py` et `api/canal_agent_applicatif.py`
+- Backend: formerly `clovis-backend`, now redirected to `petitboura/classinus-backend` (renamed 23–25 September 2026).
+- Frontend: formerly `clovis-frontend`, similarly renamed to `petitboura/classinus-frontend`.
 
-Route WebSocket : `POST/WS /api/canal-agent-applicatif/ws` (fichier `api/canal_agent_applicatif.py`).
+**Before cloning, verify the actual repository names** (GitHub redirects or a subsequent rename may have changed them again). These renames are recent and may have changed since this note was written.
 
-Handshake exact :
-1. Le client ouvre la connexion WebSocket.
-2. Le client envoie en premier message : `{"auth_token": "<jeton_supabase>", "appareil_id": "<id>"}`. Le jeton n'est jamais mis dans l'URL (pour ne pas finir dans des logs de proxy).
-3. Le backend vérifie le jeton via Supabase (`supabase.auth.get_user`), ferme la connexion avec le code `4401` si invalide ou si rien n'arrive dans les 10 secondes.
-4. `appareil_id` : convention `""` = session web/PC classique, sinon un identifiant natif propre à l'appareil. **Point important** : la clé de connexion est `(user_id, appareil_id)`. Une deuxième connexion qui arrive avec exactement la même clé **remplace et ferme** la précédente (voir `connecter()`). Donc si l'appli Electron doit ouvrir une deuxième connexion dédiée aux actions système (voir Lot S plus bas), elle doit utiliser un `appareil_id` différent de celui de la fenêtre principale, sinon elles se couperaient l'une l'autre.
+## What already exists: the application-agent channel ("live channel")
 
-Boucle de réception du backend après le handshake, trois formes de message reconnues venant du client :
-- `{"id": ..., "resultat": ...}` → résout la demande en cours dont l'id correspond (`recevoir_reponse`).
-- `{"etat_actions": [...]}` → remplace l'état des éléments cliquables poussés par cette connexion (`mettre_a_jour_etat_actions`).
-- `{"message_etudiant": "...", "id_message": "..."}` → message de l'étudiant pendant que Clovis agit (`accuser_message_etudiant`).
+This is the system Bourama calls the "live channel". It never targets one specific device: each request is broadcast to **all** open connections for the account at once (PC, browser, mobile), and the first connection that returns a real response (not "ignore") wins. The others silently ignore it.
 
-Fonctions qui envoient une demande **vers** le frontend et attendent une réponse (toutes basées sur `_diffuser_et_attendre`, qui diffuse à toutes les connexions du `user_id` et attend la première réponse valable, avec des paliers de statut à 5s, 15s, puis abandon à 30s) :
-- `demander_execution_action(user_id, action_id, on_statut)` → envoie `{"id", "action_id"}`.
-- `demander_clic_generique(user_id, selecteur, description, on_statut)` → envoie `{"id", "selecteur_generique", "description"}`.
-- `demander_pointage_action(user_id, action_id, on_statut)` → envoie `{"id", "montrer_action_id"}` (déplace juste le curseur, n'exécute rien).
-- `demander_ecriture_champ(user_id, action_id, texte, on_statut)` → envoie `{"id", "action_id", "texte_a_ecrire"}`.
+### Backend: `core/canal_agent_applicatif.py` and `api/canal_agent_applicatif.py`
 
-Fonctions qui diffusent sans rien attendre en retour :
-- `pousser_texte_clovis(user_id, texte, duree_secondes=None)` → envoie `{"texte_clovis": texte}` (+ `duree_secondes` optionnel) à toutes les connexions, affiché dans la bulle de dialogue. C'est l'outil `dire_a_l_etudiant` (`core/outils_action_agent.py`) qui appelle ça pendant qu'un tour est en cours.
-- `demander_ouverture_canal(user_id, conversation_id, texte_suite)` → cas spécifique à la démo, pas central pour ce chantier.
+WebSocket route: `POST/WS /api/canal-agent-applicatif/ws` (file `api/canal_agent_applicatif.py`).
 
-Le tout est écrit pour être étendu facilement : chaque nouvelle capacité peut réutiliser `_diffuser_et_attendre` avec un nouveau nom de champ dans le message diffusé, sans toucher à la boucle de réception (`api/canal_agent_applicatif.py`) qui accepte déjà n'importe quel `{"id", "resultat"}` en retour, quel que soit le type de demande d'origine.
+Exact handshake:
 
-### Frontend : `lib/canalAgentApplicatif.ts` (et les composants visuels)
+1. The client opens the WebSocket connection.
+2. The client sends this as its first message: `{"auth_token": "<supabase_token>", "appareil_id": "<id>"}`. The token is never placed in the URL, so it cannot end up in proxy logs.
+3. The backend validates the token through Supabase (`supabase.auth.get_user`). It closes the connection with code `4401` if the token is invalid or if no message arrives within 10 seconds.
+4. `appareil_id`: an empty string (`""`) means a regular web/PC session; otherwise it is a native identifier specific to the device. **Important:** the connection key is `(user_id, appareil_id)`. A second connection using exactly the same key **replaces and closes** the first one (see `connecter()`). Therefore, if the Electron app opens a second connection dedicated to system actions (see Lot S below), it must use a different `appareil_id` from the main window. Otherwise the two connections will close each other.
 
-C'est un fichier `"use client"`, donc du JavaScript de navigateur, initialisé une seule fois par `initialiserCanalAgentApplicatif()`, qui ouvre/ferme la connexion selon la visibilité de l'onglet et l'état de la session Supabase.
+After the handshake, the backend accepts three client message shapes:
 
-Calcul de `appareil_id` côté client, dans `obtenirAppareilIdPourCanal()` : si `Capacitor.isNativePlatform()` est faux (cas du navigateur web normal), renvoie `""`. Sinon, appelle un plugin Capacitor nommé `"Dossiers"` et sa méthode `obtenirInfosAppareil()`, qui renvoie `{appareilId: string}`. **Ce mécanisme existe déjà et est déjà prêt pour n'importe quelle plateforme native, pas seulement mobile** : si l'appli Electron passe par Capacitor et déclare `isNativePlatform() = true`, ce code fonctionnera sans être modifié, à condition qu'un plugin natif du même nom expose la même méthode côté Electron (voir Lot Q).
+- `{"id": ..., "resultat": ...}`: resolves the pending request with the matching ID (`recevoir_reponse`).
+- `{"etat_actions": [...]}`: replaces the state of clickable elements pushed by this connection (`mettre_a_jour_etat_actions`).
+- `{"message_etudiant": "...", "id_message": "..."}`: a message from the student while Classinus is acting (`accuser_message_etudiant`).
 
-Les six formes de message reconnues en provenance du backend (fonction `traiterMessage`) :
+Functions that send a request **to** the frontend and wait for a response (all based on `_diffuser_et_attendre`, which broadcasts to every connection for the `user_id` and waits for the first valid response, with status thresholds at 5 and 15 seconds and timeout at 30 seconds):
+
+- `demander_execution_action(user_id, action_id, on_statut)` sends `{"id", "action_id"}`.
+- `demander_clic_generique(user_id, selecteur, description, on_statut)` sends `{"id", "selecteur_generique", "description"}`.
+- `demander_pointage_action(user_id, action_id, on_statut)` sends `{"id", "montrer_action_id"}` (moves the cursor only; it does not execute anything).
+- `demander_ecriture_champ(user_id, action_id, texte, on_statut)` sends `{"id", "action_id", "texte_a_ecrire"}`.
+
+Functions that broadcast without waiting for a response:
+
+- `pousser_texte_clovis(user_id, texte, duree_secondes=None)` sends `{"texte_clovis": texte}` (plus optional `duree_secondes`) to all connections. It is displayed in the speech bubble. The `dire_a_l_etudiant` tool (`core/outils_action_agent.py`) calls it while a turn is running.
+- `demander_ouverture_canal(user_id, conversation_id, texte_suite)` is specific to the demo and is not central to this project.
+
+The system is designed to be extended easily. Each new capability can reuse `_diffuser_et_attendre` with a new field name in the broadcast message, without changing the receive loop (`api/canal_agent_applicatif.py`). That loop already accepts any `{"id", "resultat"}` response, regardless of the original request type.
+
+### Frontend: `lib/canalAgentApplicatif.ts` and visual components
+
+This is a `"use client"` file, so it runs in the browser. `initialiserCanalAgentApplicatif()` initializes it once and opens/closes the connection based on tab visibility and the Supabase session state.
+
+The client calculates `appareil_id` in `obtenirAppareilIdPourCanal()`: if `Capacitor.isNativePlatform()` is false (a regular web browser), it returns `""`. Otherwise, it calls the Capacitor plugin named `"Dossiers"` and its `obtenirInfosAppareil()` method, which returns `{appareilId: string}`.
+
+**This mechanism already exists and is ready for any native platform, not just mobile.** If the Electron app uses Capacitor and reports `isNativePlatform() = true`, this code will work without modification, provided that an Electron native plugin with the same name exposes the same method (see Lot Q).
+
+The eight message shapes recognized from the backend by `traiterMessage` are:
+
 1. `{"accuse_message_etudiant": id, "pris_en_compte": bool}`
 2. `{"message_etudiant_renvoye": string}`
-3. `{"texte_clovis": string, "duree_secondes"?: number}` → bulle de dialogue
+3. `{"texte_clovis": string, "duree_secondes"?: number}` → speech bubble.
 4. `{"ouvrir_canal_en_direct": {...}}`
-5. `{"id", "action_id", "texte_a_ecrire"}` → écriture simulée dans un champ
-6. `{"id", "action_id"}` → clic
-7. `{"id", "selecteur_generique", "description"}` → clic générique par sélecteur CSS
-8. `{"id", "montrer_action_id"}` → pointage seul
+5. `{"id", "action_id", "texte_a_ecrire"}` → simulated typing in a field.
+6. `{"id", "action_id"}` → click.
+7. `{"id", "selecteur_generique", "description"}` → generic click using a CSS selector.
+8. `{"id", "montrer_action_id"}` → cursor pointing only.
 
-Toutes les demandes de clic/écriture ciblent des éléments du DOM de la page Clovis elle-même, repérés par un attribut `data-agent-id` posé automatiquement par un scan générique (`lib/scanElementsInteractifs.ts`, hors périmètre de ce chantier). **C'est la vraie limite actuelle** : rien ne permet aujourd'hui de cliquer en dehors de cette page.
+All click/typing requests target DOM elements inside the Classinus page itself. They are identified by a `data-agent-id` attribute added automatically by a generic scan (`lib/scanElementsInteractifs.ts`, outside this project's scope). **This is the current limitation:** nothing can click outside that page.
 
-Composants visuels concernés, tous dans `clovis-frontend/components/` :
-- `CurseurVirtuelAgent.tsx` : le curseur, en `position: fixed`, `z-index: 10000`, lit son état dans le contexte React `ContexteCurseurVirtuel` (`lib/contexteCurseurVirtuel.tsx`), déplaçable à la souris quand aucune action n'est en cours.
-- `BulleDialogueAgent.tsx` : la bulle de dialogue à côté du curseur.
-- `CanalEnDirectFlottant.tsx` : le groupe flottant en bas à gauche (bouton d'activation + `ControlesInteractionCanal.tsx`, qui contient la barre de saisie/dictée), en `position: fixed`, `z-index: 65`, déplaçable via `lib/useDeplacable.ts`.
-- `BoutonJournalAgent.tsx` : le bouton du journal des actions.
-- Tout ce visuel lit son état dans les contextes React `ContexteCurseurVirtuel` et `ContexteCanalEnDirect` (`lib/contexteCanalEnDirect.tsx`), qui sont eux-mêmes mis à jour par `lib/canalAgentApplicatif.ts` au fil des messages WebSocket reçus.
+Visual components involved, all in `clovis-frontend/components/`:
 
-**Point essentiel à comprendre avant de coder la suite** : ces éléments sont des `<div>` React normaux, positionnés en CSS à l'intérieur d'une seule page. Ils flottent déjà au-dessus du contenu de cette page (c'est ce que Bourama a déjà demandé et obtenu le 19-20/09/2026), mais pas au-dessus du reste de l'écran. Dès que l'utilisateur change d'onglet, de site, ou d'appli, ils disparaissent avec la fenêtre du navigateur qui les contient. C'est exactement le problème que ce chantier doit résoudre.
+- `CurseurVirtuelAgent.tsx`: the cursor, positioned with `position: fixed`, `z-index: 10000`, and reading its state from the React context `ContexteCurseurVirtuel` (`lib/contexteCurseurVirtuel.tsx`). It can be dragged with the mouse when no action is running.
+- `BulleDialogueAgent.tsx`: the speech bubble next to the cursor.
+- `CanalEnDirectFlottant.tsx`: the floating group at the bottom left (activation button and `ControlesInteractionCanal.tsx`, which contains the input/dictation bar), positioned with `position: fixed`, `z-index: 65`, and draggable through `lib/useDeplacable.ts`.
+- `BoutonJournalAgent.tsx`: the action-log button.
+- All these visuals read state from the React contexts `ContexteCurseurVirtuel` and `ContexteCanalEnDirect` (`lib/contexteCanalEnDirect.tsx`). Those contexts are updated by `lib/canalAgentApplicatif.ts` as WebSocket messages arrive.
 
-## Découpage en lots
+**Essential point to understand before continuing:** these are ordinary React `<div>` elements positioned with CSS inside a single page. They already float above that page's content (as Bourama requested and obtained on 19–20 September 2026), but not above the rest of the screen. As soon as the user changes tab, website, or application, they disappear with the browser window that contains them. That is exactly what this project must solve.
 
-Les lots suivent la convention déjà en place dans le code (des lettres de chantier : A, B, C, D, F, G, I, J, K, L, M, N, P sont déjà pris). On continue avec Q, R, S, T. Chaque lot est un commit/PR à part entière, avec un état qui marche à la fin, testable seul.
+## Work packages
 
-Ordre de dépendance réel (pas totalement indépendants entre eux, mais chaque lot est un livrable complet et vérifiable) : Q d'abord (base), puis R et S peuvent être faits dans n'importe quel ordre une fois Q pushé, T vient après R et S.
+The packages follow the letter-based convention already used in the code. A, B, C, D, F, G, I, J, K, L, M, N, and P are already taken. Continue with Q, R, S, and T. Each package is a separate commit/PR and must end in a working state that can be tested independently.
 
----
-
-### Lot Q — Squelette Electron + identifiant d'appareil propre au PC
-
-**But** : faire tourner `clovis-frontend` dans une vraie fenêtre Electron installée, avec un identifiant d'appareil qui lui est propre (pas `""`), sans changer aucun comportement fonctionnel. Ce lot ne fait rien de nouveau visible par l'étudiant : il pose juste la fondation.
-
-**Ce qu'il faut faire :**
-1. Ajouter un répertoire `electron/` à la racine de `clovis-frontend`, au même niveau que `android/` et `ios/` (mêmes précédents : ces deux-là ont été construits directement dans ce dépôt, pas dans un dépôt séparé — décision de Bourama du 25/08/2026, voir le chantier mobile). Utiliser la plateforme Electron de Capacitor (`@capacitor-community/electron`), qui charge le même export statique déjà généré par `npm run build:capacitor` (voir `next.config.mjs` pour la logique conditionnelle, déjà en place pour android/ios).
-2. Créer un plugin Capacitor natif, nommé exactement `Dossiers` (même nom que celui déjà appelé côté web dans `obtenirAppareilIdPourCanal()`, fichier `lib/canalAgentApplicatif.ts`), avec au minimum la méthode `obtenirInfosAppareil()` renvoyant `{appareilId: string}`. L'identifiant est un UUID généré une seule fois à la première ouverture et stocké dans un fichier local (dossier `userData` d'Electron), sur le même principe que `IdentifiantAppareil.kt`/`.swift` côté mobile (chantier `clovis-mobile`, 05/09/2026).
-3. Ne rien modifier dans `lib/canalAgentApplicatif.ts` : le code qui appelle `Capacitor.isNativePlatform()` et le plugin `Dossiers` existe déjà et doit fonctionner tel quel une fois Electron reconnu comme plateforme native par Capacitor.
-
-**Critère de fin** : lancer l'appli Electron, se connecter avec un compte Clovis, et confirmer que le canal agent applicatif s'ouvre avec un `appareil_id` non vide (vérifiable côté backend par un log temporaire dans `connecter()`, à retirer ensuite). Confirmer aussi qu'un clic ordinaire déjà existant (chantier F, clic générique) fonctionne à l'identique dans cette fenêtre Electron.
-
-**Hors périmètre de ce lot** : pas de fenêtre de superposition, pas d'action hors de la page Clovis.
+Actual dependency order (the packages are not entirely independent, but each is a complete and verifiable deliverable): Q first (foundation), then R and S in either order once Q has been pushed, and T after both R and S.
 
 ---
 
-### Lot R — Fenêtre de superposition système (curseur, bulle, barre de saisie, journal au-dessus de tout)
+### Lot Q: Electron shell and a PC-specific device identifier
 
-**Dépend de** : Lot Q (a besoin qu'Electron tourne).
+**Goal:** run `clovis-frontend` inside a real installed Electron window with its own device identifier (not `""`), without changing any functional behavior. Nothing new is visible to the student in this package; it establishes the foundation.
 
-**But** : que les trois éléments demandés par Bourama restent visibles et actifs même quand une autre appli ou un autre site est au premier plan.
+**Work required:**
 
-**Ce qu'il faut faire :**
-1. Dans le processus principal Electron (`main`), ouvrir une **deuxième** `BrowserWindow`, en plus de la fenêtre principale qui affiche `clovis-frontend` : sans bordure (`frame: false`), transparente (`transparent: true`), toujours au-dessus (`alwaysOnTop: true`, avec le niveau le plus haut disponible sur Windows), qui ne doit pas capter les clics là où rien n'est affiché (`setIgnoreMouseEvents` activé/désactivé dynamiquement selon la zone).
-2. Cette fenêtre de superposition charge une page dédiée et minimale (nouvelle route, par exemple `app/(app)/agent-superposition/page.tsx` dans `clovis-frontend`), qui réutilise tel quel `CurseurVirtuelAgent.tsx`, `BulleDialogueAgent.tsx`, `CanalEnDirectFlottant.tsx` et `BoutonJournalAgent.tsx` — sans les récrire.
-3. Problème à résoudre : ces composants lisent leur état dans des contextes React (`ContexteCurseurVirtuel`, `ContexteCanalEnDirect`) qui sont remplis par `lib/canalAgentApplicatif.ts`, lequel tourne dans la fenêtre **principale** (celle qui garde la vraie connexion WebSocket et le DOM de la page Clovis). La fenêtre de superposition est un processus de rendu séparé : elle n'a pas accès à ces contextes directement. Il faut un pont IPC Electron (`ipcMain` dans le processus principal, relayant entre les deux fenêtres de rendu, exposé via un script `preload` sécurisé, pas de `nodeIntegration` direct dans le renderer) : chaque changement d'état poussé dans `ContexteCurseurVirtuel`/`ContexteCanalEnDirect` de la fenêtre principale est renvoyé vers la fenêtre de superposition, et chaque interaction de l'utilisateur avec la superposition (glisser le curseur, écrire dans la barre de saisie, cliquer sur le bouton du canal) repart en sens inverse vers la fenêtre principale, qui appelle les fonctions déjà existantes (`envoyerMessageEtudiant`, etc.) exactement comme si l'utilisateur avait cliqué dans la page normale.
-4. Un moyen simple de distinguer "on tourne dans la fenêtre de superposition Electron" du fonctionnement web/mobile normal est nécessaire pour activer ce pont sans rien casser ailleurs (vérifier `Capacitor.getPlatform() === "electron"` ou équivalent selon ce que le plugin Capacitor Electron expose réellement — à vérifier dans sa documentation au moment de coder, ne pas deviner le nom exact).
+1. Add an `electron/` directory at the root of `clovis-frontend`, alongside `android/` and `ios/`. As with those projects, Electron is built directly in this repository rather than a separate repository (Bourama's decision on 25 August 2026; see the mobile project). Use the Capacitor Electron platform (`@capacitor-community/electron`), which loads the same static export generated by `npm run build:capacitor`. See the existing conditional logic in `next.config.mjs`, already used for Android/iOS.
+2. Create a native Capacitor plugin named exactly `Dossiers`, matching the name already called by the web code in `obtenirAppareilIdPourCanal()` (`lib/canalAgentApplicatif.ts`). It must expose at least `obtenirInfosAppareil()`, returning `{appareilId: string}`. Generate the identifier as a UUID once, on first launch, and store it in a local file in Electron's `userData` directory. Follow the same approach as mobile `IdentifiantAppareil.kt` / `.swift` (`clovis-mobile`, 5 September 2026).
+3. Do not modify `lib/canalAgentApplicatif.ts`. The code calling `Capacitor.isNativePlatform()` and the `Dossiers` plugin already exists and must work unchanged once Electron is recognized as a native platform.
 
-**Critère de fin** : avec l'appli Electron lancée, ouvrir le Bloc-notes ou un site quelconque au premier plan : le curseur, la bulle, la barre de saisie et le journal restent visibles et utilisables par-dessus, exactement comme aujourd'hui dans la page Clovis. Les actions déjà existantes (clic dans la page Clovis, chantier F) continuent de fonctionner et sont visibles dans cette superposition même quand la fenêtre principale Clovis n'est pas au premier plan.
+**Completion criteria:** launch Electron, sign in with an account, and confirm that the application-agent channel opens with a non-empty `appareil_id`. This can be checked with a temporary log in backend `connecter()`, which must then be removed. Also confirm that an existing regular click (Lot F, generic click) works identically inside the Electron window.
 
-**Hors périmètre de ce lot** : toujours aucune action réelle en dehors de la page Clovis. Ce lot est purement visuel et de relais, il ne donne aucun nouveau pouvoir d'action à Clovis.
+**Out of scope:** no overlay window and no actions outside the Classinus page.
 
 ---
 
-### Lot S — Nouvel exécutant : actions au niveau du système (clic écran, clavier, ouverture d'appli, lecture d'écran)
+### Lot R: system overlay window (cursor, bubble, input bar, and log above everything)
 
-**Dépend de** : Lot Q (identifiant d'appareil). Ne dépend pas fonctionnellement du Lot R (peut être testé sans superposition visuelle, via des logs, mais n'a de sens pour l'étudiant qu'une fois R en place).
+**Depends on:** Lot Q, because Electron must be running.
 
-**But** : donner à Clovis une vraie capacité d'agir en dehors de sa page, sur le système.
+**Goal:** keep the three elements requested by Bourama visible and active even when another application or website is in the foreground.
 
-**Ce qu'il faut faire, côté Electron (processus principal, Node) :**
-1. Ouvrir une **deuxième connexion WebSocket** vers `/api/canal-agent-applicatif/ws`, distincte de celle de la fenêtre principale (qui reste dédiée aux clics DOM dans la page Clovis). Cette deuxième connexion tourne en JavaScript Node classique (bibliothèque `ws`), pas dans un renderer Capacitor, car elle a besoin d'un accès système que le navigateur interdit. Utiliser un `appareil_id` **différent** de celui de la fenêtre principale (rappel : deux connexions avec le même `(user_id, appareil_id)` se remplacent et se ferment l'une l'autre côté backend, voir `connecter()`) — par exemple le même UUID que le Lot Q suivi d'un suffixe distinctif.
-2. Le jeton Supabase nécessaire pour l'authentification (`auth_token`) doit être récupéré depuis la session déjà ouverte dans la fenêtre principale et transmis au processus principal via IPC (jamais stocké en clair côté disque au-delà de ce que fait déjà l'appli existante).
-3. Utiliser une bibliothèque de contrôle système multiplateforme pour Node (par exemple `@nut-tree/nut-js`) pour : déplacer la souris et cliquer à des coordonnées d'écran précises, taper du texte au clavier, ouvrir une application (lancement de processus classique). Pour la lecture d'écran, une capture d'écran (par exemple `screenshot-desktop`) est le point de départ le plus simple ; une lecture plus fine des fenêtres ouvertes (nom des fenêtres, texte affiché) peut s'appuyer sur les API natives Windows (UI Automation), à évaluer à ce moment-là selon la difficulté réelle plutôt que d'être décidée à l'avance ici.
+**Work required:**
 
-**Ce qu'il faut faire, côté backend (`clovis-backend`), en ajout dans `core/canal_agent_applicatif.py`, sans toucher au code existant :**
+1. In Electron's main process, open a **second** `BrowserWindow` in addition to the main window displaying `clovis-frontend`. It must be frameless (`frame: false`), transparent (`transparent: true`), always on top (`alwaysOnTop: true`, using the highest level available on Windows), and must not capture clicks where nothing is displayed. Toggle `setIgnoreMouseEvents` dynamically based on the active region.
+2. Load a dedicated, minimal page in this overlay window (for example, a new route such as `app/(app)/agent-superposition/page.tsx` in `clovis-frontend`). Reuse `CurseurVirtuelAgent.tsx`, `BulleDialogueAgent.tsx`, `CanalEnDirectFlottant.tsx`, and `BoutonJournalAgent.tsx` as they are; do not rewrite them.
+3. Solve the state-sharing problem. These components read their state from React contexts (`ContexteCurseurVirtuel`, `ContexteCanalEnDirect`) populated by `lib/canalAgentApplicatif.ts`, which runs in the **main** window (the one holding the real WebSocket connection and Classinus page DOM). The overlay window is a separate renderer and cannot access those contexts directly.
+
+   Add an Electron IPC bridge: `ipcMain` in the main process relays messages between the two renderer windows, exposed through a secure preload script, with no direct `nodeIntegration` in the renderer. Every state change pushed into `ContexteCurseurVirtuel` or `ContexteCanalEnDirect` in the main window must be forwarded to the overlay. Every user interaction with the overlay (dragging the cursor, typing in the input bar, clicking the channel button) must travel back to the main window, which calls the existing functions (`envoyerMessageEtudiant`, etc.) exactly as if the user had interacted with the regular page.
+4. Add a simple way to distinguish the Electron overlay window from normal web/mobile operation, so the bridge is enabled without changing other environments. Check `Capacitor.getPlatform() === "electron"` or an equivalent. Verify the actual value exposed by the Capacitor Electron plugin documentation when implementing this; do not guess the exact API name.
+
+**Completion criteria:** with the Electron app running, open Notepad or any website in the foreground. The cursor, bubble, input bar, and log must remain visible and usable above it, exactly as they are inside the Classinus page today. Existing actions (clicking inside the Classinus page, Lot F) must continue to work and must be visible in the overlay even when the main Classinus window is not in the foreground.
+
+**Out of scope:** still no real actions outside the Classinus page. This package is visual and relays state only; it gives Classinus no new ability to act on the rest of the PC.
+
+---
+
+### Lot S: new system-level action executor (screen click, keyboard, app launch, screen reading)
+
+**Depends on:** Lot Q (device identifier). It does not functionally depend on Lot R; it can be tested without the visual overlay using logs, but it is only useful to the student once R is in place.
+
+**Goal:** give Classinus the ability to perform real actions outside its own page, at operating-system level.
+
+**Electron-side work (main Node process):**
+
+1. Open a **second WebSocket connection** to `/api/canal-agent-applicatif/ws`, separate from the main window's connection (which remains dedicated to DOM clicks inside the Classinus page). This second connection runs in regular Node JavaScript using the `ws` library, not in a Capacitor renderer, because it needs system access that the browser blocks.
+
+   Use an `appareil_id` **different** from the main window's identifier. Recall that two connections with the same `(user_id, appareil_id)` replace and close each other on the backend (see `connecter()`). For example, use the Lot Q UUID with a distinctive suffix.
+2. Retrieve the Supabase session token (`auth_token`) from the already signed-in main window and pass it to the main process through IPC. Never store it in clear text on disk beyond what the existing app already does.
+3. Use a cross-platform system-control library for Node (for example, `@nut-tree/nut-js`) to move the mouse and click exact screen coordinates, type with the keyboard, and launch an application through a normal process. For screen reading, a screenshot tool (for example, `screenshot-desktop`) is the simplest starting point. More detailed reading of open windows (window names and displayed text) can use native Windows APIs (UI Automation). Decide whether to add that based on the real difficulty encountered at implementation time, rather than deciding in advance here.
+
+**Backend work** (additive only, in `clovis-backend/core/canal_agent_applicatif.py`; do not change existing code):
+
 ```python
 async def demander_action_systeme(user_id: str, type_action: str, parametres: dict, on_statut=None) -> Any | None:
     """
-    Meme principe que demander_execution_action, mais pour une action hors
-    du DOM de la page Clovis (clic a des coordonnees d'ecran, clavier,
-    ouverture d'application, lecture d'ecran) : diffuse
-    {action_systeme, parametres} a toutes les connexions actives, la
-    connexion Electron dediee au systeme (voir lot S) execute reellement,
-    les autres connexions (fenetre principale web/DOM, mobile) l'ignorent
-    naturellement car elles ne reconnaissent pas ce type de message.
+    Same principle as demander_execution_action, but for actions outside
+    the Classinus page DOM (screen-coordinate click, keyboard input,
+    application launch, screen reading). Broadcasts
+    {action_systeme, parametres} to all active connections. The dedicated
+    Electron system connection (Lot S) executes the action; other
+    connections (main web/DOM window and mobile) naturally ignore it
+    because they do not recognize this message type.
     """
     correlation_id = str(uuid.uuid4())
     return await _diffuser_et_attendre(
@@ -156,153 +177,119 @@ async def demander_action_systeme(user_id: str, type_action: str, parametres: di
         on_timeout_log=f"action_systeme={type_action}",
     )
 ```
-Aucune modification n'est nécessaire dans `api/canal_agent_applicatif.py` : la boucle de réception accepte déjà n'importe quel `{"id", "resultat"}` en retour, quel que soit le type de demande d'origine.
 
-**Ce qu'il faut faire, côté outils pour le modèle** : un nouveau fichier ou une extension de `core/outils_action_agent.py`, exposant au modèle des outils tels que `cliquer_ecran(x, y)`, `taper_clavier(texte)`, `ouvrir_application(nom)`, `lire_ecran()`, chacun appelant `demander_action_systeme` avec le `type_action` et les `parametres` correspondants.
+No change is required in `api/canal_agent_applicatif.py`: its receive loop already accepts any `{"id", "resultat"}` response, regardless of the original request type.
 
-**Critère de fin** : demander à Clovis (par le chat) d'ouvrir le Bloc-notes et d'y écrire une phrase précise, sans que l'étudiant touche à rien : ça doit se produire réellement à l'écran, et la réponse remonter jusqu'au modèle.
+**Model tools:** add a new file or extend `core/outils_action_agent.py` to expose tools such as `cliquer_ecran(x, y)`, `taper_clavier(texte)`, `ouvrir_application(nom)`, and `lire_ecran()`. Each tool calls `demander_action_systeme` with the corresponding `type_action` and `parametres`.
 
-**Hors périmètre de ce lot** : pas encore de confirmation avant action (décision de Bourama, voir plus bas), pas encore de journalisation visuelle unifiée avec les actions DOM (voir Lot T).
+**Completion criteria:** ask Classinus through chat to open Notepad and type a specific sentence, without the student touching anything. It must happen on the real screen, and the result must return to the model.
 
----
-
-### Lot T — Unifier le journal et la bulle entre actions DOM et actions système
-
-**Dépend de** : Lot R (superposition visuelle) et Lot S (actions système) tous les deux terminés.
-
-**But** : que les actions faites hors de la page (Lot S) apparaissent dans le même journal et la même bulle que les actions faites dans la page (existant), sans que l'étudiant perçoive de différence.
-
-**Ce qu'il faut faire :**
-1. Juste avant d'envoyer la réponse `{"id", "resultat"}` pour une action système exécutée (Lot S, processus principal Electron), envoyer aussi un événement IPC vers la fenêtre de superposition (Lot R) décrivant l'action en une phrase courte ("Clovis a cliqué à l'écran", "Clovis a ouvert Bloc-notes", "Clovis a écrit du texte"), sur le même modèle que ce que fait déjà `pousserJournalDepuisAgent`/`mettreAJourJournalDepuisAgent` côté web pour les actions DOM (`lib/contexteCanalEnDirect.tsx`).
-2. Réutiliser `pousser_texte_clovis` côté backend sans aucune modification pour la narration parlée (bulle) : ce mécanisme est déjà générique et diffuse à toutes les connexions, il fonctionnera pour les actions système exactement comme pour les actions DOM, à condition que la fenêtre de superposition (Lot R) l'affiche bien (ce qui est déjà son rôle depuis le Lot R).
-
-**Critère de fin** : une action système (Lot S) et une action DOM classique (existant) produisent, du point de vue de l'étudiant, exactement le même type d'entrée dans le journal et le même type de commentaire dans la bulle.
+**Out of scope:** no confirmation before actions yet (see Bourama's decision below), and no unified visual logging with DOM actions yet (Lot T).
 
 ---
 
-## Ce qui est volontairement laissé de côté pour l'instant
+### Lot T: unify the log and speech bubble for DOM and system actions
 
-- **Confirmation avant action sensible** : Bourama a tranché de la laisser de côté pour ce premier temps de travail. Le point d'ancrage naturel pour l'ajouter plus tard est `demander_action_systeme` côté backend (avant de diffuser) et/ou dans le processus principal Electron (avant d'exécuter réellement, Lot S) : ajouter une liste d'actions jugées sensibles (ouverture d'un site de paiement, suppression de fichier, etc.) et une pause qui attend une validation explicite de l'étudiant, envoyée par la fenêtre de superposition.
-- **Mac** : ce plan cible Windows en priorité (comme le reste de l'environnement de travail de Bourama). Une extension à Mac demanderait de gérer les permissions Accessibilité/Enregistrement d'écran, spécifiques à ce système, et un compte Apple Developer payant pour la distribution, que Bourama n'a pas encore.
-- **Lecture d'écran fine (nom des fenêtres, texte précis affiché)** : volontairement laissée ouverte au Lot S plutôt que figée à l'avance, pour être tranchée selon la difficulté réelle rencontrée en codant (capture d'écran simple d'abord, UI Automation Windows si nécessaire).
+**Depends on:** both Lot R (visual overlay) and Lot S (system actions) must be complete.
 
-## Lot V : lecture du contenu de la fenetre (fait le 28/09/2026)
+**Goal:** actions outside the page (Lot S) appear in the same log and bubble as actions inside the page (existing behavior), with no visible difference to the student.
 
-La lecture d'ecran fine, laissee ouverte au Lot S, est faite : `lire_ecran`
-lit en texte le contenu de la fenetre au premier plan avec UI Automation de
-Windows (script PowerShell lance depuis le processus principal Electron),
-sans aucune image envoyee au modele. Voir la section "Lot V" du README de
-`packages/capacitor-pont-natif-electron` et `plan-canal-en-direct-pc-lot-v.md`
-si ce fichier est present dans le depot. Cote backend, les quatre outils PC
-sont maintenant enregistres (`core/registre_outils.py`, categorie
-`agent_pc`) et proposes au modele seulement quand une connexion systeme PC
-est ouverte (`core/main.py`, `a_connexion_systeme_pc`).
+**Work required:**
 
-## Lot W : bouton permanent du canal en direct (fait le 01/10/2026)
+1. Immediately before sending the `{"id", "resultat"}` response for a system action (Lot S, Electron main process), also send an IPC event to the overlay window (Lot R) describing the action in one short sentence, such as "Classinus clicked on the screen", "Classinus opened Notepad", or "Classinus typed text". Follow the existing web implementation used by `pousserJournalDepuisAgent` / `mettreAJourJournalDepuisAgent` for DOM actions (`lib/contexteCanalEnDirect.tsx`).
+2. Reuse backend `pousser_texte_clovis` without modification for spoken narration in the bubble. This mechanism is already generic and broadcasts to all connections. It will work for system actions just as it does for DOM actions, provided that the overlay window (Lot R) displays it correctly.
 
-Demande de Bourama : pouvoir activer le canal en direct a tout moment, meme
-fenetre de Classinus fermee. Le bouton d'activation est desormais le seul
-element de la superposition affiche en permanence ; les autres boutons
-apparaissent (avec une transition) quand le canal est active.
+**Completion criteria:** from the student's point of view, a system action (Lot S) and a regular DOM action (existing behavior) produce exactly the same kind of log entry and bubble comment.
 
-- **Fenetre principale cachee au lieu d'etre fermee** (`electron/arrierePlan.ts`).
-  La croix cache la fenetre, l'appli continue de tourner et une icone pres de
-  l'horloge propose Ouvrir Classinus et Quitter Classinus. C'est la fenetre
-  principale qui porte la vraie connexion du canal : la detruire le couperait.
-  Sans icone possible, fermer la fenetre quitte l'appli comme avant.
-- **Superposition affichee en permanence** (`plugin.mts`,
-  `afficherSuperpositionPermanente`). Elle est montree des que la fenetre
-  principale pousse son premier etat, et retiree quand la fenetre principale
-  quitte AppShell (deconnexion), pour qu'un bouton sans effet ne reste pas a
-  l'ecran. Remplace la decision du 28/09/2026 qui la cachait tant que le canal
-  etait inactif.
-- **Un seul bouton sur PC** : AppShell ne monte plus `CanalEnDirectFlottant`
-  sur Electron, seul celui de la superposition existe.
-- **Opacite au repos reglable** (`lib/opaciteBoutonCanal.ts`,
-  `components/ReglageOpaciteBoutonCanal.tsx`). Petit controle discret qui
-  apparait a cote du bouton une fois le canal active, avec apercu direct sur le
-  bouton. Jamais en dessous de 15 %, 50 % par defaut, 100 % au survol et quand
-  le canal est actif. Memorise dans le stockage local de la superposition.
-- **Demarrage avec Windows** (`electron/demarrage.ts`, `lancementSession.ts`).
-  Active par defaut au premier lancement de l'appli installee, desactivable
-  dans Parametres > Preferences (`components/DemarrageAutomatiqueCarte.tsx`,
-  methodes `lireDemarrageAutomatique` / `definirDemarrageAutomatique` du
-  plugin). Lance avec l'argument `--lancement-session` : ni fenetre ni ecran
-  d'ouverture, seul le bouton apparait.
+---
 
-Limites connues : si l'etudiant n'est pas connecte, AppShell n'est pas monte
-donc le bouton n'apparait qu'apres la connexion ; quitter vraiment l'appli
-(Quitter dans l'icone pres de l'horloge) retire aussi le bouton.
+## Deliberately out of scope for now
 
-## Autorisations avant la publication (frontend fait le 18/10/2026, serveur à faire)
+- **Confirmation before sensitive actions:** Bourama decided to leave this out of the first phase. The natural integration point for later is backend `demander_action_systeme` (before broadcasting) and/or the Electron main process (before executing the action in Lot S). Add a list of sensitive actions (opening a payment site, deleting a file, etc.) and pause until the student explicitly approves through the overlay.
+- **Mac:** this plan prioritizes Windows, matching Bourama's work environment. Extending to Mac requires Accessibility/Screen Recording permissions specific to that OS and a paid Apple Developer account, which Bourama did not have at the time.
+- **Detailed screen reading (window names and exact displayed text):** deliberately left open for Lot S so the implementation can decide based on actual difficulty. Start with a simple screenshot; add Windows UI Automation if required.
 
-Décisions de Bourama, toutes confirmées par lui le 18/10/2026 :
+## Lot V: read the contents of the window (completed 28 September 2026)
 
-- Classinus doit demander l'accord de l'étudiant pour regarder l'écran, écrire, ouvrir une
-  application et cliquer.
-- Application normale : trois boutons, « Autoriser cette fois seulement » (vaut pour toute la
-  tâche en cours dans cette application, clics compris, pas de question à chaque clic),
-  « Toujours autoriser pour cette appli » (retenu), « Refuser ». Jamais de « toujours » général.
-- Application sensible (ou non identifiée) : deux boutons seulement, « Autoriser cette fois
-  seulement » et « Refuser ». La question revient avant CHAQUE action, clics compris, et un
-  avertissement de risque est affiché au-dessus des boutons. Même si l'étudiant a mis « toujours »
-  pour cette appli ou son navigateur, une page sensible (titre) redemande.
-- Sensibles : argent et paiement, mots de passe, messages privés, réglages de l'ordinateur,
-  commandes de l'ordinateur, documents officiels et santé. Liste fournie par le serveur.
-- Classinus a l'OBLIGATION de demander lui-même une autorisation avant une action qu'il sent
-  sensible (payer, supprimer, envoyer) : action `demander_autorisation`, deux boutons, à chaque fois.
-- Les choix « toujours » se mémorisent sur le compte de l'étudiant.
-- On sépare le fonctionnement (application PC et site, cette partie) des conditions (serveur,
-  modifiables à distance sans nouvelle version).
+The detailed screen reading left open in Lot S has been implemented. `lire_ecran` reads the foreground window as text using Windows UI Automation (a PowerShell script launched from Electron's main process), without sending any image to the model.
 
-### Ce qui est fait (frontend, branche feature/canal-en-direct-pc)
+See the **Lot V** section in `packages/capacitor-pont-natif-electron/README.md` and `plan-canal-en-direct-pc-lot-v.md` if that file exists in the repository.
 
-- `electron/src/politiqueAutorisation.mts` : le fonctionnement (décider, retenir, texte de la question).
-  Module pur, testé par `npm run test:politique-autorisation`.
-- `plugin.mts` : branchement sur lire_ecran, taper_clavier (y compris écriture derrière une autre
-  fenêtre), appuyer_touches (Win+R toujours sensible), ouvrir_application, cliquer_ecran, plus la
-  nouvelle action `demander_autorisation`. Les accords « cette fois » tombent au début et à la fin de
-  chaque tâche (armerArretGlobal, desarmerArretGlobal, arrêt).
-- `applicationsProtegees.mts` : la demande porte maintenant `boutons` et `risque`, la réponse est un
-  choix (cette_fois, toujours_appli, refuser). Les anciennes réponses true et false restent comprises.
-- Bulle : `BandeauAutorisationAgent.tsx` montre les boutons reçus et l'avertissement. Site et
-  application PC restent compatibles dans les deux sens (ancienne version de l'un avec nouvelle de l'autre).
-- Lecture automatique décidée par le serveur : ne pose jamais de question. Sans accord elle ne donne
-  rien et renvoie Classinus vers lire_ecran, qui demande.
+On the backend, the four PC tools are now registered in `core/registre_outils.py` under category `agent_pc`, and are offered to the model only when a PC system connection is open (`core/main.py`, `a_connexion_systeme_pc`).
 
-### Interrupteur : rien ne change tant que le serveur n'envoie pas ce bloc
+## Lot W: permanent live-channel button (completed 1 October 2026)
 
-Sans `parametres.autorisation`, l'application PC garde son ancien comportement (seules les
-applications protégées de `applications_protegees` demandent un accord, deux boutons). Le serveur
-active la nouvelle politique en ajoutant dans les paramètres de chaque action PC :
+Bourama requested that the live channel can be activated at any time, even when the Classinus window is closed. The activation button is now the only overlay element displayed permanently. Other buttons appear with a transition when the channel becomes active.
 
-```
-autorisation: {
-  active: true,
-  applications_sensibles: ["powershell", "cmd", ...],      // noms de programmes
-  mots_titre_sensibles: ["banque", "paypal", ...],         // mots dans un titre de fenêtre (navigateur)
-  applications_toujours: ["notepad", ...],                 // choix « toujours » de l'étudiant (compte)
-  message_risque: "...",                                   // facultatif, remplace le texte par défaut
-  message_risque_action: "...",                            // facultatif, pour demander_autorisation
-  actions: ["lire", "ecrire", "ouvrir", "cliquer"]         // facultatif, tout par défaut
+- **Main window is hidden instead of closed** (`electron/arrierePlan.ts`). The close button hides the window; the app keeps running, and a tray icon near the clock offers **Open Classinus** and **Quit Classinus**. The main window holds the real channel connection; destroying it would disconnect the channel. If the tray icon cannot be created, closing the window exits the app as before.
+- **Overlay remains permanently visible** (`plugin.mts`, `afficherSuperpositionPermanente`). It appears as soon as the main window pushes its first state and is removed when the main window exits AppShell (sign-out), so an inactive button does not remain on screen. This replaces the decision from 28 September 2026, when the overlay was hidden while the channel was inactive.
+- **Only one PC button:** AppShell no longer mounts `CanalEnDirectFlottant` on Electron; only the overlay's button exists.
+- **Adjustable idle opacity** (`lib/opaciteBoutonCanal.ts`, `components/ReglageOpaciteBoutonCanal.tsx`). A discreet control appears beside the button once the channel is active, with a live preview on the button. Opacity never drops below 15%; default is 50%, and it becomes 100% on hover and while the channel is active. The setting is stored locally in the overlay.
+- **Start with Windows** (`electron/demarrage.ts`, `lancementSession.ts`). Enabled by default on the first launch of the installed app. It can be disabled in Settings > Preferences (`components/DemarrageAutomatiqueCarte.tsx`, plugin methods `lireDemarrageAutomatique` / `definirDemarrageAutomatique`). The app starts with the `--lancement-session` argument: no main window and no splash screen; only the button appears.
+
+Known limitations: if the student is not signed in, AppShell is not mounted and the button appears only after signing in. Fully quitting the app (Quit in the tray icon) also removes the button.
+
+## Authorization policy before release (frontend completed 18 October 2026; server work remains)
+
+Bourama confirmed all these decisions on 18 October 2026:
+
+- Classinus must ask the student for permission to view the screen, type, open an application, and click.
+- **Normal application:** three buttons:
+  - **Allow this time only:** applies to the entire current task in that application, including clicks. No question before every click.
+  - **Always allow for this app:** remembered.
+  - **Deny.**
+  There is never a global "always allow" option.
+- **Sensitive or unidentified application:** only two buttons, **Allow this time only** and **Deny**. The question is repeated before EVERY action, including clicks, and a risk warning appears above the buttons. Even if the student selected "always" for the app or browser, a sensitive page (detected through its title) asks again.
+- Sensitive areas include money and payments, passwords, private messages, computer settings, computer commands, official documents, and health. The server supplies the list.
+- Classinus is REQUIRED to request permission itself before an action it recognizes as sensitive (pay, delete, send). It uses the `demander_autorisation` action with two buttons every time.
+- "Always allow" choices are stored on the student's account.
+- Separate the behavior (PC application and website, this section) from the conditions (server-side rules that can be changed remotely without a new app version).
+
+### Completed on the frontend (branch `feature/canal-en-direct-pc`)
+
+- `electron/src/politiqueAutorisation.mts`: behavior for deciding, remembering, and writing the question text. Pure module, tested by `npm run test:politique-autorisation`.
+- `plugin.mts`: connected to `lire_ecran`, `taper_clavier` (including background typing), `appuyer_touches` (Win+R is always sensitive), `ouvrir_application`, `cliquer_ecran`, and the new `demander_autorisation` action. One-time approvals are cleared at the beginning and end of every task (`armerArretGlobal`, `desarmerArretGlobal`, stop).
+- `applicationsProtegees.mts`: the request now contains `boutons` and `risque`; the response is a choice (`cette_fois`, `toujours_appli`, `refuser`). Older boolean `true` and `false` responses are still supported.
+- Bubble: `BandeauAutorisationAgent.tsx` displays the received buttons and warning. The website and PC app remain compatible in both directions, including an older version of one with a newer version of the other.
+- Automatic reading is decided by the server and never asks a question. Without approval, it returns nothing and directs Classinus to `lire_ecran`, which requests permission.
+
+### Switch: nothing changes until the server sends this block
+
+Without `parametres.autorisation`, the PC application keeps its previous behavior. Only applications in `applications_protegees` request permission, with two buttons.
+
+The server enables the new policy by adding the following block to the parameters of each PC action:
+
+```json
+{
+  "autorisation": {
+    "active": true,
+    "applications_sensibles": ["powershell", "cmd"],
+    "mots_titre_sensibles": ["banque", "paypal"],
+    "applications_toujours": ["notepad"],
+    "message_risque": "...",
+    "message_risque_action": "...",
+    "actions": ["lire", "ecrire", "ouvrir", "cliquer"]
+  }
 }
 ```
 
-### Reste à faire côté serveur (volontairement pas fait)
+The values are:
 
-1. Envoyer le bloc `autorisation` ci-dessus avec chaque action PC (listes modifiables à distance).
-2. Mémoriser les choix « toujours » sur le compte (table par étudiant et application, retrait possible)
-   et les renvoyer dans `applications_toujours`. Tant que ce n'est pas fait, un « toujours » ne dure que
-   jusqu'à la fermeture de l'application PC. L'application PC appelle déjà un point d'accroche
-   (`creerAccords({ surToujours })` dans `plugin.mts`), aujourd'hui vide : c'est là qu'il faudra
-   prévenir le serveur du nouveau choix.
-3. Donner à Classinus l'outil `demander_autorisation` ({ texte }) et, dans sa consigne, l'obligation de
-   s'en servir avant toute action sensible. Il doit s'arrêter si l'étudiant refuse.
-4. Prévoir le message que Classinus reçoit quand une lecture automatique n'est pas autorisée
-   (voir MESSAGE_LECTURE_NON_AUTORISEE dans `plugin.mts`).
+- `applications_sensibles`: program names.
+- `mots_titre_sensibles`: words in a window title, including browser page titles.
+- `applications_toujours`: apps for which the student selected "always allow" on their account.
+- `message_risque` and `message_risque_action`: optional custom warning text.
+- `actions`: optional action list; all actions are enabled by default.
 
-### Limites connues à regarder en production
+### Remaining server work (intentionally not done)
 
-- Une banque ou une messagerie dans Chrome n'est reconnue que par le titre de la fenêtre.
-- Chaque clic lit un peu l'écran pour savoir dans quelle application il tombe : mesurer la lenteur.
-- La lecture se fait localement avant la question, mais rien n'est donné à Classinus avant l'accord.
+1. Send the `autorisation` block above with every PC action. Lists must be remotely configurable.
+2. Store "always allow" choices on the account (table keyed by student and application, with a way to revoke them) and return them in `applications_toujours`. Until this is implemented, "always" lasts only until the PC app closes. The PC app already calls an integration point (`creerAccords({ surToujours })` in `plugin.mts`), currently empty. Use it to notify the server of a new choice.
+3. Give Classinus the `demander_autorisation` tool (`{ texte }`) and add an instruction requiring it before every sensitive action. It must stop if the student refuses.
+4. Define the message Classinus receives when automatic reading is not authorized. See `MESSAGE_LECTURE_NON_AUTORISEE` in `plugin.mts`.
+
+### Known production issues to monitor
+
+- A bank or messaging service open in Chrome is recognized only through the window title.
+- Every click reads part of the screen to identify the target application. Measure the resulting latency.
+- Reading happens locally before the permission question, but nothing is sent to Classinus before approval.

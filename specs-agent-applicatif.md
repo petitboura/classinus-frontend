@@ -1,88 +1,112 @@
-# Plan de chantier — Agent applicatif Clovis (Clovis peut agir dans l'appli)
+# Project plan: Classinus application agent (Classinus can act inside the app)
 
-Rédigé le 15/09/2026, après audit réel de `clovis-frontend` et `clovis-backend`. Ce fichier est fait pour être repris par une ou plusieurs IA en parallèle, chacune sur une branche dédiée à son chantier.
+[English version] · [Français](specs-agent-applicatif.fr.md)
 
-**Avancement (16/09/2026)** : chantiers A, B, C, D, E, F posés sur la branche `chantier-agent-applicatif` (frontend + backend). Reste : chantier G (mode guidage), le POC limité à une section décidé en section 6 (encore à câbler dans une vraie section de l'appli), et la vérification visuelle réelle sur les trois plateformes (personne n'a encore ouvert l'appli avec ce code).
+Written on 15 September 2026, after an actual audit of `clovis-frontend` and `clovis-backend`. This file is intended to be picked up by one or more AIs working in parallel, each on a dedicated branch for its own task.
 
-## 1. Décisions déjà actées avec Bourama (ne pas re-discuter)
+**Progress (16 September 2026):** tasks A, B, C, D, E, and F were added to the `chantier-agent-applicatif` branch (frontend and backend). Remaining: task G (guidance mode), the proof of concept limited to one section as decided in section 6 (still needs to be connected to a real app section), and visual verification on all three platforms (no one has opened the app with this code yet).
 
-- Périmètre : Clovis peut voir l'état de l'appli et agir (cliquer, naviguer) comme l'utilisateur, mais uniquement à l'intérieur de l'appli Clovis elle même, jamais sur le reste du PC ou du téléphone.
-- Deux mécanismes combinés : un catalogue d'actions structurées pour les parcours fréquents, plus un mode générique (DOM + sélecteur) en filet de sécurité pour le reste.
-- Même système réutilisé pour un mode guidage (visite guidée d'une nouveauté), avec pause à chaque étape.
-- Trois plateformes concernées : web, natif mobile (Capacitor), PC. Comme les trois tournent sur le même code Next.js, un seul système suffit.
-- Curseur virtuel visible, superposé à l'interface, qui se déplace (jamais en ligne droite) et simule le clic.
-- Jamais dire à Clovis qu'il peut agir sur un élément désactivé, absent ou invisible à l'écran : la liste des actions disponibles doit toujours être calculée en direct sur l'état réel, jamais apprise une fois pour toutes.
-- L'état de l'interface est poussé à Clovis en continu (pas seulement relu à chaque tour de conversation), pour les actions autonomes ET pour le guidage.
-- Deux régimes de sensibilité coexistent pour les actions : certaines demandent confirmation, d'autres non. La sensibilité d'une action non qualifiée est TOUJOURS considérée sensible par défaut (défaut prudent).
-- La confirmation d'une action sensible se fait par une fenêtre avec un bouton, jamais par une question posée en texte libre dans le chat.
-- En cas d'échec en cours de route (élément disparu, page changée) : signaler à l'étudiant et réessayer ; certains cas précis (ex : action avec effet indépendant de l'écran, comme valider/envoyer/sauvegarder) peuvent continuer en arrière plan même si l'étudiant a changé de page. Décidé au cas par cas, voir section 5.
-- Aucune limite au nombre d'actions que Clovis peut enchaîner d'affilée sans repasser par l'étudiant. En cas d'échec au milieu d'une chaîne, Clovis évalue lui même si les actions restantes sont indépendantes de celle qui a échoué (même logique que l'enchaînement d'outils déjà existant dans le chat) : si oui il continue, sinon il arrête la chaîne à cette étape, sans annuler ce qui a déjà été fait.
-- Toute nouvelle table ou colonne Supabase pour ce chantier doit être strictement additive : ne jamais modifier une table déjà utilisée en production. Développement sur une branche dédiée, fusion dans main seulement quand le code est prêt.
+## 1. Decisions already approved by Bourama (do not reopen)
 
-## 2. Constat d'audit (fait le 15/09/2026 — à revérifier avant de coder si du temps a passé depuis)
+- Scope: Classinus can inspect the app state and act (click, navigate) like the user, but only inside the Classinus app itself, never elsewhere on the PC or phone.
+- Two combined mechanisms: a structured action catalogue for common journeys, plus a generic fallback mode (DOM + selector) for everything else.
+- Reuse the same system for a guidance mode (guided tour of a new feature), pausing at every step.
+- Three platforms: web, native mobile (Capacitor), and PC. All three run the same Next.js code, so one system is sufficient.
+- A visible virtual cursor is overlaid on the interface. It moves along a non-straight path, never a straight line, and visually simulates the click.
+- Never tell Classinus that it can act on an element that is disabled, absent, or invisible on screen. The available-action list must always be calculated from the real current state, never learned once and reused as a static list.
+- The interface state is continuously pushed to Classinus, not only reread at each conversation turn. This applies to autonomous actions and guidance mode.
+- Two sensitivity levels coexist: some actions require confirmation and others do not. An action with no declared sensitivity is ALWAYS treated as sensitive by default.
+- Confirmation for a sensitive action uses a dialog with a button, never a free-form question in chat.
+- If an action fails midway (element disappeared, page changed), notify the student and retry. Some specific cases, such as an action with an effect independent of the screen (submit, send, save), may continue in the background even if the student changes page. Decide case by case; see section 5.
+- There is no limit to the number of consecutive actions Classinus can perform without asking the student again. If an action fails in a chain, Classinus decides whether the remaining actions are independent of the failed action, using the same logic as consecutive tool calls in chat. If they are independent, continue; otherwise stop at that step without undoing completed work.
+- Any new Supabase table or column for this project must be strictly additive. Never modify a table already used in production. Develop on a dedicated branch and merge into `main` only when the code is ready.
 
-- **Canal temps réel déjà existant** : `lib/canalTempsReel.ts` (frontend, WebSocket) et `core/canal_temps_reel.py` (backend). Aujourd'hui utilisé pour l'exploration de dossier natif (`poser_question_appareil` : le backend pose une question à l'appareil ouvert et attend la réponse dans le même tour de raisonnement). C'est la fondation la plus naturelle pour la poussée d'état et l'exécution d'action, mais **à confirmer avec Bourama** : on étend ce canal existant, ou on en crée un séparé dédié à l'agent applicatif (voir section 4, point ouvert).
-- **Bus d'événements frontend existant** : `lib/evenementsDonnees.ts`, un simple `CustomEvent` sur `window` qui rafraîchit des sections quand l'IA modifie une donnée depuis le chat. Pattern différent (local, pas réseau) mais même philosophie de source unique de vérité, jamais de liste maintenue à la main.
-- **Registre d'outils backend existant** : `core/registre_outils.py` (catalogue des serveurs MCP) et la table Supabase `registre_outils_plateforme` (disponibilité par outil, catégorie, serveur). Piège déjà vécu et documenté : cache serveur de 24h, `forcer_rechargement_catalogue_outils` ou redémarrage Railway nécessaire pour qu'un nouvel outil soit visible sans attendre.
-- **Structure frontend** : Next.js App Router (`app/(app)/...` pour les sections connectées), composants dans `components/`, hooks/contexts dans `lib/`. Aucun mécanisme existant de déclaration de métadonnée d'action directement sur un composant : à construire de zéro (chantier A ci-dessous).
-- **Convention de dépôt** : jamais de tiret moyen dans un texte affiché à l'utilisateur (`CLAUDE.md`), toujours vérifiée avant de livrer un texte visible.
+## 2. Audit findings (15 September 2026; recheck before coding if time has passed)
 
-## 3. Contraintes valables pour tous les chantiers ci-dessous
+- **Existing real-time channel:** `lib/canalTempsReel.ts` (frontend WebSocket) and `core/canal_temps_reel.py` (backend). Currently used for native folder exploration (`poser_question_appareil`: the backend asks the open device a question and waits for its response in the same reasoning turn). This is the most natural foundation for continuous state updates and action execution, but **confirm with Bourama** whether to extend this channel or create a separate one dedicated to the application agent (see section 4, open decision).
+- **Existing frontend event bus:** `lib/evenementsDonnees.ts`, a simple `CustomEvent` on `window` that refreshes sections when the AI changes data from chat. A different pattern (local, not network-based), but the same principle: one source of truth, never a manually maintained list.
+- **Existing backend tool registry:** `core/registre_outils.py` (MCP server catalogue) and the Supabase `registre_outils_plateforme` table (tool availability by tool, category, and server). A known issue has already occurred and is documented: server-side cache lasts 24 hours. Use `forcer_rechargement_catalogue_outils` or restart Railway when a new tool must become visible immediately.
+- **Frontend structure:** Next.js App Router (`app/(app)/...` for authenticated sections), components in `components/`, hooks/contexts in `lib/`. There is no existing mechanism for declaring action metadata directly on a component; task A must build it from scratch.
+- **Repository convention:** never use an em dash in user-visible text (`CLAUDE.md`). Check this before delivering visible text.
 
-- Aucune ligne droite pour le déplacement du curseur virtuel.
-- Sensibilité non déclarée = sensible par défaut.
-- Confirmation = fenêtre + bouton uniquement.
-- Aucune modification d'une table Supabase déjà utilisée en prod ; additif uniquement, sur branche dédiée.
-- Jamais de tiret moyen dans un texte affiché.
-- Toute IA qui reprend un chantier ci-dessous doit lire `djiguigne-standards-dev` et, pour tout ce qui touche au frontend, `djiguigne-standards-frontend`, avant d'écrire une seule ligne de code.
-- Ne jamais supposer que cet audit (section 2) est toujours exact : revérifier l'état réel du dépôt avant de commencer.
+## 3. Constraints that apply to every task below
 
-## 4. Phase 0 — fondation commune (séquentielle, à trancher avant tout le reste)
+- The virtual cursor must never move in a straight line.
+- Undeclared sensitivity means sensitive by default.
+- Confirmation uses a dialog with a button only.
+- Never modify a Supabase table already used in production; additive changes only, on a dedicated branch.
+- Never use an em dash in user-visible text.
+- Any AI taking over a task below must read `djiguigne-standards-dev` and, for frontend work, `djiguigne-standards-frontend` before writing a single line of code.
+- Never assume the audit in section 2 is still accurate. Recheck the actual repository state before starting.
 
-- **0.1** Décider avec Bourama : étendre le canal temps réel existant (`canal_temps_reel.py` / `canalTempsReel.ts`) pour porter les nouveaux messages (état poussé, demande d'exécution d'action), ou créer un canal séparé dédié. Bloque le démarrage des chantiers C et D.
-- **0.2** Créer une branche dédiée à l'ensemble du chantier sur `clovis-frontend` et sur `clovis-backend` (nom à confirmer avec Bourama), séparée de `main`, fusionnée seulement quand prête — comme pour le chantier "image-vers-grand-modele".
+## 4. Phase 0: shared foundation (sequential, must be decided before the rest)
 
-## 5. Chantiers (dépendances notées, ceux sans dépendance commune sont réellement poussables en parallèle)
+- **0.1** Decide with Bourama whether to extend the existing real-time channel (`canal_temps_reel.py` / `canalTempsReel.ts`) to carry the new messages (pushed state and action execution request), or create a separate channel dedicated to the application agent. This blocks the start of tasks C and D.
+- **0.2** Create a dedicated branch for the entire project in both `clovis-frontend` and `clovis-backend` (branch name to be confirmed with Bourama), separate from `main`, and merge only when ready, as done for the "image-to-large-model" project.
 
-### Chantier A — Déclaration de métadonnée d'action sur les composants (frontend)
-**Dépendance : aucune.**
-Permettre à un composant (bouton, champ, section) de déclarer dans son propre code : un nom d'action, une description, une condition d'activation, et un niveau de sensibilité (sensible/non-sensible, défaut sensible si absent). But : à tout instant, on peut obtenir la liste des actions réellement montées, visibles et actives, sans jamais dépendre d'une liste apprise à l'avance. Peut être conçu et testé avec des composants factices avant d'être branché sur le reste.
+## 5. Tasks
 
-### Chantier B — Curseur virtuel (frontend)
-**Dépendance : aucune.**
-Composant visuel superposé, qui se déplace vers des coordonnées données par une trajectoire non rectiligne, s'arrête, simule visuellement le clic. Testable isolément avec des coordonnées codées en dur (à retirer avant fusion finale, jamais laissées en dur en prod).
+Dependencies are noted. Tasks without shared dependencies can genuinely proceed in parallel.
 
-### Chantier C — Nouvel outil MCP pour déclencher une action (backend)
-**Dépendance : 0.1.**
-Nouvel outil exposé UNIQUEMENT côté chat élève (jamais côté serveur MCP public, même logique que pour `verifier_consignes_code_actif`), qui envoie via le canal choisi en 0.1 une demande d'exécution d'action à l'appareil actif et attend le résultat. Entrée à ajouter dans `registre_outils_plateforme`, en anticipant tout de suite le piège de cache 24h déjà connu (appeler `forcer_rechargement_catalogue_outils` ou prévoir un redémarrage).
+### Task A: declare action metadata on frontend components
 
-### Chantier D — Poussée continue de l'état de l'interface (frontend + backend)
-**Dépendance : A (rien à signaler sans la déclaration), 0.1 (canal).**
-Dès qu'un élément déclaré en A apparaît, disparaît ou change d'état (actif/inactif), un message est poussé via le canal choisi en 0.1. Point à trancher avec Bourama avant de coder : quels changements sont "signalables" pour éviter le bruit (probablement uniquement montage/démontage/changement d'état des éléments déclarés en A, jamais les événements bruts comme frappe ou défilement).
+**Dependency:** none.
 
-### Chantier E — Fenêtre de confirmation pour action sensible (frontend)
-**Dépendance : A (pour connaître la sensibilité déclarée).**
-Composant de fenêtre modale générique avec un bouton, affichée quand une action sensible (ou non qualifiée) est demandée.
+Allow a component (button, field, section) to declare in its own code an action name, description, activation condition, and sensitivity level (sensitive/non-sensitive; default to sensitive if omitted).
 
-### Chantier F — Mode générique de secours, DOM + sélecteur (frontend)
-**Dépendance : A (pour ne jamais faire doublon avec une action déjà structurée, et pour réutiliser la même logique de vérification en direct).**
-Filet de sécurité pour ce qui n'a pas encore d'action déclarée. Double vérification obligatoire juste avant le clic réel (l'élément existe-t-il encore, est-il visible et actif), jamais seulement au moment de la décision.
+The goal is to obtain at any moment the list of actions that are actually mounted, visible, and active, without relying on a list learned in advance. It can be designed and tested with dummy components before being connected to the rest of the app.
 
-### Chantier G — Mode guidage / visite guidée (frontend)
-**Dépendance : A, B, D.**
-Réutilise les actions déclarées et le curseur virtuel, mais avec une pause à chaque étape. Peut être écrit en parallèle sur sa propre branche, mais ne pourra être testé en conditions réelles qu'une fois A, B et D posés.
+### Task B: virtual cursor (frontend)
 
-## 6. Points ouverts à trancher avec Bourama avant que le codage commence
+**Dependency:** none.
 
-1. Canal réseau (0.1) : étendre l'existant ou en créer un nouveau ?
-2. Nom exact du nouvel outil MCP et de ses paramètres (chantier C).
-3. Le comportement "peut continuer en arrière plan si la page change" (cas 2 de la section discussion sur les échecs) : déclaré comme un paramètre supplémentaire sur chaque action (dans la métadonnée du chantier A), ou géré autrement ? À ne pas deviner.
-4. Portée du premier lot : une preuve de concept limitée à une seule section de l'appli (ex : bibliothèque) avant de généraliser partout, ou tout de suite sur l'ensemble des sections ?
-5. Nom de la branche commune du chantier (0.2).
+Create an overlay component that moves towards provided coordinates along a non-straight trajectory, stops, and visually simulates a click. It can be tested in isolation with hard-coded coordinates, which must be removed before the final merge and must never remain hard-coded in production.
 
-## 7. Rappel pour toute IA qui reprend ce fichier
+### Task C: new MCP tool to trigger an action (backend)
 
-- Lire `djiguigne-standards-dev` (et `djiguigne-standards-frontend` pour le frontend) avant d'écrire du code.
-- Revérifier l'état réel des dépôts avant de supposer que l'audit de la section 2 est toujours valable.
-- Ne jamais coder sans confirmation explicite de Bourama sur les points ouverts de la section 6.
-- Expliquer tout à Bourama en langage simple, sans jargon inutile, il n'a pas de background code.
+**Dependency:** Phase 0.1.
+
+Add a new tool exposed ONLY in student chat (never through the public MCP server, following the same rule as `verifier_consignes_code_actif`). It sends an action execution request to the active device through the channel selected in phase 0.1 and waits for the result.
+
+Add the tool to `registre_outils_plateforme`. Immediately account for the known 24-hour cache issue: call `forcer_rechargement_catalogue_outils` or plan a restart.
+
+### Task D: continuous interface-state updates (frontend + backend)
+
+**Dependencies:** A (nothing can be reported without component declarations) and Phase 0.1 (channel).
+
+Whenever an element declared in task A appears, disappears, or changes state (active/inactive), push a message through the selected channel.
+
+Before coding, decide with Bourama which changes should be reported to avoid noise. Likely only mount/unmount and state changes for declared elements, never raw events such as typing or scrolling.
+
+### Task E: confirmation dialog for sensitive actions (frontend)
+
+**Dependency:** A, to identify declared sensitivity.
+
+Create a generic modal dialog with one button, displayed whenever a sensitive or undeclared action is requested.
+
+### Task F: generic DOM + selector fallback (frontend)
+
+**Dependency:** A, to avoid duplicating an already structured action and reuse the same live verification logic.
+
+This is a fallback for elements that do not yet declare an action. A mandatory double-check must happen immediately before the real click: does the element still exist, is it visible, and is it enabled? Checking only when the model decides is not sufficient.
+
+### Task G: guidance mode / guided tour (frontend)
+
+**Dependencies:** A, B, and D.
+
+Reuse declared actions and the virtual cursor, but pause at every step. It can be implemented in parallel on its own branch, but it cannot be tested in real conditions until A, B, and D are in place.
+
+## 6. Open decisions for Bourama before coding begins
+
+1. Network channel (0.1): extend the existing one or create a new one?
+2. Exact name and parameters for the new MCP tool (task C).
+3. Behavior when an action "can continue in the background if the page changes" (case 2 in the failure discussion): should this be an extra parameter on every action (in task A metadata), or handled another way? Do not guess.
+4. Scope of the first release: a proof of concept limited to one app section (for example, the library) before generalizing, or the whole app from the start?
+5. Name of the shared project branch (0.2).
+
+## 7. Reminder for any AI taking over this file
+
+- Read `djiguigne-standards-dev` (and `djiguigne-standards-frontend` for frontend work) before writing code.
+- Recheck the actual repository state before relying on the audit in section 2.
+- Do not code without Bourama's explicit confirmation on the open decisions in section 6.
+- Explain everything to Bourama in simple language, without unnecessary jargon. He does not have a traditional coding background.

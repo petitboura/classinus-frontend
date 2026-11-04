@@ -1,136 +1,87 @@
-# Instructions permanentes pour Claude sur ce dépôt
+# Permanent instructions for Claude in this repository
 
-## Jamais de tirets doubles ("--") dans un texte AFFICHÉ
+[English version] · [Français](CLAUDE.fr.md)
 
-Bourama déteste totalement les "--" (substitut d'em-dash) dans tout texte
-qu'un utilisateur voit à l'écran. Concrètement, jamais dans :
-- un label, titre, placeholder, message d'erreur ou texte de bouton en JSX
-- tout texte injecté dynamiquement (props texte, contenu généré)
+## Never use double hyphens ("--") in user-visible text
 
-Ça reste totalement acceptable dans :
-- le code lui-même (commentaires `//`, JSDoc) -- jamais vu par l'utilisateur
+Bourama strongly dislikes double hyphens used as a substitute for an em dash in any text shown to a user. In practice, never use them in:
+- JSX labels, titles, placeholders, error messages, or button text.
+- Any text inserted dynamically, including text props and generated content.
 
-À la place d'un em-dash dans un texte affiché : une virgule, un point, une
-parenthèse, ou reformuler la phrase.
+They are acceptable in code itself (comments, JSDoc), which users do not see.
 
-Cette règle est un standing instruction : la vérifier avant de livrer tout
-texte destiné à être affiché, sans que Bourama ait à la répéter.
+When an em dash would otherwise appear in visible text, use a comma, period, parentheses, or rewrite the sentence.
 
-## Toujours tenir à jour la base FAQ/AEO de Classinus
+This is a standing instruction. Check all user-visible text before delivery without waiting for Bourama to repeat the rule.
 
-Dès qu'une fonctionnalité, un comportement, un affichage, un bouton ou une
-icône est ajouté, modifié ou supprimé, la documentation SEO/AEO
-correspondante (pages `/decouvrir/...`, futures entrées FAQ/AEO) doit être
-mise à jour dans le même geste, sans que Bourama ait à le redemander.
+## Keep the Classinus FAQ/AEO knowledge base up to date
 
-## Couche du haut réservée à l'agent (z-index)
+Whenever a feature, behavior, visual element, button, or icon is added, changed, or removed, update the corresponding SEO/AEO documentation (the `/decouvrir/...` pages and future FAQ/AEO entries) in the same change. Do not wait for Bourama to ask.
 
-Le bouton du canal en direct, le bouton du journal et le curseur virtuel
-doivent toujours rester au dessus de tout : plein écran, popups, menus,
-visionneuses. Leurs valeurs vivent dans `lib/couchesAgent.ts` (source unique,
-exposées aussi en classes Tailwind `z-agent-bulle`, `z-agent-controles`,
-`z-agent-curseur`).
+## The agent's overlay layer must stay on top (z-index)
 
-Règle pour tout ajout : aucun autre élément ne dépasse
-`COUCHE_MAX_APPLICATION` (9989). Ne jamais écrire un z-index supérieur pour
-un nouvel élément, et ne jamais mettre en dur une valeur de cette couche
-ailleurs que dans `lib/couchesAgent.ts`.
+The live-channel button, action-log button, and virtual cursor must always stay above everything else: full-screen views, popups, menus, and document viewers.
 
-## STAGING : le blocage d'indexation ne va JAMAIS dans main
+Their z-index values live in `lib/couchesAgent.ts`, the single source of truth. They are also exposed through the Tailwind classes `z-agent-bulle`, `z-agent-controles`, and `z-agent-curseur`.
 
-Règle absolue, voulue par Bourama (12/10/2026). À respecter même si une
-fusion, un rebase ou une demande semble l'exiger.
+For every new UI element, never exceed `COUCHE_MAX_APPLICATION` (9989). Do not set a higher z-index and never hard-code values from the agent layer anywhere except `lib/couchesAgent.ts`.
 
-La copie de test `staging.classinus.com` est construite depuis la branche
-`staging`. Cette branche (et elle seule) contient dans `next.config.mjs` un
-bloc marqué "STAGING SEULEMENT" qui envoie `X-Robots-Tag: noindex, nofollow`
-sur toutes les pages, pour que Google n'affiche pas la copie de test.
+## STAGING: the indexing block must NEVER enter main
 
-Si ce bloc arrive dans `main` ou en production, le vrai site `classinus.com`
-disparaît de Google. C'est déjà arrivé que Google le prenne pour un double
-d'un autre site, il ne faut pas aggraver ça.
+This is an absolute rule requested by Bourama on 12 October 2026. Follow it even if a merge, rebase, or request appears to require otherwise.
 
-Ce que Claude doit faire :
-- Ne jamais copier, fusionner, cherry-pick ou réécrire ce bloc dans `main`.
-- Avant toute fusion de `staging` vers `main`, vérifier que le bloc
-  "STAGING SEULEMENT" de `next.config.mjs` (et son garde) ne part pas avec :
-  garder la version de `main` pour ce fichier, ou retirer le bloc à la main.
-- Ne jamais promouvoir en production un déploiement construit depuis
-  `staging` (la promotion ne relance pas de construction, donc le garde ne
-  pourrait pas l'arrêter).
-- Si Bourama demande quelque chose qui obligerait à mettre ce bloc dans
-  `main`, ne pas le faire : lui rappeler cette règle et attendre sa réponse.
+The test copy at `staging.classinus.com` is built from the `staging` branch. That branch, and only that branch, contains a block in `next.config.mjs` marked **STAGING ONLY**. It sends `X-Robots-Tag: noindex, nofollow` on every page so Google does not index the test copy.
 
-Garde-fou technique : le bloc contient un garde qui fait ÉCHOUER la
-construction (erreur volontaire) quand elle tourne pour `main` ou pour la
-production. Vercel garde alors la version précédente en ligne. Ne jamais
-retirer, contourner ou assouplir ce garde.
+If this block reaches `main` or production, the real `classinus.com` website may disappear from Google. Google has previously treated the test site as a duplicate of another site; do not make this worse.
 
-## Menus, listes et bulles ancrés : toujours via FlottantAncre
+Claude must:
+- Never copy, merge, cherry-pick, or recreate this block in `main`.
+- Before merging `staging` into `main`, verify that the **STAGING ONLY** block in `next.config.mjs` and its guard are not included. Keep the `main` version of that file or remove the block manually.
+- Never promote a deployment built from `staging` to production. Promotion does not rebuild the app, so the guard cannot stop it.
+- If Bourama requests something that would require putting this block in `main`, do not do it. Remind him of this rule and wait for his response.
 
-Règle voulue par Bourama (17/10/2026) : plus jamais de placement réglé au cas
-par cas pour un menu, une liste déroulante, une bulle ou un volet qui s'ouvre
-à côté d'un bouton. Tout passe par `components/FlottantAncre.tsx` (calcul dans
-`lib/placementFlottant.ts`).
+Technical safeguard: the block contains a guard that deliberately FAILS the build if it runs for `main` or production. Vercel then keeps the previous version online. Never remove, bypass, or weaken this guard.
 
-Ce que la règle garantit : le panneau s'ouvre du côté voulu s'il y a la place,
-sinon de l'autre côté (vers le haut ou vers la gauche), sinon il se réduit et
-défile à l'intérieur de lui-même. Il ne sort jamais de son contenant : la
-fenêtre ou le panneau qui le porte, sinon l'écran réellement visible (clavier
-du téléphone exclu). Il est rendu dans le corps de la page, donc aucun parent
-ne peut le rogner ni le pousser à déborder.
+## Anchored menus, lists, and tooltips must use FlottantAncre
 
-Pour tout ajout :
-- Ne jamais écrire `absolute top-full`, `bottom-full`, `right-0` ou une mesure
-  `getBoundingClientRect` pour un panneau ancré. Utiliser `FlottantAncre`.
-- Toute fenêtre ou panneau qui peut contenir un menu porte l'attribut
-  `data-contenant-flottant` (déjà posé sur `PanneauFlottant` et les fenêtres de
-  section). Un nouveau conteneur de ce type doit le porter aussi.
-- Le clic à l'extérieur doit tester `innerRef.contains(cible)` en plus du
-  bouton, car le panneau n'est plus un descendant DOM de son bouton.
-- Le niveau (z-index) est géré par le composant, sous la couche de l'agent.
+Bourama's rule from 17 October 2026: never position a menu, dropdown, tooltip, or panel beside a button with one-off CSS calculations. Use `components/FlottantAncre.tsx` for all of them; placement logic is in `lib/placementFlottant.ts`.
 
-## Listes et cases à cocher : jamais de natif
+The component opens the panel on the preferred side when space is available, otherwise on the opposite side (up or left). If neither side has enough room, it shrinks the panel and scrolls its own content. It never extends beyond its containing window or panel, or the actually visible screen area (excluding the phone keyboard). It is rendered in the page body, so no parent can clip it or force it outside the viewport.
 
-Décision de Bourama (22/10/2026), à ne jamais défaire. Le navigateur dessine
-lui-même les `<select>` et les `<input type="checkbox">`, sans notre thème.
-- Liste déroulante : `SelectPersonnalise` (option `compact` pour les rangées serrées).
-- Case à cocher : `CaseACocher`.
-- Ne jamais écrire `<select>` ni `<input type="checkbox">` ailleurs que dans ces
-  deux composants. `tests/verifier-composants-natifs.mjs` tourne avant chaque
-  build (`prebuild`, et les builds Capacitor) et l'arrête avec le fichier et la
-  ligne fautifs. Ne pas le contourner ni l'assouplir.
-- Même logique pour la langue de l'interface : pas de pastille FR/EN flottante,
-  le choix est dans Paramètres > Préférences et à la création du compte.
+For every new anchored panel:
+- Never use `absolute top-full`, `bottom-full`, `right-0`, or a custom `getBoundingClientRect` calculation. Use `FlottantAncre`.
+- Every window or panel that may contain a menu must have the `data-contenant-flottant` attribute. It is already present on `PanneauFlottant` and section windows. Add it to any new container of this type.
+- Outside-click handling must test `innerRef.contains(target)` as well as the button, because the panel is no longer a DOM child of its button.
+- The component manages its z-index below the agent overlay layer.
 
-## Le bouton et le menu "Outils" du chat : supprimés pour toujours
+## Select lists and checkboxes: never use native controls
 
-Décision de Bourama (28/10/2026), à respecter même si une demande, une
-fusion ou un ancien code semble l'exiger. Le bouton "Outils" de la barre de
-saisie et son menu (sur ordinateur comme sur mobile) n'existent plus : c'est
-le routeur automatique qui choisit les outils, la personne n'en choisit plus
-un à la main.
+Bourama's decision from 22 October 2026 must never be reversed. The browser draws native `<select>` and `<input type="checkbox">` controls itself, without using our theme.
 
-Ce que Claude doit faire :
-- Ne jamais recréer ce bouton, ce menu, ni une variante (onglets d'outils,
-  panneau Outils mobile, bouton flottant d'outils, interrupteur pour le
-  réactiver).
-- Ne jamais écrire dans un texte affiché que des outils "sont dans le menu
-  Outils" : les outils d'un serveur MCP personnalisé sont utilisés par
-  Classinus dans le chat, avec une confirmation avant chaque exécution.
-- Ne pas confondre avec le bouton Applications et le bouton "+" de la barre
-  de saisie, qui restent.
+- Dropdown: use `SelectPersonnalise` (the `compact` option is available for tight rows).
+- Checkbox: use `CaseACocher`.
+- Never write `<select>` or `<input type="checkbox">` anywhere except inside those two components.
 
-## Couleurs du thème : jamais une couleur qui n'existe pas
+`tests/verifier-composants-natifs.mjs` runs before every build (`prebuild` and Capacitor builds) and stops the build with the offending file and line. Do not bypass or weaken it.
 
-Décision de Bourama (29/10/2026), à ne jamais défaire. Une classe comme
-`bg-dj-primaire` ne produit rien quand `primaire` n'est pas défini : le bouton
-n'a plus de fond, son texte blanc devient invisible (c'est arrivé au bouton
-"Nouveau skill", blanc en thème sombre).
-- Les seules couleurs `dj-...` permises sont celles de `tailwind.config.ts`
-  (bloc `colors.dj` et `backgroundImage`).
-- Bouton principal : `bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2`.
-- `tests/verifier-couleurs-theme.mjs` tourne avant chaque build (`prebuild`, et
-  les builds Capacitor) et l'arrête avec le fichier et la ligne fautifs. Ne pas
-  le contourner ni l'assouplir. Pour une vraie nouvelle couleur, l'ajouter
-  d'abord dans `tailwind.config.ts` et `app/globals.css` (clair et sombre).
+The same principle applies to interface language: do not add a floating FR/EN badge. Language selection is in Settings > Preferences and during account creation.
+
+## The chat "Tools" button and menu have been permanently removed
+
+Bourama's decision from 28 October 2026 must be respected even if a request, merge, or old code appears to require otherwise.
+
+The **Tools** button in the chat input bar and its menu no longer exist, on desktop or mobile. The automatic router chooses tools; the user does not choose them manually.
+
+Claude must:
+- Never recreate this button, menu, or any variation (tool tabs, mobile Tools panel, floating Tools button, or a switch to re-enable it).
+- Never write user-visible text saying that tools are "in the Tools menu". Tools from a custom MCP server are used by Classinus in chat, with confirmation before each execution.
+- Do not confuse this with the Applications button or the plus button in the input bar. Those remain.
+
+## Theme colors: never use an undefined color
+
+Bourama's decision from 29 October 2026 must never be reversed. A class such as `bg-dj-primaire` does nothing when `primaire` is not defined. The button then loses its background, and white text can become invisible. This happened to the white **New skill** button in dark mode.
+
+- The only permitted `dj-...` colors are those defined in `tailwind.config.ts` (the `colors.dj` and `backgroundImage` blocks).
+- Primary button: `bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2`.
+- `tests/verifier-couleurs-theme.mjs` runs before every build (`prebuild` and Capacitor builds) and stops the build with the offending file and line. Do not bypass or weaken it.
+- To add a genuinely new color, define it first in `tailwind.config.ts` and `app/globals.css` for both light and dark themes.

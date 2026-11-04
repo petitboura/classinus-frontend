@@ -1,10 +1,9 @@
-# ⚠️ Fonctionnalité "Programme" désactivée
+# The "Programme" feature is disabled
 
-La structure classe/matière/chapitre côté frontend a déjà été entièrement
-retirée (aucun composant `EspaceProgramme`, aucune route associée — vérifié
-le 29/08/2026). Voir `clovis-backend/_desactive_programme/LISEZ_MOI_NE_JAMAIS_REUTILISER.md`
-pour le détail de la désactivation côté backend.
+[English version] · [Français](PROGRAMME_DESACTIVE.fr.md)
 
-**NE JAMAIS RÉINTRODUIRE** de composant, page ou logique "programme" dans
-ce dépôt, même partiellement, même "pour s'inspirer" — le backend qui les
-servait est désactivé et isolé.
+The class/subject/chapter structure has already been completely removed from the frontend. There is no `EspaceProgramme` component or associated route, as verified on 29 August 2026.
+
+See `classinus-backend/_desactive_programme/LISEZ_MOI_NE_JAMAIS_REUTILISER.md` for details about the backend deactivation.
+
+**NEVER REINTRODUCE** a Programme component, page, or logic in this repository, even partially and even "for inspiration". The backend that served it is disabled and isolated.
