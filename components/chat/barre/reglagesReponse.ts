@@ -46,7 +46,7 @@ export type ModeleDisponible = {
 // d'affichage seulement : Meta puis DeepSeek en haut de la liste, à la demande de
 // Bourama (30/10/2026), suivis des autres fournisseurs dans l'ordre d'avant. Même ordre que
 // la colonne ordre de fournisseurs_llm côté base de données.
-export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["meta", "deepseek", "claude", "gpt", "gemini", "grok"];
+export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["meta", "deepseek", "claude", "gpt", "gemini", "grok", "zai", "alibaba", "nvidia"];
 
 export const LABELS_DISTRIBUTEUR: Record<string, string> = {
   claude: "Claude",
