@@ -131,7 +131,7 @@ components/
                           téléphone (chat plein écran) le bouton est posé tout en haut, sur la ligne du hamburger ;
                           IconeFournisseur.tsx : icône d'un fournisseur de modèles, depuis public/icones-fournisseurs/ ;
                           barre/GroupeFournisseur.tsx (04/11/2026) : liste dépliable d'un fournisseur (dépliée par défaut,
-                          flèche vers la droite si repliée, vers le bas si dépliée), partagée par le sélecteur du haut et BoutonReglages ;
+                          flèche après le nom, vers la droite si repliée, vers le bas si dépliée), partagée par le sélecteur du haut et BoutonReglages ;
                           LigneApercuPieces.tsx (02/10/2026) : ligne unique défilable des pièces jointes,
                           avant envoi (BarreDeSaisie.tsx) et après envoi (BulleMessage.tsx) ; carrés pour
                           images et vidéos, pilules empilées par deux pour le reste ; FenetreTexteColle.tsx
