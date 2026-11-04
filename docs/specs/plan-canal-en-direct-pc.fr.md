@@ -1,4 +1,4 @@
-> [English version](./docs/specs/plan-canal-en-direct-pc.md) · **Version française**
+> [English version](./docs/specs/docs/specs/plan-canal-en-direct-pc.md) · **Version française**
 
 # Plan : le canal en direct sort de l'appli, sur PC
 

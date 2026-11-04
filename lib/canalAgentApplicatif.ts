@@ -394,7 +394,7 @@ function envoyerViaRepli(texte: string) {
 export function envoyerMessageEtudiant(texte: string) {
   const propre = texte.trim();
   if (!propre) return;
-  // Ajout du 27/09/2026 (Lot R, voir plan-canal-en-direct-pc.md) : cette
+  // Ajout du 27/09/2026 (Lot R, voir docs/specs/plan-canal-en-direct-pc.md) : cette
   // fonction est importée directement par ControlesInteractionCanal.tsx
   // et BulleDialogueAgent.tsx (pas via ContexteCanalEnDirect), et ces
   // composants sont réutilisés tels quels dans la fenêtre de

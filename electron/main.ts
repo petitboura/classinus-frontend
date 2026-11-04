@@ -12,7 +12,7 @@ import { preparerRelais } from './relais';
 const capacitorApp = createCapacitorElectronApp(config);
 
 // Lot R (27/09/2026, Bourama : chantier "canal en direct sort de
-// l'appli", voir plan-canal-en-direct-pc.md a la racine du depot).
+// l'appli", voir docs/specs/plan-canal-en-direct-pc.md a la racine du depot).
 // Deuxieme fenetre : sans bordure, transparente, toujours au dessus de
 // tout (y compris une appli en plein ecran) et a l'origine sans capture
 // de clic. Elle charge une route Next dediee (app/agent-superposition/page.tsx)
