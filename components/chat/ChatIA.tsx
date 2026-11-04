@@ -37,6 +37,7 @@ import { lireLangage } from "@/lib/logosLangages";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 import { obtenirLectureEditeurPourChat } from "@/lib/pontEditeurAgent";
 import { detecterLangageCode } from "@/lib/texteColle";
+import { estTexteEchecOuAnnulation, obtenirLocale } from "@/lib/i18n/locale";
 import type { ModeleDisponible } from "./barre/reglagesReponse";
 import type { ContexteVideoMontage } from "@/lib/videoMontage";
 
@@ -544,7 +545,7 @@ export function ChatIA({
               })();
         // "a échoué" traité comme "annulée" (18/09/2026) : une ligne d'outil
         // ne doit jamais afficher de coche verte pour un échec.
-        const estEchecOuAnnulation = !evenement.libelle_ia && (evenement.texte.includes("annulée") || evenement.texte.includes("échoué"));
+        const estEchecOuAnnulation = !evenement.libelle_ia && estTexteEchecOuAnnulation(evenement.texte);
         if (i === -1) {
           copie.push({ texte: evenement.texte, etat: "termine", libelleIa: !!evenement.libelle_ia });
         } else {
@@ -552,7 +553,7 @@ export function ChatIA({
         }
         return copie;
       });
-      if (evenement.id_appel && (evenement.libelle_ia || !(evenement.texte.includes("annulée") || evenement.texte.includes("échoué")))) {
+      if (evenement.id_appel && (evenement.libelle_ia || !estTexteEchecOuAnnulation(evenement.texte))) {
         textesTermineRef.current.set(evenement.id_appel, evenement.texte);
       }
     } else if (item.type === "sources") {
@@ -1760,6 +1761,7 @@ export function ChatIA({
   // frappe du canal se coupent, et les outils encore « en cours » passent en « annulée » (leur
   // ligne ne doit pas continuer de tourner à l'écran).
   function arreterGeneration() {
+    const enAnglais = obtenirLocale() === "en";
     setStatuts((prec) =>
       prec.some((s) => s.etat === "en_cours")
         ? prec.map((s) =>
@@ -1768,7 +1770,7 @@ export function ChatIA({
                   ...s,
                   // Une phrase écrite par l'IA reste telle quelle (« annulée » collé derrière
                   // ferait une phrase bancale, et l'icône suffit à montrer l'arrêt).
-                  texte: s.libelleIa ? s.texte.replace(/(\.{3}|…)$/, "").trim() : `${(s.nomLisible || s.texte.replace(/\.{3}$/, "")).trim()} annulée`,
+                  texte: s.libelleIa ? s.texte.replace(/(\.{3}|…)$/, "").trim() : `${(s.nomLisible || s.texte.replace(/\.{3}$/, "")).trim()} ${enAnglais ? "canceled" : "annulée"}`,
                   etat: "annule" as EtatStatut,
                 }
               : s

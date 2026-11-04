@@ -6,11 +6,15 @@
 // vers l'inscription (22/09), rien ne menait plus aux pages de connexion.
 // Rien n'est affiché tant que la session n'est pas confirmée, pour ne pas
 // faire clignoter les boutons chez quelqu'un de déjà connecté.
+import { useLocale } from "@/lib/i18n/useLocale";
+import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 export function BoutonsCompteVisiteur() {
+  const locale = useLocale();
+  const t = (texte: string) => traduireTexteInterface(texte, locale);
   const [visiteur, setVisiteur] = useState(false);
 
   useEffect(() => {
@@ -40,13 +44,13 @@ export function BoutonsCompteVisiteur() {
         href="/connexion"
         className="rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute px-[22px] py-3 text-sm font-semibold text-dj-texte transition-colors duration-200 ease-cgpt-doux hover:border-dj-bordure-forte hover:bg-dj-surface active:scale-[.98]"
       >
-        Se connecter
+        {t("Se connecter")}
       </Link>
       <Link
         href="/inscription"
         className="rounded-cgpt-bouton bg-dj-accent-1 px-[22px] py-3 text-sm font-semibold text-[#1a0f06] transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 active:scale-[.98]"
       >
-        Créer un compte
+        {t("Créer un compte")}
       </Link>
     </div>
   );

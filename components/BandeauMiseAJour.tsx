@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/useLocale";
+import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { Download } from "lucide-react";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 
@@ -11,6 +13,8 @@ import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
  * peut jamais valoir true hors app mobile, voir useMiseAJourDisponible).
  */
 export function BandeauMiseAJour() {
+  const locale = useLocale();
+  const t = (texte: string) => traduireTexteInterface(texte, locale);
   const { misAJourDisponible, version, telecharger } = useMiseAJourDisponible();
 
   if (!misAJourDisponible) return null;
@@ -20,14 +24,14 @@ export function BandeauMiseAJour() {
       <div className="flex items-center gap-2.5">
         <Download size={18} className="flex-shrink-0 text-dj-accent-1" />
         <span className="text-sm text-dj-texte">
-          Version {version ?? ""} disponible.
+          {t(`Version ${version ?? ""} disponible.`)}
         </span>
       </div>
       <button
         onClick={telecharger}
         className="flex-shrink-0 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
       >
-        Télécharger
+        {t("Télécharger")}
       </button>
     </div>
   );

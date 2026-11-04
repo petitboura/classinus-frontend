@@ -7,6 +7,7 @@ import type { Locale } from "./locale";
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  "Télécharger": "Download",
   // Carte de connexion proposée dans le chat et écran Connexions (26/10/2026).
   "utiliser pour ça": "Use it for this",
   "demande envoyée": "Request sent",
@@ -2766,6 +2767,10 @@ export function traduireTexteInterface(texte: string, locale: Locale): string {
     [/^(.+) réfléchit…$/i, "$1 is thinking…"],
     [/^(.+) réfléchit\.\.\.$/i, "$1 is thinking..."],
     [/^(.+) réfléchit$/i, "$1 is thinking"],
+    [/^raisonnement de (.+)$/i, "Reasoning from $1"],
+    [/^conversation : (.+)$/i, "Conversation: $1"],
+    [/^ajouté à la bibliothèque : (.+)$/i, "Added to library: $1"],
+    [/^version (.+) disponible\.$/i, "Version $1 available."],
     [/^génération en cours… (\d+)%$/i, "Generating… $1%"],
     [/^1 effet · (\d+) au total$/i, "1 effect · $1 in total"],
     [/^(\d+) effets · (\d+) au total$/i, "$1 effects · $2 in total"],

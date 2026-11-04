@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/useLocale";
 import { useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { appelerApi } from "@/lib/api";
@@ -39,6 +40,7 @@ const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
 const SOUS_TITRE_ACCUEIL_CLOVIS = "Le coin des étudiants.";
 
 export function ChatSection() {
+  const locale = useLocale();
   const [connecte, setConnecte] = useState(false);
   // Détection natif : une seule source de vérité dans l'app (calculée
   // dans AppShell.tsx, voir son commentaire "data-natif" et celui de
@@ -265,7 +267,7 @@ export function ChatSection() {
               key={cle}
               agentId={agent.id}
               nomAgent="Classinus"
-              titreAccueil={texteAccueilSelonHeure()}
+              titreAccueil={texteAccueilSelonHeure(locale)}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
               iconePersonnalisee={<Logo taille={40} sansFond />}
               conversationId={cle}

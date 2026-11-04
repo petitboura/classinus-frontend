@@ -1,5 +1,7 @@
 "use client";
 
+import { traduireTexteInterface } from "@/lib/i18n/interface";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, BrainCog } from "lucide-react";
 
@@ -35,6 +37,7 @@ export function RaisonnementBulle({
   enCours: boolean;
   outilsCommences?: boolean;
 }) {
+  const locale = useLocale();
   // Ouverte d'emblée seulement pour une première réflexion en direct, avant
   // tout outil. Un message rechargé depuis l'historique démarre replié.
   const [ouvert, setOuvert] = useState(enCours && !outilsCommences);
@@ -128,7 +131,7 @@ export function RaisonnementBulle({
               : ""
           }
         >
-          {enCours ? `${nomAgent} réfléchit...` : `Raisonnement de ${nomAgent}`}
+          {traduireTexteInterface(enCours ? `${nomAgent} réfléchit...` : `Raisonnement de ${nomAgent}`, locale)}
         </span>
         {ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
       </button>
