@@ -55,6 +55,9 @@ export const LABELS_DISTRIBUTEUR: Record<string, string> = {
   deepseek: "DeepSeek",
   grok: "Grok",
   meta: "Meta",
+  zai: "Z.ai",
+  alibaba: "Alibaba",
+  nvidia: "NVIDIA",
 };
 
 // Modes pédagogiques : mêmes clés que MODES_PEDAGOGIQUES côté backend
