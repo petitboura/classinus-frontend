@@ -85,3 +85,14 @@ Bourama's decision from 29 October 2026 must never be reversed. A class such as 
 - Primary button: `bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2`.
 - `tests/verifier-couleurs-theme.mjs` runs before every build (`prebuild` and Capacitor builds) and stops the build with the offending file and line. Do not bypass or weaken it.
 - To add a genuinely new color, define it first in `tailwind.config.ts` and `app/globals.css` for both light and dark themes.
+
+## Documentation: always up to date, always organized, always translated
+
+Bourama's decision from 4 November 2026. This rule is mandatory: apply it every time, without asking and without waiting for him to repeat it.
+
+- **Always up to date.** Whenever code, behavior, configuration, or a decision changes, update the affected documentation in the same change.
+- **Never leave a mess.** Never drop a loose Markdown file at the repository root. Every new document goes in `docs/`, or in a themed subfolder (for example `docs/chantiers/`, `docs/specs/`) once a topic grows. Create a new document or a new folder whenever it keeps things clear; do not ask first.
+- **Always organized.** Every new document is added to the index in `docs/README.md` and `docs/README.fr.md` in the same change. When you edit an old document still at the root (see that index), move it into `docs/` and fix every reference to it, in code comments and in other documents.
+- **Always translated.** Every document exists in English (default, `.md`) and French (`.fr.md`), with the language switch line at the top of both. Update both versions together, never only one.
+- Only `README`, `CLAUDE`, and their `.fr.md` versions stay at the root.
+- Never write a secret, token, or password in documentation.
