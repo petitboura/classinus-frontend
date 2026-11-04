@@ -63,6 +63,9 @@ Le script de build exécute aussi les vérifications définies dans `prebuild`.
 
 ## Documentation
 
+Index complet : [English](docs/README.md) · [Français](docs/README.fr.md).
+
+
 | Guide | Contenu |
 |---|---|
 | [Architecture](docs/ARCHITECTURE.md) | rôle du frontend, organisation du code et échanges avec le backend |

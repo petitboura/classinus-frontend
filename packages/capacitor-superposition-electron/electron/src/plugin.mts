@@ -1,5 +1,5 @@
 // Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-// (voir plan-canal-en-direct-pc.md), Lot R.
+// (voir docs/specs/plan-canal-en-direct-pc.md), Lot R.
 //
 // Meme contrat que le plugin Dossiers du Lot Q (voir
 // packages/capacitor-dossiers-electron/electron/src/plugin.mts) : fichier

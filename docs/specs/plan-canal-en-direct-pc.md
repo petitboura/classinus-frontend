@@ -213,7 +213,7 @@ No change is required in `api/canal_agent_applicatif.py`: its receive loop alrea
 
 The detailed screen reading left open in Lot S has been implemented. `lire_ecran` reads the foreground window as text using Windows UI Automation (a PowerShell script launched from Electron's main process), without sending any image to the model.
 
-See the **Lot V** section in `packages/capacitor-pont-natif-electron/README.md` and `plan-canal-en-direct-pc-lot-v.md` if that file exists in the repository.
+See the **Lot V** section in `docs/platforms/electron/packages/capacitor-pont-natif-electron/README.md` and `plan-canal-en-direct-pc-lot-v.md` if that file exists in the repository.
 
 On the backend, the four PC tools are now registered in `core/registre_outils.py` under category `agent_pc`, and are offered to the model only when a PC system connection is open (`core/main.py`, `a_connexion_systeme_pc`).
 

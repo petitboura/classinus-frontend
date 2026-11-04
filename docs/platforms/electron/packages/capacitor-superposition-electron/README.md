@@ -2,7 +2,7 @@
 
 [English version] · [Français](README.fr.md)
 
-Created on 27 September 2026 by Bourama for the "live channel leaves the app" project (see `plan-canal-en-direct-pc.md` at the repository root), Lot R.
+Created on 27 September 2026 by Bourama for the "live channel leaves the app" project (see `docs/specs/plan-canal-en-direct-pc.md`), Lot R.
 
 Electron implementation of the Capacitor `SuperpositionAgent` plugin. It provides an IPC bridge between the main window (real WebSocket connection and the Classinus page DOM) and the system overlay window (frameless, transparent, always on top, and brought to the top every 500 ms; see `electron/main.ts`).
 

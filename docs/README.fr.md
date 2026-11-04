@@ -2,24 +2,35 @@
 
 [English version](README.md) · **Version française**
 
-Point d'entrée de toute la documentation du dépôt. Chaque document existe en anglais (par défaut, `.md`) et en français (`.fr.md`). Ajouter chaque nouveau document ici, dans les deux langues.
+Point d'entrée central de toute la documentation du frontend Classinus. L'anglais est la langue par défaut ; chaque document possède une version française correspondante en `.fr.md`.
 
-## Documents de référence (`docs/`)
+## Références produit et techniques
 
-- [Architecture du frontend](./ARCHITECTURE.fr.md) : `docs/ARCHITECTURE.fr.md`
-- [Cartographie technique du frontend](./CARTOGRAPHIE_TECHNIQUE.fr.md) : `docs/CARTOGRAPHIE_TECHNIQUE.fr.md`
-- [Développement du frontend](./DEVELOPPEMENT.fr.md) : `docs/DEVELOPPEMENT.fr.md`
-- [Plateformes Classinus](./PLATEFORMES.fr.md) : `docs/PLATEFORMES.fr.md`
-- [Appli PC (Windows) : mise à jour automatique et publication](./appli-pc-mise-a-jour-et-publication.fr.md) : `docs/appli-pc-mise-a-jour-et-publication.fr.md`
-- [Soumission Play Store / App Store, suivi (03/09/2026)](./soumission-stores.fr.md) : `docs/soumission-stores.fr.md`
+- [Architecture du frontend](./ARCHITECTURE.fr.md)
+- [Cartographie technique](./CARTOGRAPHIE_TECHNIQUE.fr.md)
+- [Guide de développement](./DEVELOPPEMENT.fr.md)
+- [Plateformes prises en charge](./PLATEFORMES.fr.md)
+- [Mises à jour et publication de l'application Windows](./appli-pc-mise-a-jour-et-publication.fr.md)
+- [Suivi des soumissions aux stores](./soumission-stores.fr.md)
 
-## Documents de travail encore à la racine du dépôt
+## Historique et spécifications du projet
 
-Ces fichiers sont antérieurs au dossier `docs/`. Quand l'un d'eux est modifié, le déplacer dans `docs/` (ou un sous-dossier) et mettre à jour toutes les références.
+- [Consolidation des branches, 31 octobre 2026](./project-history/BRANCHES-CONSOLIDATION-2026-10-31.fr.md)
+- [État du catalogue Higgsfield](./status/HIGGSFIELD_TODO.fr.md)
+- [Désactivation de la fonctionnalité Programme](./archive/PROGRAMME_DESACTIVE.fr.md)
+- [Plan du canal en direct sur PC](./specs/plan-canal-en-direct-pc.fr.md)
+- [Spécifications de l'agent applicatif](./specs/specs-agent-applicatif.fr.md)
+- [Spécifications du guide de découverte](./specs/specs-guide-decouverte.fr.md)
 
-- [Consolidation des branches en doute — 31/10/2026](../BRANCHES-CONSOLIDATION-2026-10-31.fr.md) : `BRANCHES-CONSOLIDATION-2026-10-31.fr.md`
-- [Higgsfield — branche `feature/higgsfield-catalogue-generation`](../HIGGSFIELD_TODO.fr.md) : `HIGGSFIELD_TODO.fr.md`
-- [⚠️ Fonctionnalité "Programme" désactivée](../PROGRAMME_DESACTIVE.fr.md) : `PROGRAMME_DESACTIVE.fr.md`
-- [Plan : le canal en direct sort de l'appli, sur PC](../plan-canal-en-direct-pc.fr.md) : `plan-canal-en-direct-pc.fr.md`
-- [Plan de chantier — Agent applicatif Clovis (Clovis peut agir dans l'appli)](../specs-agent-applicatif.fr.md) : `specs-agent-applicatif.fr.md`
-- [Specs : Guide de découverte de Clovis (chantier lancé le 16/09/2026, demande Bourama)](../specs-guide-decouverte.fr.md) : `specs-guide-decouverte.fr.md`
+## Guides des plateformes et des paquets
+
+- [Signature des APK Android](./platforms/android/README-SIGNATURE.fr.md)
+- [Ressources graphiques Electron](./platforms/electron/assets/README.fr.md)
+- [Paquet iOS App SPM](./platforms/ios/CapApp-SPM/README.fr.md)
+- [Plugin Electron Dossiers](./platforms/electron/packages/capacitor-dossiers-electron/README.fr.md)
+- [Plugin Electron PontNatif](./platforms/electron/packages/capacitor-pont-natif-electron/README.fr.md)
+- [Plugin Electron Superposition](./platforms/electron/packages/capacitor-superposition-electron/README.fr.md)
+
+## Tests
+
+- [Guide de test du canal en direct PC](./testing/README-canal-pc.fr.md)

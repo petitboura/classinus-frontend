@@ -2,7 +2,7 @@
 
 [English version] · [Français](README.fr.md)
 
-Created on 27 September 2026 by Bourama for the "live channel leaves the app" project (see `plan-canal-en-direct-pc.md` at the repository root), Lot S.
+Created on 27 September 2026 by Bourama for the "live channel leaves the app" project (see `docs/specs/plan-canal-en-direct-pc.md`), Lot S.
 
 Electron implementation of the Capacitor `PontNatif` plugin. It uses the same plugin name as Android/iOS and is already called automatically by the web code (see `lib/supabase.ts`: `enregistrerToken` runs whenever the Supabase session changes, so no web-side change is required).
 
@@ -130,7 +130,7 @@ Safe failures before the marker file is created return `indisponible`. After the
 
 Protected applications require student approval before writing.
 
-Since 18 October 2026, a broader authorization policy exists for viewing, writing, opening, and clicking, with three buttons. It remains disabled unless the server sends `parametres.autorisation`. See the **Authorizations before release** section in `plan-canal-en-direct-pc.md`.
+Since 18 October 2026, a broader authorization policy exists for viewing, writing, opening, and clicking, with three buttons. It remains disabled unless the server sends `parametres.autorisation`. See the **Authorizations before release** section in `docs/specs/plan-canal-en-direct-pc.md`.
 
 If the application does not support background writing (missing field, multiple fields without focus, or field not editable through accessibility), Classinus announces the fallback, brings the window to the foreground, and types without pausing. The student can stop it with Escape.
 

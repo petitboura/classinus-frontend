@@ -1,5 +1,5 @@
 // Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-// (voir plan-canal-en-direct-pc.md), Lot Q.
+// (voir docs/specs/plan-canal-en-direct-pc.md), Lot Q.
 //
 // Contrat impose par @capawesome/capacitor-electron (voir son README,
 // section "Plugin Development") : ce fichier compile doit se trouver a

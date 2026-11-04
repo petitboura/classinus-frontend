@@ -2,24 +2,35 @@
 
 [English version] · [Français](README.fr.md)
 
-Entry point for all repository documentation. Every document exists in English (default, `.md`) and French (`.fr.md`). Add every new document here, in both languages.
+Central entry point for all Classinus frontend documentation. English is the default language; every document has a matching French `.fr.md` version.
 
-## Reference documents (`docs/`)
+## Product and technical references
 
-- [Frontend architecture](./ARCHITECTURE.md) : `docs/ARCHITECTURE.md`
-- [Frontend technical code map](./CARTOGRAPHIE_TECHNIQUE.md) : `docs/CARTOGRAPHIE_TECHNIQUE.md`
-- [Frontend development](./DEVELOPPEMENT.md) : `docs/DEVELOPPEMENT.md`
-- [Classinus platforms](./PLATEFORMES.md) : `docs/PLATEFORMES.md`
-- [Windows app: automatic updates and publishing](./appli-pc-mise-a-jour-et-publication.md) : `docs/appli-pc-mise-a-jour-et-publication.md`
-- [Google Play and App Store submission: tracking](./soumission-stores.md) : `docs/soumission-stores.md`
+- [Frontend architecture](./ARCHITECTURE.md)
+- [Technical code map](./CARTOGRAPHIE_TECHNIQUE.md)
+- [Development guide](./DEVELOPPEMENT.md)
+- [Supported platforms](./PLATEFORMES.md)
+- [Windows app updates and publishing](./appli-pc-mise-a-jour-et-publication.md)
+- [Store submission tracking](./soumission-stores.md)
 
-## Working documents still at the repository root
+## Project history and specifications
 
-These files predate the `docs/` folder. When one of them is edited, move it into `docs/` (or a subfolder) and update every reference to it.
+- [Branch consolidation, 31 October 2026](./project-history/BRANCHES-CONSOLIDATION-2026-10-31.md)
+- [Higgsfield catalogue status](./status/HIGGSFIELD_TODO.md)
+- [Programme feature deactivation](./archive/PROGRAMME_DESACTIVE.md)
+- [PC live-channel project plan](./specs/plan-canal-en-direct-pc.md)
+- [Application agent specifications](./specs/specs-agent-applicatif.md)
+- [Discovery guide specifications](./specs/specs-guide-decouverte.md)
 
-- [Branch consolidation notes: 31 October 2026](../BRANCHES-CONSOLIDATION-2026-10-31.md) : `BRANCHES-CONSOLIDATION-2026-10-31.md`
-- [Higgsfield: status of branch `feature/higgsfield-catalogue-generation`](../HIGGSFIELD_TODO.md) : `HIGGSFIELD_TODO.md`
-- [The "Programme" feature is disabled](../PROGRAMME_DESACTIVE.md) : `PROGRAMME_DESACTIVE.md`
-- [Plan: move the live channel outside the app on PC](../plan-canal-en-direct-pc.md) : `plan-canal-en-direct-pc.md`
-- [Project plan: Classinus application agent (Classinus can act inside the app)](../specs-agent-applicatif.md) : `specs-agent-applicatif.md`
-- [Specifications: Classinus discovery guide (project started 16 September 2026, requested by Bourama)](../specs-guide-decouverte.md) : `specs-guide-decouverte.md`
+## Platform and package guides
+
+- [Android APK signing](./platforms/android/README-SIGNATURE.md)
+- [Electron assets](./platforms/electron/assets/README.md)
+- [iOS App SPM package](./platforms/ios/CapApp-SPM/README.md)
+- [Electron Dossiers plugin](./platforms/electron/packages/capacitor-dossiers-electron/README.md)
+- [Electron native bridge plugin](./platforms/electron/packages/capacitor-pont-natif-electron/README.md)
+- [Electron overlay plugin](./platforms/electron/packages/capacitor-superposition-electron/README.md)
+
+## Testing
+
+- [PC live-channel test guide](./testing/README-canal-pc.md)

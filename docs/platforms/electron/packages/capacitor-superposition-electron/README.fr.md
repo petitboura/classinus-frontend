@@ -3,7 +3,7 @@
 # capacitor-superposition-electron
 
 Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-(voir `plan-canal-en-direct-pc.md` a la racine du depot), Lot R.
+(voir `docs/specs/plan-canal-en-direct-pc.md`), Lot R.
 
 Implementation Electron du plugin Capacitor `SuperpositionAgent` : pont IPC
 entre la fenetre principale (vraie connexion WebSocket, DOM de la page

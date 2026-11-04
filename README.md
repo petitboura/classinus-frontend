@@ -63,6 +63,9 @@ The build script also runs the checks configured in `prebuild`.
 
 ## Documentation
 
+Full documentation index: [English](docs/README.md) · [Français](docs/README.fr.md).
+
+
 | Guide | What it covers |
 |---|---|
 | [Architecture](docs/ARCHITECTURE.md) · [Français](docs/ARCHITECTURE.fr.md) | Frontend responsibilities, code organization, and backend communication |

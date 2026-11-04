@@ -2,7 +2,7 @@
 
 [English version] · [Français](README.fr.md)
 
-Created on 27 September 2026 by Bourama as part of the "live channel leaves the app" project (see `plan-canal-en-direct-pc.md` at the repository root), Lot Q.
+Created on 27 September 2026 by Bourama as part of the "live channel leaves the app" project (see `docs/specs/plan-canal-en-direct-pc.md`), Lot Q.
 
 Electron implementation of the Capacitor `Dossiers` plugin, currently limited to `obtenirInfosAppareil()`. It returns the PC's persistent device identifier, which `core/canal_agent_applicatif.py` in the backend uses with the `(user_id, appareil_id)` key to distinguish an Electron window from a regular browser tab.
 

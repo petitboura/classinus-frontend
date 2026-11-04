@@ -1,7 +1,7 @@
 "use client";
 
 // Créé le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-// (voir plan-canal-en-direct-pc.md), Lot R.
+// (voir docs/specs/plan-canal-en-direct-pc.md), Lot R.
 //
 // Pont entre la fenêtre PRINCIPALE (vraie connexion WebSocket, DOM réel
 // de la page Clovis, voir lib/canalAgentApplicatif.ts et AppShell.tsx) et
@@ -461,7 +461,7 @@ export function useEmetteurSuperposition(
   }, []);
 }
 
-// Lot T (27/09/2026, voir plan-canal-en-direct-pc.md) : événement émis par
+// Lot T (27/09/2026, voir docs/specs/plan-canal-en-direct-pc.md) : événement émis par
 // le plugin PontNatif (packages/capacitor-pont-natif-electron) autour de
 // chaque action système du lot S. Même plugin, même nom que celui déjà
 // enregistré dans lib/supabase.ts (registerPlugin renvoie l'instance
