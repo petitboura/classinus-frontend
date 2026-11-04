@@ -1,38 +1,26 @@
 # capacitor-superposition-electron
 
-Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-(voir `plan-canal-en-direct-pc.md` a la racine du depot), Lot R.
+[English version] · [Français](README.fr.md)
 
-Implementation Electron du plugin Capacitor `SuperpositionAgent` : pont IPC
-entre la fenetre principale (vraie connexion WebSocket, DOM de la page
-Clovis) et la fenetre de superposition systeme (sans bordure, transparente,
-toujours au dessus et remise au sommet toutes les 500 ms, voir `electron/main.ts`). Methodes principales : `pousserEtat`
-(fenetre principale -> superposition, avec conversion des coordonnees du
-curseur de "locales a la page" vers "absolues a l'ecran"), `envoyerInteraction`
-(superposition -> fenetre principale) et `maintenirCapture` (la
-superposition signale un appui en cours sur l'un de ses elements ; le reste
-du passe-clic est decide cote Electron par un suivi de la position du
-pointeur, sans jamais recevoir les mouvements de souris du PC). Depuis le 01/10/2026 (bouton permanent du canal, voir le Lot W du plan), la
-superposition reste affichee en permanence des que la fenetre principale a
-pousse son premier etat (`pousserEtat` avec `retirer: true` la retire), et le
-plugin expose deux methodes de plus pour le demarrage automatique avec
-Windows : `lireDemarrageAutomatique` et `definirDemarrageAutomatique`.
-Depuis le 11/10/2026 (crayon du canal), `definirModeCrayon` fait capter la
-souris a la superposition sur tout l'ecran tant que le crayon est sorti, et
-`definirRaccourcisCrayon` prend trois raccourcis systeme (sortir le crayon,
-rappeler les traits, les effacer) seulement canal actif, relayes a la page par
-l'evenement `crayon` (logique dans `electron/src/raccourcisCrayon.mts`, testee par
-`npm run test:raccourcis-crayon`).
-Voir les commentaires de `electron/src/plugin.mts` pour le
-detail, et `lib/superpositionElectron.ts` (racine du depot) pour la forme
-exacte de l'etat/des interactions transportes.
+Created on 27 September 2026 by Bourama for the "live channel leaves the app" project (see `plan-canal-en-direct-pc.md` at the repository root), Lot R.
 
-Meme raison qu'un paquet local a part (et pas un fichier dans `electron/`)
-que `capacitor-dossiers-electron` (Lot Q) : `@capawesome/capacitor-electron`
-decouvre les plugins via le champ `"capacitor": {"electron": {"src": "..."}}`
-du `package.json` d'une dependance, pas en scannant `electron/` librement.
+Electron implementation of the Capacitor `SuperpositionAgent` plugin. It provides an IPC bridge between the main window (real WebSocket connection and the Classinus page DOM) and the system overlay window (frameless, transparent, always on top, and brought to the top every 500 ms; see `electron/main.ts`).
 
-## Construire ce paquet
+Main methods:
+
+- `pousserEtat`: main window → overlay, converting cursor coordinates from page-local to absolute screen coordinates.
+- `envoyerInteraction`: overlay → main window.
+- `maintenirCapture`: the overlay reports that the user is pressing one of its elements. Electron determines the rest of click-through behavior by tracking pointer position, without receiving the PC's mouse-movement events.
+
+Since 1 October 2026 (the permanent channel button, Lot W in the plan), the overlay remains visible after the main window pushes its first state. It is removed when `pousserEtat` is called with `retirer: true`. The plugin also exposes two methods for automatic startup with Windows: `lireDemarrageAutomatique` and `definirDemarrageAutomatique`.
+
+Since 11 October 2026 (channel drawing tool), `definirModeCrayon` makes the overlay capture the mouse across the entire screen while the pen is active. `definirRaccourcisCrayon` registers three system shortcuts (show the pen, restore strokes, erase strokes) while the channel is active. They are forwarded to the page through the `crayon` event. The logic is in `electron/src/raccourcisCrayon.mts` and is tested by `npm run test:raccourcis-crayon`.
+
+See the comments in `electron/src/plugin.mts` for implementation details, and `lib/superpositionElectron.ts` (repository root) for the exact shape of the state and interactions being transported.
+
+The reason for keeping this as a separate local package rather than putting it directly in `electron/` is the same as for `capacitor-dossiers-electron` (Lot Q): `@capawesome/capacitor-electron` discovers plugins through the `"capacitor": {"electron": {"src": "..."}}` field in a dependency's `package.json`, not by scanning arbitrary files inside `electron/`.
+
+## Build this package
 
 ```bash
 cd packages/capacitor-superposition-electron
@@ -40,12 +28,11 @@ npm install
 npm run build
 ```
 
-Produit `electron/dist/plugin.mjs`. A refaire a chaque modification de
-`electron/src/plugin.mts`.
+This produces `electron/dist/plugin.mjs`. Rebuild it after every change to `electron/src/plugin.mts`.
 
-## Tester (sur ta machine Windows)
+## Test on your Windows machine
 
-Depuis la racine du depot `clovis-frontend` :
+From the root of the `clovis-frontend` repository:
 
 ```powershell
 npm install
@@ -54,25 +41,16 @@ npx cap sync @capawesome/capacitor-electron
 npx cap run @capawesome/capacitor-electron
 ```
 
-Critere de fin du Lot R (voir le plan) : appli Electron lancee, ouvrir le
-Bloc-notes ou un site quelconque au premier plan -- le curseur, la bulle, la
-barre de saisie et le journal restent visibles et utilisables par dessus.
+Lot R is complete when the Electron app is running and you open Notepad or any website in the foreground: the cursor, speech bubble, input bar, and action log must remain visible and usable above it.
 
-## Focus et clavier (12/10/2026)
+## Focus and keyboard behavior (12 October 2026)
 
-Sous Windows, la fenetre de superposition nait non activable (`focusable: false`
-dans `electron/main.ts`) : un clic sur la bulle, un bouton ou le crayon arrive
-normalement mais n'active pas la superposition, donc la fenetre qui est derriere
-ne se fige plus. `definirSaisieTexte({ actif })` la rend activable seulement
-pendant que l'etudiant ecrit dans une de ses zones de texte (la page l'appelle
-depuis `PageAgentSuperpositionClient.tsx` et `ControlesInteractionCanal.tsx`),
-puis la rend non activable. Rendre la fenetre non activable n'a jamais suffi a
-rendre l'activation a la fenetre du dessous (le journal de diagnostic du
-18/10/2026 ne montrait aucune perte de focus) : avant la saisie, le plugin note
-donc la fenetre active et, a la fin, la reactive avec `SetForegroundWindow`
-(`electron/src/focusPrecedent.mts`, appels Windows par le module natif `koffi`).
-Si l'etudiant a clique dans une autre fenetre entre temps, rien n'est reactive.
-Si `koffi` ne se charge pas, la raison est ecrite dans le journal (ligne `FOCUS`)
-et la superposition fonctionne comme avant. Perte de focus de la superposition :
-elle redevient non activable seule. Hors Windows, rien ne change. Test :
-`npm run test:focus-precedent`.
+On Windows, the overlay window is created as non-focusable (`focusable: false` in `electron/main.ts`). Clicking the bubble, a button, or the pen normally reaches the overlay without activating it, so the window underneath does not lose focus.
+
+`definirSaisieTexte({ actif })` makes the overlay focusable only while the student is typing in one of its text areas (the page calls it from `PageAgentSuperpositionClient.tsx` and `ControlesInteractionCanal.tsx`), then makes it non-focusable again.
+
+Making the overlay non-focusable was not enough to restore activation to the underlying window. The diagnostic log from 18 October 2026 showed no focus loss. The plugin therefore records the active window before text entry and restores it afterward with `SetForegroundWindow` (`electron/src/focusPrecedent.mts`, Windows calls through the native `koffi` module).
+
+If the student clicks another window in the meantime, nothing is restored. If `koffi` fails to load, the reason is written to the log (the `FOCUS` line) and the overlay continues to work as before. If the overlay itself loses focus, it becomes non-focusable again. There is no behavior change outside Windows.
+
+Test: `npm run test:focus-precedent`.

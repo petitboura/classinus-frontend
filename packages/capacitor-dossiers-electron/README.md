@@ -1,31 +1,20 @@
 # capacitor-dossiers-electron
 
-Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-(voir `plan-canal-en-direct-pc.md` a la racine du depot), Lot Q.
+[English version] · [Français](README.fr.md)
 
-Implementation Electron du plugin Capacitor `Dossiers`, limitee pour
-l'instant a `obtenirInfosAppareil()` -- l'identifiant persistant du PC,
-necessaire pour que `core/canal_agent_applicatif.py` (clovis-backend, voir
-la cle `(user_id, appareil_id)`) distingue une fenetre Electron d'un onglet
-navigateur classique. Cote web, rien n'a ete modifie : `lib/canalAgentApplicatif.ts`
-appelle deja ce plugin par son nom des que `Capacitor.isNativePlatform()`
-est vrai (ce que la plateforme Electron rapporte nativement).
+Created on 27 September 2026 by Bourama as part of the "live channel leaves the app" project (see `plan-canal-en-direct-pc.md` at the repository root), Lot Q.
 
-Les autres methodes du plugin `Dossiers` deja disponibles sur Android/iOS
-(gestion de dossiers designes) ne sont pas reprises ici -- chantier a part,
-non demande pour l'instant.
+Electron implementation of the Capacitor `Dossiers` plugin, currently limited to `obtenirInfosAppareil()`. It returns the PC's persistent device identifier, which `core/canal_agent_applicatif.py` in the backend uses with the `(user_id, appareil_id)` key to distinguish an Electron window from a regular browser tab.
 
-## Pourquoi un paquet local a part, plutot qu'un fichier dans `electron/`
+The web code was not changed: `lib/canalAgentApplicatif.ts` already calls this plugin by name whenever `Capacitor.isNativePlatform()` is true (which the Electron platform reports natively).
 
-`@capawesome/capacitor-electron` (la plateforme Electron maintenue, voir
-son README) decouvre les implementations de plugin en scannant les
-dependances du projet a la recherche d'un champ `"capacitor": {"electron":
-{"src": "..."}}` dans leur `package.json` -- pas en lisant des fichiers
-poses librement dans `electron/`. D'ou ce petit paquet local, reference
-depuis `package.json` (racine du depot) via `"file:./packages/
-capacitor-dossiers-electron"`.
+The other `Dossiers` plugin methods already available on Android/iOS (designated-folder management) are not implemented here. That is a separate project and was not requested at the time.
 
-## Construire ce paquet
+## Why this is a separate local package instead of a file in `electron/`
+
+`@capawesome/capacitor-electron` discovers plugin implementations by scanning project dependencies for a `"capacitor": {"electron": {"src": "..."}}` field in their `package.json`. It does not scan arbitrary files placed in `electron/`. That is why this local package is referenced from the repository root `package.json` through `"file:./packages/capacitor-dossiers-electron"`.
+
+## Build this package
 
 ```bash
 cd packages/capacitor-dossiers-electron
@@ -33,13 +22,11 @@ npm install
 npm run build
 ```
 
-Produit `electron/dist/plugin.mjs` (chemin exact attendu par le contrat).
-A refaire a chaque modification de `electron/src/plugin.mts` -- ce n'est
-pas automatique.
+This produces `electron/dist/plugin.mjs`, the exact path expected by the plugin contract. Rebuild it after every change to `electron/src/plugin.mts`; this is not automatic.
 
-## Tester (sur ta machine Windows, comme pour le reste du projet)
+## Test on your Windows machine
 
-Depuis la racine du depot `clovis-frontend` :
+From the root of the `clovis-frontend` repository:
 
 ```powershell
 npm install
@@ -48,8 +35,4 @@ npx cap sync @capawesome/capacitor-electron
 npx cap run @capawesome/capacitor-electron
 ```
 
-Verification que tout est bien branche : une fois l'appli Electron
-lancee et connectee avec un compte, `Capacitor.getPlatform()` doit valoir
-`"electron"` cote web (console DevTools de la fenetre). Un log temporaire
-dans `connecter()` (`clovis-backend/core/canal_agent_applicatif.py`) permet
-de confirmer que l'`appareil_id` recu n'est plus une chaine vide.
+To confirm that everything is connected, launch the Electron app and sign in. On the web side, `Capacitor.getPlatform()` must return `"electron"` (check the DevTools console in the window). A temporary log in `connecter()` (`clovis-backend/core/canal_agent_applicatif.py`) can confirm that the received `appareil_id` is no longer an empty string.
