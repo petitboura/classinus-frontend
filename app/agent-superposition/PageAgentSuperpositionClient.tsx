@@ -1,7 +1,7 @@
 "use client";
 
 // Créé le 27/09/2026, Bourama : chantier "canal en direct sort de
-// l'appli" (voir docs/specs/plan-canal-en-direct-pc.md a la racine du depot), Lot R.
+// l'appli" (voir docs/specs/plan-canal-en-direct-pc.md), Lot R.
 //
 // Chargee UNIQUEMENT par la fenetre de superposition Electron (voir
 // electron/main.ts) -- jamais visitee en navigation normale (pas de lien

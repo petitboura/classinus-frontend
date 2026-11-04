@@ -2,7 +2,7 @@
 
 [English version] · [Français](README.fr.md)
 
-Created on 27 September 2026 by Bourama for the "live channel leaves the app" project (see `docs/specs/plan-canal-en-direct-pc.md` in docs/specs/), Lot S.
+Created on 27 September 2026 by Bourama for the "live channel leaves the app" project (see `docs/specs/plan-canal-en-direct-pc.md`), Lot S.
 
 Electron implementation of the Capacitor `PontNatif` plugin. It uses the same plugin name as Android/iOS and is already called automatically by the web code (see `lib/supabase.ts`: `enregistrerToken` runs whenever the Supabase session changes, so no web-side change is required).
 

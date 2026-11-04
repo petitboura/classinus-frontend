@@ -3,7 +3,7 @@
 # capacitor-pont-natif-electron
 
 Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-(voir `docs/specs/plan-canal-en-direct-pc.md` a la racine du depot), Lot S.
+(voir `docs/specs/plan-canal-en-direct-pc.md`), Lot S.
 
 Implementation Electron du plugin Capacitor `PontNatif` -- meme nom que
 celui deja utilise sur Android/iOS et deja appele automatiquement cote
