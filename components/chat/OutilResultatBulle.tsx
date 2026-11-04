@@ -7,6 +7,8 @@ import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 import { imagesNonPlacees, videosNonPlacees } from "./mediasNonPlaces";
+import { WidgetsMcpUi } from "./WidgetMcpUi";
+import type { RessourceUi } from "@/lib/mcpUi";
 
 // Un outil encore en train de s'exécuter (15/09/2026, demande Bourama --
 // chantier "ligne connectrice") -- `id` correspond à id_appel émis par le
@@ -84,6 +86,8 @@ type ResultatOutil = {
   sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[];
   images?: { titre: string; url: string; miniature: string; credit?: string | null }[];
   videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[];
+  // Widgets MCP-UI (04/11/2026) : ressources ui:// renvoyées par l'outil.
+  ressourcesUi?: RessourceUi[];
 };
 
 type Rangee = { cle: string; nomOutil?: string; nomLisible?: string; action?: string; domaines?: string[]; langage?: string; donnees: DonneesLigneOutil };
@@ -137,6 +141,7 @@ function donneesDeLigne(ligne: Ligne): DonneesLigneOutil {
       sources: sources.length ? sources : undefined,
       images: images.length ? images : undefined,
       videos: videos.length ? videos : undefined,
+      ressourcesUi: termines.flatMap((m) => m.donnees.ressourcesUi ?? []).length ? termines.flatMap((m) => m.donnees.ressourcesUi ?? []) : undefined,
     };
   }
   const courant = restants[restants.length - 1].donnees;
@@ -224,6 +229,7 @@ export function OutilResultatBulle({
         sources: r.sources,
         images: r.images,
         videos: r.videos,
+        ressourcesUi: r.ressourcesUi,
         texteTermine: r.texteTermine,
       },
     })),
@@ -307,6 +313,7 @@ export function OutilResultatBulle({
     .flatMap((r, index) => [
       r.images && r.images.length ? <GalerieImagesBulle key={`galerie-${index}`} images={r.images} /> : null,
       r.videos && r.videos.length ? <CartesVideosBulle key={`videos-${index}`} videos={r.videos} /> : null,
+      r.ressourcesUi && r.ressourcesUi.length ? <WidgetsMcpUi key={`widgets-${index}`} ressources={r.ressourcesUi} texteRepli={r.resultat} /> : null,
     ])
     .filter(Boolean);
 

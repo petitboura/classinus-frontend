@@ -621,6 +621,34 @@ export function ChatIA({
         copie[copie.length - 1] = { ...dernier, outilsResultats: outilsCopie, segments };
         return copie;
       });
+    } else if (item.type === "ressources_ui") {
+      // Widgets MCP-UI (04/11/2026) : rattachés à l'outil par son id d'appel (plusieurs outils
+      // peuvent finir en parallèle), à défaut au dernier. Voir components/chat/WidgetMcpUi.tsx.
+      majMessages((prec) => {
+        const copie = [...prec];
+        const dernier = copie[copie.length - 1];
+        const outils = dernier.outilsResultats || [];
+        if (!outils.length) return prec;
+        if (!evenement.ressources || !evenement.ressources.length) return prec;
+        const iParId = evenement.id_appel ? outils.findIndex((o) => o.idAppel === evenement.id_appel) : -1;
+        const iOutil = iParId !== -1 ? iParId : outils.length - 1;
+        const outilsCopie = [...outils];
+        outilsCopie[iOutil] = { ...outilsCopie[iOutil], ressourcesUi: evenement.ressources };
+        const segments = dernier.segments ? [...dernier.segments] : [];
+        let iSegment = evenement.id_appel
+          ? segments.findIndex((sg) => sg.type === "outil" && sg.idAppel === evenement.id_appel)
+          : -1;
+        if (iSegment === -1) {
+          const depuisFin = [...segments].reverse().findIndex((sg) => sg.type === "outil");
+          iSegment = depuisFin === -1 ? -1 : segments.length - 1 - depuisFin;
+        }
+        if (iSegment !== -1) {
+          const segmentOutil = segments[iSegment] as Extract<SegmentMessage, { type: "outil" }>;
+          segments[iSegment] = { ...segmentOutil, ressourcesUi: evenement.ressources };
+        }
+        copie[copie.length - 1] = { ...dernier, outilsResultats: outilsCopie, segments };
+        return copie;
+      });
     } else if (item.type === "outil_resultat") {
       emettreDonneesModifieesPourOutil(evenement.nom_outil);
       // Retire l'entrée "en_cours" correspondante dès que le vrai résultat
@@ -864,6 +892,7 @@ export function ChatIA({
       evenement.type === "sources" ||
       evenement.type === "images" ||
       evenement.type === "videos" ||
+      evenement.type === "ressources_ui" ||
       evenement.type === "outil_resultat" ||
       evenement.type === "raisonnement"
     ) {

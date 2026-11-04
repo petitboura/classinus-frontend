@@ -6,6 +6,8 @@ import { CheckCircle2, ChevronDown, ChevronRight, Link2, Loader2 } from "lucide-
 import { SourcesBulle } from "./SourcesBulle";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
+import { WidgetsMcpUi } from "./WidgetMcpUi";
+import { masquerLigneRessource, type RessourceUi } from "@/lib/mcpUi";
 import { LogoSite, LogosSites } from "./LogoSite";
 import { logoPourLangage } from "@/lib/logosLangages";
 import { couleurMarque } from "@/lib/couleursIcones";
@@ -48,6 +50,8 @@ export type DonneesLigneOutil = {
   sources?: ComponentProps<typeof SourcesBulle>["sources"];
   images?: ComponentProps<typeof GalerieImagesBulle>["images"];
   videos?: ComponentProps<typeof CartesVideosBulle>["videos"];
+  // Widgets MCP-UI (04/11/2026) : ressources ui:// renvoyées par l'outil.
+  ressourcesUi?: RessourceUi[];
 };
 
 function phaseInitiale(etat: EtatLigneOutil): Phase {
@@ -85,7 +89,7 @@ export function LigneOutil({
   estDerniere: boolean;
   estGroupe: boolean;
 }) {
-  const { etat, texteEnCours, texteTermine, nomLisible, resultat, sources, images, videos } = donnees;
+  const { etat, texteEnCours, texteTermine, nomLisible, resultat, sources, images, videos, ressourcesUi } = donnees;
 
   const [phase, setPhase] = useState<Phase>(() => phaseInitiale(etat));
   const phaseRef = useRef<Phase>(phase);
@@ -265,6 +269,7 @@ export function LigneOutil({
                 hors du repli automatique du groupe. */}
             {!estGroupe && <GalerieImagesBulle images={images} />}
             {!estGroupe && <CartesVideosBulle videos={videos} />}
+            {!estGroupe && <WidgetsMcpUi ressources={ressourcesUi} texteRepli={resultat} />}
             <div
               className={`grid transition-[grid-template-rows] duration-300 ease-out ${
                 ouvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
@@ -272,7 +277,7 @@ export function LigneOutil({
             >
               <div className="overflow-hidden">
                 <pre className="mt-1.5 max-h-64 overflow-auto rounded-xl border border-dj-bordure bg-dj-surface p-2.5 text-[12px] leading-relaxed text-dj-texte-muet">
-                  {resultat}
+                  {masquerLigneRessource(resultat ?? "", ressourcesUi)}
                 </pre>
               </div>
             </div>

@@ -571,3 +571,9 @@ manifest Android, mise à jour de Capacitor) exigent un nouvel APK.
 - **Première mise en place** : les APK déjà installés n'ont pas le plugin. Un
   APK qui l'embarque doit d'abord être publié par le circuit habituel
   (`/telecharger`), ensuite tout le code web passe en OTA.
+
+## Widgets MCP-UI dans le chat
+
+`components/chat/WidgetMcpUi.tsx` affiche dans le fil les widgets reçus par l'événement SSE `ressources_ui` (voir le README du backend). Le contenu est traité comme du code tiers : iframe `sandbox="allow-scripts"` sans `allow-same-origin` pour le HTML, ni navigation de la page, ni popups, ni permissions, taille bornée. Le protocole (MCP-UI et MCP Apps, JSON-RPC) est dans `lib/mcpUi.ts`, les réglages d'affichage aussi (`NEXT_PUBLIC_MCP_UI_HAUTEUR_INITIALE`, `_HAUTEUR_MIN`, `_HAUTEUR_MAX`, `_DELAI_CHARGEMENT_MS`). Un widget peut seulement demander d'ouvrir un lien http(s) ou de changer sa hauteur, tout le reste est refusé. Sans signe de vie dans le délai, le texte de repli s'affiche avec un bouton Réessayer.
+
+Natif et PC : une adresse tierce (`text/uri-list`) se dégrade en carte « Ouvrir le widget », car la CSP Electron n'autorise que YouTube en `frame-src`. Test : `npm run test:widget-mcp-ui`.
