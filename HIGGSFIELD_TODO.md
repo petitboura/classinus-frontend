@@ -1,26 +1,32 @@
-# Higgsfield — branche `feature/higgsfield-catalogue-generation`
+# Higgsfield: status of branch `feature/higgsfield-catalogue-generation`
 
-> Mis à jour le 2026-11-01 : panneau Générer finalisé.
+[English version] · [Français](HIGGSFIELD_TODO.fr.md)
 
-## Fait dans cette branche
+Updated 1 November 2026: the Generate panel is complete.
 
-### Frontend `classinus-frontend`
-- `components/higgsfield/CatalogueHiggsfield.tsx` : recherche texte normalisée, compteur `X effets / N au total`, chips Type/Style, bandeau BIENTÔT retiré, grid 2→3 cols, état vide + reset.
-- `components/higgsfield/VisionneurHiggsfield.tsx` : snap vertical, flèches ← → / ↑ ↓, dots en bas, clavier, bouton Générer → callback `onGenerer`.
-- `lib/higgsfieldApi.ts` : helpers `higgsfieldDisponible`, `lancerVideoHiggsfield`, `lancerImageHiggsfield`, `lancerGenjutsuHiggsfield`, `statutHiggsfield`, `annulerHiggsfield`, `estimerHiggsfield`, `uploaderFichierHiggsfield`.
-- `components/higgsfield/GenererHiggsfield.tsx` : **finalisé** — upload image/vidéo (via `POST /api/uploads/fichier-chat`), formulaire titre/prompt/durée/format/qualité/son/résolution, lancement Higgsfield, polling `GET /statut/{id}` toutes les 5s avec barre de progression, annulation, affichage résultat (vidéo/image) + sauvegarde auto en bibliothèque côté backend.
+## Completed in this branch
 
-### Backend `classinus-backend`
-- `api/higgsfield.py` : router `POST /api/higgsfield/video|image|genjutsu`, `GET /statut/{id}`, `POST /annuler/{id}`, `POST /estimation`, `GET /disponible`. Limite `10/min` + `reserver_generation` (quota jour), sauvegarde bibliothèque en fin de `statut`.
-- `api/main.py` : `higgsfield_router` importé + `app.include_router(higgsfield_router)` (restauré — n'avait pas été committé avant).
+### Frontend: `classinus-frontend`
 
-## Tests manuels avant merge
-- [ ] Catalogue : recherche, filtres, compteur, reset, carte hover son, fallback preview HS.
-- [ ] Visionneur : scroll snap, flèches, clavier, dots, son toggle, Générer ouvre bien le panneau.
-- [ ] Backend : `GET /api/higgsfield/disponible` → `{disponible: true/false}` selon env (`HIGGSFIELD_API_KEY`).
-- [ ] Générer : upload → lancer → statut → annuler → terminé → bibliothèque.
+- `components/higgsfield/CatalogueHiggsfield.tsx`: normalized text search, `X effects / N total` counter, Type/Style chips, removed the SOON banner, 2-to-3-column grid, empty state and reset.
+- `components/higgsfield/VisionneurHiggsfield.tsx`: vertical snap, ← → / ↑ ↓ arrows, bottom dots, keyboard controls, and Generate button wired to the `onGenerer` callback.
+- `lib/higgsfieldApi.ts`: helpers for `higgsfieldDisponible`, `lancerVideoHiggsfield`, `lancerImageHiggsfield`, `lancerGenjutsuHiggsfield`, `statutHiggsfield`, `annulerHiggsfield`, `estimerHiggsfield`, and `uploaderFichierHiggsfield`.
+- `components/higgsfield/GenererHiggsfield.tsx`: **complete**. Image/video upload through `POST /api/uploads/fichier-chat`; title, prompt, duration, format, quality, sound, and resolution fields; Higgsfield job submission; status polling through `GET /statut/{id}` every 5 seconds with a progress bar; cancellation; image/video result display; and automatic backend save to the library.
 
-## Références
-- Endpoints backend : `api/higgsfield.py`
-- Logique Higgsfield : `core/generation_video_higgsfield.py`, `core/higgsfield_catalogue.py`, `core/higgsfield_limites.py`, `core/higgsfield_requetes.py`
-- Catalogue statique : `lib/effetsHiggsfield.ts` (50+ effets)
+### Backend: `classinus-backend`
+
+- `api/higgsfield.py`: router endpoints `POST /api/higgsfield/video|image|genjutsu`, `GET /statut/{id}`, `POST /annuler/{id}`, `POST /estimation`, and `GET /disponible`. Rate limit `10/min` plus `reserver_generation` (daily quota); library save occurs when the status is finalized.
+- `api/main.py`: `higgsfield_router` imported and mounted through `app.include_router(higgsfield_router)`. This was restored because it had not been committed previously.
+
+## Manual tests before merge
+
+- [ ] Catalogue: search, filters, counter, reset, hover sound card, fallback when preview is unavailable.
+- [ ] Viewer: scroll snap, arrows, keyboard, dots, sound toggle, and Generate opening the correct panel.
+- [ ] Backend: `GET /api/higgsfield/disponible` returns `{disponible: true/false}` based on the environment's `HIGGSFIELD_API_KEY`.
+- [ ] Generate: upload → submit → status → cancel → completion → library.
+
+## References
+
+- Backend endpoints: `api/higgsfield.py`
+- Higgsfield logic: `core/generation_video_higgsfield.py`, `core/higgsfield_catalogue.py`, `core/higgsfield_limites.py`, `core/higgsfield_requetes.py`
+- Static catalogue: `lib/effetsHiggsfield.ts` (50+ effects)

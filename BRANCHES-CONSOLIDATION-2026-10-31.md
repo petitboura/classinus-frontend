@@ -1,27 +1,32 @@
-# Consolidation des branches en doute — 31/10/2026
+# Branch consolidation notes: 31 October 2026
 
-Note pour les créateurs des branches concernées (décision Bourama, analyse Git : ancêtres, `git cherry`, diffs d'arbres vs `staging`).
+[English version] · [Français](BRANCHES-CONSOLIDATION-2026-10-31.fr.md)
 
-## Branche à utiliser désormais (cluster relais PC)
+Note for the owners of the affected branches. Decision by Bourama, based on Git analysis: ancestry, `git cherry`, and tree diffs against `staging`.
+
+## Branch to use from now on (PC relay cluster)
+
 - **`fix/relais-sante-stable`** (`6ab3490c79005f919799540ccb1e0dfeab1efdd9`)
-  - Contient `ci/pc-1.0.7-brouillon` et `fix/relais-stabilite-log-watchdog` en ancêtres (prouvé).
-  - Contient en plus les 2 correctifs les plus récents (frères de rôles différents, échec de santé transitoire).
-  - Continuez tout le travail relais PC sur cette branche, pas sur les anciennes.
+  - Includes `ci/pc-1.0.7-brouillon` and `fix/relais-stabilite-log-watchdog` as proven ancestors.
+  - Also includes the two most recent fixes (different role siblings and transient health-check failure).
+  - Continue all PC relay work on this branch, not on the older branches.
 
-## Branches supprimées le 31/10/2026
-| Branche supprimée | SHA (restauration possible) | Raison |
+## Branches deleted on 31 October 2026
+
+| Deleted branch | SHA (can be restored) | Reason |
 |---|---|---|
-| `ci/pc-1.0.7-brouillon` | `9d545fbfdbe066788c27d3b13af882608967b4c3` | Ancêtre de `fix/relais-sante-stable` |
-| `fix/relais-stabilite-log-watchdog` | `3958482a71887e12f04a4fe134b918ef7c4d8e28` | Ancêtre de `fix/relais-sante-stable` |
-| `fix/relais-stabilite-v2` | `750b817f9db0ee65b6aadafa502df761d1c00836` | Tentative divergente supprimant `plugin.mts`, remplacée |
-| `fix/relais-auto-log-watchdog` | `ff7ccdc792f6d4a3d8fbc4898ff3d8134a03a771` | Tentative divergente supprimant `plugin.mts` + `relaisPc.mts`, remplacée |
-| `feat/higgsfield-rail` | `036c878e3a9cf58021da75b5836ab8498f0c368f` | V1 (3 effets) dépassée par `staging` (catalogue étendu) |
-| `diag/focus2-temp` | `cfd374ce12e847b24656904c21de9da632e6213e` | Diagnostic du 18/10 remplacé par `focusPrecedent.mts` dans `staging` |
+| `ci/pc-1.0.7-brouillon` | `9d545fbfdbe066788c27d3b13af882608967b4c3` | Ancestor of `fix/relais-sante-stable` |
+| `fix/relais-stabilite-log-watchdog` | `3958482a71887e12f04a4fe134b918ef7c4d8e28` | Ancestor of `fix/relais-sante-stable` |
+| `fix/relais-stabilite-v2` | `750b817f9db0ee65b6aadafa502df761d1c00836` | Divergent attempt that removed `plugin.mts`; replaced |
+| `fix/relais-auto-log-watchdog` | `ff7ccdc792f6d4a3d8fbc4898ff3d8134a03a771` | Divergent attempt that removed `plugin.mts` and `relaisPc.mts`; replaced |
+| `feat/higgsfield-rail` | `036c878e3a9cf58021da75b5836ab8498f0c368f` | V1 (3 effects) superseded by the extended catalogue in `staging` |
+| `diag/focus2-temp` | `cfd374ce12e847b24656904c21de9da632e6213e` | 18 October diagnostic replaced by `focusPrecedent.mts` in `staging` |
 
-## Restaurer une branche si vraiment nécessaire
+## Restore a branch if genuinely needed
+
 ```bash
-git branch <nom-branche> <sha-ci-dessus>
-git push origin <nom-branche>
+git branch <branch-name> <sha-above>
+git push origin <branch-name>
 ```
 
-Non touchés : `main`, `staging` et toutes les autres branches utiles / PR ouvertes.
+Unaffected: `main`, `staging`, and all other useful branches and open PRs.

@@ -1,0 +1,217 @@
+> [English version](./README.md) · **Version française**
+
+# capacitor-pont-natif-electron
+
+Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
+(voir `plan-canal-en-direct-pc.md` a la racine du depot), Lot S.
+
+Implementation Electron du plugin Capacitor `PontNatif` -- meme nom que
+celui deja utilise sur Android/iOS et deja appele automatiquement cote
+web (voir `lib/supabase.ts`, `enregistrerToken` a chaque changement de
+session Supabase, aucun changement necessaire la-bas).
+
+Sur Electron, `enregistrerToken` ouvre et maintient une DEUXIEME
+connexion WebSocket vers `clovis-backend`, dediee aux actions systeme
+(clic ecran, clavier, ouverture d'application, lecture d'ecran) --
+separee de la connexion de la fenetre principale (qui reste dediee aux
+clics dans la page Classinus). Le clic tente les actions UI Automation et
+les boutons natifs Windows sans déplacer la souris. `@nut-tree-fork/nut-js`
+sert au clavier et au repli souris annoncé. La lecture d'écran est textuelle.
+
+## Construire ce paquet
+
+Necessite que `capacitor-dossiers-electron` soit deja construit avant
+(reutilise sa fonction `obtenirAppareilIdPc`) :
+
+```bash
+cd packages/capacitor-dossiers-electron && npm run build
+cd ../capacitor-pont-natif-electron && npm install && npm run build
+```
+
+Produit `electron/dist/plugin.mjs`. A refaire a chaque modification de
+`electron/src/plugin.mts`.
+
+## Bureau et barre des taches (04/10/2026)
+
+Le meme outil `lire_ecran` lit aussi le bureau et la barre du bas, via son parametre
+`zone` ("fenetre" par defaut, "barre_des_taches", "bureau"). Le script retrouve ces
+fenetres de l'explorateur de Windows par leur classe (Shell_TrayWnd, Progman, WorkerW) et les
+lit comme n'importe quelle fenetre : memes elements, memes coordonnees. Le bureau est lu tout
+seul quand l'etudiant le regarde (bureau au premier plan, ou aucune fenetre ouverte et celle de
+Classinus pas affichee). Non verifie sur un vrai Windows au moment de l'ecriture : a controler
+au premier essai (icones du bureau sous Progman ou WorkerW selon la version de Windows).
+
+## Lot V : lecture de la fenetre au premier plan (UI Automation)
+
+Le cas `lire_ecran` ne prend plus de capture d'image (decision Bourama du
+28/09/2026 : aucune image envoyee au modele, trop couteux). Il lit en TEXTE
+la fenetre au premier plan avec UI Automation de Windows, via un petit
+script PowerShell lance par `electron/src/lectureFenetreWindows.mts`
+(lecture seule, aucune fenetre affichee). Le resultat contient le titre, le
+nom de l'application, les titres des autres fenetres ouvertes, et les
+elements visibles (textes, boutons, champs avec leur valeur, cases,
+onglets...) avec leurs coordonnees d'ecran pour `cliquer_ecran`. La valeur
+d'un champ mot de passe n'est jamais lue. Les fenetres de Classinus lui
+meme sont reconnues par leur processus (`process.pid`) : la fenêtre principale
+renvoie vers `lire_page`. Quand la superposition a le focus, son handle Win32
+est exclu et la fenêtre visible immédiatement en dessous est lue. Avant une
+frappe ou un clic système, le focus lui est rendu.
+
+Les limites (nombre d'elements, longueurs, delai) sont envoyees par le
+backend avec chaque demande (`core/outils_action_agent_pc.py`), elles ne
+sont reglees qu'a cet endroit. Si la lecture echoue (PowerShell absent ou
+bloque, delai depasse), on renvoie au moins le titre, en mode `titre_seul`.
+
+Lecture du texte long (documents, champs multilignes) : par l'API COM native
+de UI Automation (`IUIAutomation`, classe `LectureTexteCom` du script), et non
+par le wrapper .NET `TextPatternRange.GetText()`, qui plante Windows
+PowerShell avec une violation d'acces sous Windows 11. Ordre des methodes COM
+et GUID verifies contre `uiautomationclient.h` du SDK Windows. Non verifie sur
+une vraie machine Windows a ce jour.
+
+Menus ouverts : un menu, un menu contextuel ou une liste deroulante est une
+fenetre a part, absente de l'arbre de la fenetre au premier plan. Le script
+lit donc d'abord les fenetres annexes placees AU-DESSUS de la fenetre cible
+(classe `#32768`, ou meme processus avec fenetre outil / possedee / sans titre /
+nom contenant `Popup`, ou `ComboLBox`), maximum 6. Leurs elements portent
+`zone: "menu ouvert"` et le resultat `menu_ouvert: true`.
+
+Clavier : `taper_clavier` ecrit du texte dans la fenetre annoncee par le modele
+(parametre `cible`, module pur `cibleSaisie.mts`, 12/10/2026) : sans cible, ou si
+la fenetre au premier plan n'est pas la bonne, rien n'est tape. Avant chaque bloc
+de texte, collage, retour a la ligne et raccourci interne, trois signaux sont
+relus : meme identifiant de fenetre, titre qui correspond encore a la cible
+(changement d'onglet), pointeur qui n'a pas bouge de plus de 60 pixels (changement
+de champ dans la meme fenetre, Clovis ne deplace jamais le pointeur en ecrivant).
+Si l'etudiant reprend la main en cours de frappe, la frappe s'arrete tout de suite et Clovis est prevenu du nombre de caracteres deja tapes.
+Test : `npm run test:cible-saisie`. `appuyer_touches` (module pur
+`touchesClavier.mts`) appuie sur des touches seules et des raccourcis
+(`ctrl+c`, `alt+tab`, `win+d`, `enter`, `ctrl+a ctrl+c`...), comme un
+utilisateur. Une touche inconnue est refusee, les touches sont toujours
+relachees (jamais de Ctrl reste enfonce), chaque raccourci est annonce dans le
+journal avant d'etre execute.
+
+Filet de securite : si PowerShell s'arrete brutalement sans rien renvoyer
+(plantage de Windows dans la lecture du texte long d'un document ou d'un
+champ, code 3221225477), la lecture est relancee une seule fois sans cette
+partie. Clovis recoit alors la structure de la fenetre (boutons, menus,
+champs courts), avec `texte_long_ignore: true`. Pas de relance apres un
+delai depasse.
+
+A tester sur la machine de Bourama, en priorite :
+
+- Bloc-notes avec une phrase ecrite : le texte est lu.
+- Chrome sur une page quelconque : contenu de la page lu, ou seulement la
+  barre d'outils ? (les navigateurs ne construisent leur arbre complet que
+  lorsqu'un outil d'accessibilite le demande : non verifie).
+- Ecran regle a 100 % puis 150 % : les coordonnees donnees a l'IA tombent
+  elles sur le bon element avec `cliquer_ecran` ? Le script se declare
+  sensible a l'echelle d'affichage (`SetProcessDPIAware`) pour s'aligner sur
+  la souris, mais l'accord avec `nut-js` n'a pas pu etre verifie.
+- Un champ mot de passe rempli : la valeur ne doit jamais apparaitre.
+- Une application qui n'expose rien : reponse propre en `titre_seul`.
+
+`screenshot-desktop` n'est plus utilise par ce paquet : la dependance de
+`package.json` peut etre retiree (a decider avec Bourama).
+
+## Points a verifier au premier vrai test (sur la machine de Bourama)
+
+- La destination API est transmise par le renderer dans
+  `enregistrerToken({token, apiUrl})` : le canal système et le chat utilisent
+  le même serveur, y compris en staging. Sans `apiUrl`, le repli reste
+  `CLASSINUS_API_URL` puis `https://api.classinus.com`.
+- `@nut-tree-fork/nut-js` et `screenshot-desktop` contiennent des modules
+  natifs precompiles par plateforme -- a reconstruire avec
+  `electron-rebuild` (ou equivalent) si un module natif ne charge pas au
+  lancement de l'appli empaquetee. Non teste dans ce chantier (bac a
+  sable Linux sans runtime Electron reel) : seule la compilation
+  TypeScript a ete verifiee ici.
+- `ouvrir_application` lance un exécutable avec `spawn` et accuse son
+  démarrage immédiatement, sans attendre sa fermeture.
+
+## Lot T : journal et bulle des actions système
+
+Autour de chaque action système exécutée (clic, clavier, ouverture
+d'application, lecture d'écran), ce plugin émet l'événement
+`actionSysteme` vers la fenêtre principale : phase `debut` (phrase courte,
+ex. "Clovis a ouvert notepad") avant l'exécution, phase `fin` (statut
+`succes` ou `erreur`) après. La fenêtre principale
+(`lib/superpositionElectron.ts`, `useJournalActionsSysteme`) en fait une
+entrée de journal et une phrase de bulle, exactement comme pour un clic
+dans la page ; la superposition les reçoit par l'instantané du lot R.
+
+Critère de fin à vérifier sur ta machine : demander à Clovis d'ouvrir le
+Bloc-notes et d'y écrire une phrase, Bloc-notes au premier plan. Le
+journal et la bulle de la superposition doivent montrer les mêmes types
+d'entrées que pour une action dans la page.
+
+## Clic indépendant et repli annoncé
+
+Lorsqu'un bouton Win32 ou WinForms n'expose aucun pattern UIA, son handle et
+sa classe native sont vérifiés avant l'envoi de `BM_CLICK`. Ce chemin reste
+indépendant du pointeur Windows. Les autres contrôles incompatibles utilisent
+le repli souris annoncé ci-dessous.
+
+`cliquer_ecran` place d’abord le curseur dessiné sur la cible et tente une action UI Automation (bouton, case, sélection, menu ou focus de champ). Aucun pilote souris n’est chargé sur ce chemin. Si aucune action compatible n’existe, la superposition affiche « Je ne peux pas cliquer ici avec mon curseur seul. Je vais utiliser ton curseur maintenant. » avant le clic par la vraie souris, sans validation de l’étudiant. Le pointeur est remis à sa position initiale si l’étudiant ne l’a pas repris. La superposition laisse traverser le clic pendant toute l’opération.
+
+Un clic UIA commencé mais dont le résultat est incertain n’est pas répété, pour éviter une double action. Les confirmations internes concernent uniquement l’affichage de la superposition ; aucun bouton d’approbation n’est présenté.
+
+## Ce que l'etudiant a entoure (11/10/2026, crayon du canal, lot 3)
+
+La methode `lireElementsEntoures({ zones })` recoit un rectangle par trait dessine (pixels de la
+page de superposition, voir `lib/zonesCrayon.ts`), les convertit en pixels d'ecran (origine et
+zoom de la fenetre de superposition, echelle de l'ecran), lit la fenetre au premier plan avec la
+meme lecture que `lire_ecran` et rend tous les elements lus, ceux dont la position tombe dans une zone etant marques `entoure`
+(le grand modele recoit tout, ce qui est entoure d'abord). Pour un champ ou un document
+dont le texte est lisible (poignee de fenetre connue), le texte exact sous le trait est lu mot par mot
+et rendu dans `texte_entoure` (`LectureTexteCom.LireZone`, nouveau code, la lecture normale est inchangee).
+Sans poignee (certains navigateurs), seul le champ est marque entoure, pas les mots.
+Logique de conversion et de choix dans `electron/src/zonesCrayon.mts`, testee par
+`npm run test:zones-crayon`. Cote site : `lib/lectureEntoureCrayon.ts`. Le bouton Envoyer du champ
+d'ecriture du canal (`components/ControlesInteractionCanal.tsx`) l'appelle quand un dessin attend, voir `lib/envoiCrayon.ts`. Conversion d'ecran et lecture reelle non verifiees sur un
+vrai Windows au moment de l'ecriture : a controler au premier essai, notamment sur un ecran mis
+a l'echelle (125 % ou 150 %).
+
+## Ecriture en arriere plan (12/10/2026)
+
+Quand la fenetre visee par `taper_clavier` (parametre `cible`) n'est PAS celle qui est
+devant, `ecritureArrierePlan.mts` ecrit le texte directement dans son champ de texte par
+UI Automation (ValuePattern), AJOUTE A LA FIN du champ, sans la mettre devant, sans
+clavier et sans souris. Echecs surs : avant l'ecriture, tout echec renvoie "indisponible" ;
+des que le fichier marqueur est pose, tout echec renvoie "incertain" et rien n'est rejoue.
+Application protegee : l'accord de l'etudiant est demande avant d'ecrire.
+Depuis le 18/10/2026, une politique d'autorisation plus large (regarder, ecrire, ouvrir, cliquer, trois boutons) existe, eteinte tant que le serveur n'envoie pas parametres.autorisation : voir plan-canal-en-direct-pc.md, section Autorisations avant la publication.
+
+Si l'application ne le permet pas (champ absent, plusieurs champs sans focus, champ non
+modifiable par accessibilite), Classinus annonce, met la fenetre devant et ecrit au
+clavier sans s'arreter ; l'etudiant peut arreter avec Echap. Fenetre introuvable : rien
+n'est fait, Clovis est prevenu. Si la fenetre visee est deja devant, la frappe touche par
+touche reste celle d'avant. Test : `npm run test:ecriture-arriere-plan` (le script
+PowerShell lui meme ne se verifie que sur un vrai Windows).
+
+## Lecture d'une fenetre derriere (13/10/2026)
+
+`lire_ecran` accepte un parametre `fenetre_cible` (le titre de la fenetre, tel que lu a
+l'ecran, ou le nom de l'application). La fenetre est retrouvee parmi les fenetres ouvertes
+visibles (hors Classinus) comme `ecritureArrierePlan.mts` retrouve la sienne : titre sans
+accents ni majuscules, titre exact prefere quand plusieurs correspondent. Aucune fenetre ou
+plusieurs : la lecture s'arrete avec la liste des fenetres lisibles, jamais de choix au
+hasard et jamais de repli sur la fenetre du premier plan. Une fenetre reduite dans la barre
+des taches n'est pas dans la liste (son contenu n'est pas lisible). La fenetre n'est pas
+mise devant : UI Automation lit une fenetre cachee sans la toucher. Les menus ouverts ne
+sont pas lus (ils appartiennent a la fenetre du premier plan). Le resultat porte
+`fenetre_visee: true` : les positions des elements ne sont pas cliquables tant que la
+fenetre est derriere (le clic tomberait sur la fenetre qui est devant). Ne se combine pas
+avec `zone`. Test : `npm run test:lecture-fenetre-visee` (le script PowerShell lui meme ne
+se verifie que sur un vrai Windows).
+
+## Clic sur un bouton Windows classique sans premier plan (13/10/2026)
+
+Pour un bouton Win32 classique (action `BoutonWindows` de `clicWindows.mts`), le clic passe par
+`BM_CLICK` et la fenetre n'est plus mise au premier plan : l'etudiant garde son focus. Seule
+exception, une boite de dialogue Windows (classe `#32770`) est activee avant le clic, car
+Microsoft indique que `BM_CLICK` peut echouer sur une boite de dialogue inactive. Ne change rien
+pour les autres actions (Invoke, Toggle, selection, deploiement). Limite connue : le clic se fait
+a des coordonnees, la fenetre trouvee est la plus haute a cet endroit ; un bouton entierement
+cache derriere une autre fenetre n'est pas atteignable ainsi. Test : `npm run test:clic-sans-premier-plan`
+(le script lui meme ne se verifie que sur un vrai Windows).

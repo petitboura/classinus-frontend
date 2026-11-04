@@ -1,170 +1,104 @@
-# Specs : Guide de découverte de Clovis (chantier lancé le 16/09/2026, demande Bourama)
+# Specifications: Classinus discovery guide (project started 16 September 2026, requested by Bourama)
 
-Ce document existe parce que plusieurs IA vont travailler sur ce chantier en
-parallèle, chacune sur une étape distincte. Toujours relire ce fichier avant
-de commencer une étape, ne jamais deviner un point marqué "ouvert" plus bas,
-demander à Bourama si besoin.
+[English version] · [Français](specs-guide-decouverte.fr.md)
 
-## Contexte général
+Several AIs may work on different steps of this project in parallel. Always reread this file before starting a step. Never guess any item marked "open" below; ask Bourama if necessary.
 
-Bourama veut un guide interactif qui présente Clovis section par section à
-un nouvel utilisateur, sans jamais afficher un long pavé de texte. Ce guide
-s'appuie sur deux choses qui existent déjà en prod et qu'il ne faut pas
-recréer :
+## General context
 
-1. **La base de connaissance Clovis** : table Supabase `documents`
-   (`agent_id = 'clovis'`), 17 articles nommés `01-vue-ensemble.md` à
-   `17-capacites-ia.md`, lus par l'outil `gerer_base_connaissance`. Voir la
-   section "Correspondance des sections" plus bas pour la liste complète.
-2. **La question riche dans le chat** (chantier du 15/09/2026) : Clovis peut
-   écrire un bloc \`\`\`question\`\`\` (JSON, 8 types dont `choix_unique`,
-   voir `lib/questionRiche.ts` et `components/chat/QuestionInteractive.tsx`
-   dans `clovis-frontend`), affiché comme de vrais boutons/champs cliquables.
-   Cliquer envoie une vraie phrase comme message suivant. C'est le mécanisme
-   à utiliser pour TOUTE interaction du guide (Continuer, section
-   précédente, choix d'une section, Essayer maintenant / Juste un exemple).
-   Ne jamais construire un nouveau composant de boutons séparé pour le
-   guide : réutiliser ce mécanisme existant.
+Bourama wants an interactive guide that introduces Classinus to a new user one section at a time, without ever showing a long block of text.
 
-Il existe aussi déjà un système de mode par conversation (mode pédagogique,
-bouton + raccourci `/`, voir chantier "modes-pedagogiques-system-prompt").
-Le guide doit être un mode supplémentaire de ce même système, pas un
-mécanisme séparé.
+The guide relies on two things that already exist in production and must not be rebuilt:
 
-## Règles validées par Bourama (ne jamais réinterpréter)
+1. **Classinus knowledge base:** Supabase table `documents` (`agent_id = 'clovis'`), containing 17 articles named `01-vue-ensemble.md` through `17-capacites-ia.md`, read through the `gerer_base_connaissance` tool. See the "Section mapping" table below for the full list.
+2. **Rich chat question** (project from 15 September 2026): Classinus can write a ```question``` block (JSON, eight types including `choix_unique`; see `lib/questionRiche.ts` and `components/chat/QuestionInteractive.tsx` in `clovis-frontend`). It is displayed as real clickable buttons and fields. Clicking sends a real sentence as the next message. This mechanism must be used for EVERY guide interaction (Continue, previous section, choosing a section, Try now / Just an example). Never build a separate button component for the guide; reuse the existing mechanism.
 
-- Deux points d'entrée seulement : un bouton flottant, déplaçable, visible
-  sur toutes les pages SAUF `/chat` ; et une entrée dans le menu `+` déjà
-  existant du chat. Jamais de bouton séparé dans le chat lui même.
-- Au déclenchement, Clovis propose lui même, via un bloc `question` de type
-  `choix_unique`, deux options : "Je commence" et "Je veux comprendre une
-  section".
-- "Je commence" : parcours des 17 sections dans l'ordre fixe 01 à 17. Pas de
-  vrai aléatoire. L'utilisateur peut à tout moment sauter à une autre
-  section ou revenir en arrière, jamais un parcours strictement bloqué à
-  avancer une par une.
-- Chaque section est expliquée étape par étape (plusieurs messages courts),
-  jamais un seul long texte.
-- Section chat (correspond à l'article `02-chat.md` et surtout
-  `17-capacites-ia.md`) : Clovis démontre absolument tout ce qu'il sait
-  faire (modes, boutons, types de génération), regroupé par catégorie
-  (Générer, Rechercher, Action app, Utilitaires), et pour chaque outil ou
-  groupe propose à l'élève un choix entre "Essayer maintenant" (vraie
-  exécution de l'outil) et "Juste un exemple" (démonstration décrite, sans
-  exécution réelle).
-- "Je veux comprendre une section" : la liste proposée à l'utilisateur
-  utilise des libellés compréhensibles (voir tableau plus bas), jamais les
-  noms de fichiers techniques de la base de connaissance.
-- Rien dans le guide ne doit contourner les confirmations déjà obligatoires
-  sur les actions sensibles (GitHub, Notion, Google Drive). Voir
-  `04-recherche-et-connecteurs.md` et `16-integrations-externes.md`.
+A conversation-level mode system already exists (pedagogical mode, plus button and `/` shortcut; see the "modes-pedagogiques-system-prompt" project). The guide must be an additional mode in that same system, not a separate mechanism.
 
-## Correspondance des sections (article de la base de connaissance -> libellé utilisateur)
+## Rules approved by Bourama (never reinterpret)
 
-| Article (table `documents`, agent `clovis`) | Libellé pour l'utilisateur |
+- Only two entry points: a movable floating button visible on every page EXCEPT `/chat`, and an entry in the chat's existing `+` menu. Never add a separate button inside the chat itself.
+- When triggered, Classinus itself proposes two choices through a `question` block of type `choix_unique`: **"I'll get started"** and **"I want to understand a section"**.
+- **"I'll get started":** walk through all 17 sections in a fixed order from 01 to 17. No real randomization. The user may jump to another section or go backwards at any time. Navigation must not be locked to one-step-at-a-time progression.
+- Explain every section step by step through several short messages, never one long text.
+- **Chat section** (corresponds to article `02-chat.md` and especially `17-capacites-ia.md`): Classinus must demonstrate everything it can do (modes, buttons, generation types), grouped by category (Generate, Search, App actions, Utilities). For each tool or group, offer the student a choice between **"Try now"** (actually execute the tool) and **"Just an example"** (describe a demonstration without running the tool).
+- **"I want to understand a section":** show user-friendly labels from the table below, never the technical filenames from the knowledge base.
+- The guide must never bypass existing confirmation requirements for sensitive actions (GitHub, Notion, Google Drive). See `04-recherche-et-connecteurs.md` and `16-integrations-externes.md`.
+
+## Section mapping (knowledge-base article → user-facing label)
+
+| Article (table `documents`, agent `clovis`) | User-facing label |
 |---|---|
-| 01-vue-ensemble.md | Vue d'ensemble |
-| 02-chat.md | Le chat |
-| 03-generation.md | Génération de contenus |
-| 04-recherche-et-connecteurs.md | Recherche et connecteurs |
-| 05-bibliotheque.md | Bibliothèque personnelle |
-| 06-memoire-et-profil.md | Mémoire et profil |
-| 07-skills.md | Skills |
-| 08-base-de-connaissance.md | Base de connaissance de Clovis |
-| 09-bureau-enseignant.md | Bureau (enseignant) |
-| 10-avancement-programme.md | Programme et avancement |
-| 11-telephone.md | Dossiers du téléphone |
-| 12-utilitaires.md | Utilitaires du chat |
-| 13-outils-dynamiques.md | Outils dynamiques |
-| 14-connecter-claude.md | Connecter Clovis dans Claude |
-| 15-concentration.md | Concentration |
-| 16-integrations-externes.md | Intégrations externes |
-| 17-capacites-ia.md | Ce que Clovis sait faire |
+| `01-vue-ensemble.md` | Overview |
+| `02-chat.md` | The chat |
+| `03-generation.md` | Content generation |
+| `04-recherche-et-connecteurs.md` | Search and connectors |
+| `05-bibliotheque.md` | Personal library |
+| `06-memoire-et-profil.md` | Memory and profile |
+| `07-skills.md` | Skills |
+| `08-base-de-connaissance.md` | Classinus knowledge base |
+| `09-bureau-enseignant.md` | Workspace (teacher) |
+| `10-avancement-programme.md` | Programme and progress |
+| `11-telephone.md` | Phone folders |
+| `12-utilitaires.md` | Chat utilities |
+| `13-outils-dynamiques.md` | Dynamic tools |
+| `14-connecter-claude.md` | Connect Classinus to Claude |
+| `15-concentration.md` | Focus |
+| `16-integrations-externes.md` | External integrations |
+| `17-capacites-ia.md` | What Classinus can do |
 
-Cette table doit être stockée quelque part de dynamique (voir étape 1), pas
-codée en dur dans un composant, conformément à la règle générale de
-dynamisme des standards de Bourama.
+This table must be stored in a dynamic location (see step 1), not hard-coded in a component, in keeping with Bourama's general dynamic-data rule.
 
-## Une seule branche pour tout le chantier
+## One branch for the entire project
 
-Toutes les étapes de ce chantier, backend comme frontend, se poussent sur
-UNE SEULE branche dédiée nommée `guide-decouverte` (une par dépôt, donc
-`guide-decouverte` sur `clovis-backend` ET sur `clovis-frontend`), jamais
-une branche séparée par étape. Si la branche `guide-decouverte` du dépôt
-concerné existe déjà, la récupérer et committer par dessus ; sinon la
-créer à partir de `main` à jour.
+All steps, backend and frontend, must be pushed to **one dedicated branch** named `guide-decouverte` (one branch per repository: `guide-decouverte` in both `clovis-backend` and `clovis-frontend`). Never create a separate branch for each step.
 
-## Étapes indépendantes
+If the relevant repository already has a `guide-decouverte` branch, check it out and commit on top of it. Otherwise, create it from the latest `main`.
 
-Chaque étape ci dessous peut être développée et poussée séparément, sans
-attendre les autres. Une étape qui dépend du résultat d'une autre peut
-quand même être poussée seule : elle restera simplement sans effet réel
-jusqu'à ce que l'étape dont elle dépend soit poussée à son tour (jamais de
-crash, jamais de comportement cassé pour l'utilisateur actuel).
+## Independent steps
 
-### Étape 1 (backend, clovis-backend) : référentiel des sections du guide
+Each step below can be developed and pushed separately without waiting for the others. A step that depends on another can still be pushed on its own; it will simply have no real effect until the dependency is pushed too. It must never crash or break current user behavior.
 
-Créer une petite table Supabase (proposition : `guide_sections`, colonnes
-`nom_article`, `libelle_utilisateur`, `accroche_courte`, `ordre`) reprenant
-le tableau ci dessus. Aucune dépendance, rien ne la consomme encore.
+### Step 1 (backend, `clovis-backend`): guide-section reference data
 
-Point ouvert : nom exact de la table et de ses colonnes, à confirmer avec
-Bourama avant de créer la migration si une autre IA arrive ici en premier.
+Create a small Supabase table (proposed name: `guide_sections`) with columns `nom_article`, `libelle_utilisateur`, `accroche_courte`, and `ordre`, based on the mapping above. No dependencies; nothing consumes the table yet.
 
-### Étape 2 (backend) : mode de conversation "guide"
+Open decision: confirm the exact table and column names with Bourama before creating the migration, in case another AI reaches this step first.
 
-S'appuie sur le système existant de mode par conversation (mode
-pédagogique). Ajouter une valeur de mode supplémentaire ("guide"),
-stockée par conversation comme le mode pédagogique actuel.
+### Step 2 (backend): conversation mode "guide"
 
-Indépendante : peut être poussée même si rien ne l'active encore côté
-frontend (testable en changeant la valeur manuellement en base, comme pour
-tous les chantiers précédents).
+Build on the existing conversation mode system (pedagogical mode). Add one more mode value ("guide"), stored per conversation like the current pedagogical mode.
 
-### Étape 3 (backend, contenu du prompt) : instruction système du mode guide
+This step is independent: it can be pushed even if the frontend does not activate it yet. It can be tested by changing the value manually in the database, as in previous projects.
 
-Rédiger le texte d'instruction injecté au prompt quand le mode "guide" est
-actif (voir étape 2). Ce texte doit dire à Clovis : s'appuyer sur
-`gerer_base_connaissance` pour lire les 17 articles, utiliser un bloc
-`question` de type `choix_unique` à chaque transition, ne jamais produire
-un pavé de texte, respecter l'ordre fixe des sections en autorisant les
-sauts, et pour la section chat appliquer la règle "Essayer maintenant" /
-"Juste un exemple" par groupe d'outils.
+### Step 3 (backend, prompt content): system instruction for guide mode
 
-Point ouvert, à trancher avant de rédiger : la liste proposée pour "je veux
-comprendre une section" est elle un bloc `question` `choix_unique` généré
-par Clovis lui même à partir de la table de l'étape 1 (pas de nouveau
-composant frontend), ou une vraie liste d'interface séparée (menu, cartes)
-codée côté frontend ? Ne pas deviner, demander à Bourama.
+Write the system instruction injected into the prompt when "guide" mode is active (see step 2). It must tell Classinus to:
 
-Dépend de l'étape 2 pour être branchée en production, mais le texte peut
-être rédigé et stocké avant que l'étape 2 ne l'utilise réellement.
+- Use `gerer_base_connaissance` to read the 17 articles.
+- Use a `question` block of type `choix_unique` at every transition.
+- Never output a long block of text.
+- Respect the fixed section order while allowing the user to jump.
+- For the chat section, apply the **Try now / Just an example** choice for every tool group.
 
-### Étape 4 (frontend, clovis-frontend) : bouton flottant
+Open decision before writing this prompt: should the list shown for "I want to understand a section" be a `question` / `choix_unique` block generated by Classinus from the table created in step 1 (no new frontend component), or a separate interface list (menu/cards) implemented in the frontend? Do not guess. Ask Bourama.
 
-Composant flottant, déplaçable, position mémorisée par utilisateur,
-affiché sur toutes les pages sauf `/chat`. Au clic, il doit déclencher le
-mode "guide" (étape 2) sur une conversation puis ouvrir le chat.
+This step depends on step 2 to be enabled in production, but the instruction text can be written and stored before step 2 uses it.
 
-Point ouvert : le clic ouvre une nouvelle conversation dédiée au guide, ou
-active le mode guide sur la conversation en cours ? Ne pas deviner,
-demander à Bourama.
+### Step 4 (frontend, `clovis-frontend`): floating button
 
-Indépendante : peut être poussée avant même que le mode existe côté
-backend, simplement sans effet réel tant que l'étape 2 n'est pas poussée.
+Create a movable floating component whose position is remembered per user and which appears on every page except `/chat`. Clicking it must activate guide mode (step 2) for a conversation and open the chat.
 
-### Étape 5 (frontend) : entrée "Guide" dans le menu `+` du chat
+Open decision: should the click open a new conversation dedicated to the guide, or activate guide mode in the current conversation? Do not guess. Ask Bourama.
 
-Même déclenchement que l'étape 4 (mode guide + ouverture du chat), mais
-accessible depuis le menu `+` déjà existant du chat. Jamais de bouton
-séparé affiché dans le chat lui même, règle explicite de Bourama.
+This step is independent and can be pushed before the backend mode exists. It will simply have no real effect until step 2 is pushed.
 
-Indépendante, même logique de dépendance que l'étape 4.
+### Step 5 (frontend): "Guide" entry in the chat plus menu
 
-## Ce qui n'est PAS une étape séparée
+Same trigger as step 4 (activate guide mode and open the chat), but accessible through the chat's existing `+` menu. Never add a separate visible button inside the chat; this is an explicit rule from Bourama.
 
-La liste des sections affichée pour "je veux comprendre une section" et la
-démonstration groupée des outils dans la section chat font partie du
-contenu de l'instruction du mode guide (étape 3), pas d'un nouveau
-composant d'interface, sauf si le point ouvert de l'étape 3 est tranché
-dans l'autre sens par Bourama.
+This step is independent and has the same dependency behavior as step 4.
+
+## What is NOT a separate step
+
+The section list for "I want to understand a section" and the grouped tool demonstrations in the chat section belong to the guide-mode instruction content (step 3). They are not separate UI components, unless Bourama resolves the open question in step 3 in favor of a separate frontend component.
