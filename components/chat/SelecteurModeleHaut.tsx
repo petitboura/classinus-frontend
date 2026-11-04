@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { IconeFournisseur } from "./IconeFournisseur";
 import { ORDRE_DISTRIBUTEURS_AFFICHAGE, LABELS_DISTRIBUTEUR } from "./barre/reglagesReponse";
+import { GroupeFournisseur } from "./barre/GroupeFournisseur";
 import { obtenirLocale } from "@/lib/i18n/locale";
 
 // libelles_bientot : le mot affiché sur un modèle Bientôt, par langue. Il vient du backend, qui le lit
@@ -30,7 +31,8 @@ function libelleBientot(libelles?: Record<string, string>): string {
  * le nom du modèle actif avec l'icône de son fournisseur. Il n'y a plus de choix "Auto"
  * (15/10/2026) : le modèle actif est toujours un vrai modèle, voir lib/modeleActif.ts.
  * Au clic il déplie la liste de tous les modèles, groupés par
- * fournisseur dans le même ordre que partout ailleurs (reglagesReponse.ts).
+ * fournisseur dans le même ordre que partout ailleurs (reglagesReponse.ts). Chaque
+ * fournisseur est une liste dépliable, dépliée par défaut (GroupeFournisseur.tsx).
  *
  * Il remplace la ligne "Modèle" du bouton Réglages de la barre de saisie. Les données
  * (liste, modèle choisi) et le stockage du choix (lib/reglagesProchainMessage.ts)
@@ -119,10 +121,7 @@ export function SelecteurModeleHaut({
                 (d) => modelesDisponibles.some((m) => m.distributeur === d) || modelesBientot.some((m) => m.distributeur === d)
               ).map(
                 (distributeur) => (
-                  <div key={distributeur} className="mt-1">
-                    <div className="px-2.5 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-dj-texte-muet">
-                      {LABELS_DISTRIBUTEUR[distributeur] ?? distributeur}
-                    </div>
+                  <GroupeFournisseur key={distributeur} libelle={LABELS_DISTRIBUTEUR[distributeur] ?? distributeur}>
                     {modelesDisponibles
                       .filter((m) => m.distributeur === distributeur)
                       .map((m) => (
@@ -147,7 +146,7 @@ export function SelecteurModeleHaut({
                           {m.label}
                         </OptionModele>
                       ))}
-                  </div>
+                  </GroupeFournisseur>
                 )
               )}
             </motion.div>

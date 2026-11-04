@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Lock, X, Sparkles, AlignLeft, GraduationCap, BookOpen, KeyRound, Gauge } from "lucide-react";
 import { LigneReglage, LARGEUR_VOLET_REM } from "./LigneReglage";
+import { GroupeFournisseur } from "./GroupeFournisseur";
 import {
   type LongueurReponse,
   type EffortReflexion,
@@ -323,10 +324,7 @@ export function BoutonReglages({
             <LigneReglage Icone={Sparkles} titre="Modèle" {...ligneProps("modele")}>
               {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter((d) => modelesDisponibles.some((m) => m.distributeur === d)).map(
                 (distributeur) => (
-                  <div key={distributeur} className="mt-1">
-                    <div className="px-2 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-dj-texte-muet">
-                      {LABELS_DISTRIBUTEUR[distributeur] ?? distributeur}
-                    </div>
+                  <GroupeFournisseur key={distributeur} libelle={LABELS_DISTRIBUTEUR[distributeur] ?? distributeur}>
                     {modelesDisponibles
                       .filter((m) => m.distributeur === distributeur)
                       .map((m) => (
@@ -342,7 +340,7 @@ export function BoutonReglages({
                           {m.label}
                         </Choix>
                       ))}
-                  </div>
+                  </GroupeFournisseur>
                 )
               )}
             </LigneReglage>

@@ -130,6 +130,8 @@ components/
                           sinon DeepSeek Flash, sinon le premier de la liste (lib/modeleActif.ts). Sur
                           téléphone (chat plein écran) le bouton est posé tout en haut, sur la ligne du hamburger ;
                           IconeFournisseur.tsx : icône d'un fournisseur de modèles, depuis public/icones-fournisseurs/ ;
+                          barre/GroupeFournisseur.tsx (04/11/2026) : liste dépliable d'un fournisseur (dépliée par défaut,
+                          flèche vers la droite si repliée, vers le bas si dépliée), partagée par le sélecteur du haut et BoutonReglages ;
                           LigneApercuPieces.tsx (02/10/2026) : ligne unique défilable des pièces jointes,
                           avant envoi (BarreDeSaisie.tsx) et après envoi (BulleMessage.tsx) ; carrés pour
                           images et vidéos, pilules empilées par deux pour le reste ; FenetreTexteColle.tsx
@@ -218,7 +220,7 @@ components/
                           avec un bouton Brut ; code et LaTeX gardent leur rendu
 
 public/
-  icones-fournisseurs/    icônes SVG des fournisseurs de modèles (claude, gpt, gemini, deepseek, grok, meta), nommées comme la clé
+  icones-fournisseurs/    icônes SVG des fournisseurs de modèles (claude, gpt, gemini, deepseek, grok, meta, zai, alibaba, nvidia), nommées comme la clé
                           "distributeur" du backend, tirées de @lobehub/icons-static-svg (licence MIT). Pour ajouter
                           un fournisseur : déposer son SVG ici et l'ajouter dans components/chat/IconeFournisseur.tsx
   foliate-js/             moteur de lecture EPUB et MOBI (foliate-js, licence MIT), copié sans modification
