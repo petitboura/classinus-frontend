@@ -495,8 +495,8 @@ export const APPLIS_DISPONIBLES: AppliDisponible[] = [
   // service côté backend (api/connexions.py), il ne doit pas changer. Les
   // icônes sont les vrais logos (components/icons).
   { nom: "higgsfield_mcp", label: "Higgsfield", Icone: IconeHiggsfield, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
-  // Vercel : masqué partout (décision du 28/10 de Bourama), ne pas le réafficher sans sa demande explicite.
-  { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel, visibleDansBoutonApplications: false, visibleDansEspaceConnexions: false },
+  // Vercel : jeton personnel comme Render (04/11/2026, demande de Bourama), réaffiché après le masquage du 28/10.
+  { nom: "vercel_mcp", label: "Vercel", Icone: IconeVercel, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true, modeConnexion: "jeton" },
   { nom: "railway_mcp", label: "Railway", Icone: IconeRailway, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
   { nom: "supabase_mcp", label: "Supabase", Icone: IconeSupabase, visibleDansBoutonApplications: true, visibleDansEspaceConnexions: true },
 ];
