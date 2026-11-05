@@ -856,6 +856,7 @@ html[data-ouverture-vue="1"] #clovis-splash {
 /* Notes de bas de page : filet de séparation, texte plus petit, titre
    "Footnotes" gardé seulement pour les lecteurs d'écran. */
 .dj-markdown section[data-footnotes] {
+  position: relative;
   margin-top: 1rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--dj-bordure);
