@@ -214,6 +214,7 @@ export function ChatIA({
   // force le scroll que dans ce cas, jamais s'il a remonté lire l'historique.
   const conteneurMessagesRef = useRef<HTMLDivElement>(null);
   const finDesMessagesRef = useRef<HTMLDivElement>(null);
+  const carteConfirmationRef = useRef<HTMLDivElement>(null);
   const collePresBasRef = useRef(true);
   const { activer: activerNotificationsPush } = useNotificationsPush();
   const [genEnCours, setGenEnCours] = useState(false);
@@ -304,6 +305,15 @@ export function ChatIA({
     cleAutorisation?: string | null;
   } | null>(null);
   const [confirmationEnAttente, setConfirmationEnAttente] = useState(false);
+  // La carte d'autorisation peut apparaître au bas d'une longue liste d'outils, donc derrière la
+  // barre de saisie : on la fait défiler au-dessus de la barre dès qu'elle s'affiche.
+  useEffect(() => {
+    if (!confirmation) return;
+    const minuteur = window.setTimeout(() => {
+      carteConfirmationRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    }, 50);
+    return () => window.clearTimeout(minuteur);
+  }, [confirmation]);
   const [popupFeedback, setPopupFeedback] = useState<{
     type: "positif" | "negatif";
     messageId: number;
@@ -2355,16 +2365,21 @@ export function ChatIA({
         )}
 
         {confirmation && (
-          <ConfirmationOutil
-            nomLisible={confirmation.nomLisible}
-            nomOutil={confirmation.nomOutil}
-            agentNom={confirmation.agentNom}
-            arguments={confirmation.arguments}
-            enAttente={confirmationEnAttente}
-            onConfirmer={() => repriseApresConfirmation(true)}
-            onToujoursAutoriser={confirmation.cleAutorisation ? () => repriseApresConfirmation(true, true) : undefined}
-            onAnnuler={() => repriseApresConfirmation(false)}
-          />
+          <div
+            ref={carteConfirmationRef}
+            style={{ scrollMarginBottom: "calc(var(--hauteur-saisie-chat, 7rem) + 1rem)" }}
+          >
+            <ConfirmationOutil
+              nomLisible={confirmation.nomLisible}
+              nomOutil={confirmation.nomOutil}
+              agentNom={confirmation.agentNom}
+              arguments={confirmation.arguments}
+              enAttente={confirmationEnAttente}
+              onConfirmer={() => repriseApresConfirmation(true)}
+              onToujoursAutoriser={confirmation.cleAutorisation ? () => repriseApresConfirmation(true, true) : undefined}
+              onAnnuler={() => repriseApresConfirmation(false)}
+            />
+          </div>
         )}
         {/* Sur téléphone en chat plein écran, la barre de saisie est posée par-dessus la
             liste : ce repère de fin réserve sa hauteur (mesurée, voir saisieSuperposeeRef),
