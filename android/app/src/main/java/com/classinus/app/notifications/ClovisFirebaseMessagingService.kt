@@ -72,6 +72,8 @@ class ClovisFirebaseMessagingService : FirebaseMessagingService() {
         val titre = message.data["title"] ?: "Classinus"
         val corps = message.data["body"] ?: ""
         val prioritaire = message.data["prioritaire"] == "true"
-        NotificationsNatives.afficherRappel(applicationContext, titre, corps, prioritaire)
+        // Page a ouvrir au clic, envoyee par le serveur (voir _envoyer_fcm cote backend).
+        val url = message.data["url"]
+        NotificationsNatives.afficherRappel(applicationContext, titre, corps, prioritaire, url)
     }
 }

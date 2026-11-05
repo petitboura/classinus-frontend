@@ -5,9 +5,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.classinus.app.BuildConfig
+import com.classinus.app.MainActivity
 import kotlin.random.Random
 
 object NotificationsNatives {
@@ -37,12 +40,48 @@ object NotificationsNatives {
     }
 
     /**
+     * Adresse complete a ouvrir au clic, ou null pour ouvrir simplement l'appli.
+     * `url` est un chemin interne ("/", "/rappels"). Tout ce qui n'en est pas un
+     * (adresse complete, "//hote") est ignore : une notification ne doit jamais
+     * pouvoir envoyer l'appli vers un autre site.
+     */
+    internal fun adresseOuverture(url: String?): Uri? {
+        if (url.isNullOrBlank() || !url.startsWith("/") || url.startsWith("//") || url.contains("\\")) return null
+        return Uri.parse("https://${BuildConfig.HOTE_LIENS_APP}$url")
+    }
+
+    /**
+     * Action du clic sur la notification : ouvre l'appli sur la page voulue.
+     * Le lien https passe par MainActivity, que Capacitor transmet au JS comme
+     * un lien entrant (appUrlOpen a chaud, getLaunchUrl au demarrage a froid),
+     * traite par components/EcouteurLiensEntrants.tsx : aucune navigation
+     * propre aux notifications a maintenir cote JS.
+     */
+    private fun actionOuvrirAppli(context: Context, url: String?): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            val adresse = adresseOuverture(url)
+            if (adresse != null) {
+                action = Intent.ACTION_VIEW
+                data = adresse
+            }
+        }
+        return PendingIntent.getActivity(
+            context, Random.nextInt(), intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    /**
+     * `url` : page de l'appli a ouvrir au clic (voir adresseOuverture). Absente,
+     * le clic ouvre l'appli la ou elle etait.
+     *
      * `prioritaire` correspond a l'alerte plein ecran demandee par
      * 03-notifications-rappels.md. Si Android ne l'autorise pas
      * effectivement (voir pleinEcranAutorise), repli automatique sur une
      * notification heads-up classique ; jamais d'echec silencieux total.
      */
-    fun afficherRappel(context: Context, titre: String, corps: String, prioritaire: Boolean = false) {
+    fun afficherRappel(context: Context, titre: String, corps: String, prioritaire: Boolean = false, url: String? = null) {
         if (!permissionNotificationsAccordee(context)) return
 
         val demanderPleinEcran = prioritaire && pleinEcranAutorise(context)
@@ -57,6 +96,7 @@ object NotificationsNatives {
             .setSmallIcon(com.classinus.app.R.drawable.ic_notification_plume)
             .setLargeIcon(BitmapFactory.decodeResource(context.resources, com.classinus.app.R.drawable.ic_notification_grande))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(actionOuvrirAppli(context, url))
             .setAutoCancel(true)
 
         if (demanderPleinEcran) {
