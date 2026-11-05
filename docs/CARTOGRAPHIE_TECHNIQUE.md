@@ -102,6 +102,7 @@ Shared contexts and hooks coordinate state across components. Avoid recreating l
 - Global styles: **app/globals.css**.
 - Shared theme and colors: **lib/useTheme.ts** and utilities in **lib/**.
 - Logo: **components/Logo.tsx** and assets in **public/**.
+- Markdown in chat messages: the style of every element (quotes, headings 4 to 6, nested lists, task lists, horizontal rule, footnotes, collapsible blocks, keys, highlighted text) lives in **app/globals.css**, under the `.dj-markdown` container shared by the chat, the live channel, and skill previews. Elements that need code (task-list checkboxes, in-message links such as footnote references) are in **components/chat/composantsMarkdownRiches.tsx**. The HTML allow-list is in **components/chat/BulleMessage.tsx** (`SCHEMA_SANITIZE`); an HTML tag must be added there before it can be styled.
 
 Reuse the existing visual conventions. After a visual change, check both light and dark themes and the relevant screen sizes.
 

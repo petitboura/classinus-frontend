@@ -102,6 +102,7 @@ Les contextes et hooks partagés coordonnent l’état entre plusieurs composant
 - Styles globaux : **app/globals.css**.
 - Thème et couleurs partagés : **lib/useTheme.ts** et les utilitaires de **lib/**.
 - Logo : **components/Logo.tsx** et ressources de **public/**.
+- Markdown dans les messages du chat : le style de chaque élément (citations, titres 4 à 6, listes imbriquées, listes de tâches, ligne horizontale, notes de bas de page, blocs dépliables, touches de clavier, texte surligné) est dans **app/globals.css**, sous le conteneur `.dj-markdown` commun au chat, au canal en direct et aux aperçus de skills. Les éléments qui demandent du code (cases des listes de tâches, liens internes au message comme les renvois de notes) sont dans **components/chat/composantsMarkdownRiches.tsx**. La liste blanche des balises HTML est dans **components/chat/BulleMessage.tsx** (`SCHEMA_SANITIZE`) : une balise doit y être ajoutée avant de pouvoir être stylée.
 
 Réutiliser les conventions visuelles existantes. Après une évolution, vérifier les thèmes clair et sombre ainsi que les formats d’écran concernés.
 
