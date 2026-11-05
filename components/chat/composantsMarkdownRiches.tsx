@@ -27,6 +27,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { CaseACocher } from "../CaseACocher";
+import { defilerDansConteneur } from "@/lib/defilerDansConteneur";
 import { BlocCode } from "./BlocCode";
 import { Mermaid } from "./Mermaid";
 import { CarteMessage } from "./CarteMessage";
@@ -177,7 +178,7 @@ function AncreInterne({ href, children, reste }: { href: string; children?: Reac
     }
     const candidats = [`user-content-${id}`, id];
     const cible = Array.from(conteneur.querySelectorAll("[id]")).find((el) => candidats.includes(el.id));
-    cible?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (cible) defilerDansConteneur(cible);
   }
   return (
     <a {...reste} href={href} onClick={aller} className="dj-ancre">
