@@ -16,8 +16,17 @@
 // de l'application et ne change jamais. Les valeurs qui varient passent par
 // des contextes : un contexte qui change remet à jour les composants sans
 // jamais les démonter.
-import { Children, createContext, isValidElement, useContext, type ReactNode } from "react";
+import {
+  Children,
+  createContext,
+  isValidElement,
+  useContext,
+  type ComponentPropsWithoutRef,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import dynamic from "next/dynamic";
+import { CaseACocher } from "../CaseACocher";
 import { BlocCode } from "./BlocCode";
 import { Mermaid } from "./Mermaid";
 import { CarteMessage } from "./CarteMessage";
@@ -141,9 +150,59 @@ function TableMarkdown({ children }: { children?: ReactNode }) {
   return <TableauMessage>{children}</TableauMessage>;
 }
 
-function LienMarkdown({ href, title, children }: { href?: string; title?: string; children?: ReactNode }) {
+// Case d'une liste de tâches (- [ ] ou - [x]). Lecture seule : l'état vient du
+// texte du message. Passe par CaseACocher, jamais par la case du navigateur.
+function ignorerChangement() {}
+
+function InputMarkdown({ type, checked }: { type?: string; checked?: boolean }) {
+  if (type !== "checkbox") return null;
+  return <CaseACocher checked={!!checked} disabled onChange={ignorerChangement} className="dj-case-tache" />;
+}
+
+// Lien vers un autre endroit du même message (renvoi vers une note de bas de
+// page et retour). Le navigateur le ferait ouvrir dans un nouvel onglet, et
+// les identifiants de deux messages se ressemblent : on cherche donc la cible
+// uniquement dans le message qui contient le lien. Le nettoyage de sécurité
+// ajoute son préfixe "user-content-" aux identifiants, d'où le second essai.
+function AncreInterne({ href, children, reste }: { href: string; children?: ReactNode; reste: ComponentPropsWithoutRef<"a"> }) {
+  function aller(e: MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    const conteneur = e.currentTarget.closest(".dj-markdown");
+    if (!conteneur) return;
+    let id = href.slice(1);
+    try {
+      id = decodeURIComponent(id);
+    } catch {
+      // identifiant laissé tel quel s'il n'est pas décodable
+    }
+    const candidats = [`user-content-${id}`, id];
+    const cible = Array.from(conteneur.querySelectorAll("[id]")).find((el) => candidats.includes(el.id));
+    cible?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  return (
+    <a {...reste} href={href} onClick={aller} className="dj-ancre">
+      {children}
+    </a>
+  );
+}
+
+function LienMarkdown({
+  href,
+  title,
+  children,
+  ...reste
+}: ComponentPropsWithoutRef<"a"> & { node?: unknown }) {
   const etat = useContext(ContexteRenduBulle);
   if (!href) return <>{children}</>;
+  if (href.startsWith("#")) {
+    // "node" est ajouté par react-markdown, il ne doit pas aller sur la balise.
+    const { node: _noeud, ...proprietes } = reste;
+    return (
+      <AncreInterne href={href} reste={proprietes}>
+        {children}
+      </AncreInterne>
+    );
+  }
 
   const matchCitation = /^citation:(\d+)$/.exec(href);
   if (matchCitation) {
@@ -257,4 +316,5 @@ export const COMPOSANTS_MARKDOWN = {
   table: TableMarkdown,
   a: LienMarkdown,
   p: ParagrapheMarkdown,
+  input: InputMarkdown,
 };

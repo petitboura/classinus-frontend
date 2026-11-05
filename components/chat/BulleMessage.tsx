@@ -43,8 +43,11 @@ export const PLUGINS_REMARK: PluggableList = [remarkGfm, remarkMath];
 // "citation" explicitement, sinon [n](citation:n) (26/08, voir a() plus
 // bas) se ferait vider de son href AVANT même d'atteindre notre
 // composant personnalisé, silencieusement.
+// "mark" (texte surligné) n'est pas dans la liste blanche par défaut : sans
+// lui le nettoyage retire la balise et garde le texte, sans surlignage.
 const SCHEMA_SANITIZE = {
   ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "mark"],
   protocols: {
     ...defaultSchema.protocols,
     href: [...(defaultSchema.protocols?.href ?? []), "citation"],
