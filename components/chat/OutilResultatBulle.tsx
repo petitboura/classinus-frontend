@@ -309,13 +309,16 @@ export function OutilResultatBulle({
   // juste en dessous (voir le commentaire dans LigneOutil, 17/09) -- toujours
   // visibles, peu importe que le groupe soit ouvert, fermé, ou déjà
   // replié automatiquement.
-  const galeriesExternes = (resultats ?? [])
-    .flatMap((r, index) => [
-      r.images && r.images.length ? <GalerieImagesBulle key={`galerie-${index}`} images={r.images} /> : null,
+  // Toutes les images de la réponse dans UNE seule galerie : une galerie par résultat d'outil
+  // empilait chaque capture du navigateur sur la précédente, une rangée par action.
+  const toutesImages = (resultats ?? []).flatMap((r) => r.images ?? []);
+  const galeriesExternes = [
+    toutesImages.length ? <GalerieImagesBulle key="galerie-images" images={toutesImages} /> : null,
+    ...(resultats ?? []).flatMap((r, index) => [
       r.videos && r.videos.length ? <CartesVideosBulle key={`videos-${index}`} videos={r.videos} /> : null,
       r.ressourcesUi && r.ressourcesUi.length ? <WidgetsMcpUi key={`widgets-${index}`} ressources={r.ressourcesUi} texteRepli={r.resultat} /> : null,
-    ])
-    .filter(Boolean);
+    ]),
+  ].filter(Boolean);
 
   return (
     <div className="my-1.5 flex max-w-[85%] flex-col gap-1 animate-dj-fade-in">
