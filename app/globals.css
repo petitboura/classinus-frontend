@@ -390,6 +390,34 @@ body {
   overscroll-behavior: none;
 }
 
+/* Page figée dans l'appli (coque AppShell, repérée par .dj-coque-appli) : le
+   document lui-même ne peut jamais défiler, ni par un geste, ni par du code
+   (scrollIntoView, scrollTo, focus d'un champ...). Seules les zones internes
+   (le <main> de la coque, la liste des messages...) défilent. Sans ça, un seul
+   appel qui défile le document décale toute la mise en page, barre de saisie
+   comprise, et fait apparaître une seconde barre de défilement.
+   - html en "hidden" : le défilement du document est coupé.
+   - body en "clip" et hauteur de l'écran visible : contrairement à "hidden",
+     "clip" interdit aussi le défilement par code, et la hauteur égale à celle
+     de la coque supprime toute plage de défilement (le min-h-screen du body,
+     plus haut que l'écran visible sur mobile, en créait une).
+   - body en position: relative : un élément absolute posé directement sur le
+     body prend sinon la fenêtre comme repère, échappe au "clip" et recrée une
+     plage de défilement du document.
+   Les pages hors coque (découvrir, connexion, CGU...) ne sont pas touchées :
+   elles gardent leur défilement normal de document. Les calques en
+   position: fixed ne sont pas coupés par l'overflow de leur parent. */
+html:has(.dj-coque-appli) {
+  overflow: hidden;
+}
+html:has(.dj-coque-appli) body {
+  position: relative;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  overflow: clip;
+}
+
 /* Chantier "web mobile façon appli" (28/08/2026) -- retour tactile
    immédiat au tap, qui manquait partout (aucun état "pressé" sur les
    boutons/liens, brief 2026 : "immediate visual feedback"). Portée
@@ -856,6 +884,7 @@ html[data-ouverture-vue="1"] #clovis-splash {
 /* Notes de bas de page : filet de séparation, texte plus petit, titre
    "Footnotes" gardé seulement pour les lecteurs d'écran. */
 .dj-markdown section[data-footnotes] {
+  position: relative;
   margin-top: 1rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--dj-bordure);
