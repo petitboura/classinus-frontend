@@ -1,3 +1,5 @@
+> [English version](./specs-guide-decouverte.md) · **Version française**
+
 # Specs : Guide de découverte de Clovis (chantier lancé le 16/09/2026, demande Bourama)
 
 Ce document existe parce que plusieurs IA vont travailler sur ce chantier en

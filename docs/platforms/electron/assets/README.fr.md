@@ -1,3 +1,5 @@
+> [English version](./README.md) · **Version française**
+
 # Build resources
 
 Place your app icons here for packaging with electron-builder:

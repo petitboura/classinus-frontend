@@ -64,7 +64,7 @@ function InteractionGlobaleSession({ children }: { children: ReactNode }) {
     if (canal.actif) afficher();
     else masquer();
   }, [canal.actif, afficher, masquer]);
-  // Lot R (27/09/2026, voir plan-canal-en-direct-pc.md) : pousse l'etat du curseur,
+  // Lot R (27/09/2026, voir docs/specs/plan-canal-en-direct-pc.md) : pousse l'etat du curseur,
   // du canal et de la voix vers la fenetre de superposition Electron (ne fait rien
   // ailleurs que sur la plateforme "electron", voir lib/superpositionElectron.ts).
   useEmetteurSuperposition(curseur, canal, voix);

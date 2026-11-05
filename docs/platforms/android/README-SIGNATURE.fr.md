@@ -1,3 +1,5 @@
+> [English version](./README-SIGNATURE.md) · **Version française**
+
 # Signature de l'APK (flavor `externe`) — à faire une seule fois
 
 Porté depuis `clovis-mobile/android/README-SIGNATURE.md` (25/08/2026) : ce

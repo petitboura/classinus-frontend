@@ -55,3 +55,11 @@ export function definirLocale(locale: Locale): void {
   document.documentElement.lang = locale;
   window.dispatchEvent(new CustomEvent(EVENEMENT_LOCALE_CLASSINUS, { detail: locale }));
 }
+
+/**
+ * Vrai si le texte d'un outil signale un échec ou une annulation, en français ou en anglais
+ * (la traduction du serveur écrit « failed » et « canceled » en mode anglais).
+ */
+export function estTexteEchecOuAnnulation(texte: string): boolean {
+  return ["annulée", "échoué", "canceled", "failed"].some((mot) => texte.includes(mot));
+}

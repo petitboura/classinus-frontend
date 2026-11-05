@@ -1,5 +1,5 @@
 // Lot V du chantier "canal en direct sort de l'appli" (voir
-// plan-canal-en-direct-pc.md et plan-canal-en-direct-pc-lot-v.md).
+// docs/specs/plan-canal-en-direct-pc.md et plan-canal-en-direct-pc-lot-v.md).
 //
 // Decision Bourama (28/09/2026) : Clovis doit voir ce qu'il y a dans la
 // fenetre au premier plan du PC, en TEXTE, jamais en image (une capture lue

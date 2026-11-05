@@ -1,4 +1,4 @@
-import { enregistrerJetonRender } from "@/lib/api";
+import { enregistrerJetonRender, enregistrerJetonVercel } from "@/lib/api";
 
 // Textes des cartes de connexion, partagés entre l'écran Connexions et la carte proposée dans le
 // chat (components/chat/CarteConnecteur.tsx) : une seule source, les deux cartes disent la même chose.
@@ -14,6 +14,14 @@ export const JETONS: Record<string, JetonService> = {
     lien: "https://dashboard.render.com/u/settings/api-keys",
     libelleLien: "les paramètres de ton compte Render",
     enregistrer: enregistrerJetonRender,
+  },
+  vercel_mcp: {
+    nom: "Vercel",
+    champ: "Jeton personnel Vercel",
+    placeholder: "Colle ton jeton Vercel",
+    lien: "https://vercel.com/account/tokens",
+    libelleLien: "les réglages de ton compte Vercel",
+    enregistrer: enregistrerJetonVercel,
   },
 };
 
@@ -32,7 +40,7 @@ export const DESCRIPTIONS: Record<string, string> = {
   google_people_mcp: "Serveur MCP Google People : consulter les profils et contacts couverts par les autorisations Google accordées.",
   render_mcp: "Serveur MCP officiel Render : explorer les services, déploiements et journaux accessibles à ton compte. Tu colles ta clé personnelle Render, vérifiée puis conservée côté serveur pour ton compte. Les actions qui modifient un service ou déclenchent un déploiement demandent une confirmation.",
   higgsfield_mcp: "Autorise Classinus à utiliser les fonctionnalités Higgsfield disponibles via son serveur MCP, avec ton propre compte.",
-  vercel_mcp: "Permets à Classinus d’interagir avec tes projets et déploiements Vercel selon les accès que tu accordes.",
+  vercel_mcp: "Serveur MCP Vercel : consulter tes projets, déploiements, journaux et domaines accessibles à ton compte. Tu colles ton jeton personnel Vercel, vérifié puis conservé côté serveur pour ton compte. Les actions qui modifient un projet demandent une confirmation.",
   railway_mcp: "Permets à Classinus d’interagir avec tes projets et services Railway selon les autorisations de ton compte.",
   supabase_mcp: "Permets à Classinus d’interagir avec tes projets Supabase sans partager tes identifiants avec d’autres utilisateurs.",
 };

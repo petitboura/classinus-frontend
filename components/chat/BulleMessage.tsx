@@ -208,6 +208,22 @@ export function normaliserCitations(texte: string): string {
   return texte.replace(/\[\[(\d+)\]\]/g, (_, numero) => `[${numero}](citation:${numero})`);
 }
 
+// 03/11/2026, demande Bourama : pendant la génération, un lien Markdown encore en train
+// d'arriver ("[Titre](https://exe") s'affichait tel quel une fraction de seconde, avant de
+// devenir un lien souligné. On masque donc seulement la FIN du texte reçu tant que le lien
+// n'est pas complet : le libellé s'affiche déjà (sans crochets ni adresse), l'adresse et
+// les marqueurs de citation "[[1" sont cachés jusqu'à leur fermeture. Un lien déjà complet
+// n'est jamais touché. Ignoré si un bloc de code est ouvert (le code doit rester intact).
+// N'est appliqué que pendant la génération (voir rendreMarkdown).
+export function masquerFinLienIncomplet(texte: string): string {
+  if (((texte.match(/```/g) ?? []).length % 2) === 1) return texte;
+  return texte
+    .replace(/!\[[^\]\n]*\]?(\([^)\n]*)?$/, "")
+    .replace(/\[\[\d*\]?$/, "")
+    .replace(/\[([^\]\n]*)\]\([^)\n]*$/, "$1")
+    .replace(/\[([^\]\n]*)\]?$/, "$1");
+}
+
 export interface MessageAffiche {
   id: number | null; // id historique_conversations (null tant que non persisté, ex: pendant le streaming)
   role: "user" | "assistant";
@@ -1087,7 +1103,10 @@ function BulleMessageInterne({
     estUtilisateur,
   };
 
-  function rendreMarkdown(texte: string, avecFade: boolean, cle: number = -1) {
+  function rendreMarkdown(texteBrut: string, avecFade: boolean, cle: number = -1) {
+    // avecFade n'est vrai que pour le texte encore en train d'arriver : on y masque un lien
+    // pas encore complet (voir masquerFinLienIncomplet).
+    const texte = avecFade ? masquerFinLienIncomplet(texteBrut) : texteBrut;
     return (
       <ContexteRenduBulle.Provider value={etatRendu}>
           <ReactMarkdown

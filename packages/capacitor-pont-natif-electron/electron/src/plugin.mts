@@ -1,5 +1,5 @@
 // Cree le 27/09/2026, Bourama : chantier "canal en direct sort de
-// l'appli" (voir plan-canal-en-direct-pc.md), Lot S.
+// l'appli" (voir docs/specs/plan-canal-en-direct-pc.md), Lot S.
 //
 // Meme contrat que capacitor-dossiers-electron (voir son README) :
 // ce fichier compile doit se trouver a electron/dist/plugin.mjs.
@@ -165,7 +165,7 @@ function estMessageActionSysteme(valeur: unknown): valeur is MessageActionSystem
   );
 }
 
-// Lot T (27/09/2026, voir plan-canal-en-direct-pc.md) : diffuse a la
+// Lot T (27/09/2026, voir docs/specs/plan-canal-en-direct-pc.md) : diffuse a la
 // fenetre principale (qui tient le journal et la bulle, voir
 // lib/superpositionElectron.ts) une phrase courte decrivant l'action
 // systeme, AVANT l'execution (phase "debut") puis avec son issue APRES

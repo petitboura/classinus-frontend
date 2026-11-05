@@ -1,3 +1,5 @@
+> [English version](./specs-agent-applicatif.md) · **Version française**
+
 # Plan de chantier — Agent applicatif Clovis (Clovis peut agir dans l'appli)
 
 Rédigé le 15/09/2026, après audit réel de `clovis-frontend` et `clovis-backend`. Ce fichier est fait pour être repris par une ou plusieurs IA en parallèle, chacune sur une branche dédiée à son chantier.

@@ -2,7 +2,7 @@
   "name": "capacitor-superposition-electron",
   "version": "0.1.0",
   "private": true,
-  "description": "Implementation Electron du plugin Capacitor \"SuperpositionAgent\" -- pont IPC entre la fenetre principale (vraie connexion WebSocket du canal agent applicatif) et la fenetre de superposition systeme (Lot R, voir plan-canal-en-direct-pc.md). Relaie dans les deux sens : etat pousse par la fenetre principale vers la superposition (position du curseur convertie en coordonnees ecran absolues, texte de la bulle, journal, etc.), et interactions de l'utilisateur avec la superposition renvoyees vers la fenetre principale (qui appelle les fonctions deja existantes, comme si l'utilisateur avait clique dans la page normale). Gere aussi le passe-clic dynamique de la fenetre de superposition (setIgnoreMouseEvents).",
+  "description": "Implementation Electron du plugin Capacitor \"SuperpositionAgent\" -- pont IPC entre la fenetre principale (vraie connexion WebSocket du canal agent applicatif) et la fenetre de superposition systeme (Lot R, voir docs/specs/plan-canal-en-direct-pc.md). Relaie dans les deux sens : etat pousse par la fenetre principale vers la superposition (position du curseur convertie en coordonnees ecran absolues, texte de la bulle, journal, etc.), et interactions de l'utilisateur avec la superposition renvoyees vers la fenetre principale (qui appelle les fonctions deja existantes, comme si l'utilisateur avait clique dans la page normale). Gere aussi le passe-clic dynamique de la fenetre de superposition (setIgnoreMouseEvents).",
   "capacitor": {
     "electron": { "src": "electron" }
   },

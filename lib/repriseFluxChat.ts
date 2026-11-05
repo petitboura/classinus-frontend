@@ -26,8 +26,9 @@ const DUREE_MAX_RECONNEXION_MS = 10 * 60 * 1000;
 // Silence maximal toléré sur une connexion censée être vivante. Le flux de rattachement envoie un
 // signe de vie toutes les 15 secondes : bien au delà, la connexion est morte sans l'avoir dit
 // (téléphone en veille, réseau qui a changé). Le flux d'origine n'en envoie pas : une longue
-// attente d'outil le fait passer pour mort, ce qui est sans conséquence, la reconnexion repart
-// du dernier événement reçu et rattrape le flux vivant.
+// attente d'outil le fait passer pour mort : la reconnexion repart du dernier événement reçu et
+// rattrape le flux vivant, et le bandeau est retiré dès que ce flux rattaché livre quelque chose.
+// Depuis le 03/11/2026 le flux d'origine envoie lui aussi un signe de vie (api/chat.py).
 const SILENCE_MAX_MS = 40 * 1000;
 
 export type IssueFlux = "fini" | "coupe";
@@ -91,7 +92,9 @@ export async function lireFluxSse(
   surEvenement: (evenement: any) => void,
   signal: AbortSignal | undefined,
   compteur: CompteurFlux,
-  tolererCoupure: boolean
+  tolererCoupure: boolean,
+  // Appelé à chaque morceau reçu, signe de vie du serveur compris : preuve que la connexion vit.
+  surActivite?: () => void
 ): Promise<IssueFlux> {
   if (!reponse.body) return tolererCoupure ? "coupe" : "fini";
   const lecteur = reponse.body.getReader();
@@ -131,6 +134,7 @@ export async function lireFluxSse(
       }
 
       if (lecture.done) return tolererCoupure ? "coupe" : "fini";
+      surActivite?.();
       tampon += decodeur.decode(lecture.value, { stream: true });
 
       // Un événement SSE = une ligne "data: {...}", séparée par \n\n.
@@ -216,9 +220,23 @@ export async function reprendreFluxApresCoupure(options: OptionsReprise): Promis
   const { compteur, ouvrirFlux, surEvenement, signal, erreurInitiale } = options;
   const debut = Date.now();
   let tentative = 0;
-  changerReconnexions(1);
+  // Le bandeau n'est affiché que tant que la connexion est réellement coupée : il est retiré dès
+  // que le flux rattaché livre quoi que ce soit (événement ou signe de vie), puis réaffiché si
+  // ce flux se coupe à son tour.
+  let bandeauAffiche = false;
+  const afficherBandeau = () => {
+    if (bandeauAffiche) return;
+    bandeauAffiche = true;
+    changerReconnexions(1);
+  };
+  const retirerBandeau = () => {
+    if (!bandeauAffiche) return;
+    bandeauAffiche = false;
+    changerReconnexions(-1);
+  };
   try {
     while (true) {
+      afficherBandeau();
       if (signal?.aborted) return;
       if (Date.now() - debut > DUREE_MAX_RECONNEXION_MS) {
         throw erreurInitiale ?? new Error("Connexion perdue");
@@ -247,12 +265,12 @@ export async function reprendreFluxApresCoupure(options: OptionsReprise): Promis
       }
 
       const avant = compteur.recus;
-      const issue = await lireFluxSse(reponse, surEvenement, signal, compteur, true);
+      const issue = await lireFluxSse(reponse, surEvenement, signal, compteur, true, retirerBandeau);
       if (issue === "fini") return;
       // Une connexion qui a livré quelque chose repart d'une pause courte.
       if (compteur.recus > avant) tentative = 0;
     }
   } finally {
-    changerReconnexions(-1);
+    retirerBandeau();
   }
 }

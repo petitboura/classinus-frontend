@@ -1,3 +1,5 @@
+> [English version](./PROGRAMME_DESACTIVE.md) · **Version française**
+
 # ⚠️ Fonctionnalité "Programme" désactivée
 
 La structure classe/matière/chapitre côté frontend a déjà été entièrement

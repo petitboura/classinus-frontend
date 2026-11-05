@@ -2,11 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import { VisionneurHiggsfield } from "@/components/higgsfield/VisionneurHiggsfield";
-import { PanneauGenererHiggsfield } from "@/components/higgsfield/GenererHiggsfield";
+import dynamic from "next/dynamic";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
 import { useDefinirActionEnTete } from "@/lib/contexteEnTete";
 
+// Les deux grands panneaux ne servent qu'au clic : on les sépare du code de la page,
+// puis on les charge en arrière-plan dès que le navigateur est au repos.
+const chargerVisionneur = () => import("@/components/higgsfield/VisionneurHiggsfield").then((m) => m.VisionneurHiggsfield);
+const chargerGenerer = () => import("@/components/higgsfield/GenererHiggsfield").then((m) => m.PanneauGenererHiggsfield);
+const VisionneurHiggsfield = dynamic(chargerVisionneur, { ssr: false });
+const PanneauGenererHiggsfield = dynamic(chargerGenerer, { ssr: false });
 
 function FiltreChips({
   label,
@@ -39,10 +44,12 @@ function FiltreChips({
   );
 }
 
-function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: number; onClick: () => void }) {
+function CarteEffet({ effet, onClick }: { effet: EffetHiggsfield; onClick: () => void }) {
   const ref = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [visible, setVisible] = useState(false);
+  // La vidéo commence à se charger quand la carte approche de l'écran, pas avant :
+  // l'image fixe s'affiche tout de suite, la vidéo est prête quand on arrive dessus.
+  const [proche, setProche] = useState(false);
   const [mediaError, setMediaError] = useState(false);
   const [survolActif, setSurvolActif] = useState(false);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
@@ -53,18 +60,18 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setVisible(true);
+          setProche(true);
           obs.disconnect();
         }
       },
-      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
+      { rootMargin: "600px 0px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
   useEffect(() => {
-    if (!isVideo || mediaError) return;
+    if (!isVideo || mediaError || !proche) return;
     const v = videoRef.current;
     if (!v) return;
     const obs = new IntersectionObserver(
@@ -76,14 +83,14 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
     );
     obs.observe(v);
     return () => obs.disconnect();
-  }, [isVideo, mediaError]);
+  }, [isVideo, mediaError, proche]);
 
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !isVideo || mediaError) return;
+    if (!v || !isVideo || mediaError || !proche) return;
     v.muted = !survolActif;
     if (survolActif) v.play().catch(() => {});
-  }, [survolActif, isVideo, mediaError]);
+  }, [survolActif, isVideo, mediaError, proche]);
 
   function activerSon() {
     if (!isVideo || mediaError) return;
@@ -102,22 +109,18 @@ function CarteEffet({ effet, index, onClick }: { effet: EffetHiggsfield; index: 
       onMouseLeave={couperSon}
       onFocus={activerSon}
       onBlur={couperSon}
-      style={{ transitionDelay: `${Math.min(index * 40, 300)}ms` }}
-      className={`group relative flex aspect-[3/4] touch-manipulation flex-col justify-end overflow-hidden rounded-[20px] border border-dj-bordure text-left shadow-sm transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-      }`}
+      className="group relative flex aspect-[3/4] animate-dj-fade-in-rapide touch-manipulation flex-col justify-end overflow-hidden rounded-[20px] border border-dj-bordure bg-dj-surface-haute text-left shadow-sm transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
     >
       {!mediaError ? (
         isVideo ? (
           <video
             ref={videoRef}
-            src={effet.preview}
+            src={proche ? effet.preview : undefined}
             poster={effet.poster}
             muted={!survolActif}
             loop
-            autoPlay
             playsInline
-            preload="metadata"
+            preload={proche ? "auto" : "none"}
             onError={() => setMediaError(true)}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
@@ -214,6 +217,20 @@ export function CatalogueHiggsfield() {
   );
 
   useDefinirActionEnTete(boutonFiltres);
+
+  // Chargement en arrière-plan des panneaux, sans gêner l'affichage de la page.
+  useEffect(() => {
+    const lancer = () => {
+      void chargerVisionneur();
+      void chargerGenerer();
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(lancer, { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = window.setTimeout(lancer, 1500);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
   const [effetAGenerer, setEffetAGenerer] = useState<EffetHiggsfield | null>(null);
@@ -318,7 +335,7 @@ export function CatalogueHiggsfield() {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {filtres.map((e, i) => (
-            <CarteEffet key={e.id} effet={e} index={i} onClick={() => setIndexVisionneur(i)} />
+            <CarteEffet key={e.id} effet={e} onClick={() => setIndexVisionneur(i)} />
           ))}
         </div>
       )}

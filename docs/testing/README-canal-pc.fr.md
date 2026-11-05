@@ -1,3 +1,5 @@
+> [English version](./README-canal-pc.md) · **Version française**
+
 # Vérification du canal PC
 
 `npm run test:canal-pc` exerce les vrais modules de lecture/scanning, le cycle

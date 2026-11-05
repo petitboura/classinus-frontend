@@ -1,3 +1,5 @@
+> [English version](./README.md) · **Version française**
+
 # CapApp-SPM
 
 This package is used to host SPM dependencies for your Capacitor project

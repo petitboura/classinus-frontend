@@ -43,10 +43,12 @@ export type ModeleDisponible = {
 
 // Regroupement du sélecteur de modèle premium par distributeur (02/08/2026,
 // voir ModelesPremiumAgent.tsx côté dashboard pour le même mapping). Ordre
-// d'affichage seulement : Meta puis DeepSeek en haut de la liste, à la demande de
-// Bourama (30/10/2026), suivis des autres fournisseurs dans l'ordre d'avant. Même ordre que
-// la colonne ordre de fournisseurs_llm côté base de données.
-export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["meta", "deepseek", "claude", "gpt", "gemini", "grok", "zai", "alibaba", "nvidia"];
+// d'affichage seulement : Meta en tête (demande de Bourama, 05/11/2026), puis les fournisseurs
+// qui ont le plus de modèles pas en Bientôt (demande du 04/11/2026). Cet ordre ne touche pas
+// aux accès : la colonne ordre de fournisseurs_llm côté base de données reste la hiérarchie de
+// déblocage des agents (un agent débloqué à un fournisseur obtient aussi ceux qui le suivent),
+// elle ne doit donc pas être alignée sur cette liste.
+export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["meta", "zai", "alibaba", "deepseek", "nvidia", "claude", "gpt", "gemini", "grok"];
 
 export const LABELS_DISTRIBUTEUR: Record<string, string> = {
   claude: "Claude",

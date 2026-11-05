@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/lib/i18n/useLocale";
 import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -99,6 +100,7 @@ export function ChatFlottant({
   // du chat qui s'adapte à l'appli native.
   natif?: boolean;
 }) {
+  const locale = useLocale();
   const [compteRequis, setCompteRequis] = useState(false);
   const [historiqueOuvert, setHistoriqueOuvert] = useState(false);
   // Fondu de fermeture (18/08/2026, demande Bourama : "le popup disparaît
@@ -640,7 +642,7 @@ export function ChatFlottant({
               key={cle}
               agentId={agent.id}
               nomAgent="Classinus"
-              titreAccueil={texteAccueilSelonHeure()}
+              titreAccueil={texteAccueilSelonHeure(locale)}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
               iconePersonnalisee={<Logo taille={40} sansFond />}
               conversationId={cle}

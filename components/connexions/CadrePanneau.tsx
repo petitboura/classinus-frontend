@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // Cadre commun des panneaux de l'écran Connexions : fond qui s'estompe, feuille qui monte depuis le
@@ -19,6 +20,10 @@ export function CadrePanneau({
 }) {
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onFermer);
+  // Le panneau est posé directement sur le corps de la page (portail), pour que le fond couvre toute
+  // la fenêtre même quand la carte qui l'ouvre est dans une zone animée (ex. les messages du chat).
+  const [monte, setMonte] = useState(false);
+  useEffect(() => setMonte(true), []);
 
   useEffect(() => {
     const auClavier = (e: KeyboardEvent) => { if (e.key === "Escape") demarrerFermeture(onFermer); };
@@ -26,7 +31,9 @@ export function CadrePanneau({
     return () => window.removeEventListener("keydown", auClavier);
   }, [demarrerFermeture, onFermer]);
 
-  return (
+  if (!monte) return null;
+
+  return createPortal(
     <div
       className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 pb-[var(--dj-barre-onglets-web,0px)] backdrop-blur-sm sm:items-center sm:p-6 sm:pb-6 ${
         enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
@@ -44,6 +51,7 @@ export function CadrePanneau({
       >
         {children(fermer)}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

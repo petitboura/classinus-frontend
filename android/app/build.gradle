@@ -52,6 +52,10 @@ android {
         // et public/.well-known/assetlinks.json). Doit etre l'hote de
         // NEXT_PUBLIC_APP_URL.
         manifestPlaceholders = [hoteLiensApp: "classinus.com"]
+        // Meme hote, lu par NotificationsNatives.kt pour ouvrir la bonne page de
+        // l'appli au clic sur une notification (lien https traite par
+        // lib/liensEntrants.ts). Une seule valeur a changer : celle du dessus.
+        buildConfigField "String", "HOTE_LIENS_APP", "\"${manifestPlaceholders.hoteLiensApp}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -88,7 +92,7 @@ android {
     // sans toucher a ce dernier). Seule la mise a jour a ete traitee ; le
     // reste de "play" (pas d'accessibilite notamment) est inchange.
     // Signature du flavor externe : lit android/keystore.properties (local,
-    // jamais committe, gitignore) -- voir android/README-SIGNATURE.md pour
+    // jamais committe, gitignore) -- voir docs/platforms/android/README-SIGNATURE.md pour
     // generer la cle dans CE projet. Sans ce fichier, "externe" compile quand
     // meme mais n'est pas signe (comme cote clovis-mobile).
     signingConfigs {

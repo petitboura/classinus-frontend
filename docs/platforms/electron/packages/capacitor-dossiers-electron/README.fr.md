@@ -1,7 +1,9 @@
+> [English version](./README.md) · **Version française**
+
 # capacitor-dossiers-electron
 
 Cree le 27/09/2026, Bourama : chantier "canal en direct sort de l'appli"
-(voir `plan-canal-en-direct-pc.md` a la racine du depot), Lot Q.
+(voir `docs/specs/plan-canal-en-direct-pc.md`), Lot Q.
 
 Implementation Electron du plugin Capacitor `Dossiers`, limitee pour
 l'instant a `obtenirInfosAppareil()` -- l'identifiant persistant du PC,

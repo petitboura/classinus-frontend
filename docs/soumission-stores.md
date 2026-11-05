@@ -1,238 +1,148 @@
-# Soumission Play Store / App Store, suivi (03/09/2026)
+# Google Play and App Store submission: tracking
 
-Ce fichier centralise le statut de chaque point de la checklist envoyée
-par Bourama, pour que n'importe quelle session future reprenne
-exactement où celle-ci s'est arrêtée. Rien ici n'a été deviné : chaque
-ligne "FAIT" vient d'un audit direct du code, chaque ligne "BLOQUÉ"
-explique précisément ce qui manque et qui doit le fournir.
+[English version] · [Français](soumission-stores.fr.md)
 
-## Bloquant / priorité haute
+Last updated: 3 September 2026.
 
-- [x] **AccessibilityService exclu du build `play`**, déjà en place
-  avant cette session (flavor `externe` seul a le vrai service, `play`
-  a un stub qui refuse tout). Rien à changer.
-- [x] **Suppression de compte dans l'app**, déjà codée
-  (`EspaceParametres.tsx` -> `DELETE /api/profiles/me`,
-  `api/profiles.py:supprimer_mon_compte`). À tester en prod.
-- [x] **Suppression de compte hors app**, le site web `clovis-frontend`
-  est accessible sans app installée, `/parametres` (même bouton) y est
-  atteignable après connexion. Couvre l'exigence Play/Apple.
-- [x] **Privacy Policy**, infrastructure créée cette session (route
-  `/confidentialite`, backend `api/legal/confidentialite` ajouté à la
-  whitelist), MAIS le contenu doit être collé par Bourama dans la table
-  Supabase `contenu_legal` (même principe que `cgu`/`copyright`, lecture
-  seule côté backend, écriture au dashboard). **Brouillon complet
-  ci-dessous**, à relire avant de coller, voir "Ce que je n'ai pas pu
-  deviner".
-- [ ] **Data Safety Google Play**, brouillon ci-dessous, à saisir dans
-  la Play Console (formulaire, pas du code).
+This file tracks each item in the release checklist so that future work can resume from the exact point reached. Nothing here is assumed: every **DONE** item comes from a direct code audit, and every **BLOCKED** item explains what is missing and who must provide it.
 
-## Permissions et conformité
+## Blockers and high-priority items
 
-- [x] `PACKAGE_USAGE_STATS` et `ACCESS_NOTIFICATION_POLICY` : déjà
-  commentées dans le code avec leur usage réel (temps d'écran,
-  contrôle de session/DND). Justifications rédigées pour le formulaire
-  Play Console, voir plus bas.
-- [x] Cohérence permissions déclarées : audit fait, seulement 4
-  permissions au total (`INTERNET`, `POST_NOTIFICATIONS`,
-  `ACCESS_NOTIFICATION_POLICY`, `PACKAGE_USAGE_STATS`), toutes
-  documentées.
+- [x] **AccessibilityService excluded from the `play` build.** Only the `externe` flavor contains the real service; `play` uses a stub that refuses all operations.
+- [x] **Account deletion inside the app.** Implemented through `EspaceParametres.tsx` → `DELETE /api/profiles/me`, handled by `api/profiles.py:supprimer_mon_compte`. Still needs production testing.
+- [x] **Account deletion outside the app.** The `classinus-frontend` website can be accessed without installing the app. After signing in, `/parametres` exposes the same deletion action.
+- [x] **Privacy Policy infrastructure.** The `/confidentialite` route exists and `api/legal/confidentialite` was added to the backend whitelist. Bourama must paste the policy content into the Supabase `contenu_legal` table. The backend reads it; editing is done in the dashboard. Review the draft below before publishing, especially the fields that cannot be inferred.
+- [ ] **Google Play Data Safety.** Draft answers are included below and must be entered in the Play Console form. This is not a code change.
 
-## Firebase / Notifications
+## Permissions and compliance
 
-- [x] **Bug corrigé (iOS)** : `NotificationsNatives.demanderAutorisation()`
-  demandait l'autorisation locale mais ne déclenchait jamais
-  `UIApplication.registerForRemoteNotifications()`. Résultat :
-  `didRegisterForRemoteNotificationsWithDeviceToken` n'était jamais
-  appelé, donc le token APNs n'était jamais envoyé au backend, le canal
-  push iOS était mort côté client, indépendamment de toute config
-  Firebase/APNs côté serveur. Corrigé + un ré-enregistrement automatique
-  à chaque lancement ajouté (recommandation Apple, le token peut changer).
-- [ ] **Ce qui reste, hors de portée du code** (confirmé en lisant
-  `core/notifications_push.py`, commentaire TODO de Bourama déjà présent
-  dans le fichier) :
-  - Android (FCM) : créer un projet Firebase, activer Cloud Messaging,
-    générer une clé de compte de service -> `google-services.json` à
-    déposer dans `android/app/`, + `FCM_SERVICE_ACCOUNT_JSON_B64` et
-    `FCM_PROJECT_ID` côté backend (Railway).
-  - iOS (APNs) : compte Apple Developer Program, générer une clé APNs
-    (.p8) -> `APNS_KEY_P8_B64`, `APNS_KEY_ID`, `APNS_TEAM_ID` côté
-    backend.
-  - **Aucune des deux ne passe par le SDK Firebase iOS** : l'architecture
-    existante utilise APNs nativement pour iOS (JWT signé, API HTTP/2
-    directe) et FCM HTTP v1 pour Android, pas de dépendance Firebase
-    iOS à ajouter au projet Xcode. Ajouter le SDK Firebase iOS serait
-    redondant avec ce qui existe déjà et introduirait un second pipeline
-    inutile.
-  - Ces 5 identifiants sont des secrets/fichiers que je ne peux pas
-    fabriquer, accès Firebase Console + Apple Developer nécessaires,
-    tous deux à toi.
-- [ ] Tests FCM/APNs en conditions réelles (app ouverte/arrière-plan/
-  fermée) : nécessite un vrai appareil, à faire une fois les identifiants
-  ci-dessus en place.
+- [x] `PACKAGE_USAGE_STATS` and `ACCESS_NOTIFICATION_POLICY` are documented in the code with their actual use: screen-time tracking, session control, and Do Not Disturb.
+- [x] The audit found only four declared permissions: `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_NOTIFICATION_POLICY`, and `PACKAGE_USAGE_STATS`. All four are documented.
+
+## Firebase and notifications
+
+- [x] **iOS bug fixed.** `NotificationsNatives.demanderAutorisation()` requested local notification permission but never called `UIApplication.registerForRemoteNotifications()`. As a result, `didRegisterForRemoteNotificationsWithDeviceToken` was never called and the APNs token was not sent to the backend. The iOS push channel was therefore broken on the client, independently of Firebase/APNs server configuration. This has been fixed, and automatic re-registration on every launch was added because the token can change.
+- [ ] **Remaining work outside the codebase.** Confirmed by reading `core/notifications_push.py`, which already contains Bourama's TODO:
+  - Android (FCM): create a Firebase project, enable Cloud Messaging, generate a service-account key, and place `google-services.json` in `android/app/`. Configure `FCM_SERVICE_ACCOUNT_JSON_B64` and `FCM_PROJECT_ID` on the backend (Railway).
+  - iOS (APNs): an Apple Developer Program account is required to generate an APNs key (`.p8`). Configure `APNS_KEY_P8_B64`, `APNS_KEY_ID`, and `APNS_TEAM_ID` on the backend.
+  - **Neither platform requires the Firebase iOS SDK.** The architecture uses native APNs for iOS (signed JWT and direct HTTP/2 API) and FCM HTTP v1 for Android. Adding the Firebase iOS SDK would duplicate the existing pipeline.
+  - These five credentials/files cannot be generated from the repository. Access to Firebase Console and Apple Developer is required.
+- [ ] Test FCM/APNs on real devices while the app is open, in the background, and fully closed. This requires the credentials above and physical devices.
 
 ## OAuth
 
-- [ ] Tests des flux OAuth en prod + vérification des redirect URI
-  réelles : pas d'audit fait cette session (pas bloquant côté code
-  d'après le chantier connecteurs déjà en place), à tester
-  manuellement.
+- [ ] Test OAuth flows in production and verify the actual redirect URIs. No audit was performed during this session. Test this manually.
 
-## iOS / App Store
+## iOS and App Store
 
-- [x] `PrivacyInfo.xcprivacy` : créé (`ios/App/App/PrivacyInfo.xcprivacy`)
-  et ajouté au projet Xcode (référence + phase Resources). Construit à
-  partir d'un audit réel du code Swift (`UserDefaults` utilisé dans
-  `DossiersDesignesRepository.swift`, aucune autre Required Reason API
-  trouvée, aucun SDK tracking/pub dans le dépôt). **Types de données
-  collectées déclarés = première ébauche (email + contenu utilisateur),
-  à faire valider par toi avant soumission**, je n'ai pas le schéma
-  Supabase complet pour garantir l'exhaustivité légale.
-- [x] Sign in with Apple : pas trouvé dans le dépôt (aucune mention
-  `ASAuthorizationAppleIDProvider` ni bouton correspondant). Si Clovis
-  propose une connexion via un autre fournisseur tiers (Google, etc.),
-  Apple **exige** Sign in with Apple en option équivalente. À confirmer :
-  quels moyens de connexion existent aujourd'hui (email/mot de passe
-  seul, ou aussi OAuth tiers) ?
-- [x] Suppression de compte côté iOS : même route que web/Android
-  (`DELETE /api/profiles/me`, appelée depuis `EspaceParametres.tsx`,
-  composant partagé), donc déjà couverte.
-- [ ] Métadonnées App Store (screenshots, description, etc.) : non
-  commencé, hors du dépôt de code.
+- [x] `PrivacyInfo.xcprivacy` was created at `ios/App/App/PrivacyInfo.xcprivacy` and added to the Xcode project (file reference and Resources build phase). It was based on an audit of the Swift code: `UserDefaults` is used in `DossiersDesignesRepository.swift`, no other Required Reason API was found, and the repository contains no tracking or advertising SDK. **The declared data types (email and user content) are a first draft and must be validated before submission.** The complete Supabase schema was not available, so legal completeness cannot be guaranteed.
+- [x] **Sign in with Apple:** no implementation was found in the repository (no `ASAuthorizationAppleIDProvider` reference or corresponding button). If Classinus offers another third-party sign-in provider, such as Google, Apple requires Sign in with Apple as an equivalent option. Confirm the current sign-in methods: email/password only, or third-party OAuth as well?
+- [x] Account deletion on iOS uses the same web/Android route (`DELETE /api/profiles/me`, called from shared component `EspaceParametres.tsx`).
+- [ ] App Store metadata (screenshots, description, etc.) has not been started. This work is outside the code repository.
 
-## Décision prise le 03/09/2026 (Bourama) : audience de cette soumission
+## Audience decision for this submission, made on 3 September 2026
 
-Clovis est un produit pour établissements scolaires (élèves/enseignants),
-basé en Tunisie/Afrique du Nord, avec création de compte directe dès
-l'arrivée sur l'app. Le collège (11-13 ans) fait partie du public visé à
-terme, mais **pas de cette première soumission** : décision explicite de
-ne rien bloquer dans le code d'inscription (aucun changement fait,
-l'inscription reste ouverte telle quelle), et de déclarer l'audience
-comme lycée/15 ans et plus dans les formulaires Play Console et App
-Store Connect pour cette version. Le collège sera ajouté dans une future
-mise à jour, avec la conformité adaptée à ce moment (âge à l'inscription
-et/ou invitation par l'établissement, à retrancher de ce fichier quand
-ce chantier sera lancé).
+At the time of this decision, Classinus was described as a product for schools (students and teachers), based in Tunisia/North Africa, with direct account creation on first launch. Middle-school students aged 11–13 were part of the long-term target audience, but **not for this first submission**. Bourama explicitly decided not to add age restrictions to the registration code: registration remains open as implemented. For this release, the audience was to be declared as high-school students aged 15 and older in the Play Console and App Store Connect forms.
 
-Conséquence pratique sur les formulaires :
-- Google Play, questionnaire de classification de contenu : public visé
-  = 13 ans et plus (pas "Designed for children" ni "Mixed Audience").
-- Google Play, Data Safety, "Application destinée aux enfants" : Non.
-- App Store Connect, tranche d'âge cible ("Age Rating" / "Made for
-  Kids") : pas la catégorie Kids. Note rédactionnelle Bourama : garder
-  la description store cohérente (ne pas écrire "collège" tant que ce
-  n'est pas rouvert).
+Middle school may be added in a future release, with the appropriate compliance changes (age at registration and/or school invitation). Remove this note from the file when that work begins.
+
+Practical implications for the submission forms:
+
+- Google Play content rating: target audience is 13+; do not select **Designed for children** or **Mixed Audience**.
+- Google Play Data Safety, **App is designed for children**: No.
+- App Store Connect age rating / Made for Kids: do not select the Kids category. Keep store copy consistent and do not mention middle school until that audience is formally supported again.
 
 ---
 
-## Brouillon, Privacy Policy (à coller dans `contenu_legal`, clé `confidentialite`)
+## Privacy Policy draft
 
-Construit uniquement à partir des fonctionnalités réellement présentes
-dans le code (comptes, bibliothèque de documents, comportements/skills,
-connecteurs OAuth Google Drive/Notion/GitHub/Higgsfield, notifications, contrôle de
-session/temps d'écran, mémoire). **Champs entre crochets `[...]` = je ne
-peux pas les inventer, à remplir avant publication.**
+To be pasted into `contenu_legal` under the `confidentialite` key.
+
+This draft is based only on features found in the code: accounts, document library, behaviors/skills, Google Drive/Notion/GitHub/Higgsfield OAuth connectors, notifications, session and screen-time controls, and memory. **Bracketed fields `[...]` cannot be inferred and must be completed before publication.**
 
 ```markdown
-# Politique de confidentialité de Clovis
+# Classinus Privacy Policy
 
-Dernière mise à jour : [date]
+Last updated: [date]
 
-## Qui nous sommes
+## Who we are
 
-Clovis est édité par [nom légal de l'entité / auto-entrepreneur],
-[adresse ou pays d'immatriculation]. Pour toute question sur cette
-politique ou vos données : [email de contact].
+Classinus is operated by [legal entity name / sole proprietor],
+[registered address or country]. For questions about this policy or
+your data, contact us at [contact email].
 
-## Données que nous collectons
+## Data we collect
 
-- **Compte** : adresse email, mot de passe (chiffré), et les
-  informations de profil que vous renseignez.
-- **Contenu que vous créez** : documents ajoutés à votre bibliothèque,
-  conversations avec l'assistant, comportements/skills personnalisés,
-  éléments enregistrés dans votre mémoire.
-- **Connecteurs externes (optionnels)** : si vous connectez un compte
-  Google Drive, Notion, GitHub, Higgsfield ou Claude, nous accédons aux données de
-  ce service dans la limite des permissions que vous accordez au moment
-  de la connexion, et uniquement pour exécuter les actions que vous
-  demandez.
-- **Notifications** : un identifiant technique (token push) est
-  enregistré si vous activez les notifications, pour vous envoyer les
-  rappels que vous programmez.
-- **Fonctionnalités optionnelles de l'app mobile** : si vous les
-  activez, l'app peut avoir accès (i) à l'état "Ne pas déranger" de
-  votre téléphone pour l'activer/désactiver pendant une session que vous
-  démarrez vous-même, et (ii) à vos statistiques d'usage d'applications
-  pour la fonctionnalité de suivi du temps d'écran. Aucune des deux
-  n'est activée sans action explicite de votre part, et vous pouvez les
-  désactiver à tout moment dans les réglages de votre téléphone.
+- **Account:** email address, password (encrypted), and profile
+  information you provide.
+- **Content you create:** documents added to your library,
+  conversations with the assistant, custom behaviors/skills, and
+  information saved in your memory.
+- **Optional external connectors:** if you connect a Google Drive,
+  Notion, GitHub, Higgsfield, or Claude account, we access data from
+  that service within the permissions you grant during connection,
+  solely to perform the actions you request.
+- **Notifications:** a technical identifier (push token) is stored
+  when you enable notifications so that we can send reminders you
+  schedule.
+- **Optional mobile features:** if enabled, the app may access
+  (i) your phone's Do Not Disturb status so it can turn the mode on or
+  off during a session you start, and (ii) application usage statistics
+  for the screen-time tracking feature. Neither feature is enabled
+  without an explicit action from you. You can disable them at any time
+  in your phone settings.
 
-## Comment nous utilisons ces données
+## How we use this data
 
-Uniquement pour faire fonctionner Clovis : authentification, réponses
-de l'assistant, bibliothèque, comportements, rappels, connecteurs que
-vous activez. Nous ne vendons pas vos données et ne les utilisons pas à
-des fins publicitaires.
+Only to operate Classinus: authentication, assistant responses,
+library, behaviors, reminders, and connectors you enable. We do not
+sell your data or use it for advertising.
 
-## Sous-traitants / hébergement
+## Processors and hosting
 
-- **Supabase** : hébergement de la base de données et des fichiers.
-- **[fournisseur du modèle de langage principal]** : traitement de vos
-  messages pour générer les réponses de l'assistant.
-- **Google (Firebase Cloud Messaging)** et **Apple (APNs)** :
-  acheminement des notifications push, selon votre appareil.
-- **[autres sous-traitants, ex. le routeur de comportements, hébergeur
-  Railway/Vercel]** : à compléter.
+- **Supabase:** database and file hosting.
+- **[primary language-model provider]:** processes your messages to
+  generate assistant responses.
+- **Google (Firebase Cloud Messaging)** and **Apple (APNs):**
+  delivery of push notifications, depending on your device.
+- **[other processors, e.g. behavior router, Railway/Vercel hosting]:**
+  to be completed.
 
-## Conservation et suppression
+## Retention and deletion
 
-Vous pouvez supprimer votre compte à tout moment depuis Clovis
-(Paramètres) ou depuis le site web, même sans avoir l'application
-installée. La suppression efface [préciser : immédiatement / sous X
-jours] vos données de compte et de bibliothèque.
+You can delete your account at any time from Classinus (Settings) or
+from the website, even without the app installed. Account and library
+data will be deleted [specify: immediately / within X days].
 
-## Vos droits
+## Your rights
 
-[à adapter selon les juridictions visées, RGPD si utilisateurs UE,
-etc.] Vous pouvez demander l'accès, la correction ou la suppression de
-vos données en nous contactant à [email de contact].
+[Adapt this section to the jurisdictions served, including GDPR where
+applicable.] You may request access, correction, or deletion of your
+data by contacting us at [contact email].
 
-## Mineurs
+## Minors
 
-Clovis est actuellement destiné aux lycéens (15 ans et plus), aux
-étudiants et aux enseignants. Nous ne visons pas sciemment les enfants
-de moins de 13 ans avec la version actuelle de l'application. Si vous
-pensez qu'un enfant de moins de 13 ans a créé un compte, contactez-nous
-à [email de contact] pour que nous puissions le supprimer.
+The current version of Classinus is intended for high-school students
+aged 15 and older, university students, and teachers. We do not
+knowingly target children under 13 with the current app version. If you
+believe a child under 13 has created an account, contact us at
+[contact email] so we can delete it.
 ```
 
 ---
 
-## Brouillon, justifications permissions (Play Console, formulaire "Permissions sensibles")
+## Draft permission justifications for Google Play
 
-**`PACKAGE_USAGE_STATS`** : Utilisée uniquement pour la fonctionnalité
-optionnelle de suivi du temps d'écran de l'utilisateur (visible dans
-l'app sous [nom de l'écran concerné, ex. "Concentration"/"Temps
-d'écran"]). L'utilisateur doit explicitement se rendre dans
-Réglages > Accès spécial > Accès à l'usage et activer la permission,
-aucune collecte silencieuse, aucune donnée d'usage envoyée à des tiers
-publicitaires.
+**`PACKAGE_USAGE_STATS`:** Used only for the optional user screen-time tracking feature (shown in the app under [name of the relevant screen, e.g. "Focus" / "Screen time"]). The user must explicitly open Settings > Special app access > Usage access and enable the permission. There is no silent collection and no usage data is sent to advertising third parties.
 
-**`ACCESS_NOTIFICATION_POLICY`** : Utilisée uniquement pendant une
-session de concentration démarrée volontairement par l'utilisateur,
-pour activer/désactiver le mode "Ne pas déranger" le temps de la
-session. Redirection vers les réglages système, pas de popup standard.
+**`ACCESS_NOTIFICATION_POLICY`:** Used only during a focus session voluntarily started by the user, to enable or disable Do Not Disturb for the duration of that session. The app redirects the user to system settings; it does not use a standard permission popup.
 
-## Brouillon, Data Safety (Google Play)
+## Google Play Data Safety draft
 
-- Collecte de données : Oui.
-- Types : Email (identifiant), Fichiers/documents utilisateur, Contenu
-  des conversations avec l'assistant, Identifiant d'appareil (token
-  push).
-- Partagée avec des tiers : Non (sous-traitance technique uniquement,
-  hébergement, envoi des notifications, traitement IA, pas de vente
-  ni de partage publicitaire).
-- Chiffrement en transit : Oui (HTTPS).
-- Suppression de compte possible : Oui, dans l'app et hors de l'app.
-- Application destinée aux enfants : Non (audience déclarée = 13 ans et
-  plus pour cette version, voir décision du 03/09/2026 plus haut).
+- Data collection: Yes.
+- Data types: email (account identifier), user files/documents, assistant conversation content, device identifier (push token).
+- Shared with third parties: No, technical processors only (hosting, notification delivery, AI processing); no sale or advertising sharing.
+- Encrypted in transit: Yes (HTTPS).
+- Account deletion available: Yes, both in the app and outside the app.
+- App designed for children: No (declared audience is 13+ for this release; see the 3 September 2026 decision above).
+```

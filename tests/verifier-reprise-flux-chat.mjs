@@ -125,4 +125,26 @@ function reponse(morceaux, { erreur = false } = {}) {
   assert.equal(m.reconnexionFluxEnCours(), false);
 }
 
+// 11. Le bandeau est retiré dès que le flux rattaché livre quelque chose (événement ou signe de vie),
+// pas seulement à la fin de la réponse (faux positif du 03/11/2026).
+{
+  const etatsPendantLecture = [];
+  await m.reprendreFluxApresCoupure({
+    compteur: { recus: 0 },
+    surEvenement: () => etatsPendantLecture.push(m.reconnexionFluxEnCours()),
+    ouvrirFlux: async () => reponse([ligne(0), ligne(1), "data: [DONE]\n\n"]),
+  });
+  assert.deepEqual(etatsPendantLecture, [false, false]);
+  assert.equal(m.reconnexionFluxEnCours(), false);
+
+  // Signe de vie seul : le bandeau est déjà retiré avant le premier événement.
+  const etatsApresSigne = [];
+  await m.reprendreFluxApresCoupure({
+    compteur: { recus: 0 },
+    surEvenement: () => etatsApresSigne.push(m.reconnexionFluxEnCours()),
+    ouvrirFlux: async () => reponse([": signe de vie\n\n", ligne(0), "data: [DONE]\n\n"]),
+  });
+  assert.deepEqual(etatsApresSigne, [false]);
+}
+
 console.log("Reprise du flux du chat : tous les tests passent.");

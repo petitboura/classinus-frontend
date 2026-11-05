@@ -130,6 +130,9 @@ math-field {
      Même opacité que --dj-bordure-forte (même accent, juste une surface
      au lieu d'un trait) pour rester cohérent avec ce qui existait déjà. */
   --dj-accent-1-conteneur: rgba(184, 134, 11, 0.14);
+  /* Surlignage du texte sélectionné (03/11/2026, demande Bourama : l'ancien doré plein était
+     trop foncé). Doré transparent : le texte garde sa couleur et reste lisible dessous. */
+  --dj-selection: rgba(184, 134, 11, 0.28);
   --dj-texte: #1c1a16;
   --dj-texte-muet: #6b675e;
   --dj-succes: #15803d;
@@ -286,6 +289,7 @@ math-field {
     --dj-accent-1: #e8bf60;
     --dj-accent-1-texte: var(--dj-accent-1);
     --dj-accent-1-conteneur: rgba(232, 191, 96, 0.16);
+    --dj-selection: rgba(232, 191, 96, 0.30);
     --dj-accent-2: #da9f0d;
     --dj-texte: #f5f0e6;
     --dj-texte-muet: #9a9184;
@@ -318,6 +322,7 @@ math-field {
   --dj-accent-1: #e8bf60;
   --dj-accent-1-texte: var(--dj-accent-1);
   --dj-accent-1-conteneur: rgba(232, 191, 96, 0.16);
+  --dj-selection: rgba(232, 191, 96, 0.30);
   --dj-accent-2: #da9f0d;
   --dj-texte: #f5f0e6;
   --dj-texte-muet: #9a9184;
@@ -429,9 +434,10 @@ body {
   }
 }
 
+/* 03/11/2026, demande Bourama : le surlignage plein était trop foncé. Fond doré transparent
+   (--dj-selection, clair et sombre), sans changer la couleur du texte. */
 ::selection {
-  background: var(--dj-accent-1);
-  color: #1a0d02;
+  background: var(--dj-selection);
 }
 
 /* 2026-08-20, Bourama : "tout mon dépôt les carrés j'aime pas, pas du

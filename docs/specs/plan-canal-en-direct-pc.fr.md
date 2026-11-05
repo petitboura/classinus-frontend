@@ -1,3 +1,5 @@
+> [English version](./plan-canal-en-direct-pc.md) · **Version française**
+
 # Plan : le canal en direct sort de l'appli, sur PC
 
 Document de contexte complet pour une IA qui va coder ce chantier sans repasser par Bourama pour des questions de base. Toutes les informations ci-dessous viennent d'une lecture réelle du code des dépôts (pas de suppositions). Vérifie quand même l'état actuel des fichiers cités avant de commencer : ce document date du 27/09/2026, et Bourama fait avancer plusieurs chantiers en parallèle.

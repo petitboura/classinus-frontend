@@ -85,7 +85,10 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
+  // Le serveur envoie un chemin ("/"), alors que client.url est une adresse
+  // complète : on compare donc des adresses complètes, sinon la fenêtre déjà
+  // ouverte n'était jamais reprise et chaque clic en ouvrait une nouvelle.
+  const url = new URL(event.notification.data?.url || "/", self.location.origin).href;
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsList) => {

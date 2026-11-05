@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLocale } from "@/lib/i18n/useLocale";
+import { traduireTexteInterface } from "@/lib/i18n/interface";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bird, MessageSquare, Library, type LucideIcon } from "lucide-react";
 import { appelerApi } from "@/lib/api";
@@ -69,7 +71,9 @@ export function EcranAccueil() {
   // ChatFlottant.tsx/ChatIA.tsx -- même fonction partagée, voir
   // lib/salutations.ts). Le texte de l'heure est figé au montage de la
   // page (pas de mise à jour live tant que l'onglet reste ouvert).
-  const [titreAccueilEcran] = useState(texteAccueilTableauDeBordSelonHeure);
+  const locale = useLocale();
+  const t = (texte: string) => traduireTexteInterface(texte, locale);
+  const titreAccueilEcran = useMemo(() => texteAccueilTableauDeBordSelonHeure(locale), [locale]);
   const [titreRevele, setTitreRevele] = useState("");
   useEffect(() => {
     setTitreRevele("");
@@ -174,14 +178,14 @@ export function EcranAccueil() {
             <h1 className="font-display text-3xl font-bold tracking-tight text-dj-texte md:text-4xl">
               {titreRevele}
             </h1>
-            <p className="mt-2 text-base text-dj-texte-muet">Le coin des étudiants.</p>
+            <p className="mt-2 text-base text-dj-texte-muet">{t("Le coin des étudiants.")}</p>
           </div>
           <button
             onClick={() => ouvrirChat()}
             className="group flex items-center gap-2 rounded-xl bg-dj-gradient px-5 py-3 text-sm font-bold text-[#1A0D02] shadow-[0_4px_20px_rgba(184,134,11,0.25)] transition-transform duration-200 ease-cgpt-geste hover:scale-[1.02] active:scale-[0.98]"
           >
             <Bird size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
-            Ouvrir le chat
+            {t("Ouvrir le chat")}
           </button>
           <BoutonsCompteVisiteur />
         </div>
@@ -200,7 +204,7 @@ export function EcranAccueil() {
           pas touchées ici. */}
       <div>
         <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-dj-texte">
-          Mon espace
+          {t("Mon espace")}
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {ONGLETS.map((o) => (
@@ -211,7 +215,7 @@ export function EcranAccueil() {
                   strokeWidth={TRAIT_ICONE_SECTION}
                   className={`flex-shrink-0 text-dj-texte transition-transform duration-200 ${MOUVEMENT_CARTE}`}
                 />
-                <span className="text-sm font-semibold text-dj-texte">{o.label}</span>
+                <span className="text-sm font-semibold text-dj-texte">{t(o.label)}</span>
               </div>
             </Link>
           ))}
@@ -229,7 +233,7 @@ export function EcranAccueil() {
             Les icônes des raccourcis "Mon espace" ne sont volontairement
             pas touchées ici. */}
         <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-dj-texte">
-          Activité récente
+          {t("Activité récente")}
         </h2>
 
         {/* Skeleton précis (30/08, audit) : le vrai contenu n'a pas de
@@ -259,7 +263,7 @@ export function EcranAccueil() {
         )}
 
         {activite !== null && activite.length === 0 && (
-          <p className="text-sm text-dj-texte-muet">Rien pour l&apos;instant, lance une conversation pour commencer.</p>
+          <p className="text-sm text-dj-texte-muet">{t("Rien pour l'instant, lance une conversation pour commencer.")}</p>
         )}
 
         {activite !== null && activite.length > 0 && (
@@ -272,7 +276,7 @@ export function EcranAccueil() {
                   className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-dj-surface"
                 >
                   <item.Icone size={16} className="flex-shrink-0 text-dj-texte transition-transform group-hover:scale-110" />
-                  <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{item.label}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{t(item.label)}</span>
                   <span className="flex-shrink-0 text-xs text-dj-texte-muet">{dateRelative(item.date)}</span>
                 </button>
               ) : (
@@ -282,7 +286,7 @@ export function EcranAccueil() {
                   className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-dj-surface"
                 >
                   <item.Icone size={16} className="flex-shrink-0 text-dj-texte transition-transform group-hover:scale-110" />
-                  <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{item.label}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{t(item.label)}</span>
                   <span className="flex-shrink-0 text-xs text-dj-texte-muet">{dateRelative(item.date)}</span>
                 </Link>
               )

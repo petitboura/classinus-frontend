@@ -1,3 +1,5 @@
+> [English version](./HIGGSFIELD_TODO.md) · **Version française**
+
 # Higgsfield — branche `feature/higgsfield-catalogue-generation`
 
 > Mis à jour le 2026-11-01 : panneau Générer finalisé.
