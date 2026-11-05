@@ -212,7 +212,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ContexteMinuteurs.Provider value={minuteursValeur}>
     <ContexteStatutUtilisateur.Provider value={statutUtilisateurValeur}>
       <ContexteFenetres.Provider value={fenetres}>
-        <div className="flex h-dvh">
+        <div className="dj-coque-appli flex h-dvh">
           {/* 30/08/2026, menu hamburger : reprend Accueil/Connecter
               Claude/Paramètres/Partager/Avis/Pourquoi Classinus, tout ce qui
               n'a pas de place dans les 5 onglets directs. Étape 1 de
