@@ -133,6 +133,7 @@ export function SectionMarketingStudio() {
 
       <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg" style={{ backgroundColor: "var(--dj-surface)" }}>
         <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setFiltresOuverts((v) => !v)}
@@ -152,6 +153,16 @@ export function SectionMarketingStudio() {
               </span>
             )}
           </button>
+          {actif ? (
+            <button
+              type="button"
+              onClick={reinitialiser}
+              className="inline-flex min-h-8 items-center rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              Réinitialiser les filtres
+            </button>
+          ) : null}
+          </div>
           <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
             {`${effets.length} preset${effets.length !== 1 ? "s" : ""} · ${PRESETS_MARKETING.length} au total`}
           </span>
@@ -180,11 +191,12 @@ export function SectionMarketingStudio() {
             </div>
             <FiltreChips
               options={[
+                { value: "tous", label: "Tous" },
                 { value: "image", label: "Image" },
                 { value: "video", label: "Vidéo" },
               ]}
               valeur={rendu}
-              onChange={(v) => setRendu(rendu === v ? "tous" : v)}
+              onChange={setRendu}
               compteurs={compteursRendu}
             />
             <FiltreChips
@@ -193,15 +205,6 @@ export function SectionMarketingStudio() {
               onChange={setCategorie}
               compteurs={compteursCategorie}
             />
-            {actif ? (
-              <button
-                type="button"
-                onClick={reinitialiser}
-                className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-              >
-                Réinitialiser les filtres
-              </button>
-            ) : null}
           </>
         )}
       </div>

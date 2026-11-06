@@ -279,6 +279,7 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
       <GenerationsRecentesHiggsfield />
       <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg" style={{ backgroundColor: "var(--dj-surface)" }}>
         <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setFiltresOuverts((v) => !v)}
@@ -298,6 +299,20 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
               </span>
             )}
           </button>
+          {actif ? (
+            <button
+              type="button"
+              onClick={() => {
+                setRecherche("");
+                setRenduFiltre("tous");
+                setStyleFiltre("tous");
+              }}
+              className="inline-flex min-h-8 items-center rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              Réinitialiser les filtres
+            </button>
+          ) : null}
+          </div>
           <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
             {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${effetsDuCatalogue.length} au total`}
           </span>
@@ -325,9 +340,9 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
               ) : null}
             </div>
             <FiltreChips
-              options={RENDUS_EFFET}
+              options={[{ value: "tous", label: "Tous" }, ...RENDUS_EFFET]}
               valeur={renduFiltre}
-              onChange={(v) => setRenduFiltre(renduFiltre === v ? "tous" : v)}
+              onChange={setRenduFiltre}
               compteurs={compteursRendu}
             />
             <FiltreChips
@@ -336,19 +351,6 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
               onChange={setStyleFiltre}
               compteurs={compteursStyle}
             />
-            {actif ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setRecherche("");
-                  setRenduFiltre("tous");
-                  setStyleFiltre("tous");
-                }}
-                className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-              >
-                Réinitialiser les filtres
-              </button>
-            ) : null}
           </>
         )}
       </div>
