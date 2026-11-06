@@ -20,11 +20,13 @@ export function FiltreChips({
   options,
   valeur,
   onChange,
+  compteurs,
 }: {
   label?: string;
   options: { value: string; label: string }[];
   valeur: string;
   onChange: (v: string) => void;
+  compteurs?: Record<string, number>;
 }) {
   return (
     <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
@@ -40,6 +42,7 @@ export function FiltreChips({
           }`}
         >
           {o.label}
+          {compteurs ? <span className="ml-1.5 text-[10px] font-bold opacity-70">{compteurs[o.value] ?? 0}</span> : null}
         </button>
       ))}
     </div>

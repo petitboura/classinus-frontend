@@ -66,6 +66,31 @@ export function SectionMarketingStudio() {
 
   const effets = useMemo(() => filtres.map(presetVersEffet), [filtres]);
 
+  // Presets qui passent la recherche seule : base des compteurs des deux rangees de puces.
+  const passentRecherche = useMemo(() => {
+    const q = normaliser(recherche.trim());
+    return PRESETS_MARKETING.filter((p) => !q || normaliser(p.nom).includes(q));
+  }, [recherche]);
+
+  // Chaque compteur reflete l'autre filtre : Vidéo en haut change les nombres en bas, et inversement.
+  const compteursRendu = useMemo(() => {
+    const base = passentRecherche.filter((p) => categorie === "tous" || p.type === categorie);
+    return {
+      tous: base.length,
+      image: base.filter((p) => p.previewType === "image").length,
+      video: base.filter((p) => p.previewType === "video").length,
+    };
+  }, [passentRecherche, categorie]);
+
+  const compteursCategorie = useMemo(() => {
+    const base = passentRecherche.filter((p) => rendu === "tous" || p.previewType === rendu);
+    const compteur: Record<string, number> = { tous: base.length };
+    for (const t of TYPES_MARKETING) {
+      compteur[t.value] = base.filter((p) => p.type === t.value).length;
+    }
+    return compteur;
+  }, [passentRecherche, rendu]);
+
   const actif = categorie !== "tous" || rendu !== "tous" || recherche.trim() !== "";
   const nbFiltresActifs = [categorie !== "tous", rendu !== "tous", recherche.trim() !== ""].filter(Boolean).length;
 
@@ -161,11 +186,13 @@ export function SectionMarketingStudio() {
               ]}
               valeur={rendu}
               onChange={setRendu}
+              compteurs={compteursRendu}
             />
             <FiltreChips
               options={[{ value: "tous", label: "Tous" }, ...TYPES_MARKETING.map((t) => ({ value: t.value, label: t.label }))]}
               valeur={categorie}
               onChange={setCategorie}
+              compteurs={compteursCategorie}
             />
             {actif ? (
               <button
