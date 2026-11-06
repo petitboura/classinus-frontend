@@ -2,6 +2,8 @@ import { appelerApi, appelerApiFichier } from "./api";
 
 export type HiggsfieldStatut = {
   etat: "en_cours" | "terminee" | "echec" | "bloquee" | "annulee";
+  /** Étape réelle côté Higgsfield : la demande attend son tour, ou la création est en cours. */
+  etape?: "attente" | "creation";
   url: string | null;
   erreur: string | null;
 };
