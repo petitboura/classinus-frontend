@@ -145,6 +145,22 @@ export function VisionneurHiggsfield({
     if (el) el.scrollTop = indexDepart * el.clientHeight;
   }, [indexDepart]);
 
+  // Le bouton retour du telephone (ou du navigateur) ferme le visionneur au lieu de quitter la page.
+  // On ajoute une entree d'historique a l'ouverture ; retirer le visionneur par la croix la retire aussi.
+  const fermerRef = useRef(onClose);
+  useEffect(() => {
+    fermerRef.current = onClose;
+  });
+  useEffect(() => {
+    window.history.pushState({ visionneurHiggsfield: true }, "");
+    const surRetour = () => fermerRef.current();
+    window.addEventListener("popstate", surRetour);
+    return () => {
+      window.removeEventListener("popstate", surRetour);
+      if (window.history.state?.visionneurHiggsfield) window.history.back();
+    };
+  }, []);
+
   // instantane : utilisé quand on fait glisser le curseur de la colonne, où un défilement
   // animé se battrait avec le doigt ; les flèches et les clics gardent l'animation.
   const scrollerVers = useCallback(
@@ -237,7 +253,7 @@ export function VisionneurHiggsfield({
       <div
         ref={conteneurRef}
         onScroll={onScroll}
-        className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
+        className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {effets.map((effet, i) => (
           <DiapoEffet
