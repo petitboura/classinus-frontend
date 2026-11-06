@@ -1,13 +1,22 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Play, Search, X } from "lucide-react";
 import { PRESETS_MARKETING, TYPES_MARKETING, type MarketingPreset } from "@/lib/presetsMarketingStudio";
+import type { EffetHiggsfield, StyleEffet, TypeEffet } from "@/lib/effetsHiggsfield";
 
 // Section Marketing Studio de la grande page /higgsfield : 649 presets dans
 // leur propre bloc, separe du catalogue d'effets, avec un filtre par categorie
-// et une barre de recherche dediee. Le clic sur une carte copie une demande
-// prete a coller dans le chat Classinus, ou la generation a vraiment lieu.
+// et une barre de recherche dediee. Un clic ouvre le meme visionneur plein
+// ecran que le catalogue d'effets. La generation n'est pas encore disponible
+// pour ces presets : le bouton Generer l'indique au lieu de lancer une demande.
+
+// Meme chargement differe que le catalogue d'effets.
+const VisionneurHiggsfield = dynamic(
+  () => import("@/components/higgsfield/VisionneurHiggsfield").then((m) => m.VisionneurHiggsfield),
+  { ssr: false }
+);
 
 function normaliser(s: string) {
   return s
@@ -16,9 +25,36 @@ function normaliser(s: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+// Le visionneur attend la meme forme que les effets du catalogue.
+// Les presets n'ont ni description ni style propres : on affiche leur categorie.
+function presetVersEffet(p: MarketingPreset): EffetHiggsfield {
+  const categorie = TYPES_MARKETING.find((t) => t.value === p.type)?.label ?? p.type;
+  const type: TypeEffet = p.previewType === "video" ? "image-to-video" : "image";
+  return {
+    id: "marketing-" + p.id,
+    nom: p.nom,
+    description: "Preset Marketing Studio · " + categorie,
+    type,
+    style: categorie as StyleEffet,
+    modele: "Marketing Studio",
+    preview: p.preview,
+    previewType: p.previewType,
+    poster: p.poster,
+    promptChat: "",
+  };
+}
+
 // memo : les cartes sont figees par preset, la grille ne redessine que les
 // cartes ajoutees quand on affiche la suite.
-const CarteMarketing = memo(function CarteMarketing({ preset }: { preset: MarketingPreset }) {
+const CarteMarketing = memo(function CarteMarketing({
+  preset,
+  index,
+  onOuvrir,
+}: {
+  preset: MarketingPreset;
+  index: number;
+  onOuvrir: (index: number) => void;
+}) {
   const ref = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [mediaError, setMediaError] = useState(false);
@@ -32,7 +68,7 @@ const CarteMarketing = memo(function CarteMarketing({ preset }: { preset: Market
     if (!b) return;
     const obs = new IntersectionObserver(
       ([entry]) => setProche(entry.isIntersecting),
-      { rootMargin: "600px 0px" }
+      { rootMargin: "300px 0px" }
     );
     obs.observe(b);
     return () => obs.disconnect();
@@ -44,7 +80,7 @@ const CarteMarketing = memo(function CarteMarketing({ preset }: { preset: Market
   // charger leurs videos d'un coup.
   useEffect(() => {
     const v = videoRef.current;
-    if (v && v.currentSrc) {
+    if (v && v.currentSrc && !proche) {
       v.pause();
       v.load();
     }
@@ -65,18 +101,21 @@ const CarteMarketing = memo(function CarteMarketing({ preset }: { preset: Market
     return () => obs.disconnect();
   }, [isVideo, mediaError, proche]);
 
-  function ouvrirDansLeChat() {
-    // Le preset se genere depuis le chat Classinus : on y colle directement
-    // une demande prete a l'emploi avec le nom exact du preset.
-    window.location.href = "/?higgsfield-preset=" + encodeURIComponent(preset.nom);
-  }
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !isVideo || mediaError || !proche) return;
+    v.muted = !survolActif;
+    if (survolActif) v.play().catch(() => {});
+  }, [survolActif, isVideo, mediaError, proche]);
 
   return (
     <button
       ref={ref}
-      onClick={ouvrirDansLeChat}
+      onClick={() => onOuvrir(index)}
       onMouseEnter={() => isVideo && !mediaError && setSurvolActif(true)}
       onMouseLeave={() => isVideo && !mediaError && setSurvolActif(false)}
+      onFocus={() => isVideo && !mediaError && setSurvolActif(true)}
+      onBlur={() => isVideo && !mediaError && setSurvolActif(false)}
       className="group relative flex aspect-[3/4] animate-dj-fade-in-rapide touch-manipulation flex-col justify-end overflow-hidden rounded-[20px] border border-dj-bordure bg-dj-surface-haute text-left shadow-sm transition-transform duration-300 ease-out md:transition-all md:duration-500 md:hover:-translate-y-1 md:hover:shadow-xl active:scale-[0.98]"
     >
       {!mediaError ? (
@@ -105,7 +144,12 @@ const CarteMarketing = memo(function CarteMarketing({ preset }: { preset: Market
         )
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-dj-texte/10 via-dj-surface-haute to-dj-fond p-6">
-          <span className="text-xs font-semibold text-dj-texte-muet">Preview bientot</span>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-dj-texte text-dj-fond">
+              <Play className="h-5 w-5 translate-x-px" />
+            </div>
+            <span className="text-xs font-semibold text-dj-texte-muet">Preview bientôt</span>
+          </div>
         </div>
       )}
 
@@ -129,6 +173,8 @@ export function SectionMarketingStudio() {
   const [categorie, setCategorie] = useState<string>("tous");
   const [recherche, setRecherche] = useState("");
   const [toutCharger, setToutCharger] = useState(false);
+  const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
+  const [avisGeneration, setAvisGeneration] = useState(false);
 
   // Affichage progressif : la grille demarre a 48 cartes et une barre
   // "Afficher plus" decharge le rendu au fil du defilement. Les 649 cartes
@@ -143,6 +189,10 @@ export function SectionMarketingStudio() {
     });
   }, [categorie, recherche]);
 
+  const effets = useMemo(() => filtres.map(presetVersEffet), [filtres]);
+
+  const actif = categorie !== "tous" || recherche.trim() !== "";
+
   const nbAffiches = toutCharger ? filtres.length : Math.min(filtres.length, 48);
   const affiches = filtres.slice(0, nbAffiches);
 
@@ -154,15 +204,27 @@ export function SectionMarketingStudio() {
     return compteur;
   }, []);
 
-  const boutonTout = useCallback(() => setCategorie("tous"), []);
+  const ouvrirVisionneur = useCallback((i: number) => {
+    setAvisGeneration(false);
+    setIndexVisionneur(i);
+  }, []);
+
+  const fermerVisionneur = useCallback(() => setIndexVisionneur(null), []);
+
+  // La generation de ces presets n'est pas encore prise en charge : on ferme
+  // le visionneur et on l'indique clairement, sans rien lancer.
+  const generationIndisponible = useCallback(() => {
+    setIndexVisionneur(null);
+    setAvisGeneration(true);
+  }, []);
 
   return (
     <section className="flex flex-col gap-4 py-4 md:py-6" aria-label="Marketing Studio">
       <div className="flex flex-col gap-2 rounded-[20px] border border-dj-bordure bg-dj-surface px-4 py-3.5">
         <span className="text-base font-bold text-dj-texte">Marketing Studio</span>
         <p className="text-sm leading-relaxed text-dj-texte-muet">
-          Des templates de pubs et de visuels produit prets a l'emploi, directement inspires du Marketing Studio
-          Higgsfield. Trouve ton style, puis demande-le dans le chat pour generer ta video.
+          Des templates de pubs et de visuels produit prêts à l'emploi, inspirés du Marketing Studio Higgsfield.
+          Ouvre un preset en plein écran pour voir le rendu. La génération arrive bientôt.
         </p>
       </div>
 
@@ -197,7 +259,7 @@ export function SectionMarketingStudio() {
 
         <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
           <button
-            onClick={boutonTout}
+            onClick={() => setCategorie("tous")}
             className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
               categorie === "tous"
                 ? "border-dj-texte bg-dj-texte text-dj-fond"
@@ -223,11 +285,17 @@ export function SectionMarketingStudio() {
         </div>
       </div>
 
+      {avisGeneration ? (
+        <p className="rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-sm leading-relaxed text-dj-texte-muet">
+          La génération à partir des presets Marketing Studio n'est pas encore disponible. Elle arrivera bientôt.
+        </p>
+      ) : null}
+
       {affiches.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <p className="text-sm font-semibold text-dj-texte">Aucun preset pour ces filtres</p>
           <p className="max-w-md text-sm leading-relaxed text-dj-texte-muet">
-            Essaie un autre mot-cle ou reviens sur la categorie Tous pour revoir les 649 presets.
+            Essaie un autre mot-clé ou réinitialise les filtres pour revoir tout le catalogue.
           </p>
           <button
             onClick={() => {
@@ -241,8 +309,8 @@ export function SectionMarketingStudio() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-          {affiches.map((p) => (
-            <CarteMarketing key={p.id} preset={p} />
+          {affiches.map((p, i) => (
+            <CarteMarketing key={p.id} preset={p} index={i} onOuvrir={ouvrirVisionneur} />
           ))}
         </div>
       )}
@@ -254,6 +322,15 @@ export function SectionMarketingStudio() {
         >
           Afficher plus ({filtres.length - nbAffiches} restants)
         </button>
+      ) : null}
+
+      {indexVisionneur !== null && effets[indexVisionneur] ? (
+        <VisionneurHiggsfield
+          effets={effets}
+          indexDepart={indexVisionneur}
+          onClose={fermerVisionneur}
+          onGenerer={generationIndisponible}
+        />
       ) : null}
     </section>
   );
