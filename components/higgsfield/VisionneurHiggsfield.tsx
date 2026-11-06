@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ChevronDown, ChevronUp, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
 function libelleType(effet: EffetHiggsfield) {
@@ -33,6 +33,8 @@ function DiapoEffet({
   const [mediaError, setMediaError] = useState(false);
   // Taille reelle du fichier : on ne l'agrandit jamais au-dela, il reste net.
   const [taille, setTaille] = useState<{ w: number; h: number } | null>(null);
+  // Vrai quand la video joue ; sinon un bouton Lire reste visible pour la relancer.
+  const [enLecture, setEnLecture] = useState(false);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
   const vraieVideo = isVideo && proche;
 
@@ -63,6 +65,14 @@ function DiapoEffet({
             playsInline
             preload="auto"
             onLoadedMetadata={(e) => setTaille({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
+            onPlay={() => setEnLecture(true)}
+            onPause={() => setEnLecture(false)}
+            onEnded={() => setEnLecture(false)}
+            onClick={(e) => {
+              const v = e.currentTarget;
+              if (v.paused) v.play().catch(() => setEnLecture(false));
+              else v.pause();
+            }}
             onError={() => setMediaError(true)}
             className="absolute inset-0 m-auto object-contain"
             style={tailleMedia(taille)}
@@ -229,6 +239,17 @@ export function VisionneurHiggsfield({
           {sonActif ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
         </button>
       </div>
+
+      {vraieVideo && courant && !enLecture && !mediaError ? (
+        <button
+          type="button"
+          onClick={() => videoRef.current?.play().catch(() => setEnLecture(false))}
+          aria-label="Lire la vidéo"
+          className="absolute left-1/2 top-1/2 z-10 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur transition-transform duration-200 active:scale-90"
+        >
+          <Play className="h-7 w-7 translate-x-0.5" />
+        </button>
+      ) : null}
 
       {/* Flèches haut et bas sur le bord droit : sur PC seulement, le téléphone se manipule au doigt. */}
       <div className="pointer-events-none absolute right-2 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex">
