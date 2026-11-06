@@ -95,6 +95,10 @@ function DiapoEffet({
           </div>
           <h2 className="text-xl font-bold leading-tight text-white sm:text-2xl">{effet.nom}</h2>
           <p className="line-clamp-3 text-sm leading-relaxed text-white/85 sm:line-clamp-none">{effet.description}</p>
+          {/* Pour ces effets, l'aperçu montre un exemple : le résultat dépend des fichiers de l'utilisateur. */}
+          {effet.type === "video-to-video" ? (
+            <p className="text-xs leading-relaxed text-white/70">L&apos;aperçu est un exemple. Ton résultat dépend de ta vidéo et de tes images.</p>
+          ) : null}
           <span className="text-[11px] font-semibold uppercase tracking-widest text-white/60">Modèle : {effet.modele}</span>
           <button
             onClick={() => onGenerer(effet)}

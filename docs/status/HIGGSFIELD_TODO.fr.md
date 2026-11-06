@@ -23,6 +23,18 @@
 - Cadrage du visionneur (téléphone et PC) : la vidéo (ou l'image) s'affiche en entier, avec des bandes noires si besoin, au lieu d'être recadrée pour remplir l'écran.
 - Navigation du visionneur (6 novembre 2026, branche `fix/higgsfield-points-cadrage`) : la colonne verticale à droite (`RailVisionneur`) a été retirée. Sur PC, un petit point par effet est en bas (l'effet affiché a un point allongé et blanc, chaque point est cliquable) et les flèches haut et bas restent sur le bord droit. Sur téléphone, aucun indicateur n'est affiché, le glissement du doigt suffit. Le compteur `1 / N` en haut reste.
 
+### Formulaire Générer pour les effets vidéo vers vidéo (6 novembre 2026)
+
+- Les 47 effets vidéo vers vidéo (35 Genjutsu et 12 Viral) n'envoient pas l'effet lui-même à Higgsfield : le résultat vient de la vidéo et des images de l'utilisateur. Le champ de description est donc replié sous « Ajouter une précision (optionnel) » au lieu d'être un grand champ, et le visionneur affiche sous l'aperçu : « L'aperçu est un exemple. Ton résultat dépend de ta vidéo et de tes images. »
+- Les 3 effets image (Soul) ne changent pas : la description reste obligatoire. Préremplir un prompt de style est une étape à part, pas encore faite.
+
+### Génération côté serveur (6 novembre 2026)
+
+- Le lancement, le suivi et l'enregistrement d'une génération se font maintenant sur le serveur : tu peux fermer l'appli, le résultat arrive quand même dans ta bibliothèque, avec une notification quand il est prêt. Voir `docs/status/HIGGSFIELD_TODO.md` dans `classinus-backend` pour la table, la boucle et les endpoints.
+- `lib/higgsfieldApi.ts` : `statutHiggsfield` lit seulement l'état serveur (paramètre `titre` retiré) ; nouveau `listerGenerationsHiggsfield`.
+- Nouveau `components/higgsfield/GenerationsRecentesHiggsfield.tsx` : bloc « Mes générations récentes » en haut du catalogue (en cours, terminées, échecs ; lien « Voir » sur les terminées). Il se rafraîchit tant qu'une génération tourne et reste caché si la liste est vide.
+- Pas encore fait : l'effet visuel « construit sous tes yeux » pendant la génération.
+
 ## Tests manuels avant merge
 - [ ] Catalogue : recherche, filtres, compteur, reset, carte hover son, fallback preview HS.
 - [ ] Visionneur : scroll snap, flèches, clavier, dots, son toggle, Générer ouvre bien le panneau.
