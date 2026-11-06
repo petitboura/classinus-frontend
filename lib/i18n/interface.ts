@@ -2692,6 +2692,8 @@ const EN: Record<string, string> = {
   "(optionnel)": "(optional)",
   "Décris ce que tu veux…": "Describe what you want…",
   "Options Genjutsu": "Genjutsu options",
+  "Ajouter une précision": "Add a detail",
+  "L'aperçu est un exemple. Ton résultat dépend de ta vidéo et de tes images.": "The preview is an example. Your result depends on your video and your images.",
   "Options image": "Image options",
   "Son": "Sound",
   "Envoi des fichiers…": "Sending files…",

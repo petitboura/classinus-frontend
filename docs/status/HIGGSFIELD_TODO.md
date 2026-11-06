@@ -26,6 +26,11 @@ Updated 1 November 2026: the Generate panel is complete.
 - Viewer framing (phone and PC): the video (or image) is shown in full, with black bars if needed, instead of being cropped to fill the screen.
 - Viewer navigation (6 November 2026, branch `fix/higgsfield-points-cadrage`): the vertical column on the right (`RailVisionneur`) was removed. On PC, one small dot per effect sits at the bottom (the displayed effect has a longer white dot, each dot is clickable) and the up and down arrows stay on the right edge. On phones, no indicator is shown; swiping is enough. The `1 / N` counter at the top stays.
 
+### Generate form for video-to-video effects (6 November 2026)
+
+- The 47 video-to-video effects (35 Genjutsu and 12 Viral) do not send the effect itself to Higgsfield: the result comes from the user's own video and images. So the description field is now folded under "Add a detail (optional)" instead of being a large field, and the viewer shows a note under the preview: "The preview is an example. Your result depends on your video and your images."
+- The 3 image effects (Soul) are unchanged: the description stays required. Prefilling it with a style prompt is a separate step, not done yet.
+
 ## Manual tests before merge
 
 - [ ] Catalogue: search, filters, counter, reset, hover sound card, fallback when preview is unavailable.
