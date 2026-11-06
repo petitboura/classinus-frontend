@@ -30,6 +30,7 @@ import { ouvrirPosition } from "./visionneurPositionEvenement";
 import { COMPOSANTS_MARKDOWN, ContexteRenduBulle, type EtatRenduBulle } from "./composantsMarkdownRiches";
 import { texteBrut } from "./texteBrut";
 import { Skeleton } from "../Skeleton";
+import { PlumeEcriture } from "./PlumeEcriture";
 import type { CodeErreurTour } from "@/lib/erreurTour";
 
 // Perf (10/08) : listes de plugins ReactMarkdown constantes, sorties du
@@ -923,6 +924,12 @@ function BulleMessageInterne({
   // de grandir anime ses propres nouveaux mots sans se mélanger aux autres.
   const motsDejaAnimesRef = useRef<Record<number, number>>({});
   const totalMotsCourantRef = useRef<Record<number, number>>({});
+  // Plume d'écriture (16/10/2026, PlumeEcriture.tsx) : vrai dès que ce
+  // message a été généré en direct (attente ou génération), pour que la
+  // plume puisse sortir en fondu à la fin au lieu de disparaître d'un coup.
+  // Les messages d'historique n'y touchent jamais.
+  const aGenereEnDirectRef = useRef(false);
+  if (estEnCoursDeGeneration || enAttente) aGenereEnDirectRef.current = true;
   useEffect(() => {
     motsDejaAnimesRef.current = { ...totalMotsCourantRef.current };
   }, [message.content, estEnCoursDeGeneration]);
@@ -1414,6 +1421,12 @@ function BulleMessageInterne({
                 rendreMarkdown(normaliserCitations(normaliserLatex(message.content)), !!estEnCoursDeGeneration)
               )}
             </div>
+            {/* Plume d'écriture (16/10/2026, demande de Bourama) : ajoutée
+                APRÈS le bloc de texte, donc toujours sous la dernière ligne ;
+                l'apparition du texte reste inchangée. */}
+            {!estUtilisateur && aGenereEnDirectRef.current && (
+              <PlumeEcriture actif={!!enAttente || !!estEnCoursDeGeneration} />
+            )}
             {modeQuestionsGroupees && !estEnCoursDeGeneration && !questionDejaRepondue && !reponsesGroupeesEnvoyees && (
               <button
                 type="button"
