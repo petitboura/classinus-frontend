@@ -140,13 +140,17 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
   },
 ];
 
-export const TYPES_EFFET: { value: TypeEffet | "tous"; label: string }[] = [
-  { value: "tous", label: "Tous" },
+// Le rendu (image ou video) est le seul type sur lequel on peut compter :
+// il se lit sur l'apercu. Les anciens types (image vers video, avatar) ne sont plus affiches.
+export const RENDUS_EFFET: { value: "image" | "video"; label: string }[] = [
   { value: "image", label: "Image" },
-  { value: "image-to-video", label: "Image → Video" },
-  { value: "video-to-video", label: "Video → Video" },
-  { value: "avatar", label: "Avatar" },
+  { value: "video", label: "Vidéo" },
 ];
+
+export function renduEffet(e: EffetHiggsfield): "image" | "video" {
+  if (e.previewType) return e.previewType;
+  return /\.(mp4|webm)(\?|$)/i.test(e.preview) ? "video" : "image";
+}
 export const STYLES_EFFET: { value: StyleEffet | "tous"; label: string }[] = [
   { value: "tous", label: "Tous les styles" },
   { value: "realiste", label: "Realiste" },

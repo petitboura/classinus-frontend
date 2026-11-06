@@ -4,7 +4,7 @@ import { GenerationsRecentesHiggsfield } from "./GenerationsRecentesHiggsfield";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Play, Search, SlidersHorizontal, X } from "lucide-react";
 import dynamic from "next/dynamic";
-import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { EFFETS_HIGGSFIELD, RENDUS_EFFET, STYLES_EFFET, renduEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
 // Les deux grands panneaux ne servent qu'au clic : on les sépare du code de la page,
 // puis on les charge en arrière-plan dès que le navigateur est au repos.
@@ -164,7 +164,7 @@ export const CarteEffet = memo(function CarteEffet({
       )}
 
       <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white">
-        {effet.libelleType ?? (effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR")}
+        {effet.libelleType ?? (renduEffet(effet) === "video" ? "VIDÉO" : "IMAGE")}
       </span>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-12 sm:px-3.5 sm:pb-3.5">
@@ -191,13 +191,13 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
     () => (famille ? EFFETS_HIGGSFIELD.filter((e) => e.id.startsWith(famille + "-")) : EFFETS_HIGGSFIELD),
     [famille],
   );
-  const [typeFiltre, setTypeFiltre] = useState<string>("tous");
+  const [renduFiltre, setRenduFiltre] = useState<string>("tous");
   const [styleFiltre, setStyleFiltre] = useState<string>("tous");
   const [filtresOuverts, setFiltresOuverts] = useState(false);
   const [recherche, setRecherche] = useState("");
 
-  const actif = typeFiltre !== "tous" || styleFiltre !== "tous" || recherche.trim() !== "";
-  const badgeFiltres = [typeFiltre, styleFiltre].filter((v) => v !== "tous").length + (recherche.trim() ? 1 : 0);
+  const actif = renduFiltre !== "tous" || styleFiltre !== "tous" || recherche.trim() !== "";
+  const badgeFiltres = [renduFiltre, styleFiltre].filter((v) => v !== "tous").length + (recherche.trim() ? 1 : 0);
 
   // Chargement en arrière-plan des panneaux, sans gêner l'affichage de la page.
   useEffect(() => {
@@ -219,14 +219,41 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
   const filtres = useMemo(() => {
     const q = normaliser(recherche.trim());
     return effetsDuCatalogue.filter((e) => {
-      const okType = typeFiltre === "tous" || e.type === typeFiltre;
+      const okRendu = renduFiltre === "tous" || renduEffet(e) === renduFiltre;
       const okStyle = styleFiltre === "tous" || e.style === styleFiltre;
-      if (!okType || !okStyle) return false;
+      if (!okRendu || !okStyle) return false;
       if (!q) return true;
-      const hay = normaliser([e.nom, e.description, e.badge || "", e.style, e.type, e.id].join(" "));
+      const hay = normaliser([e.nom, e.description, e.badge || "", e.style, e.id].join(" "));
       return hay.includes(q);
     });
-  }, [typeFiltre, styleFiltre, recherche, effetsDuCatalogue]);
+  }, [renduFiltre, styleFiltre, recherche, effetsDuCatalogue]);
+
+  // Compteurs des puces : chacun reflete l'autre filtre et la recherche (meme logique que Marketing Studio).
+  const passentRecherche = useMemo(() => {
+    const q = normaliser(recherche.trim());
+    return effetsDuCatalogue.filter((e) => {
+      if (!q) return true;
+      return normaliser([e.nom, e.description, e.badge || "", e.style, e.id].join(" ")).includes(q);
+    });
+  }, [recherche, effetsDuCatalogue]);
+
+  const compteursRendu = useMemo(() => {
+    const base = passentRecherche.filter((e) => styleFiltre === "tous" || e.style === styleFiltre);
+    return {
+      tous: base.length,
+      image: base.filter((e) => renduEffet(e) === "image").length,
+      video: base.filter((e) => renduEffet(e) === "video").length,
+    };
+  }, [passentRecherche, styleFiltre]);
+
+  const compteursStyle = useMemo(() => {
+    const base = passentRecherche.filter((e) => renduFiltre === "tous" || renduEffet(e) === renduFiltre);
+    const compteur: Record<string, number> = { tous: base.length };
+    for (const st of STYLES_EFFET) {
+      if (st.value !== "tous") compteur[st.value] = base.filter((e) => e.style === st.value).length;
+    }
+    return compteur;
+  }, [passentRecherche, renduFiltre]);
 
   const ouvrirVisionneur = useCallback((i: number) => setIndexVisionneur(i), []);
 
@@ -297,14 +324,24 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
                 </button>
               ) : null}
             </div>
-            <FiltreChips options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
-            <FiltreChips options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
+            <FiltreChips
+              options={RENDUS_EFFET}
+              valeur={renduFiltre}
+              onChange={(v) => setRenduFiltre(renduFiltre === v ? "tous" : v)}
+              compteurs={compteursRendu}
+            />
+            <FiltreChips
+              options={STYLES_EFFET.map((st) => ({ value: st.value, label: st.label }))}
+              valeur={styleFiltre}
+              onChange={setStyleFiltre}
+              compteurs={compteursStyle}
+            />
             {actif ? (
               <button
                 type="button"
                 onClick={() => {
                   setRecherche("");
-                  setTypeFiltre("tous");
+                  setRenduFiltre("tous");
                   setStyleFiltre("tous");
                 }}
                 className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -325,7 +362,7 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
           <button
             onClick={() => {
               setRecherche("");
-              setTypeFiltre("tous");
+              setRenduFiltre("tous");
               setStyleFiltre("tous");
             }}
             className="mt-1 inline-flex min-h-10 items-center justify-center rounded-full bg-dj-texte px-5 py-2 text-sm font-bold text-dj-fond transition-transform duration-200 active:scale-95"
