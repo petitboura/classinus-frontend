@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Play, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
@@ -44,11 +44,22 @@ function FiltreChips({
   );
 }
 
-function CarteEffet({ effet, onClick }: { effet: EffetHiggsfield; onClick: () => void }) {
+// memo : ouvrir ou fermer le plein écran ne redessine plus les cartes du catalogue.
+const CarteEffet = memo(function CarteEffet({
+  effet,
+  index,
+  onOuvrir,
+}: {
+  effet: EffetHiggsfield;
+  index: number;
+  onOuvrir: (index: number) => void;
+}) {
   const ref = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // La vidéo commence à se charger quand la carte approche de l'écran, pas avant :
-  // l'image fixe s'affiche tout de suite, la vidéo est prête quand on arrive dessus.
+  // La vidéo n'existe en mémoire que lorsque la carte est proche de l'écran : l'image fixe
+  // s'affiche tout de suite, la vidéo se charge à l'approche, et elle est libérée dès que la
+  // carte s'éloigne. Sans cela, toutes les vidéos déjà passées restaient chargées en mémoire
+  // et le téléphone ralentissait de plus en plus.
   const [proche, setProche] = useState(false);
   const [mediaError, setMediaError] = useState(false);
   const [survolActif, setSurvolActif] = useState(false);
@@ -57,18 +68,21 @@ function CarteEffet({ effet, onClick }: { effet: EffetHiggsfield; onClick: () =>
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setProche(true);
-          obs.disconnect();
-        }
-      },
-      { rootMargin: "600px 0px" }
-    );
+    const obs = new IntersectionObserver(([entry]) => setProche(entry.isIntersecting), { rootMargin: "300px 0px" });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  // Quand la carte s'éloigne, React retire la source de la vidéo ; load() force le navigateur
+  // à vraiment libérer ce qu'il avait téléchargé.
+  useEffect(() => {
+    if (proche) return;
+    const v = videoRef.current;
+    if (v && v.currentSrc) {
+      v.pause();
+      v.load();
+    }
+  }, [proche]);
 
   useEffect(() => {
     if (!isVideo || mediaError || !proche) return;
@@ -104,12 +118,12 @@ function CarteEffet({ effet, onClick }: { effet: EffetHiggsfield; onClick: () =>
   return (
     <button
       ref={ref}
-      onClick={onClick}
+      onClick={() => onOuvrir(index)}
       onMouseEnter={activerSon}
       onMouseLeave={couperSon}
       onFocus={activerSon}
       onBlur={couperSon}
-      className="group relative flex aspect-[3/4] animate-dj-fade-in-rapide touch-manipulation flex-col justify-end overflow-hidden rounded-[20px] border border-dj-bordure bg-dj-surface-haute text-left shadow-sm transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98]"
+      className="group relative flex aspect-[3/4] animate-dj-fade-in-rapide touch-manipulation flex-col justify-end overflow-hidden rounded-[20px] border border-dj-bordure bg-dj-surface-haute text-left shadow-sm transition-transform duration-300 ease-out md:transition-all md:duration-500 md:hover:-translate-y-1 md:hover:shadow-xl active:scale-[0.98]"
     >
       {!mediaError ? (
         isVideo ? (
@@ -120,7 +134,7 @@ function CarteEffet({ effet, onClick }: { effet: EffetHiggsfield; onClick: () =>
             muted={!survolActif}
             loop
             playsInline
-            preload={proche ? "auto" : "none"}
+            preload={proche ? "metadata" : "none"}
             onError={() => setMediaError(true)}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
@@ -146,7 +160,7 @@ function CarteEffet({ effet, onClick }: { effet: EffetHiggsfield; onClick: () =>
         </div>
       )}
 
-      <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white backdrop-blur">
+      <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white">
         {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
       </span>
 
@@ -166,14 +180,14 @@ function CarteEffet({ effet, onClick }: { effet: EffetHiggsfield; onClick: () =>
       </div>
 
       {!mediaError && (
-        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white/95 px-3 py-2 text-[11px] font-bold leading-none text-black shadow backdrop-blur">
+        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white px-3 py-2 text-[11px] font-bold leading-none text-black shadow">
           <Sparkles className="h-3.5 w-3.5" />
           Générer
         </span>
       )}
     </button>
   );
-}
+});
 
 function normaliser(s: string) {
   return s
@@ -246,6 +260,8 @@ export function CatalogueHiggsfield() {
       return hay.includes(q);
     });
   }, [typeFiltre, styleFiltre, recherche]);
+
+  const ouvrirVisionneur = useCallback((i: number) => setIndexVisionneur(i), []);
 
   function ouvrirGenerer(effet: EffetHiggsfield) {
     setIndexVisionneur(null);
@@ -335,7 +351,7 @@ export function CatalogueHiggsfield() {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {filtres.map((e, i) => (
-            <CarteEffet key={e.id} effet={e} onClick={() => setIndexVisionneur(i)} />
+            <CarteEffet key={e.id} effet={e} index={i} onOuvrir={ouvrirVisionneur} />
           ))}
         </div>
       )}

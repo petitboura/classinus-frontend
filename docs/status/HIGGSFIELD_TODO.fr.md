@@ -16,6 +16,10 @@
 - `api/higgsfield.py` : router `POST /api/higgsfield/video|image|genjutsu`, `GET /statut/{id}`, `POST /annuler/{id}`, `POST /estimation`, `GET /disponible`. Limite `10/min` + `reserver_generation` (quota jour), sauvegarde bibliothèque en fin de `statut`.
 - `api/main.py` : `higgsfield_router` importé + `app.include_router(higgsfield_router)` (restauré — n'avait pas été committé avant).
 
+### Fluidité sur téléphone (6 novembre 2026, branche `fix/higgsfield-allegement-mobile`)
+- Catalogue : la vidéo d'une carte n'est chargée que lorsque la carte est proche de l'écran, et elle est libérée quand la carte s'éloigne (avant, toutes les vidéos déjà passées restaient en mémoire). Les cartes ne se redessinent plus quand le plein écran s'ouvre ou se ferme, et les effets de flou sur chaque carte ont été retirés.
+- Visionneur : seuls l'effet affiché et ses deux voisins ont une vraie vidéo, les autres montrent leur image fixe. Avant, toutes les vidéos du catalogue démarraient ensemble à l'ouverture du plein écran.
+
 ## Tests manuels avant merge
 - [ ] Catalogue : recherche, filtres, compteur, reset, carte hover son, fallback preview HS.
 - [ ] Visionneur : scroll snap, flèches, clavier, dots, son toggle, Générer ouvre bien le panneau.

@@ -18,61 +18,63 @@ function libelleType(effet: EffetHiggsfield) {
 function DiapoEffet({
   effet,
   sonActif,
+  courant,
+  proche,
   onGenerer,
 }: {
   effet: EffetHiggsfield;
   sonActif: boolean;
+  // courant : c'est l'effet affiché à l'écran, sa vidéo joue.
+  courant: boolean;
+  // proche : c'est l'effet affiché ou son voisin direct, seuls ces trois-là ont une vraie vidéo.
+  proche: boolean;
   onGenerer: (effet: EffetHiggsfield) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [mediaError, setMediaError] = useState(false);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
+  const vraieVideo = isVideo && proche;
 
+  // Le son, la lecture et la pause suivent l'effet courant ; la vidéo n'existe que pour les
+  // trois effets proches, donc ce réglage est refait quand elle apparaît.
   useEffect(() => {
-    if (!isVideo || mediaError) return;
     const v = videoRef.current;
     if (!v) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) v.play().catch(() => {});
-        else v.pause();
-      },
-      { threshold: 0.6 }
-    );
-    obs.observe(v);
-    return () => obs.disconnect();
-  }, [isVideo, mediaError]);
+    v.muted = !sonActif;
+    if (courant) v.play().catch(() => {});
+    else v.pause();
+  }, [courant, sonActif, vraieVideo, mediaError]);
 
-  useEffect(() => {
-    const v = videoRef.current;
-    if (v) v.muted = !sonActif;
-  }, [sonActif]);
+  // Les autres effets n'affichent que leur image fixe, légère : ouvrir le plein écran ne lance
+  // plus toutes les vidéos du catalogue en même temps.
+  const imageFixe = isVideo ? effet.poster : effet.preview;
 
   return (
     <section className="relative h-full min-h-[100dvh] w-full shrink-0 snap-start snap-always overflow-hidden bg-black">
       {!mediaError ? (
-        isVideo ? (
+        vraieVideo ? (
           <video
             ref={videoRef}
             src={effet.preview}
             poster={effet.poster}
             muted={!sonActif}
             loop
-            autoPlay
             playsInline
-            preload="metadata"
+            preload="auto"
             onError={() => setMediaError(true)}
             className="absolute inset-0 h-full w-full object-cover"
           />
-        ) : (
+        ) : imageFixe ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={effet.preview}
+            src={imageFixe}
             alt={effet.nom}
+            loading="lazy"
+            decoding="async"
             onError={() => setMediaError(true)}
             className="absolute inset-0 h-full w-full object-cover"
           />
-        )
+        ) : null
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-black p-6">
           <span className="text-sm font-semibold text-white/70">Preview bientôt</span>
@@ -204,8 +206,15 @@ export function VisionneurHiggsfield({
         onScroll={onScroll}
         className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
       >
-        {effets.map((effet) => (
-          <DiapoEffet key={effet.id} effet={effet} sonActif={sonActif} onGenerer={onGenerer} />
+        {effets.map((effet, i) => (
+          <DiapoEffet
+            key={effet.id}
+            effet={effet}
+            sonActif={sonActif}
+            courant={i === indexCourant}
+            proche={Math.abs(i - indexCourant) <= 1}
+            onGenerer={onGenerer}
+          />
         ))}
       </div>
     </div>

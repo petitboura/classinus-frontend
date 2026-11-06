@@ -18,6 +18,11 @@ Updated 1 November 2026: the Generate panel is complete.
 - `api/higgsfield.py`: router endpoints `POST /api/higgsfield/video|image|genjutsu`, `GET /statut/{id}`, `POST /annuler/{id}`, `POST /estimation`, and `GET /disponible`. Rate limit `10/min` plus `reserver_generation` (daily quota); library save occurs when the status is finalized.
 - `api/main.py`: `higgsfield_router` imported and mounted through `app.include_router(higgsfield_router)`. This was restored because it had not been committed previously.
 
+### Performance on phones (6 November 2026, branch `fix/higgsfield-allegement-mobile`)
+
+- Catalogue: a card's video is now loaded only when the card is near the screen and is released when it moves away (before, every video already scrolled past stayed in memory). Cards no longer redraw when the full-screen viewer opens or closes, and the blur effects on every card were removed.
+- Viewer: only the displayed effect and its two neighbours have a real video; the others show their still image. Before, all videos of the catalogue started together when the viewer opened.
+
 ## Manual tests before merge
 
 - [ ] Catalogue: search, filters, counter, reset, hover sound card, fallback when preview is unavailable.
