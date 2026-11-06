@@ -65,13 +65,17 @@ export const CarteEffet = memo(function CarteEffet({
   // et le téléphone ralentissait de plus en plus.
   const [proche, setProche] = useState(false);
   const [mediaError, setMediaError] = useState(false);
+  // Les images de carte utilisent la miniature redimensionnee quand elle existe (bien plus legere
+  // que l'original, qui reste reserve au plein ecran). Si elle echoue, on retombe sur l'original.
+  const [miniatureEchec, setMiniatureEchec] = useState(false);
   const [survolActif, setSurvolActif] = useState(false);
+  const srcImage = effet.poster && !miniatureEchec ? effet.poster : effet.preview;
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([entry]) => setProche(entry.isIntersecting), { rootMargin: "300px 0px" });
+    const obs = new IntersectionObserver(([entry]) => setProche(entry.isIntersecting), { rootMargin: "700px 0px" });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -144,12 +148,15 @@ export const CarteEffet = memo(function CarteEffet({
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={effet.preview}
+            src={srcImage}
             alt={effet.nom}
             loading="lazy"
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            onError={() => setMediaError(true)}
+            onError={() => {
+              if (srcImage !== effet.preview) setMiniatureEchec(true);
+              else setMediaError(true);
+            }}
           />
         )
       ) : (
