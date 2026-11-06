@@ -24,7 +24,7 @@ Updated 1 November 2026: the Generate panel is complete.
 - Viewer: only the displayed effect and its two neighbours have a real video; the others show their still image. Before, all videos of the catalogue started together when the viewer opened.
 
 - Viewer framing (phone and PC): the video (or image) is shown in full, with black bars if needed, instead of being cropped to fill the screen.
-- Viewer navigation (6 November 2026, branch `fix/higgsfield-points-cadrage`): the vertical column on the right (`RailVisionneur`) was removed. On PC, one small dot per effect sits at the bottom (the displayed effect has a longer white dot, each dot is clickable) and the left and right arrows return on the sides. On phones, no indicator is shown; swiping is enough. The `1 / N` counter at the top stays.
+- Viewer navigation (6 November 2026, branch `fix/higgsfield-points-cadrage`): the vertical column on the right (`RailVisionneur`) was removed. On PC, one small dot per effect sits at the bottom (the displayed effect has a longer white dot, each dot is clickable) and the up and down arrows stay on the right edge. On phones, no indicator is shown; swiping is enough. The `1 / N` counter at the top stays.
 
 ## Manual tests before merge
 

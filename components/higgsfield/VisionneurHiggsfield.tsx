@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
 function libelleType(effet: EffetHiggsfield) {
@@ -198,23 +198,25 @@ export function VisionneurHiggsfield({
         </button>
       </div>
 
-      {/* Flèches gauche et droite : sur PC seulement, le téléphone se manipule au doigt. */}
-      <button
-        onClick={() => scrollerVers(indexCourant - 1)}
-        disabled={indexCourant <= 0}
-        aria-label="Effet précédent"
-        className="pointer-events-auto absolute left-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30 md:flex"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <button
-        onClick={() => scrollerVers(indexCourant + 1)}
-        disabled={indexCourant >= effets.length - 1}
-        aria-label="Effet suivant"
-        className="pointer-events-auto absolute right-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30 md:flex"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
+      {/* Flèches haut et bas sur le bord droit : sur PC seulement, le téléphone se manipule au doigt. */}
+      <div className="pointer-events-none absolute right-2 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex">
+        <button
+          onClick={() => scrollerVers(indexCourant - 1)}
+          disabled={indexCourant <= 0}
+          aria-label="Effet précédent"
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+        >
+          <ChevronUp className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => scrollerVers(indexCourant + 1)}
+          disabled={indexCourant >= effets.length - 1}
+          aria-label="Effet suivant"
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+        >
+          <ChevronDown className="h-5 w-5" />
+        </button>
+      </div>
 
       <div
         ref={conteneurRef}
