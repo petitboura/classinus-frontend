@@ -223,7 +223,12 @@ function normaliser(s: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-export function CatalogueHiggsfield() {
+export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral" } = {}) {
+  // Sur une sous-section, seule la famille demandee est affichee (l'identifiant commence par son nom).
+  const effetsDuCatalogue = useMemo(
+    () => (famille ? EFFETS_HIGGSFIELD.filter((e) => e.id.startsWith(famille + "-")) : EFFETS_HIGGSFIELD),
+    [famille],
+  );
   const [typeFiltre, setTypeFiltre] = useState<string>("tous");
   const [styleFiltre, setStyleFiltre] = useState<string>("tous");
   const [filtresOuverts, setFiltresOuverts] = useState(false);
@@ -262,7 +267,7 @@ export function CatalogueHiggsfield() {
 
   const filtres = useMemo(() => {
     const q = normaliser(recherche.trim());
-    return EFFETS_HIGGSFIELD.filter((e) => {
+    return effetsDuCatalogue.filter((e) => {
       const okType = typeFiltre === "tous" || e.type === typeFiltre;
       const okStyle = styleFiltre === "tous" || e.style === styleFiltre;
       if (!okType || !okStyle) return false;
@@ -270,7 +275,7 @@ export function CatalogueHiggsfield() {
       const hay = normaliser([e.nom, e.description, e.badge || "", e.style, e.type, e.id].join(" "));
       return hay.includes(q);
     });
-  }, [typeFiltre, styleFiltre, recherche]);
+  }, [typeFiltre, styleFiltre, recherche, effetsDuCatalogue]);
 
   const ouvrirVisionneur = useCallback((i: number) => setIndexVisionneur(i), []);
 
@@ -322,7 +327,7 @@ export function CatalogueHiggsfield() {
               ) : null}
             </div>
             <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
-              {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${EFFETS_HIGGSFIELD.length} au total`}
+              {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${effetsDuCatalogue.length} au total`}
             </span>
           </div>
           <FiltreChips options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
