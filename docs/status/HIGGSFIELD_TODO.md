@@ -23,6 +23,8 @@ Updated 1 November 2026: the Generate panel is complete.
 - Catalogue: a card's video is now loaded only when the card is near the screen and is released when it moves away (before, every video already scrolled past stayed in memory). Cards no longer redraw when the full-screen viewer opens or closes, and the blur effects on every card were removed.
 - Viewer: only the displayed effect and its two neighbours have a real video; the others show their still image. Before, all videos of the catalogue started together when the viewer opened.
 
+- Viewer on phones: the video (or image) is now shown in full, with black bars if needed, instead of being cropped to fill the screen. On larger screens it still fills the screen.
+
 ## Manual tests before merge
 
 - [ ] Catalogue: search, filters, counter, reset, hover sound card, fallback when preview is unavailable.

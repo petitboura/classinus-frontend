@@ -62,7 +62,7 @@ function DiapoEffet({
             playsInline
             preload="auto"
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain md:object-cover"
           />
         ) : imageFixe ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -72,7 +72,7 @@ function DiapoEffet({
             loading="lazy"
             decoding="async"
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain md:object-cover"
           />
         ) : null
       ) : (

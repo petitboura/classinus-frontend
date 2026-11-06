@@ -20,6 +20,8 @@
 - Catalogue : la vidéo d'une carte n'est chargée que lorsque la carte est proche de l'écran, et elle est libérée quand la carte s'éloigne (avant, toutes les vidéos déjà passées restaient en mémoire). Les cartes ne se redessinent plus quand le plein écran s'ouvre ou se ferme, et les effets de flou sur chaque carte ont été retirés.
 - Visionneur : seuls l'effet affiché et ses deux voisins ont une vraie vidéo, les autres montrent leur image fixe. Avant, toutes les vidéos du catalogue démarraient ensemble à l'ouverture du plein écran.
 
+- Visionneur sur téléphone : la vidéo (ou l'image) s'affiche maintenant en entier, avec des bandes noires si besoin, au lieu d'être recadrée pour remplir l'écran. Sur les grands écrans, elle remplit toujours l'écran.
+
 ## Tests manuels avant merge
 - [ ] Catalogue : recherche, filtres, compteur, reset, carte hover son, fallback preview HS.
 - [ ] Visionneur : scroll snap, flèches, clavier, dots, son toggle, Générer ouvre bien le panneau.
