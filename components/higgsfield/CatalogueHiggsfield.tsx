@@ -6,6 +6,7 @@ import { Play, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
 import { useDefinirActionEnTete } from "@/lib/contexteEnTete";
+import { ecrireEtatFiltres, useEtatFiltresHiggsfield } from "@/lib/filtresHiggsfieldStore";
 
 // Les deux grands panneaux ne servent qu'au clic : on les sépare du code de la page,
 // puis on les charge en arrière-plan dès que le navigateur est au repos.
@@ -42,6 +43,31 @@ function FiltreChips({
         </button>
       ))}
     </div>
+  );
+}
+
+function BoutonFiltresEnTete() {
+  const { ouvert, actif, badge, basculer } = useEtatFiltresHiggsfield();
+  return (
+    <button
+      type="button"
+      onClick={basculer}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+        ouvert || actif
+          ? "border-dj-texte bg-dj-texte text-dj-fond"
+          : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+      }`}
+      aria-expanded={ouvert}
+      aria-label="Filtres Higgsfield"
+    >
+      {ouvert ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
+      Filtres
+      {badge > 0 && (
+        <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
+          {badge}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -206,32 +232,16 @@ export function CatalogueHiggsfield() {
   const actif = typeFiltre !== "tous" || styleFiltre !== "tous" || recherche.trim() !== "";
   const badgeFiltres = [typeFiltre, styleFiltre].filter((v) => v !== "tous").length + (recherche.trim() ? 1 : 0);
 
-  const boutonFiltres = useMemo(
-    () => (
-      <button
-        type="button"
-        onClick={() => setFiltresOuverts((v) => !v)}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-          filtresOuverts || actif
-            ? "border-dj-texte bg-dj-texte text-dj-fond"
-            : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-        }`}
-        aria-expanded={filtresOuverts}
-        aria-label="Filtres Higgsfield"
-      >
-        {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
-        Filtres
-        {badgeFiltres > 0 && (
-          <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
-            {badgeFiltres}
-          </span>
-        )}
-      </button>
-    ),
-    [filtresOuverts, actif, badgeFiltres],
-  );
+  const basculerFiltres = useCallback(() => setFiltresOuverts((v) => !v), []);
 
-  useDefinirActionEnTete(boutonFiltres);
+  // Le bouton Filtres de l'en-tete lit son etat dans un magasin partage, au lieu
+  // d'etre recree a chaque changement : il reste donc affiche en permanence.
+  useEffect(() => {
+    ecrireEtatFiltres({ ouvert: filtresOuverts, actif, badge: badgeFiltres, basculer: basculerFiltres });
+  }, [filtresOuverts, actif, badgeFiltres, basculerFiltres]);
+
+  const boutonFiltresEnTete = useMemo(() => <BoutonFiltresEnTete />, []);
+  useDefinirActionEnTete(boutonFiltresEnTete);
 
   // Chargement en arrière-plan des panneaux, sans gêner l'affichage de la page.
   useEffect(() => {
@@ -285,12 +295,11 @@ export function CatalogueHiggsfield() {
       </p>
       <GenerationsRecentesHiggsfield />
       {filtresOuverts && (
-        // Le panneau reste visible en haut de la zone qui défile, où que l'on soit dans la liste.
-        // Fond du thème à 92 % avec flou : la transparence Tailwind (bg-dj-surface/90) ne s'applique
-        // pas aux couleurs du thème, qui sont des variables CSS.
+        // Le panneau est collé tout en haut de la zone qui défile (sous l'en-tête), sans espace,
+        // avec un fond plein : rien du contenu qui défile ne passe au travers.
         <div
-          className="sticky top-2 z-20 flex max-h-[70dvh] animate-dj-fade-in-rapide flex-col gap-3 overflow-y-auto overscroll-contain rounded-xl border border-dj-bordure px-4 py-3 shadow-lg backdrop-blur-md"
-          style={{ backgroundColor: "color-mix(in srgb, var(--dj-surface) 92%, transparent)" }}
+          className="sticky top-0 z-20 flex max-h-[70dvh] animate-dj-fade-in-rapide flex-col gap-3 overflow-y-auto overscroll-contain rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg"
+          style={{ backgroundColor: "var(--dj-surface)" }}
         >
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex w-full max-w-md items-center">
