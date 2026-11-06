@@ -2,11 +2,9 @@
 
 import { GenerationsRecentesHiggsfield } from "./GenerationsRecentesHiggsfield";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Play, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { Play, Search, SlidersHorizontal, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
-import { useDefinirActionEnTete } from "@/lib/contexteEnTete";
-import { ecrireEtatFiltres, useEtatFiltresHiggsfield } from "@/lib/filtresHiggsfieldStore";
 
 // Les deux grands panneaux ne servent qu'au clic : on les sépare du code de la page,
 // puis on les charge en arrière-plan dès que le navigateur est au repos.
@@ -46,31 +44,6 @@ export function FiltreChips({
         </button>
       ))}
     </div>
-  );
-}
-
-function BoutonFiltresEnTete() {
-  const { ouvert, actif, badge, basculer } = useEtatFiltresHiggsfield();
-  return (
-    <button
-      type="button"
-      onClick={basculer}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-        ouvert || actif
-          ? "border-dj-texte bg-dj-texte text-dj-fond"
-          : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-      }`}
-      aria-expanded={ouvert}
-      aria-label="Filtres Higgsfield"
-    >
-      {ouvert ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
-      Filtres
-      {badge > 0 && (
-        <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
-          {badge}
-        </span>
-      )}
-    </button>
   );
 }
 
@@ -196,31 +169,11 @@ export const CarteEffet = memo(function CarteEffet({
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-12 sm:px-3.5 sm:pb-3.5">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-bold leading-tight text-white sm:text-[15px]">{effet.nom}</span>
-            {effet.badge ? (
-              <span className="hidden shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold leading-none text-black min-[480px]:inline-flex">
-                {effet.badge}
-              </span>
-            ) : null}
-          </div>
-          {effet.description ? (
-            <span className="line-clamp-2 text-xs leading-snug text-white/80 sm:text-[13px]">{effet.description}</span>
-          ) : null}
+          <span className="truncate text-sm font-bold leading-tight text-white sm:text-[15px]">{effet.nom}</span>
           <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">{effet.style}</span>
         </div>
       </div>
 
-      {!mediaError && (
-        <span
-          className={`pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full px-3 py-2 text-[11px] font-bold leading-none ${
-            effet.id.startsWith("marketing-") ? "border border-white/60 bg-transparent text-white" : "bg-white text-black shadow"
-          }`}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          Générer
-        </span>
-      )}
     </button>
   );
 });
@@ -245,17 +198,6 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
 
   const actif = typeFiltre !== "tous" || styleFiltre !== "tous" || recherche.trim() !== "";
   const badgeFiltres = [typeFiltre, styleFiltre].filter((v) => v !== "tous").length + (recherche.trim() ? 1 : 0);
-
-  const basculerFiltres = useCallback(() => setFiltresOuverts((v) => !v), []);
-
-  // Le bouton Filtres de l'en-tete lit son etat dans un magasin partage, au lieu
-  // d'etre recree a chaque changement : il reste donc affiche en permanence.
-  useEffect(() => {
-    ecrireEtatFiltres({ ouvert: filtresOuverts, actif, badge: badgeFiltres, basculer: basculerFiltres });
-  }, [filtresOuverts, actif, badgeFiltres, basculerFiltres]);
-
-  const boutonFiltresEnTete = useMemo(() => <BoutonFiltresEnTete />, []);
-  useDefinirActionEnTete(boutonFiltresEnTete);
 
   // Chargement en arrière-plan des panneaux, sans gêner l'affichage de la page.
   useEffect(() => {
@@ -308,15 +250,35 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
         génération directement avec tes images et vidéos.
       </p>
       <GenerationsRecentesHiggsfield />
-      {filtresOuverts && (
-        // Le panneau est collé tout en haut de la zone qui défile (sous l'en-tête), sans espace,
-        // avec un fond plein : rien du contenu qui défile ne passe au travers.
-        <div
-          className="sticky top-0 z-20 flex max-h-[70dvh] animate-dj-fade-in-rapide flex-col gap-3 overflow-y-auto overscroll-contain rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg"
-          style={{ backgroundColor: "var(--dj-surface)" }}
-        >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex w-full max-w-md items-center">
+      <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg" style={{ backgroundColor: "var(--dj-surface)" }}>
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setFiltresOuverts((v) => !v)}
+            aria-expanded={filtresOuverts}
+            aria-label="Filtres Higgsfield"
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              filtresOuverts || actif
+                ? "border-dj-texte bg-dj-texte text-dj-fond"
+                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+            }`}
+          >
+            {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
+            Filtres
+            {badgeFiltres > 0 && (
+              <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
+                {badgeFiltres}
+              </span>
+            )}
+          </button>
+          <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
+            {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${effetsDuCatalogue.length} au total`}
+          </span>
+        </div>
+
+        {filtresOuverts && (
+          <>
+            <div className="relative flex w-full items-center">
               <Search className="pointer-events-none absolute left-3 h-4 w-4 text-dj-texte-muet" />
               <input
                 value={recherche}
@@ -335,27 +297,25 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
                 </button>
               ) : null}
             </div>
-            <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
-              {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${effetsDuCatalogue.length} au total`}
-            </span>
-          </div>
-          <FiltreChips options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
-          <FiltreChips options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
-          {actif ? (
-            <button
-              type="button"
-              onClick={() => {
-                setRecherche("");
-                setTypeFiltre("tous");
-                setStyleFiltre("tous");
-              }}
-              className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              Réinitialiser les filtres
-            </button>
-          ) : null}
-        </div>
-      )}
+            <FiltreChips options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
+            <FiltreChips options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
+            {actif ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setRecherche("");
+                  setTypeFiltre("tous");
+                  setStyleFiltre("tous");
+                }}
+                className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              >
+                Réinitialiser les filtres
+              </button>
+            ) : null}
+          </>
+        )}
+      </div>
+
       {filtres.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <p className="text-sm font-semibold text-dj-texte">Aucun effet pour ces filtres</p>

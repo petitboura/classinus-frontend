@@ -180,12 +180,11 @@ export function SectionMarketingStudio() {
             </div>
             <FiltreChips
               options={[
-                { value: "tous", label: "Tous" },
                 { value: "image", label: "Image" },
                 { value: "video", label: "Vidéo" },
               ]}
               valeur={rendu}
-              onChange={setRendu}
+              onChange={(v) => setRendu(rendu === v ? "tous" : v)}
               compteurs={compteursRendu}
             />
             <FiltreChips
