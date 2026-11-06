@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ChevronDown, ChevronUp, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
@@ -31,6 +31,8 @@ function DiapoEffet({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [mediaError, setMediaError] = useState(false);
+  // Taille reelle du fichier : on ne l'agrandit jamais au-dela, il reste net.
+  const [taille, setTaille] = useState<{ w: number; h: number } | null>(null);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
   const vraieVideo = isVideo && proche;
 
@@ -60,8 +62,10 @@ function DiapoEffet({
             loop
             playsInline
             preload="auto"
+            onLoadedMetadata={(e) => setTaille({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-contain"
+            className="absolute inset-0 m-auto object-contain"
+            style={tailleMedia(taille)}
           />
         ) : imageFixe ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -70,8 +74,10 @@ function DiapoEffet({
             alt={effet.nom}
             loading="lazy"
             decoding="async"
+            onLoad={(e) => setTaille({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-contain"
+            className="absolute inset-0 m-auto object-contain"
+            style={tailleMedia(taille)}
           />
         ) : null
       ) : (
@@ -111,6 +117,12 @@ function DiapoEffet({
       </div>
     </section>
   );
+}
+
+// Taille affichee : la taille reelle du fichier, sans agrandissement, centree et reduite si l'ecran est plus petit.
+function tailleMedia(t: { w: number; h: number } | null): CSSProperties {
+  if (!t || !t.w || !t.h) return { width: "100%", height: "100%" };
+  return { width: t.w, height: t.h, maxWidth: "100%", maxHeight: "100%" };
 }
 
 export function VisionneurHiggsfield({
