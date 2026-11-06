@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Play, Search, X } from "lucide-react";
+import { Play, Search, SlidersHorizontal, X } from "lucide-react";
 import { PRESETS_MARKETING, TYPES_MARKETING, type MarketingPreset } from "@/lib/presetsMarketingStudio";
 import type { EffetHiggsfield, StyleEffet, TypeEffet } from "@/lib/effetsHiggsfield";
 
@@ -172,6 +172,7 @@ const CarteMarketing = memo(function CarteMarketing({
 export function SectionMarketingStudio() {
   const [categorie, setCategorie] = useState<string>("tous");
   const [rendu, setRendu] = useState<string>("tous");
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
   const [recherche, setRecherche] = useState("");
   const [toutCharger, setToutCharger] = useState(false);
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
@@ -242,6 +243,32 @@ export function SectionMarketingStudio() {
         className="sticky top-0 z-10 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg"
         style={{ backgroundColor: "var(--dj-surface)" }}
       >
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setFiltresOuverts((v) => !v)}
+            aria-expanded={filtresOuverts}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              filtresOuverts || categorie !== "tous" || rendu !== "tous" || recherche.trim() !== ""
+                ? "border-dj-texte bg-dj-texte text-dj-fond"
+                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+            }`}
+          >
+            {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
+            Filtres
+            {([categorie !== "tous", rendu !== "tous", recherche.trim() !== ""].filter(Boolean).length) > 0 && (
+              <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
+                ([categorie !== "tous", rendu !== "tous", recherche.trim() !== ""].filter(Boolean).length)
+              </span>
+            )}
+          </button>
+          <span className="text-xs font-semibold text-dj-texte-muet">
+            {`${filtres.length} preset${filtres.length !== 1 ? "s" : ""} · ${PRESETS_MARKETING.length} au total`}
+          </span>
+        </div>
+
+        {filtresOuverts && (
+          <>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex w-full max-w-md items-center">
             <Search className="pointer-events-none absolute left-3 h-4 w-4 text-dj-texte-muet" />
@@ -262,9 +289,6 @@ export function SectionMarketingStudio() {
               </button>
             ) : null}
           </div>
-          <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
-            {`${filtres.length} preset${filtres.length !== 1 ? "s" : ""} · ${PRESETS_MARKETING.length} au total`}
-          </span>
         </div>
 
         <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
@@ -316,6 +340,8 @@ export function SectionMarketingStudio() {
             </button>
           ))}
         </div>
+          </>
+        )}
       </div>
 
       {avisGeneration ? (
