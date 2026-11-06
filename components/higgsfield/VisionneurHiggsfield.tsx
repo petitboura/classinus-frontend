@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
-import { RailVisionneur } from "@/components/higgsfield/RailVisionneur";
 
 function libelleType(effet: EffetHiggsfield) {
   return effet.type === "video-to-video"
@@ -18,68 +17,70 @@ function libelleType(effet: EffetHiggsfield) {
 function DiapoEffet({
   effet,
   sonActif,
+  courant,
+  proche,
   onGenerer,
 }: {
   effet: EffetHiggsfield;
   sonActif: boolean;
+  // courant : c'est l'effet affiché à l'écran, sa vidéo joue.
+  courant: boolean;
+  // proche : c'est l'effet affiché ou son voisin direct, seuls ces trois-là ont une vraie vidéo.
+  proche: boolean;
   onGenerer: (effet: EffetHiggsfield) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [mediaError, setMediaError] = useState(false);
   const isVideo = effet.previewType === "video" || effet.preview.endsWith(".mp4") || effet.preview.endsWith(".webm");
+  const vraieVideo = isVideo && proche;
 
+  // Le son, la lecture et la pause suivent l'effet courant ; la vidéo n'existe que pour les
+  // trois effets proches, donc ce réglage est refait quand elle apparaît.
   useEffect(() => {
-    if (!isVideo || mediaError) return;
     const v = videoRef.current;
     if (!v) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) v.play().catch(() => {});
-        else v.pause();
-      },
-      { threshold: 0.6 }
-    );
-    obs.observe(v);
-    return () => obs.disconnect();
-  }, [isVideo, mediaError]);
+    v.muted = !sonActif;
+    if (courant) v.play().catch(() => {});
+    else v.pause();
+  }, [courant, sonActif, vraieVideo, mediaError]);
 
-  useEffect(() => {
-    const v = videoRef.current;
-    if (v) v.muted = !sonActif;
-  }, [sonActif]);
+  // Les autres effets n'affichent que leur image fixe, légère : ouvrir le plein écran ne lance
+  // plus toutes les vidéos du catalogue en même temps.
+  const imageFixe = isVideo ? effet.poster : effet.preview;
 
   return (
     <section className="relative h-full min-h-[100dvh] w-full shrink-0 snap-start snap-always overflow-hidden bg-black">
       {!mediaError ? (
-        isVideo ? (
+        vraieVideo ? (
           <video
             ref={videoRef}
             src={effet.preview}
             poster={effet.poster}
             muted={!sonActif}
             loop
-            autoPlay
             playsInline
-            preload="metadata"
+            preload="auto"
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain"
           />
-        ) : (
+        ) : imageFixe ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={effet.preview}
+            src={imageFixe}
             alt={effet.nom}
+            loading="lazy"
+            decoding="async"
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain"
           />
-        )
+        ) : null
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-black p-6">
           <span className="text-sm font-semibold text-white/70">Preview bientôt</span>
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent pl-4 pr-14 pb-[calc(1.25rem+var(--safe-bottom,0px))] pt-24 sm:px-5 sm:pb-[calc(1.5rem+var(--safe-bottom,0px))]">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-4 pb-[calc(1.25rem+var(--safe-bottom,0px))] pt-24 sm:px-5 sm:pb-[calc(1.5rem+var(--safe-bottom,0px))]">
         <div className="pointer-events-auto flex w-full max-w-xl flex-col items-start gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-black">
@@ -197,15 +198,54 @@ export function VisionneurHiggsfield({
         </button>
       </div>
 
-      <RailVisionneur total={effets.length} index={indexCourant} onAller={scrollerVers} />
+      {/* Flèches haut et bas sur le bord droit : sur PC seulement, le téléphone se manipule au doigt. */}
+      <div className="pointer-events-none absolute right-2 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex">
+        <button
+          onClick={() => scrollerVers(indexCourant - 1)}
+          disabled={indexCourant <= 0}
+          aria-label="Effet précédent"
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+        >
+          <ChevronUp className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => scrollerVers(indexCourant + 1)}
+          disabled={indexCourant >= effets.length - 1}
+          aria-label="Effet suivant"
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+        >
+          <ChevronDown className="h-5 w-5" />
+        </button>
+      </div>
 
       <div
         ref={conteneurRef}
         onScroll={onScroll}
         className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
       >
-        {effets.map((effet) => (
-          <DiapoEffet key={effet.id} effet={effet} sonActif={sonActif} onGenerer={onGenerer} />
+        {effets.map((effet, i) => (
+          <DiapoEffet
+            key={effet.id}
+            effet={effet}
+            sonActif={sonActif}
+            courant={i === indexCourant}
+            proche={Math.abs(i - indexCourant) <= 1}
+            onGenerer={onGenerer}
+          />
+        ))}
+      </div>
+
+      {/* Petits points en bas : sur PC seulement. L'effet affiché a un point allongé et blanc. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden items-center justify-center gap-1.5 pb-[calc(0.75rem+var(--safe-bottom,0px))] pt-6 md:flex">
+        {effets.map((effet, i) => (
+          <button
+            key={effet.id}
+            onClick={() => scrollerVers(i)}
+            aria-label={`Aller à l'effet ${i + 1}`}
+            className={`pointer-events-auto h-1.5 rounded-full transition-all duration-300 ${
+              i === indexCourant ? "w-6 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
+            }`}
+          />
         ))}
       </div>
     </div>
