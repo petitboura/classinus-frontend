@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
-import { RailVisionneur } from "@/components/higgsfield/RailVisionneur";
 
 function libelleType(effet: EffetHiggsfield) {
   return effet.type === "video-to-video"
@@ -62,7 +61,7 @@ function DiapoEffet({
             playsInline
             preload="auto"
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-contain md:object-cover"
+            className="absolute inset-0 h-full w-full object-contain"
           />
         ) : imageFixe ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -72,7 +71,7 @@ function DiapoEffet({
             loading="lazy"
             decoding="async"
             onError={() => setMediaError(true)}
-            className="absolute inset-0 h-full w-full object-contain md:object-cover"
+            className="absolute inset-0 h-full w-full object-contain"
           />
         ) : null
       ) : (
@@ -81,7 +80,7 @@ function DiapoEffet({
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent pl-4 pr-14 pb-[calc(1.25rem+var(--safe-bottom,0px))] pt-24 sm:px-5 sm:pb-[calc(1.5rem+var(--safe-bottom,0px))]">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-4 pb-[calc(1.25rem+var(--safe-bottom,0px))] pt-24 sm:px-5 sm:pb-[calc(1.5rem+var(--safe-bottom,0px))]">
         <div className="pointer-events-auto flex w-full max-w-xl flex-col items-start gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-black">
@@ -199,7 +198,23 @@ export function VisionneurHiggsfield({
         </button>
       </div>
 
-      <RailVisionneur total={effets.length} index={indexCourant} onAller={scrollerVers} />
+      {/* Flèches gauche et droite : sur PC seulement, le téléphone se manipule au doigt. */}
+      <button
+        onClick={() => scrollerVers(indexCourant - 1)}
+        disabled={indexCourant <= 0}
+        aria-label="Effet précédent"
+        className="pointer-events-auto absolute left-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30 md:flex"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        onClick={() => scrollerVers(indexCourant + 1)}
+        disabled={indexCourant >= effets.length - 1}
+        aria-label="Effet suivant"
+        className="pointer-events-auto absolute right-2 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-all duration-200 hover:bg-black/70 active:scale-90 disabled:pointer-events-none disabled:opacity-30 md:flex"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
 
       <div
         ref={conteneurRef}
@@ -214,6 +229,20 @@ export function VisionneurHiggsfield({
             courant={i === indexCourant}
             proche={Math.abs(i - indexCourant) <= 1}
             onGenerer={onGenerer}
+          />
+        ))}
+      </div>
+
+      {/* Petits points en bas : sur PC seulement. L'effet affiché a un point allongé et blanc. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden items-center justify-center gap-1.5 pb-[calc(0.75rem+var(--safe-bottom,0px))] pt-6 md:flex">
+        {effets.map((effet, i) => (
+          <button
+            key={effet.id}
+            onClick={() => scrollerVers(i)}
+            aria-label={`Aller à l'effet ${i + 1}`}
+            className={`pointer-events-auto h-1.5 rounded-full transition-all duration-300 ${
+              i === indexCourant ? "w-6 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
+            }`}
           />
         ))}
       </div>

@@ -20,7 +20,8 @@
 - Catalogue : la vidéo d'une carte n'est chargée que lorsque la carte est proche de l'écran, et elle est libérée quand la carte s'éloigne (avant, toutes les vidéos déjà passées restaient en mémoire). Les cartes ne se redessinent plus quand le plein écran s'ouvre ou se ferme, et les effets de flou sur chaque carte ont été retirés.
 - Visionneur : seuls l'effet affiché et ses deux voisins ont une vraie vidéo, les autres montrent leur image fixe. Avant, toutes les vidéos du catalogue démarraient ensemble à l'ouverture du plein écran.
 
-- Visionneur sur téléphone : la vidéo (ou l'image) s'affiche maintenant en entier, avec des bandes noires si besoin, au lieu d'être recadrée pour remplir l'écran. Sur les grands écrans, elle remplit toujours l'écran.
+- Cadrage du visionneur (téléphone et PC) : la vidéo (ou l'image) s'affiche en entier, avec des bandes noires si besoin, au lieu d'être recadrée pour remplir l'écran.
+- Navigation du visionneur (6 novembre 2026, branche `fix/higgsfield-points-cadrage`) : la colonne verticale à droite (`RailVisionneur`) a été retirée. Sur PC, un petit point par effet est en bas (l'effet affiché a un point allongé et blanc, chaque point est cliquable) et les flèches gauche et droite reviennent sur les côtés. Sur téléphone, aucun indicateur n'est affiché, le glissement du doigt suffit. Le compteur `1 / N` en haut reste.
 
 ## Tests manuels avant merge
 - [ ] Catalogue : recherche, filtres, compteur, reset, carte hover son, fallback preview HS.

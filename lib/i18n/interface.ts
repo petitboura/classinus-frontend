@@ -2681,7 +2681,6 @@ const EN: Record<string, string> = {
   "Retirer la vidéo": "Remove the video",
   "Vérifier à nouveau": "Check again",
   "Vidéo source *": "Source video *",
-  "Position dans les effets": "Position among the effects",
   "Effet précédent": "Previous effect",
   "Effet suivant": "Next effect",
   "Effets Higgsfield en plein écran": "Higgsfield effects in full screen",
