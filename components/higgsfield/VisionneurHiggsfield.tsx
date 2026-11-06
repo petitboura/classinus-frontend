@@ -96,6 +96,17 @@ function DiapoEffet({
         </div>
       )}
 
+      {vraieVideo && courant && !enLecture && !mediaError ? (
+        <button
+          type="button"
+          onClick={() => videoRef.current?.play().catch(() => setEnLecture(false))}
+          aria-label="Lire la vidéo"
+          className="absolute left-1/2 top-1/2 z-10 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur transition-transform duration-200 active:scale-90"
+        >
+          <Play className="h-7 w-7 translate-x-0.5" />
+        </button>
+      ) : null}
+
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-4 pb-[calc(1.25rem+var(--safe-bottom,0px))] pt-24 sm:px-5 sm:pb-[calc(1.5rem+var(--safe-bottom,0px))]">
         <div className="pointer-events-auto flex w-full max-w-xl flex-col items-start gap-2.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -239,17 +250,6 @@ export function VisionneurHiggsfield({
           {sonActif ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
         </button>
       </div>
-
-      {vraieVideo && courant && !enLecture && !mediaError ? (
-        <button
-          type="button"
-          onClick={() => videoRef.current?.play().catch(() => setEnLecture(false))}
-          aria-label="Lire la vidéo"
-          className="absolute left-1/2 top-1/2 z-10 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur transition-transform duration-200 active:scale-90"
-        >
-          <Play className="h-7 w-7 translate-x-0.5" />
-        </button>
-      ) : null}
 
       {/* Flèches haut et bas sur le bord droit : sur PC seulement, le téléphone se manipule au doigt. */}
       <div className="pointer-events-none absolute right-2 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex">
