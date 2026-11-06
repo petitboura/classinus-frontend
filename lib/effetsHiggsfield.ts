@@ -15,6 +15,7 @@ export type EffetHiggsfield = {
   poster?: string;
   promptChat: string;
   badge?: string;
+  libelleType?: string;
 };
 
 const G = "https://cdn.higgsfield.ai/genjutsu/preview/genjutsu-h264-600-v1/";

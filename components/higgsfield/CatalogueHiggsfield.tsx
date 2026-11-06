@@ -15,7 +15,7 @@ const chargerGenerer = () => import("@/components/higgsfield/GenererHiggsfield")
 const VisionneurHiggsfield = dynamic(chargerVisionneur, { ssr: false });
 const PanneauGenererHiggsfield = dynamic(chargerGenerer, { ssr: false });
 
-function FiltreChips({
+export function FiltreChips({
   label,
   options,
   valeur,
@@ -72,7 +72,7 @@ function BoutonFiltresEnTete() {
 }
 
 // memo : ouvrir ou fermer le plein écran ne redessine plus les cartes du catalogue.
-const CarteEffet = memo(function CarteEffet({
+export const CarteEffet = memo(function CarteEffet({
   effet,
   index,
   onOuvrir,
@@ -188,7 +188,7 @@ const CarteEffet = memo(function CarteEffet({
       )}
 
       <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white">
-        {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
+        {effet.libelleType ?? (effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR")}
       </span>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-12 sm:px-3.5 sm:pb-3.5">
