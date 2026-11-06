@@ -78,7 +78,7 @@ export function useSuiviGenerationHiggsfield() {
       setProgression((p) => Math.min(PROGRESSION_MAX_AVANT_FIN, p + Math.max(1, 6 - verificationsRef.current * 0.4)));
 
       try {
-        const statut = await statutHiggsfield(id, titreRef.current);
+        const statut = await statutHiggsfield(id);
         if (jeton !== jetonRef.current) return;
         if (statut.etat === "terminee" && statut.url) {
           setResultatUrl(statut.url);

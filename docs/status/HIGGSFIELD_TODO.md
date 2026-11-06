@@ -31,6 +31,13 @@ Updated 1 November 2026: the Generate panel is complete.
 - The 47 video-to-video effects (35 Genjutsu and 12 Viral) do not send the effect itself to Higgsfield: the result comes from the user's own video and images. So the description field is now folded under "Add a detail (optional)" instead of being a large field, and the viewer shows a note under the preview: "The preview is an example. Your result depends on your video and your images."
 - The 3 image effects (Soul) are unchanged: the description stays required. Prefilling it with a style prompt is a separate step, not done yet.
 
+### Server-side generation (6 November 2026)
+
+- Launching, tracking and saving a generation now happen on the server: you can close the app and the result still lands in your library, with a notification when it is ready. See `docs/status/HIGGSFIELD_TODO.md` in `classinus-backend` for the table, the loop and the endpoints.
+- `lib/higgsfieldApi.ts`: `statutHiggsfield` only reads the server state (the `titre` parameter was removed); new `listerGenerationsHiggsfield`.
+- New `components/higgsfield/GenerationsRecentesHiggsfield.tsx`: "My recent generations" block at the top of the catalogue (running, done, failed; a "View" link on finished ones). It refreshes while a generation is running and stays hidden when the list is empty.
+- Not done yet: the "built before your eyes" visual effect during generation.
+
 ## Manual tests before merge
 
 - [ ] Catalogue: search, filters, counter, reset, hover sound card, fallback when preview is unavailable.

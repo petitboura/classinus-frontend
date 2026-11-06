@@ -27,9 +27,25 @@ export async function lancerGenjutsuHiggsfield(payload: Record<string, unknown>)
   return (await appelerApi("/api/higgsfield/genjutsu", { method: "POST", body: JSON.stringify(payload) })) as { request_id: string; titre: string };
 }
 
-export async function statutHiggsfield(request_id: string, titre = ""): Promise<HiggsfieldStatut> {
-  const q = titre ? `?titre=${encodeURIComponent(titre)}` : "";
-  return (await appelerApi(`/api/higgsfield/statut/${encodeURIComponent(request_id)}${q}`)) as HiggsfieldStatut;
+// Le suivi et l'enregistrement en bibliothèque sont faits par le serveur : cet appel ne fait que lire l'état.
+export async function statutHiggsfield(request_id: string): Promise<HiggsfieldStatut> {
+  return (await appelerApi(`/api/higgsfield/statut/${encodeURIComponent(request_id)}`)) as HiggsfieldStatut;
+}
+
+export type GenerationHiggsfield = {
+  request_id: string;
+  titre: string;
+  genre: "video" | "image";
+  etat: HiggsfieldStatut["etat"];
+  url: string | null;
+  erreur: string | null;
+  cree_a: string;
+  termine_a: string | null;
+};
+
+export async function listerGenerationsHiggsfield(limite = 8): Promise<GenerationHiggsfield[]> {
+  const r = (await appelerApi(`/api/higgsfield/generations?limite=${limite}`)) as { generations: GenerationHiggsfield[] };
+  return r.generations || [];
 }
 
 export async function annulerHiggsfield(request_id: string) {

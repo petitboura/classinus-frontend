@@ -1,5 +1,6 @@
 "use client";
 
+import { GenerationsRecentesHiggsfield } from "./GenerationsRecentesHiggsfield";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Play, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -282,6 +283,7 @@ export function CatalogueHiggsfield() {
         Explore les effets Higgsfield, filtre par type et style, ouvre en plein écran pour comparer, puis lance la
         génération directement avec tes images et vidéos.
       </p>
+      <GenerationsRecentesHiggsfield />
       {filtresOuverts && (
         // Le panneau reste visible en haut de la zone qui défile, où que l'on soit dans la liste.
         // Fond du thème à 92 % avec flou : la transparence Tailwind (bg-dj-surface/90) ne s'applique
