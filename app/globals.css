@@ -1039,3 +1039,72 @@ html[data-ouverture-vue="1"] #clovis-splash {
   rx: 12px;
   ry: 12px;
 }
+
+/* Carte de génération Higgsfield (06/11/2026, components/higgsfield/CarteGenerationHiggsfield.tsx).
+   Animations légères pour le téléphone : aucune vidéo en plus, seulement des transformations et des
+   filtres. Le bloc prefers-reduced-motion en haut de ce fichier les ramène à leur état final. */
+@keyframes hf-flou {
+  from {
+    filter: blur(26px) saturate(1.1);
+    transform: scale(1.14);
+  }
+  to {
+    filter: blur(9px) saturate(1.05);
+    transform: scale(1.06);
+  }
+}
+.hf-flou {
+  animation: hf-flou 120s ease-out forwards;
+}
+@keyframes hf-derive {
+  from {
+    transform: translate3d(-2%, -1.5%, 0) scale(1.08);
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) scale(1.14);
+  }
+}
+.hf-derive {
+  animation: hf-derive 9s ease-in-out infinite alternate;
+}
+@keyframes hf-reflet {
+  0% {
+    transform: translateX(0) skewX(-18deg);
+  }
+  45%,
+  100% {
+    transform: translateX(400%) skewX(-18deg);
+  }
+}
+.hf-reflet {
+  animation: hf-reflet 4.2s ease-in-out infinite;
+}
+@keyframes hf-dissipe {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    filter: blur(16px);
+    transform: scale(1.05);
+  }
+}
+.hf-dissipe {
+  animation: hf-dissipe 0.7s ease-out forwards;
+}
+@keyframes hf-point {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+.hf-point {
+  animation: hf-point 1.4s ease-in-out infinite;
+}

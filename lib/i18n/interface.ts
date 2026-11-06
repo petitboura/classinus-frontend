@@ -2711,6 +2711,10 @@ const EN: Record<string, string> = {
   "Higgsfield n'est pas disponible pour le moment. Réessaie plus tard.": "Higgsfield is not available right now. Try again later.",
   "Retirer l'image": "Remove the image",
   "Mon effet Higgsfield": "My Higgsfield effect",
+  "Envoi de tes fichiers": "Sending your files",
+  "En attente de son tour": "Waiting for its turn",
+  "Création en cours": "Creation in progress",
+  "Tu peux fermer, on te prévient": "You can close this, we'll notify you",
 };
 
 function normaliserCasse(texte: string): string {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Clock, Download, ExternalLink, ImagePlus, Loader2, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
+import { CarteGenerationHiggsfield, type EtapeCarteGeneration } from "@/components/higgsfield/CarteGenerationHiggsfield";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
@@ -59,7 +60,10 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   const inputImageRef = useRef<HTMLInputElement>(null);
 
   const suivi = useSuiviGenerationHiggsfield();
-  const { etat, requestId, resultatUrl, erreur, progression, delaiDepasse } = suivi;
+  const { etat, resultatUrl, erreur, etape, delaiDepasse } = suivi;
+  // Heure à laquelle la personne a touché Générer (compteur de temps réel) et fin de la révélation de la carte.
+  const [debutMs, setDebutMs] = useState(0);
+  const [reveleCarte, setReveleCarte] = useState(false);
 
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onClose);
@@ -103,6 +107,20 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   }
 
   const enCours = etat === "upload" || etat === "lancement" || etat === "en_cours";
+  // La carte remplace le formulaire pendant toute la génération, puis jusqu'à la révélation du résultat.
+  const carteVisible = enCours || (etat === "terminee" && !!resultatUrl);
+  const etapeCarte: EtapeCarteGeneration = etat === "upload" || etat === "lancement" ? "envoi" : etape;
+  const formatCarte = famille === "video" ? formatVideo : famille === "image" ? formatImage : "";
+  const sourceCarte = useMemo(() => {
+    if (famille === "genjutsu") return fichiersVideo[0] ? { url: fichiersVideo[0].url, type: "video" as const } : null;
+    return fichiersImage[0] ? { url: fichiersImage[0].url, type: "image" as const } : null;
+  }, [famille, fichiersVideo, fichiersImage]);
+  const apercuEffetCarte = effet.poster || (effet.previewType === "video" ? null : effet.preview) || null;
+
+  function recommencer() {
+    setReveleCarte(false);
+    suivi.reinitialiser();
+  }
 
   const peutLancer =
     titre.trim().length >= 1 &&
@@ -128,11 +146,13 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
 
   async function handleGenerer() {
     suivi.effacerMessages();
+    setReveleCarte(false);
     if (messageErreurLance || !peutLancer) {
       suivi.definirErreur(messageErreurLance || "Vérifie les champs.");
       return;
     }
 
+    setDebutMs(Date.now());
     try {
       suivi.definirEtape("upload", 8);
 
@@ -239,6 +259,26 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
         </div>
 
         <div className="flex flex-col gap-4 overflow-y-auto overscroll-contain p-4 pb-6">
+          {carteVisible && (
+            <CarteGenerationHiggsfield
+              key={debutMs}
+              format={formatCarte}
+              source={sourceCarte}
+              apercuEffet={apercuEffetCarte}
+              etape={etapeCarte}
+              debutMs={debutMs}
+              delaiDepasse={delaiDepasse}
+              resultatUrl={resultatUrl}
+              onRevele={() => setReveleCarte(true)}
+            />
+          )}
+
+          {/* Le formulaire se range en douceur pendant la génération et revient en cas d'échec ou d'annulation. */}
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-in-out ${carteVisible ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}
+            aria-hidden={carteVisible}
+          >
+          <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-dj-texte">
               Titre <span className="font-normal text-dj-texte-muet">(requis, max 120)</span>
@@ -543,42 +583,29 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             </div>
           )}
 
-          {enCours && (
-            <div className="flex animate-dj-fade-in-rapide flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface p-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-dj-texte">
-                {delaiDepasse ? <Clock className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
-                {delaiDepasse
-                  ? "La génération prend plus de temps que prévu."
-                  : etat === "upload"
-                    ? "Envoi des fichiers…"
-                    : etat === "lancement"
-                      ? "Lancement Higgsfield…"
-                      : `Génération en cours… ${Math.round(progression)}%`}
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-dj-bordure">
-                <div className="h-full rounded-full bg-dj-texte transition-all duration-700" style={{ width: `${progression}%` }} />
-              </div>
-              {requestId && <p className="truncate text-[11px] text-dj-texte-muet">ID: {requestId}</p>}
-              <div className="flex flex-wrap gap-2">
-                {delaiDepasse && (
-                  <button
-                    type="button"
-                    onClick={suivi.reprendreSuivi}
-                    className="rounded-full bg-dj-texte px-3 py-1.5 text-xs font-semibold text-dj-fond transition-colors hover:bg-dj-texte/90"
-                  >
-                    Vérifier à nouveau
-                  </button>
-                )}
-                {etat === "en_cours" && (
-                  <button
-                    type="button"
-                    onClick={suivi.annuler}
-                    className="rounded-full border border-dj-bordure bg-dj-fond px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                  >
-                    Annuler
-                  </button>
-                )}
-              </div>
+          </div>
+          </div>
+
+          {carteVisible && (
+            <div className="flex flex-wrap justify-center gap-2">
+              {delaiDepasse && (
+                <button
+                  type="button"
+                  onClick={suivi.reprendreSuivi}
+                  className="rounded-full bg-dj-texte px-3 py-1.5 text-xs font-semibold text-dj-fond transition-colors hover:bg-dj-texte/90"
+                >
+                  Vérifier à nouveau
+                </button>
+              )}
+              {etat === "en_cours" && (
+                <button
+                  type="button"
+                  onClick={suivi.annuler}
+                  className="rounded-full border border-dj-bordure bg-dj-fond px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                >
+                  Annuler
+                </button>
+              )}
             </div>
           )}
 
@@ -589,17 +616,11 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             </div>
           )}
 
-          {etat === "terminee" && resultatUrl && (
+          {etat === "terminee" && resultatUrl && reveleCarte && (
             <div className="flex animate-dj-fade-in-rapide flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
               <div className="flex items-center gap-2 text-sm font-bold text-emerald-800">
                 <CheckCircle2 className="h-4 w-4" /> Génération terminée !
               </div>
-              {resultatUrl.includes(".mp4") ? (
-                <video src={resultatUrl} controls playsInline className="w-full rounded-xl bg-black" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={resultatUrl} alt="Résultat" className="w-full rounded-xl" />
-              )}
               <div className="flex flex-wrap gap-2">
                 <a href={resultatUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800">
                   <ExternalLink className="h-3.5 w-3.5" /> Ouvrir
@@ -611,7 +632,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                   <Clock className="h-3 w-3" /> Enregistré dans ta bibliothèque
                 </span>
               </div>
-              <button type="button" onClick={suivi.reinitialiser} className="self-start text-xs font-semibold text-emerald-700 underline">
+              <button type="button" onClick={recommencer} className="self-start text-xs font-semibold text-emerald-700 underline">
                 Générer à nouveau
               </button>
             </div>
