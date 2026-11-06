@@ -201,13 +201,19 @@ export const CarteEffet = memo(function CarteEffet({
               </span>
             ) : null}
           </div>
-          <span className="line-clamp-2 text-xs leading-snug text-white/80 sm:text-[13px]">{effet.description}</span>
+          {effet.description ? (
+            <span className="line-clamp-2 text-xs leading-snug text-white/80 sm:text-[13px]">{effet.description}</span>
+          ) : null}
           <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">{effet.style}</span>
         </div>
       </div>
 
       {!mediaError && (
-        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white px-3 py-2 text-[11px] font-bold leading-none text-black shadow">
+        <span
+          className={`pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full px-3 py-2 text-[11px] font-bold leading-none ${
+            effet.id.startsWith("marketing-") ? "border border-white/60 bg-transparent text-white" : "bg-white text-black shadow"
+          }`}
+        >
           <Sparkles className="h-3.5 w-3.5" />
           Générer
         </span>

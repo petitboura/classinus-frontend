@@ -32,7 +32,7 @@ function presetVersEffet(p: MarketingPreset): EffetHiggsfield {
   return {
     id: "marketing-" + p.id,
     nom: p.nom,
-    description: "Preset Marketing Studio · " + categorie,
+    description: "",
     type,
     style: categorie as StyleEffet,
     modele: "Marketing Studio",
@@ -40,7 +40,6 @@ function presetVersEffet(p: MarketingPreset): EffetHiggsfield {
     previewType: p.previewType,
     poster: p.poster,
     promptChat: "",
-    badge: "Marketing",
     libelleType: estVideo ? "VIDÉO" : "IMAGE",
   };
 }
@@ -107,36 +106,35 @@ export function SectionMarketingStudio() {
         Explore les presets Marketing Studio, filtre par rendu et par catégorie, ouvre en plein écran pour comparer.
       </p>
 
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={() => setFiltresOuverts((v) => !v)}
-          aria-expanded={filtresOuverts}
-          aria-label="Filtres Marketing Studio"
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-            filtresOuverts || actif
-              ? "border-dj-texte bg-dj-texte text-dj-fond"
-              : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-          }`}
-        >
-          {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
-          Filtres
-          {nbFiltresActifs > 0 && (
-            <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
-              {nbFiltresActifs}
-            </span>
-          )}
-        </button>
-      </div>
+      <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg" style={{ backgroundColor: "var(--dj-surface)" }}>
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setFiltresOuverts((v) => !v)}
+            aria-expanded={filtresOuverts}
+            aria-label="Filtres Marketing Studio"
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              filtresOuverts || actif
+                ? "border-dj-texte bg-dj-texte text-dj-fond"
+                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+            }`}
+          >
+            {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
+            Filtres
+            {nbFiltresActifs > 0 && (
+              <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
+                {nbFiltresActifs}
+              </span>
+            )}
+          </button>
+          <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
+            {`${effets.length} preset${effets.length !== 1 ? "s" : ""} · ${PRESETS_MARKETING.length} au total`}
+          </span>
+        </div>
 
-      {filtresOuverts && (
-        // Le panneau est colle tout en haut de la zone qui defile, sans espace, fond plein.
-        <div
-          className="sticky top-0 z-20 flex max-h-[70dvh] animate-dj-fade-in-rapide flex-col gap-3 overflow-y-auto overscroll-contain rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg"
-          style={{ backgroundColor: "var(--dj-surface)" }}
-        >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex w-full max-w-md items-center">
+        {filtresOuverts && (
+          <>
+            <div className="relative flex w-full items-center">
               <Search className="pointer-events-none absolute left-3 h-4 w-4 text-dj-texte-muet" />
               <input
                 value={recherche}
@@ -155,35 +153,32 @@ export function SectionMarketingStudio() {
                 </button>
               ) : null}
             </div>
-            <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
-              {`${effets.length} preset${effets.length !== 1 ? "s" : ""} · ${PRESETS_MARKETING.length} au total`}
-            </span>
-          </div>
-          <FiltreChips
-            options={[
-              { value: "tous", label: "Tous" },
-              { value: "image", label: "Image" },
-              { value: "video", label: "Vidéo" },
-            ]}
-            valeur={rendu}
-            onChange={setRendu}
-          />
-          <FiltreChips
-            options={[{ value: "tous", label: "Tous" }, ...TYPES_MARKETING.map((t) => ({ value: t.value, label: t.label }))]}
-            valeur={categorie}
-            onChange={setCategorie}
-          />
-          {actif ? (
-            <button
-              type="button"
-              onClick={reinitialiser}
-              className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              Réinitialiser les filtres
-            </button>
-          ) : null}
-        </div>
-      )}
+            <FiltreChips
+              options={[
+                { value: "tous", label: "Tous" },
+                { value: "image", label: "Image" },
+                { value: "video", label: "Vidéo" },
+              ]}
+              valeur={rendu}
+              onChange={setRendu}
+            />
+            <FiltreChips
+              options={[{ value: "tous", label: "Tous" }, ...TYPES_MARKETING.map((t) => ({ value: t.value, label: t.label }))]}
+              valeur={categorie}
+              onChange={setCategorie}
+            />
+            {actif ? (
+              <button
+                type="button"
+                onClick={reinitialiser}
+                className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              >
+                Réinitialiser les filtres
+              </button>
+            ) : null}
+          </>
+        )}
+      </div>
 
       {avisGeneration ? (
         <p className="rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-sm leading-relaxed text-dj-texte-muet">
