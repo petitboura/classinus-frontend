@@ -241,16 +241,25 @@ export function VisionneurHiggsfield({
 
       {/* Petits points en bas : sur PC seulement. L'effet affiché a un point allongé et blanc. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden items-center justify-center gap-1.5 pb-[calc(0.75rem+var(--safe-bottom,0px))] pt-6 md:flex">
-        {effets.map((effet, i) => (
-          <button
-            key={effet.id}
-            onClick={() => scrollerVers(i)}
-            aria-label={`Aller à l'effet ${i + 1}`}
-            className={`pointer-events-auto h-1.5 rounded-full transition-all duration-300 ${
-              i === indexCourant ? "w-6 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
-            }`}
-          />
-        ))}
+        {/* Au-dela de 60 effets, seule une fenetre de points autour de l'effet affiche est visible : elle glisse avec la navigation. */}
+        {(() => {
+          const nb = effets.length;
+          const debut = nb > 60 ? Math.max(0, Math.min(indexCourant - 12, nb - 25)) : 0;
+          const fin = nb > 60 ? debut + 25 : nb;
+          return effets.slice(debut, fin).map((effet, k) => {
+            const i = debut + k;
+            return (
+              <button
+                key={effet.id}
+                onClick={() => scrollerVers(i)}
+                aria-label={`Aller à l'effet ${i + 1}`}
+                className={`pointer-events-auto h-1.5 rounded-full transition-all duration-300 ${
+                  i === indexCourant ? "w-6 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
+                }`}
+              />
+            );
+          });
+        })()}
       </div>
     </div>
   );

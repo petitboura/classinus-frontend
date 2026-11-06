@@ -21,14 +21,14 @@ function FiltreChips({
   valeur,
   onChange,
 }: {
-  label: string;
+  label?: string;
   options: { value: string; label: string }[];
   valeur: string;
   onChange: (v: string) => void;
 }) {
   return (
     <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
-      <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">{label}</span>
+      {label ? <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">{label}</span> : null}
       {options.map((o) => (
         <button
           key={o.value}
@@ -325,8 +325,8 @@ export function CatalogueHiggsfield() {
               {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${EFFETS_HIGGSFIELD.length} au total`}
             </span>
           </div>
-          <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
-          <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
+          <FiltreChips options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
+          <FiltreChips options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
           {actif ? (
             <button
               type="button"

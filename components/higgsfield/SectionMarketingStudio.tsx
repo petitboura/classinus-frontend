@@ -229,8 +229,8 @@ export function SectionMarketingStudio() {
       </div>
 
       <div
-        className="sticky top-2 z-10 flex flex-col gap-3 rounded-xl border border-dj-bordure px-4 py-3 shadow-lg backdrop-blur-md"
-        style={{ backgroundColor: "color-mix(in srgb, var(--dj-surface) 92%, transparent)" }}
+        className="sticky top-0 z-10 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg"
+        style={{ backgroundColor: "var(--dj-surface)" }}
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex w-full max-w-md items-center">
