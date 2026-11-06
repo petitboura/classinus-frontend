@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Clock, Download, ExternalLink, ImagePlus, Loader2, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Clock, Download, ExternalLink, ImagePlus, Loader2, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
@@ -52,6 +52,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   const [qualiteImage, setQualiteImage] = useState("1k");
   const [resolutionGenjutsu, setResolutionGenjutsu] = useState("720p");
   const [presetId, setPresetId] = useState("");
+  const [precisionOuverte, setPrecisionOuverte] = useState(false);
 
   const [fichiersVideo, setFichiersVideo] = useState<FichierPreview[]>([]);
   const [fichiersImage, setFichiersImage] = useState<FichierPreview[]>([]);
@@ -254,20 +255,52 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             <span className="text-[11px] text-dj-texte-muet">{titre.length}/120</span>
           </label>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-dj-texte">
-              Description / prompt{" "}
-              {famille === "image" ? <span className="text-red-500">*</span> : <span className="font-normal text-dj-texte-muet">(optionnel)</span>}
-            </span>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={3}
-              placeholder={effet.description || "Décris ce que tu veux…"}
-              disabled={enCours}
-              className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
-            />
-          </label>
+          {famille === "genjutsu" ? (
+            // Pour Genjutsu, la transformation vient de la vidéo et des images de l'utilisateur, pas d'un texte :
+            // le champ reste disponible mais replié, pour ne pas laisser croire qu'il faut écrire quelque chose.
+            <div className="flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPrecisionOuverte((o) => !o)}
+                aria-expanded={precisionOuverte}
+                disabled={enCours}
+                className="flex w-fit items-center gap-1.5 text-xs font-semibold text-dj-texte transition-colors hover:text-dj-texte-muet disabled:opacity-60"
+              >
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${precisionOuverte ? "rotate-180" : ""}`} />
+                <span>
+                  Ajouter une précision <span className="font-normal text-dj-texte-muet">(optionnel)</span>
+                </span>
+              </button>
+              <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${precisionOuverte ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                <div className="overflow-hidden" aria-hidden={!precisionOuverte}>
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    rows={3}
+                    tabIndex={precisionOuverte ? 0 : -1}
+                    placeholder={effet.description || "Décris ce que tu veux…"}
+                    disabled={enCours}
+                    className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-dj-texte">
+                Description / prompt{" "}
+                {famille === "image" ? <span className="text-red-500">*</span> : <span className="font-normal text-dj-texte-muet">(optionnel)</span>}
+              </span>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={3}
+                placeholder={effet.description || "Décris ce que tu veux…"}
+                disabled={enCours}
+                className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
+              />
+            </label>
+          )}
 
           {famille === "genjutsu" && (
             <fieldset disabled={enCours} className={`${CLASSE_BLOC_OPTIONS} ${enCours ? "opacity-60" : ""}`}>

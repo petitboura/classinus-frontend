@@ -1,10 +1,10 @@
 "use client";
 
+import { GenerationsRecentesHiggsfield } from "./GenerationsRecentesHiggsfield";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Play, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { Play, Search, SlidersHorizontal, X } from "lucide-react";
 import dynamic from "next/dynamic";
-import { EFFETS_HIGGSFIELD, STYLES_EFFET, TYPES_EFFET, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
-import { useDefinirActionEnTete } from "@/lib/contexteEnTete";
+import { EFFETS_HIGGSFIELD, RENDUS_EFFET, STYLES_EFFET, renduEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
 
 // Les deux grands panneaux ne servent qu'au clic : on les sépare du code de la page,
 // puis on les charge en arrière-plan dès que le navigateur est au repos.
@@ -13,20 +13,22 @@ const chargerGenerer = () => import("@/components/higgsfield/GenererHiggsfield")
 const VisionneurHiggsfield = dynamic(chargerVisionneur, { ssr: false });
 const PanneauGenererHiggsfield = dynamic(chargerGenerer, { ssr: false });
 
-function FiltreChips({
+export function FiltreChips({
   label,
   options,
   valeur,
   onChange,
+  compteurs,
 }: {
-  label: string;
+  label?: string;
   options: { value: string; label: string }[];
   valeur: string;
   onChange: (v: string) => void;
+  compteurs?: Record<string, number>;
 }) {
   return (
     <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
-      <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">{label}</span>
+      {label ? <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">{label}</span> : null}
       {options.map((o) => (
         <button
           key={o.value}
@@ -38,6 +40,7 @@ function FiltreChips({
           }`}
         >
           {o.label}
+          {compteurs ? <span className="ml-1.5 text-[10px] font-bold opacity-70">{compteurs[o.value] ?? 0}</span> : null}
         </button>
       ))}
     </div>
@@ -45,7 +48,7 @@ function FiltreChips({
 }
 
 // memo : ouvrir ou fermer le plein écran ne redessine plus les cartes du catalogue.
-const CarteEffet = memo(function CarteEffet({
+export const CarteEffet = memo(function CarteEffet({
   effet,
   index,
   onOuvrir,
@@ -161,30 +164,16 @@ const CarteEffet = memo(function CarteEffet({
       )}
 
       <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white">
-        {effet.type === "video-to-video" ? "VIDÉO → VIDÉO" : effet.type === "image-to-video" ? "IMAGE → VIDÉO" : effet.type === "image" ? "IMAGE" : "AVATAR"}
+        {effet.libelleType ?? (renduEffet(effet) === "video" ? "VIDÉO" : "IMAGE")}
       </span>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-12 sm:px-3.5 sm:pb-3.5">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-bold leading-tight text-white sm:text-[15px]">{effet.nom}</span>
-            {effet.badge ? (
-              <span className="hidden shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold leading-none text-black min-[480px]:inline-flex">
-                {effet.badge}
-              </span>
-            ) : null}
-          </div>
-          <span className="line-clamp-2 text-xs leading-snug text-white/80 sm:text-[13px]">{effet.description}</span>
+          <span className="truncate text-sm font-bold leading-tight text-white sm:text-[15px]">{effet.nom}</span>
           <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">{effet.style}</span>
         </div>
       </div>
 
-      {!mediaError && (
-        <span className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-white px-3 py-2 text-[11px] font-bold leading-none text-black shadow">
-          <Sparkles className="h-3.5 w-3.5" />
-          Générer
-        </span>
-      )}
     </button>
   );
 });
@@ -196,41 +185,19 @@ function normaliser(s: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-export function CatalogueHiggsfield() {
-  const [typeFiltre, setTypeFiltre] = useState<string>("tous");
+export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral" } = {}) {
+  // Sur une sous-section, seule la famille demandee est affichee (l'identifiant commence par son nom).
+  const effetsDuCatalogue = useMemo(
+    () => (famille ? EFFETS_HIGGSFIELD.filter((e) => e.id.startsWith(famille + "-")) : EFFETS_HIGGSFIELD),
+    [famille],
+  );
+  const [renduFiltre, setRenduFiltre] = useState<string>("tous");
   const [styleFiltre, setStyleFiltre] = useState<string>("tous");
   const [filtresOuverts, setFiltresOuverts] = useState(false);
   const [recherche, setRecherche] = useState("");
 
-  const actif = typeFiltre !== "tous" || styleFiltre !== "tous" || recherche.trim() !== "";
-  const badgeFiltres = [typeFiltre, styleFiltre].filter((v) => v !== "tous").length + (recherche.trim() ? 1 : 0);
-
-  const boutonFiltres = useMemo(
-    () => (
-      <button
-        type="button"
-        onClick={() => setFiltresOuverts((v) => !v)}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-          filtresOuverts || actif
-            ? "border-dj-texte bg-dj-texte text-dj-fond"
-            : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-        }`}
-        aria-expanded={filtresOuverts}
-        aria-label="Filtres Higgsfield"
-      >
-        {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
-        Filtres
-        {badgeFiltres > 0 && (
-          <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
-            {badgeFiltres}
-          </span>
-        )}
-      </button>
-    ),
-    [filtresOuverts, actif, badgeFiltres],
-  );
-
-  useDefinirActionEnTete(boutonFiltres);
+  const actif = renduFiltre !== "tous" || styleFiltre !== "tous" || recherche.trim() !== "";
+  const badgeFiltres = [renduFiltre, styleFiltre].filter((v) => v !== "tous").length + (recherche.trim() ? 1 : 0);
 
   // Chargement en arrière-plan des panneaux, sans gêner l'affichage de la page.
   useEffect(() => {
@@ -251,15 +218,42 @@ export function CatalogueHiggsfield() {
 
   const filtres = useMemo(() => {
     const q = normaliser(recherche.trim());
-    return EFFETS_HIGGSFIELD.filter((e) => {
-      const okType = typeFiltre === "tous" || e.type === typeFiltre;
+    return effetsDuCatalogue.filter((e) => {
+      const okRendu = renduFiltre === "tous" || renduEffet(e) === renduFiltre;
       const okStyle = styleFiltre === "tous" || e.style === styleFiltre;
-      if (!okType || !okStyle) return false;
+      if (!okRendu || !okStyle) return false;
       if (!q) return true;
-      const hay = normaliser([e.nom, e.description, e.badge || "", e.style, e.type, e.id].join(" "));
+      const hay = normaliser([e.nom, e.description, e.badge || "", e.style, e.id].join(" "));
       return hay.includes(q);
     });
-  }, [typeFiltre, styleFiltre, recherche]);
+  }, [renduFiltre, styleFiltre, recherche, effetsDuCatalogue]);
+
+  // Compteurs des puces : chacun reflete l'autre filtre et la recherche (meme logique que Marketing Studio).
+  const passentRecherche = useMemo(() => {
+    const q = normaliser(recherche.trim());
+    return effetsDuCatalogue.filter((e) => {
+      if (!q) return true;
+      return normaliser([e.nom, e.description, e.badge || "", e.style, e.id].join(" ")).includes(q);
+    });
+  }, [recherche, effetsDuCatalogue]);
+
+  const compteursRendu = useMemo(() => {
+    const base = passentRecherche.filter((e) => styleFiltre === "tous" || e.style === styleFiltre);
+    return {
+      tous: base.length,
+      image: base.filter((e) => renduEffet(e) === "image").length,
+      video: base.filter((e) => renduEffet(e) === "video").length,
+    };
+  }, [passentRecherche, styleFiltre]);
+
+  const compteursStyle = useMemo(() => {
+    const base = passentRecherche.filter((e) => renduFiltre === "tous" || renduEffet(e) === renduFiltre);
+    const compteur: Record<string, number> = { tous: base.length };
+    for (const st of STYLES_EFFET) {
+      if (st.value !== "tous") compteur[st.value] = base.filter((e) => e.style === st.value).length;
+    }
+    return compteur;
+  }, [passentRecherche, renduFiltre]);
 
   const ouvrirVisionneur = useCallback((i: number) => setIndexVisionneur(i), []);
 
@@ -282,16 +276,51 @@ export function CatalogueHiggsfield() {
         Explore les effets Higgsfield, filtre par type et style, ouvre en plein écran pour comparer, puis lance la
         génération directement avec tes images et vidéos.
       </p>
-      {filtresOuverts && (
-        // Le panneau reste visible en haut de la zone qui défile, où que l'on soit dans la liste.
-        // Fond du thème à 92 % avec flou : la transparence Tailwind (bg-dj-surface/90) ne s'applique
-        // pas aux couleurs du thème, qui sont des variables CSS.
-        <div
-          className="sticky top-2 z-20 flex max-h-[70dvh] animate-dj-fade-in-rapide flex-col gap-3 overflow-y-auto overscroll-contain rounded-xl border border-dj-bordure px-4 py-3 shadow-lg backdrop-blur-md"
-          style={{ backgroundColor: "color-mix(in srgb, var(--dj-surface) 92%, transparent)" }}
-        >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex w-full max-w-md items-center">
+      <GenerationsRecentesHiggsfield />
+      <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg" style={{ backgroundColor: "var(--dj-surface)" }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFiltresOuverts((v) => !v)}
+            aria-expanded={filtresOuverts}
+            aria-label="Filtres Higgsfield"
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              filtresOuverts || actif
+                ? "border-dj-texte bg-dj-texte text-dj-fond"
+                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
+            }`}
+          >
+            {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
+            Filtres
+            {badgeFiltres > 0 && (
+              <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
+                {badgeFiltres}
+              </span>
+            )}
+          </button>
+          {actif ? (
+            <button
+              type="button"
+              onClick={() => {
+                setRecherche("");
+                setRenduFiltre("tous");
+                setStyleFiltre("tous");
+              }}
+              className="inline-flex min-h-8 items-center rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              Réinitialiser les filtres
+            </button>
+          ) : null}
+          </div>
+          <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
+            {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${effetsDuCatalogue.length} au total`}
+          </span>
+        </div>
+
+        {filtresOuverts && (
+          <>
+            <div className="relative flex w-full items-center">
               <Search className="pointer-events-none absolute left-3 h-4 w-4 text-dj-texte-muet" />
               <input
                 value={recherche}
@@ -310,27 +339,22 @@ export function CatalogueHiggsfield() {
                 </button>
               ) : null}
             </div>
-            <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
-              {`${filtres.length} effet${filtres.length !== 1 ? "s" : ""} · ${EFFETS_HIGGSFIELD.length} au total`}
-            </span>
-          </div>
-          <FiltreChips label="Type" options={TYPES_EFFET as any} valeur={typeFiltre} onChange={setTypeFiltre} />
-          <FiltreChips label="Style" options={STYLES_EFFET as any} valeur={styleFiltre} onChange={setStyleFiltre} />
-          {actif ? (
-            <button
-              type="button"
-              onClick={() => {
-                setRecherche("");
-                setTypeFiltre("tous");
-                setStyleFiltre("tous");
-              }}
-              className="inline-flex min-h-8 items-center self-start rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              Réinitialiser les filtres
-            </button>
-          ) : null}
-        </div>
-      )}
+            <FiltreChips
+              options={[{ value: "tous", label: "Tous" }, ...RENDUS_EFFET]}
+              valeur={renduFiltre}
+              onChange={setRenduFiltre}
+              compteurs={compteursRendu}
+            />
+            <FiltreChips
+              options={STYLES_EFFET.map((st) => ({ value: st.value, label: st.label }))}
+              valeur={styleFiltre}
+              onChange={setStyleFiltre}
+              compteurs={compteursStyle}
+            />
+          </>
+        )}
+      </div>
+
       {filtres.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <p className="text-sm font-semibold text-dj-texte">Aucun effet pour ces filtres</p>
@@ -340,7 +364,7 @@ export function CatalogueHiggsfield() {
           <button
             onClick={() => {
               setRecherche("");
-              setTypeFiltre("tous");
+              setRenduFiltre("tous");
               setStyleFiltre("tous");
             }}
             className="mt-1 inline-flex min-h-10 items-center justify-center rounded-full bg-dj-texte px-5 py-2 text-sm font-bold text-dj-fond transition-transform duration-200 active:scale-95"
