@@ -171,6 +171,7 @@ const CarteMarketing = memo(function CarteMarketing({
 
 export function SectionMarketingStudio() {
   const [categorie, setCategorie] = useState<string>("tous");
+  const [rendu, setRendu] = useState<string>("tous");
   const [recherche, setRecherche] = useState("");
   const [toutCharger, setToutCharger] = useState(false);
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
@@ -183,11 +184,12 @@ export function SectionMarketingStudio() {
     const q = normaliser(recherche.trim());
     return PRESETS_MARKETING.filter((p) => {
       const okCategorie = categorie === "tous" || p.type === categorie;
-      if (!okCategorie) return false;
+      const okRendu = rendu === "tous" || p.previewType === rendu;
+      if (!okCategorie || !okRendu) return false;
       if (!q) return true;
       return normaliser(p.nom).includes(q);
     });
-  }, [categorie, recherche]);
+  }, [categorie, rendu, recherche]);
 
   const effets = useMemo(() => filtres.map(presetVersEffet), [filtres]);
 
@@ -195,6 +197,14 @@ export function SectionMarketingStudio() {
 
   const nbAffiches = toutCharger ? filtres.length : Math.min(filtres.length, 48);
   const affiches = filtres.slice(0, nbAffiches);
+
+  const compterParRendu = useMemo(() => {
+    const compteur: Record<string, number> = { image: 0, video: 0 };
+    for (const p of PRESETS_MARKETING) {
+      compteur[p.previewType] = (compteur[p.previewType] ?? 0) + 1;
+    }
+    return compteur;
+  }, []);
 
   const compterParCategorie = useMemo(() => {
     const compteur: Record<string, number> = {};
@@ -258,6 +268,29 @@ export function SectionMarketingStudio() {
         </div>
 
         <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
+          {[
+            { value: "tous", label: "Tous" },
+            { value: "image", label: "Image" },
+            { value: "video", label: "Vidéo" },
+          ].map((o) => (
+            <button
+              key={o.value}
+              onClick={() => setRendu(o.value)}
+              className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                rendu === o.value
+                  ? "border-dj-texte bg-dj-texte text-dj-fond"
+                  : "border-dj-bordure bg-transparent text-dj-texte-muet hover:border-dj-texte-muet hover:text-dj-texte"
+              }`}
+            >
+              {o.label}
+              {o.value !== "tous" && (
+                <span className="ml-1.5 text-[10px] font-bold opacity-70">{compterParRendu[o.value] ?? 0}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => setCategorie("tous")}
             className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
@@ -301,6 +334,7 @@ export function SectionMarketingStudio() {
             onClick={() => {
               setRecherche("");
               setCategorie("tous");
+              setRendu("tous");
             }}
             className="mt-1 inline-flex min-h-10 items-center justify-center rounded-full bg-dj-texte px-5 py-2 text-sm font-bold text-dj-fond transition-transform duration-200 active:scale-95"
           >
