@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { PRESETS_MARKETING, TYPES_MARKETING, type MarketingPreset } from "@/lib/presetsMarketingStudio";
@@ -44,12 +44,15 @@ function presetVersEffet(p: MarketingPreset): EffetHiggsfield {
   };
 }
 
+const PAS_CHARGEMENT = 48;
+
 export function SectionMarketingStudio() {
   const [categorie, setCategorie] = useState<string>("tous");
   const [rendu, setRendu] = useState<string>("tous");
   const [recherche, setRecherche] = useState("");
   const [filtresOuverts, setFiltresOuverts] = useState(false);
-  const [toutCharger, setToutCharger] = useState(false);
+  const [nbVisibles, setNbVisibles] = useState(PAS_CHARGEMENT);
+  const sentinelle = useRef<HTMLDivElement>(null);
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
   const [avisGeneration, setAvisGeneration] = useState(false);
 
@@ -94,9 +97,26 @@ export function SectionMarketingStudio() {
   const actif = categorie !== "tous" || rendu !== "tous" || recherche.trim() !== "";
   const nbFiltresActifs = [categorie !== "tous", rendu !== "tous", recherche.trim() !== ""].filter(Boolean).length;
 
-  // Affichage progressif : 48 cartes d'abord, puis "Afficher plus".
-  const nbAffiches = toutCharger ? effets.length : Math.min(effets.length, 48);
-  const effetsAffiches = effets.slice(0, nbAffiches);
+  // Chargement au defilement : on affiche d'abord 48 cartes, puis 48 de plus a chaque
+  // fois que la fin de la liste arrive a l'ecran. Un changement de filtre repart de 48.
+  const effetsAffiches = effets.slice(0, nbVisibles);
+
+  useEffect(() => {
+    setNbVisibles(PAS_CHARGEMENT);
+  }, [categorie, rendu, recherche]);
+
+  useEffect(() => {
+    const el = sentinelle.current;
+    if (!el || nbVisibles >= effets.length) return;
+    const obs = new IntersectionObserver(
+      ([entree]) => {
+        if (entree.isIntersecting) setNbVisibles((n) => Math.min(n + PAS_CHARGEMENT, effets.length));
+      },
+      { rootMargin: "400px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [nbVisibles, effets.length]);
 
   const reinitialiser = useCallback(() => {
     setRecherche("");
@@ -237,15 +257,7 @@ export function SectionMarketingStudio() {
         </div>
       )}
 
-      {!toutCharger && effets.length > nbAffiches ? (
-        <button
-          type="button"
-          onClick={() => setToutCharger(true)}
-          className="mx-auto inline-flex min-h-10 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface px-5 py-2 text-sm font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute active:scale-95"
-        >
-          Afficher plus ({effets.length - nbAffiches} restants)
-        </button>
-      ) : null}
+      {effets.length > nbVisibles ? <div ref={sentinelle} className="h-px w-full" aria-hidden="true" /> : null}
 
       {indexVisionneur !== null && effets[indexVisionneur] ? (
         <VisionneurHiggsfield
