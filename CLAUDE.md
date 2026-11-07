@@ -96,3 +96,12 @@ Bourama's decision from 4 November 2026. This rule is mandatory: apply it every 
 - **Always translated.** Every document exists in English (default, `.md`) and French (`.fr.md`), with the language switch line at the top of both. Update both versions together, never only one.
 - Only `README`, `CLAUDE`, and their `.fr.md` versions stay at the root.
 - Never write a secret, token, or password in documentation.
+
+## Everything user-visible must exist in English, or the work is not finished
+
+Bourama's order from 7 November 2026. It is a rule, not a question: never ask whether to translate.
+
+- Every text a person can read must exist in English as well as French: interface labels, catalogue data (names, descriptions, effect texts), texts prefilled in a field and sent to a model, error messages, and documentation.
+- Catalogue and data texts carry their English version next to the French one (for example `descriptionEn`), and the screen picks one from the language chosen in Settings. Backend errors go through a stable code with a French and an English message (`core/erreurs.py` and `lib/erreurs.ts`).
+- If a text lives in Supabase, add its English version there too.
+- A task that adds or changes visible text without its English version is not finished.

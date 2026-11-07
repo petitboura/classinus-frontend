@@ -58,3 +58,9 @@ Rule decided by Bourama on 6 November 2026: for the effects, the description the
 - Backend endpoints: `api/higgsfield.py`
 - Higgsfield logic: `core/generation_video_higgsfield.py`, `core/higgsfield_catalogue.py`, `core/higgsfield_limites.py`, `core/higgsfield_requetes.py`
 - Static catalogue: `lib/effetsHiggsfield.ts` (50+ effects)
+
+### English for every effect text (7 November 2026)
+
+- Rule from Bourama: every visible text exists in English. Each effect now has `descriptionEn`, and `promptInitialEn` when a text is prefilled (Viral and Soul). `descriptionEffet` and `promptInitialEffet` in `lib/effetsHiggsfield.ts` pick the language chosen in Settings; the starting text is chosen when the form opens, so an English user sends the English text.
+- The catalogue search looks in both descriptions. Remaining interface texts were added to `lib/i18n/interface.ts`, and the Higgsfield error codes to `lib/erreurs.ts`.
+- `tests/verifier-i18n.mjs` fails when an effect description or starting text has no English version.

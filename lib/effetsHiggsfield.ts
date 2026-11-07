@@ -1,12 +1,16 @@
 // Catalogue Higgsfield affiche dans la grande page /higgsfield.
 // Source : MCP Higgsfield connecte (get_presets genjutsu / viral / soul), recupere le 31/10/2026.
 // Aucune URL inventee : preview et poster sont les preview_url / thumbnail_url renvoyes par Higgsfield.
+import type { Locale } from "@/lib/i18n/locale";
+
 export type TypeEffet = "image" | "image-to-video" | "video-to-video" | "avatar";
 export type StyleEffet = "realiste" | "anime" | "cinematique" | "viral";
 export type EffetHiggsfield = {
   id: string;
   nom: string;
   description: string;
+  // Version anglaise obligatoire : tout texte visible existe dans les deux langues.
+  descriptionEn: string;
   type: TypeEffet;
   style: StyleEffet;
   modele: string;
@@ -17,6 +21,7 @@ export type EffetHiggsfield = {
   styleId?: string;
   // Texte propose au depart dans le champ de description. Ce qui reste dans le champ est ce qui part.
   promptInitial?: string;
+  promptInitialEn?: string;
   badge?: string;
   libelleType?: string;
 };
@@ -30,6 +35,7 @@ function genjutsu(id: string, nom: string, preview: string, poster: string | und
     id: "genjutsu-" + id,
     nom: "Genjutsu · " + nom,
     description: modele === "hf_mult_replace_object" ? "Change un élément de ta vidéo (personnage, tenue, objet ou lieu) et garde tout le reste." : "Garde les gestes, la caméra et le rythme de ta vidéo, et refait la scène à partir de tes images.",
+    descriptionEn: modele === "hf_mult_replace_object" ? "Changes one element of your video (character, outfit, object or place) and keeps everything else." : "Keeps the gestures, the camera and the rhythm of your video, and rebuilds the scene from your images.",
     type: "video-to-video",
     style: "viral",
     modele,
@@ -40,11 +46,12 @@ function genjutsu(id: string, nom: string, preview: string, poster: string | und
   };
 }
 
-function viral(id: string, nom: string, description: string, preview: string, poster: string): EffetHiggsfield {
+function viral(id: string, nom: string, description: string, descriptionEn: string, preview: string, poster: string): EffetHiggsfield {
   return {
     id: "viral-" + id,
     nom,
     description,
+    descriptionEn,
     type: "video-to-video",
     style: "viral",
     modele: "higgsfield-viral",
@@ -52,6 +59,7 @@ function viral(id: string, nom: string, description: string, preview: string, po
     previewType: "video",
     poster: V + poster,
     promptInitial: description,
+    promptInitialEn: descriptionEn,
     badge: "Viral",
   };
 }
@@ -92,22 +100,23 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
   genjutsu("parkour-flow", "Parkour Flow", G + "1fe2bb91-3821-4d9e-a2c3-02640a8792d6.mp4", "https://cdn.higgsfield.ai/genjutsu/video-explore/15/edit/8a112815-9349-47ee-8035-7ef6352eb4ad.webp", "hf_mult_motion_control"),
   genjutsu("fantasy-rider", "Fantasy Rider", "https://d8j0ntlcm91z4.cloudfront.net/community-presets/772b02e5-1f26-4ae7-8957-30c9fd17eb18/generation-genjutsu-h264-600-v1.mp4", P + "f3188f06-018f-436f-a7b6-c77f449e0b34.webp", "hf_mult_motion_control"),
   genjutsu("street-flow", "Street Flow", G + "dfd17324-1b04-4956-bced-7ec3bacc5c1d.mp4", "https://cdn.higgsfield.ai/genjutsu/video-explore/02/edit/9445ce67-4691-477c-ba27-f2dd7d9eafee.webp", "hf_mult_motion_control"),
-  viral("floating-fall", "Floating fall", "Tombe en arrière pendant que ses affaires flottent dans les airs", "d877f71c-d2f3-44df-9317-f3ce6889bcb6.mp4", "151664fa-7f7f-43d6-80fa-4683104a3c02.webp"),
-  viral("vanish", "Vanish", "Le corps disparaît instantanément, les vêtements tombent au sol", "d63d47dd-d00f-42c8-9c45-9bddd3df7a38.mp4", "a9944d26-47dc-463f-b4d6-446c371ae2f7.webp"),
-  viral("eyes-in", "Eyes in", "La caméra plonge dans l'œil et traverse la pupille vers une autre scène", "dba03734-6e8a-4337-acb4-17ce943563d8.mp4", "5354ce11-c68c-45a0-8a97-5aab94f52833.webp"),
-  viral("cutout", "Cutout", "Le décor se découpe en couches flottantes autour du sujet", "a64711ac-93b8-46ee-a9ce-37ee5c18e148.mp4", "b5c90864-c3c5-4b14-87a0-3739250fd00b.webp"),
-  viral("wild-ride", "Wild ride", "Orbite caméra rapide et dynamique autour du sujet en mouvement", "8cd9e3fc-8e4f-4071-abff-8934f3381507.mp4", "99aa3365-5ae0-4616-9722-ce0dc087607d.webp"),
-  viral("clones", "Clones", "Des clones identiques apparaissent et imitent le sujet", "9cedf121-64a9-4eb9-88e9-608844ff1929.mp4", "e56a428d-6795-49f2-a456-6457ce90b346.webp"),
-  viral("infinite-clones", "Infinite clones", "Des clones sortent en continu d'une petite voiture", "04df3d28-67de-464a-9426-55568d4ee55c.mp4", "a54ccc43-8866-4b56-89ba-35f199ab977f.webp"),
-  viral("act-natural", "Act natural", "Le sujet se fige en pleine action pendant que le monde continue", "7a261cff-8d6c-4bab-84e7-515364061f3e.mp4", "17cc1333-9822-442c-adaa-d208c59e3e01.webp"),
-  viral("studio-slide", "Studio slide", "Plusieurs copies du sujet glissent dans le même cadre à différentes échelles", "c129fb83-2014-4a37-a3f8-6c7dfeab0254.mp4", "05201733-c72f-43ed-8393-8b8cea28b8ce.webp"),
-  viral("high-flip", "High flip", "La caméra passe au-dessus et révèle un nouveau personnage et lieu", "001156a7-cfdb-4e16-8f13-68c246ddc06c.mp4", "95cd0d73-4f3c-40d1-ac0b-c8668a99440b.webp"),
-  viral("melting", "Melting", "Le sujet fond lentement en flaque brillante", "f661157c-af00-46f7-8b7c-6a7ae711ef98.mp4", "6ecca888-1780-46ae-a86d-a05b69b2fe34.webp"),
-  viral("frozen-in-motion", "Frozen in motion", "Le sujet se fige en l'air pendant que la rue continue de bouger", "59c46689-f756-4843-b298-f34b9761187e.mp4", "4bd4d456-d335-42da-b6ca-d0d8b8dffcea.webp"),
+  viral("floating-fall", "Floating fall", "Tombe en arrière pendant que ses affaires flottent dans les airs", "Falls backward while their belongings float in the air", "d877f71c-d2f3-44df-9317-f3ce6889bcb6.mp4", "151664fa-7f7f-43d6-80fa-4683104a3c02.webp"),
+  viral("vanish", "Vanish", "Le corps disparaît instantanément, les vêtements tombent au sol", "The body vanishes instantly, the clothes drop to the ground", "d63d47dd-d00f-42c8-9c45-9bddd3df7a38.mp4", "a9944d26-47dc-463f-b4d6-446c371ae2f7.webp"),
+  viral("eyes-in", "Eyes in", "La caméra plonge dans l'œil et traverse la pupille vers une autre scène", "The camera dives into the eye and passes through the pupil into another scene", "dba03734-6e8a-4337-acb4-17ce943563d8.mp4", "5354ce11-c68c-45a0-8a97-5aab94f52833.webp"),
+  viral("cutout", "Cutout", "Le décor se découpe en couches flottantes autour du sujet", "The set cuts into floating layers around the subject", "a64711ac-93b8-46ee-a9ce-37ee5c18e148.mp4", "b5c90864-c3c5-4b14-87a0-3739250fd00b.webp"),
+  viral("wild-ride", "Wild ride", "Orbite caméra rapide et dynamique autour du sujet en mouvement", "Fast, dynamic camera orbit around the moving subject", "8cd9e3fc-8e4f-4071-abff-8934f3381507.mp4", "99aa3365-5ae0-4616-9722-ce0dc087607d.webp"),
+  viral("clones", "Clones", "Des clones identiques apparaissent et imitent le sujet", "Identical clones appear and mimic the subject", "9cedf121-64a9-4eb9-88e9-608844ff1929.mp4", "e56a428d-6795-49f2-a456-6457ce90b346.webp"),
+  viral("infinite-clones", "Infinite clones", "Des clones sortent en continu d'une petite voiture", "Clones keep coming out of a small car", "04df3d28-67de-464a-9426-55568d4ee55c.mp4", "a54ccc43-8866-4b56-89ba-35f199ab977f.webp"),
+  viral("act-natural", "Act natural", "Le sujet se fige en pleine action pendant que le monde continue", "The subject freezes mid action while the world keeps moving", "7a261cff-8d6c-4bab-84e7-515364061f3e.mp4", "17cc1333-9822-442c-adaa-d208c59e3e01.webp"),
+  viral("studio-slide", "Studio slide", "Plusieurs copies du sujet glissent dans le même cadre à différentes échelles", "Several copies of the subject slide through the same frame at different scales", "c129fb83-2014-4a37-a3f8-6c7dfeab0254.mp4", "05201733-c72f-43ed-8393-8b8cea28b8ce.webp"),
+  viral("high-flip", "High flip", "La caméra passe au-dessus et révèle un nouveau personnage et lieu", "The camera flies over and reveals a new character and place", "001156a7-cfdb-4e16-8f13-68c246ddc06c.mp4", "95cd0d73-4f3c-40d1-ac0b-c8668a99440b.webp"),
+  viral("melting", "Melting", "Le sujet fond lentement en flaque brillante", "The subject slowly melts into a shiny puddle", "f661157c-af00-46f7-8b7c-6a7ae711ef98.mp4", "6ecca888-1780-46ae-a86d-a05b69b2fe34.webp"),
+  viral("frozen-in-motion", "Frozen in motion", "Le sujet se fige en l'air pendant que la rue continue de bouger", "The subject freezes in mid air while the street keeps moving", "59c46689-f756-4843-b298-f34b9761187e.mp4", "4bd4d456-d335-42da-b6ca-d0d8b8dffcea.webp"),
   {
     id: "soul-general",
     nom: "Soul · General",
     description: "Style Soul 2.0 : portrait photo général, rendu naturel",
+    descriptionEn: "Soul 2.0 style: general photo portrait, natural look",
     type: "image",
     style: "realiste",
     modele: "soul_2",
@@ -115,12 +124,14 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
     previewType: "image",
     styleId: "3db34ab5-3439-4317-9e03-08dc30852e69",
     promptInitial: "Portrait photo d'une personne, rendu naturel",
+    promptInitialEn: "Photo portrait of a person, natural look",
     badge: "Soul",
   },
   {
     id: "soul-warm-ambient",
     nom: "Soul · Warm ambient",
     description: "Style Soul 2.0 : lumière ambiante chaude",
+    descriptionEn: "Soul 2.0 style: warm ambient light",
     type: "image",
     style: "realiste",
     modele: "soul_2",
@@ -128,12 +139,14 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
     previewType: "image",
     styleId: "fafd3087-0d0f-4fb1-9af6-91b7d304687c",
     promptInitial: "Portrait d'une personne dans une lumière ambiante chaude",
+    promptInitialEn: "Portrait of a person in warm ambient light",
     badge: "Soul",
   },
   {
     id: "soul-y2k-studio",
     nom: "Soul · Y2K studio",
     description: "Style Soul 2.0 : studio Y2K",
+    descriptionEn: "Soul 2.0 style: Y2K studio",
     type: "image",
     style: "realiste",
     modele: "soul_2",
@@ -141,6 +154,7 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
     previewType: "image",
     styleId: "7ee16ff3-c0b0-4f5f-a0e1-e7fc46144230",
     promptInitial: "Portrait d'une personne en studio, esthétique Y2K",
+    promptInitialEn: "Portrait of a person in a studio, Y2K aesthetic",
     badge: "Soul",
   },
 ];
@@ -163,3 +177,12 @@ export const STYLES_EFFET: { value: StyleEffet | "tous"; label: string }[] = [
   { value: "cinematique", label: "Cinematique" },
   { value: "viral", label: "Viral" },
 ];
+
+// Texte affiche et texte propose au depart, dans la langue choisie par la personne.
+export function descriptionEffet(e: EffetHiggsfield, locale: Locale): string {
+  return locale === "en" ? e.descriptionEn : e.description;
+}
+
+export function promptInitialEffet(e: EffetHiggsfield, locale: Locale): string {
+  return (locale === "en" ? e.promptInitialEn : e.promptInitial) ?? "";
+}

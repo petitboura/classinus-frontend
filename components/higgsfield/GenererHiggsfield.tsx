@@ -5,7 +5,9 @@ import { AlertCircle, CheckCircle2, ChevronDown, Clock, Download, ExternalLink, 
 import { CarteGenerationHiggsfield, type EtapeCarteGeneration } from "@/components/higgsfield/CarteGenerationHiggsfield";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
-import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { descriptionEffet, promptInitialEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { obtenirLocale } from "@/lib/i18n/locale";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { lancerGenjutsuHiggsfield, lancerImageHiggsfield, lancerVideoHiggsfield, uploaderFichierHiggsfield } from "@/lib/higgsfieldApi";
 import {
   DUREES_VIDEO,
@@ -45,6 +47,7 @@ function tailleEnMo(octets: number): string {
 }
 
 export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggsfield; onClose: () => void }) {
+  const locale = useLocale();
   const famille = familleEffet(effet);
   const modeleDefaut = modeleBackend(effet);
   const mode = modeEffet(effet);
@@ -57,7 +60,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
 
   const [titre, setTitre] = useState(() => effet.nom.replace(/^Genjutsu ·\s*/, "").slice(0, 80));
   // Le champ commence avec le texte propre à l'effet (viral, Soul). Ce qui reste dans le champ est exactement ce qui part.
-  const [prompt, setPrompt] = useState(() => effet.promptInitial ?? "");
+  const [prompt, setPrompt] = useState(() => promptInitialEffet(effet, obtenirLocale()));
   const [duree, setDuree] = useState(5);
   const [formatVideo, setFormatVideo] = useState("16:9");
   const [qualiteVideo, setQualiteVideo] = useState("720p");
@@ -369,7 +372,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={3}
-                placeholder={estSoul ? "Décris la personne et la scène…" : effet.description || "Décris ce que tu veux…"}
+                placeholder={estSoul ? "Décris la personne et la scène…" : descriptionEffet(effet, locale) || "Décris ce que tu veux…"}
                 disabled={enCours}
                 className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
               />

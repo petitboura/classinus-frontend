@@ -53,3 +53,9 @@ Règle décidée par Bourama le 6 novembre 2026 : pour les effets, la descriptio
 - Endpoints backend : `api/higgsfield.py`
 - Logique Higgsfield : `core/generation_video_higgsfield.py`, `core/higgsfield_catalogue.py`, `core/higgsfield_limites.py`, `core/higgsfield_requetes.py`
 - Catalogue statique : `lib/effetsHiggsfield.ts` (50+ effets)
+
+### Anglais pour tous les textes d'effets (7 novembre 2026)
+
+- Règle de Bourama : tout texte visible existe en anglais. Chaque effet a maintenant `descriptionEn`, et `promptInitialEn` quand un texte est prérempli (Viral et Soul). `descriptionEffet` et `promptInitialEffet` dans `lib/effetsHiggsfield.ts` choisissent la langue réglée dans les paramètres ; le texte de départ est choisi à l'ouverture du formulaire, donc une personne en anglais envoie le texte anglais.
+- La recherche du catalogue regarde les deux descriptions. Les textes d'interface restants sont ajoutés dans `lib/i18n/interface.ts`, et les codes d'erreur Higgsfield dans `lib/erreurs.ts`.
+- `tests/verifier-i18n.mjs` échoue quand une description ou un texte de départ d'effet n'a pas sa version anglaise.

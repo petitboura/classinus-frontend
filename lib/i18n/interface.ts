@@ -7,6 +7,15 @@ import type { Locale } from "./locale";
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Page Higgsfield : textes restants traduits le 07/11/2026.
+  "vidéo": "Video",
+  "Lire la vidéo": "Play the video",
+  "Upload échoué": "Upload failed",
+  "Rechercher un preset…": "Search for a preset…",
+  "Filtres Higgsfield": "Higgsfield filters",
+  "Aucun preset pour ces filtres": "No preset matches these filters",
+  "Filtres Marketing Studio": "Marketing Studio filters",
+  "mp4 / webm · ≤15 Mo": "mp4 / webm · ≤15 MB",
   "Télécharger": "Download",
   // Carte de connexion proposée dans le chat et écran Connexions (26/10/2026).
   "utiliser pour ça": "Use it for this",
