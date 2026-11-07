@@ -397,7 +397,7 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
       ) : null}
 
       {effetAGenerer ? (
-        <PanneauGenererHiggsfield effet={effetAGenerer} onClose={() => setEffetAGenerer(null)} />
+        <PanneauGenererHiggsfield key={effetAGenerer.id} effet={effetAGenerer} onClose={() => setEffetAGenerer(null)} />
       ) : null}
     </div>
   );

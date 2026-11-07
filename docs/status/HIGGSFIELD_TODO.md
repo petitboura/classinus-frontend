@@ -26,10 +26,18 @@ Updated 1 November 2026: the Generate panel is complete.
 - Viewer framing (phone and PC): the video (or image) is shown in full, with black bars if needed, instead of being cropped to fill the screen.
 - Viewer navigation (6 November 2026, branch `fix/higgsfield-points-cadrage`): the vertical column on the right (`RailVisionneur`) was removed. On PC, one small dot per effect sits at the bottom (the displayed effect has a longer white dot, each dot is clickable) and the up and down arrows stay on the right edge. On phones, no indicator is shown; swiping is enough. The `1 / N` counter at the top stays.
 
-### Generate form for video-to-video effects (6 November 2026)
+### Generate form: what is shown, what is sent, what comes back (6 and 7 November 2026)
 
-- The 47 video-to-video effects (35 Genjutsu and 12 Viral) do not send the effect itself to Higgsfield: the result comes from the user's own video and images. So the description field is now folded under "Add a detail (optional)" instead of being a large field, and the viewer shows a note under the preview: "The preview is an example. Your result depends on your video and your images."
-- The 3 image effects (Soul) are unchanged: the description stays required. Prefilling it with a style prompt is a separate step, not done yet.
+Rule decided by Bourama on 6 November 2026: for the effects, the description the person reads, what really goes to the model and what comes out must never diverge.
+
+- The name and the preview of an effect are never sent to Higgsfield. They are examples, and the viewer says so under the preview.
+- **Genjutsu, motion transfer (25 effects).** Keeps the gestures, the camera and the rhythm of the user's video and rebuilds the scene from the user's images. The text field stays folded under "Add a detail (optional)" while it is empty, and stays visible as soon as it holds a text, because that text is sent.
+- **Genjutsu, element swap (10 effects).** Changes one element of the video (character, outfit, object or place) and keeps the rest. The text says which one, so the field "What should change?" is always visible (optional).
+- **Viral (12 effects).** They go through the motion transfer. The description of the effect is the starting text of an always visible field and is sent with the request; the person can edit or erase it. The documentation of Higgsfield does not confirm that it follows this text for the motion transfer: a test with and without the text is still to be done.
+- **Soul (3 effects).** Soul 2.0 is now really called (before, the request went to Grok). The style of the effect is sent (`style_id`), the text field starts filled with a short portrait text for that style, the reference images zone is hidden (Soul does not offer it), and the quality is 720p or 1080p. Higgsfield may reword a very short text, and the form says so.
+- Plain labels replace the technical model names (`hf_mult_motion_control`, `genjutsu-motion`, `higgsfield-viral`): "Motion transfer", "Element swap" and "Soul 2.0".
+- `lib/effetsHiggsfield.ts`: the unused `promptChat` field was removed, `styleId` and `promptInitial` were added, and the descriptions are written with their accents. `lib/higgsfieldGeneration.ts`: `modeEffet`, `libelleModeEffet`, `estEffetViral`, `FORMATS_SOUL` and `QUALITES_SOUL`.
+- The descriptions of the effects stay in French (they are catalogue data, not part of the English dictionary), so an English user also sees and sends the French text of a Viral effect.
 
 ### Server-side generation (6 November 2026)
 

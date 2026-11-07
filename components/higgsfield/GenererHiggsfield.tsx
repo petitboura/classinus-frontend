@@ -10,13 +10,18 @@ import { lancerGenjutsuHiggsfield, lancerImageHiggsfield, lancerVideoHiggsfield,
 import {
   DUREES_VIDEO,
   FORMATS_IMAGE,
+  FORMATS_SOUL,
   FORMATS_VIDEO,
   MAX_IMAGES_REFERENCE,
   QUALITES_IMAGE,
+  QUALITES_SOUL,
   QUALITES_VIDEO,
   RESOLUTIONS_GENJUTSU,
   TAILLE_MAX_FICHIER_OCTETS,
+  estEffetViral,
   familleEffet,
+  libelleModeEffet,
+  modeEffet,
   modeleBackend,
   optionsDepuisValeurs,
   type FichierPreview,
@@ -42,18 +47,28 @@ function tailleEnMo(octets: number): string {
 export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggsfield; onClose: () => void }) {
   const famille = familleEffet(effet);
   const modeleDefaut = modeleBackend(effet);
+  const mode = modeEffet(effet);
+  const estSoul = mode === "soul";
+  const estViral = estEffetViral(effet);
+  const libelleMode = libelleModeEffet(effet);
+  // Pour les effets viral et le remplacement d'un élément, le texte dit ce qui doit changer :
+  // le champ reste toujours visible, pour que rien ne parte sans être affiché.
+  const champToujoursOuvert = mode === "element" || estViral;
 
   const [titre, setTitre] = useState(() => effet.nom.replace(/^Genjutsu ·\s*/, "").slice(0, 80));
-  const [prompt, setPrompt] = useState("");
+  // Le champ commence avec le texte propre à l'effet (viral, Soul). Ce qui reste dans le champ est exactement ce qui part.
+  const [prompt, setPrompt] = useState(() => effet.promptInitial ?? "");
   const [duree, setDuree] = useState(5);
   const [formatVideo, setFormatVideo] = useState("16:9");
   const [qualiteVideo, setQualiteVideo] = useState("720p");
   const [son, setSon] = useState(true);
-  const [formatImage, setFormatImage] = useState("auto");
-  const [qualiteImage, setQualiteImage] = useState("1k");
+  const [formatImage, setFormatImage] = useState(estSoul ? "1:1" : "auto");
+  const [qualiteImage, setQualiteImage] = useState(estSoul ? "720p" : "1k");
   const [resolutionGenjutsu, setResolutionGenjutsu] = useState("720p");
   const [presetId, setPresetId] = useState("");
   const [precisionOuverte, setPrecisionOuverte] = useState(false);
+  // Le champ replié s'ouvre à la demande, et reste visible dès qu'il contient un texte, puisque ce texte part.
+  const champPrecisionVisible = precisionOuverte || prompt.trim().length > 0;
 
   const [fichiersVideo, setFichiersVideo] = useState<FichierPreview[]>([]);
   const [fichiersImage, setFichiersImage] = useState<FichierPreview[]>([]);
@@ -197,6 +212,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
           format_image: formatImage,
           qualite: qualiteImage,
           ...(imageUrls.length ? { images_reference: imageUrls } : {}),
+          // Le style de l'effet Soul part vraiment à Higgsfield : l'image est faite avec le style de l'aperçu.
+          ...(estSoul && effet.styleId ? { style_id: effet.styleId } : {}),
         });
       } else {
         res = await lancerVideoHiggsfield({
@@ -245,7 +262,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                 <span>Générer</span> <span className="font-semibold text-dj-texte-muet">{effet.nom}</span>
               </span>
               <span className="truncate text-xs text-dj-texte-muet">
-                {effet.badge || effet.style} · {famille} · {modeleDefaut}
+                {libelleMode ?? `${effet.badge || effet.style} · ${famille} · ${modeleDefaut}`}
               </span>
             </div>
           </div>
@@ -295,30 +312,47 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             <span className="text-[11px] text-dj-texte-muet">{titre.length}/120</span>
           </label>
 
-          {famille === "genjutsu" ? (
-            // Pour Genjutsu, la transformation vient de la vidéo et des images de l'utilisateur, pas d'un texte :
-            // le champ reste disponible mais replié, pour ne pas laisser croire qu'il faut écrire quelque chose.
+          {famille === "genjutsu" && champToujoursOuvert ? (
+            // Viral : la description de l'effet est le texte de départ, et elle part avec la demande.
+            // Remplacement d'un élément : le texte dit lequel. Dans les deux cas le champ reste visible.
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-dj-texte">
+                {estViral ? "Description de l'effet" : "Qu'est-ce qui doit changer ?"}{" "}
+                <span className="font-normal text-dj-texte-muet">{estViral ? "(envoyée à Higgsfield, tu peux la modifier)" : "(optionnel)"}</span>
+              </span>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={3}
+                placeholder={estViral ? "Décris l'effet voulu…" : "Par exemple : la veste, le décor ou le personnage"}
+                disabled={enCours}
+                className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
+              />
+            </label>
+          ) : famille === "genjutsu" ? (
+            // Transfert de mouvement : la transformation vient de la vidéo et des images, le texte est un complément.
+            // Le champ reste replié tant qu'il est vide, et visible dès qu'il contient un texte qui part.
             <div className="flex flex-col gap-1.5">
               <button
                 type="button"
                 onClick={() => setPrecisionOuverte((o) => !o)}
-                aria-expanded={precisionOuverte}
+                aria-expanded={champPrecisionVisible}
                 disabled={enCours}
                 className="flex w-fit items-center gap-1.5 text-xs font-semibold text-dj-texte transition-colors hover:text-dj-texte-muet disabled:opacity-60"
               >
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${precisionOuverte ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${champPrecisionVisible ? "rotate-180" : ""}`} />
                 <span>
                   Ajouter une précision <span className="font-normal text-dj-texte-muet">(optionnel)</span>
                 </span>
               </button>
-              <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${precisionOuverte ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
-                <div className="overflow-hidden" aria-hidden={!precisionOuverte}>
+              <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${champPrecisionVisible ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                <div className="overflow-hidden" aria-hidden={!champPrecisionVisible}>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={3}
-                    tabIndex={precisionOuverte ? 0 : -1}
-                    placeholder={effet.description || "Décris ce que tu veux…"}
+                    tabIndex={champPrecisionVisible ? 0 : -1}
+                    placeholder="Par exemple : un décor de plage au coucher du soleil"
                     disabled={enCours}
                     className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
                   />
@@ -335,10 +369,11 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={3}
-                placeholder={effet.description || "Décris ce que tu veux…"}
+                placeholder={estSoul ? "Décris la personne et la scène…" : effet.description || "Décris ce que tu veux…"}
                 disabled={enCours}
                 className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
               />
+              {estSoul && <span className="text-[11px] text-dj-texte-muet">Higgsfield peut reformuler un texte très court.</span>}
             </label>
           )}
 
@@ -351,8 +386,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                   <SelectPersonnalise options={optionsDepuisValeurs(RESOLUTIONS_GENJUTSU)} valeur={resolutionGenjutsu} onChange={setResolutionGenjutsu} />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className={CLASSE_LIBELLE_CHAMP}>Modèle</span>
-                  <span className="flex min-h-[38px] items-center rounded-lg border border-dj-bordure bg-dj-fond px-2 text-xs font-medium text-dj-texte-muet">{modeleDefaut}</span>
+                  <span className={CLASSE_LIBELLE_CHAMP}>{libelleMode ? "Mode" : "Modèle"}</span>
+                  <span className="flex min-h-[38px] items-center rounded-lg border border-dj-bordure bg-dj-fond px-2 text-xs font-medium text-dj-texte-muet">{libelleMode ?? modeleDefaut}</span>
                 </div>
               </div>
               {modeleDefaut === "genjutsu-restyle" && (
@@ -399,11 +434,11 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
                   <span className={CLASSE_LIBELLE_CHAMP}>Format</span>
-                  <SelectPersonnalise options={optionsDepuisValeurs(FORMATS_IMAGE)} valeur={formatImage} onChange={setFormatImage} />
+                  <SelectPersonnalise options={optionsDepuisValeurs(estSoul ? FORMATS_SOUL : FORMATS_IMAGE)} valeur={formatImage} onChange={setFormatImage} />
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className={CLASSE_LIBELLE_CHAMP}>Qualité</span>
-                  <SelectPersonnalise options={optionsDepuisValeurs(QUALITES_IMAGE)} valeur={qualiteImage} onChange={setQualiteImage} />
+                  <SelectPersonnalise options={optionsDepuisValeurs(estSoul ? QUALITES_SOUL : QUALITES_IMAGE)} valeur={qualiteImage} onChange={setQualiteImage} />
                 </div>
               </div>
             </fieldset>
@@ -519,7 +554,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             </>
           )}
 
-          {famille === "image" && (
+          {/* Soul 2.0 n'accepte pas d'image de référence : la zone n'est pas affichée, pour ne rien promettre qui ne part pas. */}
+          {famille === "image" && !estSoul && (
             <div className="flex flex-col gap-2 rounded-xl border border-dashed border-dj-bordure bg-dj-surface p-3">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-dj-texte">

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ChevronDown, ChevronUp, Play, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { estEffetViral, libelleModeEffet, modeEffet } from "@/lib/higgsfieldGeneration";
 
 function libelleType(effet: EffetHiggsfield) {
   return effet.type === "video-to-video"
@@ -122,11 +123,15 @@ function DiapoEffet({
           </div>
           <h2 className="text-xl font-bold leading-tight text-white sm:text-2xl">{effet.nom}</h2>
           <p className="line-clamp-3 text-sm leading-relaxed text-white/85 sm:line-clamp-none">{effet.description}</p>
-          {/* Pour ces effets, l'aperçu montre un exemple : le résultat dépend des fichiers de l'utilisateur. */}
-          {effet.type === "video-to-video" ? (
+          {/* L'aperçu montre un exemple : le résultat dépend de ce que l'utilisateur fournit. Pour les effets viral, la description part avec la demande. */}
+          {estEffetViral(effet) ? (
+            <p className="text-xs leading-relaxed text-white/70">L&apos;aperçu est un exemple. Cette description est envoyée avec ta vidéo et tes images, tu peux la modifier.</p>
+          ) : effet.type === "video-to-video" ? (
             <p className="text-xs leading-relaxed text-white/70">L&apos;aperçu est un exemple. Ton résultat dépend de ta vidéo et de tes images.</p>
+          ) : modeEffet(effet) === "soul" ? (
+            <p className="text-xs leading-relaxed text-white/70">L&apos;aperçu est un exemple. Ton image dépend de ton texte.</p>
           ) : null}
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-white/60">Modèle : {effet.modele}</span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-white/60">{libelleModeEffet(effet) ?? <>Modèle : {effet.modele}</>}</span>
           <button
             onClick={() => onGenerer(effet)}
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-black shadow-lg transition-transform duration-200 hover:scale-[1.03] active:scale-95 sm:w-auto sm:justify-start"

@@ -39,7 +39,6 @@ function presetVersEffet(p: MarketingPreset): EffetHiggsfield {
     preview: p.preview,
     previewType: p.previewType,
     poster: p.poster,
-    promptChat: "",
     libelleType: estVideo ? "VIDÉO" : "IMAGE",
   };
 }
