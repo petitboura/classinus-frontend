@@ -139,6 +139,12 @@ type ContexteChatValeur = {
   erreurActionHistorique: string | null;
   texteInitialConversation: string | null;
   setTexteInitialConversation: (v: string | null) => void;
+  // Fichiers déjà joints ailleurs (par exemple dans le formulaire Générer de Higgsfield) et à
+  // retrouver dans la barre de saisie de la nouvelle conversation, à côté du texte déposé.
+  // Ils suivent la vie du texte initial : quand celui-ci est vidé, ils le sont aussi, et la barre
+  // de saisie les vide dès l'envoi du message.
+  fichiersInitiauxConversation: File[];
+  setFichiersInitiauxConversation: (v: File[]) => void;
   // Fondu de fermeture (18/08/2026, demande Bourama : "le popup disparaît
   // ... brut, j'aime pas"). Remonté ici depuis ChatFlottant.tsx le
   // 30/08/2026 (audit "fermeture brutale du chat depuis le tiroir mobile")
@@ -368,6 +374,16 @@ export function useFournirContexteChat(): ContexteChatValeur {
   const uidHistoriqueRef = useRef<string | null>(null);
   const historiqueSynchroniseRef = useRef(false);
   const [texteInitialConversation, setTexteInitialConversation] = useState<string | null>(null);
+  const [fichiersInitiauxConversation, setFichiersInitiauxConversation] = useState<File[]>([]);
+  // Les fichiers déposés avec un texte suivent la vie de ce texte : quand le texte est vidé
+  // (nouvelle conversation, sortie de la page, changement de compte), les fichiers le sont aussi.
+  const texteInitialPrecedentRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (texteInitialPrecedentRef.current !== null && texteInitialConversation === null) {
+      setFichiersInitiauxConversation([]);
+    }
+    texteInitialPrecedentRef.current = texteInitialConversation;
+  }, [texteInitialConversation]);
 
   // 04/10/2026 : la conversation affichée est retenue pour la durée de
   // l'onglet et rechargée après un rafraîchissement de page (voir
@@ -507,6 +523,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       setNbMessages(0);
       setChargementFilConversation(false);
       setTexteInitialConversation(null);
+      setFichiersInitiauxConversation([]);
 
       // Détail de l'agent (public) et outils (qui dépendent de la personne).
       try {
@@ -713,6 +730,8 @@ export function useFournirContexteChat(): ContexteChatValeur {
       erreurActionHistorique,
       texteInitialConversation,
       setTexteInitialConversation,
+      fichiersInitiauxConversation,
+      setFichiersInitiauxConversation,
     }),
     [
       etat,
@@ -748,6 +767,7 @@ export function useFournirContexteChat(): ContexteChatValeur {
       supprimerFil,
       erreurActionHistorique,
       texteInitialConversation,
+      fichiersInitiauxConversation,
     ]
   );
 }
@@ -767,7 +787,11 @@ export function useOuvrirChatAvecTexte() {
   // popup mini était déjà ouvert, il ne doit pas rester affiché
   // par-dessus la page /chat, même mécanique que fermerMiniAvantNavigation
   // (ChatFlottant.tsx) et l'action Cmd+K (PaletteCommandes.tsx).
-  return (texte: string) => {
+  // `fichiers` (optionnel) : fichiers déjà joints par la personne, retrouvés dans la barre de saisie
+  // de la nouvelle conversation (voir fichiersInitiauxConversation). Toujours remplacés par cet appel,
+  // même vides, pour qu'une demande précédente ne laisse jamais de fichiers derrière elle.
+  return (texte: string, fichiers?: File[]) => {
+    ctx?.setFichiersInitiauxConversation(fichiers ?? []);
     ctx?.setDemandePrefill(texte);
     ctx?.fermerAvecFondu();
     router.push(ROUTES_APP.chat);

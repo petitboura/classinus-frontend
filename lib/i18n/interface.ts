@@ -2724,6 +2724,9 @@ const EN: Record<string, string> = {
   "En attente de son tour": "Waiting for its turn",
   "Création en cours": "Creation in progress",
   "Tu peux fermer, on te prévient": "You can close this, we'll notify you",
+  // Lien vers le chat depuis le formulaire Générer et depuis les presets Marketing Studio (07/11/2026).
+  "Faire dans le chat": "Do it in the chat",
+  "La génération à partir des presets Marketing Studio n'est pas encore disponible. Elle arrivera bientôt.": "Generation from Marketing Studio presets is not available yet. It is coming soon.",
 };
 
 function normaliserCasse(texte: string): string {

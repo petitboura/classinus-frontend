@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { MessageSquare, Search, SlidersHorizontal, X } from "lucide-react";
+import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
+import { messageChatHiggsfield } from "@/lib/messageChatHiggsfield";
 import { PRESETS_MARKETING, TYPES_MARKETING, type MarketingPreset } from "@/lib/presetsMarketingStudio";
 import type { EffetHiggsfield, StyleEffet, TypeEffet } from "@/lib/effetsHiggsfield";
 import { CarteEffet, FiltreChips } from "@/components/higgsfield/CatalogueHiggsfield";
@@ -54,7 +56,10 @@ export function SectionMarketingStudio() {
   const [nbVisibles, setNbVisibles] = useState(PAS_CHARGEMENT);
   const sentinelle = useRef<HTMLDivElement>(null);
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
-  const [avisGeneration, setAvisGeneration] = useState(false);
+  // Preset pour lequel l'avis « génération pas encore disponible » est affiché (null : pas d'avis).
+  // Il sert aussi à écrire le message du chat, seule voie ouverte pour ces presets.
+  const [effetAvis, setEffetAvis] = useState<EffetHiggsfield | null>(null);
+  const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
 
   const filtres = useMemo(() => {
     const q = normaliser(recherche.trim());
@@ -125,16 +130,16 @@ export function SectionMarketingStudio() {
   }, []);
 
   const ouvrirVisionneur = useCallback((i: number) => {
-    setAvisGeneration(false);
+    setEffetAvis(null);
     setIndexVisionneur(i);
   }, []);
 
   const fermerVisionneur = useCallback(() => setIndexVisionneur(null), []);
 
-  // La generation de ces presets n'est pas encore prise en charge.
-  const generationIndisponible = useCallback(() => {
+  // La generation de ces presets n'est pas encore prise en charge par le formulaire.
+  const generationIndisponible = useCallback((effet: EffetHiggsfield) => {
     setIndexVisionneur(null);
-    setAvisGeneration(true);
+    setEffetAvis(effet);
   }, []);
 
   return (
@@ -229,10 +234,20 @@ export function SectionMarketingStudio() {
         )}
       </div>
 
-      {avisGeneration ? (
-        <p className="rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-sm leading-relaxed text-dj-texte-muet">
-          La génération à partir des presets Marketing Studio n'est pas encore disponible. Elle arrivera bientôt.
-        </p>
+      {effetAvis ? (
+        <div className="flex animate-dj-fade-in-rapide flex-col items-start gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
+          <p className="text-sm leading-relaxed text-dj-texte-muet">
+            La génération à partir des presets Marketing Studio n'est pas encore disponible. Elle arrivera bientôt.
+          </p>
+          <button
+            type="button"
+            onClick={() => ouvrirChatAvecTexte(messageChatHiggsfield(effetAvis))}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-dj-texte px-5 py-2 text-sm font-bold text-dj-fond transition-transform duration-200 active:scale-95"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Faire dans le chat
+          </button>
+        </div>
       ) : null}
 
       {effets.length === 0 ? (
