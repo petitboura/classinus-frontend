@@ -39,13 +39,13 @@ function presetVersEffet(p: MarketingPreset): EffetHiggsfield {
     id: "marketing-" + p.id,
     nom: p.nom,
     description: "",
+    descriptionEn: "",
     type,
     style: categorie as StyleEffet,
     modele: "Marketing Studio",
     preview: p.preview,
     previewType: p.previewType,
     poster: p.poster,
-    promptChat: "",
     libelleType: estVideo ? "VIDÉO" : "IMAGE",
   };
 }

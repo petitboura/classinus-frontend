@@ -50,4 +50,17 @@ for (const protectedSelector of ["pre", "code", "textarea", ".markdown-body", ".
   assert.ok(globalI18n.includes(protectedSelector), `Expected user content protection for ${protectedSelector}`);
 }
 
+assert.equal(traduireTexteInterface("Lire la vidéo", "en"), "Play the video");
+assert.equal(traduireTexteInterface("Aller à l'effet 3", "en"), "Go to effect 3");
+assert.equal(traduireTexteInterface("Vidéo", "en"), "Video");
+
+// Chaque effet Higgsfield existe en anglais : description et texte de départ.
+const sourceEffets = readFileSync("lib/effetsHiggsfield.ts", "utf8");
+const nbDescriptions = (sourceEffets.match(/^\s+description(?!En)\w*:/gm) ?? []).length;
+const nbDescriptionsEn = (sourceEffets.match(/^\s+descriptionEn:/gm) ?? []).length;
+assert.ok(nbDescriptions > 0 && nbDescriptions === nbDescriptionsEn, "Chaque description d'effet doit avoir sa version anglaise");
+const nbPrompts = (sourceEffets.match(/^\s+promptInitial:/gm) ?? []).length;
+const nbPromptsEn = (sourceEffets.match(/^\s+promptInitialEn:/gm) ?? []).length;
+assert.equal(nbPrompts, nbPromptsEn, "Chaque texte de départ d'effet doit avoir sa version anglaise");
+
 console.log("Frontend localization checks passed.");

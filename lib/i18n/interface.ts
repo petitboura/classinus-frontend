@@ -7,6 +7,15 @@ import type { Locale } from "./locale";
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Page Higgsfield : textes restants traduits le 07/11/2026.
+  "vidéo": "Video",
+  "Lire la vidéo": "Play the video",
+  "Upload échoué": "Upload failed",
+  "Rechercher un preset…": "Search for a preset…",
+  "Filtres Higgsfield": "Higgsfield filters",
+  "Aucun preset pour ces filtres": "No preset matches these filters",
+  "Filtres Marketing Studio": "Marketing Studio filters",
+  "mp4 / webm · ≤15 Mo": "mp4 / webm · ≤15 MB",
   "Télécharger": "Download",
   // Carte de connexion proposée dans le chat et écran Connexions (26/10/2026).
   "utiliser pour ça": "Use it for this",
@@ -2701,6 +2710,19 @@ const EN: Record<string, string> = {
   "Échec": "Failed",
   "Voir": "View",
   "L'aperçu est un exemple. Ton résultat dépend de ta vidéo et de tes images.": "The preview is an example. Your result depends on your video and your images.",
+  "L'aperçu est un exemple. Cette description est envoyée avec ta vidéo et tes images, tu peux la modifier.": "The preview is an example. This description is sent with your video and your images, and you can edit it.",
+  "L'aperçu est un exemple. Ton image dépend de ton texte.": "The preview is an example. Your image depends on your text.",
+  "Mode": "Mode",
+  "Transfert de mouvement": "Motion transfer",
+  "Remplacement d'un élément": "Element swap",
+  "Description de l'effet": "Effect description",
+  "(envoyée à Higgsfield, tu peux la modifier)": "(sent to Higgsfield, you can edit it)",
+  "Qu'est-ce qui doit changer ?": "What should change?",
+  "Décris l'effet voulu…": "Describe the effect you want…",
+  "Par exemple : la veste, le décor ou le personnage": "For example: the jacket, the setting or the character",
+  "Par exemple : un décor de plage au coucher du soleil": "For example: a beach setting at sunset",
+  "Décris la personne et la scène…": "Describe the person and the scene…",
+  "Higgsfield peut reformuler un texte très court.": "Higgsfield may reword a very short text.",
   "Options image": "Image options",
   "Son": "Sound",
   "Envoi des fichiers…": "Sending files…",
@@ -2743,6 +2765,10 @@ const EN: Record<string, string> = {
   "Explore les presets Marketing Studio, filtre par rendu et par catégorie, ouvre-en un en plein écran puis génère avec l'image de ton produit.": "Explore the Marketing Studio presets, filter by style and category, open one full screen, then generate with your product image.",
   "Ta génération est prête": "Your generation is ready",
   "Ta génération n'a pas abouti": "Your generation did not complete",
+  "Envoi de tes fichiers": "Sending your files",
+  "En attente de son tour": "Waiting for its turn",
+  "Création en cours": "Creation in progress",
+  "Tu peux fermer, on te prévient": "You can close this, we'll notify you",
 };
 
 function normaliserCasse(texte: string): string {

@@ -23,10 +23,18 @@
 - Cadrage du visionneur (téléphone et PC) : la vidéo (ou l'image) s'affiche en entier, avec des bandes noires si besoin, au lieu d'être recadrée pour remplir l'écran.
 - Navigation du visionneur (6 novembre 2026, branche `fix/higgsfield-points-cadrage`) : la colonne verticale à droite (`RailVisionneur`) a été retirée. Sur PC, un petit point par effet est en bas (l'effet affiché a un point allongé et blanc, chaque point est cliquable) et les flèches haut et bas restent sur le bord droit. Sur téléphone, aucun indicateur n'est affiché, le glissement du doigt suffit. Le compteur `1 / N` en haut reste.
 
-### Formulaire Générer pour les effets vidéo vers vidéo (6 novembre 2026)
+### Formulaire Générer : ce qui est affiché, envoyé et renvoyé (6 et 7 novembre 2026)
 
-- Les 47 effets vidéo vers vidéo (35 Genjutsu et 12 Viral) n'envoient pas l'effet lui-même à Higgsfield : le résultat vient de la vidéo et des images de l'utilisateur. Le champ de description est donc replié sous « Ajouter une précision (optionnel) » au lieu d'être un grand champ, et le visionneur affiche sous l'aperçu : « L'aperçu est un exemple. Ton résultat dépend de ta vidéo et de tes images. »
-- Les 3 effets image (Soul) ne changent pas : la description reste obligatoire. Préremplir un prompt de style est une étape à part, pas encore faite.
+Règle décidée par Bourama le 6 novembre 2026 : pour les effets, la description que la personne lit, ce qui part vraiment au modèle et ce qui en sort ne doivent jamais diverger.
+
+- Le nom et l'aperçu d'un effet ne sont jamais envoyés à Higgsfield. Ce sont des exemples, et le visionneur le dit sous l'aperçu.
+- **Genjutsu, transfert de mouvement (25 effets).** Garde les gestes, la caméra et le rythme de la vidéo de l'utilisateur et refait la scène à partir de ses images. Le champ de texte reste replié sous « Ajouter une précision (optionnel) » tant qu'il est vide, et reste visible dès qu'il contient un texte, puisque ce texte part.
+- **Genjutsu, remplacement d'un élément (10 effets).** Change un élément de la vidéo (personnage, tenue, objet ou lieu) et garde le reste. Le texte dit lequel, donc le champ « Qu'est-ce qui doit changer ? » est toujours visible (optionnel).
+- **Viral (12 effets).** Ils passent par le transfert de mouvement. La description de l'effet est le texte de départ d'un champ toujours visible et part avec la demande ; la personne peut la modifier ou l'effacer. La documentation de Higgsfield ne confirme pas qu'il suive ce texte pour le transfert de mouvement : un essai avec et sans le texte reste à faire.
+- **Soul (3 effets).** Soul 2.0 est maintenant vraiment appelé (avant, la demande partait vers Grok). Le style de l'effet est envoyé (`style_id`), le champ de texte commence rempli avec un court texte de portrait pour ce style, la zone d'images de référence est masquée (Soul n'en propose pas) et la qualité est 720p ou 1080p. Higgsfield peut reformuler un texte très court, et le formulaire le dit.
+- Des libellés simples remplacent les noms techniques de modèle (`hf_mult_motion_control`, `genjutsu-motion`, `higgsfield-viral`) : « Transfert de mouvement », « Remplacement d'un élément » et « Soul 2.0 ».
+- `lib/effetsHiggsfield.ts` : le champ inutilisé `promptChat` est supprimé, `styleId` et `promptInitial` sont ajoutés, et les descriptions sont écrites avec leurs accents. `lib/higgsfieldGeneration.ts` : `modeEffet`, `libelleModeEffet`, `estEffetViral`, `FORMATS_SOUL` et `QUALITES_SOUL`.
+- Les descriptions des effets restent en français (ce sont des données du catalogue, hors du dictionnaire anglais) : un utilisateur anglophone voit donc et envoie aussi le texte français d'un effet Viral.
 
 ### Génération côté serveur (6 novembre 2026)
 
@@ -45,3 +53,9 @@
 - Endpoints backend : `api/higgsfield.py`
 - Logique Higgsfield : `core/generation_video_higgsfield.py`, `core/higgsfield_catalogue.py`, `core/higgsfield_limites.py`, `core/higgsfield_requetes.py`
 - Catalogue statique : `lib/effetsHiggsfield.ts` (50+ effets)
+
+### Anglais pour tous les textes d'effets (7 novembre 2026)
+
+- Règle de Bourama : tout texte visible existe en anglais. Chaque effet a maintenant `descriptionEn`, et `promptInitialEn` quand un texte est prérempli (Viral et Soul). `descriptionEffet` et `promptInitialEffet` dans `lib/effetsHiggsfield.ts` choisissent la langue réglée dans les paramètres ; le texte de départ est choisi à l'ouverture du formulaire, donc une personne en anglais envoie le texte anglais.
+- La recherche du catalogue regarde les deux descriptions. Les textes d'interface restants sont ajoutés dans `lib/i18n/interface.ts`, et les codes d'erreur Higgsfield dans `lib/erreurs.ts`.
+- `tests/verifier-i18n.mjs` échoue quand une description ou un texte de départ d'effet n'a pas sa version anglaise.

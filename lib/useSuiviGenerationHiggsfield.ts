@@ -27,6 +27,8 @@ export function useSuiviGenerationHiggsfield() {
   const [resultatUrl, setResultatUrl] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [progression, setProgression] = useState(0);
+  // Étape réelle renvoyée par le serveur. Une demande tout juste lancée attend son tour (valeur par défaut côté base).
+  const [etape, setEtape] = useState<"attente" | "creation">("attente");
   // Vrai quand les vérifications automatiques sont épuisées alors que la génération n'est pas finie.
   const [delaiDepasse, setDelaiDepasse] = useState(false);
 
@@ -65,6 +67,7 @@ export function useSuiviGenerationHiggsfield() {
     setErreur(null);
     setDelaiDepasse(false);
     setEtat("en_cours");
+    setEtape("attente");
     setProgression(PROGRESSION_DEBUT_SUIVI);
 
     const terminerAvec = (etatFinal: EtatGeneration, message: string | null) => {
@@ -80,6 +83,7 @@ export function useSuiviGenerationHiggsfield() {
       try {
         const statut = await statutHiggsfield(id);
         if (jeton !== jetonRef.current) return;
+        if (statut.etape) setEtape(statut.etape);
         if (statut.etat === "terminee" && statut.url) {
           setResultatUrl(statut.url);
           setProgression(100);
@@ -129,6 +133,7 @@ export function useSuiviGenerationHiggsfield() {
     setRequestId(null);
     setErreur(null);
     setProgression(0);
+    setEtape("attente");
     setDelaiDepasse(false);
   }, [arreterSuivi]);
 
@@ -143,6 +148,7 @@ export function useSuiviGenerationHiggsfield() {
     resultatUrl,
     erreur,
     progression,
+    etape,
     delaiDepasse,
     definirEtape,
     definirErreur: setErreur,

@@ -930,7 +930,8 @@ export function ChatIA({
     } else if (evenement.type === "confirmation_requise") {
       setConfirmation({
         nomLisible: evenement.nom_lisible,
-        nomOutil: evenement.nom_outil,
+        // Nom montré dans les détails : le vrai nom de l'outil, sans préfixe ni code interne.
+        nomOutil: evenement.nom_outil_affiche ?? evenement.nom_outil,
         agentNom: evenement.agent_nom,
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,

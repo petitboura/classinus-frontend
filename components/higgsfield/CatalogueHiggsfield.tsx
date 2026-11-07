@@ -230,7 +230,7 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
       const okStyle = styleFiltre === "tous" || e.style === styleFiltre;
       if (!okRendu || !okStyle) return false;
       if (!q) return true;
-      const hay = normaliser([e.nom, e.description, e.badge || "", e.style, e.id].join(" "));
+      const hay = normaliser([e.nom, e.description, e.descriptionEn, e.badge || "", e.style, e.id].join(" "));
       return hay.includes(q);
     });
   }, [renduFiltre, styleFiltre, recherche, effetsDuCatalogue]);
@@ -240,7 +240,7 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
     const q = normaliser(recherche.trim());
     return effetsDuCatalogue.filter((e) => {
       if (!q) return true;
-      return normaliser([e.nom, e.description, e.badge || "", e.style, e.id].join(" ")).includes(q);
+      return normaliser([e.nom, e.description, e.descriptionEn, e.badge || "", e.style, e.id].join(" ")).includes(q);
     });
   }, [recherche, effetsDuCatalogue]);
 
@@ -397,7 +397,7 @@ export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral
       ) : null}
 
       {effetAGenerer ? (
-        <PanneauGenererHiggsfield effet={effetAGenerer} onClose={() => setEffetAGenerer(null)} />
+        <PanneauGenererHiggsfield key={effetAGenerer.id} effet={effetAGenerer} onClose={() => setEffetAGenerer(null)} />
       ) : null}
     </div>
   );

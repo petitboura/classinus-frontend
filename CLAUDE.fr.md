@@ -147,3 +147,12 @@ Décision de Bourama du 4 novembre 2026. Cette règle est obligatoire : l'appliq
 - **Toujours traduite.** Chaque document existe en anglais (par défaut, `.md`) et en français (`.fr.md`), avec la ligne de choix de langue en tête des deux. Mettre à jour les deux versions ensemble, jamais une seule.
 - Seuls `README`, `CLAUDE` et leurs versions `.fr.md` restent à la racine.
 - Ne jamais écrire de secret, de jeton ou de mot de passe dans la documentation.
+
+## Tout texte visible doit exister en anglais, sinon le travail n'est pas fini
+
+Ordre de Bourama du 7 novembre 2026. C'est une règle, pas une question : ne jamais demander s'il faut traduire.
+
+- Tout texte qu'une personne peut lire existe en anglais comme en français : libellés de l'interface, données de catalogue (noms, descriptions, textes d'effets), textes préremplis dans un champ et envoyés à un modèle, messages d'erreur, et documentation.
+- Les textes de catalogue et de données portent leur version anglaise à côté du français (par exemple `descriptionEn`), et l'écran choisit selon la langue réglée dans les paramètres. Les erreurs du serveur passent par un code stable avec un message français et un message anglais (`core/erreurs.py` et `lib/erreurs.ts`).
+- Si un texte vit dans Supabase, ajouter aussi sa version anglaise là-bas.
+- Une tâche qui ajoute ou change un texte visible sans sa version anglaise n'est pas terminée.

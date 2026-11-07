@@ -1,21 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, ChevronDown, Clock, Download, ExternalLink, ImagePlus, Loader2, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
+import { CarteGenerationHiggsfield, type EtapeCarteGeneration } from "@/components/higgsfield/CarteGenerationHiggsfield";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
-import type { EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { descriptionEffet, promptInitialEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { obtenirLocale } from "@/lib/i18n/locale";
+import { useLocale } from "@/lib/i18n/useLocale";
 import { lancerGenjutsuHiggsfield, lancerImageHiggsfield, lancerVideoHiggsfield, uploaderFichierHiggsfield } from "@/lib/higgsfieldApi";
 import {
   DUREES_VIDEO,
   FORMATS_IMAGE,
+  FORMATS_SOUL,
   FORMATS_VIDEO,
   MAX_IMAGES_REFERENCE,
   QUALITES_IMAGE,
+  QUALITES_SOUL,
   QUALITES_VIDEO,
   RESOLUTIONS_GENJUTSU,
   TAILLE_MAX_FICHIER_OCTETS,
+  estEffetViral,
   familleEffet,
+  libelleModeEffet,
+  modeEffet,
   modeleBackend,
   optionsDepuisValeurs,
   type FichierPreview,
@@ -39,20 +47,31 @@ function tailleEnMo(octets: number): string {
 }
 
 export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggsfield; onClose: () => void }) {
+  const locale = useLocale();
   const famille = familleEffet(effet);
   const modeleDefaut = modeleBackend(effet);
+  const mode = modeEffet(effet);
+  const estSoul = mode === "soul";
+  const estViral = estEffetViral(effet);
+  const libelleMode = libelleModeEffet(effet);
+  // Pour les effets viral et le remplacement d'un élément, le texte dit ce qui doit changer :
+  // le champ reste toujours visible, pour que rien ne parte sans être affiché.
+  const champToujoursOuvert = mode === "element" || estViral;
 
   const [titre, setTitre] = useState(() => effet.nom.replace(/^Genjutsu ·\s*/, "").slice(0, 80));
-  const [prompt, setPrompt] = useState("");
+  // Le champ commence avec le texte propre à l'effet (viral, Soul). Ce qui reste dans le champ est exactement ce qui part.
+  const [prompt, setPrompt] = useState(() => promptInitialEffet(effet, obtenirLocale()));
   const [duree, setDuree] = useState(5);
   const [formatVideo, setFormatVideo] = useState("16:9");
   const [qualiteVideo, setQualiteVideo] = useState("720p");
   const [son, setSon] = useState(true);
-  const [formatImage, setFormatImage] = useState("auto");
-  const [qualiteImage, setQualiteImage] = useState("1k");
+  const [formatImage, setFormatImage] = useState(estSoul ? "1:1" : "auto");
+  const [qualiteImage, setQualiteImage] = useState(estSoul ? "720p" : "1k");
   const [resolutionGenjutsu, setResolutionGenjutsu] = useState("720p");
   const [presetId, setPresetId] = useState("");
   const [precisionOuverte, setPrecisionOuverte] = useState(false);
+  // Le champ replié s'ouvre à la demande, et reste visible dès qu'il contient un texte, puisque ce texte part.
+  const champPrecisionVisible = precisionOuverte || prompt.trim().length > 0;
 
   const [fichiersVideo, setFichiersVideo] = useState<FichierPreview[]>([]);
   const [fichiersImage, setFichiersImage] = useState<FichierPreview[]>([]);
@@ -60,7 +79,10 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   const inputImageRef = useRef<HTMLInputElement>(null);
 
   const suivi = useSuiviGenerationHiggsfield();
-  const { etat, requestId, resultatUrl, erreur, progression, delaiDepasse } = suivi;
+  const { etat, resultatUrl, erreur, etape, delaiDepasse } = suivi;
+  // Heure à laquelle la personne a touché Générer (compteur de temps réel) et fin de la révélation de la carte.
+  const [debutMs, setDebutMs] = useState(0);
+  const [reveleCarte, setReveleCarte] = useState(false);
 
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onClose);
@@ -104,6 +126,20 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   }
 
   const enCours = etat === "upload" || etat === "lancement" || etat === "en_cours";
+  // La carte remplace le formulaire pendant toute la génération, puis jusqu'à la révélation du résultat.
+  const carteVisible = enCours || (etat === "terminee" && !!resultatUrl);
+  const etapeCarte: EtapeCarteGeneration = etat === "upload" || etat === "lancement" ? "envoi" : etape;
+  const formatCarte = famille === "video" ? formatVideo : famille === "image" ? formatImage : "";
+  const sourceCarte = useMemo(() => {
+    if (famille === "genjutsu") return fichiersVideo[0] ? { url: fichiersVideo[0].url, type: "video" as const } : null;
+    return fichiersImage[0] ? { url: fichiersImage[0].url, type: "image" as const } : null;
+  }, [famille, fichiersVideo, fichiersImage]);
+  const apercuEffetCarte = effet.poster || (effet.previewType === "video" ? null : effet.preview) || null;
+
+  function recommencer() {
+    setReveleCarte(false);
+    suivi.reinitialiser();
+  }
 
   const peutLancer =
     titre.trim().length >= 1 &&
@@ -129,11 +165,13 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
 
   async function handleGenerer() {
     suivi.effacerMessages();
+    setReveleCarte(false);
     if (messageErreurLance || !peutLancer) {
       suivi.definirErreur(messageErreurLance || "Vérifie les champs.");
       return;
     }
 
+    setDebutMs(Date.now());
     try {
       suivi.definirEtape("upload", 8);
 
@@ -177,6 +215,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
           format_image: formatImage,
           qualite: qualiteImage,
           ...(imageUrls.length ? { images_reference: imageUrls } : {}),
+          // Le style de l'effet Soul part vraiment à Higgsfield : l'image est faite avec le style de l'aperçu.
+          ...(estSoul && effet.styleId ? { style_id: effet.styleId } : {}),
         });
       } else {
         res = await lancerVideoHiggsfield({
@@ -225,7 +265,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                 <span>Générer</span> <span className="font-semibold text-dj-texte-muet">{effet.nom}</span>
               </span>
               <span className="truncate text-xs text-dj-texte-muet">
-                {effet.badge || effet.style} · {famille} · {modeleDefaut}
+                {libelleMode ?? `${effet.badge || effet.style} · ${famille} · ${modeleDefaut}`}
               </span>
             </div>
           </div>
@@ -240,6 +280,26 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
         </div>
 
         <div className="flex flex-col gap-4 overflow-y-auto overscroll-contain p-4 pb-6">
+          {carteVisible && (
+            <CarteGenerationHiggsfield
+              key={debutMs}
+              format={formatCarte}
+              source={sourceCarte}
+              apercuEffet={apercuEffetCarte}
+              etape={etapeCarte}
+              debutMs={debutMs}
+              delaiDepasse={delaiDepasse}
+              resultatUrl={resultatUrl}
+              onRevele={() => setReveleCarte(true)}
+            />
+          )}
+
+          {/* Le formulaire se range en douceur pendant la génération et revient en cas d'échec ou d'annulation. */}
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-500 ease-in-out ${carteVisible ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}
+            aria-hidden={carteVisible}
+          >
+          <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-dj-texte">
               Titre <span className="font-normal text-dj-texte-muet">(requis, max 120)</span>
@@ -255,30 +315,47 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             <span className="text-[11px] text-dj-texte-muet">{titre.length}/120</span>
           </label>
 
-          {famille === "genjutsu" ? (
-            // Pour Genjutsu, la transformation vient de la vidéo et des images de l'utilisateur, pas d'un texte :
-            // le champ reste disponible mais replié, pour ne pas laisser croire qu'il faut écrire quelque chose.
+          {famille === "genjutsu" && champToujoursOuvert ? (
+            // Viral : la description de l'effet est le texte de départ, et elle part avec la demande.
+            // Remplacement d'un élément : le texte dit lequel. Dans les deux cas le champ reste visible.
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-dj-texte">
+                {estViral ? "Description de l'effet" : "Qu'est-ce qui doit changer ?"}{" "}
+                <span className="font-normal text-dj-texte-muet">{estViral ? "(envoyée à Higgsfield, tu peux la modifier)" : "(optionnel)"}</span>
+              </span>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={3}
+                placeholder={estViral ? "Décris l'effet voulu…" : "Par exemple : la veste, le décor ou le personnage"}
+                disabled={enCours}
+                className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
+              />
+            </label>
+          ) : famille === "genjutsu" ? (
+            // Transfert de mouvement : la transformation vient de la vidéo et des images, le texte est un complément.
+            // Le champ reste replié tant qu'il est vide, et visible dès qu'il contient un texte qui part.
             <div className="flex flex-col gap-1.5">
               <button
                 type="button"
                 onClick={() => setPrecisionOuverte((o) => !o)}
-                aria-expanded={precisionOuverte}
+                aria-expanded={champPrecisionVisible}
                 disabled={enCours}
                 className="flex w-fit items-center gap-1.5 text-xs font-semibold text-dj-texte transition-colors hover:text-dj-texte-muet disabled:opacity-60"
               >
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${precisionOuverte ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${champPrecisionVisible ? "rotate-180" : ""}`} />
                 <span>
                   Ajouter une précision <span className="font-normal text-dj-texte-muet">(optionnel)</span>
                 </span>
               </button>
-              <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${precisionOuverte ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
-                <div className="overflow-hidden" aria-hidden={!precisionOuverte}>
+              <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${champPrecisionVisible ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                <div className="overflow-hidden" aria-hidden={!champPrecisionVisible}>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={3}
-                    tabIndex={precisionOuverte ? 0 : -1}
-                    placeholder={effet.description || "Décris ce que tu veux…"}
+                    tabIndex={champPrecisionVisible ? 0 : -1}
+                    placeholder="Par exemple : un décor de plage au coucher du soleil"
                     disabled={enCours}
                     className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
                   />
@@ -295,10 +372,11 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={3}
-                placeholder={effet.description || "Décris ce que tu veux…"}
+                placeholder={estSoul ? "Décris la personne et la scène…" : descriptionEffet(effet, locale) || "Décris ce que tu veux…"}
                 disabled={enCours}
                 className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm outline-none placeholder:text-dj-texte-muet focus:border-dj-texte disabled:opacity-60"
               />
+              {estSoul && <span className="text-[11px] text-dj-texte-muet">Higgsfield peut reformuler un texte très court.</span>}
             </label>
           )}
 
@@ -311,8 +389,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                   <SelectPersonnalise options={optionsDepuisValeurs(RESOLUTIONS_GENJUTSU)} valeur={resolutionGenjutsu} onChange={setResolutionGenjutsu} />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className={CLASSE_LIBELLE_CHAMP}>Modèle</span>
-                  <span className="flex min-h-[38px] items-center rounded-lg border border-dj-bordure bg-dj-fond px-2 text-xs font-medium text-dj-texte-muet">{modeleDefaut}</span>
+                  <span className={CLASSE_LIBELLE_CHAMP}>{libelleMode ? "Mode" : "Modèle"}</span>
+                  <span className="flex min-h-[38px] items-center rounded-lg border border-dj-bordure bg-dj-fond px-2 text-xs font-medium text-dj-texte-muet">{libelleMode ?? modeleDefaut}</span>
                 </div>
               </div>
               {modeleDefaut === "genjutsu-restyle" && (
@@ -359,11 +437,11 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
                   <span className={CLASSE_LIBELLE_CHAMP}>Format</span>
-                  <SelectPersonnalise options={optionsDepuisValeurs(FORMATS_IMAGE)} valeur={formatImage} onChange={setFormatImage} />
+                  <SelectPersonnalise options={optionsDepuisValeurs(estSoul ? FORMATS_SOUL : FORMATS_IMAGE)} valeur={formatImage} onChange={setFormatImage} />
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className={CLASSE_LIBELLE_CHAMP}>Qualité</span>
-                  <SelectPersonnalise options={optionsDepuisValeurs(QUALITES_IMAGE)} valeur={qualiteImage} onChange={setQualiteImage} />
+                  <SelectPersonnalise options={optionsDepuisValeurs(estSoul ? QUALITES_SOUL : QUALITES_IMAGE)} valeur={qualiteImage} onChange={setQualiteImage} />
                 </div>
               </div>
             </fieldset>
@@ -479,7 +557,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             </>
           )}
 
-          {famille === "image" && (
+          {/* Soul 2.0 n'accepte pas d'image de référence : la zone n'est pas affichée, pour ne rien promettre qui ne part pas. */}
+          {famille === "image" && !estSoul && (
             <div className="flex flex-col gap-2 rounded-xl border border-dashed border-dj-bordure bg-dj-surface p-3">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-xs font-semibold text-dj-texte">
@@ -576,42 +655,29 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             </div>
           )}
 
-          {enCours && (
-            <div className="flex animate-dj-fade-in-rapide flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface p-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-dj-texte">
-                {delaiDepasse ? <Clock className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
-                {delaiDepasse
-                  ? "La génération prend plus de temps que prévu."
-                  : etat === "upload"
-                    ? "Envoi des fichiers…"
-                    : etat === "lancement"
-                      ? "Lancement Higgsfield…"
-                      : `Génération en cours… ${Math.round(progression)}%`}
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-dj-bordure">
-                <div className="h-full rounded-full bg-dj-texte transition-all duration-700" style={{ width: `${progression}%` }} />
-              </div>
-              {requestId && <p className="truncate text-[11px] text-dj-texte-muet">ID: {requestId}</p>}
-              <div className="flex flex-wrap gap-2">
-                {delaiDepasse && (
-                  <button
-                    type="button"
-                    onClick={suivi.reprendreSuivi}
-                    className="rounded-full bg-dj-texte px-3 py-1.5 text-xs font-semibold text-dj-fond transition-colors hover:bg-dj-texte/90"
-                  >
-                    Vérifier à nouveau
-                  </button>
-                )}
-                {etat === "en_cours" && (
-                  <button
-                    type="button"
-                    onClick={suivi.annuler}
-                    className="rounded-full border border-dj-bordure bg-dj-fond px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                  >
-                    Annuler
-                  </button>
-                )}
-              </div>
+          </div>
+          </div>
+
+          {carteVisible && (
+            <div className="flex flex-wrap justify-center gap-2">
+              {delaiDepasse && (
+                <button
+                  type="button"
+                  onClick={suivi.reprendreSuivi}
+                  className="rounded-full bg-dj-texte px-3 py-1.5 text-xs font-semibold text-dj-fond transition-colors hover:bg-dj-texte/90"
+                >
+                  Vérifier à nouveau
+                </button>
+              )}
+              {etat === "en_cours" && (
+                <button
+                  type="button"
+                  onClick={suivi.annuler}
+                  className="rounded-full border border-dj-bordure bg-dj-fond px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute"
+                >
+                  Annuler
+                </button>
+              )}
             </div>
           )}
 
@@ -622,17 +688,11 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             </div>
           )}
 
-          {etat === "terminee" && resultatUrl && (
+          {etat === "terminee" && resultatUrl && reveleCarte && (
             <div className="flex animate-dj-fade-in-rapide flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
               <div className="flex items-center gap-2 text-sm font-bold text-emerald-800">
                 <CheckCircle2 className="h-4 w-4" /> Génération terminée !
               </div>
-              {resultatUrl.includes(".mp4") ? (
-                <video src={resultatUrl} controls playsInline className="w-full rounded-xl bg-black" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={resultatUrl} alt="Résultat" className="w-full rounded-xl" />
-              )}
               <div className="flex flex-wrap gap-2">
                 <a href={resultatUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800">
                   <ExternalLink className="h-3.5 w-3.5" /> Ouvrir
@@ -644,7 +704,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                   <Clock className="h-3 w-3" /> Enregistré dans ta bibliothèque
                 </span>
               </div>
-              <button type="button" onClick={suivi.reinitialiser} className="self-start text-xs font-semibold text-emerald-700 underline">
+              <button type="button" onClick={recommencer} className="self-start text-xs font-semibold text-emerald-700 underline">
                 Générer à nouveau
               </button>
             </div>
