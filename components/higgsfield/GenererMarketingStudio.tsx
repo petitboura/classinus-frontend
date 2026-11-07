@@ -86,7 +86,7 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
   const [format, setFormat] = useState("");
 
   const suivi = useSuiviGenerationHiggsfield();
-  const { etat, requestId, resultatUrl, erreur, progression, delaiDepasse } = suivi;
+  const { etat, resultatUrl, erreur, progression, delaiDepasse } = suivi;
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onClose);
 
@@ -325,7 +325,6 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
                   Vérifier à nouveau
                 </button>
               )}
-              {requestId && <span className="sr-only">Génération {requestId}</span>}
             </div>
           )}
 

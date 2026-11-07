@@ -2720,6 +2720,29 @@ const EN: Record<string, string> = {
   "Higgsfield n'est pas disponible pour le moment. Réessaie plus tard.": "Higgsfield is not available right now. Try again later.",
   "Retirer l'image": "Remove the image",
   "Mon effet Higgsfield": "My Higgsfield effect",
+  // Panneau de generation Marketing Studio et notifications de fin (07/11/2026).
+  "Choisir une image": "Choose an image",
+  "Générer avec Marketing Studio": "Generate with Marketing Studio",
+  "Le preset décide du style. Ton résultat dépend surtout de l'image de ton produit.": "The preset decides the style. Your result mostly depends on your product image.",
+  "Image de ton produit (ou adresse de ton site)": "Your product image (or your website address)",
+  "Image de ton produit": "Your product image",
+  "PNG, JPG ou WebP, 15 Mo maximum. Une image nette, produit bien visible.": "PNG, JPG or WebP, 15 MB maximum. A sharp image with the product clearly visible.",
+  "Photo de la personne (optionnel)": "Photo of the person (optional)",
+  "Si tu n'en ajoutes pas, Higgsfield choisit la personne.": "If you don't add one, Higgsfield picks the person.",
+  "Adresse de ton site (optionnel si tu ajoutes une image)": "Your website address (optional if you add an image)",
+  "Format": "Format",
+  "Celui du preset": "The preset's own",
+  "Ajouter une précision (optionnel)": "Add a detail (optional)",
+  "Ex : ambiance chaude, fond clair…": "E.g. warm mood, light background…",
+  "Envoi de tes images…": "Sending your images…",
+  "Lancement de la génération…": "Starting the generation…",
+  "Tu peux fermer cette fenêtre : on te prévient quand c'est prêt et le résultat arrive dans ta bibliothèque.": "You can close this window: we'll notify you when it's ready and the result will arrive in your library.",
+  "Ajoute l'image de ton produit ou l'adresse de ton site (https://).": "Add your product image or your website address (https://).",
+  "Ajoute l'image de ton produit.": "Add your product image.",
+  "L'adresse du site doit commencer par https://.": "The website address must start with https://.",
+  "Explore les presets Marketing Studio, filtre par rendu et par catégorie, ouvre-en un en plein écran puis génère avec l'image de ton produit.": "Explore the Marketing Studio presets, filter by style and category, open one full screen, then generate with your product image.",
+  "Ta génération est prête": "Your generation is ready",
+  "Ta génération n'a pas abouti": "Your generation did not complete",
 };
 
 function normaliserCasse(texte: string): string {
@@ -2785,6 +2808,8 @@ export function traduireTexteInterface(texte: string, locale: Locale): string {
     [/^aller à l'effet (\d+)$/i, "Go to effect $1"],
     [/^"(.+)" dépasse 15 mo\.$/i, '"$1" is larger than 15 MB.'],
     [/^(\d+(?:[.,]\d+)?) mo$/i, "$1 MB"],
+    [/^« (.+) » est enregistrée dans ta bibliothèque\.$/i, "“$1” is saved in your library."],
+    [/^« (.+) » n'a pas pu être terminée\.$/i, "“$1” could not be completed."],
   ] as const;
   const texteDynamique = normaliserCasse(texte);
   for (const [motif, remplacement] of dynamique) {
