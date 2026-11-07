@@ -2,7 +2,7 @@
 
 [English version] · [Français](HIGGSFIELD_TODO.fr.md)
 
-Updated 1 November 2026: the Generate panel is complete.
+Updated 7 November 2026: the Generate form can hand over to the chat.
 
 ## Completed in this branch
 
@@ -44,7 +44,16 @@ Rule decided by Bourama on 6 November 2026: for the effects, the description the
 - Launching, tracking and saving a generation now happen on the server: you can close the app and the result still lands in your library, with a notification when it is ready. See `docs/status/HIGGSFIELD_TODO.md` in `classinus-backend` for the table, the loop and the endpoints.
 - `lib/higgsfieldApi.ts`: `statutHiggsfield` only reads the server state (the `titre` parameter was removed); new `listerGenerationsHiggsfield`.
 - New `components/higgsfield/GenerationsRecentesHiggsfield.tsx`: "My recent generations" block at the top of the catalogue (running, done, failed; a "View" link on finished ones). It refreshes while a generation is running and stays hidden when the list is empty.
-- Not done yet: the "built before your eyes" visual effect during generation.
+- Generation card (`components/higgsfield/CarteGenerationHiggsfield.tsx`): during a generation the form folds away and an empty card with the exact shape of the future video or image takes its place, with a frosted-glass layer over the user's own file, a real elapsed-time counter, and the result revealed once it is loaded. Higgsfield sends no partial preview and no percentage, so only the three real steps are shown: "Sending your files", "Waiting for its turn" and "Creation in progress".
+
+### Chat fallback from the Generate form (7 November 2026)
+
+- New "Do it in the chat" button in the Generate form, above Close and Generate. It opens a new chat conversation with a ready-written message and keeps everything already added in the form: the video and the images are attached again in the chat input, and the title (if changed), the description and the chosen options are written into the message. The button folds away while a generation runs and when the result is shown, and comes back after a failure or a cancellation. It exists for the cases where the form is not enough.
+- The 3 image effects (Soul) get the same button, with the message about the chosen style.
+- Marketing Studio presets have no form yet, so the same button sits under the "generation not available yet" notice and opens the chat with a message naming the preset (name, category, identifier).
+- New `lib/messageChatHiggsfield.ts`: builds the message from the effect's `promptChat` and from what was typed in the form (it writes the starting sentence itself for Marketing Studio presets). Messages stay in French, like the catalogue sentences.
+- Chat side: `useOuvrirChatAvecTexte` now accepts optional files. `ContexteChat` gets `fichiersInitiauxConversation`, which follows the life of `texteInitialConversation` (emptied when the text is emptied) and is also emptied by the input bar once the message is sent. `BarreDeSaisie` adds these files once when it opens, through its normal attachment path.
+- Not tested in a browser yet: the type-check, the i18n tests and the native-components and theme-colour checks pass, and the message builder was run on real effects.
 
 ## Manual tests before merge
 
@@ -52,6 +61,8 @@ Rule decided by Bourama on 6 November 2026: for the effects, the description the
 - [ ] Viewer: scroll snap, arrows, keyboard, dots, sound toggle, and Generate opening the correct panel.
 - [ ] Backend: `GET /api/higgsfield/disponible` returns `{disponible: true/false}` based on the environment's `HIGGSFIELD_API_KEY`.
 - [ ] Generate: upload → submit → status → cancel → completion → library.
+- [ ] Generate, "Do it in the chat": with a video and images added, the chat opens on a new conversation, the message is written, the same files are attached in the input bar, and sending the message sends them; the button hides during a generation and returns after a failure.
+- [ ] Marketing Studio: "Do it in the chat" under the notice opens the chat with a message naming the preset.
 
 ## References
 

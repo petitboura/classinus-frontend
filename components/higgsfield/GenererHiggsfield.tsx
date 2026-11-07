@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronDown, Clock, Download, ExternalLink, ImagePlus, Loader2, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Clock, Download, ExternalLink, ImagePlus, Loader2, MessageSquare, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
 import { CarteGenerationHiggsfield, type EtapeCarteGeneration } from "@/components/higgsfield/CarteGenerationHiggsfield";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
@@ -28,6 +28,8 @@ import {
   optionsDepuisValeurs,
   type FichierPreview,
 } from "@/lib/higgsfieldGeneration";
+import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
+import { messageChatHiggsfield, titreParDefaut } from "@/lib/messageChatHiggsfield";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useSuiviGenerationHiggsfield } from "@/lib/useSuiviGenerationHiggsfield";
 
@@ -58,7 +60,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   // le champ reste toujours visible, pour que rien ne parte sans être affiché.
   const champToujoursOuvert = mode === "element" || estViral;
 
-  const [titre, setTitre] = useState(() => effet.nom.replace(/^Genjutsu ·\s*/, "").slice(0, 80));
+  const [titre, setTitre] = useState(() => titreParDefaut(effet));
   // Le champ commence avec le texte propre à l'effet (viral, Soul). Ce qui reste dans le champ est exactement ce qui part.
   const [prompt, setPrompt] = useState(() => promptInitialEffet(effet, obtenirLocale()));
   const [duree, setDuree] = useState(5);
@@ -139,6 +141,29 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   function recommencer() {
     setReveleCarte(false);
     suivi.reinitialiser();
+  }
+
+  // Porte de sortie quand le formulaire ne suffit pas : le chat s'ouvre sur une nouvelle conversation
+  // avec le message déjà écrit, et les fichiers déjà joints ici (vidéo d'abord, puis images) y restent.
+  const ouvrirChatAvecTexte = useOuvrirChatAvecTexte();
+  function faireDansLeChat() {
+    const message = messageChatHiggsfield(effet, {
+      famille,
+      titre,
+      // Le texte de départ de l'effet est déjà dans la phrase du message : on ne le répète pas.
+      prompt: prompt.trim() === promptInitialEffet(effet, obtenirLocale()).trim() ? "" : prompt,
+      duree,
+      formatVideo,
+      qualiteVideo,
+      son,
+      formatImage,
+      qualiteImage,
+      resolutionGenjutsu,
+      presetId,
+      nbVideos: fichiersVideo.length,
+      nbImages: fichiersImage.length,
+    });
+    ouvrirChatAvecTexte(message, [...fichiersVideo, ...fichiersImage].map((apercu) => apercu.file));
   }
 
   const peutLancer =
@@ -711,7 +736,25 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
           )}
         </div>
 
-        <div className="flex gap-2 border-t border-dj-bordure p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="border-t border-dj-bordure p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {/* Le lien vers le chat se range en douceur dès qu'une génération démarre et revient en cas d'échec ou d'annulation. */}
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${carteVisible ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"}`}
+            aria-hidden={carteVisible}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <button
+                type="button"
+                onClick={faireDansLeChat}
+                tabIndex={carteVisible ? -1 : 0}
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-full border border-dj-bordure bg-transparent px-4 py-2.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Faire dans le chat
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-2">
           <button
             type="button"
             onClick={fermer}
@@ -737,6 +780,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
               {etat === "upload" ? "Envoi…" : etat === "lancement" ? "Lancement…" : etat === "en_cours" ? "En cours…" : "Générer"}
             </button>
           )}
+          </div>
         </div>
       </div>
     </div>
