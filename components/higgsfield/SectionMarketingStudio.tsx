@@ -9,7 +9,13 @@ import { CarteEffet, FiltreChips } from "@/components/higgsfield/CatalogueHiggsf
 
 // Section Marketing Studio : meme affichage que le catalogue d'effets (cartes,
 // panneau de filtres, visionneur). Les presets sont convertis dans la forme
-// d'un effet. La generation n'est pas encore disponible pour eux.
+// d'un effet. Le bouton Generer ouvre le panneau de generation Marketing Studio.
+
+// Panneau de generation : charge a la demande, comme le visionneur.
+const PanneauGenererMarketingStudio = dynamic(
+  () => import("@/components/higgsfield/GenererMarketingStudio").then((m) => m.PanneauGenererMarketingStudio),
+  { ssr: false }
+);
 
 // Meme chargement differe que le catalogue d'effets.
 const VisionneurHiggsfield = dynamic(
@@ -54,7 +60,7 @@ export function SectionMarketingStudio() {
   const [nbVisibles, setNbVisibles] = useState(PAS_CHARGEMENT);
   const sentinelle = useRef<HTMLDivElement>(null);
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
-  const [avisGeneration, setAvisGeneration] = useState(false);
+  const [presetAGenerer, setPresetAGenerer] = useState<MarketingPreset | null>(null);
 
   const filtres = useMemo(() => {
     const q = normaliser(recherche.trim());
@@ -125,30 +131,24 @@ export function SectionMarketingStudio() {
   }, []);
 
   const ouvrirVisionneur = useCallback((i: number) => {
-    setAvisGeneration(false);
     setIndexVisionneur(i);
   }, []);
 
   const fermerVisionneur = useCallback(() => setIndexVisionneur(null), []);
 
-  // La generation de ces presets n'est pas encore prise en charge.
-  const generationIndisponible = useCallback(() => {
+  // Generer depuis le visionneur : on retrouve le preset a partir de l'id de l'effet ("marketing-" + id).
+  const ouvrirGenerer = useCallback((effet: EffetHiggsfield) => {
+    const id = effet.id.replace(/^marketing-/, "");
+    const preset = PRESETS_MARKETING.find((p) => p.id === id);
+    if (!preset) return;
     setIndexVisionneur(null);
-    setAvisGeneration(true);
+    setPresetAGenerer(preset);
   }, []);
 
   return (
     <div className="flex flex-col gap-4 py-4 md:py-6">
-      <div className="flex flex-col gap-1 rounded-[20px] border border-dj-bordure bg-dj-surface px-4 py-3.5">
-        <span className="inline-flex w-fit items-center rounded-full bg-dj-texte px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-dj-fond">
-          BIENTÔT DISPONIBLE
-        </span>
-        <p className="text-sm leading-relaxed text-dj-texte-muet">
-          La génération arrive bientôt. En attendant, explore les presets Marketing Studio et ouvre-en un en plein écran.
-        </p>
-      </div>
       <p className="max-w-2xl text-sm leading-relaxed text-dj-texte-muet">
-        Explore les presets Marketing Studio, filtre par rendu et par catégorie, ouvre en plein écran pour comparer.
+        Explore les presets Marketing Studio, filtre par rendu et par catégorie, ouvre-en un en plein écran puis génère avec l'image de ton produit.
       </p>
 
       <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg" style={{ backgroundColor: "var(--dj-surface)" }}>
@@ -229,12 +229,6 @@ export function SectionMarketingStudio() {
         )}
       </div>
 
-      {avisGeneration ? (
-        <p className="rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-sm leading-relaxed text-dj-texte-muet">
-          La génération à partir des presets Marketing Studio n'est pas encore disponible. Elle arrivera bientôt.
-        </p>
-      ) : null}
-
       {effets.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <p className="text-sm font-semibold text-dj-texte">Aucun preset pour ces filtres</p>
@@ -264,9 +258,11 @@ export function SectionMarketingStudio() {
           effets={effets}
           indexDepart={indexVisionneur}
           onClose={fermerVisionneur}
-          onGenerer={generationIndisponible}
+          onGenerer={ouvrirGenerer}
         />
       ) : null}
+
+      {presetAGenerer ? <PanneauGenererMarketingStudio preset={presetAGenerer} onClose={() => setPresetAGenerer(null)} /> : null}
     </div>
   );
 }
