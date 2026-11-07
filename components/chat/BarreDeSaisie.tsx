@@ -36,6 +36,7 @@ import {
   lireReglagesProchainMessage,
 } from "@/lib/reglagesProchainMessage";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
+import { ContexteChat } from "@/lib/contexteChat";
 import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
@@ -654,6 +655,20 @@ export function BarreDeSaisie({
       return [];
     });
   }
+
+  // Fichiers déjà joints dans un autre écran (voir useOuvrirChatAvecTexte, lib/contexteChat.tsx) :
+  // ajoutés une seule fois à l'ouverture, exactement comme si la personne les avait joints ici.
+  // Le garde évite un double ajout si React rejoue l'effet au montage.
+  const ctxChatFichiers = useContext(ContexteChat);
+  const fichiersInitiaux = ctxChatFichiers?.fichiersInitiauxConversation;
+  const fichiersInitiauxAjoutesRef = useRef(false);
+  useEffect(() => {
+    if (fichiersInitiauxAjoutesRef.current) return;
+    fichiersInitiauxAjoutesRef.current = true;
+    if (fichiersInitiaux && fichiersInitiaux.length > 0) ajouterFichiers(fichiersInitiaux);
+    // Lu une seule fois au montage, comme texteInitial : les dépendances ne doivent pas rejouer l'effet.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-agrandissement du textarea (2026-07-20, bug trouvé par Bourama en
   // test réel) -- rows={1} fixait la hauteur à une seule ligne sans aucune
@@ -1375,6 +1390,9 @@ export function BarreDeSaisie({
     );
     setTexte("");
     viderFichiers();
+    // Les fichiers venus d'un autre écran sont partis avec le message : ils ne doivent pas revenir
+    // si la barre est remontée plus tard dans la même page.
+    if (fichiersInitiaux && fichiersInitiaux.length > 0) ctxChatFichiers?.setFichiersInitiauxConversation([]);
     setLocalisation(null);
     setTextesColles([]);
     setRechercheForcee(false);

@@ -7,6 +7,15 @@ import type { Locale } from "./locale";
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Page Higgsfield : textes restants traduits le 07/11/2026.
+  "vidéo": "Video",
+  "Lire la vidéo": "Play the video",
+  "Upload échoué": "Upload failed",
+  "Rechercher un preset…": "Search for a preset…",
+  "Filtres Higgsfield": "Higgsfield filters",
+  "Aucun preset pour ces filtres": "No preset matches these filters",
+  "Filtres Marketing Studio": "Marketing Studio filters",
+  "mp4 / webm · ≤15 Mo": "mp4 / webm · ≤15 MB",
   "Télécharger": "Download",
   // Carte de connexion proposée dans le chat et écran Connexions (26/10/2026).
   "utiliser pour ça": "Use it for this",
@@ -2701,6 +2710,19 @@ const EN: Record<string, string> = {
   "Échec": "Failed",
   "Voir": "View",
   "L'aperçu est un exemple. Ton résultat dépend de ta vidéo et de tes images.": "The preview is an example. Your result depends on your video and your images.",
+  "L'aperçu est un exemple. Cette description est envoyée avec ta vidéo et tes images, tu peux la modifier.": "The preview is an example. This description is sent with your video and your images, and you can edit it.",
+  "L'aperçu est un exemple. Ton image dépend de ton texte.": "The preview is an example. Your image depends on your text.",
+  "Mode": "Mode",
+  "Transfert de mouvement": "Motion transfer",
+  "Remplacement d'un élément": "Element swap",
+  "Description de l'effet": "Effect description",
+  "(envoyée à Higgsfield, tu peux la modifier)": "(sent to Higgsfield, you can edit it)",
+  "Qu'est-ce qui doit changer ?": "What should change?",
+  "Décris l'effet voulu…": "Describe the effect you want…",
+  "Par exemple : la veste, le décor ou le personnage": "For example: the jacket, the setting or the character",
+  "Par exemple : un décor de plage au coucher du soleil": "For example: a beach setting at sunset",
+  "Décris la personne et la scène…": "Describe the person and the scene…",
+  "Higgsfield peut reformuler un texte très court.": "Higgsfield may reword a very short text.",
   "Options image": "Image options",
   "Son": "Sound",
   "Envoi des fichiers…": "Sending files…",
@@ -2720,10 +2742,36 @@ const EN: Record<string, string> = {
   "Higgsfield n'est pas disponible pour le moment. Réessaie plus tard.": "Higgsfield is not available right now. Try again later.",
   "Retirer l'image": "Remove the image",
   "Mon effet Higgsfield": "My Higgsfield effect",
+  // Panneau de generation Marketing Studio et notifications de fin (07/11/2026).
+  "Choisir une image": "Choose an image",
+  "Générer avec Marketing Studio": "Generate with Marketing Studio",
+  "Le preset décide du style. Ton résultat dépend surtout de l'image de ton produit.": "The preset decides the style. Your result mostly depends on your product image.",
+  "Image de ton produit (ou adresse de ton site)": "Your product image (or your website address)",
+  "Image de ton produit": "Your product image",
+  "PNG, JPG ou WebP, 15 Mo maximum. Une image nette, produit bien visible.": "PNG, JPG or WebP, 15 MB maximum. A sharp image with the product clearly visible.",
+  "Photo de la personne (optionnel)": "Photo of the person (optional)",
+  "Si tu n'en ajoutes pas, Higgsfield choisit la personne.": "If you don't add one, Higgsfield picks the person.",
+  "Adresse de ton site (optionnel si tu ajoutes une image)": "Your website address (optional if you add an image)",
+  "Format": "Format",
+  "Celui du preset": "The preset's own",
+  "Ajouter une précision (optionnel)": "Add a detail (optional)",
+  "Ex : ambiance chaude, fond clair…": "E.g. warm mood, light background…",
+  "Envoi de tes images…": "Sending your images…",
+  "Lancement de la génération…": "Starting the generation…",
+  "Tu peux fermer cette fenêtre : on te prévient quand c'est prêt et le résultat arrive dans ta bibliothèque.": "You can close this window: we'll notify you when it's ready and the result will arrive in your library.",
+  "Ajoute l'image de ton produit ou l'adresse de ton site (https://).": "Add your product image or your website address (https://).",
+  "Ajoute l'image de ton produit.": "Add your product image.",
+  "L'adresse du site doit commencer par https://.": "The website address must start with https://.",
+  "Explore les presets Marketing Studio, filtre par rendu et par catégorie, ouvre-en un en plein écran puis génère avec l'image de ton produit.": "Explore the Marketing Studio presets, filter by style and category, open one full screen, then generate with your product image.",
+  "Ta génération est prête": "Your generation is ready",
+  "Ta génération n'a pas abouti": "Your generation did not complete",
   "Envoi de tes fichiers": "Sending your files",
   "En attente de son tour": "Waiting for its turn",
   "Création en cours": "Creation in progress",
   "Tu peux fermer, on te prévient": "You can close this, we'll notify you",
+  // Lien vers le chat depuis le formulaire Générer et depuis les presets Marketing Studio (07/11/2026).
+  "Faire dans le chat": "Do it in the chat",
+  "La génération à partir des presets Marketing Studio n'est pas encore disponible. Elle arrivera bientôt.": "Generation from Marketing Studio presets is not available yet. It is coming soon.",
 };
 
 function normaliserCasse(texte: string): string {
@@ -2789,6 +2837,8 @@ export function traduireTexteInterface(texte: string, locale: Locale): string {
     [/^aller à l'effet (\d+)$/i, "Go to effect $1"],
     [/^"(.+)" dépasse 15 mo\.$/i, '"$1" is larger than 15 MB.'],
     [/^(\d+(?:[.,]\d+)?) mo$/i, "$1 MB"],
+    [/^« (.+) » est enregistrée dans ta bibliothèque\.$/i, "“$1” is saved in your library."],
+    [/^« (.+) » n'a pas pu être terminée\.$/i, "“$1” could not be completed."],
   ] as const;
   const texteDynamique = normaliserCasse(texte);
   for (const [motif, remplacement] of dynamique) {

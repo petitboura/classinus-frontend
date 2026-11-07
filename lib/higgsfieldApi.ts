@@ -29,6 +29,10 @@ export async function lancerGenjutsuHiggsfield(payload: Record<string, unknown>)
   return (await appelerApi("/api/higgsfield/genjutsu", { method: "POST", body: JSON.stringify(payload) })) as { request_id: string; titre: string };
 }
 
+export async function lancerMarketingStudioHiggsfield(payload: Record<string, unknown>) {
+  return (await appelerApi("/api/higgsfield/marketing-studio", { method: "POST", body: JSON.stringify(payload) })) as { request_id: string; titre: string };
+}
+
 // Le suivi et l'enregistrement en bibliothèque sont faits par le serveur : cet appel ne fait que lire l'état.
 export async function statutHiggsfield(request_id: string): Promise<HiggsfieldStatut> {
   return (await appelerApi(`/api/higgsfield/statut/${encodeURIComponent(request_id)}`)) as HiggsfieldStatut;

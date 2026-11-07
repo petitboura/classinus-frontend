@@ -2,7 +2,7 @@
 
 [English version] · [Français](HIGGSFIELD_TODO.fr.md)
 
-Updated 1 November 2026: the Generate panel is complete.
+Updated 7 November 2026: the Generate form can hand over to the chat.
 
 ## Completed in this branch
 
@@ -26,17 +26,34 @@ Updated 1 November 2026: the Generate panel is complete.
 - Viewer framing (phone and PC): the video (or image) is shown in full, with black bars if needed, instead of being cropped to fill the screen.
 - Viewer navigation (6 November 2026, branch `fix/higgsfield-points-cadrage`): the vertical column on the right (`RailVisionneur`) was removed. On PC, one small dot per effect sits at the bottom (the displayed effect has a longer white dot, each dot is clickable) and the up and down arrows stay on the right edge. On phones, no indicator is shown; swiping is enough. The `1 / N` counter at the top stays.
 
-### Generate form for video-to-video effects (6 November 2026)
+### Generate form: what is shown, what is sent, what comes back (6 and 7 November 2026)
 
-- The 47 video-to-video effects (35 Genjutsu and 12 Viral) do not send the effect itself to Higgsfield: the result comes from the user's own video and images. So the description field is now folded under "Add a detail (optional)" instead of being a large field, and the viewer shows a note under the preview: "The preview is an example. Your result depends on your video and your images."
-- The 3 image effects (Soul) are unchanged: the description stays required. Prefilling it with a style prompt is a separate step, not done yet.
+Rule decided by Bourama on 6 November 2026: for the effects, the description the person reads, what really goes to the model and what comes out must never diverge.
+
+- The name and the preview of an effect are never sent to Higgsfield. They are examples, and the viewer says so under the preview.
+- **Genjutsu, motion transfer (25 effects).** Keeps the gestures, the camera and the rhythm of the user's video and rebuilds the scene from the user's images. The text field stays folded under "Add a detail (optional)" while it is empty, and stays visible as soon as it holds a text, because that text is sent.
+- **Genjutsu, element swap (10 effects).** Changes one element of the video (character, outfit, object or place) and keeps the rest. The text says which one, so the field "What should change?" is always visible (optional).
+- **Viral (12 effects).** They go through the motion transfer. The description of the effect is the starting text of an always visible field and is sent with the request; the person can edit or erase it. The documentation of Higgsfield does not confirm that it follows this text for the motion transfer: a test with and without the text is still to be done.
+- **Soul (3 effects).** Soul 2.0 is now really called (before, the request went to Grok). The style of the effect is sent (`style_id`), the text field starts filled with a short portrait text for that style, the reference images zone is hidden (Soul does not offer it), and the quality is 720p or 1080p. Higgsfield may reword a very short text, and the form says so.
+- Plain labels replace the technical model names (`hf_mult_motion_control`, `genjutsu-motion`, `higgsfield-viral`): "Motion transfer", "Element swap" and "Soul 2.0".
+- `lib/effetsHiggsfield.ts`: the unused `promptChat` field was removed, `styleId` and `promptInitial` were added, and the descriptions are written with their accents. `lib/higgsfieldGeneration.ts`: `modeEffet`, `libelleModeEffet`, `estEffetViral`, `FORMATS_SOUL` and `QUALITES_SOUL`.
+- The descriptions of the effects stay in French (they are catalogue data, not part of the English dictionary), so an English user also sees and sends the French text of a Viral effect.
 
 ### Server-side generation (6 November 2026)
 
 - Launching, tracking and saving a generation now happen on the server: you can close the app and the result still lands in your library, with a notification when it is ready. See `docs/status/HIGGSFIELD_TODO.md` in `classinus-backend` for the table, the loop and the endpoints.
 - `lib/higgsfieldApi.ts`: `statutHiggsfield` only reads the server state (the `titre` parameter was removed); new `listerGenerationsHiggsfield`.
 - New `components/higgsfield/GenerationsRecentesHiggsfield.tsx`: "My recent generations" block at the top of the catalogue (running, done, failed; a "View" link on finished ones). It refreshes while a generation is running and stays hidden when the list is empty.
-- Not done yet: the "built before your eyes" visual effect during generation.
+- Generation card (`components/higgsfield/CarteGenerationHiggsfield.tsx`): during a generation the form folds away and an empty card with the exact shape of the future video or image takes its place, with a frosted-glass layer over the user's own file, a real elapsed-time counter, and the result revealed once it is loaded. Higgsfield sends no partial preview and no percentage, so only the three real steps are shown: "Sending your files", "Waiting for its turn" and "Creation in progress".
+
+### Chat fallback from the Generate form (7 November 2026)
+
+- New "Do it in the chat" button in the Generate form, above Close and Generate. It opens a new chat conversation with a ready-written message and keeps everything already added in the form: the video and the images are attached again in the chat input, and the title (if changed), the description and the chosen options are written into the message. The button folds away while a generation runs and when the result is shown, and comes back after a failure or a cancellation. It exists for the cases where the form is not enough.
+- The 3 image effects (Soul) get the same button, with the message about the chosen style.
+- Marketing Studio presets have no form yet, so the same button sits under the "generation not available yet" notice and opens the chat with a message naming the preset (name, category, identifier).
+- New `lib/messageChatHiggsfield.ts`: builds the message from the effect's `promptChat` and from what was typed in the form (it writes the starting sentence itself for Marketing Studio presets). Messages stay in French, like the catalogue sentences.
+- Chat side: `useOuvrirChatAvecTexte` now accepts optional files. `ContexteChat` gets `fichiersInitiauxConversation`, which follows the life of `texteInitialConversation` (emptied when the text is emptied) and is also emptied by the input bar once the message is sent. `BarreDeSaisie` adds these files once when it opens, through its normal attachment path.
+- Not tested in a browser yet: the type-check, the i18n tests and the native-components and theme-colour checks pass, and the message builder was run on real effects.
 
 ## Manual tests before merge
 
@@ -44,9 +61,23 @@ Updated 1 November 2026: the Generate panel is complete.
 - [ ] Viewer: scroll snap, arrows, keyboard, dots, sound toggle, and Generate opening the correct panel.
 - [ ] Backend: `GET /api/higgsfield/disponible` returns `{disponible: true/false}` based on the environment's `HIGGSFIELD_API_KEY`.
 - [ ] Generate: upload → submit → status → cancel → completion → library.
+- [ ] Generate, "Do it in the chat": with a video and images added, the chat opens on a new conversation, the message is written, the same files are attached in the input bar, and sending the message sends them; the button hides during a generation and returns after a failure.
+- [ ] Marketing Studio: "Do it in the chat" under the notice opens the chat with a message naming the preset.
 
 ## References
 
 - Backend endpoints: `api/higgsfield.py`
 - Higgsfield logic: `core/generation_video_higgsfield.py`, `core/higgsfield_catalogue.py`, `core/higgsfield_limites.py`, `core/higgsfield_requetes.py`
 - Static catalogue: `lib/effetsHiggsfield.ts` (50+ effects)
+
+### English for every effect text (7 November 2026)
+
+- Rule from Bourama: every visible text exists in English. Each effect now has `descriptionEn`, and `promptInitialEn` when a text is prefilled (Viral and Soul). `descriptionEffet` and `promptInitialEffet` in `lib/effetsHiggsfield.ts` pick the language chosen in Settings; the starting text is chosen when the form opens, so an English user sends the English text.
+- The catalogue search looks in both descriptions. Remaining interface texts were added to `lib/i18n/interface.ts`, and the Higgsfield error codes to `lib/erreurs.ts`.
+- `tests/verifier-i18n.mjs` fails when an effect description or starting text has no English version.
+
+### Images: what is shown is what is made (7 November 2026, branch `feat/images-coherence-reelle`)
+
+- Checked against Higgsfield's own data (MCP, nothing generated): a Soul style comes with a name and a sample image only, no description and no starting text. The invented starting texts of the 3 Soul effects were removed: the field starts empty and the person writes what they want. The default format of Soul is now 3:4, the ratio of its samples.
+- Marketing Studio images (product shots and product shots with a person): the Format choice is hidden and no format is sent, because Higgsfield offers no format for them and the sample keeps its own ratio. Videos are unchanged.
+- Still to verify with a real generation: that the image shown as the Marketing Studio result is the generated one (the server reads it from an undocumented answer).
