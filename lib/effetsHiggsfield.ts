@@ -123,8 +123,6 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
     preview: "https://cdn.higgsfield.ai/soul-v2-style/f33d85f2-6521-4fa8-8e8f-894cfbdee578.webp",
     previewType: "image",
     styleId: "3db34ab5-3439-4317-9e03-08dc30852e69",
-    promptInitial: "Portrait photo d'une personne, rendu naturel",
-    promptInitialEn: "Photo portrait of a person, natural look",
     badge: "Soul",
   },
   {
@@ -138,8 +136,6 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
     preview: "https://cdn.higgsfield.ai/soul-v2-style/18e79fc7-3ce8-499b-a129-2daba3165707.webp",
     previewType: "image",
     styleId: "fafd3087-0d0f-4fb1-9af6-91b7d304687c",
-    promptInitial: "Portrait d'une personne dans une lumière ambiante chaude",
-    promptInitialEn: "Portrait of a person in warm ambient light",
     badge: "Soul",
   },
   {
@@ -153,8 +149,6 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
     preview: "https://cdn.higgsfield.ai/soul-v2-style/c1d13313-1a78-4f55-acd3-125e789d202f.webp",
     previewType: "image",
     styleId: "7ee16ff3-c0b0-4f5f-a0e1-e7fc46144230",
-    promptInitial: "Portrait d'une personne en studio, esthétique Y2K",
-    promptInitialEn: "Portrait of a person in a studio, Y2K aesthetic",
     badge: "Soul",
   },
 ];

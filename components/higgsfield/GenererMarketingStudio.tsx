@@ -84,6 +84,7 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
   const [prompt, setPrompt] = useState("");
   const [precisionOuverte, setPrecisionOuverte] = useState(false);
   const [format, setFormat] = useState("");
+  const estImage = preset.previewType === "image";
 
   const suivi = useSuiviGenerationHiggsfield();
   const { etat, resultatUrl, erreur, progression, delaiDepasse } = suivi;
@@ -167,7 +168,8 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
         ...(urlPersonne ? { image_avatar_url: urlPersonne } : {}),
         ...(contrat.site && siteValide ? { url_marque: site.trim() } : {}),
         ...(prompt.trim() ? { prompt: prompt.trim() } : {}),
-        ...(format ? { format_image: format } : {}),
+        // Une image garde le format de son apercu : Higgsfield ne propose pas de choix de format pour les images.
+        ...(format && !estImage ? { format_image: format } : {}),
       });
       suivi.demarrerSuivi(res.request_id, titre.trim());
     } catch (e: unknown) {
@@ -267,6 +269,7 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
             </label>
           )}
 
+          {!estImage && (
           <div className={`flex flex-col gap-1.5 ${enCours ? "pointer-events-none opacity-60" : ""}`}>
             <span className="text-xs font-semibold text-dj-texte">Format</span>
             <SelectPersonnalise
@@ -275,6 +278,7 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
               options={FORMATS_MARKETING.map((f) => ({ id: f, label: f || "Celui du preset" }))}
             />
           </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <button

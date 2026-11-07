@@ -65,7 +65,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   const [formatVideo, setFormatVideo] = useState("16:9");
   const [qualiteVideo, setQualiteVideo] = useState("720p");
   const [son, setSon] = useState(true);
-  const [formatImage, setFormatImage] = useState(estSoul ? "1:1" : "auto");
+  const [formatImage, setFormatImage] = useState(estSoul ? "3:4" : "auto");
   const [qualiteImage, setQualiteImage] = useState(estSoul ? "720p" : "1k");
   const [resolutionGenjutsu, setResolutionGenjutsu] = useState("720p");
   const [presetId, setPresetId] = useState("");

@@ -59,3 +59,9 @@ Règle décidée par Bourama le 6 novembre 2026 : pour les effets, la descriptio
 - Règle de Bourama : tout texte visible existe en anglais. Chaque effet a maintenant `descriptionEn`, et `promptInitialEn` quand un texte est prérempli (Viral et Soul). `descriptionEffet` et `promptInitialEffet` dans `lib/effetsHiggsfield.ts` choisissent la langue réglée dans les paramètres ; le texte de départ est choisi à l'ouverture du formulaire, donc une personne en anglais envoie le texte anglais.
 - La recherche du catalogue regarde les deux descriptions. Les textes d'interface restants sont ajoutés dans `lib/i18n/interface.ts`, et les codes d'erreur Higgsfield dans `lib/erreurs.ts`.
 - `tests/verifier-i18n.mjs` échoue quand une description ou un texte de départ d'effet n'a pas sa version anglaise.
+
+### Images : ce qui est montré est ce qui est fait (7 novembre 2026, branche `feat/images-coherence-reelle`)
+
+- Vérifié auprès de Higgsfield (MCP, rien généré) : un style Soul n'arrive qu'avec un nom et une image d'exemple, sans description ni texte de départ. Les textes de départ inventés des 3 effets Soul sont retirés : le champ commence vide et la personne écrit ce qu'elle veut. Le format par défaut de Soul est maintenant 3:4, celui de ses exemples.
+- Images Marketing Studio (photos de produit, avec ou sans personne) : le choix du format est masqué et aucun format n'est envoyé, car Higgsfield n'en propose pas pour elles et l'exemple garde son propre format. Les vidéos ne changent pas.
+- Reste à vérifier avec une vraie génération : que l'image affichée comme résultat Marketing Studio est bien celle qui a été générée (le serveur la lit dans une réponse non documentée).

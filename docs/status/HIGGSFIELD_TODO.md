@@ -64,3 +64,9 @@ Rule decided by Bourama on 6 November 2026: for the effects, the description the
 - Rule from Bourama: every visible text exists in English. Each effect now has `descriptionEn`, and `promptInitialEn` when a text is prefilled (Viral and Soul). `descriptionEffet` and `promptInitialEffet` in `lib/effetsHiggsfield.ts` pick the language chosen in Settings; the starting text is chosen when the form opens, so an English user sends the English text.
 - The catalogue search looks in both descriptions. Remaining interface texts were added to `lib/i18n/interface.ts`, and the Higgsfield error codes to `lib/erreurs.ts`.
 - `tests/verifier-i18n.mjs` fails when an effect description or starting text has no English version.
+
+### Images: what is shown is what is made (7 November 2026, branch `feat/images-coherence-reelle`)
+
+- Checked against Higgsfield's own data (MCP, nothing generated): a Soul style comes with a name and a sample image only, no description and no starting text. The invented starting texts of the 3 Soul effects were removed: the field starts empty and the person writes what they want. The default format of Soul is now 3:4, the ratio of its samples.
+- Marketing Studio images (product shots and product shots with a person): the Format choice is hidden and no format is sent, because Higgsfield offers no format for them and the sample keeps its own ratio. Videos are unchanged.
+- Still to verify with a real generation: that the image shown as the Marketing Studio result is the generated one (the server reads it from an undocumented answer).
