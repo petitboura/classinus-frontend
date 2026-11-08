@@ -7,8 +7,11 @@
 // compris ici, sans protocole maison :
 //   - MCP-UI (messages {type, payload, messageId}), spécification mcpui.dev ;
 //   - MCP Apps (JSON-RPC 2.0 par postMessage, ui/initialize etc.), SEP-1865.
-// Tout ce que le widget demande de plus (appeler un outil, écrire un message dans le chat)
-// est refusé : un widget est du code tiers, il ne pilote ni les outils ni la conversation.
+// Un widget est du code tiers : il ne pilote pas la conversation (ui/message, prompt, intent sont
+// refusés). Depuis le 08/11/2026 il peut appeler les outils de SON PROPRE serveur MCP (tools/call
+// en MCP Apps, `tool` en MCP-UI), mais jamais directement : l'appel est relayé par notre backend
+// (api/widgets_outils.py), qui vérifie le serveur, demande la confirmation des actions qui
+// modifient ou qui coûtent, et exécute avec le compte de la personne.
 
 export type RessourceUi = {
   uri: string;
@@ -18,6 +21,9 @@ export type RessourceUi = {
   contenu: string;
   // Résultat de l'outil, rejoué au widget d'une MCP App (notification tool-result).
   donnees?: { content: unknown[]; structuredContent?: unknown };
+  // Nom (côté Classinus) de l'outil qui a affiché le widget : le backend en déduit le serveur
+  // dont le widget a le droit d'appeler les outils. Absent des anciens widgets rejoués.
+  outil_source?: string;
 };
 
 // Réglages d'affichage, tous ici (jamais en dur dans le composant). Surchargeables au build
@@ -48,7 +54,12 @@ export type ContexteWidget = {
 export type ActionWidget =
   | { type: "taille"; hauteur: number }
   | { type: "lien"; url: string }
-  | { type: "repondre"; message: Record<string, unknown> };
+  | { type: "repondre"; message: Record<string, unknown> }
+  // Le widget demande d'appeler un outil de son serveur : à relayer, la réponse est asynchrone.
+  | { type: "appel_outil"; dialecte: "apps" | "mcpui"; id: unknown; nom: string; arguments: Record<string, unknown> };
+
+/** Résultat d'un outil rendu au widget, dans le dialecte dont il est venu. */
+export type ResultatAppelOutil = { texte: string; estErreur: boolean };
 
 export function adresseHttpValide(brut: unknown): string | null {
   if (typeof brut !== "string") return null;
@@ -103,7 +114,7 @@ function traiterJsonRpc(d: Record<string, unknown>, ctx: ContexteWidget): Action
         message: reponseOk(d.id, {
           protocolVersion: protocole,
           hostInfo: { name: "Classinus", version: "1.0.0" },
-          hostCapabilities: { openLinks: {} },
+          hostCapabilities: { openLinks: {}, serverTools: {} },
           hostContext: contexteHote(ctx),
         }),
       }];
@@ -114,7 +125,13 @@ function traiterJsonRpc(d: Record<string, unknown>, ctx: ContexteWidget): Action
       return [{ type: "lien", url }, { type: "repondre", message: reponseOk(d.id) }];
     }
     if (methode === "ping") return [{ type: "repondre", message: reponseOk(d.id) }];
-    // tools/call, resources/read, ui/message, ui/request-display-mode... : refusés.
+    if (methode === "tools/call") {
+      const nom = typeof params.name === "string" ? params.name.trim() : "";
+      if (!nom) return [{ type: "repondre", message: reponseErreur(d.id, -32602, "Invalid tool name") }];
+      const args = estObjet(params.arguments) ? params.arguments : {};
+      return [{ type: "appel_outil", dialecte: "apps", id: d.id, nom, arguments: args }];
+    }
+    // resources/read, ui/message, ui/request-display-mode... : refusés.
     return [{ type: "repondre", message: reponseErreur(d.id, -32601, "Not supported by this host") }];
   }
 
@@ -152,7 +169,12 @@ function traiterMcpUi(d: Record<string, unknown>, ctx: ContexteWidget): ActionWi
     }
     case "notify":
       return recu();
-    case "tool":
+    case "tool": {
+      const nom = typeof charge.toolName === "string" ? charge.toolName.trim() : "";
+      if (!idMessage || !nom) return [];
+      const args = estObjet(charge.params) ? charge.params : {};
+      return [...recu(), { type: "appel_outil", dialecte: "mcpui", id: idMessage, nom, arguments: args }];
+    }
     case "prompt":
     case "intent":
       // Refusé, mais le widget est prévenu pour ne pas attendre indéfiniment.
@@ -162,6 +184,19 @@ function traiterMcpUi(d: Record<string, unknown>, ctx: ContexteWidget): ActionWi
     default:
       return [];
   }
+}
+
+/** Message à renvoyer au widget quand l'appel d'outil relayé est terminé (ou refusé). */
+export function reponseAppelOutil(action: Extract<ActionWidget, { type: "appel_outil" }>, resultat: ResultatAppelOutil): Record<string, unknown> {
+  const contenu = [{ type: "text", text: resultat.texte }];
+  if (action.dialecte === "apps") {
+    return reponseOk(action.id, { content: contenu, ...(resultat.estErreur ? { isError: true } : {}) });
+  }
+  return {
+    type: "ui-message-response",
+    messageId: action.id,
+    payload: resultat.estErreur ? { error: resultat.texte } : { response: { content: contenu } },
+  };
 }
 
 /** Ce que l'hôte doit faire d'un message reçu de l'iframe. Ne lève jamais. */
