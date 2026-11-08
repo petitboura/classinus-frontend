@@ -16,7 +16,7 @@ function precharger() {
   void chargerGenerer();
 }
 
-export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral" } = {}) {
+export function CatalogueHiggsfield({ famille }: { famille?: "genjutsu" | "viral" | "soul" } = {}) {
   // Sur une sous-section, seule la famille demandée est affichée (l'identifiant commence par son nom).
   const elements = useMemo<ElementSection[]>(
     () =>
