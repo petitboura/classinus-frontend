@@ -106,10 +106,11 @@ Bourama's order from 7 November 2026. It is a rule, not a question: never ask wh
 - If a text lives in Supabase, add its English version there too.
 - A task that adds or changes visible text without its English version is not finished.
 
-## The two Higgsfield sections must never differ
+## The Higgsfield tabs must never differ
 
-Bourama's rule from 8 November 2026. The Higgsfield catalogue (`CatalogueHiggsfield.tsx`) and Marketing Studio (`SectionMarketingStudio.tsx`) must always look and behave the same way: same filter bar, same Image / Video row, same search, same reset, same cards, same full screen viewer.
+Bourama's rule from 8 November 2026. The four Higgsfield tabs (Catalogue, Genjutsu, Viral, Marketing Studio) must always look and behave the same way: same filter bar, same Image / Video row, same search, same counters, same reset, same cards, same full screen viewer, same loading on scroll, same "no result" message.
 
-- The filter bar lives in one shared component, `components/higgsfield/BarreFiltresHiggsfield.tsx`. Change it there, never in a single section.
-- The Image / Video row always stays visible at the top, next to the Filters button, even when the Filters panel is closed. On a phone, the preset counter is hidden because it is not essential.
-- Any new filter, label, behavior or visual detail added to one of the two sections must be added to the other in the same change, preferably by sharing the component.
+- All of that lives in ONE component, `components/higgsfield/SectionEffetsHiggsfield.tsx` (with the bar in `BarreFiltresHiggsfield.tsx` and the card in `CarteEffetHiggsfield.tsx`). Change it there, never in a single tab.
+- A tab only provides its data and its generation panel (`CatalogueHiggsfield.tsx` for Catalogue, Genjutsu and Viral, `SectionMarketingStudio.tsx` for Marketing Studio). Do not copy filter or layout code into a tab.
+- The Image / Video row always stays visible at the top, next to the Filters button, even when the Filters panel is closed. On a phone, the counter is hidden because it is not essential.
+- Any new filter, label, behavior or visual detail is added once, in the shared component, so every tab gets it.

@@ -157,10 +157,11 @@ Ordre de Bourama du 7 novembre 2026. C'est une règle, pas une question : ne jam
 - Si un texte vit dans Supabase, ajouter aussi sa version anglaise là-bas.
 - Une tâche qui ajoute ou change un texte visible sans sa version anglaise n'est pas terminée.
 
-## Les deux sections Higgsfield ne doivent jamais différer
+## Les onglets Higgsfield ne doivent jamais différer
 
-Règle de Bourama du 8 novembre 2026. Le catalogue Higgsfield (`CatalogueHiggsfield.tsx`) et Marketing Studio (`SectionMarketingStudio.tsx`) doivent toujours avoir le même aspect et le même comportement : même barre de filtres, même rangée Image / Vidéo, même recherche, même réinitialisation, mêmes cartes, même visionneur plein écran.
+Règle de Bourama du 8 novembre 2026. Les quatre onglets Higgsfield (Catalogue, Genjutsu, Viral, Marketing Studio) doivent toujours avoir le même aspect et le même comportement : même barre de filtres, même rangée Image / Vidéo, même recherche, mêmes compteurs, même réinitialisation, mêmes cartes, même visionneur plein écran, même chargement au défilement, même message « aucun résultat ».
 
-- La barre de filtres vit dans un seul composant partagé, `components/higgsfield/BarreFiltresHiggsfield.tsx`. On la change là, jamais dans une seule section.
-- La rangée Image / Vidéo reste toujours visible en haut, à côté du bouton Filtres, même quand le panneau Filtres est fermé. Sur téléphone, le compteur de presets est masqué car il n'est pas indispensable.
-- Tout nouveau filtre, libellé, comportement ou détail visuel ajouté à l'une des deux sections doit être ajouté à l'autre dans la même livraison, de préférence en partageant le composant.
+- Tout cela vit dans UN seul composant, `components/higgsfield/SectionEffetsHiggsfield.tsx` (avec la barre dans `BarreFiltresHiggsfield.tsx` et la carte dans `CarteEffetHiggsfield.tsx`). On le change là, jamais dans un seul onglet.
+- Un onglet ne fournit que ses données et son panneau de génération (`CatalogueHiggsfield.tsx` pour Catalogue, Genjutsu et Viral, `SectionMarketingStudio.tsx` pour Marketing Studio). Ne jamais recopier du code de filtre ou de mise en page dans un onglet.
+- La rangée Image / Vidéo reste toujours visible en haut, à côté du bouton Filtres, même quand le panneau Filtres est fermé. Sur téléphone, le compteur est masqué car il n'est pas indispensable.
+- Tout nouveau filtre, libellé, comportement ou détail visuel s'ajoute une seule fois, dans le composant partagé, pour que tous les onglets l'aient.

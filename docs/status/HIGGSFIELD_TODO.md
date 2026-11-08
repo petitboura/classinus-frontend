@@ -2,6 +2,8 @@
 
 [English version] · [Français](HIGGSFIELD_TODO.fr.md)
 
+Updated 8 November 2026: the four Higgsfield tabs (Catalogue, Genjutsu, Viral, Marketing Studio) now use one shared section, `components/higgsfield/SectionEffetsHiggsfield.tsx`, with the filter bar in `BarreFiltresHiggsfield.tsx` and the card in `CarteEffetHiggsfield.tsx`. The Image / Video row stays visible next to the Filters button, and the counter is hidden on phones. The tabs must never differ (see `CLAUDE.md`).
+
 Updated 7 November 2026: the Generate form can hand over to the chat.
 
 ## Completed in this branch
