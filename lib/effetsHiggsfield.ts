@@ -64,6 +64,24 @@ function viral(id: string, nom: string, description: string, descriptionEn: stri
   };
 }
 
+const SOUL = "https://cdn.higgsfield.ai/soul-v2-style/";
+
+function soul(id: string, nom: string, apercu: string, styleId: string, description: string, descriptionEn: string): EffetHiggsfield {
+  return {
+    id: "soul-" + id,
+    nom: "Soul · " + nom,
+    description: "Style Soul 2.0 : " + description,
+    descriptionEn: "Soul 2.0 style: " + descriptionEn,
+    type: "image",
+    style: "realiste",
+    modele: "soul_2",
+    preview: SOUL + apercu + ".webp",
+    previewType: "image",
+    styleId,
+    badge: "Soul",
+  };
+}
+
 export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
   genjutsu("countryside-duo", "Countryside Duo", G + "90d01517-46a5-467d-a37e-b2e18b401386.mp4", P + "54b6f52b-08b2-5acf-9557-2e599560acd8.webp", "hf_mult_replace_object"),
   genjutsu("orange-jacket", "Orange Jacket", G + "76933ec2-b002-4446-8713-180f60286ad7.mp4", P + "c045b52b-ab93-5d96-8e2b-72115697cb50.webp", "hf_mult_replace_object"),
@@ -151,6 +169,36 @@ export const EFFETS_HIGGSFIELD: EffetHiggsfield[] = [
     styleId: "7ee16ff3-c0b0-4f5f-a0e1-e7fc46144230",
     badge: "Soul",
   },
+  soul("swag-era", "Swag era", "35702530-c33b-4259-84c8-170c7d043882", "6dffca48-f9fe-43f2-8589-da58a172fa3e", "ambiance streetwear, allure assurée", "streetwear mood, confident attitude"),
+  soul("theatrical-light", "Theatrical light", "2a79c49e-29cd-46b3-b60e-d6eed72b40ec", "7876c2a5-aa83-4530-ad09-2b368bbb5e95", "lumière de scène, contrastes dramatiques", "stage lighting, dramatic contrast"),
+  soul("y2k-street", "Y2K street", "1235a986-ef50-4920-9ca1-0a9e2dee1768", "d7e58c26-b74e-4a72-8c78-d061d600c9a5", "rue et mode des années 2000", "2000s street and fashion look"),
+  soul("flash-editorial", "Flash editorial", "9f132343-278b-4fd1-b614-c11e07472cf5", "5e87c5bd-86b6-491a-94ab-046891d1e35e", "portrait de magazine au flash direct", "magazine portrait with direct flash"),
+  soul("old-smartphone", "Old smartphone", "b7f45834-8736-4858-bba8-30029048e1e5", "a7cb654b-eba7-4e9b-af41-8eaa482bf7c9", "photo prise avec un vieux téléphone", "photo taken with an old smartphone"),
+  soul("street-photography", "Street photography", "bf3defc5-e184-4a21-bf1f-cae4a66ace97", "95151de0-e0e5-4e04-bd45-c58c8a4ac023", "photographie de rue prise sur le vif", "candid street photography"),
+  soul("retro-bw", "Retro BW", "efe5394f-d88b-4587-8417-d22f462af786", "069f5a5f-8c4b-4591-a3dd-bde488672228", "noir et blanc rétro", "retro black and white"),
+  soul("asian-nostalgia", "Asian nostalgia", "ddda68b0-a93b-43c0-a26f-bf0b3e683469", "99716f25-c133-438a-829a-ec53258980b4", "ambiance nostalgique d'un souvenir asiatique", "nostalgic Asian memory mood"),
+  soul("surreal-solarization", "Surreal solarization", "776961b9-336d-4234-b569-bdd57021ffcf", "26bb19d1-25cc-4455-9a80-522eb136a4de", "effet de solarisation surréaliste", "surreal solarization effect"),
+  soul("subtle-flash", "Subtle flash", "2134d88a-8e98-4f4a-9477-19a59343bd2d", "e62e75c2-b1bb-433d-9192-f1196faed74e", "flash léger et discret", "soft, discreet flash"),
+  soul("digital-camera", "Digital camera", "4663f0a8-7e42-405d-ab2d-2f0fdceb5246", "74abc530-cec8-4c13-88a6-2b3f78bfd0ff", "rendu d'appareil photo numérique compact", "compact digital camera look"),
+  soul("siren", "Siren", "feec6fd0-995d-4491-adfe-12dc3a1abec1", "cfd92ced-4801-42c4-b8ca-e096a405ff1a", "portrait envoûtant, esprit sirène", "enchanting portrait, siren spirit"),
+  soul("mystique-city", "Mystique city", "06fd4ff1-b3e0-4ad6-ad00-bb91d2268ca5", "d6371f60-a70c-4a43-9393-6e3d8206590c", "ville nocturne et mystérieuse", "mysterious night city"),
+  soul("candy-pop", "Candy pop", "bd012736-2b24-40fd-84b8-d73b0d2ebee4", "cd55643f-812c-461d-9837-baa9a88dff2e", "couleurs bonbon, ambiance pop", "candy colors, pop mood"),
+  soul("double-exposure", "Double exposure", "e4057886-2c14-4a51-998d-26fa24a9941c", "7a42d44e-0dab-4dd1-be49-c83fec827251", "double exposition, deux images superposées", "double exposure, two overlaid images"),
+  soul("2000s-band", "2000s band", "254355c4-d976-46b0-b066-baa1cc6dc8a1", "330789e8-cb50-410c-a31f-b1ba10188176", "photo de groupe des années 2000", "2000s band photo"),
+  soul("frutiger-aero", "Frutiger aero", "ea15a9bb-ef1d-49ce-8d49-fd311f6ea270", "599d96ce-be5b-4071-9ee0-5b3494f6c757", "esthétique Frutiger Aero, lumineuse et aquatique", "Frutiger Aero look, bright and aquatic"),
+  soul("drain", "Drain", "4c796bd9-ee7e-476f-b588-083b3df529e1", "8261de31-258b-4a58-997c-b65bbd6d367f", "ambiance sombre et désaturée, style Drain", "dark, desaturated Drain style"),
+  soul("extraterrestrial", "Extraterrestrial", "6938b497-ce2f-4d80-9760-00be2a2a3277", "82e55816-3b41-4f01-8500-d36f235e08e6", "look extraterrestre", "extraterrestrial look"),
+  soul("editorial-street-style", "Editorial street style", "84b09184-9077-4f93-b4aa-1340f3641631", "3d5584b2-4d15-48d2-8a09-c1073259f4c6", "mode de rue façon éditorial", "editorial street fashion"),
+  soul("nature-light", "Nature light", "f795f856-42c9-4f09-991f-ff3f5d1b7db4", "dbe816eb-c651-4361-aee3-9386f8372121", "lumière naturelle en extérieur", "natural outdoor light"),
+  soul("new-indie", "New Indie", "200949a2-c394-468c-adbb-5a88a5b3105b", "184401c9-65d8-4d4b-b2e1-fd6a87a5b60c", "esthétique indie moderne", "modern indie aesthetic"),
+  soul("underwater", "Underwater", "3b6c09ce-e318-4cf3-82ca-770b4e1f753d", "04022c41-6164-47d9-b33f-cf241f0b5e15", "portrait sous l'eau", "underwater portrait"),
+  soul("80s-horror", "80s horror", "06e57621-847a-4a51-a10c-a607548a27e8", "313f3e05-0d79-4d2f-a56a-d9d289321fd8", "ambiance film d'horreur des années 80", "1980s horror movie mood"),
+  soul("disposable-camera", "Disposable camera", "00e8d173-cf5e-45c4-8896-23af3d8d37ce", "7ef8747e-c925-4851-b9e9-6400ddb19df9", "rendu d'appareil jetable", "disposable camera look"),
+  soul("neutral-pastel-film", "Neutral pastel film", "e70fc9f9-648e-4016-a411-7564fa47bab5", "adbca234-bfff-4c19-835f-f8647655d295", "pellicule aux tons pastel neutres", "film look with neutral pastel tones"),
+  soul("warm-vivid-film", "Warm vivid film", "576fb6f0-e000-4da9-ba05-a4cc5f5e2462", "dbaabc25-7fee-438c-bd65-ae4d1775d4ab", "pellicule chaude aux couleurs vives", "warm film with vivid colors"),
+  soul("bw-film", "BW film", "30b6d8ca-1a73-429d-9a16-b19905d69756", "3ece570b-a9a3-4b86-8c20-8eaa7c58cc4f", "pellicule noir et blanc", "black and white film"),
+  soul("warm-contrast-film", "Warm contrast film", "fd7b86d1-e90f-4198-a429-c764bd9b1996", "2c109e42-bf29-47a2-ae16-aa6cbbba8b8a", "pellicule chaude et contrastée", "warm, high contrast film"),
+  soul("muted-cool-film", "Muted cool film", "c50c0350-dffe-49fc-acc4-e6fcfa5a6140", "a15510bf-2439-4964-a2cc-0e35d1b5e70f", "pellicule froide aux couleurs atténuées", "cool film with muted colors"),
 ];
 
 // Le rendu (image ou video) est le seul type sur lequel on peut compter :
