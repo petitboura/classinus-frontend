@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { ChevronDown, ChevronUp, Play, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import { descriptionEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
 import { useLocale } from "@/lib/i18n/useLocale";
-import { estEffetViral, libelleModeEffet, modeEffet } from "@/lib/higgsfieldGeneration";
+import { estEffetViral, estGenerationDisponible, libelleModeEffet, modeEffet } from "@/lib/higgsfieldGeneration";
 
 function libelleType(effet: EffetHiggsfield) {
   return effet.type === "video-to-video"
@@ -134,6 +134,17 @@ function DiapoEffet({
             <p className="text-xs leading-relaxed text-white/70">L&apos;aperçu est un exemple. Ton image dépend de ton texte.</p>
           ) : null}
           <span className="text-[11px] font-semibold uppercase tracking-widest text-white/60">{libelleModeEffet(effet) ?? <>Modèle : {effet.modele}</>}</span>
+          {estGenerationDisponible(effet) ? (
+            <p className="text-xs leading-relaxed text-white/70">{locale === "en" ? "Add your product image: Higgsfield recreates this preview with it." : "Ajoute l'image de ton produit : Higgsfield refait cet aperçu avec elle."}</p>
+          ) : null}
+          {!estGenerationDisponible(effet) ? (
+            <div
+              aria-disabled="true"
+              className="mt-2 inline-flex min-h-12 w-full cursor-default items-center justify-center gap-2 rounded-full bg-white/20 px-6 py-3 text-sm font-bold text-white/80 backdrop-blur"
+            >
+              {locale === "en" ? "Coming soon" : "Bientôt disponible"}
+            </div>
+          ) : (
           <button
             onClick={() => onGenerer(effet)}
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-black shadow-lg transition-transform duration-200 hover:scale-[1.03] active:scale-95 sm:w-auto sm:justify-start"
@@ -141,6 +152,7 @@ function DiapoEffet({
             <Sparkles className="h-4 w-4" />
             Générer
           </button>
+          )}
         </div>
       </div>
     </section>

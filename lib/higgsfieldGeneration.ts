@@ -46,6 +46,15 @@ export function modeEffet(effet: EffetHiggsfield): ModeEffet {
   return "autre";
 }
 
+/**
+ * Seules les images Marketing Studio sont générables aujourd'hui : Higgsfield les refait à partir de l'aperçu
+ * avec l'image de la personne, donc le résultat ressemble à ce qu'elle a vu. Tout le reste (Soul, Genjutsu,
+ * Viral, vidéos Marketing Studio) reste visible avec la mention « Bientôt », sans bouton Générer.
+ */
+export function estGenerationDisponible(effet: EffetHiggsfield): boolean {
+  return effet.modele === "Marketing Studio" && effet.type === "image";
+}
+
 export function estEffetViral(effet: EffetHiggsfield): boolean {
   return effet.modele === "higgsfield-viral";
 }

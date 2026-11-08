@@ -165,3 +165,10 @@ Règle de Bourama du 8 novembre 2026. Les quatre onglets Higgsfield (Catalogue, 
 - Un onglet ne fournit que ses données et son panneau de génération (`CatalogueHiggsfield.tsx` pour Catalogue, Genjutsu et Viral, `SectionMarketingStudio.tsx` pour Marketing Studio). Ne jamais recopier du code de filtre ou de mise en page dans un onglet.
 - La rangée Image / Vidéo reste toujours visible en haut, à côté du bouton Filtres, même quand le panneau Filtres est fermé. Sur téléphone, le compteur est masqué car il n'est pas indispensable.
 - Tout nouveau filtre, libellé, comportement ou détail visuel s'ajoute une seule fois, dans le composant partagé, pour que tous les onglets l'aient.
+
+## Higgsfield : seuls les modèles fidèles se génèrent
+
+Règle de Bourama du 8 novembre 2026. Un aperçu doit être un vrai modèle : la personne clique, ajoute sa propre image et obtient un résultat proche de ce qu'elle a vu, sans avoir à écrire (écrire reste possible, jamais obligatoire). Aujourd'hui seules les 418 images Marketing Studio le font (Higgsfield refait l'aperçu à partir de l'image du produit). Les styles Soul, Genjutsu, Viral et les vidéos Marketing Studio restent visibles avec la mention « Bientôt » et sans bouton Générer.
+
+- L'interrupteur unique est `estGenerationDisponible` dans `lib/higgsfieldGeneration.ts`. Pour ouvrir un autre type d'effet, on le change là, quand Higgsfield sait reproduire cet aperçu fidèlement, jamais dans un seul onglet.
+- Ne jamais faire d'un aperçu une décoration ou une pub : s'il ne peut pas être reproduit sur l'image de la personne, on le marque « Bientôt ».

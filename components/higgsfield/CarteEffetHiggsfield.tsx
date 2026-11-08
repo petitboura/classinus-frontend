@@ -3,6 +3,8 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { renduEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { estGenerationDisponible } from "@/lib/higgsfieldGeneration";
+import { useLocale } from "@/lib/i18n/useLocale";
 
 // memo : ouvrir ou fermer le plein écran ne redessine plus les cartes du catalogue.
 export const CarteEffet = memo(function CarteEffet({
@@ -14,6 +16,7 @@ export const CarteEffet = memo(function CarteEffet({
   index: number;
   onOuvrir: (index: number) => void;
 }) {
+  const locale = useLocale();
   const ref = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   // La vidéo n'existe en mémoire que lorsque la carte est proche de l'écran : l'image fixe
@@ -130,6 +133,11 @@ export const CarteEffet = memo(function CarteEffet({
       <span className="pointer-events-none absolute left-2.5 top-2.5 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white">
         {effet.libelleType ?? (renduEffet(effet) === "video" ? "VIDÉO" : "IMAGE")}
       </span>
+      {!estGenerationDisponible(effet) ? (
+        <span className="pointer-events-none absolute right-2.5 top-2.5 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold leading-none tracking-wide text-black">
+          {locale === "en" ? "Coming soon" : "Bientôt"}
+        </span>
+      ) : null}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-12 sm:px-3.5 sm:pb-3.5">
         <div className="flex flex-col gap-1">
