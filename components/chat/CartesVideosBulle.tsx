@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { Play, X } from "lucide-react";
 
-// Filet de sécurité des vidéos trouvées par l'outil rechercher_video : le
-// modèle place normalement les liens lui même dans sa réponse (rendus en
-// grandes cartes par LinkPreview.tsx). Ces cartes ne s'affichent que pour les
-// vidéos qu'il a oublié de placer, sous le message, en une rangée où chaque
+// Cartes de vidéos affichées automatiquement sous le message pour les outils
+// qui renvoient une liste de vidéos (par exemple Higgsfield) quand le modèle
+// n'a pas placé leur lien lui même. Depuis le 08/11/2026 l'outil
+// rechercher_video n'en fait plus partie : c'est le modèle qui choisit quelles
+// vidéos montrer et où, en écrivant leur lien dans sa réponse (rendu en grande
+// carte par LinkPreview.tsx). Ces cartes se présentent en une rangée où chaque
 // carte garde sa taille et se fait défiler à gauche et à droite.
 //
 // Un clic sur une carte lance la lecture sur place, dans la carte elle même,
