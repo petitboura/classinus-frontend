@@ -105,3 +105,11 @@ Bourama's order from 7 November 2026. It is a rule, not a question: never ask wh
 - Catalogue and data texts carry their English version next to the French one (for example `descriptionEn`), and the screen picks one from the language chosen in Settings. Backend errors go through a stable code with a French and an English message (`core/erreurs.py` and `lib/erreurs.ts`).
 - If a text lives in Supabase, add its English version there too.
 - A task that adds or changes visible text without its English version is not finished.
+
+## The two Higgsfield sections must never differ
+
+Bourama's rule from 8 November 2026. The Higgsfield catalogue (`CatalogueHiggsfield.tsx`) and Marketing Studio (`SectionMarketingStudio.tsx`) must always look and behave the same way: same filter bar, same Image / Video row, same search, same reset, same cards, same full screen viewer.
+
+- The filter bar lives in one shared component, `components/higgsfield/BarreFiltresHiggsfield.tsx`. Change it there, never in a single section.
+- The Image / Video row always stays visible at the top, next to the Filters button, even when the Filters panel is closed. On a phone, the preset counter is hidden because it is not essential.
+- Any new filter, label, behavior or visual detail added to one of the two sections must be added to the other in the same change, preferably by sharing the component.
