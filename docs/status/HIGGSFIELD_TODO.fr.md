@@ -2,6 +2,8 @@
 
 # Higgsfield — branche `feature/higgsfield-catalogue-generation`
 
+> Mis à jour le 2026-11-08 : les quatre onglets Higgsfield (Catalogue, Genjutsu, Viral, Marketing Studio) utilisent maintenant une seule section partagée, `components/higgsfield/SectionEffetsHiggsfield.tsx`, avec la barre de filtres dans `BarreFiltresHiggsfield.tsx` et la carte dans `CarteEffetHiggsfield.tsx`. La rangée Image / Vidéo reste visible à côté du bouton Filtres, et le compteur est masqué sur téléphone. Les onglets ne doivent jamais différer (voir `CLAUDE.fr.md`).
+
 > Mis à jour le 2026-11-07 : le formulaire Générer peut passer la main au chat.
 
 ## Fait dans cette branche
