@@ -114,3 +114,10 @@ Bourama's rule from 8 November 2026. The four Higgsfield tabs (Catalogue, Genjut
 - A tab only provides its data and its generation panel (`CatalogueHiggsfield.tsx` for Catalogue, Genjutsu and Viral, `SectionMarketingStudio.tsx` for Marketing Studio). Do not copy filter or layout code into a tab.
 - The Image / Video row always stays visible at the top, next to the Filters button, even when the Filters panel is closed. On a phone, the counter is hidden because it is not essential.
 - Any new filter, label, behavior or visual detail is added once, in the shared component, so every tab gets it.
+
+## Higgsfield: only faithful templates can be generated
+
+Bourama's rule from 8 November 2026. A preview must be a real template: the person clicks it, adds their own image, and gets a result close to what they saw, without having to write anything (writing stays possible, never required). Today only the 418 Marketing Studio images do that (Higgsfield recreates the preview from the product image). Soul styles, Genjutsu, Viral and the Marketing Studio videos stay visible with a "Coming soon" mark and no Generate button.
+
+- The single switch is `estGenerationDisponible` in `lib/higgsfieldGeneration.ts`. To open another kind of effect, change it there once Higgsfield can reproduce that preview faithfully, never in a single tab.
+- Never make a preview a decoration or an advert: if it cannot be reproduced on the person's image, mark it "Coming soon".

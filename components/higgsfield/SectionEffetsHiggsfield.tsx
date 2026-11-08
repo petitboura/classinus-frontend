@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { RENDUS_EFFET, renduEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
+import { estGenerationDisponible } from "@/lib/higgsfieldGeneration";
 import { CarteEffet } from "@/components/higgsfield/CarteEffetHiggsfield";
 import { BarreFiltresHiggsfield } from "@/components/higgsfield/BarreFiltresHiggsfield";
 
@@ -147,6 +148,7 @@ export function SectionEffetsHiggsfield({
   const fermerGenerer = useCallback(() => setEffetAGenerer(null), []);
 
   function ouvrirGenerer(effet: EffetHiggsfield) {
+    if (!estGenerationDisponible(effet)) return;
     setIndexVisionneur(null);
     setEffetAGenerer(effet);
   }
