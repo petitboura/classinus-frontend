@@ -1,6 +1,6 @@
 import { IconeHiggsfield } from "@/components/icons/IconeHiggsfield";
 import { ROUTES_HIGGSFIELD } from "./routesHiggsfield";
-import { Flame, Megaphone, Wand2 } from "lucide-react";
+import { Flame, Megaphone, Sparkles, Wand2 } from "lucide-react";
 import { construireGroupe, type SectionDeGroupe } from "./groupeSections";
 
 export const SECTIONS_HIGGSFIELD: SectionDeGroupe[] = [
@@ -21,6 +21,12 @@ export const SECTIONS_HIGGSFIELD: SectionDeGroupe[] = [
     label: "Viral",
     description: "Les effets viraux Higgsfield",
     Icone: Flame,
+  },
+  {
+    href: ROUTES_HIGGSFIELD.soul,
+    label: "Soul",
+    description: "Les styles d'image Soul Higgsfield",
+    Icone: Sparkles,
   },
   {
     href: ROUTES_HIGGSFIELD.marketingStudio,
