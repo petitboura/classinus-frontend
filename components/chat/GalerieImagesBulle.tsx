@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { VisionneuseImage } from "./VisionneuseImage";
 
-// Galerie d'images trouvées par l'outil rechercher_image (01/09, demande
-// Bourama), embarquée par OutilResultatBulle.tsx -- même principe que
-// SourcesBulle.tsx (rendu "bête" d'une liste, pas de toggle propre),
-// mais en grille de miniatures plutôt qu'en puces de texte, et TOUJOURS
-// visible (pas besoin de déplier) : contrairement aux sources d'une
-// recherche web, la galerie EST le résultat que l'utilisateur est venu
-// chercher.
+// Galerie d'images affichée automatiquement par les outils qui renvoient une
+// liste d'images (captures du navigateur, Higgsfield...), embarquée par
+// OutilResultatBulle.tsx -- même principe que SourcesBulle.tsx (rendu "bête"
+// d'une liste, pas de toggle propre), mais en grille de miniatures plutôt
+// qu'en puces de texte, et TOUJOURS visible (pas besoin de déplier).
+// Depuis le 08/11/2026 l'outil rechercher_image n'en fait plus partie : c'est
+// le modèle qui choisit quelles images montrer et où, en les écrivant dans sa
+// réponse (rendues par ImageMessage.tsx).
 //
 // Clic sur une image -> aperçu plein écran en app (VisionneuseImage.tsx) avec
 // flèches, balayage, et téléchargement de l'image affichée.
