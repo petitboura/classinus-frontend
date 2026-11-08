@@ -25,7 +25,14 @@ assert.deepEqual(m.traiterMessageWidget({ type: "ui-size-change", payload: { hei
 const lien = m.traiterMessageWidget({ type: "link", payload: { url: "https://x.test" }, messageId: "1" }, sans);
 assert.equal(lien.find((a) => a.type === "lien").url, "https://x.test/");
 assert.deepEqual(m.traiterMessageWidget({ type: "link", payload: { url: "javascript:1" } }, sans), []);
-const refus = m.traiterMessageWidget({ type: "tool", payload: {}, messageId: "9" }, sans);
+// MCP-UI `tool` : relayé (appel_outil) ; sans nom d'outil ou sans messageId, rien n'est relayé.
+const outilUi = m.traiterMessageWidget({ type: "tool", payload: { toolName: "get_presets", params: { q: 1 } }, messageId: "9" }, sans);
+assert.deepEqual(outilUi[0].message, { type: "ui-message-received", messageId: "9" });
+assert.deepEqual(outilUi[1], { type: "appel_outil", dialecte: "mcpui", id: "9", nom: "get_presets", arguments: { q: 1 } });
+assert.deepEqual(m.traiterMessageWidget({ type: "tool", payload: {}, messageId: "9" }, sans), []);
+assert.deepEqual(m.traiterMessageWidget({ type: "tool", payload: { toolName: "x" } }, sans), []);
+// prompt et intent restent refusés (le widget ne pilote pas la conversation).
+const refus = m.traiterMessageWidget({ type: "prompt", payload: {}, messageId: "8" }, sans);
 assert.equal(refus[0].message.payload.error.length > 0, true);
 assert.deepEqual(m.traiterMessageWidget({ type: "prompt", payload: {} }, sans), []);
 
@@ -37,7 +44,26 @@ const pret = m.traiterMessageWidget({ jsonrpc: "2.0", method: "ui/notifications/
 assert.equal(pret[1].message.method, "ui/notifications/tool-result");
 assert.deepEqual(pret[1].message.params.structuredContent, { a: 1 });
 assert.deepEqual(m.traiterMessageWidget({ jsonrpc: "2.0", method: "ui/notifications/initialized" }, sans), []);
-assert.equal(m.traiterMessageWidget({ jsonrpc: "2.0", id: 2, method: "tools/call", params: {} }, ctx)[0].message.error.code, -32601);
+assert.deepEqual(init[0].message.result.hostCapabilities.serverTools, {});
+// tools/call : relayé, avec un nom valide seulement.
+assert.deepEqual(
+  m.traiterMessageWidget({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "get_presets", arguments: { q: 1 } } }, ctx),
+  [{ type: "appel_outil", dialecte: "apps", id: 2, nom: "get_presets", arguments: { q: 1 } }],
+);
+assert.deepEqual(m.traiterMessageWidget({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "a" } }, ctx)[0].arguments, {});
+assert.equal(m.traiterMessageWidget({ jsonrpc: "2.0", id: 2, method: "tools/call", params: {} }, ctx)[0].message.error.code, -32602);
+assert.equal(m.traiterMessageWidget({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: 5 } }, ctx)[0].message.error.code, -32602);
+// Les autres demandes restent refusées.
+for (const methode of ["resources/read", "ui/message", "ui/request-display-mode"]) {
+  assert.equal(m.traiterMessageWidget({ jsonrpc: "2.0", id: 4, method: methode, params: {} }, ctx)[0].message.error.code, -32601, methode);
+}
+// Réponses rendues au widget, dans son dialecte.
+const aApps = { type: "appel_outil", dialecte: "apps", id: 7, nom: "x", arguments: {} };
+assert.deepEqual(m.reponseAppelOutil(aApps, { texte: "ok", estErreur: false }), { jsonrpc: "2.0", id: 7, result: { content: [{ type: "text", text: "ok" }] } });
+assert.equal(m.reponseAppelOutil(aApps, { texte: "non", estErreur: true }).result.isError, true);
+const aUi = { type: "appel_outil", dialecte: "mcpui", id: "5", nom: "x", arguments: {} };
+assert.equal(m.reponseAppelOutil(aUi, { texte: "ok", estErreur: false }).payload.response.content[0].text, "ok");
+assert.equal(m.reponseAppelOutil(aUi, { texte: "non", estErreur: true }).payload.error, "non");
 assert.equal(m.traiterMessageWidget({ jsonrpc: "2.0", id: 3, method: "ui/open-link", params: { url: "file:///etc/passwd" } }, ctx)[0].message.error.code, -32602);
 assert.deepEqual(m.traiterMessageWidget({ jsonrpc: "2.0", method: "ui/notifications/size-changed", params: { height: 300 } }, ctx), [{ type: "taille", hauteur: 300 }]);
 
@@ -57,4 +83,8 @@ assert.ok(!code.includes("allow-top-navigation") && !code.includes("allow-popups
 assert.ok(comp.includes("evenement.source !== iframeRef.current.contentWindow"), "émetteur vérifié par sa fenêtre");
 assert.ok(chat.includes('item.type === "ressources_ui"') && chat.includes('evenement.type === "ressources_ui"'), "événement traité et mis en file");
 assert.ok(bulle.includes("WidgetsMcpUi") && ligne.includes("WidgetsMcpUi"));
+// Appels d'outils (08/11/2026) : relayés au backend, confirmés avec la carte du chat, jamais directs.
+assert.ok(comp.includes("appelerOutilDeWidget") && comp.includes("ConfirmationOutil"), "relais et confirmation câblés");
+assert.ok(comp.includes("outil_source: source"), "le serveur d'origine est transmis au backend");
+assert.ok(!code.includes("fetch("), "le composant n'appelle aucun serveur lui-même");
 console.log("Widgets MCP-UI : contrôles passés.");

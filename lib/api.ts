@@ -3231,3 +3231,19 @@ export async function listerAutorisationsOutils() {
 export async function retirerAutorisationOutil(cle: string) {
   await appelerApi(`/api/autorisations-outils?cle=${encodeURIComponent(cle)}`, { method: "DELETE" });
 }
+
+// Appel d'outil lancé depuis un widget MCP (08/11/2026). Le backend vérifie que l'outil est du même
+// serveur que celui qui a affiché le widget et demande confirmation pour ce qui modifie ou coûte.
+export type ReponseAppelOutilWidget =
+  | { statut: "ok"; contenu: { type: string; text: string }[]; est_erreur: boolean }
+  | { statut: "confirmation_requise"; nom_lisible: string; plateforme: string | null; cle: string };
+
+export async function appelerOutilDeWidget(demande: {
+  outil_source: string;
+  nom_outil: string;
+  arguments: Record<string, unknown>;
+  approuve?: boolean;
+  toujours_autoriser?: boolean;
+}) {
+  return appelerApi("/api/widgets/appel-outil", { method: "POST", body: JSON.stringify(demande) }) as Promise<ReponseAppelOutilWidget>;
+}
