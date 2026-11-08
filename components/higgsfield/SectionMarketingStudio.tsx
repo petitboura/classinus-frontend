@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Search, SlidersHorizontal, X } from "lucide-react";
 import { PRESETS_MARKETING, TYPES_MARKETING, type MarketingPreset } from "@/lib/presetsMarketingStudio";
-import type { EffetHiggsfield, StyleEffet, TypeEffet } from "@/lib/effetsHiggsfield";
-import { CarteEffet, FiltreChips } from "@/components/higgsfield/CatalogueHiggsfield";
+import { RENDUS_EFFET, type EffetHiggsfield, type StyleEffet, type TypeEffet } from "@/lib/effetsHiggsfield";
+import { CarteEffet } from "@/components/higgsfield/CatalogueHiggsfield";
+import { BarreFiltresHiggsfield } from "@/components/higgsfield/BarreFiltresHiggsfield";
 
 // Section Marketing Studio : meme affichage que le catalogue d'effets (cartes,
 // panneau de filtres, visionneur). Les presets sont convertis dans la forme
@@ -56,7 +56,6 @@ export function SectionMarketingStudio() {
   const [categorie, setCategorie] = useState<string>("tous");
   const [rendu, setRendu] = useState<string>("tous");
   const [recherche, setRecherche] = useState("");
-  const [filtresOuverts, setFiltresOuverts] = useState(false);
   const [nbVisibles, setNbVisibles] = useState(PAS_CHARGEMENT);
   const sentinelle = useRef<HTMLDivElement>(null);
   const [indexVisionneur, setIndexVisionneur] = useState<number | null>(null);
@@ -100,7 +99,6 @@ export function SectionMarketingStudio() {
     return compteur;
   }, [passentRecherche, rendu]);
 
-  const actif = categorie !== "tous" || rendu !== "tous" || recherche.trim() !== "";
   const nbFiltresActifs = [categorie !== "tous", rendu !== "tous", recherche.trim() !== ""].filter(Boolean).length;
 
   // Chargement au defilement : on affiche d'abord 48 cartes, puis 48 de plus a chaque
@@ -151,83 +149,27 @@ export function SectionMarketingStudio() {
         Explore les presets Marketing Studio, filtre par rendu et par catégorie, ouvre-en un en plein écran puis génère avec l'image de ton produit.
       </p>
 
-      <div className="sticky top-0 z-20 flex flex-col gap-3 rounded-b-xl border border-dj-bordure px-4 py-3 shadow-lg" style={{ backgroundColor: "var(--dj-surface)" }}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFiltresOuverts((v) => !v)}
-            aria-expanded={filtresOuverts}
-            aria-label="Filtres Marketing Studio"
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-              filtresOuverts || actif
-                ? "border-dj-texte bg-dj-texte text-dj-fond"
-                : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
-            }`}
-          >
-            {filtresOuverts ? <X className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
-            Filtres
-            {nbFiltresActifs > 0 && (
-              <span className="ml-0.5 rounded-full bg-dj-fond px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-texte">
-                {nbFiltresActifs}
-              </span>
-            )}
-          </button>
-          {actif ? (
-            <button
-              type="button"
-              onClick={reinitialiser}
-              className="inline-flex min-h-8 items-center rounded-full border border-dj-bordure bg-transparent px-3 py-1.5 text-xs font-semibold text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              Réinitialiser les filtres
-            </button>
-          ) : null}
-          </div>
-          <span className="shrink-0 text-xs font-semibold text-dj-texte-muet">
-            {`${effets.length} preset${effets.length !== 1 ? "s" : ""} · ${PRESETS_MARKETING.length} au total`}
-          </span>
-        </div>
-
-        {filtresOuverts && (
-          <>
-            <div className="relative flex w-full items-center">
-              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-dj-texte-muet" />
-              <input
-                value={recherche}
-                onChange={(e) => setRecherche(e.target.value)}
-                placeholder="Rechercher un preset…"
-                className="h-10 w-full rounded-full border border-dj-bordure bg-dj-fond py-2 pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-dj-texte-muet focus:border-dj-texte"
-              />
-              {recherche ? (
-                <button
-                  type="button"
-                  onClick={() => setRecherche("")}
-                  aria-label="Effacer la recherche"
-                  className="absolute right-1 flex h-8 w-8 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              ) : null}
-            </div>
-            <FiltreChips
-              options={[
-                { value: "tous", label: "Tous" },
-                { value: "image", label: "Image" },
-                { value: "video", label: "Vidéo" },
-              ]}
-              valeur={rendu}
-              onChange={setRendu}
-              compteurs={compteursRendu}
-            />
-            <FiltreChips
-              options={[{ value: "tous", label: "Tous" }, ...TYPES_MARKETING.map((t) => ({ value: t.value, label: t.label }))]}
-              valeur={categorie}
-              onChange={setCategorie}
-              compteurs={compteursCategorie}
-            />
-          </>
-        )}
-      </div>
+      <BarreFiltresHiggsfield
+        libelleAria="Filtres Marketing Studio"
+        placeholderRecherche="Rechercher un preset…"
+        recherche={recherche}
+        onRecherche={setRecherche}
+        rendu={{
+          options: [{ value: "tous", label: "Tous" }, ...RENDUS_EFFET],
+          valeur: rendu,
+          onChange: setRendu,
+          compteurs: compteursRendu,
+        }}
+        second={{
+          options: [{ value: "tous", label: "Tous" }, ...TYPES_MARKETING.map((t) => ({ value: t.value, label: t.label }))],
+          valeur: categorie,
+          onChange: setCategorie,
+          compteurs: compteursCategorie,
+        }}
+        nbFiltresActifs={nbFiltresActifs}
+        texteCompteur={`${effets.length} preset${effets.length !== 1 ? "s" : ""} · ${PRESETS_MARKETING.length} au total`}
+        onReinitialiser={reinitialiser}
+      />
 
       {effets.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
