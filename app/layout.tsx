@@ -32,6 +32,7 @@ import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharge
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
 import { VisionneurGlobalRacine } from "@/components/VisionneurGlobalRacine";
+import { EnregistrementParrainage } from "@/components/EnregistrementParrainage";
 import { InteractionGlobale } from "@/components/InteractionGlobale";
 import { IndicateurTelechargements } from "@/components/IndicateurTelechargements";
 import { FournisseurRequetes } from "@/lib/reactQuery";
@@ -221,6 +222,7 @@ export default function RacineLayout({
         <ReveilBackend />
         <FournisseurRequetes>
           <InteractionGlobale>{children}</InteractionGlobale>
+          <EnregistrementParrainage />
         </FournisseurRequetes>
         <BoutonFlottantTelecharger />
         <PopupExplorationDossier />

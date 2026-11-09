@@ -17,6 +17,7 @@ Point d'entrée central de toute la documentation du frontend Classinus. L'angla
 
 - [Consolidation des branches, 31 octobre 2026](./project-history/BRANCHES-CONSOLIDATION-2026-10-31.fr.md)
 - [État du catalogue Higgsfield](./status/HIGGSFIELD_TODO.fr.md)
+- [Parrainage et crédits d'images gratuits, étape 5](./chantiers/parrainage-credits-images.fr.md)
 - [Désactivation de la fonctionnalité Programme](./archive/PROGRAMME_DESACTIVE.fr.md)
 - [Plan du canal en direct sur PC](./specs/plan-canal-en-direct-pc.fr.md)
 - [Spécifications de l'agent applicatif](./specs/specs-agent-applicatif.fr.md)

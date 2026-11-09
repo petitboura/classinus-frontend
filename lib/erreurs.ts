@@ -34,6 +34,16 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     MARKETING_INDISPONIBLE: "La génération Marketing Studio n'est pas disponible pour le moment. Réessaie plus tard.",
     MARKETING_LIMITE_JOUR: "Limite du jour atteinte ({limite} générations par jour). Tu pourras en refaire demain.",
     MARKETING_LIMITE_INDISPONIBLE: "Impossible de vérifier ta limite du jour, réessaie dans un instant.",
+    // 09/11/2026, crédits d'images, parrainage et téléchargement après partage : codes à garder
+    // synchronisés avec core/erreurs.py côté backend (core/credits_images.py, core/parrainage.py,
+    // core/higgsfield_telechargement.py).
+    CREDITS_IMAGES_EPUISES: "Tu n'as plus de crédits d'images. Invite tes amis pour en gagner d'autres.",
+    CREDITS_IMAGES_INDISPONIBLE: "Impossible de vérifier ton solde de crédits d'images, réessaie dans un instant.",
+    PARRAINAGE_CODE_INVALIDE: "Ce lien de parrainage n'est pas valide.",
+    PARRAINAGE_INDISPONIBLE: "Le parrainage n'est pas disponible pour le moment, réessaie dans un instant.",
+    TELECHARGEMENT_PARTAGE_REQUIS: "Partage ton image pour la télécharger.",
+    IMPOSSIBLE_TELECHARGER_HIGGSFIELD: "Impossible de télécharger ce fichier pour le moment. Réessaie dans un instant.",
+    PARTAGE_IMAGE_INVALIDE: "Seule une image terminée peut être partagée.",
     // 20/09/2026, minuteurs du chat : codes à garder synchronisés avec
     // core/erreurs.py côté backend (voir core/minuteurs.py).
     MINUTEUR_DUREE_INVALIDE: "Cette durée de minuteur n'est pas valide.",
@@ -306,6 +316,13 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     MARKETING_INDISPONIBLE: "Marketing Studio generation is not available right now. Try again later.",
     MARKETING_LIMITE_JOUR: "Daily limit reached ({limite} generations per day). You can generate more tomorrow.",
     MARKETING_LIMITE_INDISPONIBLE: "Could not check your daily limit, try again in a moment.",
+    CREDITS_IMAGES_EPUISES: "You have no image credits left. Invite your friends to earn more.",
+    CREDITS_IMAGES_INDISPONIBLE: "Could not check your image credit balance, try again in a moment.",
+    PARRAINAGE_CODE_INVALIDE: "This referral link is not valid.",
+    PARRAINAGE_INDISPONIBLE: "Referrals are not available right now, try again in a moment.",
+    TELECHARGEMENT_PARTAGE_REQUIS: "Share your image to download it.",
+    IMPOSSIBLE_TELECHARGER_HIGGSFIELD: "Unable to download this file right now. Try again in a moment.",
+    PARTAGE_IMAGE_INVALIDE: "Only a finished image can be shared.",
     PRECISE_LA_VALEUR_POUR: "Specify a value for {libelle}.",
     EST_DEJA_PRISE_PAR_UNE: "{libelle} is already taken.",
     AUCUNE_FORMULE_DETECTEE_DANS_CETTE_IMAGE: "No formula detected in this image.",

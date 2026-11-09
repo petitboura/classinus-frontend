@@ -72,6 +72,7 @@
                 <data android:pathPrefix="/dossiers" />
                 <data android:pathPrefix="/etablissements" />
                 <data android:pathPrefix="/inscription" />
+                <data android:pathPrefix="/invitation" />
                 <data android:pathPrefix="/memoire" />
                 <data android:pathPrefix="/mon-espace" />
                 <data android:pathPrefix="/mot-de-passe-oublie" />

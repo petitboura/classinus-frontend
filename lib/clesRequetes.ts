@@ -34,4 +34,8 @@ export const clesRequetes = {
   adminSignalements: ["admin-signalements"] as const,
   auditCorrections: ["audit-corrections"] as const,
   auditComplet: (codeId: string) => ["audit-complet", codeId] as const,
+  // 09/11/2026, parrainage et crédits d'images : le résumé est rangé par compte, car le cache se garde
+  // dans sessionStorage et rien ne le vide à la déconnexion (jamais le solde d'un autre compte).
+  parrainageTous: ["parrainage"] as const,
+  monParrainage: (userId: string) => ["parrainage", "moi", userId] as const,
 };

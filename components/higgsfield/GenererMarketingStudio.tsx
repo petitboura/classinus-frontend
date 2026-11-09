@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronDown, Clock, Download, ExternalLink, ImagePlus, Loader2, Sparkles, Trash2, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Clock, ImagePlus, Loader2, Sparkles, Trash2, X } from "lucide-react";
+import { ActionsResultatHiggsfield } from "@/components/higgsfield/ActionsResultatHiggsfield";
+import { CreditsImagesHiggsfield } from "@/components/higgsfield/CreditsImagesHiggsfield";
+import { PlusDeCreditsHiggsfield } from "@/components/higgsfield/PlusDeCreditsHiggsfield";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { lancerMarketingStudioHiggsfield, uploaderFichierHiggsfield } from "@/lib/higgsfieldApi";
 import { TAILLE_MAX_FICHIER_OCTETS } from "@/lib/higgsfieldGeneration";
 import { CONTRAT_MARKETING, FORMATS_MARKETING } from "@/lib/marketingStudioGeneration";
 import { TYPES_MARKETING, type MarketingPreset } from "@/lib/presetsMarketingStudio";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { useMonParrainage } from "@/lib/useMonParrainage";
 import { useSuiviGenerationHiggsfield } from "@/lib/useSuiviGenerationHiggsfield";
 
 type ImageChoisie = { file: File; url: string };
@@ -88,6 +92,8 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
 
   const suivi = useSuiviGenerationHiggsfield();
   const { etat, resultatUrl, erreur, progression, delaiDepasse } = suivi;
+  // Une image coûte un crédit (retiré au lancement, rendu si la génération échoue) : le solde se relit à chaque étape.
+  const { resume: resumeCredits, rafraichir: rafraichirCredits } = useMonParrainage();
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onClose);
 
@@ -128,6 +134,13 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
   }
 
   const enCours = etat === "upload" || etat === "lancement" || etat === "en_cours";
+
+  useEffect(() => {
+    if (estImage && (etat === "terminee" || etat === "echec" || etat === "bloquee" || etat === "annulee")) rafraichirCredits();
+  }, [estImage, etat, rafraichirCredits]);
+
+  // Plus de crédits : solde à zéro, ou refus du serveur. Le bloc « invite tes amis » remplace alors le message d'erreur.
+  const creditsEpuises = estImage && !enCours && (suivi.codeErreur === "CREDITS_IMAGES_EPUISES" || (!!resumeCredits && resumeCredits.solde <= 0));
   const siteValide = site.trim().toLowerCase().startsWith("https://");
   const aUneSource = !!produit || (contrat.site && siteValide);
 
@@ -172,12 +185,14 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
         ...(format && !estImage ? { format_image: format } : {}),
       });
       suivi.demarrerSuivi(res.request_id, titre.trim());
+      if (estImage) rafraichirCredits();
     } catch (e: unknown) {
       suivi.echouer(e);
+      if (estImage) rafraichirCredits();
     }
   }
 
-  const afficherErreur = !!erreur && !enCours;
+  const afficherErreur = !!erreur && !enCours && suivi.codeErreur !== "CREDITS_IMAGES_EPUISES";
   const estVideo = !!resultatUrl && /\.(mp4|webm|mov)(\?|$)/i.test(resultatUrl);
 
   return (
@@ -234,6 +249,8 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
           <p className="text-[12px] leading-relaxed text-dj-texte-muet">
             Le preset décide du style. Ton résultat dépend surtout de l'image de ton produit.
           </p>
+
+          {estImage && <CreditsImagesHiggsfield />}
 
           <ChampImage
             libelle={contrat.site ? "Image de ton produit (ou adresse de ton site)" : "Image de ton produit"}
@@ -332,6 +349,8 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
             </div>
           )}
 
+          {creditsEpuises && <PlusDeCreditsHiggsfield />}
+
           {afficherErreur && (
             <div className="flex animate-dj-fade-in-rapide gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -350,17 +369,19 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={resultatUrl} alt="Résultat" className="w-full rounded-xl" />
               )}
-              <div className="flex flex-wrap gap-2">
-                <a href={resultatUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800">
-                  <ExternalLink className="h-3.5 w-3.5" /> Ouvrir
-                </a>
-                <a href={resultatUrl} download className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100">
-                  <Download className="h-3.5 w-3.5" /> Télécharger
-                </a>
-                <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700">
-                  <Clock className="h-3 w-3" /> Enregistré dans ta bibliothèque
-                </span>
-              </div>
+              <ActionsResultatHiggsfield
+                genre={estVideo ? "video" : "image"}
+                requestId={suivi.requestId}
+                url={resultatUrl}
+                titre={titre.trim()}
+                debloque={suivi.telechargementDebloque}
+                onDebloque={suivi.marquerDebloque}
+                aCote={
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                    <Clock className="h-3 w-3" /> Enregistré dans ta bibliothèque
+                  </span>
+                }
+              />
               <button type="button" onClick={suivi.reinitialiser} className="self-start text-xs font-semibold text-emerald-700 underline">
                 Générer à nouveau
               </button>
