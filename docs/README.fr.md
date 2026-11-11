@@ -12,6 +12,7 @@ Point d'entrée central de toute la documentation du frontend Classinus. L'angla
 - [Plateformes prises en charge](./PLATEFORMES.fr.md)
 - [Mises à jour et publication de l'application Windows](./appli-pc-mise-a-jour-et-publication.fr.md)
 - [Suivi des soumissions aux stores](./soumission-stores.fr.md)
+- [Page de test des voix bambara](./BOUCHE_BAMBARA.fr.md)
 
 ## Historique et spécifications du projet
 

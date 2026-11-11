@@ -55,7 +55,7 @@ export async function erreurNonAuthentifie(): Promise<ErreurApi> {
  * - {"detail": "texte brut"}                                     (ancien format / lib externe)
  * - corps non-JSON ou vide                                       (erreur réseau, proxy, etc.)
  */
-async function construireErreurApi(reponse: Response, chemin: string): Promise<ErreurApi> {
+export async function construireErreurApi(reponse: Response, chemin: string): Promise<ErreurApi> {
   if (reponse.status === 401) return erreurNonAuthentifie();
 
   const texteBrut = await reponse.text().catch(() => "");

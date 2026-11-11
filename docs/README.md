@@ -12,6 +12,7 @@ Central entry point for all Classinus frontend documentation. English is the def
 - [Supported platforms](./PLATEFORMES.md)
 - [Windows app updates and publishing](./appli-pc-mise-a-jour-et-publication.md)
 - [Store submission tracking](./soumission-stores.md)
+- [Bambara voice test page](./BOUCHE_BAMBARA.md)
 
 ## Project history and specifications
 

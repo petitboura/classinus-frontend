@@ -35,12 +35,12 @@ export const HOTE_LIEN_APPLI = "app";
  * - /oauth : le consentement du connecteur Claude. La personne y arrive depuis
  *   le navigateur ou l'appli de Claude et doit y repartir : l'ouvrir dans
  *   l'appli casserait le retour vers Claude.
- * - /agent-superposition, /dev-demo-question : écrans internes, jamais
- *   partagés.
+ * - /agent-superposition, /dev-demo-question, /dev-demo-bouche : écrans
+ *   internes, jamais partagés.
  * Cette liste est lue par le test, qui vérifie que AndroidManifest.xml ne
  * déclare aucune de ces pages.
  */
-export const PREFIXES_NON_OUVERTS_DANS_APPLI = ["/oauth", "/agent-superposition", "/dev-demo-question"] as const;
+export const PREFIXES_NON_OUVERTS_DANS_APPLI = ["/oauth", "/agent-superposition", "/dev-demo-question", "/dev-demo-bouche"] as const;
 
 export type LienEntrant = {
   /** Chemin interne de l'appli, avec ses paramètres (?fichier=...), toujours commençant par "/". */

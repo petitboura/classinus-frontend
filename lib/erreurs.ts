@@ -285,6 +285,15 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     ZIP_SKILL_TROP_DE_FICHIERS: "Ce zip contient trop de fichiers ({maximum} au maximum).",
     ZIP_SKILL_FICHIER_NON_TEXTE: "Le fichier {fichier} n'est pas un fichier texte. Les skills n'acceptent que des fichiers texte.",
     ZIP_SKILL_ENTETE_INVALIDE: "Le nom ou la description écrits dans l'en-tête de SKILL.md sont trop longs ou contiennent un saut de ligne.",
+    // 12/11/2026, voix bambara de test : codes à garder synchronisés avec
+    // core/erreurs.py côté backend (voir api/bouche.py).
+    BOUCHE_NON_CONFIGUREE: "La voix de test n'est pas branchée pour le moment.",
+    BOUCHE_INDISPONIBLE: "La voix de test ne répond pas pour le moment. Réessaie dans un instant.",
+    BOUCHE_VOIX_INCONNUE: "Cette voix n'existe pas ou n'est pas activée.",
+    BOUCHE_TEXTE_VIDE: "Écris un texte à faire lire.",
+    BOUCHE_TEXTE_TROP_LONG: "Ce texte est trop long pour la voix de test. Raccourcis-le.",
+    BOUCHE_LOCUTEUR_INVALIDE: "Ce locuteur n'existe pas pour cette voix.",
+    BOUCHE_SYNTHESE_ECHEC: "La voix n'a pas réussi à lire ce texte, réessaie.",
   },
   en: {
     PRECISE_MATIERE_AUTRE: "Specify the subject in \"Other\".",
@@ -680,6 +689,13 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     ZIP_SKILL_TROP_DE_FICHIERS: "This zip contains too many files ({maximum} at most).",
     ZIP_SKILL_FICHIER_NON_TEXTE: "The file {fichier} is not a text file. Skills only accept text files.",
     ZIP_SKILL_ENTETE_INVALIDE: "The name or description in the SKILL.md header is too long or contains a line break.",
+    BOUCHE_NON_CONFIGUREE: "The test voice is not connected yet.",
+    BOUCHE_INDISPONIBLE: "The test voice is not responding right now. Try again in a moment.",
+    BOUCHE_VOIX_INCONNUE: "This voice does not exist or is not enabled.",
+    BOUCHE_TEXTE_VIDE: "Write a text to read aloud.",
+    BOUCHE_TEXTE_TROP_LONG: "This text is too long for the test voice. Shorten it.",
+    BOUCHE_LOCUTEUR_INVALIDE: "This speaker does not exist for this voice.",
+    BOUCHE_SYNTHESE_ECHEC: "The voice could not read this text, try again.",
   },
 };
 
