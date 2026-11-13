@@ -12,6 +12,7 @@ import { ContexteVoixDirecte, useFournirVoixDirecte } from "@/lib/contexteVoixDi
 import { CurseurVirtuelAgent } from "@/components/CurseurVirtuelAgent";
 import { BulleDialogueAgent } from "@/components/BulleDialogueAgent";
 import { VoixDirecteSuperposition } from "@/components/voix/VoixDirecteSuperposition";
+import { ChoixLangueVoix } from "@/components/voix/ChoixLangueVoix";
 import { CanalEnDirectFlottant } from "@/components/CanalEnDirectFlottant";
 import { PontMessageCanalVersChat } from "@/components/PontMessageCanalVersChat";
 import { useEmetteurSuperposition, surElectron } from "@/lib/superpositionElectron";
@@ -119,6 +120,7 @@ function InteractionGlobaleSession({ children }: { children: ReactNode }) {
                   {!surElectronClient && <CurseurVirtuelAgent />}
                   {!surElectronClient && <BulleDialogueAgent />}
                   <VoixDirecteSuperposition />
+                  <ChoixLangueVoix />
                   {!surElectronClient && afficherCommandes && <CanalEnDirectFlottant />}
                 </>,
                 document.body,

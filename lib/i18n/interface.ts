@@ -7,6 +7,12 @@ import type { Locale } from "./locale";
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Choix de la langue du mode vocal (13/11/2026).
+  "Dans quelle langue veux-tu parler ?": "Which language do you want to speak?",
+  "Bambara": "Bambara",
+  "Tu parles, Classinus te répond en bambara à voix haute.": "You speak, Classinus answers aloud in Bambara.",
+  "Autre langue": "Other language",
+  "Le mode vocal habituel.": "The usual voice mode.",
   // Page Higgsfield : textes restants traduits le 07/11/2026.
   "vidéo": "Video",
   "Lire la vidéo": "Play the video",

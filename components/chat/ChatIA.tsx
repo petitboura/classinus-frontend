@@ -1097,6 +1097,9 @@ export function ChatIA({
   // de la réponse de Clovis pour ce tour (voir l'effet plus bas).
   const voixEnCoursRef = useRef<DemandeVoixEnAttente | null>(null);
   const texteTourVoixRef = useRef("");
+  // Client annoncé au serveur pendant un tour demandé par la voix bambara (champ client de /api/chat),
+  // gardé le temps du tour, reprises après confirmation comprises.
+  const clientTourRef = useRef<string | null>(null);
   // Tour déclenché par un message tapé (pas par la voix) : on garde aussi le
   // texte de la réponse pour que la voix, si elle est active, en dise l'essentiel.
   const tourEcritSuiviRef = useRef(false);
@@ -1154,11 +1157,13 @@ export function ChatIA({
     if (!demande) return;
     texteTourVoixRef.current = "";
     voixEnCoursRef.current = demande;
+    clientTourRef.current = demande.client ?? null;
     envoyerMessage(demande.texte, "moyenne", [])
       .then(() => demande.resoudre(texteTourVoixRef.current.trim()))
       .catch((e) => demande.rejeter(e instanceof Error ? e : new Error("Erreur lors de l'envoi au chat.")))
       .finally(() => {
         if (voixEnCoursRef.current === demande) voixEnCoursRef.current = null;
+        clientTourRef.current = null;
         texteTourVoixRef.current = "";
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
@@ -1474,6 +1479,7 @@ export function ChatIA({
           // le canal est actif, sur ce message comme sur tous les
           // autres pendant ce temps.
           canal_en_direct: canalEnDirectActif,
+          ...(clientTourRef.current ? { client: clientTourRef.current } : {}),
           // Source de vérité pour l'éditeur pendant CE tour. Le WebSocket
           // reste utilisé pour les actions interactives, mais n'est plus
           // requis pour que le modèle voie le code courant.
@@ -1592,6 +1598,7 @@ export function ChatIA({
           // valeurs par défaut.
           natif,
           canal_en_direct: canalEnDirectActif,
+          ...(clientTourRef.current ? { client: clientTourRef.current } : {}),
           message_automatique: messageUtilisateur.automatique === true,
           modele: modeleSelectionne,
           // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
@@ -1681,6 +1688,7 @@ export function ChatIA({
           // Même raison que dans regenererDepuis ci-dessus.
           natif,
           canal_en_direct: canalEnDirectActif,
+          ...(clientTourRef.current ? { client: clientTourRef.current } : {}),
           modele: modeleSelectionne,
           // Reglage Effort (04/10/2026) : meme principe que l'envoi principal plus haut.
           effort_reflexion: lireReglagesProchainMessage().effort,

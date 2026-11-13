@@ -212,7 +212,7 @@ type ContexteChatValeur = {
   etatChatAffiche: () => { visible: boolean; conversationId: string | null };
   enregistrerChatPourVoix: (conversationId: string | null) => () => void;
   nbDemandesVoixEnAttente: number;
-  deposerDemandeVoix: (texte: string, conversationId: string) => Promise<string>;
+  deposerDemandeVoix: (texte: string, conversationId: string, client?: string) => Promise<string>;
   prendreDemandeVoix: (conversationId: string | null) => DemandeVoixEnAttente | null;
 };
 
@@ -248,6 +248,8 @@ function ecranVisible(): boolean {
 export type DemandeVoixEnAttente = {
   texte: string;
   conversationId: string;
+  // Client annoncé au serveur pour ce tour (mode vocal bambara : "voix_bambara"). Absent : tour normal.
+  client?: string;
   resoudre: (reponse: string) => void;
   rejeter: (erreur: Error) => void;
 };
@@ -332,9 +334,9 @@ export function useFournirContexteChat(): ContexteChatValeur {
       orphelines.forEach((d) => d.rejeter(new ChatIndisponiblePourVoix()));
     };
   }, []);
-  const deposerDemandeVoix = useCallback((texte: string, conversationId: string) => {
+  const deposerDemandeVoix = useCallback((texte: string, conversationId: string, client?: string) => {
     return new Promise<string>((resoudre, rejeter) => {
-      demandesVoixRef.current.push({ texte, conversationId, resoudre, rejeter });
+      demandesVoixRef.current.push({ texte, conversationId, client, resoudre, rejeter });
       setNbDemandesVoixEnAttente(demandesVoixRef.current.length);
     });
   }, []);

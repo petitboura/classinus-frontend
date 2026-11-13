@@ -74,6 +74,7 @@ Full documentation index: [English](docs/README.md) · [Français](docs/README.f
 | [Technical code map](docs/CARTOGRAPHIE_TECHNIQUE.md) · [Français](docs/CARTOGRAPHIE_TECHNIQUE.fr.md) | Where to find code by feature |
 | [Windows app publishing](docs/appli-pc-mise-a-jour-et-publication.md) · [Français](docs/appli-pc-mise-a-jour-et-publication.fr.md) | Build and update the Windows app |
 | [Store submission tracking](docs/soumission-stores.md) · [Français](docs/soumission-stores.fr.md) | Mobile release checklist, to be revalidated before submission |
+| [Bambara voice mode](docs/VOIX_BAMBARA.md) | microphone, Soloni, AI, Gemini voice chain, and the "Bambara or other" question |
 
 ## Related repositories
 

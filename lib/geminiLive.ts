@@ -87,14 +87,14 @@ function declarerOutilClovis(description: string) {
 
 // Chemin direct vers Classinus, sans passer par le chat affiché : utilisé seulement
 // quand aucun chat n'est ouvert pour recevoir la demande.
-export async function demanderAClovisDirectement(question: string, conversationId: string): Promise<string> {
+export async function demanderAClovisDirectement(question: string, conversationId: string, client?: string): Promise<string> {
   let reponseClovis = "";
   let idUser: IdMessage | null = null;
   let idAssistant: IdMessage | null = null;
   // Suite de la conversation, pas un nouveau départ : historique et parent_id
   // viennent de l'état partagé (voir lib/conversationPartagee.ts).
   const etat = lireEtatConversation(conversationId);
-  await appelerApiStream("/api/chat", { message: question, agent_id: "clovis", historique: etat.historique, conversation_id: conversationId, parent_id: etat.dernierMessageId, longueur_reponse: "moyenne", canal_en_direct: true, fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone }, (evenement) => {
+  await appelerApiStream("/api/chat", { message: question, agent_id: "clovis", historique: etat.historique, conversation_id: conversationId, parent_id: etat.dernierMessageId, longueur_reponse: "moyenne", canal_en_direct: true, fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone, ...(client ? { client } : {}) }, (evenement) => {
     if (evenement?.type === "reponse" && typeof evenement.texte === "string") reponseClovis += evenement.texte;
     else if (evenement?.type === "meta") {
       idUser = evenement.message_id_user ?? idUser;
