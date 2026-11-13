@@ -34,6 +34,11 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     MARKETING_INDISPONIBLE: "La génération Marketing Studio n'est pas disponible pour le moment. Réessaie plus tard.",
     MARKETING_LIMITE_JOUR: "Limite du jour atteinte ({limite} générations par jour). Tu pourras en refaire demain.",
     MARKETING_LIMITE_INDISPONIBLE: "Impossible de vérifier ta limite du jour, réessaie dans un instant.",
+    // 13/11/2026, voix bambara : codes à garder synchronisés avec core/erreurs.py côté backend (api/voix_bambara.py).
+    VOIX_BAMBARA_NON_CONFIGUREE: "La voix bambara n'est pas branchée pour le moment.",
+    VOIX_BAMBARA_INDISPONIBLE: "La voix bambara ne répond pas pour le moment, réessaie dans un instant.",
+    VOIX_BAMBARA_AUDIO_INVALIDE: "L'enregistrement est vide ou trop gros, réessaie en parlant un peu moins longtemps.",
+    VOIX_BAMBARA_TEXTE_INVALIDE: "Il n'y a rien à lire à voix haute.",
     // 20/09/2026, minuteurs du chat : codes à garder synchronisés avec
     // core/erreurs.py côté backend (voir core/minuteurs.py).
     MINUTEUR_DUREE_INVALIDE: "Cette durée de minuteur n'est pas valide.",
@@ -306,6 +311,10 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     MARKETING_INDISPONIBLE: "Marketing Studio generation is not available right now. Try again later.",
     MARKETING_LIMITE_JOUR: "Daily limit reached ({limite} generations per day). You can generate more tomorrow.",
     MARKETING_LIMITE_INDISPONIBLE: "Could not check your daily limit, try again in a moment.",
+    VOIX_BAMBARA_NON_CONFIGUREE: "The Bambara voice is not connected right now.",
+    VOIX_BAMBARA_INDISPONIBLE: "The Bambara voice is not responding right now, try again in a moment.",
+    VOIX_BAMBARA_AUDIO_INVALIDE: "The recording is empty or too large, try again with a shorter message.",
+    VOIX_BAMBARA_TEXTE_INVALIDE: "There is nothing to read aloud.",
     PRECISE_LA_VALEUR_POUR: "Specify a value for {libelle}.",
     EST_DEJA_PRISE_PAR_UNE: "{libelle} is already taken.",
     AUCUNE_FORMULE_DETECTEE_DANS_CETTE_IMAGE: "No formula detected in this image.",

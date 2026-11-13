@@ -74,6 +74,7 @@ Index complet : [English](docs/README.md) · [Français](docs/README.fr.md).
 | [Cartographie technique](docs/CARTOGRAPHIE_TECHNIQUE.md) | inventaire transféré de l’ancien README, référence datée |
 | [Publication PC](docs/appli-pc-mise-a-jour-et-publication.md) | fabrication et mise à jour de l’application Windows |
 | [Suivi des stores](docs/soumission-stores.md) | checklist mobile, à revalider avant toute soumission |
+| [Mode vocal bambara](docs/VOIX_BAMBARA.fr.md) | chaîne micro, Soloni, IA, voix Gemini, et question « bambara ou autre » |
 
 ## Dépôts liés
 

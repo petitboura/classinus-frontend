@@ -9,6 +9,7 @@
     "test:composants-natifs": "node tests/verifier-composants-natifs.mjs",
     "test:couleurs-theme": "node tests/verifier-couleurs-theme.mjs",
     "test:connexions": "node tests/verifier-connexions.mjs",
+    "test:voix-bambara": "node tests/verifier-voix-bambara.mjs",
     "start": "next start",
     "lint": "next lint",
     "build:capacitor": "node tests/verifier-composants-natifs.mjs && node tests/verifier-couleurs-theme.mjs && cross-env CAPACITOR_BUILD=true next build && npx cap sync",
