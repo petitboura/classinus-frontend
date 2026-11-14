@@ -22,7 +22,13 @@ import { usePathname, useRouter } from "next/navigation";
 // vide, le comportement normal reprend (retour réel / l'appli se
 // minimise sur natif, comme n'importe quelle appli Android standard).
 
-type Calque = { id: string; fermer: () => void; chemin?: string };
+// `entreePoussee` : l'entrée d'historique de ce calque existe vraiment. Elle reste à false tant
+// que l'ouverture attend l'arrivée d'un retour déclenché par l'appli (voir empiler).
+type Calque = { id: string; fermer: () => void; chemin?: string; entreePoussee: boolean };
+
+// Délai de secours : un history.back() sans page précédente ne déclenche aucun popstate.
+// Passé ce délai, on considère que le retour n'aura pas lieu et l'attente s'arrête.
+const DELAI_SECOURS_RETOUR_MS = 500;
 
 type ContexteRetourValeur = {
   empiler: (id: string, fermer: () => void) => void;
@@ -88,24 +94,75 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
     pathnamePrecedent.current = pathname;
   }, [pathname]);
 
-  const empiler = useCallback((id: string, fermer: () => void) => {
-    pile.current = [
-      ...pile.current.filter((c) => c.id !== id),
-      { id, fermer, chemin: typeof window !== "undefined" ? window.location.pathname : undefined },
-    ];
-    if (typeof window !== "undefined") {
-      window.history.pushState({ clovisCalqueRetour: true }, "", window.location.href);
+  // 14/11/2026, correctif Bourama ("réduire le mode vocal m'emmène hors du chat") : un calque
+  // qui s'ouvre pendant qu'un history.back() déclenché par l'appli n'a pas encore atterri
+  // ajoutait son entrée tout de suite, puis ce retour en retard effaçait cette entrée neuve.
+  // La pile croyait avoir une entrée de plus que l'historique, et la fermeture suivante du
+  // calque reculait d'un cran de trop, jusqu'à la page d'avant. Cas réel : la question
+  // "bambara ou autre" se ferme (retour) au moment où le plein écran vocal s'ouvre (3 ms plus
+  // tard). Règle : tant qu'un retour de l'appli est en route, l'ajout de l'entrée attend son
+  // arrivée. La pile, elle, est mise à jour tout de suite, seule l'entrée d'historique attend.
+  const entreesEnAttente = useRef<string[]>([]);
+  const minuterieSecours = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const arreterMinuterieSecours = useCallback(() => {
+    if (minuterieSecours.current !== null) {
+      clearTimeout(minuterieSecours.current);
+      minuterieSecours.current = null;
     }
   }, []);
 
+  const pousserEntree = useCallback((id: string) => {
+    const calque = pile.current.find((c) => c.id === id);
+    if (!calque || calque.entreePoussee || typeof window === "undefined") return;
+    calque.entreePoussee = true;
+    window.history.pushState({ clovisCalqueRetour: true }, "", window.location.href);
+  }, []);
+
+  const viderEntreesEnAttente = useCallback(() => {
+    arreterMinuterieSecours();
+    const ids = entreesEnAttente.current;
+    entreesEnAttente.current = [];
+    ids.forEach(pousserEntree);
+  }, [arreterMinuterieSecours, pousserEntree]);
+
+  const empiler = useCallback((id: string, fermer: () => void) => {
+    pile.current = [
+      ...pile.current.filter((c) => c.id !== id),
+      { id, fermer, chemin: typeof window !== "undefined" ? window.location.pathname : undefined, entreePoussee: false },
+    ];
+    entreesEnAttente.current = entreesEnAttente.current.filter((x) => x !== id);
+    if (typeof window === "undefined") return;
+    if (!ignorerProchainPopstate.current) {
+      pousserEntree(id);
+      return;
+    }
+    entreesEnAttente.current.push(id);
+    if (minuterieSecours.current === null) {
+      minuterieSecours.current = setTimeout(() => {
+        minuterieSecours.current = null;
+        ignorerProchainPopstate.current = false;
+        viderEntreesEnAttente();
+      }, DELAI_SECOURS_RETOUR_MS);
+    }
+  }, [pousserEntree, viderEntreesEnAttente]);
+
   const remonterAuSommet = useCallback((id: string, fermer: () => void) => {
-    pile.current = [...pile.current.filter((c) => c.id !== id), { id, fermer }];
+    const existant = pile.current.find((c) => c.id === id);
+    // Un calque inconnu garde l'ancien comportement : on lui suppose une entrée d'historique.
+    pile.current = [
+      ...pile.current.filter((c) => c.id !== id),
+      { id, fermer, entreePoussee: existant ? existant.entreePoussee : true },
+    ];
   }, []);
 
   const depiler = useCallback((id: string, consommer: boolean = true) => {
     const calque = pile.current.find((c) => c.id === id);
     const existait = !!calque;
+    // Entrée jamais ajoutée (calque refermé avant la fin d'un retour en cours) : rien à consommer.
+    const aUneEntree = !!calque && calque.entreePoussee;
     pile.current = pile.current.filter((c) => c.id !== id);
+    entreesEnAttente.current = entreesEnAttente.current.filter((x) => x !== id);
     // 27/09/2026, retour de test Bourama ("Ouvrir dans l'éditeur" depuis
     // le chat : arrive dans l'éditeur puis revient au chat, seulement la
     // première fois -- un calque ouvert dans le chat se fermait à cause de
@@ -128,7 +185,7 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
     // vraie navigation vient d'avoir lieu (pas un clic explicite sur
     // fermer/à-côté) -- appeler history.back() ici annulerait cette
     // navigation au lieu de nettoyer l'entrée devenue inutile.
-    if (existait && consommer && typeof window !== "undefined") {
+    if (existait && aUneEntree && consommer && typeof window !== "undefined") {
       ignorerProchainPopstate.current = true;
       window.history.back();
     }
@@ -138,6 +195,9 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
     function onPopState() {
       if (ignorerProchainPopstate.current) {
         ignorerProchainPopstate.current = false;
+        // Le retour de l'appli a atterri : les calques qui attendaient ajoutent leur entrée,
+        // un tour plus tard pour laisser le routeur finir de traiter ce popstate.
+        if (entreesEnAttente.current.length > 0) setTimeout(viderEntreesEnAttente, 0);
         return;
       }
       const sommet = pile.current[pile.current.length - 1];
@@ -149,8 +209,11 @@ export function useFournirContexteRetour(): ContexteRetourValeur {
       // navigateur a déjà eu lieu de son côté.
     }
     window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      arreterMinuterieSecours();
+    };
+  }, [viderEntreesEnAttente, arreterMinuterieSecours]);
 
   // Natif (Capacitor) : le bouton matériel Android est indépendant de
   // l'historique de la WebView -- géré séparément via @capacitor/app.
