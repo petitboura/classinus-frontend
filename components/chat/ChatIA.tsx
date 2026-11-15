@@ -1990,11 +1990,21 @@ export function ChatIA({
     setConfirmationEnAttente(true);
     reinitialiserAffichageControle();
     setGenEnCours(true);
+    // Rattachement à la conversation (15/11/2026, messages perdus signalés par Bourama) : la suite
+    // de la réponse après Confirmer ou Refuser partait sans conversation, ni agent, ni question,
+    // le serveur ne pouvait donc pas l'enregistrer et elle disparaissait au rechargement.
+    const idQuestionConfirmation = [...messages].reverse().find((m) => m.role === "user")?.id ?? null;
     try {
       const controleur = new AbortController();
       controleurAbandonRef.current = controleur;
       await lireFluxChat(
-        { erreurs_typees: true, reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve, ...(approuve && toujoursAutoriser ? { toujours_autoriser: true } : {}) } },
+        {
+          conversation_id: conversationId,
+          agent_id: agentId,
+          parent_id: idQuestionConfirmation,
+          erreurs_typees: true,
+          reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve, ...(approuve && toujoursAutoriser ? { toujours_autoriser: true } : {}) },
+        },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
       );
