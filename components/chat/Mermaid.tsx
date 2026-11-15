@@ -130,12 +130,14 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
   return (
     <Enveloppe sansCadre={sansCadre}>
       {svg ? (
-        // Taille du diagramme : le SVG prend sa largeur naturelle mais ne depasse
-        // jamais la colonne de texte, il rapetisse pour y tenir (jamais de
-        // defilement ni d'elargissement sur les cotes). min-w-full : un petit
-        // diagramme remplit quand meme le cadre. mermaid pose un style inline
-        // max-width sur le SVG : un style inline gagne sur une classe normale,
-        // d'ou les variantes avec !.
+        // Taille du diagramme : le SVG prend sa taille naturelle, centree, et ne
+        // grossit jamais au dela. Il rapetisse pour tenir dans la colonne de texte
+        // (largeur) et sous la hauteur maximale --dj-diagramme-hauteur-max, definie
+        // dans globals.css (jamais de defilement ni d'elargissement sur les cotes).
+        // Pas de min-w-full : un petit diagramme etroit etait etire jusqu'a la
+        // largeur de la colonne, texte compris, et devenait geant. mermaid pose un
+        // style inline max-width sur le SVG : un style inline gagne sur une classe
+        // normale, d'ou les variantes avec !.
         <>
         {!sansCadre && (
           <div className="absolute right-0 top-0 z-10 flex justify-end [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/nu:opacity-100 focus-within:!opacity-100 transition-opacity">
@@ -147,7 +149,7 @@ export function Mermaid({ definition, sansCadre = false }: { definition: string;
         )}
         <div
           ref={zoneDiagrammeRef}
-          className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-[var(--largeur-naturelle,100%)] [&_svg]:!min-w-full [&_svg]:!max-w-full [&_svg]:!h-auto [&_svg]:min-h-[160px]"
+          className="animate-dj-fade-in [&_svg]:mx-auto [&_svg]:!w-[var(--largeur-naturelle,100%)] [&_svg]:!max-w-full [&_svg]:!h-auto [&_svg]:!max-h-[var(--dj-diagramme-hauteur-max)] [&_svg]:min-h-[160px]"
           style={{ "--largeur-naturelle": `${largeurNaturelle(svg)}px` } as CSSProperties}
           dangerouslySetInnerHTML={{ __html: svg }}
         />

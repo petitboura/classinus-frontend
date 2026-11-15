@@ -1029,6 +1029,14 @@ html[data-ouverture-vue="1"] #clovis-splash {
   display: none;
 }
 
+/* Diagrammes Mermaid : hauteur maximale d'un diagramme dans le chat (60 % de
+   la hauteur de l'ecran, jamais plus de 560px). Un diagramme plus haut
+   rapetisse pour tenir. Seul endroit a changer pour ajuster cette limite, elle
+   s'applique pareil sur mobile et sur PC (voir components/chat/Mermaid.tsx). */
+.dj-mermaid {
+  --dj-diagramme-hauteur-max: min(60vh, 560px);
+}
+
 /* Diagrammes Mermaid : coins arrondis sur les boites (noeuds, groupes,
    acteurs et notes des diagrammes de sequence). */
 .dj-mermaid .node rect,
