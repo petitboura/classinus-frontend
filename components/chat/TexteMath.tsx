@@ -15,6 +15,7 @@ import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import { echapperMontants } from "@/lib/echapperMontants";
 
 const PLUGINS_REMARK = [remarkMath];
 const PLUGINS_REHYPE = [rehypeKatex];
@@ -22,8 +23,9 @@ const COMPOSANTS = {
   p: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 };
 
+// Le $ d'un montant est échappé comme dans le chat (14/11/2026, voir lib/echapperMontants.ts).
 function normaliserDelimiteurs(texte: string): string {
-  return texte
+  return echapperMontants(texte)
     .replace(/\\\[([\s\S]*?)\\\]/g, (_, formule) => `$$${formule}$$`)
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, formule) => `$${formule}$`);
 }
