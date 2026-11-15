@@ -9,16 +9,24 @@ import { Sparkles } from "lucide-react";
 // Les icônes Claude, Gemini, DeepSeek, Meta, Alibaba et NVIDIA sont en couleur. Celles de GPT, de Grok et de Z.ai sont d'une seule
 // couleur : elle est posée comme masque et prend la couleur du texte, pour rester
 // visible en thème clair comme en thème sombre.
+//
+// 15/11/2026, demande de Bourama : le fournisseur "alibaba" affiche le logo de Qwen (qwen.svg,
+// même paquet), pas celui d'Alibaba. La clé reste "alibaba" côté backend et base de données,
+// seul le fichier d'icône change, voir FICHIER_ICONE.
 const ICONES_COULEUR = new Set(["claude", "gemini", "deepseek", "meta", "alibaba", "nvidia"]);
 const ICONES_MONOCHROME = new Set(["gpt", "grok", "zai"]);
 
+// Fournisseur dont le fichier d'icône n'a pas le même nom que la clé "distributeur".
+const FICHIER_ICONE: Record<string, string> = { alibaba: "qwen" };
+
 export function IconeFournisseur({ distributeur, taille = 16 }: { distributeur: string | null; taille?: number }) {
   const dimension = { width: taille, height: taille };
+  const fichier = distributeur ? FICHIER_ICONE[distributeur] ?? distributeur : null;
 
   if (distributeur && ICONES_COULEUR.has(distributeur)) {
     return (
       <img
-        src={`/icones-fournisseurs/${distributeur}.svg`}
+        src={`/icones-fournisseurs/${fichier}.svg`}
         alt=""
         draggable={false}
         style={dimension}
@@ -28,7 +36,7 @@ export function IconeFournisseur({ distributeur, taille = 16 }: { distributeur: 
   }
 
   if (distributeur && ICONES_MONOCHROME.has(distributeur)) {
-    const url = `url(/icones-fournisseurs/${distributeur}.svg)`;
+    const url = `url(/icones-fournisseurs/${fichier}.svg)`;
     return (
       <span
         aria-hidden
