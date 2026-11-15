@@ -11,6 +11,7 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeKatex from "rehype-katex";
 import { Copy, RotateCw, Pencil, Volume2, ThumbsUp, ThumbsDown, Check, MessageSquareQuote, FileText, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { formaterHeure } from "@/lib/formatageHeure";
+import { echapperMontants } from "@/lib/echapperMontants";
 import dynamic from "next/dynamic";
 import { MenuSignalementCorrection, type ChoixSignalement } from "./MenuSignalementCorrection";
 import { IndicateurReflexion } from "@/components/IndicateurReflexion";
@@ -192,8 +193,10 @@ function nettoyerMarkdownPourLecture(source: string): string {
 // juste porté ici côté JS). On convertit donc systématiquement vers les
 // délimiteurs $ $ / $$ $$, que remark-math sait consommer directement et
 // que CommonMark ne touche pas (le $ n'a pas de sens spécial pour lui).
+// 14/11/2026 : le $ d'un montant ("0.01$/min", "$5") est d'abord échappé
+// (lib/echapperMontants.ts), sinon remark-math le prend pour une formule.
 export function normaliserLatex(texte: string): string {
-  return texte
+  return echapperMontants(texte)
     .replace(/\\\[([\s\S]*?)\\\]/g, (_, formule) => `$$${formule}$$`)
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, formule) => `$${formule}$`);
 }
