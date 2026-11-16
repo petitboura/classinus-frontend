@@ -50,12 +50,15 @@ export type ModeleDisponible = {
 // elle ne doit donc pas être alignée sur cette liste.
 export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["meta", "zai", "alibaba", "deepseek", "nvidia", "claude", "gpt", "gemini", "grok"];
 
+// 15/11/2026, demande de Bourama : le panneau affiche le nom de l'entreprise, comme pour Alibaba,
+// NVIDIA et Z.ai, et non le nom de sa famille de modèles. Ce sont les mêmes noms que la colonne
+// nom_affiche de fournisseurs_llm en base.
 export const LABELS_DISTRIBUTEUR: Record<string, string> = {
-  claude: "Claude",
-  gpt: "GPT",
-  gemini: "Gemini",
+  claude: "Anthropic",
+  gpt: "OpenAI",
+  gemini: "Google",
   deepseek: "DeepSeek",
-  grok: "Grok",
+  grok: "xAI",
   meta: "Meta",
   zai: "Z.ai",
   alibaba: "Alibaba",
