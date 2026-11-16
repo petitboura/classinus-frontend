@@ -14,7 +14,7 @@ import {
   PERSONAS,
   MODES_SOURCE,
   ORDRE_DISTRIBUTEURS_AFFICHAGE,
-  LABELS_DISTRIBUTEUR,
+  nomDistributeur,
 } from "./reglagesReponse";
 import type { EtatModeActif } from "./useModeActif";
 import type { EtatReglagesPedagogiques } from "./useReglagesPedagogiques";
@@ -324,7 +324,7 @@ export function BoutonReglages({
             <LigneReglage Icone={Sparkles} titre="Modèle" {...ligneProps("modele")}>
               {ORDRE_DISTRIBUTEURS_AFFICHAGE.filter((d) => modelesDisponibles.some((m) => m.distributeur === d)).map(
                 (distributeur) => (
-                  <GroupeFournisseur key={distributeur} libelle={LABELS_DISTRIBUTEUR[distributeur] ?? distributeur}>
+                  <GroupeFournisseur key={distributeur} libelle={nomDistributeur(distributeur, modelesDisponibles)}>
                     {modelesDisponibles
                       .filter((m) => m.distributeur === distributeur)
                       .map((m) => (
