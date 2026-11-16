@@ -95,7 +95,7 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
       {
         question: "Puis-je choisir le modèle d'IA utilisé par Classinus ?",
         reponse:
-          "Oui. Le chat présente les modèles disponibles, regroupés par fournisseur. Les modèles qui ne sont pas encore activés sont indiqués « Bientôt » et ne peuvent pas être sélectionnés.",
+          "Oui. Le chat présente les modèles disponibles, regroupés par fournisseur. Les modèles qui ne sont pas encore activés sont indiqués « Bientôt » et ne peuvent pas être sélectionnés ; un clic dessus ouvre une liste d'attente, sans aucun paiement.",
       },
       {
         question: "Classinus est-il destiné uniquement aux élèves ?",
