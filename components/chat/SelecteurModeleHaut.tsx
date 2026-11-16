@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { IconeFournisseur } from "./IconeFournisseur";
-import { ORDRE_DISTRIBUTEURS_AFFICHAGE, LABELS_DISTRIBUTEUR } from "./barre/reglagesReponse";
+import { ORDRE_DISTRIBUTEURS_AFFICHAGE, nomDistributeur } from "./barre/reglagesReponse";
 import { GroupeFournisseur } from "./barre/GroupeFournisseur";
 import { obtenirLocale } from "@/lib/i18n/locale";
 
@@ -14,6 +14,7 @@ type ModeleDisponible = {
   modele_id: string;
   label: string;
   distributeur: string;
+  nom_distributeur?: string | null;
   palier: string;
   libelles_bientot?: Record<string, string>;
 };
@@ -121,7 +122,7 @@ export function SelecteurModeleHaut({
                 (d) => modelesDisponibles.some((m) => m.distributeur === d) || modelesBientot.some((m) => m.distributeur === d)
               ).map(
                 (distributeur) => (
-                  <GroupeFournisseur key={distributeur} libelle={LABELS_DISTRIBUTEUR[distributeur] ?? distributeur}>
+                  <GroupeFournisseur key={distributeur} libelle={nomDistributeur(distributeur, [...modelesDisponibles, ...modelesBientot])}>
                     {modelesDisponibles
                       .filter((m) => m.distributeur === distributeur)
                       .map((m) => (

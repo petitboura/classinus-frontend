@@ -36,6 +36,8 @@ export type ModeleDisponible = {
   modele_id: string;
   label: string;
   distributeur: string;
+  // Nom du fournisseur tel que Supabase le donne (colonne nom_affiche de fournisseurs_llm).
+  nom_distributeur?: string | null;
   palier: string;
   efforts?: string[];
   effort_defaut?: string | null;
@@ -51,8 +53,10 @@ export type ModeleDisponible = {
 export const ORDRE_DISTRIBUTEURS_AFFICHAGE = ["meta", "zai", "alibaba", "deepseek", "nvidia", "claude", "gpt", "gemini", "grok"];
 
 // 15/11/2026, demande de Bourama : le panneau affiche le nom de l'entreprise, comme pour Alibaba,
-// NVIDIA et Z.ai, et non le nom de sa famille de modèles. Ce sont les mêmes noms que la colonne
-// nom_affiche de fournisseurs_llm en base.
+// NVIDIA et Z.ai, et non le nom de sa famille de modèles. Le nom vient de Supabase (colonne
+// nom_affiche de fournisseurs_llm, envoyée par le backend dans nom_distributeur, voir
+// nomDistributeur plus bas). Cette liste ne sert que de repli quand le serveur n'envoie pas de nom,
+// avec les mêmes noms que la base.
 export const LABELS_DISTRIBUTEUR: Record<string, string> = {
   claude: "Anthropic",
   gpt: "OpenAI",
@@ -64,6 +68,16 @@ export const LABELS_DISTRIBUTEUR: Record<string, string> = {
   alibaba: "Alibaba",
   nvidia: "NVIDIA",
 };
+
+// Nom affiché d'un fournisseur : celui que Supabase donne (nom_distributeur, porté par chacun de ses
+// modèles), sinon la liste de repli ci-dessus, sinon l'identifiant lui-même.
+export function nomDistributeur(
+  distributeur: string,
+  modeles: { distributeur: string; nom_distributeur?: string | null }[]
+): string {
+  const depuisBase = modeles.find((m) => m.distributeur === distributeur && m.nom_distributeur)?.nom_distributeur;
+  return depuisBase || LABELS_DISTRIBUTEUR[distributeur] || distributeur;
+}
 
 // Modes pédagogiques : mêmes clés que MODES_PEDAGOGIQUES côté backend
 // (core/profils_agents.py).
