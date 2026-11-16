@@ -6,6 +6,7 @@ import { CadrePanneau } from "@/components/connexions/CadrePanneau";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise, type OptionMenu } from "@/components/SelectPersonnalise";
 import { Skeleton } from "@/components/Skeleton";
+import { CartePalierListeAttente } from "./CartePalierListeAttente";
 import { messageErreur } from "@/lib/erreurs";
 import { obtenirLocale } from "@/lib/i18n/locale";
 import {
@@ -134,13 +135,18 @@ export function FormulaireListeAttente({
   }
 
   return (
-    <CadrePanneau titreId={titreId} onFermer={onFermer} largeur="sm:max-w-lg">
+    <CadrePanneau titreId={titreId} onFermer={onFermer} largeur={etat === "formulaire" ? "sm:max-w-3xl" : "sm:max-w-lg"}>
       {(fermer) => (
         <>
           <div className="flex items-start justify-between gap-3">
-            <h2 id={titreId} className="text-base font-bold text-dj-texte">
-              {config ? t("attente_titre") : <Skeleton className="h-5 w-48 rounded" />}
-            </h2>
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="w-fit max-w-full truncate rounded-full border border-dj-bordure bg-dj-surface-haute px-2.5 py-0.5 text-[11px] font-semibold text-dj-texte-muet">
+                {modeleLabel}
+              </span>
+              <h2 id={titreId} className="text-lg font-bold text-dj-texte">
+                {config ? t("attente_titre") : <Skeleton className="h-6 w-56 rounded" />}
+              </h2>
+            </div>
             <button
               type="button"
               onClick={fermer}
@@ -157,8 +163,12 @@ export function FormulaireListeAttente({
             <div className="flex flex-col gap-3" aria-hidden>
               <Skeleton className="h-4 w-full rounded" />
               <Skeleton className="h-4 w-3/4 rounded" />
-              <Skeleton className="h-20 w-full rounded-xl" />
-              <Skeleton className="h-20 w-full rounded-xl" />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-24 w-full rounded-2xl sm:h-44" />
+                <Skeleton className="h-24 w-full rounded-2xl sm:h-44" />
+                <Skeleton className="h-24 w-full rounded-2xl sm:h-44" />
+              </div>
+              <Skeleton className="h-8 w-2/3 rounded-full" />
               <Skeleton className="h-10 w-full rounded-lg" />
             </div>
           )}
@@ -170,33 +180,22 @@ export function FormulaireListeAttente({
                 {t("attente_aucun_paiement")}
               </p>
 
-              <fieldset className="flex flex-col gap-2">
-                <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-dj-texte-muet">
+              <div role="radiogroup" aria-label={t("attente_palier_label")} className="flex flex-col gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-dj-texte-muet">
                   {t("attente_palier_label")}
-                </legend>
-                {config.paliers.map((p) => {
-                  const choisi = palier === p.prix_usd;
-                  return (
-                    <button
+                </span>
+                <div className="grid gap-3 pt-1 sm:grid-cols-3">
+                  {config.paliers.map((p) => (
+                    <CartePalierListeAttente
                       key={p.prix_usd}
-                      type="button"
-                      role="radio"
-                      aria-checked={choisi}
-                      onClick={() => setPalier(p.prix_usd)}
-                      className={`flex flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                        choisi ? "border-dj-accent-1 bg-dj-surface-haute" : "border-dj-bordure hover:bg-dj-surface-haute"
-                      }`}
-                    >
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-bold text-dj-texte">{t("attente_palier_prix", { prix: p.prix_usd })}</span>
-                        {choisi && <Check size={15} className="shrink-0 text-dj-accent-1-texte" />}
-                      </span>
-                      <span className="text-xs font-medium text-dj-texte">{t("attente_palier_credit", { credit: p.credit_usd })}</span>
-                      <span className="text-xs text-dj-texte-muet">{t(`attente_palier_${p.prix_usd}`)}</span>
-                    </button>
-                  );
-                })}
-              </fieldset>
+                      palier={p}
+                      choisi={palier === p.prix_usd}
+                      onChoisir={() => setPalier(p.prix_usd)}
+                      t={t}
+                    />
+                  ))}
+                </div>
+              </div>
 
               <fieldset className="flex flex-col gap-2">
                 <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-dj-texte-muet">
@@ -254,7 +253,10 @@ export function FormulaireListeAttente({
 
               {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
 
-              <div className="flex justify-end">
+              <div className="sticky -bottom-5 -mx-5 -mb-5 flex items-center justify-between gap-3 border-t border-dj-bordure bg-dj-surface px-5 py-3">
+                <span className="min-w-0 truncate text-xs font-medium text-dj-texte-muet">
+                  {palier !== null ? t("attente_palier_prix", { prix: palier }) : ""}
+                </span>
                 <button type="button" onClick={valider} disabled={!peutValider} className={BOUTON_PRINCIPAL}>
                   {envoi && <LoaderCircle size={14} className="animate-spin" />}
                   {t("attente_valider")}
