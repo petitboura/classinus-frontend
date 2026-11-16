@@ -25,6 +25,7 @@ import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { COUCHE_AGENT_BULLE, COUCHE_VOIX_PLEIN_ECRAN } from "@/lib/couchesAgent";
 import { estDansFenetreSuperposition, surElectron } from "@/lib/superpositionElectron";
+import { TAILLE_AVATAR_MINI } from "@/lib/avatarNapster";
 
 const TAILLE_BULLE = 56;
 const MARGE_BORD = 8;
@@ -65,6 +66,14 @@ export function VoixDirecteSuperposition() {
   // part ailleurs (la fenêtre principale ne la montre pas, sinon doublon).
   const bulleCanalIci = !surElectron() || estDansFenetreSuperposition();
   const bulleCanal = actif && modeCanal && bulleCanalIci;
+  // Avatar Napster (16/11/2026) : il prend la place de l'onde en plein écran et en petite bulle, rien
+  // d'autre. Dans la bulle du canal en direct, l'onde reste. Éteint, tout est comme avant.
+  const avatar = voix?.avatar === true;
+  const afficherAvatar = voix?.afficherAvatar;
+  useEffect(() => {
+    if (!avatar || !afficherAvatar) return;
+    afficherAvatar(pleinEcran ? "plein" : bulleChat ? "mini" : "cache");
+  }, [avatar, afficherAvatar, pleinEcran, bulleChat]);
 
   // Le retour du téléphone réduit l'onde au lieu de quitter l'appli.
   useFermetureAuRetour(pleinEcran, () => voix?.reduire());
@@ -152,8 +161,15 @@ export function VoixDirecteSuperposition() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-56 w-full max-w-3xl px-4 sm:h-72"
             >
-              <OndeVoix />
+              {/* L'avatar, lui, est dessiné par lib/avatarNapster.ts dans son propre élément : ici, la place reste vide. */}
+              {!avatar && <OndeVoix />}
             </motion.div>
+
+            {avatar && (
+              <p className="absolute bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] left-0 right-0 text-center text-xs text-dj-texte-muet">
+                Powered by Napster
+              </p>
+            )}
 
             {/* Les deux boutons sont groupés en haut à droite : le centre de l'écran
                 reste réservé à l'onde, rien ne passe jamais dessus. */}
@@ -193,10 +209,15 @@ export function VoixDirecteSuperposition() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.6 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed right-3 flex items-center justify-center overflow-hidden rounded-full border border-dj-bordure bg-dj-surface shadow-lg"
-            style={{ zIndex: COUCHE_VOIX_PLEIN_ECRAN, width: TAILLE_BULLE, height: TAILLE_BULLE, bottom: `calc(9rem + ${BAS_SECURISE})` }}
+            className={`fixed right-3 flex items-center justify-center overflow-hidden rounded-full ${avatar ? "" : "border border-dj-bordure bg-dj-surface shadow-lg"}`}
+            style={{
+              zIndex: COUCHE_VOIX_PLEIN_ECRAN,
+              width: avatar ? TAILLE_AVATAR_MINI : TAILLE_BULLE,
+              height: avatar ? TAILLE_AVATAR_MINI : TAILLE_BULLE,
+              bottom: `calc(9rem + ${BAS_SECURISE})`,
+            }}
           >
-            <OndeVoix mini />
+            {!avatar && <OndeVoix mini />}
           </motion.button>
         )}
       </AnimatePresence>

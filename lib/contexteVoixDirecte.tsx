@@ -31,10 +31,13 @@ import { conversationActive, conversationPourVoix } from "./conversationPartagee
 import { messageErreurVoix } from "./erreurs";
 import { CLIENT_VOIX_BAMBARA, ouvrirVoixBambara } from "./voixBambara";
 import { lireEtatVoixBambara } from "./voixBambaraApi";
+import { lireEtatAvatarNapster } from "./avatarNapsterApi";
+import type { ModeAvatar, SessionAvatarNapster } from "./avatarNapster";
 
 export type EtatVoixDirecte = "inactif" | "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "silence" | "erreur";
 
-export type LangueVoix = "bambara" | "autre";
+// « avatar » : l'avatar Napster à la place de l'onde (16/11/2026), choisi seulement si le serveur l'allume.
+export type LangueVoix = "bambara" | "autre" | "avatar";
 
 export type ContexteVoixDirecteValeur = {
   etat: EtatVoixDirecte;
@@ -57,6 +60,10 @@ export type ContexteVoixDirecteValeur = {
   // Fait dire l'essentiel d'une réponse écrite par la voix, seulement si elle
   // est active sur cette conversation. Sans voix active, ne fait rien.
   annoncerReponse: (conversationId: string | null, texte: string) => void;
+  // Vrai quand la session ouverte est l'avatar Napster : l'affichage pose alors l'avatar à la place de
+  // l'onde (plein écran et mini), voir components/voix/VoixDirecteSuperposition.tsx. Absent dans le miroir PC.
+  avatar?: boolean;
+  afficherAvatar?: (mode: ModeAvatar) => void;
   // Question « bambara ou autre ? » en attente de réponse (absente dans le miroir de la fenêtre de
   // superposition PC, où la question n'est jamais posée).
   choixLangue?: { conversationId: string } | null;
@@ -83,6 +90,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
   const [etat, setEtat] = useState<EtatVoixDirecte>("inactif");
   const [erreur, setErreur] = useState<string | null>(null);
   const [reduit, setReduit] = useState(false);
+  const [avatar, setAvatar] = useState(false);
   const reduire = useCallback(() => setReduit(true), []);
   const agrandir = useCallback(() => setReduit(false), []);
   const lireNiveaux = useCallback((): NiveauxVoix => sessionRef.current?.niveaux() ?? { entree: 0, sortie: 0 }, []);
@@ -99,6 +107,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
     sessionRef.current = null;
     conversationSessionRef.current = null;
     setReduit(false);
+    setAvatar(false);
     setEtat("inactif");
   }, []);
 
@@ -121,6 +130,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
           sessionRef.current = null;
           conversationSessionRef.current = null;
           setReduit(false);
+          setAvatar(false);
           setEtat("inactif");
         } else {
           setEtat(nouvelEtat);
@@ -139,6 +149,19 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
           throw e;
         }
       };
+      if (langue === "avatar") {
+        // Import dynamique : le code de l'avatar n'est chargé que si l'avatar est allumé.
+        const { ouvrirAvatarNapster } = await import("./avatarNapster");
+        setAvatar(true);
+        const sessionAvatar = await ouvrirAvatarNapster({
+          surEtat: (nouvelEtat) => surEtat(nouvelEtat === "ecoute" || nouvelEtat === "connecte" ? "ecoute" : nouvelEtat),
+          surErreur: setErreur,
+          surDemande: (question) => demanderAClovis(question),
+        });
+        // Fermée par elle même pendant l'ouverture (refus du micro, plus de crédits) : rien à garder.
+        if (sessionAvatar.ouverte()) sessionRef.current = sessionAvatar;
+        return;
+      }
       const session = langue === "bambara" ? await ouvrirVoixBambara({
         surEtat,
         surErreur: setErreur,
@@ -163,6 +186,7 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
       sessionRef.current = session;
     } catch (e) {
       conversationSessionRef.current = null;
+      setAvatar(false);
       setEtat("erreur");
       console.warn("Impossible d’ouvrir le canal vocal Classinus :", e);
       setErreur(messageErreurVoix(e));
@@ -182,10 +206,13 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
         void ouvrir(conversationId);
         return;
       }
-      // Le serveur dit si le bambara est branché : sinon, aucune question, la voix s'ouvre comme avant.
+      // Le serveur dit si l'avatar est allumé (interrupteur AVATAR_NAPSTER_ACTIF) : alors il remplace
+      // l'onde. Sinon, il dit si le bambara est branché ; sinon, aucune question, la voix s'ouvre comme avant.
       verificationLangueRef.current = true;
-      void lireEtatVoixBambara()
-        .then((etatBambara) => {
+      void lireEtatAvatarNapster()
+        .then(async (etatAvatar) => {
+          if (etatAvatar.disponible) return void ouvrir(conversationId, "avatar");
+          const etatBambara = await lireEtatVoixBambara();
           if (etatBambara.disponible) setChoixLangue({ conversationId });
           else void ouvrir(conversationId);
         })
@@ -226,10 +253,14 @@ export function useFournirVoixDirecte(dependances: DependancesVoix): ContexteVoi
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 
+  const afficherAvatar = useCallback((mode: ModeAvatar) => {
+    (sessionRef.current as SessionAvatarNapster | null)?.afficher?.(mode);
+  }, []);
+
   const actif = etat !== "inactif" && etat !== "erreur";
 
   return useMemo(
-    () => ({ etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse, choixLangue, choisirLangue, annulerChoixLangue }),
-    [etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse, choixLangue, choisirLangue, annulerChoixLangue]
+    () => ({ etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse, choixLangue, choisirLangue, annulerChoixLangue, avatar, afficherAvatar }),
+    [etat, actif, erreur, reduit, reduire, agrandir, lireNiveaux, ouvrir, fermer, fermerPourConversation, basculer, annoncerReponse, choixLangue, choisirLangue, annulerChoixLangue, avatar, afficherAvatar]
   );
 }

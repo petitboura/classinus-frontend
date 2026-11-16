@@ -48,6 +48,10 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     TELECHARGEMENT_PARTAGE_REQUIS: "Partage ton image pour la télécharger.",
     IMPOSSIBLE_TELECHARGER_HIGGSFIELD: "Impossible de télécharger ce fichier pour le moment. Réessaie dans un instant.",
     PARTAGE_IMAGE_INVALIDE: "Seule une image terminée peut être partagée.",
+    // 16/11/2026, avatar Napster du mode vocal. Codes à garder synchronisés avec core/erreurs.py côté backend.
+    AVATAR_NAPSTER_NON_CONFIGURE: "L'avatar n'est pas branché pour le moment.",
+    AVATAR_NAPSTER_INDISPONIBLE: "L'avatar ne répond pas pour le moment, réessaie dans un instant.",
+    AVATAR_NAPSTER_TROP_RAPIDE: "Patiente quelques secondes avant de relancer l'avatar.",
     // 20/09/2026, minuteurs du chat : codes à garder synchronisés avec
     // core/erreurs.py côté backend (voir core/minuteurs.py).
     MINUTEUR_DUREE_INVALIDE: "Cette durée de minuteur n'est pas valide.",
@@ -331,6 +335,9 @@ export const MESSAGES: Record<Locale, Record<string, string>> = {
     TELECHARGEMENT_PARTAGE_REQUIS: "Share your image to download it.",
     IMPOSSIBLE_TELECHARGER_HIGGSFIELD: "Unable to download this file right now. Try again in a moment.",
     PARTAGE_IMAGE_INVALIDE: "Only a finished image can be shared.",
+    AVATAR_NAPSTER_NON_CONFIGURE: "The avatar is not connected right now.",
+    AVATAR_NAPSTER_INDISPONIBLE: "The avatar is not responding right now, try again in a moment.",
+    AVATAR_NAPSTER_TROP_RAPIDE: "Wait a few seconds before starting the avatar again.",
     PRECISE_LA_VALEUR_POUR: "Specify a value for {libelle}.",
     EST_DEJA_PRISE_PAR_UNE: "{libelle} is already taken.",
     AUCUNE_FORMULE_DETECTEE_DANS_CETTE_IMAGE: "No formula detected in this image.",

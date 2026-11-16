@@ -90,6 +90,7 @@
     "@tiptap/pm": "^2.27.2",
     "@tiptap/react": "^2.27.2",
     "@tiptap/starter-kit": "^2.27.2",
+    "@touchcastllc/napster-companion-api": "2.0.0",
     "capacitor-dossiers-electron": "file:./packages/capacitor-dossiers-electron",
     "capacitor-mise-a-jour-pc-electron": "file:./packages/capacitor-mise-a-jour-pc-electron",
     "capacitor-pont-natif-electron": "file:./packages/capacitor-pont-natif-electron",
