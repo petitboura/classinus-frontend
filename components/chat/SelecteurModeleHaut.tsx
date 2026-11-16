@@ -7,6 +7,8 @@ import { IconeFournisseur } from "./IconeFournisseur";
 import { ORDRE_DISTRIBUTEURS_AFFICHAGE, nomDistributeur } from "./barre/reglagesReponse";
 import { GroupeFournisseur } from "./barre/GroupeFournisseur";
 import { obtenirLocale } from "@/lib/i18n/locale";
+import { noterEtapeListeAttente } from "@/lib/listeAttente";
+import { FormulaireListeAttente } from "./FormulaireListeAttente";
 
 // libelles_bientot : le mot affiché sur un modèle Bientôt, par langue. Il vient du backend, qui le lit
 // dans Supabase (table textes_modeles_llm), donc il se change sans toucher au code.
@@ -59,6 +61,8 @@ export function SelecteurModeleHaut({
   onModeleChange: (modeleId: string) => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
+  // Modèle Bientôt sur lequel la personne a cliqué : le formulaire de la liste d'attente s'ouvre pour lui.
+  const [modeleListeAttente, setModeleListeAttente] = useState<ModeleDisponible | null>(null);
   const idListe = useId();
   const racineRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +82,19 @@ export function SelecteurModeleHaut({
       document.removeEventListener("keydown", gererTouche);
     };
   }, [ouvert]);
+
+  // Première étape de l'entonnoir de la liste d'attente : le sélecteur s'ouvre alors qu'il montre des
+  // modèles Bientôt. Une note par ouverture, jamais bloquante (voir lib/listeAttente.ts).
+  const aDesModelesBientot = modelesBientot.length > 0;
+  useEffect(() => {
+    if (ouvert && aDesModelesBientot) noterEtapeListeAttente("selecteur_ouvert", null, obtenirLocale());
+  }, [ouvert, aDesModelesBientot]);
+
+  function ouvrirListeAttente(modele: ModeleDisponible) {
+    noterEtapeListeAttente("modele_grise_clique", modele.modele_id, obtenirLocale());
+    setOuvert(false);
+    setModeleListeAttente(modele);
+  }
 
   // Même règle que la ligne Modèle de Réglages : sans liste, pas de bouton.
   if (modelesDisponibles.length === 0) return null;
@@ -143,7 +160,7 @@ export function SelecteurModeleHaut({
                           bientot
                           libelleBientot={libelleBientot(m.libelles_bientot)}
                           distributeur={m.distributeur}
-                          onClick={() => {}}>
+                          onClick={() => ouvrirListeAttente(m)}>
                           {m.label}
                         </OptionModele>
                       ))}
@@ -154,6 +171,14 @@ export function SelecteurModeleHaut({
           </div>
         )}
       </AnimatePresence>
+
+      {modeleListeAttente && (
+        <FormulaireListeAttente
+          modeleId={modeleListeAttente.modele_id}
+          modeleLabel={modeleListeAttente.label}
+          onFermer={() => setModeleListeAttente(null)}
+        />
+      )}
     </div>
   );
 }
@@ -167,7 +192,8 @@ function OptionModele({
   children,
 }: {
   actif: boolean;
-  // Modèle pas encore ouvert : grisé, non cliquable, avec la mention Bientôt.
+  // Modèle pas encore ouvert : grisé avec la mention Bientôt, jamais choisissable. Un clic ouvre le
+  // formulaire de la liste d'attente (FormulaireListeAttente.tsx).
   bientot?: boolean;
   // Mot affiché sur un modèle Bientôt (réglé dans Supabase, voir libelleBientot plus haut).
   libelleBientot?: string;
@@ -180,12 +206,10 @@ function OptionModele({
       type="button"
       role="option"
       aria-selected={actif}
-      aria-disabled={bientot}
-      disabled={bientot}
       onClick={onClick}
       className={
         "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors " +
-        (bientot ? "cursor-not-allowed text-dj-texte-muet " : "hover:bg-dj-surface-haute ") +
+        (bientot ? "text-dj-texte-muet hover:bg-dj-surface-haute " : "hover:bg-dj-surface-haute ") +
         (actif ? "text-dj-accent-1-texte" : bientot ? "" : "text-dj-texte")
       }>
       <span className={bientot ? "opacity-50" : ""}>
