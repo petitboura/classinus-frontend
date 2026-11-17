@@ -63,10 +63,10 @@ export function FormulaireListeAttente({
       .then((c) => {
         if (!actif) return;
         setConfig(c);
-        const existante = c.inscriptions.find((i) => i.modele_id === modeleId);
-        if (existante) {
-          setPalier(existante.palier_prix);
-          setProfil(existante.profil);
+        // Une seule liste d'attente : la personne est déjà inscrite quel que soit le modèle cliqué.
+        if (c.inscription) {
+          setPalier(c.inscription.palier_prix);
+          setProfil(c.inscription.profil);
           setEtat("deja_inscrit");
         }
       })
@@ -125,7 +125,7 @@ export function FormulaireListeAttente({
     setEnvoi(true);
     setErreur(null);
     try {
-      await seDesinscrireListeAttente(modeleId);
+      await seDesinscrireListeAttente();
       setEtat("desinscrit");
     } catch (e) {
       setErreur(messageErreur(e));
@@ -267,7 +267,7 @@ export function FormulaireListeAttente({
 
           {config && etat === "deja_inscrit" && (
             <div className="flex animate-dj-fade-in-rapide flex-col gap-4 motion-reduce:animate-none">
-              <p className="text-sm text-dj-texte">{t("attente_deja_inscrit", { prix: palier ?? "" })}</p>
+              <p className="text-sm text-dj-texte">{t("attente_deja_inscrit", { prix: palier ?? "", nom: palier === null ? "" : t(`attente_palier_nom_${palier}`) })}</p>
               <p className="text-xs text-dj-texte-muet">{t("attente_aucun_paiement")}</p>
               {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
               <div className="flex flex-wrap justify-end gap-2">
