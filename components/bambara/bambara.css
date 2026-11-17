@@ -1,0 +1,141 @@
+/* Page bambara (16/11/2026, demande de Bourama) : effets visuels de la page. Aucun texte nulle part :
+   l'utilisateur ne sait ni lire ni écrire. Couleurs du thème (--dj-*), jamais en dur. */
+
+/* Une tuile apparaît en grossissant, reste, puis le tout se défait et recommence : l'image se construit sous les yeux. */
+@keyframes bb-tuile {
+  0% { opacity: 0; transform: scale(0.3); }
+  28% { opacity: 1; transform: scale(1); }
+  82% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
+}
+
+/* Ligne de lumière qui balaie le cadre pendant la construction. */
+@keyframes bb-balayage {
+  0% { transform: translateY(-10%); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateY(1050%); opacity: 0; }
+}
+
+/* Une carte de recherche se monte : le bloc glisse puis les lignes se déroulent. */
+@keyframes bb-carte {
+  0% { opacity: 0; transform: translateY(18px) scale(0.97); }
+  25% { opacity: 1; transform: translateY(0) scale(1); }
+  85% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(0.99); }
+}
+@keyframes bb-ligne {
+  0% { transform: scaleX(0); }
+  40% { transform: scaleX(1); }
+  85% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+
+@keyframes bb-lecture {
+  0%, 30% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.1); }
+  70%, 90% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
+}
+
+@keyframes bb-halo {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.bb-cadre {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--dj-surface) 85%, var(--dj-fond));
+  border: 1px solid var(--dj-bordure);
+}
+
+.bb-grille {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+  padding: 2px;
+}
+
+.bb-tuile {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--dj-accent-1) calc(var(--m, 50) * 1%), var(--dj-surface));
+  opacity: 0;
+  animation: bb-tuile var(--cycle, 3.4s) ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+.bb-balayage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 9%;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--dj-accent-1) 55%, transparent), transparent);
+  animation: bb-balayage var(--cycle, 3.4s) ease-in-out infinite;
+  pointer-events: none;
+}
+
+.bb-carte {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--dj-bordure);
+  background: color-mix(in srgb, var(--dj-surface) 90%, var(--dj-fond));
+  opacity: 0;
+  animation: bb-carte var(--cycle, 3.6s) ease-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.bb-carte-vignette {
+  flex: none;
+  width: 6.5rem;
+  aspect-ratio: 16 / 10;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--dj-accent-1) 45%, var(--dj-surface));
+}
+.bb-carte-ligne {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dj-accent-1) 30%, var(--dj-surface));
+  transform-origin: left center;
+  animation: bb-ligne var(--cycle, 3.6s) ease-out infinite;
+  animation-delay: calc(var(--d, 0s) + var(--l, 0.2s));
+}
+
+.bb-lecture {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bb-lecture var(--cycle, 3.4s) ease-in-out infinite;
+}
+.bb-lecture::before {
+  content: "";
+  width: 0;
+  height: 0;
+  margin-left: 0.4rem;
+  border-style: solid;
+  border-width: 1.1rem 0 1.1rem 1.9rem;
+  border-color: transparent transparent transparent var(--dj-fond);
+  filter: drop-shadow(0 0 6px var(--dj-accent-1));
+}
+
+.bb-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid var(--dj-accent-1);
+  animation: bb-halo 1.6s ease-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-tuile { animation: none; opacity: 0.8; }
+  .bb-balayage, .bb-lecture, .bb-halo { animation: none; }
+  .bb-carte { animation: none; opacity: 1; }
+  .bb-carte-ligne { animation: none; }
+}
