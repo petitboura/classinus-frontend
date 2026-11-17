@@ -9,13 +9,15 @@ export type Profil = "etudiant" | "administration" | "dev";
 export type Etape = "selecteur_ouvert" | "modele_grise_clique" | "formulaire_ouvert";
 
 export type PalierListeAttente = { prix_usd: number; credit_usd: number; ordre: number };
+// Une seule liste d'attente par personne (17/11/2026) : modele_id est le modele cliqué à l'inscription.
 export type InscriptionListeAttente = { modele_id: string; palier_prix: number; profil: Profil; statut: string };
 
 export type ConfigListeAttente = {
   paliers: PalierListeAttente[];
   // Par langue puis par clé : { fr: { attente_titre: "..." }, en: { ... } }.
   textes: Record<string, Record<string, string>>;
-  inscriptions: InscriptionListeAttente[];
+  // L'inscription active de la personne, ou null si elle n'est pas encore sur la liste.
+  inscription: InscriptionListeAttente | null;
   profils: Profil[];
 };
 
@@ -50,8 +52,8 @@ export function sInscrireListeAttente(payload: PayloadInscription): Promise<{ mo
   return appelerApi("/api/liste-attente", { method: "POST", body: JSON.stringify(payload) });
 }
 
-export function seDesinscrireListeAttente(modeleId: string): Promise<{ modele_id: string; statut: string }> {
-  return appelerApi("/api/liste-attente/desinscription", { method: "POST", body: JSON.stringify({ modele_id: modeleId }) });
+export function seDesinscrireListeAttente(): Promise<{ statut: string }> {
+  return appelerApi("/api/liste-attente/desinscription", { method: "POST" });
 }
 
 /**
@@ -65,7 +67,7 @@ export function noterEtapeListeAttente(etape: Etape, modeleId: string | null, la
   }).catch(() => {});
 }
 
-/** Remplace {modele}, {prix} ou {credit} dans un texte du serveur. */
+/** Remplace {modele}, {nom}, {prix} ou {credit} dans un texte du serveur. */
 export function remplirTexte(texte: string, valeurs: Record<string, string | number>): string {
   return texte.replace(/\{(\w+)\}/g, (reste, cle: string) => (cle in valeurs ? String(valeurs[cle]) : reste));
 }

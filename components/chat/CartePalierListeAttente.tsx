@@ -32,6 +32,7 @@ export function CartePalierListeAttente({
     .map((p) => (p.startsWith("~") ? { texte: p.slice(1).trim(), inclus: false } : { texte: p, inclus: true }));
   const description = t(`attente_palier_${prix}`);
   const badge = t(`attente_palier_${prix}_badge`);
+  const nom = t(`attente_palier_nom_${prix}`);
 
   return (
     <button
@@ -53,6 +54,7 @@ export function CartePalierListeAttente({
 
       <span className="flex items-start justify-between gap-3">
         <span className="flex flex-col">
+          {nom && <span className="mb-1 text-sm font-bold text-dj-texte">{nom}</span>}
           <span className="flex items-baseline gap-1">
             <span className="text-3xl font-extrabold leading-none text-dj-texte">${prix}</span>
             <span className="text-xs font-medium text-dj-texte-muet">{t("attente_palier_par_mois")}</span>

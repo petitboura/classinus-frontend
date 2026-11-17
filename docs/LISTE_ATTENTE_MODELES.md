@@ -10,7 +10,7 @@ Added on 16 November 2026 at Bourama's request. A fake door measures real demand
 2. They click a greyed out model (`modele_grise_clique`). The picker closes and the form opens (`formulaire_ouvert`).
 3. The form shows a skeleton while it loads, then: an intro, the "no payment" notice, the three plans as side by side cards (big price, monthly credit, then the plan's points), the profile (student, administration or developer), an optional country and WhatsApp number, a consent tick and a sentence about data use.
 4. "Join the list" stays disabled until a plan, a profile and the consent tick are all set.
-5. If the person is already on the list for this model, the form says so and offers "Change my choice" or "Unsubscribe". Unsubscribing also erases the WhatsApp number.
+5. There is ONE waiting list per person (decision of 17 November 2026), not one per model. If the person is already on it, whichever model they clicked, the form says so with the plan name (Pro, Max or Ultra) and offers "Change my choice" or "Unsubscribe". Unsubscribing also erases the WhatsApp number.
 
 The form opens in a bottom sheet on a phone and a centred window on a computer (the shared `CadrePanneau` frame, also used by the Connexions screen), with animated opening and closing. On a computer the three plan cards sit in a row; on a phone they stack, and only the chosen card unfolds its points. The footer stays fixed at the bottom with the chosen price and the "Join the list" button.
 

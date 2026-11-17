@@ -10,7 +10,7 @@ Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure l
 2. Elle clique sur un modèle grisé (`modele_grise_clique`). Le sélecteur se ferme et le formulaire s'ouvre (`formulaire_ouvert`).
 3. Le formulaire montre un squelette pendant le chargement, puis : une introduction, l'avertissement « aucun paiement », les trois paliers en cartes côte à côte (prix en grand, crédit mensuel, puis les points du palier), le profil (étudiant, administration ou développeur), un pays et un WhatsApp facultatifs, une case de consentement et une phrase sur l'usage des données.
 4. « Rejoindre la liste » reste inactif tant qu'un palier, un profil et la case de consentement ne sont pas tous renseignés.
-5. Si la personne est déjà inscrite pour ce modèle, le formulaire le dit et propose « Modifier mon choix » ou « Me désinscrire ». La désinscription efface aussi le numéro WhatsApp.
+5. Il n'y a qu'UNE liste d'attente par personne (décision du 17 novembre 2026), pas une par modèle. Si la personne y est déjà, quel que soit le modèle cliqué, le formulaire le dit avec le nom du palier (Pro, Max ou Ultra) et propose « Modifier mon choix » ou « Me désinscrire ». La désinscription efface aussi le numéro WhatsApp.
 
 Le formulaire s'ouvre en feuille depuis le bas sur téléphone et en fenêtre centrée sur ordinateur (le cadre commun `CadrePanneau`, aussi utilisé par l'écran Connexions), avec ouverture et fermeture animées. Sur ordinateur, les trois cartes de palier sont sur une ligne ; sur téléphone elles s'empilent, et seule la carte choisie déplie ses points. Le pied de page reste fixe en bas avec le prix choisi et le bouton « Rejoindre la liste ».
 
