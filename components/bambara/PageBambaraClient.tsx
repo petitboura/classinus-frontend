@@ -238,7 +238,7 @@ export default function PageBambaraClient() {
             className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
             style={{
               backgroundColor: erreur ? "var(--dj-erreur)" : "var(--dj-accent-1)",
-              color: "var(--dj-accent-1-texte)",
+              color: "#1A0D02",
             }}
           >
             {enConnexion ? <Loader2 size={34} className="animate-spin" /> : <Mic size={34} />}
@@ -252,7 +252,7 @@ export default function PageBambaraClient() {
             style={{
               borderColor: "var(--dj-bordure)",
               backgroundColor: champOuvert ? "var(--dj-accent-1)" : "color-mix(in srgb, var(--dj-surface) 88%, var(--dj-fond))",
-              color: champOuvert ? "var(--dj-accent-1-texte)" : "var(--dj-texte)",
+              color: champOuvert ? "#1A0D02" : "var(--dj-texte)",
             }}
           >
             <Keyboard size={22} />

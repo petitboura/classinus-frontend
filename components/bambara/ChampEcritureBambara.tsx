@@ -68,7 +68,7 @@ export function ChampEcritureBambara({ placeholder, libelleEnvoyer, occupe, surE
           disabled={!peutEnvoyer}
           aria-label={libelleEnvoyer}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-opacity active:scale-95 disabled:opacity-40"
-          style={{ backgroundColor: "var(--dj-accent-1)", color: "var(--dj-accent-1-texte)" }}
+          style={{ backgroundColor: "var(--dj-accent-1)", color: "#1A0D02" }}
         >
           <ArrowUp size={20} />
         </button>
