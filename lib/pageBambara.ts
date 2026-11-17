@@ -24,6 +24,8 @@ export type RappelsPageBambara = {
   surOutilsEnCours: (noms: string[]) => void;
   /** Nouveaux visuels à montrer, dès qu'ils sont connus. */
   surVisuels: (visuels: VisuelBambara[]) => void;
+  /** Texte de la réponse écrit jusqu'ici, à chaque morceau reçu (seulement pour une demande écrite). */
+  surTexte?: (texteCumule: string) => void;
 };
 
 export async function demanderPageBambara(question: string, conversationId: string, rappels: RappelsPageBambara): Promise<string> {
@@ -52,7 +54,10 @@ export async function demanderPageBambara(question: string, conversationId: stri
     (evenement) => {
       switch (evenement?.type) {
         case "reponse":
-          if (typeof evenement.texte === "string") reponse += evenement.texte;
+          if (typeof evenement.texte === "string") {
+            reponse += evenement.texte;
+            rappels.surTexte?.(reponse);
+          }
           break;
         case "meta":
           idUser = evenement.message_id_user ?? idUser;

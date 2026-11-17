@@ -7,10 +7,12 @@
 // construction pendant que l'IA cherche ou crée. La réflexion n'est jamais montrée, les outils non plus.
 // Côté serveur, cette page n'a que la recherche, la génération visuelle et la mémoire, avec l'effort
 // de réflexion au plus faible (client `page_bambara`, core/outils_page_bambara.py).
+// Un petit bouton clavier ouvre un champ pour écrire au lieu de parler (lib/useEcritureBambara.ts) : la
+// réponse s'affiche alors en texte et elle est lue à voix haute. Le champ reste caché tant qu'on ne le demande pas.
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, Mic } from "lucide-react";
+import { Keyboard, Loader2, Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OndeVoix } from "@/components/voix/OndeVoix";
@@ -20,22 +22,28 @@ import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
 import { effetPrincipal, fusionnerVisuels, type VisuelBambara } from "@/lib/pageBambaraVisuels";
 import { supabase } from "@/lib/supabase";
+import { useEcritureBambara } from "@/lib/useEcritureBambara";
 import { ouvrirVoixBambara } from "@/lib/voixBambara";
 import type { SessionGeminiLive } from "@/lib/geminiLive";
 import { CarteVisuelBambara } from "./CarteVisuelBambara";
+import { ChampEcritureBambara } from "./ChampEcritureBambara";
 import { EffetConstruction } from "./EffetConstruction";
 
 const TEXTES = {
-  fr: { parler: "Parler", arreter: "Arrêter", lire: "Lancer la vidéo", erreur: "Un problème est survenu." },
-  en: { parler: "Speak", arreter: "Stop", lire: "Play the video", erreur: "Something went wrong." },
+  fr: {
+    parler: "Parler", arreter: "Arrêter", lire: "Lancer la vidéo", erreur: "Un problème est survenu.",
+    ecrire: "Écrire un message", masquerChamp: "Masquer le champ d'écriture", placeholder: "Écrire ici", envoyer: "Envoyer",
+  },
+  en: {
+    parler: "Speak", arreter: "Stop", lire: "Play the video", erreur: "Something went wrong.",
+    ecrire: "Write a message", masquerChamp: "Hide the writing field", placeholder: "Write here", envoyer: "Send",
+  },
 } as const;
 
 function nouvelIdentifiant(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
   return "bambara-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
 }
-
-const NIVEAUX_NULS = { entree: 0, sortie: 0 };
 
 export default function PageBambaraClient() {
   const router = useRouter();
@@ -47,6 +55,8 @@ export default function PageBambaraClient() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [visuels, setVisuels] = useState<VisuelBambara[]>([]);
   const [outils, setOutils] = useState<string[]>([]);
+  const [texteReponse, setTexteReponse] = useState("");
+  const [champOuvert, setChampOuvert] = useState(false);
 
   const sessionRef = useRef<SessionGeminiLive | null>(null);
   const ouvertureEnCoursRef = useRef(false);
@@ -68,7 +78,28 @@ export default function PageBambaraClient() {
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 
-  const lireNiveaux = useCallback(() => sessionRef.current?.niveaux() ?? NIVEAUX_NULS, []);
+  // Demande écrite : l'écran repart de zéro et une écoute du micro encore ouverte est fermée.
+  const ecriture = useEcritureBambara({
+    conversationId: () => conversationIdRef.current,
+    avantEnvoi: () => {
+      sessionRef.current?.fermer();
+      setErreur(null);
+      setVisuels([]);
+      setOutils([]);
+      setTexteReponse("");
+    },
+    surOutilsEnCours: setOutils,
+    surVisuels: (nouveaux) => setVisuels((precedents) => fusionnerVisuels(precedents, nouveaux)),
+    surTexte: setTexteReponse,
+    surErreur: setErreur,
+  });
+  const { actif: ecritureActive, arreter: arreterEcriture, niveau: niveauEcriture } = ecriture;
+
+  // Pendant la lecture d'une réponse écrite, c'est cette lecture qui fait bouger l'onde.
+  const lireNiveaux = useCallback(
+    () => sessionRef.current?.niveaux() ?? { entree: 0, sortie: niveauEcriture() },
+    [niveauEcriture]
+  );
 
   const ouvrir = useCallback(async () => {
     if (sessionRef.current || ouvertureEnCoursRef.current) return;
@@ -89,6 +120,7 @@ export default function PageBambaraClient() {
           // Nouvelle demande : l'écran repart de zéro, seuls les visuels de cette réponse sont montrés.
           setVisuels([]);
           setOutils([]);
+          setTexteReponse("");
           return demanderPageBambara(question, conversationIdRef.current, {
             surOutilsEnCours: setOutils,
             surVisuels: (nouveaux) => setVisuels((precedents) => fusionnerVisuels(precedents, nouveaux)),
@@ -105,6 +137,14 @@ export default function PageBambaraClient() {
   }, []);
 
   const basculer = useCallback(() => {
+    // Une réponse écrite est en cours : le micro sert d'abord à l'arrêter.
+    if (ecritureActive) {
+      arreterEcriture();
+      setVisuels([]);
+      setOutils([]);
+      setTexteReponse("");
+      return;
+    }
     if (sessionRef.current) {
       sessionRef.current.fermer();
       setVisuels([]);
@@ -112,10 +152,11 @@ export default function PageBambaraClient() {
       return;
     }
     void ouvrir();
-  }, [ouvrir]);
+  }, [ouvrir, ecritureActive, arreterEcriture]);
 
   const effet = effetPrincipal(outils);
-  const actif = etat !== "inactif" && etat !== "erreur";
+  const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
+  const etatBulle: EtatVoixDirecte = etat !== "inactif" ? etat : ecriture.etat;
   const enConnexion = etat === "connexion";
 
   if (!connecte) return <div className="fixed inset-0" style={{ backgroundColor: "var(--dj-fond)" }} />;
@@ -135,11 +176,11 @@ export default function PageBambaraClient() {
           className="h-16 w-full max-w-sm overflow-hidden rounded-full border px-5 shadow-sm"
           style={{ borderColor: "var(--dj-bordure)", backgroundColor: "color-mix(in srgb, var(--dj-surface) 88%, var(--dj-fond))" }}
         >
-          <OndeVoix mini etat={etat} lireNiveaux={lireNiveaux} />
+          <OndeVoix mini etat={etatBulle} lireNiveaux={lireNiveaux} />
         </div>
       </div>
 
-      {/* Ce qui se construit puis ce qui est trouvé : seulement des vidéos et des images. */}
+      {/* Ce qui se construit puis ce qui est trouvé : des vidéos et des images, et le texte de la réponse après une demande écrite. */}
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4">
           <AnimatePresence mode="wait">
@@ -156,14 +197,37 @@ export default function PageBambaraClient() {
               </motion.div>
             )}
           </AnimatePresence>
+          {texteReponse && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="w-full whitespace-pre-line break-words text-base leading-relaxed"
+              style={{ color: "var(--dj-texte)" }}
+            >
+              {texteReponse}
+            </motion.p>
+          )}
           {visuels.map((visuel) => (
             <CarteVisuelBambara key={visuel.id} visuel={visuel} libelleLire={textes.lire} />
           ))}
         </div>
       </main>
 
-      {/* Le micro : un toucher pour parler, un toucher pour arrêter. */}
-      <div className="flex shrink-0 justify-center pb-8 pt-3">
+      {/* En bas : le champ d'écriture (caché par défaut), puis le micro avec le petit bouton clavier à côté. */}
+      <div className="flex shrink-0 flex-col items-center gap-3 pb-8 pt-3">
+        <AnimatePresence initial={false}>
+          {champOuvert && (
+            <ChampEcritureBambara
+              key="champ"
+              placeholder={textes.placeholder}
+              libelleEnvoyer={textes.envoyer}
+              occupe={ecritureActive}
+              surEnvoi={(texte) => void ecriture.envoyer(texte)}
+            />
+          )}
+        </AnimatePresence>
+        {/* Le micro : un toucher pour parler, un toucher pour arrêter. */}
         <div className="relative h-20 w-20">
           {actif && !enConnexion && <span className="bb-halo" />}
           <button
@@ -179,10 +243,24 @@ export default function PageBambaraClient() {
           >
             {enConnexion ? <Loader2 size={34} className="animate-spin" /> : <Mic size={34} />}
           </button>
+          <button
+            type="button"
+            onClick={() => setChampOuvert((ouvert) => !ouvert)}
+            aria-label={champOuvert ? textes.masquerChamp : textes.ecrire}
+            aria-pressed={champOuvert}
+            className="absolute left-full top-1/2 ml-6 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border transition-transform active:scale-95"
+            style={{
+              borderColor: "var(--dj-bordure)",
+              backgroundColor: champOuvert ? "var(--dj-accent-1)" : "color-mix(in srgb, var(--dj-surface) 88%, var(--dj-fond))",
+              color: champOuvert ? "var(--dj-accent-1-texte)" : "var(--dj-texte)",
+            }}
+          >
+            <Keyboard size={22} />
+          </button>
         </div>
       </div>
 
-      {/* Lu seulement par les lecteurs d'écran : l'écran n'affiche aucun texte. */}
+      {/* Lu seulement par les lecteurs d'écran : les erreurs ne sont jamais écrites à l'écran. */}
       <p role="status" aria-live="polite" className="sr-only">{erreur ? erreur || textes.erreur : ""}</p>
     </div>
   );

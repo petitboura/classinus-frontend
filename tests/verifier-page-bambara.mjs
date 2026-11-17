@@ -64,4 +64,22 @@ assert.match(page, /ssr: false/);
 assert.match(client, /ouvrirVoixBambara/);
 assert.match(client, /demanderPageBambara/);
 assert.doesNotMatch(client, /ChatIA|BarreDeSaisie|BulleMessage/);
+
+// Écriture : un petit bouton clavier ouvre un champ, la demande écrite passe par le même appel que la parole,
+// le texte se montre au fur et à mesure et la réponse est lue à voix haute par la voix bambara.
+const [ecriture, champ] = await Promise.all([
+  lire("../lib/useEcritureBambara.ts"),
+  lire("../components/bambara/ChampEcritureBambara.tsx"),
+]);
+assert.match(api, /surTexte\?\.\(reponse\)/);
+assert.match(ecriture, /demanderPageBambara\(question/);
+assert.match(ecriture, /creerLecteurBambara/);
+assert.match(ecriture, /synthetiserVoixBambara/);
+assert.match(ecriture, /voix\.disponible/);
+assert.match(client, /useEcritureBambara/);
+assert.match(client, /ChampEcritureBambara/);
+assert.match(client, /Keyboard/);
+assert.match(client, /champOuvert/);
+assert.match(champ, /enterKeyHint="send"/);
+assert.match(champ, /isComposing/);
 console.log("Page bambara : toutes les vérifications passent.");
