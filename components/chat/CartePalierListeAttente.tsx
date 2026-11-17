@@ -1,13 +1,16 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { PalierListeAttente } from "@/lib/listeAttente";
 
 type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
 
 // Carte d'un palier de la liste d'attente. Le prix est en grand, le crédit en dessous, puis les points
 // du palier. Les points viennent du serveur (clé attente_palier_<prix>_points, séparés par « | ») ;
-// sans eux, la phrase de description du palier est affichée à la place. Même chose pour le badge
+// un point qui commence par « ~ » est une capacité que le palier n'a pas : il s'affiche avec une
+// croix grisée au lieu d'une coche (17/11/2026, les trois cartes citent les mêmes capacités dans le
+// même ordre, pour qu'on voie d'un coup d'œil ce que chaque palier contient ou non).
+// Sans points, la phrase de description du palier est affichée à la place. Même chose pour le badge
 // (clé attente_palier_<prix>_badge) : sans texte, aucun badge. Sur téléphone, seule la carte choisie
 // déplie ses points pour garder la liste courte ; sur grand écran, toutes les cartes les montrent.
 export function CartePalierListeAttente({
@@ -25,7 +28,8 @@ export function CartePalierListeAttente({
   const points = t(`attente_palier_${prix}_points`)
     .split("|")
     .map((p) => p.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((p) => (p.startsWith("~") ? { texte: p.slice(1).trim(), inclus: false } : { texte: p, inclus: true }));
   const description = t(`attente_palier_${prix}`);
   const badge = t(`attente_palier_${prix}_badge`);
 
@@ -76,9 +80,16 @@ export function CartePalierListeAttente({
           {points.length > 0 ? (
             <span className="flex flex-col gap-1.5 border-t border-dj-bordure pt-3">
               {points.map((point) => (
-                <span key={point} className="flex items-start gap-2 text-xs text-dj-texte">
-                  <Check size={13} className="mt-px shrink-0 text-dj-accent-1-texte" />
-                  <span>{point}</span>
+                <span
+                  key={point.texte}
+                  className={`flex items-start gap-2 text-xs ${point.inclus ? "text-dj-texte" : "text-dj-texte-muet"}`}
+                >
+                  {point.inclus ? (
+                    <Check size={13} className="mt-px shrink-0 text-dj-accent-1-texte" />
+                  ) : (
+                    <X size={13} className="mt-px shrink-0 text-dj-texte-muet" />
+                  )}
+                  <span>{point.texte}</span>
                 </span>
               ))}
             </span>
