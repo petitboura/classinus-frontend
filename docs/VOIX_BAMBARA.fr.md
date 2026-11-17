@@ -25,3 +25,16 @@ Demandé par Bourama le 13 novembre 2026. Le côté serveur est décrit dans `do
 - Pendant que Classinus travaille ou parle, le micro est en pause : on ne peut pas l'interrompre en parlant, seulement avec le bouton Arrêter.
 - Les messages tapés dans le chat et les bulles du canal en direct ne sont pas lus en bambara.
 - Test : `npm run test:voix-bambara`. Aucun essai avec les vrais services n'a été fait pendant le développement.
+
+## Page bambara (`/bambara`)
+
+Demandée par Bourama le 16 novembre 2026. Une page de Classinus, après connexion, pour les personnes qui parlent bambara et ne savent ni lire ni écrire. Elle ne contient que la bulle en haut (l'onde de la voix) et le micro. Un toucher pour parler, un toucher pour arrêter. Elle réutilise la chaîne vocale ci-dessus (`ouvrirVoixBambara`).
+
+- L'écran ne montre que des vidéos et des images : vidéos du web (un toucher pour lancer), images du web, images générées. Aucun texte n'est écrit à l'écran, et la réflexion de l'IA n'est jamais montrée.
+- Pendant qu'un outil travaille, un effet de construction remplace l'icône et le libellé : des tuiles qui se posent une à une pour dessiner une image ou une vidéo, des cartes de résultats qui se montent pour une recherche web. La mémoire et les autres outils ne montrent rien d'autre que la bulle.
+- Chaque message part avec `client: "page_bambara"` (`lib/pageBambara.ts`). Le serveur ne garde alors que les outils de recherche, de génération visuelle et de mémoire, ajoute les consignes de bambara oral et force l'effort de réflexion au plus faible (voir `core/outils_page_bambara.py` dans classinus-backend).
+- Les vidéos et images viennent des listes du serveur (`images`, `videos`, `fichiers_generes`) et des liens que l'IA écrit dans sa réponse, que la voix ne lit jamais à voix haute (`lib/pageBambaraVisuels.ts`).
+
+Fichiers : `app/bambara/page.tsx`, `components/bambara/PageBambaraClient.tsx`, `CarteVisuelBambara.tsx`, `EffetConstruction.tsx`, `bambara.css`, `lib/pageBambara.ts`, `lib/pageBambaraVisuels.ts`. L'onde (`components/voix/OndeVoix.tsx`) accepte un `etat` et un `lireNiveaux` facultatifs pour que la page la pilote sans le contexte vocal global. Test : `npm run test:page-bambara`.
+
+Limites connues : la génération Higgsfield n'est pas encore proposée sur cette page ; le bouton flottant de téléchargement des navigateurs Android n'est pas masqué (sa règle est qu'il ne peut pas l'être) ; aucun essai avec les vrais services n'a été fait pendant le développement.
