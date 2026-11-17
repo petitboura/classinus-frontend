@@ -72,6 +72,15 @@ function lireDemande(argumentsOutil: unknown): string {
   return typeof demande === "string" ? demande.trim() : "";
 }
 
+function detailErreur(e: unknown): string {
+  if (!e || typeof e !== "object") return typeof e === "string" ? e : "";
+  const o = e as { reason?: unknown; message?: unknown; name?: unknown; detail?: { code?: unknown } };
+  const code = typeof o.detail?.code === "string" ? o.detail.code : "";
+  const raison = typeof o.reason === "string" ? o.reason : "";
+  const message = typeof o.message === "string" ? o.message : "";
+  return [code, raison, message].filter(Boolean).join(" ").slice(0, 120);
+}
+
 function creerHote(): HTMLDivElement {
   document.getElementById(ID_HOTE)?.remove();
   document.getElementById(ID_STYLE)?.remove();
@@ -170,7 +179,10 @@ export async function ouvrirAvatarNapster(options: OptionsAvatarNapster): Promis
   };
   const echouer = (e: unknown) => {
     if (ferme) return;
-    surErreur(messageErreurVoix(e));
+    console.error("Avatar Napster : arrêt sur erreur :", e);
+    // Le détail court aide à comprendre pourquoi l'avatar s'est arrêté (jeton refusé, micro, connexion).
+    const detail = detailErreur(e);
+    surErreur(detail ? `${messageErreurVoix(e)} (${detail})` : messageErreurVoix(e));
     fermerSession();
   };
 
@@ -278,7 +290,9 @@ export async function ouvrirAvatarNapster(options: OptionsAvatarNapster): Promis
       // Nos propres boutons (réduire, arrêter) remplacent ceux du paquet.
       features: { controls: { enabled: false }, disclaimer: { enabled: false }, inactiveTimeout: { enabled: false } },
       onData: surDonnees,
-      onAvatarReady: () => {
+      onAvatarReady: (estPret?: boolean) => {
+        // Le paquet rappelle aussi avec « faux » en se démontant : ce n'est pas une connexion prête.
+        if (estPret === false) return;
         pret = true;
         preparer();
       },
@@ -292,7 +306,11 @@ export async function ouvrirAvatarNapster(options: OptionsAvatarNapster): Promis
         if (pret) console.warn("Avatar Napster :", e);
         else echouer(cause);
       },
-      onDestroy: () => fermerSession(),
+      onDestroy: () => {
+        // Arrêt avant que l'avatar soit prêt : la connexion a échoué, on le dit au lieu de fermer en silence.
+        if (!pret && !ferme) echouer(new Error("arrêt avant la connexion de l'avatar"));
+        else fermerSession();
+      },
     }
   );
   } catch (e) {

@@ -11,7 +11,7 @@ et ne garde aucune mémoire. Aucune donnée n'est stockée côté Classinus pour
 ## Interrupteur et variables (Railway, classinus-backend)
 - `AVATAR_NAPSTER_ACTIF` : `1`, `true` ou `oui` pour allumer. Retirée ou autre chose : éteint, le mode vocal reste celui d'avant.
 - `NAPSTER_API_KEY` et `NAPSTER_AGENT_ID` : clé de l'API et identifiant de l'agent (napster.com/developer).
-- Facultatives : `NAPSTER_API_URL`, `AVATAR_NAPSTER_DELAI_MIN_S`, et les textes `AVATAR_NAPSTER_CONSIGNES`, `_DESCRIPTION_OUTIL`,
+- Facultatives : `NAPSTER_API_URL`, `AVATAR_NAPSTER_MAX_PAR_MINUTE` (jetons par minute et par compte, 6 par défaut), et les textes `AVATAR_NAPSTER_CONSIGNES`, `_DESCRIPTION_OUTIL`,
   `_ACCUEIL`, `_ANNONCE_REPONSE`, `_ANNONCE_BULLE`, `_ATTENTE`, `_SUITE_DEMANDE` (voir core/avatar_napster_config.py).
 
 ## Où est le code
