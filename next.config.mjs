@@ -71,6 +71,22 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME || String(Date.now()),
   },
+  // 17/11/2026 : le paquet @touchcastllc/napster-companion-api charge deux bibliotheques de suivi du
+  // visage (@tensorflow/tfjs et @tensorflow-models/face-landmarks-detection) qu'il declare
+  // OPTIONNELLES (peerDependenciesMeta). Elles ne sont pas installees ici et le suivi du visage n'est
+  // jamais active : sans ces deux lignes, le build echoue ("Module not found") meme quand l'avatar
+  // est charge a la demande, car le build resout les imports dynamiques du paquet. Les remplacer par
+  // un module vide suffit, rien ne les appelle. Si un jour le suivi du visage est active, il faudra
+  // plutot installer ces deux paquets et retirer ces deux lignes.
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@tensorflow/tfjs": false,
+      "@tensorflow-models/face-landmarks-detection": false,
+    };
+    return config;
+  },
   images: {
     // image_vitrine_url (agents.image_vitrine_url, voir PIVOT_SOCIAL.md)
     // est hébergée sur Supabase Storage — next/image refuse par défaut
