@@ -27,7 +27,7 @@ The form opens in a bottom sheet on a phone and a centred window on a computer (
 ## Nothing is hard coded
 
 - Plans (price and monthly credit) come from the backend, from the `paliers_liste_attente` table.
-- Every text of the form comes from the backend, from `textes_modeles_llm` (keys starting with `attente_`), in French and English. If a key is missing in the chosen language, the French text is used; a raw key is never shown. Each plan's points come from `attente_palier_<price>_points` (separated by `|`); without them the plan sentence `attente_palier_<price>` is shown. An optional badge on a plan comes from `attente_palier_<price>_badge`: no text, no badge.
+- Every text of the form comes from the backend, from `textes_modeles_llm` (keys starting with `attente_`), in French and English. If a key is missing in the chosen language, the French text is used; a raw key is never shown. Each plan's points come from `attente_palier_<price>_points` (separated by `|`; a point starting with `~` is a capability the plan does not have and shows a greyed cross instead of a tick; all three plans list the same eight capabilities in the same order, taken from Bourama's plan table of 16 Nov 2026); without them the plan sentence `attente_palier_<price>` is shown. An optional badge on a plan comes from `attente_palier_<price>_badge`: no text, no badge.
 - Country names come from the browser (`Intl.DisplayNames`) in the interface language, so none is translated by hand. Only the ISO codes of the proposed countries are in `lib/listeAttente.ts`.
 
 ## Funnel steps are never blocking

@@ -27,7 +27,7 @@ Le formulaire s'ouvre en feuille depuis le bas sur téléphone et en fenêtre ce
 ## Rien n'est écrit en dur
 
 - Les paliers (prix et crédit mensuel) viennent du serveur, de la table `paliers_liste_attente`.
-- Tous les textes du formulaire viennent du serveur, de `textes_modeles_llm` (clés qui commencent par `attente_`), en français et en anglais. Si une clé manque dans la langue choisie, le texte français est utilisé ; une clé brute n'est jamais affichée. Les points de chaque palier viennent de `attente_palier_<prix>_points` (séparés par `|`) ; sans eux, la phrase `attente_palier_<prix>` est affichée. Un badge facultatif sur un palier vient de `attente_palier_<prix>_badge` : sans texte, pas de badge.
+- Tous les textes du formulaire viennent du serveur, de `textes_modeles_llm` (clés qui commencent par `attente_`), en français et en anglais. Si une clé manque dans la langue choisie, le texte français est utilisé ; une clé brute n'est jamais affichée. Les points de chaque palier viennent de `attente_palier_<prix>_points` (séparés par `|` ; un point qui commence par `~` est une capacité que le palier n'a pas et s'affiche avec une croix grisée au lieu d'une coche ; les trois paliers citent les mêmes huit capacités dans le même ordre, tirées du tableau des paliers de Bourama du 16/11/2026) ; sans eux, la phrase `attente_palier_<prix>` est affichée. Un badge facultatif sur un palier vient de `attente_palier_<prix>_badge` : sans texte, pas de badge.
 - Les noms de pays viennent du navigateur (`Intl.DisplayNames`) dans la langue de l'interface, donc aucun n'est traduit à la main. Seuls les codes ISO des pays proposés sont dans `lib/listeAttente.ts`.
 
 ## Les étapes de l'entonnoir ne bloquent jamais
