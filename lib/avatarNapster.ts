@@ -15,11 +15,14 @@
 // bulle ne coupe donc jamais la connexion. La vidéo n'est jamais cliquable, le clic sur la bulle est
 // reçu par le bouton de components/voix/VoixDirecteSuperposition.tsx placé dessous.
 
-import type { DataChannelCommand, NapsterCompanionApiInstance } from "@touchcastllc/napster-companion-api";
+import type { NapsterCompanionApiInstance } from "@touchcastllc/napster-companion-api";
 import { COUCHE_VOIX_PLEIN_ECRAN } from "./couchesAgent";
 import { messageErreurVoix } from "./erreurs";
 import { demanderJetonAvatarNapster, type JetonAvatarNapster } from "./avatarNapsterApi";
 import type { NiveauxVoix, SessionGeminiLive } from "./geminiLive";
+
+// Le paquet n'exporte pas ce type : on le déduit de la méthode qui l'utilise.
+type CommandeAvatar = Parameters<NapsterCompanionApiInstance["sendCommand"]>[0];
 
 export type ModeAvatar = "plein" | "mini" | "cache";
 
@@ -49,6 +52,8 @@ const BAS_SECURISE = "(env(safe-area-inset-bottom, 0px) + var(--dj-barre-onglets
 // vraie réponse est envoyée ensuite.
 const DELAI_OUTIL_MS = 7000;
 const LONGUEUR_MAX_REPONSE = 4000;
+// Texte lu par le modèle de l'avatar (pas affiché à l'écran), donc pas à traduire.
+const CONSIGNE_PARAMETRE = "La demande de l'utilisateur, avec ses propres mots.";
 
 function tronquer(texte: string): string {
   return texte.length > LONGUEUR_MAX_REPONSE ? `${texte.slice(0, LONGUEUR_MAX_REPONSE)}…` : texte;
@@ -138,7 +143,7 @@ export async function ouvrirAvatarNapster(options: OptionsAvatarNapster): Promis
   let niveauSortie = 0;
   const appelsVus = new Set<string>();
 
-  const envoyer = (commande: DataChannelCommand) => {
+  const envoyer = (commande: CommandeAvatar) => {
     try {
       instance?.sendCommand(commande);
     } catch (e) {
@@ -189,7 +194,7 @@ export async function ouvrirAvatarNapster(options: OptionsAvatarNapster): Promis
               description: reglages.description_outil,
               parameters: {
                 type: "object",
-                properties: { demande: { type: "string", description: "La demande de l'utilisateur, avec ses propres mots." } },
+                properties: { demande: { type: "string", description: CONSIGNE_PARAMETRE } },
                 required: ["demande"],
               },
             },
@@ -304,7 +309,7 @@ export async function ouvrirAvatarNapster(options: OptionsAvatarNapster): Promis
     niveaux: (): NiveauxVoix => {
       const parleMicro = instance?.isUserTalking ?? false;
       niveauEntree += ((parleMicro ? 0.7 : 0) - niveauEntree) * 0.2;
-      niveauSortie += ((avatarParle ? 0.8 : 0) - niveauSortie) * 0.2;
+      niveauSortie += (((avatarParle || instance?.isAvatarSpeaking) ? 0.8 : 0) - niveauSortie) * 0.2;
       return { entree: niveauEntree, sortie: niveauSortie };
     },
     fermer: fermerSession,
