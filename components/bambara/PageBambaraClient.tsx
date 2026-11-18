@@ -24,6 +24,8 @@
 // la plus récente en bas, au lieu de faire repartir l'écran de zéro. Une demande écrite montre aussi la
 // question écrite, une demande parlée n'affiche aucun texte. L'écran suit la dernière réponse tant que la
 // personne n'est pas remontée lire plus haut.
+// Forme (18/11/2026, demande de Bourama) : les médias (images, vidéos, cadres de construction) ont des angles nets,
+// les commandes (micro, bouton clavier, champ d'écriture) sont rondes. Le micro est très grand, dans la zone du pouce.
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
@@ -406,14 +408,14 @@ export default function PageBambaraClient() {
           )}
         </AnimatePresence>
         {/* Le micro : un toucher pour parler, un toucher pour arrêter. */}
-        <div className="pointer-events-auto relative h-20 w-20">
+        <div className="pointer-events-auto relative h-24 w-24">
           {actif && !enConnexion && <span className="bb-halo" />}
           <button
             type="button"
             onClick={basculer}
             aria-label={actif ? textes.arreter : textes.parler}
             aria-pressed={actif}
-            className="relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-transform active:scale-95"
+            className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 transition-transform active:scale-95"
             style={{
               // Une erreur ne se dit pas par une couleur : le micro se vide (fond clair, trait d'encre).
               backgroundColor: erreur ? "var(--bb-fond)" : "var(--bb-encre)",
@@ -421,7 +423,7 @@ export default function PageBambaraClient() {
               borderColor: "var(--bb-encre)",
             }}
           >
-            {enConnexion ? <Loader2 size={34} className="animate-spin" /> : <Mic size={34} />}
+            {enConnexion ? <Loader2 size={40} className="animate-spin" /> : <Mic size={40} />}
           </button>
           <button
             type="button"

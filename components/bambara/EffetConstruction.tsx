@@ -2,28 +2,32 @@
 
 // Page bambara (16/11/2026, demande de Bourama) : effet visuel montré pendant qu'un outil travaille.
 // « Une ligne avec icône et libellé ne fera pas l'affaire, il faut un effet de construire sous tes
-// yeux. » Aucun texte : des tuiles qui se posent une à une pour dessiner une image ou une vidéo, des
-// cartes de résultats qui se montent pour une recherche. Les styles sont dans bambara.css.
+// yeux. » Aucun texte, et rien qui ressemble à du texte (pas de fausses lignes d'écriture) : l'utilisateur
+// ne sait pas lire.
+// Refonte du 18/11/2026 : un cadre de photo (coins de repérage, trame de points qui se développe, fine
+// ligne de balayage) pour créer une image ou chercher une vidéo ; trois petits cadres de photo pour les
+// images ; trois cadres vides qui s'allument l'un après l'autre pour la recherche. Styles : bambara.css.
 
 import type { CSSProperties } from "react";
 import type { EffetConstruction as Effet } from "@/lib/pageBambaraVisuels";
 
 type StyleVariables = CSSProperties & Record<`--${string}`, string | number>;
 
-// Retard et teinte de chaque tuile : suite fixe (jamais de hasard), les tuiles se posent en désordre
-// d'apparence mais toujours de la même façon.
-function tuiles(colonnes: number, lignes: number, etalement: number, decalage = 0) {
-  const total = colonnes * lignes;
-  return Array.from({ length: total }, (_, i) => {
-    const retard = (((i * 37 + decalage * 11) % 101) / 101) * etalement;
-    const teinte = 25 + ((i * 53 + decalage * 17) % 70);
-    const style: StyleVariables = { "--d": `${retard.toFixed(2)}s`, "--m": teinte };
-    return <span key={i} className="bb-tuile" style={style} />;
+// Taille et retard de chaque point de la trame : suite fixe (jamais de hasard). Le retard suit la
+// diagonale, donc la trame se développe en vague d'un coin à l'autre ; la taille varie doucement, ce qui
+// dessine des formes sans jamais montrer de texte.
+function points(colonnes: number, lignes: number, etalement: number, decalage: number) {
+  return Array.from({ length: colonnes * lignes }, (_, i) => {
+    const x = i % colonnes;
+    const y = Math.floor(i / colonnes);
+    const retard = ((x + y) / (colonnes + lignes - 2)) * etalement;
+    const relief = 0.5 + 0.5 * Math.sin(x * 0.55 + decalage) * Math.cos(y * 0.7 + decalage * 0.8);
+    const style: StyleVariables = { "--d": `${retard.toFixed(2)}s`, "--s": (0.18 + 0.82 * relief).toFixed(2) };
+    return <span key={i} className="bb-point" style={style} />;
   });
 }
 
-function Cadre({ ratio, colonnes, lignes, etalement = 2.1, decalage = 0, lecture = false, className }: {
-  ratio: string;
+function Cadre({ colonnes, lignes, etalement = 1.5, decalage = 0, lecture = false, className }: {
   colonnes: number;
   lignes: number;
   etalement?: number;
@@ -32,31 +36,26 @@ function Cadre({ ratio, colonnes, lignes, etalement = 2.1, decalage = 0, lecture
   className?: string;
 }) {
   return (
-    <div className={`bb-cadre ${className ?? ""}`} style={{ aspectRatio: ratio }}>
+    <div className={`bb-cadre ${className ?? ""}`} style={{ aspectRatio: `${colonnes} / ${lignes}` }}>
       <div className="bb-grille" style={{ gridTemplateColumns: `repeat(${colonnes}, 1fr)`, gridTemplateRows: `repeat(${lignes}, 1fr)` }}>
-        {tuiles(colonnes, lignes, etalement, decalage)}
+        {points(colonnes, lignes, etalement, decalage)}
       </div>
       <span className="bb-balayage" />
+      <span className="bb-coin bb-coin-hg" />
+      <span className="bb-coin bb-coin-hd" />
+      <span className="bb-coin bb-coin-bg" />
+      <span className="bb-coin bb-coin-bd" />
       {lecture && <span className="bb-lecture" />}
     </div>
   );
 }
 
-function Cartes() {
+function Sondes() {
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="grid w-full grid-cols-3 gap-3">
       {[0, 1, 2].map((i) => {
         const style: StyleVariables = { "--d": `${(i * 0.55).toFixed(2)}s` };
-        return (
-          <div key={i} className="bb-carte" style={style}>
-            <span className="bb-carte-vignette" />
-            <div className="flex flex-1 flex-col justify-center gap-2">
-              <span className="bb-carte-ligne" style={{ width: "92%", "--l": "0.15s" } as StyleVariables} />
-              <span className="bb-carte-ligne" style={{ width: "70%", "--l": "0.3s" } as StyleVariables} />
-              <span className="bb-carte-ligne" style={{ width: "46%", "--l": "0.45s" } as StyleVariables} />
-            </div>
-          </div>
-        );
+        return <span key={i} className="bb-sonde" style={style} />;
       })}
     </div>
   );
@@ -65,18 +64,18 @@ function Cartes() {
 export function EffetConstruction({ effet }: { effet: Effet }) {
   switch (effet) {
     case "creation":
-      return <Cadre ratio="16 / 9" colonnes={16} lignes={9} className="w-full" />;
+      return <Cadre colonnes={24} lignes={14} className="w-full" />;
     case "videos":
-      return <Cadre ratio="16 / 9" colonnes={16} lignes={9} lecture className="w-full" />;
+      return <Cadre colonnes={24} lignes={14} lecture className="w-full" />;
     case "images":
       return (
         <div className="grid w-full grid-cols-3 gap-3">
           {[0, 1, 2].map((i) => (
-            <Cadre key={i} ratio="1 / 1" colonnes={7} lignes={7} etalement={1.8} decalage={i * 3} />
+            <Cadre key={i} colonnes={10} lignes={10} etalement={1.3} decalage={i * 2.3} />
           ))}
         </div>
       );
     case "recherche":
-      return <Cartes />;
+      return <Sondes />;
   }
 }

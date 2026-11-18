@@ -1,9 +1,12 @@
 /* Page bambara (16/11/2026, demande de Bourama) : effets visuels de la page. Aucun texte nulle part :
    l'utilisateur ne sait ni lire ni écrire.
-   Refonte du 18/11/2026 (demande de Bourama) : la page est en noir et blanc, aucune autre couleur.
+   Refonte du 18/11/2026 (demande de Bourama) : noir et blanc uniquement, et des blocs entièrement
+   repensés. Une règle de forme : les médias (images, vidéos, cadres de construction) ont des angles
+   nets, les commandes (micro, clavier, champ) sont rondes. Les cadres de construction sont des cadres
+   de photo : coins de repérage, trame de points qui se développe, fine ligne de balayage.
    Les couleurs sont définies une seule fois ici, dans .bb-page : encre et fond s'inversent selon le
    thème clair ou sombre, tout le reste en est déduit par des gris. --dj-accent-1 est redéfini pour que
-   l'onde de la bulle (components/voix/OndeVoix.tsx) soit noire ou blanche elle aussi. */
+   l'onde (components/voix/OndeVoix.tsx) soit noire ou blanche elle aussi. */
 
 .bb-page {
   --bb-fond: #ffffff;
@@ -31,41 +34,40 @@
   color-scheme: dark;
 }
 
-/* Une tuile apparaît en grossissant, reste, puis le tout se défait et recommence : l'image se construit sous les yeux. */
-@keyframes bb-tuile {
-  0% { opacity: 0; transform: scale(0.3); }
-  28% { opacity: 1; transform: scale(1); }
-  82% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.9); }
+/* Un point de la trame grossit jusqu'à sa taille (--s), reste, puis s'efface : l'image se développe. */
+@keyframes bb-point {
+  0% { transform: scale(0); }
+  30% { transform: scale(var(--s, 1)); }
+  78% { transform: scale(var(--s, 1)); }
+  100% { transform: scale(0); }
 }
 
-/* Ligne de lumière qui balaie le cadre pendant la construction. */
+/* Ligne de balayage : un trait fin qui descend de haut en bas du cadre. */
 @keyframes bb-balayage {
-  0% { transform: translateY(-10%); opacity: 0; }
-  12% { opacity: 1; }
-  88% { opacity: 1; }
-  100% { transform: translateY(1050%); opacity: 0; }
-}
-
-/* Une carte de recherche se monte : le bloc glisse puis les lignes se déroulent. */
-@keyframes bb-carte {
-  0% { opacity: 0; transform: translateY(18px) scale(0.97); }
-  25% { opacity: 1; transform: translateY(0) scale(1); }
-  85% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-6px) scale(0.99); }
-}
-@keyframes bb-ligne {
-  0% { transform: scaleX(0); }
-  40% { transform: scaleX(1); }
-  85% { transform: scaleX(1); }
-  100% { transform: scaleX(0); }
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 0; }
 }
 
 @keyframes bb-lecture {
-  0%, 30% { opacity: 0; transform: scale(0.5); }
-  50% { opacity: 1; transform: scale(1.1); }
-  70%, 90% { opacity: 1; transform: scale(1); }
+  0%, 25% { opacity: 0; transform: scale(0.6); }
+  45% { opacity: 1; transform: scale(1.06); }
+  60%, 88% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(0.9); }
+}
+
+/* Recherche : les cadres s'allument l'un après l'autre, un point apparaît dans chacun. */
+@keyframes bb-allume {
+  0% { opacity: 0; }
+  20%, 60% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes bb-ping {
+  0% { transform: scale(0); opacity: 0; }
+  25% { transform: scale(1); opacity: 1; }
+  60% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
 
 @keyframes bb-halo {
@@ -73,87 +75,110 @@
   100% { transform: scale(1.7); opacity: 0; }
 }
 
-/* Cadre de la mosaïque : un trait fin, un fond à peine gris, aucune ombre. */
+/* Cadre de photo : angles nets, un trait fin, aucune ombre. */
 .bb-cadre {
   position: relative;
   overflow: hidden;
-  border-radius: 1.25rem;
-  background: var(--bb-voile);
-  border: 1px solid var(--bb-trait);
+  background: var(--bb-fond);
+  border: 1px solid var(--bb-trait-fort);
 }
 
 .bb-grille {
   display: grid;
   width: 100%;
   height: 100%;
-  gap: 1px;
-  padding: 1px;
+  place-items: center;
 }
 
-/* Tuiles nettes, sans arrondi : chaque tuile est un gris entre 12 et 47 pour cent d'encre. */
-.bb-tuile {
-  background: color-mix(in srgb, var(--bb-encre) calc(var(--m, 50) * 0.5%), var(--bb-fond));
-  opacity: 0;
-  animation: bb-tuile var(--cycle, 3.4s) ease-in-out infinite;
+.bb-point {
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--bb-encre);
+  transform: scale(0);
+  animation: bb-point var(--cycle, 3.6s) ease-in-out infinite;
   animation-delay: var(--d, 0s);
 }
 
 .bb-balayage {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 9%;
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bb-encre) 40%, transparent), transparent);
-  animation: bb-balayage var(--cycle, 3.4s) ease-in-out infinite;
+  inset: 0;
+  border-bottom: 1px solid var(--bb-encre);
+  animation: bb-balayage var(--cycle, 3.6s) ease-in-out infinite;
   pointer-events: none;
 }
 
-.bb-carte {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 1rem;
-  border: 1px solid var(--bb-trait);
-  background: var(--bb-fond);
-  opacity: 0;
-  animation: bb-carte var(--cycle, 3.6s) ease-out infinite;
-  animation-delay: var(--d, 0s);
+/* Coins de repérage, comme sur un viseur : ils disent qu'une image se prépare. */
+.bb-coin {
+  position: absolute;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 0 solid var(--bb-encre);
+  pointer-events: none;
 }
-.bb-carte-vignette {
-  flex: none;
-  width: 6.5rem;
-  aspect-ratio: 16 / 10;
-  border-radius: 0.6rem;
-  background: color-mix(in srgb, var(--bb-encre) 14%, var(--bb-fond));
-}
-.bb-carte-ligne {
-  height: 0.6rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bb-encre) 10%, var(--bb-fond));
-  transform-origin: left center;
-  animation: bb-ligne var(--cycle, 3.6s) ease-out infinite;
-  animation-delay: calc(var(--d, 0s) + var(--l, 0.2s));
-}
+.bb-coin-hg { top: 0.5rem; left: 0.5rem; border-top-width: 2px; border-left-width: 2px; }
+.bb-coin-hd { top: 0.5rem; right: 0.5rem; border-top-width: 2px; border-right-width: 2px; }
+.bb-coin-bg { bottom: 0.5rem; left: 0.5rem; border-bottom-width: 2px; border-left-width: 2px; }
+.bb-coin-bd { bottom: 0.5rem; right: 0.5rem; border-bottom-width: 2px; border-right-width: 2px; }
 
-/* Triangle de lecture : plein, de la couleur du fond, cerné d'un halo d'encre pour ressortir sur les gris. */
+/* Bouton de lecture : un disque plein cerné d'encre, avec son triangle. */
 .bb-lecture {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: bb-lecture var(--cycle, 3.4s) ease-in-out infinite;
+  animation: bb-lecture var(--cycle, 3.6s) ease-in-out infinite;
+  pointer-events: none;
 }
 .bb-lecture::before {
   content: "";
+  position: absolute;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background: var(--bb-fond);
+  border: 2px solid var(--bb-encre);
+}
+.bb-lecture::after {
+  content: "";
+  position: relative;
   width: 0;
   height: 0;
-  margin-left: 0.4rem;
+  margin-left: 0.3rem;
   border-style: solid;
-  border-width: 1.1rem 0 1.1rem 1.9rem;
-  border-color: transparent transparent transparent var(--bb-fond);
-  filter: drop-shadow(0 0 6px var(--bb-encre));
+  border-width: 0.8rem 0 0.8rem 1.3rem;
+  border-color: transparent transparent transparent var(--bb-encre);
+}
+
+/* Cadre vide de la recherche : un carré qui s'allume puis un point qui apparaît dedans. */
+.bb-sonde {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid var(--bb-trait-fort);
+  background: var(--bb-fond);
+}
+.bb-sonde::before {
+  content: "";
+  width: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--bb-encre);
+  transform: scale(0);
+  animation: bb-ping 2.4s ease-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.bb-sonde::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 2px solid var(--bb-encre);
+  opacity: 0;
+  animation: bb-allume 2.4s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+  pointer-events: none;
 }
 
 .bb-halo {
@@ -172,8 +197,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .bb-clavier { transition: none; }
-  .bb-tuile { animation: none; opacity: 0.8; }
+  .bb-point { animation: none; transform: scale(var(--s, 1)); }
   .bb-balayage, .bb-lecture, .bb-halo { animation: none; }
-  .bb-carte { animation: none; opacity: 1; }
-  .bb-carte-ligne { animation: none; }
+  .bb-balayage { display: none; }
+  .bb-sonde::before { animation: none; transform: scale(1); }
+  .bb-sonde::after { animation: none; opacity: 0; }
 }

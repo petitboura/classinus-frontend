@@ -6,8 +6,9 @@
 // se suivent en rangée de gauche à droite (RangeesVisuelsBambara.tsx). Une vidéo YouTube se lance d'un
 // toucher dans la carte (lecteur officiel), un fichier vidéo se lit avec le lecteur du navigateur ; une
 // image s'agrandit au toucher. Aucun texte visible : l'utilisateur ne sait pas lire.
-// Le cadre et le bouton de lecture sont en noir et blanc (18/11/2026) ; les images et vignettes
-// elles mêmes gardent leurs vraies couleurs, car elles font comprendre le contenu.
+// Le cadre et le bouton de lecture sont en noir et blanc (18/11/2026), les angles des cartes sont nets
+// (les médias sont carrés, les commandes sont rondes) ; les images et vignettes elles mêmes gardent leurs
+// vraies couleurs, car elles font comprendre le contenu.
 
 import { motion } from "framer-motion";
 import { Play, X } from "lucide-react";
@@ -36,7 +37,7 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
       initial={ENTREE}
       animate={ARRIVEE}
       transition={TRANSITION}
-      className="relative aspect-video w-60 shrink-0 snap-start overflow-hidden rounded-xl border bg-black sm:w-72"
+      className="relative aspect-video w-60 shrink-0 snap-start overflow-hidden border bg-black sm:w-72"
       style={{ borderColor: "var(--bb-trait)" }}
     >
       {enLecture ? (
@@ -77,7 +78,7 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
           )}
           <span
             className="relative flex h-12 w-12 items-center justify-center rounded-full transition-transform group-active:scale-95"
-            style={{ backgroundColor: "color-mix(in srgb, var(--bb-fond) 92%, transparent)", color: "var(--bb-encre)" }}
+            style={{ backgroundColor: "var(--bb-fond)", color: "var(--bb-encre)", border: "2px solid var(--bb-encre)" }}
           >
             <Play size={22} fill="currentColor" />
           </span>
@@ -104,7 +105,7 @@ export function CarteImageBambara({ visuel, surOuvrir, libelleOuvrir }: PropsIma
       transition={TRANSITION}
       onClick={surOuvrir}
       aria-label={visuel.titre || libelleOuvrir}
-      className="group relative h-36 w-48 shrink-0 snap-start overflow-hidden rounded-xl border sm:h-40 sm:w-56"
+      className="group relative h-36 w-48 shrink-0 snap-start overflow-hidden border sm:h-40 sm:w-56"
       style={{ backgroundColor: "var(--bb-voile)", borderColor: "var(--bb-trait)" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
