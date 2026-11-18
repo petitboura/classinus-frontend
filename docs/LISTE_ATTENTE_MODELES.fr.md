@@ -2,7 +2,7 @@
 
 [English version](LISTE_ATTENTE_MODELES.md) · **Version française**
 
-Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure la demande réelle avant de brancher Claude, GPT et Gemini. Dans le sélecteur de modèles en haut du chat, ces modèles restent grisés avec la mention « Bientôt » et ne sont jamais sélectionnables. Un clic dessus ouvre maintenant un formulaire d'inscription à une liste d'attente payante. **Aucun paiement n'est pris**, et le formulaire le dit en haut. Le côté serveur est décrit dans la documentation du backend (`docs/chantiers/LISTE_ATTENTE_MODELES.fr.md`).
+Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure la demande réelle avant de brancher Claude, GPT et Gemini. Dans le sélecteur de modèles en haut du chat, ces modèles restent grisés avec un **verrou** (le mot « Bientôt » n'existe plus depuis le 17 novembre 2026) et ne sont jamais sélectionnables. Les modèles frontière (groupe 1) portent en plus un badge **Max** devant leur nom. Un clic dessus ouvre maintenant un formulaire d'inscription à une liste d'attente payante. **Aucun paiement n'est pris**, et le formulaire le dit en haut. Le côté serveur est décrit dans la documentation du backend (`docs/chantiers/LISTE_ATTENTE_MODELES.fr.md`).
 
 ## Ce que voit la personne
 
@@ -34,8 +34,12 @@ Le formulaire s'ouvre en feuille depuis le bas sur téléphone et en fenêtre ce
 
 `noterEtapeListeAttente` ignore toute erreur, y compris l'absence de compte. Une note qui échoue ne ralentit ni n'interrompt jamais la personne. La dernière étape, `inscription_validee`, est écrite par le serveur quand l'inscription réussit ; le client ne peut pas l'envoyer.
 
+## Verrou et badge Max
+
+`SelecteurModeleHaut.tsx` montre une icône de verrou sur chaque modèle verrouillé. Son info-bulle et son nom accessible viennent du backend (`libelles_bientot`, le texte de la clé `bientot`, maintenant « Disponible avec un abonnement »). Le badge devant le nom vient de `libelles_badge` (texte `badge_groupe_1`, « Max »), envoyé seulement pour les modèles du groupe 1. Les deux textes sont dans Supabase, en français et en anglais.
+
 ## Limites connues
 
 - Le formulaire demande un compte connecté. Un visiteur sans compte reçoit le message de connexion habituel de la couche API.
-- Le panneau du plugin Thonny a son propre bouton de modèle, qui montre toujours les modèles « Bientôt » comme désactivés. Il n'ouvre pas le formulaire.
+- Le panneau du plugin Thonny a son propre bouton de modèle, qui montre toujours les modèles verrouillés comme désactivés. Il n'ouvre pas le formulaire.
 - Pas encore vérifié sur de vrais appareils : navigateur de téléphone, applis Android et iOS installées, appli PC installée. Les vérifications à faire sont dans la liste de tests staging de la description de la branche.
