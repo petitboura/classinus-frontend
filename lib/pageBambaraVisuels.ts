@@ -1,8 +1,9 @@
 // Page bambara (16/11/2026, demande de Bourama) : fonctions pures, sans React ni réseau, qui disent
 // quoi montrer à l'écran. L'utilisateur ne sait ni lire ni écrire : seules des vidéos et des images
-// sont montrées. Elles viennent de trois endroits : les listes envoyées par le serveur pendant un
-// outil (images, vidéos), les fichiers générés, et les liens que l'IA écrit elle même dans sa réponse
-// (le serveur laisse l'IA choisir quelles vidéos et images de recherche montrer).
+// sont montrées. C'est l'IA qui choisit lesquelles (19/11/2026, demande de Bourama) : les liens qu'elle
+// écrit elle même dans sa réponse, et les fichiers qu'elle génère. Les listes d'images et de vidéos que
+// le serveur envoie pendant une recherche ne sont jamais montrées d'office : elles servent seulement à
+// compléter (miniature, titre) celles que l'IA cite.
 
 import type { MessageAudioBambara } from "./audioMessageBambara";
 
@@ -67,7 +68,7 @@ export function fusionnerVisuels(existants: VisuelBambara[], nouveaux: VisuelBam
 /**
  * Un tour de la conversation (18/11/2026, demande de Bourama) : chaque demande s'ajoute à la suite des
  * précédentes au lieu de les effacer. `question` n'est remplie que pour une demande écrite (la personne
- * sait écrire dans ce cas) ; une demande parlée n'affiche aucun texte, la personne ne sait pas lire.
+ * sait écrire dans ce cas) ; une demande parlée n'écrit aucun texte dans la bulle de la personne.
  */
 export type TourBambara = {
   id: string;

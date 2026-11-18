@@ -20,8 +20,9 @@
 // à droite (components/bambara/BulleAudioBambara.tsx) et la voix de Classinus un message audio à gauche, tous deux
 // réécoutables. Ils restent dans la page avec le reste de la conversation. Pendant qu'un message se réécoute, le micro
 // est en pause (il entendrait le haut parleur) et il reprend ensuite.
-// Ordre (19/11/2026, demande de Bourama) : dans chaque message, le vocal est en haut puis le texte en dessous, replié par
-// défaut sur une seule ligne (components/bambara/TexteReplieBambara.tsx), même pour une demande parlée. La bulle audio
+// Ordre (19/11/2026, demande de Bourama) : le vocal est en haut puis le texte de la réponse en dessous, replié par défaut
+// sur une seule ligne, sans case autour (components/bambara/TexteReplieBambara.tsx), même pour une demande parlée. Aucun
+// texte n'est écrit dans la bulle de la personne qui parle. La bulle audio
 // de la réponse est déjà là, en préparation, dès que la réponse se prépare : rien ne se décale quand la voix est prête.
 // Effet conversation (18/11/2026, demande de Bourama) : chaque demande s'ajoute à la suite des précédentes,
 // la plus récente en bas, au lieu de faire repartir l'écran de zéro. Une demande écrite montre aussi la
@@ -245,10 +246,9 @@ export default function PageBambaraClient() {
           const id = tourVocalRef.current;
           setTours((precedents) => retirerTour(precedents, id));
         },
-        // Le texte de la parole (transcription) et celui de la réponse apparaissent aussi, repliés sous leur bulle audio.
+        // Le texte de la réponse apparaît aussi, replié sous sa bulle audio. Rien n'est écrit dans la bulle de la personne.
         surDemande: async (question) => {
           const id = tourVocalRef.current;
-          setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, question })));
           const reponse = await demanderPageBambara(question, conversationIdRef.current, {
             surOutilsEnCours: setOutils,
             surVisuels: ajouterVisuels,
@@ -330,9 +330,6 @@ export default function PageBambaraClient() {
                     libelleMettreEnPause={textes.mettreEnPause}
                   />
                 )}
-                {tour.question && tour.audioQuestion && (
-                  <TexteReplieBambara texte={tour.question} cote="droite" libelleDeplier={textes.deplier} libelleReplier={textes.replier} />
-                )}
                 {tour.question && !tour.audioQuestion && (
                   <motion.p
                     initial={{ opacity: 0, y: 8 }}
@@ -356,7 +353,7 @@ export default function PageBambaraClient() {
                   />
                 )}
                 {tour.texte && (
-                  <TexteReplieBambara texte={tour.texte} cote="gauche" libelleDeplier={textes.deplier} libelleReplier={textes.replier} />
+                  <TexteReplieBambara texte={tour.texte} libelleDeplier={textes.deplier} libelleReplier={textes.replier} />
                 )}
                 <RangeesVisuelsBambara
                   idTour={tour.id}

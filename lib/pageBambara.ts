@@ -1,7 +1,10 @@
 "use client";
 
 // Page bambara (16/11/2026, demande de Bourama) : envoie la parole transcrite à l'IA de Classinus et
-// suit le flux pour montrer ce qui compte à l'écran (outils en cours, vidéos, images). Même route que
+// suit le flux pour montrer ce qui compte à l'écran (outils en cours, vidéos, images). C'est l'IA qui choisit quelles
+// images et quelles vidéos s'affichent (demande de Bourama, 19/11/2026) : celles qu'elle écrit dans sa réponse. Les
+// résultats de recherche qu'elle ne cite pas ne sont pas montrés ; ils servent seulement à compléter ceux qu'elle cite
+// (miniature, titre). Les fichiers qu'elle génère, eux, sont toujours montrés. Même route que
 // le mode vocal bambara (lib/geminiLive.ts : demanderAClovisDirectement), avec `client` = `page_bambara` :
 // le serveur ne propose alors que la recherche, la génération visuelle et la mémoire, répond en
 // bambara oral et garde l'effort de réflexion au plus faible. La réflexion n'est jamais montrée.
@@ -33,6 +36,8 @@ export async function demanderPageBambara(question: string, conversationId: stri
   let idUser: IdMessage | null = null;
   let idAssistant: IdMessage | null = null;
   const enCours = new Map<string, string>();
+  // Images et vidéos trouvées par la recherche, par adresse : jamais montrées d'office, seulement si l'IA les cite.
+  const candidats = new Map<string, VisuelBambara>();
   const publierOutils = () => rappels.surOutilsEnCours([...enCours.values()]);
   let sansId = 0;
 
@@ -76,10 +81,10 @@ export async function demanderPageBambara(question: string, conversationId: stri
           break;
         }
         case "images":
-          rappels.surVisuels(visuelsDepuisImages(evenement.images));
+          for (const visuel of visuelsDepuisImages(evenement.images)) candidats.set(visuel.url, visuel);
           break;
         case "videos":
-          rappels.surVisuels(visuelsDepuisVideos(evenement.videos));
+          for (const visuel of visuelsDepuisVideos(evenement.videos)) candidats.set(visuel.url, visuel);
           break;
         case "fichiers_generes":
           rappels.surVisuels(visuelsDepuisFichiers(evenement.fichiers));
@@ -92,7 +97,8 @@ export async function demanderPageBambara(question: string, conversationId: stri
   );
   enCours.clear();
   publierOutils();
-  rappels.surVisuels(extraireVisuelsDuTexte(reponse));
+  // Seuls les visuels que l'IA a écrits dans sa réponse sont montrés, avec les détails de la recherche quand elle les a.
+  rappels.surVisuels(extraireVisuelsDuTexte(reponse).map((visuel) => candidats.get(visuel.url) ?? visuel));
   ajouterTourDirect(conversationId, question, reponse, idUser, idAssistant);
   return reponse;
 }

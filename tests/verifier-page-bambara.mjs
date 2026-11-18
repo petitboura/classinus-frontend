@@ -198,7 +198,17 @@ assert.match(texteReplie, /aria-expanded/);
 assert.match(texteReplie, /ResizeObserver/);
 assert.ok(client.indexOf('tour.id + ":reponse"') < client.indexOf("<TexteReplieBambara texte={tour.texte}"), "le vocal de la réponse est avant son texte");
 assert.ok(client.indexOf("<TexteReplieBambara texte={tour.texte}") < client.indexOf("<RangeesVisuelsBambara"), "le texte replié est avant les visuels");
-assert.ok(client.indexOf('tour.id + ":question"') < client.indexOf("<TexteReplieBambara texte={tour.question}"), "le vocal de la question est avant son texte");
+// Aucun texte dans la bulle de la personne qui parle ; le texte de l'assistant n'est pas enfermé dans une case,
+// il ne change pas de mise en forme déplié, et sa flèche pointe vers la droite quand il est replié.
+assert.doesNotMatch(client, /TexteReplieBambara texte=\{tour\.question\}/);
+assert.doesNotMatch(texteReplie, /border|backgroundColor|rounded/);
+assert.match(texteReplie, /ChevronRight/);
+assert.match(texteReplie, /rotate\(90deg\)/);
+// C'est l'IA qui choisit les images et vidéos montrées : les résultats de recherche ne s'affichent jamais d'office.
+assert.doesNotMatch(api, /surVisuels\(visuelsDepuisImages/);
+assert.doesNotMatch(api, /surVisuels\(visuelsDepuisVideos/);
+assert.match(api, /candidats\.get\(visuel\.url\)/);
+assert.match(api, /extraireVisuelsDuTexte\(reponse\)/);
 assert.match(client, /texte: nettoyerPourVoix\(reponse\)/);
 assert.match(client, /bullePreparee/);
 assert.match(bulleAudio, /enPreparation/);
