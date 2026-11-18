@@ -1,9 +1,9 @@
 "use client";
 
-// Page bambara (16/11/2026, demande de Bourama) : une vidéo ou une image dans une rangée qui défile.
+// Page bambara (16/11/2026, demande de Bourama) : une vidéo ou une image dans une planche de vignettes.
 // Refonte du 18/11/2026 (demande de Bourama) : c'est une conversation, pas une page de résultats Google.
-// Les cartes sont donc petites, comme dans le chat (GalerieImagesBulle.tsx et CartesVideosBulle.tsx), et
-// se suivent en rangée de gauche à droite (RangeesVisuelsBambara.tsx). Une vidéo YouTube se lance d'un
+// Les cartes sont donc de petites vignettes carrées, toutes de la même taille, qui se suivent en grille de
+// 3 par ligne (RangeesVisuelsBambara.tsx). Une vidéo en lecture prend toute la largeur de la ligne. Une vidéo YouTube se lance d'un
 // toucher dans la carte (lecteur officiel), un fichier vidéo se lit avec le lecteur du navigateur ; une
 // image s'agrandit au toucher. Aucun texte visible : l'utilisateur ne sait pas lire.
 // Le cadre et le bouton de lecture sont en noir et blanc (18/11/2026), les angles des cartes sont nets
@@ -15,8 +15,8 @@ import { Play, X } from "lucide-react";
 import { useState } from "react";
 import type { VisuelBambara } from "@/lib/pageBambaraVisuels";
 
-const ENTREE = { opacity: 0, x: 16 };
-const ARRIVEE = { opacity: 1, x: 0 };
+const ENTREE = { opacity: 0, y: 12 };
+const ARRIVEE = { opacity: 1, y: 0 };
 const TRANSITION = { duration: 0.35, ease: "easeOut" } as const;
 
 type PropsVideo = {
@@ -37,7 +37,7 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
       initial={ENTREE}
       animate={ARRIVEE}
       transition={TRANSITION}
-      className="relative aspect-video w-60 shrink-0 snap-start overflow-hidden border bg-black sm:w-72"
+      className={`relative overflow-hidden border bg-black ${enLecture ? "col-span-full aspect-video" : "aspect-square"}`}
       style={{ borderColor: "var(--bb-trait)" }}
     >
       {enLecture ? (
@@ -77,10 +77,10 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
             />
           )}
           <span
-            className="relative flex h-12 w-12 items-center justify-center rounded-full transition-transform group-active:scale-95"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full transition-transform group-active:scale-95 sm:h-11 sm:w-11"
             style={{ backgroundColor: "var(--bb-fond)", color: "var(--bb-encre)", border: "2px solid var(--bb-encre)" }}
           >
-            <Play size={22} fill="currentColor" />
+            <Play size={18} fill="currentColor" />
           </span>
         </button>
       )}
@@ -105,7 +105,7 @@ export function CarteImageBambara({ visuel, surOuvrir, libelleOuvrir }: PropsIma
       transition={TRANSITION}
       onClick={surOuvrir}
       aria-label={visuel.titre || libelleOuvrir}
-      className="group relative h-36 w-48 shrink-0 snap-start overflow-hidden border sm:h-40 sm:w-56"
+      className="group relative aspect-square w-full overflow-hidden border"
       style={{ backgroundColor: "var(--bb-voile)", borderColor: "var(--bb-trait)" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

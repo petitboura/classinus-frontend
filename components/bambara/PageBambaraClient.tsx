@@ -14,7 +14,7 @@
 // Refonte du 18/11/2026 (demande de Bourama) : la bulle en haut, le champ d'écriture et le micro en bas
 // FLOTTENT par dessus le contenu, ils ne prennent jamais de place dans la mise en page. Le clavier du
 // téléphone se pose aussi par dessus (app/bambara/layout.tsx et lib/useDecalageClavier.ts) : rien n'est
-// poussé ni écrasé. Les images et vidéos sont de petites rangées défilantes, comme dans le chat
+// poussé ni écrasé. Les images et vidéos forment des planches de vignettes (3 par ligne, qui descendent), comme une pellicule
 // (RangeesVisuelsBambara.tsx), parce que c'est une conversation et non une page de résultats.
 // Messages audio (19/11/2026, demande de Bourama) : comme sur WhatsApp, ce que la personne dit devient un message audio
 // à droite (components/bambara/BulleAudioBambara.tsx) et la voix de Classinus un message audio à gauche, tous deux
@@ -298,7 +298,7 @@ export default function PageBambaraClient() {
   return (
     <div ref={racineRef} className="bb-page fixed inset-0 overflow-hidden">
       {/* Ce qui se construit puis ce qui est trouvé : le texte de la réponse (après une demande écrite), puis de petites
-          rangées d'images et de vidéos. Cette couche remplit tout l'écran et défile derrière la bulle et les commandes :
+          planches d'images et de vidéos. Cette couche remplit tout l'écran et défile derrière la bulle et les commandes :
           ses marges haute et basse sont fixes, elles ne changent jamais quand le champ ou le clavier s'ouvrent. */}
       <main
         ref={defilementRef}

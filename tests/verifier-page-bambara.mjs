@@ -132,7 +132,11 @@ assert.match(client, /demarrerTour/);
 assert.match(client, /tours\.map/);
 assert.doesNotMatch(client, /setVisuels|setTexteReponse|setTours\(\[\]\)/);
 assert.match(ecriture, /avantEnvoi\(question\)/);
-assert.match(rangees, /overflow-x-auto/);
+// Pellicule (18/11/2026) : grille de 3 vignettes par ligne (4 sur grand écran), jamais de défilement de côté.
+assert.match(rangees, /grid-cols-3/);
+assert.match(rangees, /lg:grid-cols-4/);
+assert.doesNotMatch(rangees, /overflow-x-auto/);
+assert.doesNotMatch(carte, /snap-start|shrink-0/);
 assert.match(rangees, /VisionneuseImage/);
 assert.doesNotMatch(carte, /max-h-\[62vh\]|w-full rounded-2xl/);
 
