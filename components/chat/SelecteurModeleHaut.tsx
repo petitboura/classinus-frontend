@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Lock } from "lucide-react";
 import { IconeFournisseur } from "./IconeFournisseur";
 import { ORDRE_DISTRIBUTEURS_AFFICHAGE, nomDistributeur } from "./barre/reglagesReponse";
 import { GroupeFournisseur } from "./barre/GroupeFournisseur";
@@ -10,8 +10,10 @@ import { obtenirLocale } from "@/lib/i18n/locale";
 import { noterEtapeListeAttente } from "@/lib/listeAttente";
 import { FormulaireListeAttente } from "./FormulaireListeAttente";
 
-// libelles_bientot : le mot affiché sur un modèle Bientôt, par langue. Il vient du backend, qui le lit
-// dans Supabase (table textes_modeles_llm), donc il se change sans toucher au code.
+// libelles_bientot : l'info-bulle du verrou d'un modèle à crédit, par langue (le mot "Bientôt" n'est plus
+// affiché depuis le 17/11/2026). libelles_badge : le badge devant le nom, par langue (Max pour les modèles
+// frontière, groupe 1). Les deux viennent du backend, qui les lit dans Supabase (table textes_modeles_llm),
+// donc ils se changent sans toucher au code.
 type ModeleDisponible = {
   modele_id: string;
   label: string;
@@ -19,14 +21,22 @@ type ModeleDisponible = {
   nom_distributeur?: string | null;
   palier: string;
   libelles_bientot?: Record<string, string>;
+  groupe?: number | null;
+  libelles_badge?: Record<string, string>;
 };
 
-// Dernier recours si le backend n'envoie aucun mot (ancienne version du serveur).
-const LIBELLE_BIENTOT_PAR_DEFAUT = "Bientôt";
+// Dernier recours si le backend n'envoie aucun texte (ancienne version du serveur).
+const LIBELLE_VERROU_PAR_DEFAUT = "Disponible avec un abonnement";
 
-function libelleBientot(libelles?: Record<string, string>): string {
+function libelleVerrou(libelles?: Record<string, string>): string {
   const locale = obtenirLocale();
-  return libelles?.[locale] ?? (locale === "en" ? "Coming soon" : libelles?.fr ?? LIBELLE_BIENTOT_PAR_DEFAUT);
+  return libelles?.[locale] ?? (locale === "en" ? "Available with a plan" : libelles?.fr ?? LIBELLE_VERROU_PAR_DEFAUT);
+}
+
+// Badge devant le nom du modèle : vide quand le modèle n'en a pas.
+function libelleBadge(libelles?: Record<string, string>): string {
+  const locale = obtenirLocale();
+  return libelles?.[locale] ?? libelles?.fr ?? "";
 }
 
 /**
@@ -40,8 +50,8 @@ function libelleBientot(libelles?: Record<string, string>): string {
  * Il remplace la ligne "Modèle" du bouton Réglages de la barre de saisie. Les données
  * (liste, modèle choisi) et le stockage du choix (lib/reglagesProchainMessage.ts)
  * sont ceux d'avant : seul l'endroit où l'on choisit change. Les modèles pas encore
- * ouverts (modelesBientot, envoyés par le backend) sont montrés grisés avec la mention
- * Bientôt, à la suite des modèles utilisables de leur fournisseur. Le canal en direct garde,
+ * ouverts (modelesBientot, envoyés par le backend) sont montrés grisés avec un verrou
+ * (et le badge Max pour les modèles frontière), à la suite des modèles utilisables de leur fournisseur. Le canal en direct garde,
  * lui, la ligne Modèle dans son propre bouton Réglages.
  *
  * Se ferme au clic extérieur, à la touche Echap et après un choix. L'ouverture et la
@@ -54,14 +64,14 @@ export function SelecteurModeleHaut({
   onModeleChange,
 }: {
   modelesDisponibles: ModeleDisponible[];
-  // Modèles montrés grisés avec la mention Bientôt, jamais choisissables.
+  // Modèles à crédit montrés grisés avec un verrou, jamais choisissables.
   modelesBientot?: ModeleDisponible[];
   // Modèle actif déjà résolu (lib/modeleActif.ts), toujours présent dans la liste.
   modeleSelectionne: string | null;
   onModeleChange: (modeleId: string) => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
-  // Modèle Bientôt sur lequel la personne a cliqué : le formulaire de la liste d'attente s'ouvre pour lui.
+  // Modèle verrouillé sur lequel la personne a cliqué : le formulaire de la liste d'attente s'ouvre pour lui.
   const [modeleListeAttente, setModeleListeAttente] = useState<ModeleDisponible | null>(null);
   const idListe = useId();
   const racineRef = useRef<HTMLDivElement>(null);
@@ -157,8 +167,9 @@ export function SelecteurModeleHaut({
                         <OptionModele
                           key={m.modele_id}
                           actif={false}
-                          bientot
-                          libelleBientot={libelleBientot(m.libelles_bientot)}
+                          verrouille
+                          libelleVerrou={libelleVerrou(m.libelles_bientot)}
+                          badge={libelleBadge(m.libelles_badge)}
                           distributeur={m.distributeur}
                           onClick={() => ouvrirListeAttente(m)}>
                           {m.label}
@@ -185,18 +196,21 @@ export function SelecteurModeleHaut({
 
 function OptionModele({
   actif,
-  bientot = false,
-  libelleBientot = LIBELLE_BIENTOT_PAR_DEFAUT,
+  verrouille = false,
+  libelleVerrou = LIBELLE_VERROU_PAR_DEFAUT,
+  badge = "",
   distributeur,
   onClick,
   children,
 }: {
   actif: boolean;
-  // Modèle pas encore ouvert : grisé avec la mention Bientôt, jamais choisissable. Un clic ouvre le
+  // Modèle à crédit pas encore ouvert : grisé avec un verrou, jamais choisissable. Un clic ouvre le
   // formulaire de la liste d'attente (FormulaireListeAttente.tsx).
-  bientot?: boolean;
-  // Mot affiché sur un modèle Bientôt (réglé dans Supabase, voir libelleBientot plus haut).
-  libelleBientot?: string;
+  verrouille?: boolean;
+  // Info-bulle et nom accessible du verrou (réglés dans Supabase, voir libelleVerrou plus haut).
+  libelleVerrou?: string;
+  // Badge devant le nom (Max pour les modèles frontière), vide sans badge.
+  badge?: string;
   distributeur: string | null;
   onClick: () => void;
   children: string;
@@ -209,18 +223,19 @@ function OptionModele({
       onClick={onClick}
       className={
         "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-[13px] transition-colors " +
-        (bientot ? "text-dj-texte-muet hover:bg-dj-surface-haute " : "hover:bg-dj-surface-haute ") +
-        (actif ? "text-dj-accent-1-texte" : bientot ? "" : "text-dj-texte")
+        (verrouille ? "text-dj-texte-muet hover:bg-dj-surface-haute " : "hover:bg-dj-surface-haute ") +
+        (actif ? "text-dj-accent-1-texte" : verrouille ? "" : "text-dj-texte")
       }>
-      <span className={bientot ? "opacity-50" : ""}>
+      <span className={verrouille ? "opacity-50" : ""}>
         <IconeFournisseur distributeur={distributeur} />
       </span>
-      <span className="min-w-0 flex-1 truncate">{children}</span>
-      {bientot && (
-        <span className="flex-shrink-0 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] font-medium text-dj-texte-muet">
-          {libelleBientot}
+      {badge && (
+        <span className="flex-shrink-0 rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#1A0D02]">
+          {badge}
         </span>
       )}
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {verrouille && <Lock size={13} aria-label={libelleVerrou} role="img" className="flex-shrink-0 text-dj-texte-muet" />}
       {actif && <Check size={14} className="flex-shrink-0" />}
     </button>
   );

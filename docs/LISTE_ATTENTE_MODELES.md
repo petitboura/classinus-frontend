@@ -2,7 +2,7 @@
 
 **English version** · [Version française](LISTE_ATTENTE_MODELES.fr.md)
 
-Added on 16 November 2026 at Bourama's request. A fake door measures real demand before Claude, GPT and Gemini are plugged in. In the model picker at the top of the chat, these models stay greyed out with the "Coming soon" label, and are never selectable. A click on one now opens a sign up form for a paid waiting list. **No payment is taken**, and the form says so at the top. The backend side is described in the backend documentation (`docs/chantiers/LISTE_ATTENTE_MODELES.md`).
+Added on 16 November 2026 at Bourama's request. A fake door measures real demand before Claude, GPT and Gemini are plugged in. In the model picker at the top of the chat, these models stay greyed out with a **lock** (the word "Coming soon" is gone since 17 November 2026), and are never selectable. The frontier models (group 1) also carry a **Max** badge in front of their name. A click on one now opens a sign up form for a paid waiting list. **No payment is taken**, and the form says so at the top. The backend side is described in the backend documentation (`docs/chantiers/LISTE_ATTENTE_MODELES.md`).
 
 ## What the person sees
 
@@ -34,8 +34,12 @@ The form opens in a bottom sheet on a phone and a centred window on a computer (
 
 `noterEtapeListeAttente` ignores any error, including a missing account. A failed note never slows or interrupts the person. The last step, `inscription_validee`, is written by the backend when the sign up succeeds; the client cannot send it.
 
+## Lock and Max badge
+
+`SelecteurModeleHaut.tsx` shows a lock icon on every locked model. Its tooltip and accessible name come from the backend (`libelles_bientot`, the text under the key `bientot`, now "Available with a plan"). The badge in front of the name comes from `libelles_badge` (text `badge_groupe_1`, "Max"), sent only for group 1 models. Both texts live in Supabase in French and English.
+
 ## Known limits
 
 - The form needs a signed in account. A visitor without an account gets the usual sign in message from the API layer.
-- The Thonny plugin panel has its own model button, which still shows "Coming soon" models as disabled. It does not open the form.
+- The Thonny plugin panel has its own model button, which still shows locked models as disabled. It does not open the form.
 - Not yet checked on a real device: phone browser, installed Android and iOS apps, installed PC app. The checks to do are listed in the staging test list of the branch description.

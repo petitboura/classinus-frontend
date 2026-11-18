@@ -36,7 +36,7 @@ const QUESTIONS_THONNY: QuestionReponse[] = [
   {
     question: "Puis-je choisir le modèle d’IA utilisé dans Thonny ?",
     reponse:
-      "Oui. Le bouton Modèle du panneau affiche les modèles proposés par le serveur, regroupés par fournisseur. Les modèles signalés « Bientôt » ne sont pas sélectionnables. Le menu Réglages permet aussi de choisir la longueur de réponse, l’effort, le mode pédagogique et les modes ressources.",
+      "Oui. Le bouton Modèle du panneau affiche les modèles proposés par le serveur, regroupés par fournisseur. Les modèles verrouillés ne sont pas sélectionnables. Le menu Réglages permet aussi de choisir la longueur de réponse, l’effort, le mode pédagogique et les modes ressources.",
   },
   {
     question: "Puis-je insérer dans Thonny le code proposé par Classinus ?",
@@ -154,7 +154,7 @@ export default function PageDecouvrirThonny() {
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">
           Le bouton Modèle, en haut du panneau, affiche les modèles que le serveur rend disponibles et les regroupe
           par fournisseur : Claude, GPT, Gemini, DeepSeek, Grok ou Meta selon l’offre en cours. La liste n’est pas fixe :
-          seuls les modèles proposés par Classinus sont sélectionnables, et les modèles indiqués « Bientôt » restent
+          seuls les modèles proposés par Classinus sont sélectionnables, et les modèles verrouillés restent
           désactivés.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-dj-texte-muet">

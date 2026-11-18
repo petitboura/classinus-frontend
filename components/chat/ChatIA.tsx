@@ -153,7 +153,7 @@ export function ChatIA({
   // cette feature). Le modele actif est resolu par lib/modeleActif.ts.
   modelesDisponibles?: ModeleDisponible[];
   // Modèles affichés grisés avec la mention Bientôt dans le bouton du modèle (14/10/2026).
-  modelesBientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string> }[];
+  modelesBientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string>; groupe?: number | null; libelles_badge?: Record<string, string> }[];
   // Agent "Classinus" / contenu dynamique par matière (06/08/2026) -- voir
   // core/contenu_dynamique_matiere.py. Passé jusqu'à BarreDeSaisie pour
   // afficher le bouton "Sans enseignant" (forcer le prompt généraliste

@@ -325,9 +325,9 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
       "Dans le chat, ouvre le menu du modèle affiché en haut de la conversation. Les modèles disponibles sont regroupés par fournisseur ; seuls ceux qui sont activés peuvent être sélectionnés.",
   },
   {
-    question: "Pourquoi certains modèles portent-ils la mention « Bientôt » ?",
+    question: "Pourquoi certains modèles portent-ils un verrou ?",
     reponse:
-      "Cette mention indique qu'un modèle est présenté dans l'interface, mais qu'il n'est pas encore activé pour être utilisé. Il reste indisponible à la sélection, mais un clic dessus te permet de rejoindre une liste d'attente, sans aucun paiement, pour être prévenu de son ouverture.",
+      "Le verrou indique qu'un modèle est présenté dans l'interface, mais qu'il n'est pas encore activé pour être utilisé. Un badge Max signale les modèles les plus puissants. Il reste indisponible à la sélection, mais un clic dessus te permet de rejoindre une liste d'attente, sans aucun paiement, pour être prévenu de son ouverture.",
   },
   {
     question: "Puis-je faire analyser mon code Python dans Thonny ?",
@@ -353,7 +353,7 @@ export const RESUME_CLASSINUS = {
     "Classinus est une application d'étude avec IA : pose des questions, recherche des documents et des vidéos, révise avec des fiches, des QCM et des animations, exécute du Python dans le chat ou utilise le plugin Thonny-Classinus pour obtenir de l'aide dans l'éditeur.",
   fonctions: [
     "Chat avec une IA pour poser des questions et travailler des notions de cours",
-    "Choix parmi les modèles d'IA disponibles, regroupés par fournisseur ; les modèles non activés sont signalés « Bientôt »",
+    "Choix parmi les modèles d'IA disponibles, regroupés par fournisseur ; les modèles non activés sont signalés par un verrou",
     "Bibliothèque personnelle et catalogue public de documents partagés par les élèves",
     "Recherche de livres et de PDF dans Internet Archive, Gallica, HAL, arXiv, Zenodo, OpenAlex et Project Gutenberg, ainsi que recherche de vidéos et de pages web ; le chat affiche le logo du site ou de la source consultée",
     "Mode vocal pour dicter une demande et écouter la réponse",
