@@ -2,6 +2,7 @@
 
 // Page bambara : champ pour écrire une demande au lieu de parler. Il reste caché derrière le bouton
 // clavier pour que la page garde seulement la bulle et le micro. Il apparaît et disparaît en glissant.
+// Il flotte par dessus le contenu (18/11/2026) : seul le champ attrape les touchers, le reste laisse défiler ce qui est dessous.
 
 import { motion } from "framer-motion";
 import { ArrowUp } from "lucide-react";
@@ -38,10 +39,10 @@ export function ChampEcritureBambara({ placeholder, libelleEnvoyer, occupe, surE
       animate={{ opacity: 1, y: 0, height: "auto" }}
       exit={{ opacity: 0, y: 14, height: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
-      className="w-full overflow-hidden px-4"
+      className="pointer-events-none w-full overflow-hidden px-4"
     >
       <div
-        className="mx-auto flex w-full max-w-md items-center gap-2 rounded-full border py-1.5 pl-5 pr-1.5"
+        className="pointer-events-auto mx-auto flex w-full max-w-md items-center gap-2 rounded-full border py-1.5 pl-5 pr-1.5"
         style={{ borderColor: "var(--bb-trait-fort)", backgroundColor: "var(--bb-fond)" }}
       >
         <input

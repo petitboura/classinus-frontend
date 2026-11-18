@@ -165,7 +165,13 @@
   pointer-events: none;
 }
 
+/* Les commandes du bas remontent doucement au dessus du clavier du téléphone (lib/useDecalageClavier.ts). */
+.bb-clavier {
+  transition: transform 0.2s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .bb-clavier { transition: none; }
   .bb-tuile { animation: none; opacity: 0.8; }
   .bb-balayage, .bb-lecture, .bb-halo { animation: none; }
   .bb-carte { animation: none; opacity: 1; }

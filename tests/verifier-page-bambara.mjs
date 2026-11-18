@@ -100,4 +100,23 @@ for (const hex of cssCode.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) assert.ok(hexAuto
 assert.doesNotMatch(cssCode, /rgba?\(|hsla?\(/);
 assert.match(client, /bb-page/);
 
+// Mise en page du 18/11/2026 (demande de Bourama) : la bulle, le champ et le micro flottent par dessus le contenu,
+// le clavier se pose par dessus au lieu de pousser la page, et les images et vidéos sont de petites rangées
+// défilantes comme dans le chat, jamais de grandes cartes empilées.
+const [rangees, decalage, layout] = await Promise.all([
+  lire("../components/bambara/RangeesVisuelsBambara.tsx"),
+  lire("../lib/useDecalageClavier.ts"),
+  lire("../app/bambara/layout.tsx"),
+]);
+assert.match(layout, /interactiveWidget: "overlays-content"/);
+assert.match(client, /useDecalageClavier/);
+assert.match(client, /RangeesVisuelsBambara/);
+assert.match(client, /absolute inset-x-0 top-0/);
+assert.match(client, /absolute inset-x-0 bottom-0/);
+assert.doesNotMatch(client, /flex-col"\s*\n?\s*style=\{\{\s*\n?\s*paddingTop/);
+assert.match(decalage, /visualViewport/);
+assert.match(rangees, /overflow-x-auto/);
+assert.match(rangees, /VisionneuseImage/);
+assert.doesNotMatch(carte, /max-h-\[62vh\]|w-full rounded-2xl/);
+
 console.log("Page bambara : toutes les vérifications passent.");
