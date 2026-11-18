@@ -4,7 +4,7 @@
 // suit le flux pour montrer ce qui compte à l'écran (outils en cours, vidéos, images). C'est l'IA qui choisit quelles
 // images et quelles vidéos s'affichent (demande de Bourama, 19/11/2026) : celles qu'elle écrit dans sa réponse. Les
 // résultats de recherche qu'elle ne cite pas ne sont pas montrés ; ils servent seulement à compléter ceux qu'elle cite
-// (miniature, titre). Les fichiers qu'elle génère, eux, sont toujours montrés. Même route que
+// (miniature, titre). Les images qu'elle crée elle-même (outil generer_image) sont toujours montrées. Même route que
 // le mode vocal bambara (lib/geminiLive.ts : demanderAClovisDirectement), avec `client` = `page_bambara` :
 // le serveur ne propose alors que la recherche, la génération visuelle et la mémoire, répond en
 // bambara oral et garde l'effort de réflexion au plus faible. La réflexion n'est jamais montrée.
@@ -13,7 +13,7 @@ import { appelerApiStream } from "./api";
 import { ajouterTourDirect, lireEtatConversation, type IdMessage } from "./conversationPartagee";
 import {
   extraireVisuelsDuTexte,
-  visuelsDepuisFichiers,
+  visuelsDepuisFichiersGeneres,
   visuelsDepuisImages,
   visuelsDepuisVideos,
   type VisuelBambara,
@@ -87,7 +87,9 @@ export async function demanderPageBambara(question: string, conversationId: stri
           for (const visuel of visuelsDepuisVideos(evenement.videos)) candidats.set(visuel.url, visuel);
           break;
         case "fichiers_generes":
-          rappels.surVisuels(visuelsDepuisFichiers(evenement.fichiers));
+          // Seul l'outil qui crée l'image compte : le serveur annonce aussi comme « fichier généré » les miniatures et
+          // images d'une recherche, qui ne doivent jamais s'afficher d'office.
+          rappels.surVisuels(visuelsDepuisFichiersGeneres(evenement.nom_outil, evenement.fichiers));
           break;
         default:
           // raisonnement, outil_resultat, sources, ressources_ui... : rien à montrer à quelqu'un qui ne lit pas.

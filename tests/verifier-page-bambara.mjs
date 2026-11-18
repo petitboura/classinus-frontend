@@ -204,6 +204,15 @@ assert.doesNotMatch(client, /TexteReplieBambara texte=\{tour\.question\}/);
 assert.doesNotMatch(texteReplie, /border|backgroundColor|rounded/);
 assert.match(texteReplie, /ChevronRight/);
 assert.match(texteReplie, /rotate\(90deg\)/);
+// Les miniatures de vidéos YouTube et les images d'une recherche ne s'affichent jamais toutes seules : le serveur les
+// annonce comme « fichiers générés », seul l'outil qui crée vraiment l'image est montré.
+const miniatures = [{ url: "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg" }, { url: "https://exemple.org/photo.png" }];
+for (const outil of ["rechercher_video", "rechercher_image", "tavily_search", "lire_video", "memoire_lire", undefined]) {
+  assert.deepEqual(m.visuelsDepuisFichiersGeneres(outil, miniatures), []);
+}
+assert.equal(m.visuelsDepuisFichiersGeneres("generer_image", [{ url: "https://x.org/creation.png" }]).length, 1);
+assert.match(api, /visuelsDepuisFichiersGeneres\(evenement\.nom_outil/);
+assert.doesNotMatch(api, /surVisuels\(visuelsDepuisFichiers\(/);
 // C'est l'IA qui choisit les images et vidéos montrées : les résultats de recherche ne s'affichent jamais d'office.
 assert.doesNotMatch(api, /surVisuels\(visuelsDepuisImages/);
 assert.doesNotMatch(api, /surVisuels\(visuelsDepuisVideos/);

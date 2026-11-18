@@ -135,6 +135,23 @@ export function visuelsDepuisFichiers(fichiers: { url: string; nom?: string }[] 
 }
 
 /**
+ * Outils qui créent de vrais fichiers sur la page bambara (même liste que le serveur : core/outils_page_bambara.py,
+ * OUTILS_GENERATION_VISUELLE). À compléter si le serveur en ajoute un.
+ */
+export const OUTILS_GENERATION_PAGE = ["generer_image"];
+
+/**
+ * Fichiers générés à montrer pour l'outil donné (19/11/2026, demande de Bourama : les miniatures de vidéos YouTube
+ * s'affichaient toutes seules). Le serveur annonce comme « fichier généré » toute adresse d'image trouvée dans le résultat
+ * d'un outil, donc aussi les miniatures et les images d'une recherche : ce n'est le choix de l'IA que pour un outil qui
+ * crée vraiment l'image. Pour tout autre outil (recherche web, d'image, de vidéo, lecture de vidéo, mémoire) : rien.
+ */
+export function visuelsDepuisFichiersGeneres(nomOutil: string | undefined, fichiers: { url: string; nom?: string }[] | undefined): VisuelBambara[] {
+  if (!nomOutil || !OUTILS_GENERATION_PAGE.includes(nomOutil)) return [];
+  return visuelsDepuisFichiers(fichiers);
+}
+
+/**
  * Effet de construction à montrer pendant qu'un outil travaille (demande de Bourama : « un effet de
  * construire sous tes yeux », jamais une ligne avec icône et libellé). Mémoire et autres outils :
  * aucun effet, la bulle suffit.
