@@ -60,7 +60,7 @@ export function ChampEcritureBambara({ placeholder, libelleEnvoyer, occupe, surE
           aria-label={placeholder}
           enterKeyHint="send"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-base outline-none"
+          className="min-w-0 flex-1 bg-transparent font-lecture text-base outline-none"
           style={{ color: "var(--bb-encre)" }}
         />
         <button

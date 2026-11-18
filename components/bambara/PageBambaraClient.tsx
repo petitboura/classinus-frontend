@@ -27,6 +27,7 @@
 // Forme (18/11/2026, demande de Bourama) : les médias (images, vidéos, cadres de construction) ont des angles nets,
 // les commandes (micro, bouton clavier, champ d'écriture) sont rondes. La bulle du haut est la mini bulle du chat, en haut
 // à droite ; le micro et le bouton clavier sont petits et bas, sous le pouce (demande de Bourama, 18/11/2026).
+// Le texte de la page (réponse, question écrite, champ d'écriture) est en font-lecture, la police des réponses du chat.
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
@@ -316,7 +317,7 @@ export default function PageBambaraClient() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="max-w-[85%] self-end whitespace-pre-line break-words rounded-2xl border px-4 py-2 text-base leading-snug"
+                    className="max-w-[85%] self-end whitespace-pre-line break-words rounded-2xl border px-4 py-2 font-lecture text-base leading-snug"
                     style={{ borderColor: "var(--bb-trait)", backgroundColor: "var(--bb-voile)", color: "var(--bb-encre)" }}
                   >
                     {tour.question}
@@ -327,7 +328,7 @@ export default function PageBambaraClient() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="w-full whitespace-pre-line break-words text-base leading-relaxed"
+                    className="w-full whitespace-pre-line break-words font-lecture text-base leading-relaxed"
                     style={{ color: "var(--bb-encre)" }}
                   >
                     {tour.texte}
