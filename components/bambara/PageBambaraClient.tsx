@@ -25,7 +25,8 @@
 // question écrite, une demande parlée n'affiche aucun texte. L'écran suit la dernière réponse tant que la
 // personne n'est pas remontée lire plus haut.
 // Forme (18/11/2026, demande de Bourama) : les médias (images, vidéos, cadres de construction) ont des angles nets,
-// les commandes (micro, bouton clavier, champ d'écriture) sont rondes. Le micro est très grand, dans la zone du pouce.
+// les commandes (micro, bouton clavier, champ d'écriture) sont rondes. La bulle du haut est la mini bulle du chat, en haut
+// à droite ; le micro et le bouton clavier sont petits et bas, sous le pouce (demande de Bourama, 18/11/2026).
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
@@ -290,8 +291,8 @@ export default function PageBambaraClient() {
         }}
         className="absolute inset-0 overflow-y-auto overscroll-contain px-4"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 6.5rem)",
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12rem)",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 5rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10rem)",
         }}
       >
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
@@ -373,18 +374,18 @@ export default function PageBambaraClient() {
         </div>
       </main>
 
-      {/* La bulle en haut : l'onde de la voix, qui montre qui écoute, qui parle et qui travaille. Elle flotte par dessus
-          le contenu (fond plein, le contenu passe dessous) et ne prend aucune place dans la page. */}
+      {/* La mini bulle, comme dans le chat (VoixDirecteSuperposition.tsx) : un petit rond de 56 px en haut à droite avec l'onde
+          de la voix, qui montre qui écoute, qui parle et qui travaille. Elle flotte par dessus le contenu (fond plein, le
+          contenu passe dessous) et ne prend aucune place dans la page. */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center px-4"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+        className="pointer-events-none absolute right-3 z-10 h-14 w-14 overflow-hidden rounded-full border"
+        style={{
+          top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+          borderColor: "var(--bb-trait)",
+          backgroundColor: "var(--bb-voile)",
+        }}
       >
-        <div
-          className="h-16 w-full max-w-sm overflow-hidden rounded-full border px-5"
-          style={{ borderColor: "var(--bb-trait)", backgroundColor: "var(--bb-voile)" }}
-        >
-          <OndeVoix mini etat={etatBulle} lireNiveaux={lireNiveaux} />
-        </div>
+        <OndeVoix mini etat={etatBulle} lireNiveaux={lireNiveaux} />
       </div>
 
       {/* En bas, par dessus le contenu : le champ d'écriture (caché par défaut), puis le micro avec le petit bouton clavier
@@ -392,7 +393,7 @@ export default function PageBambaraClient() {
       <div
         className="bb-clavier pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 pt-3"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
           transform: decalageClavier ? `translateY(-${decalageClavier}px)` : undefined,
         }}
       >
@@ -408,14 +409,14 @@ export default function PageBambaraClient() {
           )}
         </AnimatePresence>
         {/* Le micro : un toucher pour parler, un toucher pour arrêter. */}
-        <div className="pointer-events-auto relative h-24 w-24">
+        <div className="pointer-events-auto relative h-16 w-16">
           {actif && !enConnexion && <span className="bb-halo" />}
           <button
             type="button"
             onClick={basculer}
             aria-label={actif ? textes.arreter : textes.parler}
             aria-pressed={actif}
-            className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 transition-transform active:scale-95"
+            className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 transition-transform active:scale-95"
             style={{
               // Une erreur ne se dit pas par une couleur : le micro se vide (fond clair, trait d'encre).
               backgroundColor: erreur ? "var(--bb-fond)" : "var(--bb-encre)",
@@ -423,21 +424,21 @@ export default function PageBambaraClient() {
               borderColor: "var(--bb-encre)",
             }}
           >
-            {enConnexion ? <Loader2 size={40} className="animate-spin" /> : <Mic size={40} />}
+            {enConnexion ? <Loader2 size={28} className="animate-spin" /> : <Mic size={28} />}
           </button>
           <button
             type="button"
             onClick={() => setChampOuvert((ouvert) => !ouvert)}
             aria-label={champOuvert ? textes.masquerChamp : textes.ecrire}
             aria-pressed={champOuvert}
-            className="absolute left-full top-1/2 ml-6 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border transition-transform active:scale-95"
+            className="absolute left-full top-1/2 ml-5 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border transition-transform active:scale-95"
             style={{
               borderColor: champOuvert ? "var(--bb-encre)" : "var(--bb-trait-fort)",
               backgroundColor: champOuvert ? "var(--bb-encre)" : "var(--bb-fond)",
               color: champOuvert ? "var(--bb-fond)" : "var(--bb-encre)",
             }}
           >
-            <Keyboard size={22} />
+            <Keyboard size={20} />
           </button>
         </div>
       </div>
