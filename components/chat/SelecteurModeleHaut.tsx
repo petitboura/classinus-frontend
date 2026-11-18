@@ -7,8 +7,8 @@ import { IconeFournisseur } from "./IconeFournisseur";
 import { ORDRE_DISTRIBUTEURS_AFFICHAGE, nomDistributeur } from "./barre/reglagesReponse";
 import { GroupeFournisseur } from "./barre/GroupeFournisseur";
 import { obtenirLocale } from "@/lib/i18n/locale";
-import { noterEtapeListeAttente } from "@/lib/listeAttente";
-import { FormulaireListeAttente } from "./FormulaireListeAttente";
+import { useRouter } from "next/navigation";
+import { noterEtapeListeAttente, urlPageAbonnements } from "@/lib/listeAttente";
 
 // libelles_bientot : l'info-bulle du verrou d'un modèle à crédit, par langue (le mot "Bientôt" n'est plus
 // affiché depuis le 17/11/2026). libelles_badge : le badge devant le nom, par langue (Max pour les modèles
@@ -71,8 +71,7 @@ export function SelecteurModeleHaut({
   onModeleChange: (modeleId: string) => void;
 }) {
   const [ouvert, setOuvert] = useState(false);
-  // Modèle verrouillé sur lequel la personne a cliqué : le formulaire de la liste d'attente s'ouvre pour lui.
-  const [modeleListeAttente, setModeleListeAttente] = useState<ModeleDisponible | null>(null);
+  const router = useRouter();
   const idListe = useId();
   const racineRef = useRef<HTMLDivElement>(null);
 
@@ -100,10 +99,11 @@ export function SelecteurModeleHaut({
     if (ouvert && aDesModelesBientot) noterEtapeListeAttente("selecteur_ouvert", null, obtenirLocale());
   }, [ouvert, aDesModelesBientot]);
 
+  // Un clic sur un modèle verrouillé ouvre la page des abonnements (18/11/2026, avant c'était une fenêtre).
   function ouvrirListeAttente(modele: ModeleDisponible) {
     noterEtapeListeAttente("modele_grise_clique", modele.modele_id, obtenirLocale());
     setOuvert(false);
-    setModeleListeAttente(modele);
+    router.push(urlPageAbonnements(modele.modele_id, modele.label));
   }
 
   // Même règle que la ligne Modèle de Réglages : sans liste, pas de bouton.
@@ -183,13 +183,6 @@ export function SelecteurModeleHaut({
         )}
       </AnimatePresence>
 
-      {modeleListeAttente && (
-        <FormulaireListeAttente
-          modeleId={modeleListeAttente.modele_id}
-          modeleLabel={modeleListeAttente.label}
-          onFermer={() => setModeleListeAttente(null)}
-        />
-      )}
     </div>
   );
 }
@@ -204,8 +197,8 @@ function OptionModele({
   children,
 }: {
   actif: boolean;
-  // Modèle à crédit pas encore ouvert : grisé avec un verrou, jamais choisissable. Un clic ouvre le
-  // formulaire de la liste d'attente (FormulaireListeAttente.tsx).
+  // Modèle à crédit pas encore ouvert : grisé avec un verrou, jamais choisissable. Un clic ouvre la
+  // page des abonnements (components/abonnements/PageAbonnements.tsx).
   verrouille?: boolean;
   // Info-bulle et nom accessible du verrou (réglés dans Supabase, voir libelleVerrou plus haut).
   libelleVerrou?: string;
