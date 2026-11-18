@@ -61,7 +61,7 @@ export function BoutonVideoAnimation({
       <span
         role={ok ? "status" : "alert"}
         title={ok ? t.ok : (message ?? t.echec)}
-        className={`${classe} ${ok ? "" : "text-dj-texte"} ${avecTexte ? "max-w-[18rem]" : ""}`}
+        className={`${classe} ${ok ? "" : "text-red-400"} ${avecTexte ? "max-w-[18rem]" : ""}`}
       >
         {ok ? <Check size={14} /> : <AlertCircle size={14} />}
         {avecTexte && <span className="truncate">{ok ? t.ok : (message ?? t.echec)}</span>}

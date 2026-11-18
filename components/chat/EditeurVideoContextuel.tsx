@@ -339,7 +339,7 @@ export function EditeurVideoContextuel({
             </div>
           )}
           {erreur && (
-            <div className="flex items-start justify-between gap-3 rounded-xl border border-dj-bordure-forte bg-dj-accent-1-conteneur p-3 text-sm text-dj-texte">
+            <div className="flex items-start justify-between gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-dj-texte">
               <p>{erreur}</p>
               <button
                 type="button"
@@ -364,7 +364,7 @@ export function EditeurVideoContextuel({
                 className={
                   "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors " +
                   (selectionnerZone
-                    ? "border-dj-bordure-forte bg-dj-accent-1-conteneur text-dj-texte"
+                    ? "border-sky-400 bg-sky-400/15 text-dj-texte"
                     : "border-dj-bordure text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte")
                 }
                 disabled={!urlLecture}
@@ -405,7 +405,7 @@ export function EditeurVideoContextuel({
               )}
               {apercuZone && (
                 <div
-                  className="pointer-events-none absolute border-2 border-dj-bordure-forte bg-dj-accent-1-conteneur"
+                  className="pointer-events-none absolute border-2 border-sky-400 bg-sky-400/20"
                   style={apercuZone}
                   aria-label={t.ariaZoneSelectionnee}
                 />
@@ -474,7 +474,7 @@ export function EditeurVideoContextuel({
                     if (lecteurRef.current) lecteurRef.current.currentTime = valeur;
                   }}
                   disabled={!source || duree <= 0}
-                  className="w-full accent-dj-accent-1"
+                  className="w-full accent-sky-500"
                 />
               </label>
               <label className="block">
@@ -495,7 +495,7 @@ export function EditeurVideoContextuel({
                     if (lecteurRef.current) lecteurRef.current.currentTime = valeur;
                   }}
                   disabled={!source || duree <= 0}
-                  className="w-full accent-dj-accent-1"
+                  className="w-full accent-sky-500"
                 />
               </label>
             </div>
@@ -512,7 +512,7 @@ export function EditeurVideoContextuel({
               rows={3}
               maxLength={4000}
               placeholder={t.exemple}
-              className="w-full resize-y rounded-xl border border-dj-bordure bg-dj-surface px-3.5 py-3 text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet/70 focus:border-dj-bordure-forte"
+              className="w-full resize-y rounded-xl border border-dj-bordure bg-dj-surface px-3.5 py-3 text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet/70 focus:border-sky-500"
             />
             <p className="mt-1.5 text-xs text-dj-texte-muet">
               {t.aideOperations}

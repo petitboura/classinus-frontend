@@ -88,7 +88,7 @@ export function construireDocumentWidget(code: string, theme: ThemeIframe): stri
       a{color:var(--dj-accent);}
       #dj-erreur-widget{
         display:none;margin-bottom:10px;padding:8px 10px;border-radius:8px;
-        background:rgba(128,128,128,0.15);border:1px solid rgba(128,128,128,0.4);
+        background:rgba(220,60,50,0.15);border:1px solid rgba(220,60,50,0.4);
         color:var(--dj-texte);font-size:12px;font-family:monospace;white-space:pre-wrap;
       }
     </style>

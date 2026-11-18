@@ -17,7 +17,7 @@ import { PanneauFlottant } from "@/components/PanneauFlottant";
 // Fond blanc fixe (pas le thème sombre de l'app) : un trait noir sur fond
 // sombre serait à peine visible, et ça imite une feuille de papier -- plus
 // lisible pour le modèle de vision au moment de l'envoi.
-const COULEURS = ["#111111", "#555555", "#888888", "#bbbbbb"];
+const COULEURS = ["#111111", "#dc2626", "#2563eb", "#16a34a"];
 const EPAISSEURS = [2, 5, 10];
 
 export function CanvasDessin({

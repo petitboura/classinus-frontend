@@ -166,7 +166,7 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
           {domaine && <p className="mt-0.5 truncate text-xs text-dj-texte-muet">{domaine}</p>}
           {sondage && (
             <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-dj-bordure px-2 py-0.5 text-[11px] text-dj-texte-muet">
-              {confirme ? <ShieldCheck size={12} className="text-dj-texte" /> : <TriangleAlert size={12} />}
+              {confirme ? <ShieldCheck size={12} className="text-emerald-500" /> : <TriangleAlert size={12} />}
               {confirme ? t("Site officiel") : t("Non confirmé")}
             </p>
           )}
@@ -209,7 +209,7 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
               <>
                 <p className="flex items-start gap-2 text-sm leading-6 text-dj-texte-muet">
                   {phase.sondage.officiel
-                    ? <><ShieldCheck size={16} className="mt-1 shrink-0 text-dj-texte" /><span>{t("Adresse trouvée sur le site officiel.")}{proposition.siteOfficiel ? ` (${hoteAffiche(proposition.siteOfficiel)})` : ""}</span></>
+                    ? <><ShieldCheck size={16} className="mt-1 shrink-0 text-emerald-500" /><span>{t("Adresse trouvée sur le site officiel.")}{proposition.siteOfficiel ? ` (${hoteAffiche(proposition.siteOfficiel)})` : ""}</span></>
                     : <><TriangleAlert size={16} className="mt-1 shrink-0" />{t("Je n'ai pas pu confirmer que cette adresse vient du site officiel. Je ne peux pas garantir qu'elle est sûre.")}</>}
                 </p>
                 <p className="text-sm leading-6 text-dj-texte-muet">{phraseAcces(phase.sondage.acces)}</p>
@@ -271,7 +271,7 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
           return (
             <>
               <p className="flex items-start gap-2 text-sm leading-6 text-dj-texte-muet">
-                {aAutoriser || !serveur.actif ? <CircleAlert size={16} className="mt-1 shrink-0" /> : <Check size={16} className="mt-1 shrink-0 text-dj-texte" />}
+                {aAutoriser || !serveur.actif ? <CircleAlert size={16} className="mt-1 shrink-0" /> : <Check size={16} className="mt-1 shrink-0 text-emerald-500" />}
                 {!serveur.actif
                   ? t("Ce serveur est dans tes connexions mais désactivé. Active-le depuis l'écran Connexions.")
                   : aAutoriser

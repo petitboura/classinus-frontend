@@ -8,7 +8,7 @@
 
 import type { MarqueEcranAffichee } from "@/lib/superpositionElectron";
 
-const COULEUR_TRAIT = "#000000";
+const COULEUR_TRAIT = "#ef4444";
 const COULEUR_SURLIGNAGE = "rgba(128, 128, 128, 0.45)";
 
 export function MarquesEcranAgent({ marques }: { marques: MarqueEcranAffichee[] }) {

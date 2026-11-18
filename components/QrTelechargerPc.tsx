@@ -46,7 +46,7 @@ export function QrTelechargerPc({ url }: { url: string }) {
         onClick={copierLien}
         className="flex items-center gap-2 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface"
       >
-        {copie ? <Check size={14} className="text-dj-texte" /> : <Copy size={14} />}
+        {copie ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
         {copie ? "Lien copié" : "Copier le lien"}
       </button>
     </div>

@@ -171,7 +171,7 @@ export function EditeurMathsRiche({
         ) : (
           <button
             onClick={arreterDicteeMaths}
-            className="flex animate-pulse items-center gap-1.5 rounded-lg border border-dj-bordure-forte px-3 py-1.5 text-sm text-dj-texte"
+            className="flex animate-pulse items-center gap-1.5 rounded-lg border border-red-500 px-3 py-1.5 text-sm text-red-500"
           >
             <Square size={14} /> Arrêter la dictée
           </button>

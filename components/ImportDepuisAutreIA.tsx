@@ -219,7 +219,7 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
       <div className={`grid transition-[grid-template-rows] duration-300 ease-cgpt-doux ${ouvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className="min-h-0 overflow-hidden">
           <div className={`${sansBouton ? "" : "mt-3 "}flex flex-col gap-4 rounded-xl border border-dj-bordure bg-dj-surface p-4`}>
-            {erreur && <p role="alert" className="animate-dj-fade-in-rapide rounded-lg border border-dj-bordure-forte p-3 text-sm text-dj-texte">{erreur}</p>}
+            {erreur && <p role="alert" className="animate-dj-fade-in-rapide rounded-lg border border-red-500/40 p-3 text-sm text-red-600">{erreur}</p>}
 
             {!importId && !fini && (
               <>

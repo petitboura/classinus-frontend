@@ -59,7 +59,7 @@ export function GenerationsRecentesHiggsfield() {
             {g.etat === "en_cours" ? (
               <Loader2 className="h-4 w-4 shrink-0 animate-spin text-dj-texte-muet" />
             ) : g.etat === "terminee" ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-dj-texte" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
             ) : (
               <XCircle className="h-4 w-4 shrink-0 text-dj-texte-muet" />
             )}

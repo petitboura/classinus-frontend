@@ -39,7 +39,7 @@ export function BoutonFilmerWidget({
     icone = <Loader2 size={14} className="animate-spin" />;
     texte = "Préparation";
   } else if (etat === "enregistrement") {
-    icone = <Square size={14} className="text-dj-texte" />;
+    icone = <Square size={14} className="text-red-400" />;
     texte = `Arrêter ${formaterDuree(secondes)}`;
     libelleAria = "Arrêter l'enregistrement";
   } else if (etat === "ok") {

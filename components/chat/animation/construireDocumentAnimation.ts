@@ -76,7 +76,7 @@ body{-webkit-tap-highlight-color:transparent;}
 #an-voile{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .25s ease;}
 #an-voile.visible{opacity:1;}
 #an-voile span{display:flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;background:${p.degrade};color:${p.surAccent};}
-#an-erreur{display:none;padding:8px 10px;border-radius:8px;background:rgba(128,128,128,0.15);border:1px solid rgba(128,128,128,0.4);color:${p.texte};font-size:12px;font-family:monospace;white-space:pre-wrap;}
+#an-erreur{display:none;padding:8px 10px;border-radius:8px;background:rgba(220,60,50,0.15);border:1px solid rgba(220,60,50,0.4);color:${p.texte};font-size:12px;font-family:monospace;white-space:pre-wrap;}
 #an-legende{margin:0;min-height:2.8em;font-size:14px;line-height:1.5;color:${p.texte};}
 #an-legende.maj{animation:an-apparition .35s ease;}
 @keyframes an-apparition{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
