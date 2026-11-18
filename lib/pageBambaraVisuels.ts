@@ -4,6 +4,8 @@
 // outil (images, vidéos), les fichiers générés, et les liens que l'IA écrit elle même dans sa réponse
 // (le serveur laisse l'IA choisir quelles vidéos et images de recherche montrer).
 
+import type { MessageAudioBambara } from "./audioMessageBambara";
+
 export type VisuelBambara = {
   id: string;
   genre: "video" | "image";
@@ -72,11 +74,20 @@ export type TourBambara = {
   question: string;
   texte: string;
   visuels: VisuelBambara[];
+  /** Ce que la personne a dit, réécoutable comme un message vocal (demande parlée seulement). */
+  audioQuestion?: MessageAudioBambara | null;
+  /** Ce que la voix de Classinus a lu, réécoutable comme un message vocal. */
+  audioReponse?: MessageAudioBambara | null;
 };
 
 /** Le tour d'identifiant donné est remplacé par la version changée, les autres tours restent tels quels. */
 export function modifierTour(tours: TourBambara[], idTour: string, changer: (tour: TourBambara) => TourBambara): TourBambara[] {
   return tours.map((tour) => (tour.id === idTour ? changer(tour) : tour));
+}
+
+/** Le tour d'identifiant donné disparaît, les autres restent tels quels. */
+export function retirerTour(tours: TourBambara[], idTour: string): TourBambara[] {
+  return tours.filter((tour) => tour.id !== idTour);
 }
 
 /** Les vidéos et images que l'IA a écrites dans sa réponse (image markdown, lien YouTube, fichier). */

@@ -16,6 +16,10 @@
 // téléphone se pose aussi par dessus (app/bambara/layout.tsx et lib/useDecalageClavier.ts) : rien n'est
 // poussé ni écrasé. Les images et vidéos sont de petites rangées défilantes, comme dans le chat
 // (RangeesVisuelsBambara.tsx), parce que c'est une conversation et non une page de résultats.
+// Messages audio (19/11/2026, demande de Bourama) : comme sur WhatsApp, ce que la personne dit devient un message audio
+// à droite (components/bambara/BulleAudioBambara.tsx) et la voix de Classinus un message audio à gauche, tous deux
+// réécoutables. Ils restent dans la page avec le reste de la conversation. Pendant qu'un message se réécoute, le micro
+// est en pause (il entendrait le haut parleur) et il reprend ensuite.
 // Effet conversation (18/11/2026, demande de Bourama) : chaque demande s'ajoute à la suite des précédentes,
 // la plus récente en bas, au lieu de faire repartir l'écran de zéro. Une demande écrite montre aussi la
 // question écrite, une demande parlée n'affiche aucun texte. L'écran suit la dernière réponse tant que la
@@ -27,16 +31,17 @@ import { Keyboard, Loader2, Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OndeVoix } from "@/components/voix/OndeVoix";
+import type { MessageAudioBambara } from "@/lib/audioMessageBambara";
 import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
-import { effetPrincipal, fusionnerVisuels, modifierTour, type TourBambara } from "@/lib/pageBambaraVisuels";
+import { effetPrincipal, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
 import { supabase } from "@/lib/supabase";
 import { useDecalageClavier } from "@/lib/useDecalageClavier";
 import { useEcritureBambara } from "@/lib/useEcritureBambara";
-import { ouvrirVoixBambara } from "@/lib/voixBambara";
-import type { SessionGeminiLive } from "@/lib/geminiLive";
+import { ouvrirVoixBambara, type SessionVoixBambara } from "@/lib/voixBambara";
+import { BulleAudioBambara } from "./BulleAudioBambara";
 import { ChampEcritureBambara } from "./ChampEcritureBambara";
 import { EffetConstruction } from "./EffetConstruction";
 import { RangeesVisuelsBambara } from "./RangeesVisuelsBambara";
@@ -45,10 +50,12 @@ const TEXTES = {
   fr: {
     parler: "Parler", arreter: "Arrêter", lire: "Lancer la vidéo", fermerVideo: "Fermer la vidéo", ouvrirImage: "Voir l'image", erreur: "Un problème est survenu.",
     ecrire: "Écrire un message", masquerChamp: "Masquer le champ d'écriture", placeholder: "Écrire ici", envoyer: "Envoyer",
+    ecouter: "Écouter le message", mettreEnPause: "Mettre le message en pause",
   },
   en: {
     parler: "Speak", arreter: "Stop", lire: "Play the video", fermerVideo: "Close the video", ouvrirImage: "View the image", erreur: "Something went wrong.",
     ecrire: "Write a message", masquerChamp: "Hide the writing field", placeholder: "Write here", envoyer: "Send",
+    ecouter: "Play the message", mettreEnPause: "Pause the message",
   },
 } as const;
 
@@ -70,24 +77,56 @@ export default function PageBambaraClient() {
   const [champOuvert, setChampOuvert] = useState(false);
   // Une seule vidéo se lit à la fois dans toute la conversation (identifiant : tour + vidéo).
   const [videoEnLecture, setVideoEnLecture] = useState<string | null>(null);
+  // Un seul message audio se réécoute à la fois (identifiant : tour + sens). Quand l'un joue, le micro est en pause.
+  const [messageEnLecture, setMessageEnLecture] = useState<string | null>(null);
+  const messageEnLectureRef = useRef<string | null>(null);
+  // Le tour de la demande parlée en cours : c'est à lui que se rattache la voix de Classinus une fois lue.
+  const tourVocalRef = useRef("");
+  // Ce qui attend la fin d'un message audio réécouté (la lecture d'une réponse écrite).
+  const attentesMessageRef = useRef<Array<() => void>>([]);
 
   const racineRef = useRef<HTMLDivElement>(null);
   const defilementRef = useRef<HTMLElement>(null);
   const prochesDuBasRef = useRef(true);
   const tourCourantRef = useRef("");
   const decalageClavier = useDecalageClavier(racineRef);
-  const sessionRef = useRef<SessionGeminiLive | null>(null);
+  const sessionRef = useRef<SessionVoixBambara | null>(null);
   const ouvertureEnCoursRef = useRef(false);
   const conversationIdRef = useRef<string>("");
   if (!conversationIdRef.current) conversationIdRef.current = nouvelIdentifiant();
 
+  // Un message audio démarre (identifiant) ou s'arrête (null). À l'arrêt, ce qui attendait la fin de la réécoute repart.
+  const fixerMessageEnLecture = useCallback((id: string | null) => {
+    messageEnLectureRef.current = id;
+    setMessageEnLecture(id);
+    if (id === null) {
+      const attentes = attentesMessageRef.current;
+      attentesMessageRef.current = [];
+      attentes.forEach((reprendre) => reprendre());
+    }
+  }, []);
+
+  const attendreFinMessage = useCallback((): Promise<void> => {
+    if (!messageEnLectureRef.current) return Promise.resolve();
+    return new Promise<void>((resoudre) => { attentesMessageRef.current.push(resoudre); });
+  }, []);
+
   // Nouvelle demande : un tour s'ajoute en bas, les précédents restent. On suit alors la nouvelle réponse.
-  const demarrerTour = useCallback((question: string) => {
+  // Un message audio en cours de réécoute s'arrête : la nouvelle demande reprend la main (le micro, lui, n'écoute
+  // rien pendant une réécoute, donc il n'y a rien à rouvrir ici).
+  const demarrerTour = useCallback((question: string, audioQuestion: MessageAudioBambara | null = null): string => {
     const id = nouvelIdentifiant();
     tourCourantRef.current = id;
     prochesDuBasRef.current = true;
+    fixerMessageEnLecture(null);
     setOutils([]);
-    setTours((precedents) => [...precedents, { id, question, texte: "", visuels: [] }]);
+    setTours((precedents) => [...precedents, { id, question, texte: "", visuels: [], audioQuestion, audioReponse: null }]);
+    return id;
+  }, [fixerMessageEnLecture]);
+
+  // Ce que la voix de Classinus a lu devient un message audio du tour concerné.
+  const ajouterAudioReponse = useCallback((idTour: string, message: MessageAudioBambara) => {
+    setTours((precedents) => modifierTour(precedents, idTour, (tour) => ({ ...tour, audioReponse: message })));
   }, []);
 
   const ajouterVisuels = useCallback((nouveaux: Parameters<typeof fusionnerVisuels>[1]) => {
@@ -129,14 +168,41 @@ export default function PageBambaraClient() {
     avantEnvoi: (question) => {
       sessionRef.current?.fermer();
       setErreur(null);
-      demarrerTour(question);
+      return demarrerTour(question);
     },
+    surAudio: ajouterAudioReponse,
+    avantLecture: attendreFinMessage,
     surOutilsEnCours: setOutils,
     surVisuels: ajouterVisuels,
     surTexte: changerTexte,
     surErreur: setErreur,
   });
-  const { actif: ecritureActive, arreter: arreterEcriture, niveau: niveauEcriture } = ecriture;
+  const { actif: ecritureActive, arreter: arreterEcriture, couperVoix: couperVoixEcriture, niveau: niveauEcriture } = ecriture;
+
+  // Un message audio démarre ou s'arrête. Quand il démarre : la voix de Classinus qui parlait est coupée, une vidéo
+  // qui jouait s'arrête, et le micro se met en pause (il entendrait le haut parleur et prendrait ce son pour une
+  // demande). Quand il s'arrête, le micro reprend l'écoute.
+  const changerMessageEnLecture = useCallback((id: string | null) => {
+    fixerMessageEnLecture(id);
+    const session = sessionRef.current;
+    if (id) {
+      setVideoEnLecture(null);
+      session?.suspendreEcoute();
+      session?.interrompre();
+      couperVoixEcriture();
+    } else {
+      session?.reprendreEcoute();
+    }
+  }, [couperVoixEcriture, fixerMessageEnLecture]);
+
+  // Une vidéo qui démarre arrête le message audio en cours (et rend l'écoute au micro).
+  const changerVideoEnLecture = useCallback((id: string | null) => {
+    if (id && messageEnLectureRef.current) {
+      fixerMessageEnLecture(null);
+      sessionRef.current?.reprendreEcoute();
+    }
+    setVideoEnLecture(id);
+  }, [fixerMessageEnLecture]);
 
   // Pendant la lecture d'une réponse écrite, c'est cette lecture qui fait bouger l'onde.
   const lireNiveaux = useCallback(
@@ -159,14 +225,21 @@ export default function PageBambaraClient() {
           }
         },
         surErreur: setErreur,
-        surDemande: async (question) => {
-          // Nouvelle demande parlée : un tour s'ajoute à la conversation, sans texte (la personne ne lit pas).
-          demarrerTour("");
-          return demanderPageBambara(question, conversationIdRef.current, {
+        // Dès que la personne a fini de parler, son message audio s'ajoute à la conversation, sans texte (elle ne lit
+        // pas) et sans attendre la transcription. Si rien n'est compris (bruit), ce message est retiré.
+        surParole: (message) => {
+          tourVocalRef.current = demarrerTour("", message);
+        },
+        surParoleVide: () => {
+          const id = tourVocalRef.current;
+          setTours((precedents) => retirerTour(precedents, id));
+        },
+        surDemande: (question) =>
+          demanderPageBambara(question, conversationIdRef.current, {
             surOutilsEnCours: setOutils,
             surVisuels: ajouterVisuels,
-          });
-        },
+          }),
+        surReponseAudio: (message) => ajouterAudioReponse(tourVocalRef.current, message),
       });
       sessionRef.current = session;
     } catch (e) {
@@ -175,9 +248,11 @@ export default function PageBambaraClient() {
     } finally {
       ouvertureEnCoursRef.current = false;
     }
-  }, [demarrerTour, ajouterVisuels]);
+  }, [demarrerTour, ajouterVisuels, ajouterAudioReponse]);
 
   const basculer = useCallback(() => {
+    // Un message audio se réécoutait : toucher le micro l'arrête (le micro, lui, est ouvert ou fermé juste après).
+    if (messageEnLectureRef.current) fixerMessageEnLecture(null);
     // Une réponse écrite est en cours : le micro sert d'abord à l'arrêter.
     // Arrêter ne supprime rien de la conversation : seul l'effet de construction en cours disparaît.
     if (ecritureActive) {
@@ -191,7 +266,7 @@ export default function PageBambaraClient() {
       return;
     }
     void ouvrir();
-  }, [ouvrir, ecritureActive, arreterEcriture]);
+  }, [ouvrir, ecritureActive, arreterEcriture, fixerMessageEnLecture]);
 
   const effet = effetPrincipal(outils);
   const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
@@ -219,9 +294,20 @@ export default function PageBambaraClient() {
       >
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
           {tours.map((tour) => {
-            if (!tour.question && !tour.texte && tour.visuels.length === 0) return null;
+            if (!tour.question && !tour.audioQuestion && !tour.texte && tour.visuels.length === 0 && !tour.audioReponse) return null;
             return (
               <div key={tour.id} className="flex w-full flex-col gap-3">
+                {tour.audioQuestion && (
+                  <BulleAudioBambara
+                    id={tour.id + ":question"}
+                    message={tour.audioQuestion}
+                    cote="droite"
+                    idEnLecture={messageEnLecture}
+                    surChangerLecture={changerMessageEnLecture}
+                    libelleEcouter={textes.ecouter}
+                    libelleMettreEnPause={textes.mettreEnPause}
+                  />
+                )}
                 {tour.question && (
                   <motion.p
                     initial={{ opacity: 0, y: 8 }}
@@ -248,11 +334,22 @@ export default function PageBambaraClient() {
                   idTour={tour.id}
                   visuels={tour.visuels}
                   idEnLecture={videoEnLecture}
-                  surChangerLecture={setVideoEnLecture}
+                  surChangerLecture={changerVideoEnLecture}
                   libelleLire={textes.lire}
                   libelleFermerVideo={textes.fermerVideo}
                   libelleOuvrirImage={textes.ouvrirImage}
                 />
+                {tour.audioReponse && (
+                  <BulleAudioBambara
+                    id={tour.id + ":reponse"}
+                    message={tour.audioReponse}
+                    cote="gauche"
+                    idEnLecture={messageEnLecture}
+                    surChangerLecture={changerMessageEnLecture}
+                    libelleEcouter={textes.ecouter}
+                    libelleMettreEnPause={textes.mettreEnPause}
+                  />
+                )}
               </div>
             );
           })}

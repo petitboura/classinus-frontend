@@ -98,7 +98,8 @@ const [carte, effet] = await Promise.all([
   lire("../components/bambara/EffetConstruction.tsx"),
 ]);
 const sansCommentaires = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
-for (const [nom, texte] of [["PageBambaraClient", client], ["ChampEcritureBambara", champ], ["CarteVisuelBambara", carte], ["EffetConstruction", effet]]) {
+const bulleAudio = await lire("../components/bambara/BulleAudioBambara.tsx");
+for (const [nom, texte] of [["PageBambaraClient", client], ["ChampEcritureBambara", champ], ["CarteVisuelBambara", carte], ["EffetConstruction", effet], ["BulleAudioBambara", bulleAudio]]) {
   assert.doesNotMatch(sansCommentaires(texte), /dj-(accent|erreur|bordure-forte)|#[0-9a-fA-F]{3,8}\b|rgba?\(|bg-black\/|text-white/, nom + " : couleur interdite");
 }
 const cssCode = sansCommentaires(css);
@@ -131,5 +132,60 @@ assert.match(ecriture, /avantEnvoi\(question\)/);
 assert.match(rangees, /overflow-x-auto/);
 assert.match(rangees, /VisionneuseImage/);
 assert.doesNotMatch(carte, /max-h-\[62vh\]|w-full rounded-2xl/);
+
+// Messages audio (19/11/2026, demande de Bourama) : comme sur WhatsApp, la parole de la personne et la voix de
+// Classinus deviennent des messages audio réécoutables. Logique pure : WAV, durée, barres, durée affichée.
+const srcAudio = await lire("../lib/audioMessageBambara.ts");
+const jsAudio = ts.transpileModule(srcAudio, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const a = await import("data:text/javascript;base64," + Buffer.from(jsAudio).toString("base64"));
+const seconde = new Float32Array(8000).map((_, i) => Math.sin(i / 10) * 0.5);
+const msg = a.messageDepuisMono(seconde, 8000);
+assert.equal(msg.dureeMs, 1000);
+assert.equal(msg.pics.length, a.NOMBRE_PICS);
+assert.ok(msg.pics.every((p) => p >= 0 && p <= 1));
+assert.equal(Math.max(...msg.pics), 1);
+assert.equal(msg.blob.type, "audio/wav");
+assert.equal(msg.blob.size, 44 + 8000 * 2);
+const entete = Buffer.from(await msg.blob.arrayBuffer());
+assert.equal(entete.toString("ascii", 0, 4), "RIFF");
+assert.equal(entete.toString("ascii", 8, 12), "WAVE");
+assert.equal(entete.readUInt32LE(24), 8000);
+assert.equal(entete.readUInt32LE(40), 8000 * 2);
+assert.equal(a.messageDepuisMono(new Float32Array(0), 8000), null);
+assert.deepEqual(a.calculerPics(new Float32Array(100)), new Array(a.NOMBRE_PICS).fill(0));
+assert.equal(a.formaterDuree(7400), "0:07");
+assert.equal(a.formaterDuree(65000), "1:05");
+assert.equal(a.formaterDuree(-5), "0:00");
+// Retirer un tour (parole sans rien de compris) ne touche pas aux autres.
+const unTour = (id) => ({ id, question: "", texte: "", visuels: [] });
+const restants = m.retirerTour([unTour("a"), unTour("b")], "a");
+assert.deepEqual(restants.map((t) => t.id), ["b"]);
+assert.equal(m.retirerTour([unTour("a")], "inconnu").length, 1);
+
+// Branchement : la bulle est dans la page, à droite pour la personne et à gauche pour Classinus, une seule joue à la fois,
+// le micro se met en pause pendant une réécoute et la réponse attend la fin de la réécoute pour être lue.
+const [voixBambara, micro, lecture] = await Promise.all([
+  lire("../lib/voixBambara.ts"),
+  lire("../lib/voixBambaraMicro.ts"),
+  lire("../lib/voixBambaraLecture.ts"),
+]);
+assert.match(client, /BulleAudioBambara/);
+assert.match(client, /cote="droite"/);
+assert.match(client, /cote="gauche"/);
+assert.match(client, /audioQuestion/);
+assert.match(client, /audioReponse/);
+assert.match(client, /suspendreEcoute/);
+assert.match(client, /reprendreEcoute/);
+assert.match(client, /attendreFinMessage/);
+assert.match(bulleAudio, /<audio/);
+assert.match(bulleAudio, /idEnLecture/);
+assert.match(voixBambara, /surParole\?\.\(/);
+assert.match(voixBambara, /surParoleVide\?\.\(\)/);
+assert.match(voixBambara, /surReponseAudio\?\.\(/);
+assert.match(voixBambara, /suspendreEcoute/);
+assert.match(micro, /reperes/);
+assert.match(lecture, /surTampon\?\.\(tampon\)/);
+assert.match(ecriture, /surAudio\?\.\(idTour/);
+assert.match(ecriture, /avantLecture/);
 
 console.log("Page bambara : toutes les vérifications passent.");

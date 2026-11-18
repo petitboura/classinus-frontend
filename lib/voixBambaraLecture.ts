@@ -5,8 +5,11 @@
 // joue, pour qu'il n'y ait pas de trou entre deux phrases.
 
 export type LecteurBambara = {
-  /** Lit les morceaux dans l'ordre. Se termine à la fin, ou dès qu'on interrompt. Échoue si la voix échoue. */
-  lire: (morceaux: string[]) => Promise<void>;
+  /**
+   * Lit les morceaux dans l'ordre. Se termine à la fin, ou dès qu'on interrompt. Échoue si la voix échoue.
+   * `surTampon` reçoit chaque morceau de voix au moment où il commence à être lu (pour en faire un message audio).
+   */
+  lire: (morceaux: string[], surTampon?: (tampon: AudioBuffer) => void) => Promise<void>;
   interrompre: () => void;
   /** Niveau sonore actuel entre 0 et 1. */
   niveau: () => number;
@@ -48,7 +51,7 @@ export function creerLecteurBambara(
   }
 
   return {
-    async lire(morceaux) {
+    async lire(morceaux, surTampon) {
       generation += 1;
       const maGeneration = generation;
       if (contexte.state === "suspended") await contexte.resume().catch(() => {});
@@ -65,6 +68,7 @@ export function creerLecteurBambara(
         lancer(i + 1);
         const tampon = await taches.get(i)!;
         if (maGeneration !== generation) return;
+        surTampon?.(tampon);
         await jouer(tampon);
         if (maGeneration !== generation) return;
       }

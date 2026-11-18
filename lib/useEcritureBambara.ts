@@ -9,6 +9,7 @@
 // au moment de l'envoi, pas plus tard.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { messageDepuisTampons, type MessageAudioBambara } from "./audioMessageBambara";
 import { messageErreurVoix } from "./erreurs";
 import { demanderPageBambara, type RappelsPageBambara } from "./pageBambara";
 import { lireEtatVoixBambara, synthetiserVoixBambara } from "./voixBambaraApi";
@@ -19,8 +20,15 @@ export type EtatEcritureBambara = "inactif" | "travail" | "reponse";
 
 type Options = {
   conversationId: () => string;
-  /** Appelé au début d'une demande écrite : un nouveau tour s'ajoute à la conversation et une écoute du micro est fermée. */
-  avantEnvoi: (question: string) => void;
+  /**
+   * Appelé au début d'une demande écrite : un nouveau tour s'ajoute à la conversation et une écoute du micro
+   * est fermée. Rend l'identifiant du tour créé, auquel sera rattaché le message audio de la réponse.
+   */
+  avantEnvoi: (question: string) => string;
+  /** La voix a lu la réponse (en entier, ou jusqu'à son arrêt) : elle devient un message audio réécoutable du tour donné. */
+  surAudio?: (idTour: string, message: MessageAudioBambara) => void;
+  /** Attendue avant de lire la réponse à voix haute : la page y fait patienter la lecture tant qu'un message audio se réécoute. */
+  avantLecture?: () => Promise<void>;
   surOutilsEnCours: RappelsPageBambara["surOutilsEnCours"];
   surVisuels: RappelsPageBambara["surVisuels"];
   /** Texte de la réponse, nettoyé de ce qui ne se lit pas, à chaque morceau reçu. */
@@ -55,7 +63,7 @@ export function useEcritureBambara(options: Options) {
     const numero = numeroRef.current;
     const courante = () => numero === numeroRef.current;
     const o = optionsRef.current;
-    o.avantEnvoi(question);
+    const idTour = o.avantEnvoi(question);
 
     const Contexte = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const contexte = new Contexte();
@@ -76,8 +84,17 @@ export function useEcritureBambara(options: Options) {
       if (!voix.disponible) return;
       const morceaux = decouperEnMorceaux(nettoyerPourVoix(reponse), voix.texte_max);
       if (morceaux.length === 0) return;
+      await o.avantLecture?.();
+      if (!courante()) return;
       setEtat("reponse");
-      await lecteur.lire(morceaux);
+      const tampons: AudioBuffer[] = [];
+      try {
+        await lecteur.lire(morceaux, (tampon) => tampons.push(tampon));
+      } finally {
+        // Même coupée par le bouton Arrêter, la partie déjà lue reste réécoutable.
+        const lu = messageDepuisTampons(tampons);
+        if (lu) o.surAudio?.(idTour, lu);
+      }
     } catch (e) {
       if (courante()) o.surErreur(messageErreurVoix(e));
     } finally {
@@ -97,6 +114,11 @@ export function useEcritureBambara(options: Options) {
     setEtat("inactif");
   }, [liberer]);
 
+  /** Coupe seulement la voix (un message audio va être réécouté) : le texte de la réponse continue d'arriver. */
+  const couperVoix = useCallback(() => {
+    lecteurRef.current?.interrompre();
+  }, []);
+
   const niveau = useCallback(() => lecteurRef.current?.niveau() ?? 0, []);
 
   useEffect(() => () => {
@@ -104,5 +126,5 @@ export function useEcritureBambara(options: Options) {
     liberer();
   }, [liberer]);
 
-  return { etat, actif: etat !== "inactif", envoyer, arreter, niveau };
+  return { etat, actif: etat !== "inactif", envoyer, arreter, couperVoix, niveau };
 }
