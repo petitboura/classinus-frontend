@@ -42,7 +42,7 @@ export function ChampEcritureBambara({ placeholder, libelleEnvoyer, occupe, surE
     >
       <div
         className="mx-auto flex w-full max-w-md items-center gap-2 rounded-full border py-1.5 pl-5 pr-1.5"
-        style={{ borderColor: "var(--dj-bordure)", backgroundColor: "color-mix(in srgb, var(--dj-surface) 88%, var(--dj-fond))" }}
+        style={{ borderColor: "var(--bb-trait-fort)", backgroundColor: "var(--bb-fond)" }}
       >
         <input
           ref={champRef}
@@ -60,7 +60,7 @@ export function ChampEcritureBambara({ placeholder, libelleEnvoyer, occupe, surE
           enterKeyHint="send"
           autoComplete="off"
           className="min-w-0 flex-1 bg-transparent text-base outline-none"
-          style={{ color: "var(--dj-texte)" }}
+          style={{ color: "var(--bb-encre)" }}
         />
         <button
           type="button"
@@ -68,7 +68,7 @@ export function ChampEcritureBambara({ placeholder, libelleEnvoyer, occupe, surE
           disabled={!peutEnvoyer}
           aria-label={libelleEnvoyer}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-opacity active:scale-95 disabled:opacity-40"
-          style={{ backgroundColor: "var(--dj-accent-1)", color: "#1A0D02" }}
+          style={{ backgroundColor: "var(--bb-encre)", color: "var(--bb-fond)" }}
         >
           <ArrowUp size={20} />
         </button>

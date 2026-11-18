@@ -82,4 +82,22 @@ assert.match(client, /Keyboard/);
 assert.match(client, /champOuvert/);
 assert.match(champ, /enterKeyHint="send"/);
 assert.match(champ, /isComposing/);
+// Noir et blanc seulement (demande de Bourama, 18/11/2026) : aucune couleur d'accent, d'erreur ou en dur
+// dans la page. Les couleurs viennent de .bb-page (noir et blanc qui s'inversent selon le thème).
+const css = await lire("../components/bambara/bambara.css");
+const [carte, effet] = await Promise.all([
+  lire("../components/bambara/CarteVisuelBambara.tsx"),
+  lire("../components/bambara/EffetConstruction.tsx"),
+]);
+const sansCommentaires = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+for (const [nom, texte] of [["PageBambaraClient", client], ["ChampEcritureBambara", champ], ["CarteVisuelBambara", carte], ["EffetConstruction", effet]]) {
+  assert.doesNotMatch(sansCommentaires(texte), /dj-(accent|erreur|bordure-forte)|#[0-9a-fA-F]{3,8}\b|rgba?\(|bg-black\/|text-white/, nom + " : couleur interdite");
+}
+const cssCode = sansCommentaires(css);
+assert.doesNotMatch(cssCode, /--dj-(erreur|accent-2|bordure-forte)/);
+const hexAutorises = new Set(["#ffffff", "#000000"]);
+for (const hex of cssCode.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) assert.ok(hexAutorises.has(hex.toLowerCase()), "bambara.css : couleur " + hex + " interdite");
+assert.doesNotMatch(cssCode, /rgba?\(|hsla?\(/);
+assert.match(client, /bb-page/);
+
 console.log("Page bambara : toutes les vérifications passent.");

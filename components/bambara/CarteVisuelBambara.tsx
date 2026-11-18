@@ -3,6 +3,8 @@
 // Page bambara (16/11/2026, demande de Bourama) : une vidéo ou une image montrée en grand. Une vidéo
 // YouTube se lance d'un toucher, dans la carte (lecteur officiel, comme CartesVideosBulle.tsx) ; un
 // fichier vidéo se lit avec le lecteur du navigateur. Aucun texte : l'utilisateur ne sait pas lire.
+// Le cadre et le bouton de lecture sont en noir et blanc (18/11/2026) ; les images et vignettes
+// elles mêmes gardent leurs vraies couleurs, car elles font comprendre le contenu.
 
 import { motion } from "framer-motion";
 import { Play } from "lucide-react";
@@ -18,7 +20,7 @@ function Video({ visuel, libelleLire }: { visuel: VisuelBambara; libelleLire: st
   const estFichier = !visuel.idVideo;
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
+    <div className="relative aspect-video w-full overflow-hidden rounded-2xl border bg-black" style={{ borderColor: "var(--bb-trait)" }}>
       {lecture && !estFichier ? (
         <iframe
           src={`https://www.youtube.com/embed/${visuel.idVideo}?autoplay=1&playsinline=1`}
@@ -36,7 +38,10 @@ function Video({ visuel, libelleLire }: { visuel: VisuelBambara; libelleLire: st
             // eslint-disable-next-line @next/next/no-img-element
             <img src={visuel.miniature} alt="" onError={() => setVignetteCassee(true)} className="absolute inset-0 h-full w-full object-cover" />
           )}
-          <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-black/65 text-white transition-transform group-active:scale-95">
+          <span
+            className="relative flex h-20 w-20 items-center justify-center rounded-full transition-transform group-active:scale-95"
+            style={{ backgroundColor: "color-mix(in srgb, var(--bb-fond) 92%, transparent)", color: "var(--bb-encre)" }}
+          >
             <Play size={36} fill="currentColor" />
           </span>
         </button>
@@ -54,8 +59,8 @@ function Image({ visuel }: { visuel: VisuelBambara }) {
       src={visuel.url}
       alt={visuel.titre || ""}
       onError={() => setCassee(true)}
-      className="max-h-[62vh] w-full rounded-2xl object-contain"
-      style={{ backgroundColor: "color-mix(in srgb, var(--dj-surface) 85%, var(--dj-fond))" }}
+      className="max-h-[62vh] w-full rounded-2xl border object-contain"
+      style={{ backgroundColor: "var(--bb-voile)", borderColor: "var(--bb-trait)" }}
     />
   );
 }

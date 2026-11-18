@@ -1,5 +1,35 @@
 /* Page bambara (16/11/2026, demande de Bourama) : effets visuels de la page. Aucun texte nulle part :
-   l'utilisateur ne sait ni lire ni écrire. Couleurs du thème (--dj-*), jamais en dur. */
+   l'utilisateur ne sait ni lire ni écrire.
+   Refonte du 18/11/2026 (demande de Bourama) : la page est en noir et blanc, aucune autre couleur.
+   Les couleurs sont définies une seule fois ici, dans .bb-page : encre et fond s'inversent selon le
+   thème clair ou sombre, tout le reste en est déduit par des gris. --dj-accent-1 est redéfini pour que
+   l'onde de la bulle (components/voix/OndeVoix.tsx) soit noire ou blanche elle aussi. */
+
+.bb-page {
+  --bb-fond: #ffffff;
+  --bb-encre: #000000;
+  --bb-voile: color-mix(in srgb, var(--bb-encre) 4%, var(--bb-fond));
+  --bb-trait: color-mix(in srgb, var(--bb-encre) 14%, var(--bb-fond));
+  --bb-trait-fort: color-mix(in srgb, var(--bb-encre) 34%, var(--bb-fond));
+  --dj-accent-1: var(--bb-encre);
+  color: var(--bb-encre);
+  background-color: var(--bb-fond);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bb-page {
+    --bb-fond: #000000;
+    --bb-encre: #ffffff;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] .bb-page {
+  --bb-fond: #000000;
+  --bb-encre: #ffffff;
+  color-scheme: dark;
+}
 
 /* Une tuile apparaît en grossissant, reste, puis le tout se défait et recommence : l'image se construit sous les yeux. */
 @keyframes bb-tuile {
@@ -39,29 +69,30 @@
 }
 
 @keyframes bb-halo {
-  0% { transform: scale(1); opacity: 0.55; }
+  0% { transform: scale(1); opacity: 0.5; }
   100% { transform: scale(1.7); opacity: 0; }
 }
 
+/* Cadre de la mosaïque : un trait fin, un fond à peine gris, aucune ombre. */
 .bb-cadre {
   position: relative;
   overflow: hidden;
   border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--dj-surface) 85%, var(--dj-fond));
-  border: 1px solid var(--dj-bordure);
+  background: var(--bb-voile);
+  border: 1px solid var(--bb-trait);
 }
 
 .bb-grille {
   display: grid;
   width: 100%;
   height: 100%;
-  gap: 2px;
-  padding: 2px;
+  gap: 1px;
+  padding: 1px;
 }
 
+/* Tuiles nettes, sans arrondi : chaque tuile est un gris entre 12 et 47 pour cent d'encre. */
 .bb-tuile {
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--dj-accent-1) calc(var(--m, 50) * 1%), var(--dj-surface));
+  background: color-mix(in srgb, var(--bb-encre) calc(var(--m, 50) * 0.5%), var(--bb-fond));
   opacity: 0;
   animation: bb-tuile var(--cycle, 3.4s) ease-in-out infinite;
   animation-delay: var(--d, 0s);
@@ -73,7 +104,7 @@
   right: 0;
   top: 0;
   height: 9%;
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--dj-accent-1) 55%, transparent), transparent);
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bb-encre) 40%, transparent), transparent);
   animation: bb-balayage var(--cycle, 3.4s) ease-in-out infinite;
   pointer-events: none;
 }
@@ -83,8 +114,8 @@
   gap: 0.75rem;
   padding: 0.75rem;
   border-radius: 1rem;
-  border: 1px solid var(--dj-bordure);
-  background: color-mix(in srgb, var(--dj-surface) 90%, var(--dj-fond));
+  border: 1px solid var(--bb-trait);
+  background: var(--bb-fond);
   opacity: 0;
   animation: bb-carte var(--cycle, 3.6s) ease-out infinite;
   animation-delay: var(--d, 0s);
@@ -94,17 +125,18 @@
   width: 6.5rem;
   aspect-ratio: 16 / 10;
   border-radius: 0.6rem;
-  background: color-mix(in srgb, var(--dj-accent-1) 45%, var(--dj-surface));
+  background: color-mix(in srgb, var(--bb-encre) 14%, var(--bb-fond));
 }
 .bb-carte-ligne {
   height: 0.6rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--dj-accent-1) 30%, var(--dj-surface));
+  background: color-mix(in srgb, var(--bb-encre) 10%, var(--bb-fond));
   transform-origin: left center;
   animation: bb-ligne var(--cycle, 3.6s) ease-out infinite;
   animation-delay: calc(var(--d, 0s) + var(--l, 0.2s));
 }
 
+/* Triangle de lecture : plein, de la couleur du fond, cerné d'un halo d'encre pour ressortir sur les gris. */
 .bb-lecture {
   position: absolute;
   inset: 0;
@@ -120,15 +152,15 @@
   margin-left: 0.4rem;
   border-style: solid;
   border-width: 1.1rem 0 1.1rem 1.9rem;
-  border-color: transparent transparent transparent var(--dj-fond);
-  filter: drop-shadow(0 0 6px var(--dj-accent-1));
+  border-color: transparent transparent transparent var(--bb-fond);
+  filter: drop-shadow(0 0 6px var(--bb-encre));
 }
 
 .bb-halo {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  border: 2px solid var(--dj-accent-1);
+  border: 2px solid var(--bb-encre);
   animation: bb-halo 1.6s ease-out infinite;
   pointer-events: none;
 }

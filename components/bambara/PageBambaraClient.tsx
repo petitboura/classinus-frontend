@@ -9,6 +9,8 @@
 // de réflexion au plus faible (client `page_bambara`, core/outils_page_bambara.py).
 // Un petit bouton clavier ouvre un champ pour écrire au lieu de parler (lib/useEcritureBambara.ts) : la
 // réponse s'affiche alors en texte et elle est lue à voix haute. Le champ reste caché tant qu'on ne le demande pas.
+// Look du 18/11/2026 (demande de Bourama) : noir et blanc uniquement. Les couleurs viennent de .bb-page
+// (components/bambara/bambara.css), jamais du thème coloré de l'appli.
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
@@ -159,13 +161,12 @@ export default function PageBambaraClient() {
   const etatBulle: EtatVoixDirecte = etat !== "inactif" ? etat : ecriture.etat;
   const enConnexion = etat === "connexion";
 
-  if (!connecte) return <div className="fixed inset-0" style={{ backgroundColor: "var(--dj-fond)" }} />;
+  if (!connecte) return <div className="bb-page fixed inset-0" />;
 
   return (
     <div
-      className="fixed inset-0 flex flex-col"
+      className="bb-page fixed inset-0 flex flex-col"
       style={{
-        backgroundColor: "var(--dj-fond)",
         paddingTop: "env(safe-area-inset-top, 0px)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
@@ -173,8 +174,8 @@ export default function PageBambaraClient() {
       {/* La bulle en haut : l'onde de la voix, qui montre qui écoute, qui parle et qui travaille. */}
       <div className="flex shrink-0 justify-center px-4 pt-4">
         <div
-          className="h-16 w-full max-w-sm overflow-hidden rounded-full border px-5 shadow-sm"
-          style={{ borderColor: "var(--dj-bordure)", backgroundColor: "color-mix(in srgb, var(--dj-surface) 88%, var(--dj-fond))" }}
+          className="h-16 w-full max-w-sm overflow-hidden rounded-full border px-5"
+          style={{ borderColor: "var(--bb-trait)", backgroundColor: "var(--bb-voile)" }}
         >
           <OndeVoix mini etat={etatBulle} lireNiveaux={lireNiveaux} />
         </div>
@@ -203,7 +204,7 @@ export default function PageBambaraClient() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="w-full whitespace-pre-line break-words text-base leading-relaxed"
-              style={{ color: "var(--dj-texte)" }}
+              style={{ color: "var(--bb-encre)" }}
             >
               {texteReponse}
             </motion.p>
@@ -235,10 +236,12 @@ export default function PageBambaraClient() {
             onClick={basculer}
             aria-label={actif ? textes.arreter : textes.parler}
             aria-pressed={actif}
-            className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
+            className="relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-transform active:scale-95"
             style={{
-              backgroundColor: erreur ? "var(--dj-erreur)" : "var(--dj-accent-1)",
-              color: "#1A0D02",
+              // Une erreur ne se dit pas par une couleur : le micro se vide (fond clair, trait d'encre).
+              backgroundColor: erreur ? "var(--bb-fond)" : "var(--bb-encre)",
+              color: erreur ? "var(--bb-encre)" : "var(--bb-fond)",
+              borderColor: "var(--bb-encre)",
             }}
           >
             {enConnexion ? <Loader2 size={34} className="animate-spin" /> : <Mic size={34} />}
@@ -250,9 +253,9 @@ export default function PageBambaraClient() {
             aria-pressed={champOuvert}
             className="absolute left-full top-1/2 ml-6 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border transition-transform active:scale-95"
             style={{
-              borderColor: "var(--dj-bordure)",
-              backgroundColor: champOuvert ? "var(--dj-accent-1)" : "color-mix(in srgb, var(--dj-surface) 88%, var(--dj-fond))",
-              color: champOuvert ? "#1A0D02" : "var(--dj-texte)",
+              borderColor: champOuvert ? "var(--bb-encre)" : "var(--bb-trait-fort)",
+              backgroundColor: champOuvert ? "var(--bb-encre)" : "var(--bb-fond)",
+              color: champOuvert ? "var(--bb-fond)" : "var(--bb-encre)",
             }}
           >
             <Keyboard size={22} />

@@ -81,7 +81,9 @@ export function OndeVoix({ mini = false, className, etat, lireNiveaux }: Props) 
     const observateur = new ResizeObserver(ajuster);
     observateur.observe(toile);
 
-    // Couleur du thème, relue de temps en temps pour suivre le mode clair ou sombre.
+    // Couleur du thème, relue de temps en temps pour suivre le mode clair ou sombre. Elle est lue sur
+    // le canevas lui même (les variables CSS se transmettent aux enfants) : une page peut ainsi
+    // redéfinir --dj-accent-1 pour son contenu, la page bambara en noir et blanc par exemple.
     let couleur = "#b8860b";
     let derniereLectureCouleur = -Infinity;
 
@@ -96,7 +98,7 @@ export function OndeVoix({ mini = false, className, etat, lireNiveaux }: Props) 
       dernierTemps = maintenant;
       if (maintenant - derniereLectureCouleur > 1000) {
         derniereLectureCouleur = maintenant;
-        const lue = getComputedStyle(document.documentElement).getPropertyValue("--dj-accent-1").trim();
+        const lue = getComputedStyle(toile).getPropertyValue("--dj-accent-1").trim();
         if (lue) couleur = lue;
       }
 
