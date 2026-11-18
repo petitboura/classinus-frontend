@@ -11,8 +11,9 @@ type Traduire = (cle: string, valeurs?: Record<string, string | number>) => stri
 // croix grisée au lieu d'une coche (17/11/2026, les trois cartes citent les mêmes capacités dans le
 // même ordre, pour qu'on voie d'un coup d'œil ce que chaque palier contient ou non).
 // Sans points, la phrase de description du palier est affichée à la place. Même chose pour le badge
-// (clé attente_palier_<prix>_badge) : sans texte, aucun badge. Sur téléphone, seule la carte choisie
-// déplie ses points pour garder la liste courte ; sur grand écran, toutes les cartes les montrent.
+// (clé attente_palier_<prix>_badge) : sans texte, aucun badge. Depuis que la liste d'attente est une
+// vraie page (18/11/2026), toutes les cartes montrent leurs points, sur téléphone comme sur PC : la
+// page défile, il n'y a plus de raison de les replier.
 export function CartePalierListeAttente({
   palier,
   choisi,
@@ -73,33 +74,25 @@ export function CartePalierListeAttente({
         </span>
       </span>
 
-      <span
-        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none sm:grid-rows-[1fr] sm:opacity-100 ${
-          choisi ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-        }`}
-      >
-        <span className="overflow-hidden">
-          {points.length > 0 ? (
-            <span className="flex flex-col gap-1.5 border-t border-dj-bordure pt-3">
-              {points.map((point) => (
-                <span
-                  key={point.texte}
-                  className={`flex items-start gap-2 text-xs ${point.inclus ? "text-dj-texte" : "text-dj-texte-muet"}`}
-                >
-                  {point.inclus ? (
-                    <Check size={13} className="mt-px shrink-0 text-dj-accent-1-texte" />
-                  ) : (
-                    <X size={13} className="mt-px shrink-0 text-dj-texte-muet" />
-                  )}
-                  <span>{point.texte}</span>
-                </span>
-              ))}
+      {points.length > 0 ? (
+        <span className="flex flex-col gap-2 border-t border-dj-bordure pt-3">
+          {points.map((point) => (
+            <span
+              key={point.texte}
+              className={`flex items-start gap-2 text-xs sm:text-[13px] ${point.inclus ? "text-dj-texte" : "text-dj-texte-muet"}`}
+            >
+              {point.inclus ? (
+                <Check size={13} className="mt-px shrink-0 text-dj-accent-1-texte" />
+              ) : (
+                <X size={13} className="mt-px shrink-0 text-dj-texte-muet" />
+              )}
+              <span>{point.texte}</span>
             </span>
-          ) : (
-            description && <span className="block border-t border-dj-bordure pt-3 text-xs text-dj-texte-muet">{description}</span>
-          )}
+          ))}
         </span>
-      </span>
+      ) : (
+        description && <span className="block border-t border-dj-bordure pt-3 text-xs text-dj-texte-muet">{description}</span>
+      )}
     </button>
   );
 }

@@ -32,6 +32,15 @@ export type PayloadInscription = {
   source: string | null;
 };
 
+/** Valeur envoyée quand la page /abonnements est ouverte sans passer par un modèle grisé (adresse directe). */
+export const MODELE_PAGE_DIRECTE = "page_abonnements";
+
+/** Adresse de la page des abonnements pour un modèle grisé cliqué dans le sélecteur. */
+export function urlPageAbonnements(modeleId: string, modeleLabel: string): string {
+  const params = new URLSearchParams({ modele: modeleId, nom: modeleLabel });
+  return `/abonnements?${params.toString()}`;
+}
+
 /** Source annoncée au serveur : web, android, ios ou pc (jamais devinée côté serveur). */
 export function sourceListeAttente(): string | null {
   const origine = obtenirOrigineAppareil();
