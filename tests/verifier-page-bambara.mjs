@@ -39,6 +39,14 @@ assert.equal(vs[0].idVideo, "zzzzzzzzzzz");
 assert.equal(m.fusionnerVisuels(v1, m.extraireVisuelsDuTexte(t1)).length, 1);
 assert.equal(m.fusionnerVisuels(v1, v2).length, 3);
 
+// Conversation : modifier un tour ne touche jamais aux autres tours ni à la liste d'origine.
+const toursDepart = [{ id: "a", question: "", texte: "", visuels: [] }, { id: "b", question: "q", texte: "t", visuels: [] }];
+const toursApres = m.modifierTour(toursDepart, "a", (t) => ({ ...t, texte: "x" }));
+assert.equal(toursApres[0].texte, "x");
+assert.equal(toursApres[1], toursDepart[1]);
+assert.equal(toursDepart[0].texte, "");
+assert.equal(m.modifierTour(toursDepart, "inconnu", (t) => ({ ...t, texte: "y" })).every((t) => t.texte !== "y"), true);
+
 // Effet de construction selon l'outil en cours.
 assert.equal(m.effetPourOutil("generer_image"), "creation");
 assert.equal(m.effetPourOutil("rechercher_image"), "images");
@@ -115,6 +123,11 @@ assert.match(client, /absolute inset-x-0 top-0/);
 assert.match(client, /absolute inset-x-0 bottom-0/);
 assert.doesNotMatch(client, /flex-col"\s*\n?\s*style=\{\{\s*\n?\s*paddingTop/);
 assert.match(decalage, /visualViewport/);
+// Effet conversation (18/11/2026) : chaque demande s'ajoute à la suite, rien n'efface les tours précédents.
+assert.match(client, /demarrerTour/);
+assert.match(client, /tours\.map/);
+assert.doesNotMatch(client, /setVisuels|setTexteReponse|setTours\(\[\]\)/);
+assert.match(ecriture, /avantEnvoi\(question\)/);
 assert.match(rangees, /overflow-x-auto/);
 assert.match(rangees, /VisionneuseImage/);
 assert.doesNotMatch(carte, /max-h-\[62vh\]|w-full rounded-2xl/);

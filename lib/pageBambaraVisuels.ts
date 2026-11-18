@@ -62,6 +62,23 @@ export function fusionnerVisuels(existants: VisuelBambara[], nouveaux: VisuelBam
   return resultat;
 }
 
+/**
+ * Un tour de la conversation (18/11/2026, demande de Bourama) : chaque demande s'ajoute à la suite des
+ * précédentes au lieu de les effacer. `question` n'est remplie que pour une demande écrite (la personne
+ * sait écrire dans ce cas) ; une demande parlée n'affiche aucun texte, la personne ne sait pas lire.
+ */
+export type TourBambara = {
+  id: string;
+  question: string;
+  texte: string;
+  visuels: VisuelBambara[];
+};
+
+/** Le tour d'identifiant donné est remplacé par la version changée, les autres tours restent tels quels. */
+export function modifierTour(tours: TourBambara[], idTour: string, changer: (tour: TourBambara) => TourBambara): TourBambara[] {
+  return tours.map((tour) => (tour.id === idTour ? changer(tour) : tour));
+}
+
 /** Les vidéos et images que l'IA a écrites dans sa réponse (image markdown, lien YouTube, fichier). */
 export function extraireVisuelsDuTexte(texte: string): VisuelBambara[] {
   if (!texte) return [];

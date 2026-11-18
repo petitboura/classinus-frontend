@@ -19,8 +19,8 @@ export type EtatEcritureBambara = "inactif" | "travail" | "reponse";
 
 type Options = {
   conversationId: () => string;
-  /** Appelé au début d'une demande écrite : l'écran repart de zéro et une écoute du micro est fermée. */
-  avantEnvoi: () => void;
+  /** Appelé au début d'une demande écrite : un nouveau tour s'ajoute à la conversation et une écoute du micro est fermée. */
+  avantEnvoi: (question: string) => void;
   surOutilsEnCours: RappelsPageBambara["surOutilsEnCours"];
   surVisuels: RappelsPageBambara["surVisuels"];
   /** Texte de la réponse, nettoyé de ce qui ne se lit pas, à chaque morceau reçu. */
@@ -55,7 +55,7 @@ export function useEcritureBambara(options: Options) {
     const numero = numeroRef.current;
     const courante = () => numero === numeroRef.current;
     const o = optionsRef.current;
-    o.avantEnvoi();
+    o.avantEnvoi(question);
 
     const Contexte = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const contexte = new Contexte();

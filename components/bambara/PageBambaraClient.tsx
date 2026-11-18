@@ -16,6 +16,10 @@
 // téléphone se pose aussi par dessus (app/bambara/layout.tsx et lib/useDecalageClavier.ts) : rien n'est
 // poussé ni écrasé. Les images et vidéos sont de petites rangées défilantes, comme dans le chat
 // (RangeesVisuelsBambara.tsx), parce que c'est une conversation et non une page de résultats.
+// Effet conversation (18/11/2026, demande de Bourama) : chaque demande s'ajoute à la suite des précédentes,
+// la plus récente en bas, au lieu de faire repartir l'écran de zéro. Une demande écrite montre aussi la
+// question écrite, une demande parlée n'affiche aucun texte. L'écran suit la dernière réponse tant que la
+// personne n'est pas remontée lire plus haut.
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
@@ -27,7 +31,7 @@ import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
-import { effetPrincipal, fusionnerVisuels, type VisuelBambara } from "@/lib/pageBambaraVisuels";
+import { effetPrincipal, fusionnerVisuels, modifierTour, type TourBambara } from "@/lib/pageBambaraVisuels";
 import { supabase } from "@/lib/supabase";
 import { useDecalageClavier } from "@/lib/useDecalageClavier";
 import { useEcritureBambara } from "@/lib/useEcritureBambara";
@@ -61,17 +65,48 @@ export default function PageBambaraClient() {
   const [connecte, setConnecte] = useState(false);
   const [etat, setEtat] = useState<EtatVoixDirecte>("inactif");
   const [erreur, setErreur] = useState<string | null>(null);
-  const [visuels, setVisuels] = useState<VisuelBambara[]>([]);
+  const [tours, setTours] = useState<TourBambara[]>([]);
   const [outils, setOutils] = useState<string[]>([]);
-  const [texteReponse, setTexteReponse] = useState("");
   const [champOuvert, setChampOuvert] = useState(false);
+  // Une seule vidéo se lit à la fois dans toute la conversation (identifiant : tour + vidéo).
+  const [videoEnLecture, setVideoEnLecture] = useState<string | null>(null);
 
   const racineRef = useRef<HTMLDivElement>(null);
+  const defilementRef = useRef<HTMLElement>(null);
+  const prochesDuBasRef = useRef(true);
+  const tourCourantRef = useRef("");
   const decalageClavier = useDecalageClavier(racineRef);
   const sessionRef = useRef<SessionGeminiLive | null>(null);
   const ouvertureEnCoursRef = useRef(false);
   const conversationIdRef = useRef<string>("");
   if (!conversationIdRef.current) conversationIdRef.current = nouvelIdentifiant();
+
+  // Nouvelle demande : un tour s'ajoute en bas, les précédents restent. On suit alors la nouvelle réponse.
+  const demarrerTour = useCallback((question: string) => {
+    const id = nouvelIdentifiant();
+    tourCourantRef.current = id;
+    prochesDuBasRef.current = true;
+    setOutils([]);
+    setTours((precedents) => [...precedents, { id, question, texte: "", visuels: [] }]);
+  }, []);
+
+  const ajouterVisuels = useCallback((nouveaux: Parameters<typeof fusionnerVisuels>[1]) => {
+    const id = tourCourantRef.current;
+    setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, visuels: fusionnerVisuels(tour.visuels, nouveaux) })));
+  }, []);
+
+  const changerTexte = useCallback((texte: string) => {
+    const id = tourCourantRef.current;
+    setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, texte })));
+  }, []);
+
+  // L'écran suit la dernière réponse, sauf si la personne est remontée lire plus haut.
+  useEffect(() => {
+    const zone = defilementRef.current;
+    if (!zone || !prochesDuBasRef.current) return;
+    const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    zone.scrollTo({ top: zone.scrollHeight, behavior: reduit ? "auto" : "smooth" });
+  }, [tours, outils]);
 
   // Page réservée aux utilisateurs connectés : sans session, retour à la connexion.
   useEffect(() => {
@@ -88,19 +123,17 @@ export default function PageBambaraClient() {
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 
-  // Demande écrite : l'écran repart de zéro et une écoute du micro encore ouverte est fermée.
+  // Demande écrite : elle s'ajoute à la conversation et une écoute du micro encore ouverte est fermée.
   const ecriture = useEcritureBambara({
     conversationId: () => conversationIdRef.current,
-    avantEnvoi: () => {
+    avantEnvoi: (question) => {
       sessionRef.current?.fermer();
       setErreur(null);
-      setVisuels([]);
-      setOutils([]);
-      setTexteReponse("");
+      demarrerTour(question);
     },
     surOutilsEnCours: setOutils,
-    surVisuels: (nouveaux) => setVisuels((precedents) => fusionnerVisuels(precedents, nouveaux)),
-    surTexte: setTexteReponse,
+    surVisuels: ajouterVisuels,
+    surTexte: changerTexte,
     surErreur: setErreur,
   });
   const { actif: ecritureActive, arreter: arreterEcriture, niveau: niveauEcriture } = ecriture;
@@ -127,13 +160,11 @@ export default function PageBambaraClient() {
         },
         surErreur: setErreur,
         surDemande: async (question) => {
-          // Nouvelle demande : l'écran repart de zéro, seuls les visuels de cette réponse sont montrés.
-          setVisuels([]);
-          setOutils([]);
-          setTexteReponse("");
+          // Nouvelle demande parlée : un tour s'ajoute à la conversation, sans texte (la personne ne lit pas).
+          demarrerTour("");
           return demanderPageBambara(question, conversationIdRef.current, {
             surOutilsEnCours: setOutils,
-            surVisuels: (nouveaux) => setVisuels((precedents) => fusionnerVisuels(precedents, nouveaux)),
+            surVisuels: ajouterVisuels,
           });
         },
       });
@@ -144,20 +175,18 @@ export default function PageBambaraClient() {
     } finally {
       ouvertureEnCoursRef.current = false;
     }
-  }, []);
+  }, [demarrerTour, ajouterVisuels]);
 
   const basculer = useCallback(() => {
     // Une réponse écrite est en cours : le micro sert d'abord à l'arrêter.
+    // Arrêter ne supprime rien de la conversation : seul l'effet de construction en cours disparaît.
     if (ecritureActive) {
       arreterEcriture();
-      setVisuels([]);
       setOutils([]);
-      setTexteReponse("");
       return;
     }
     if (sessionRef.current) {
       sessionRef.current.fermer();
-      setVisuels([]);
       setOutils([]);
       return;
     }
@@ -177,13 +206,57 @@ export default function PageBambaraClient() {
           rangées d'images et de vidéos. Cette couche remplit tout l'écran et défile derrière la bulle et les commandes :
           ses marges haute et basse sont fixes, elles ne changent jamais quand le champ ou le clavier s'ouvrent. */}
       <main
+        ref={defilementRef}
+        onScroll={(e) => {
+          const zone = e.currentTarget;
+          prochesDuBasRef.current = zone.scrollHeight - zone.scrollTop - zone.clientHeight < 240;
+        }}
         className="absolute inset-0 overflow-y-auto overscroll-contain px-4"
         style={{
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 6.5rem)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12rem)",
         }}
       >
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+          {tours.map((tour) => {
+            if (!tour.question && !tour.texte && tour.visuels.length === 0) return null;
+            return (
+              <div key={tour.id} className="flex w-full flex-col gap-3">
+                {tour.question && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="max-w-[85%] self-end whitespace-pre-line break-words rounded-2xl border px-4 py-2 text-base leading-snug"
+                    style={{ borderColor: "var(--bb-trait)", backgroundColor: "var(--bb-voile)", color: "var(--bb-encre)" }}
+                  >
+                    {tour.question}
+                  </motion.p>
+                )}
+                {tour.texte && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="w-full whitespace-pre-line break-words text-base leading-relaxed"
+                    style={{ color: "var(--bb-encre)" }}
+                  >
+                    {tour.texte}
+                  </motion.p>
+                )}
+                <RangeesVisuelsBambara
+                  idTour={tour.id}
+                  visuels={tour.visuels}
+                  idEnLecture={videoEnLecture}
+                  surChangerLecture={setVideoEnLecture}
+                  libelleLire={textes.lire}
+                  libelleFermerVideo={textes.fermerVideo}
+                  libelleOuvrirImage={textes.ouvrirImage}
+                />
+              </div>
+            );
+          })}
+          {/* L'effet de construction du tour en cours, tout en bas, sous ce qui est déjà arrivé. */}
           <AnimatePresence mode="wait">
             {effet && (
               <motion.div
@@ -198,23 +271,6 @@ export default function PageBambaraClient() {
               </motion.div>
             )}
           </AnimatePresence>
-          {texteReponse && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="w-full whitespace-pre-line break-words text-base leading-relaxed"
-              style={{ color: "var(--bb-encre)" }}
-            >
-              {texteReponse}
-            </motion.p>
-          )}
-          <RangeesVisuelsBambara
-            visuels={visuels}
-            libelleLire={textes.lire}
-            libelleFermerVideo={textes.fermerVideo}
-            libelleOuvrirImage={textes.ouvrirImage}
-          />
         </div>
       </main>
 
