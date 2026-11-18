@@ -11,7 +11,7 @@ export function IndicateurEtatConnexion({ etat }: { etat: EtatConnexion }) {
   const libelle = etat === "chargement" ? "Vérification…" : etat === "connecte" ? "Connecté" : etat === "reconnecter" ? "Reconnexion nécessaire" : etat === "erreur" ? "Statut indisponible" : "Non connecté";
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-xs text-dj-texte-muet">
-      {etat === "chargement" ? <LoaderCircle size={14} className="shrink-0 animate-spin" /> : etat === "connecte" ? <Check size={14} className="shrink-0 text-emerald-500" /> : etat === "erreur" || etat === "reconnecter" ? <CircleAlert size={14} className="shrink-0" /> : <PlugZap size={14} className="shrink-0" />}
+      {etat === "chargement" ? <LoaderCircle size={14} className="shrink-0 animate-spin" /> : etat === "connecte" ? <Check size={14} className="shrink-0 text-dj-texte" /> : etat === "erreur" || etat === "reconnecter" ? <CircleAlert size={14} className="shrink-0" /> : <PlugZap size={14} className="shrink-0" />}
       <span className="truncate">{libelle}</span>
     </span>
   );

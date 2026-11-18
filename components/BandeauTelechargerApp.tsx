@@ -60,7 +60,7 @@ export function BandeauTelechargerApp({ titre }: { titre: string }) {
       <Link
         href="/telecharger"
         aria-label="Accéder à l'application Classinus"
-        className="mt-1 flex h-[26px] items-center gap-2 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+        className="mt-1 flex h-[26px] items-center gap-2 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
       >
         {appareil === null ? (
           <Skeleton as="span" className="h-3 w-28 rounded" />

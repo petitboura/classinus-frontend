@@ -61,7 +61,7 @@ export function ParametresConfidentialite() {
         <button
           type="submit"
           disabled={enregistrementMotDePasse || !motDePasse}
-          className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+          className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
         >
           {enregistrementMotDePasse ? "Mise à jour…" : "Mettre à jour le mot de passe"}
         </button>

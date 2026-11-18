@@ -227,7 +227,7 @@ export function EditeurConfiguration({
               <button
                 onClick={enregistrer}
                 disabled={actionEnCours || !texte}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 <Check size={14} />{" "}
                 {texteConfiguration(enregistrementEnCours ? "action.enregistrement" : estCreation ? "action.creer" : "action.enregistrer")}

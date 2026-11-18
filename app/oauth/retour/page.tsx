@@ -134,7 +134,7 @@ function EcranRetour() {
     return (
       <CadreRetour>
         <div className="flex flex-col items-center text-center animate-dj-fade-in-rapide">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-dj-accent-1 text-[#1a0f06]">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-dj-accent-1 text-dj-sur-accent">
             <Check size={26} strokeWidth={2.5} aria-hidden />
           </span>
           <h1 className="mt-4 font-display text-xl font-bold text-dj-texte">{nom} est connecté</h1>

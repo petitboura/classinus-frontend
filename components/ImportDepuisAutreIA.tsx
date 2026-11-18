@@ -219,7 +219,7 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
       <div className={`grid transition-[grid-template-rows] duration-300 ease-cgpt-doux ${ouvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className="min-h-0 overflow-hidden">
           <div className={`${sansBouton ? "" : "mt-3 "}flex flex-col gap-4 rounded-xl border border-dj-bordure bg-dj-surface p-4`}>
-            {erreur && <p role="alert" className="animate-dj-fade-in-rapide rounded-lg border border-red-500/40 p-3 text-sm text-red-600">{erreur}</p>}
+            {erreur && <p role="alert" className="animate-dj-fade-in-rapide rounded-lg border border-dj-bordure-forte p-3 text-sm text-dj-texte">{erreur}</p>}
 
             {!importId && !fini && (
               <>
@@ -250,7 +250,7 @@ export function ImportDepuisAutreIA({ origine, ouvertParDefaut = false, sansBout
                   <p className="text-xs text-dj-texte-muet">{t("Classinus range tout ce que contient le zip au bon endroit : mémoire, skills, configuration. Les applications connectées sont gardées pour te rappeler de les connecter dans le chat.")}</p>
                   <div>
                     <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={(e) => void envoyerZip(e.target.files?.[0])} />
-                    <button type="button" disabled={envoiEnCours} onClick={() => champZip.current?.click()} className="rounded-lg bg-dj-accent-1 px-3 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:cursor-wait disabled:opacity-50">
+                    <button type="button" disabled={envoiEnCours} onClick={() => champZip.current?.click()} className="rounded-lg bg-dj-accent-1 px-3 py-2 text-sm font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:cursor-wait disabled:opacity-50">
                       {envoiEnCours ? t("Envoi du zip…") : t("Déposer le zip")}
                     </button>
                   </div>

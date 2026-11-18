@@ -21,7 +21,7 @@ export function CTACompteRequis({ texte }: { texte: string }) {
       <p className="text-sm text-dj-texte-muet">{texte}</p>
       <button
         onClick={() => setOuverte(true)}
-        className="self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+        className="self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
       >
         Créer un compte
       </button>

@@ -153,7 +153,7 @@ export function SkillsIndependants() {
   const champ = "rounded border border-dj-bordure bg-transparent p-2 transition-colors focus:border-dj-bordure-forte focus:outline-none";
   const bouton = "rounded-lg px-3 py-2 text-sm transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-50";
   return <section className="flex min-w-0 flex-col gap-4">
-    {erreur && <p role="alert" className="animate-dj-fade-in-rapide rounded-lg border border-red-500/40 p-3 text-sm text-red-600">{erreur}</p>}
+    {erreur && <p role="alert" className="animate-dj-fade-in-rapide rounded-lg border border-dj-bordure-forte p-3 text-sm text-dj-texte">{erreur}</p>}
     {vue === "liste" ? <div key="liste" className="flex min-w-0 animate-dj-fade-in-rapide flex-col gap-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -163,7 +163,7 @@ export function SkillsIndependants() {
         <div className="flex flex-wrap gap-2">
           <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={e => void envoyerZip(e.target.files?.[0])} />
           <button type="button" disabled={zipEnCours} onClick={() => champZip.current?.click()} className={`border border-dj-bordure ${bouton}`}>{zipEnCours ? "Envoi du zip…" : "Envoyer un zip"}</button>
-          <button type="button" onClick={nouveau} className={`bg-dj-accent-1 font-semibold text-[#1A0D02] hover:bg-dj-accent-2 ${bouton}`}>Nouveau skill</button>
+          <button type="button" onClick={nouveau} className={`bg-dj-accent-1 font-semibold text-dj-sur-accent hover:bg-dj-accent-2 ${bouton}`}>Nouveau skill</button>
         </div>
       </header>
       <ImportDepuisAutreIA origine="skills" />
@@ -179,7 +179,7 @@ export function SkillsIndependants() {
       <div key={vueEditeur} className="min-w-0 animate-dj-fade-in-rapide">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1 basis-56"><LigneNomSkill nom={nom} onNom={changerNom} /></div>
-          {selection && <button type="button" disabled={busy} onClick={() => void supprimer()} className="flex-shrink-0 text-sm text-red-600 transition-opacity hover:underline disabled:opacity-50">Supprimer</button>}
+          {selection && <button type="button" disabled={busy} onClick={() => void supprimer()} className="flex-shrink-0 text-sm text-dj-texte transition-opacity hover:underline disabled:opacity-50">Supprimer</button>}
           <button type="button" role="switch" aria-checked={actif} aria-label={actif ? "Skill actif" : "Skill désactivé"} title={actif ? "Skill actif" : "Skill désactivé"} onClick={() => setActif(a => !a)} className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${actif ? "bg-dj-accent-1" : "bg-dj-inactif"}`}>
             <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${actif ? "translate-x-5" : "translate-x-0"}`} />
           </button>
@@ -204,7 +204,7 @@ export function SkillsIndependants() {
           </div>
         </div>
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
+          <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
         </div>
       </div>
     </div>}

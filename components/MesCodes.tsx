@@ -280,7 +280,7 @@ export function MesCodes({ sansEnTete = false }: { sansEnTete?: boolean } = {}) 
         <button
           onClick={creerVide}
           disabled={creation}
-          className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+          className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-2 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
         >
           <Plus size={14} /> Nouveau code
         </button>
@@ -832,7 +832,7 @@ function AjoutContenuPopover({
                 <button
                   onClick={creerDossierEtAttacher}
                   disabled={creationEnCours || !nouveauDossierNom.trim()}
-                  className="flex-shrink-0 rounded-md bg-dj-accent-1 px-2 text-[#1A0D02] disabled:opacity-50"
+                  className="flex-shrink-0 rounded-md bg-dj-accent-1 px-2 text-dj-sur-accent disabled:opacity-50"
                 >
                   {creationEnCours ? "…" : <Plus size={12} />}
                 </button>

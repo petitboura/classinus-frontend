@@ -171,7 +171,7 @@ export function PopupFeedback({
           <button
             onClick={envoyer}
             disabled={envoiEnCours}
-            className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-bold text-[#1A0D02] disabled:opacity-60"
+            className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-bold text-dj-sur-accent disabled:opacity-60"
           >
             {envoiEnCours ? "Envoi..." : "Envoyer"}
           </button>

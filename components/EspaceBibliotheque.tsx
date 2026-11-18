@@ -201,7 +201,7 @@ export function EspaceBibliotheque({
         <div className="relative shrink-0">
           <button type="button" onClick={() => setFiltreOuvert((v) => !v)} aria-label={filtreOuvert ? "Fermer le filtre" : "Filtrer par type"} aria-expanded={filtreOuvert} className={`flex items-center gap-1 rounded-cgpt-bouton border px-3 py-1.5 text-xs font-semibold transition-colors ${sousOnglet !== "tous" ? "border-dj-accent-1 bg-dj-accent-1-conteneur text-dj-accent-1-texte" : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"}`}>
             Filtre
-            {sousOnglet !== "tous" && <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-[#1A0D02]">{SOUS_ONGLETS.find((s) => s.id === sousOnglet)?.label}</span>}
+            {sousOnglet !== "tous" && <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-dj-sur-accent">{SOUS_ONGLETS.find((s) => s.id === sousOnglet)?.label}</span>}
           </button>
           {filtreOuvert && (
             <>
@@ -1058,7 +1058,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           <div className="relative shrink-0">
             <button type="button" onClick={() => setFiltreOuvert((v) => !v)} aria-label={filtreOuvert ? "Fermer le filtre" : "Filtrer par type"} aria-expanded={filtreOuvert} className={`flex items-center gap-1 rounded-cgpt-bouton border px-3 py-1.5 text-xs font-semibold transition-colors ${sousOnglet !== "tous" ? "border-dj-accent-1 bg-dj-accent-1-conteneur text-dj-accent-1-texte" : "border-dj-bordure text-dj-texte-muet hover:text-dj-texte"}`}>
               Filtre
-              {sousOnglet !== "tous" && <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-[#1A0D02]">{SOUS_ONGLETS.find((s) => s.id === sousOnglet)?.label}</span>}
+              {sousOnglet !== "tous" && <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-dj-sur-accent">{SOUS_ONGLETS.find((s) => s.id === sousOnglet)?.label}</span>}
             </button>
             {filtreOuvert && (
               <>
@@ -1119,7 +1119,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           />
           <button
             onClick={creerDossier}
-            className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2"
+            className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent hover:bg-dj-accent-2"
           >
             Créer
           </button>
@@ -1406,7 +1406,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
       <button
         onClick={() => setMenuAjoutOuvert((v) => !v)}
         aria-label={menuAjoutOuvert ? "Fermer le menu d'ajout" : "Ajouter"}
-        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
+        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-dj-sur-accent shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
       >
         <Plus size={18} className={`transition-transform ${menuAjoutOuvert ? "rotate-45" : ""}`} />
       </button>
@@ -1471,7 +1471,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
               type="button"
               onClick={envoyerTexteOuLien}
               disabled={!texteOuLien.trim() || envoi}
-              className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+              className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               {envoi ? "Envoi…" : "Ajouter"}
             </button>

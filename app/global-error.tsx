@@ -33,7 +33,7 @@ export default function ErreurGlobale({ error, reset }: PropsErreurGlobale) {
             justifyContent: "center",
             boxSizing: "border-box",
             padding: "24px",
-            background: "var(--dj-fond, #f8f7f4)",
+            background: "var(--dj-fond, #ffffff)",
             color: "var(--dj-texte, #202020)",
             fontFamily: "var(--font-inter, system-ui, sans-serif)",
           }}

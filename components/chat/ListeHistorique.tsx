@@ -170,7 +170,7 @@ export function ListeHistorique({
   return (
     <div ref={racineRef} className={`dj-scroll-isole overflow-y-auto ${className}`}>
       {erreurAction && (
-        <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
+        <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-dj-texte">
           {erreurAction}
         </p>
       )}
@@ -392,7 +392,7 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
         <div className="flex items-center gap-2 pt-2">
           <button
             onClick={confirmerSuppression}
-            className="rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-sm font-medium text-dj-sur-accent transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             Supprimer
           </button>
@@ -536,7 +536,7 @@ function MenuFil({ position, enSortie, epingle, onFermer, onEpingler, onRenommer
         <Pencil size={16} />
         Renommer
       </button>
-      <button role="menuitem" onClick={onSupprimer} className={`${classeItem} text-red-500`}>
+      <button role="menuitem" onClick={onSupprimer} className={`${classeItem} text-dj-texte`}>
         <Trash2 size={16} />
         Supprimer
       </button>

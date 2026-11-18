@@ -222,7 +222,7 @@ export function EspaceRappels() {
           </div>
           <button
             onClick={demanderPermission}
-            className="flex w-fit items-center gap-2 self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+            className="flex w-fit items-center gap-2 self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
           >
             Autoriser
           </button>
@@ -264,7 +264,7 @@ export function EspaceRappels() {
               <button
                 onClick={programmer}
                 disabled={action || !titreRappel.trim() || !corpsRappel.trim() || !dateRappel}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 <Bell size={13} />
                 Programmer
@@ -300,7 +300,7 @@ export function EspaceRappels() {
             <button
               onClick={creerEvenement}
               disabled={action || !titreEvenement.trim() || !debutEvenement || !finEvenement}
-              className="flex w-fit items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+              className="flex w-fit items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               <CalendarPlus size={13} />
               Ajouter

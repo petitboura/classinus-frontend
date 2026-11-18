@@ -368,7 +368,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
             <button
               onClick={fichiersUploadLot.length > 0 ? uploaderPlusieursSkills : uploaderSkill}
               disabled={(!fichierUpload && fichiersUploadLot.length === 0) || (!!fichierUpload && !nomUpload.trim()) || envoiUpload}
-              className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+              className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               {envoiUpload
                 ? "Envoi…"

@@ -114,7 +114,7 @@ export function CarteConnecteur({ code, onUtiliser }: { code: string; onUtiliser
               type="button"
               onClick={utiliser}
               disabled={dejaUtilise}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               <Sparkles size={14} />{dejaUtilise ? "Demande envoyée" : "Utiliser pour ça"}
             </button>
@@ -124,7 +124,7 @@ export function CarteConnecteur({ code, onUtiliser }: { code: string; onUtiliser
             type="button"
             onClick={() => (etat === "erreur" ? void verifier() : modeJeton ? setPanneauOuvert(true) : void connecterDepuisCarte())}
             disabled={etat === "chargement"}
-            className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+            className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {etat === "reconnecter" ? "Reconnecter" : etat === "erreur" ? "Réessayer le statut" : "Connecter"}
           </button>

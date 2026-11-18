@@ -23,7 +23,9 @@ math-field::part(menu-toggle) {
   display: none;
 }
 math-field {
-  --hue: 42; /* aligné sur dj-accent-1 (#E3B341, doré) pour le curseur/la sélection -- 30=orange (ancienne charte), 42=doré (17/08) */
+  --hue: 0; /* noir et blanc : teinte 0 pour le curseur/la sélection (plus de doré) */
+  --caret-color: var(--dj-texte);
+  --selection-background-color: var(--dj-selection);
 }
 
 /* Thème highlight.js sur-mesure (voir components/chat/BlocCode.tsx) --
@@ -54,7 +56,7 @@ math-field {
 .hljs-number,
 .hljs-symbol,
 .hljs-built_in {
-  color: var(--dj-code-accent); /* 17/08 : variable double-thème (clair/sombre), ancien #f2a65a fixe */
+  color: var(--dj-code-accent);
 }
 .hljs-title,
 .hljs-function,
@@ -95,22 +97,22 @@ math-field {
    de tailwind.config.ts (colors + backgroundImage, qui référencent ces
    mêmes variables), les deux ne se synchronisent pas automatiquement. */
 :root {
-  --dj-fond: #faf8f5;
+  --dj-fond: #ffffff;
   --dj-surface: #ffffff;
-  --dj-surface-haute: #ebebe9;
+  --dj-surface-haute: #f0f0f0;
   /* Barre latérale PC (16/10/2026) : un ton à part, ni le fond de la page ni
      le blanc des cartes. Même principe que Notion : le rail est un peu plus
      foncé que la page en clair. --dj-rail-survol sert au survol et à l'état
      actif des boutons du rail, --dj-rail-texte à leur texte et icônes au repos
      (plus soutenu que --dj-texte-muet pour que les boutons restent nets). */
-  --dj-rail: #f1ece2;
-  --dj-rail-survol: #e5dfd2;
-  --dj-rail-texte: #4f4b43;
-  --dj-bordure: rgba(28, 26, 22, 0.08);
-  --dj-bordure-forte: rgba(184, 134, 11, 0.35);
-  --dj-accent-1: #b8860b;
+  --dj-rail: #f5f5f5;
+  --dj-rail-survol: #e6e6e6;
+  --dj-rail-texte: #333333;
+  --dj-bordure: rgba(0, 0, 0, 0.10);
+  --dj-bordure-forte: rgba(0, 0, 0, 0.35);
+  --dj-accent-1: #000000;
   /* Correctif contraste (29/08, audit UX partie 3) -- --dj-accent-1 sert
-     aussi de fond de bouton (texte fixe #1A0D02 dessus, 5.85:1, ok), donc
+     aussi de fond de bouton (texte fixe sombre dessus, 5.85:1, ok), donc
      on ne peut pas le foncer sans casser ce contraste-là. En mode clair,
      --dj-accent-1 utilisé comme COULEUR DE TEXTE (onglet actif, liens,
      mots-clés code) ne passe pas 4.5:1 sur --dj-fond (3.07:1 mesuré).
@@ -121,7 +123,7 @@ math-field {
      --dj-accent-1-texte y reste identique à --dj-accent-1, rien ne change
      visuellement pour le mode sombre. */
   --dj-accent-1-texte: var(--dj-accent-2);
-  --dj-accent-2: #8a6a1f;
+  --dj-accent-2: #333333;
   /* Ajouté 30/08/2026 (tâche 3, Material 3 Expressive) : conteneur "tonal"
      -- fond translucide de --dj-accent-1, pour donner un vrai fond coloré
      aux icônes/blocs importants (containment M3E) sans introduire de
@@ -129,26 +131,27 @@ math-field {
      tel quel en fond plein de bouton, voir correctif contraste ci-dessus).
      Même opacité que --dj-bordure-forte (même accent, juste une surface
      au lieu d'un trait) pour rester cohérent avec ce qui existait déjà. */
-  --dj-accent-1-conteneur: rgba(184, 134, 11, 0.14);
+  --dj-accent-1-conteneur: rgba(0, 0, 0, 0.08);
   /* Surlignage du texte sélectionné (03/11/2026, demande Bourama : l'ancien doré plein était
      trop foncé). Doré transparent : le texte garde sa couleur et reste lisible dessous. */
-  --dj-selection: rgba(184, 134, 11, 0.28);
-  --dj-texte: #1c1a16;
-  --dj-texte-muet: #6b675e;
-  --dj-succes: #15803d;
-  --dj-succes-conteneur: rgba(21, 128, 61, 0.12);
-  --dj-inactif: #b3afa3;
-  --dj-code-accent: #8a6a1f;
-  --dj-code-variable: #7c5ba6;
-  --dj-code-deletion: #dc2626;
-  --dj-logo-1: #d9a438;
-  --dj-logo-2: #b8860b;
-  --dj-logo-3: #6b5416;
-  --dj-gradient: linear-gradient(135deg, #e3b341 0%, #b8860b 55%, #6b5416 100%);
-  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(184, 134, 11, 0.1), transparent 60%);
-  --dj-shimmer: linear-gradient(100deg, rgba(28, 26, 22, 0.03) 20%, rgba(107, 103, 94, 0.35) 50%, rgba(28, 26, 22, 0.03) 80%);
-  --dj-shimmer-texte: linear-gradient(100deg, #9a968b 38%, #1c1a16 50%, #9a968b 62%);
-  --dj-erreur: #dc2626;
+  --dj-selection: rgba(0, 0, 0, 0.18);
+  --dj-texte: #000000;
+  --dj-texte-muet: #666666;
+  --dj-succes: #1a1a1a;
+  --dj-succes-conteneur: rgba(0, 0, 0, 0.08);
+  --dj-inactif: #b3b3b3;
+  --dj-code-accent: #000000;
+  --dj-code-variable: #555555;
+  --dj-code-deletion: #1a1a1a;
+  --dj-logo-1: #4d4d4d;
+  --dj-logo-2: #1a1a1a;
+  --dj-logo-3: #000000;
+  --dj-gradient: linear-gradient(135deg, #333333 0%, #1a1a1a 55%, #000000 100%);
+  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(0, 0, 0, 0.05), transparent 60%);
+  --dj-shimmer: linear-gradient(100deg, rgba(0, 0, 0, 0.03) 20%, rgba(102, 102, 102, 0.35) 50%, rgba(0, 0, 0, 0.03) 80%);
+  --dj-shimmer-texte: linear-gradient(100deg, #999999 38%, #000000 50%, #999999 62%);
+  --dj-erreur: #1a1a1a;
+  --dj-sur-accent: #ffffff;
 }
 
 /* Zones de securite unifiees (tache 4, 30/08/2026, edge to edge obligatoire
@@ -278,68 +281,70 @@ math-field {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --dj-fond: #0f0d0b;
-    --dj-surface: #1a1714;
-    --dj-surface-haute: #221e18;
-    --dj-rail: #211d17;
-    --dj-rail-survol: #2e2921;
-    --dj-rail-texte: #b8b0a2;
-    --dj-bordure: rgba(245, 240, 230, 0.08);
-    --dj-bordure-forte: rgba(227, 179, 65, 0.35);
-    --dj-accent-1: #e8bf60;
+    --dj-fond: #000000;
+    --dj-surface: #0d0d0d;
+    --dj-surface-haute: #1a1a1a;
+    --dj-rail: #0a0a0a;
+    --dj-rail-survol: #1f1f1f;
+    --dj-rail-texte: #bfbfbf;
+    --dj-bordure: rgba(255, 255, 255, 0.12);
+    --dj-bordure-forte: rgba(255, 255, 255, 0.40);
+    --dj-accent-1: #ffffff;
     --dj-accent-1-texte: var(--dj-accent-1);
-    --dj-accent-1-conteneur: rgba(232, 191, 96, 0.16);
-    --dj-selection: rgba(232, 191, 96, 0.30);
-    --dj-accent-2: #da9f0d;
-    --dj-texte: #f5f0e6;
-    --dj-texte-muet: #9a9184;
-    --dj-succes: #34d399;
-    --dj-succes-conteneur: rgba(52, 211, 153, 0.14);
-    --dj-inactif: #4a453c;
-    --dj-code-accent: #f0c766;
-    --dj-code-variable: #c9a9e0;
-    --dj-code-deletion: #f87171;
-    --dj-logo-1: #f0c766;
-    --dj-logo-2: #d9a438;
-    --dj-logo-3: #8a6a1f;
-    --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
-    --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
-    --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
-    --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
-    --dj-erreur: #f87171;
+    --dj-accent-1-conteneur: rgba(255, 255, 255, 0.12);
+    --dj-selection: rgba(255, 255, 255, 0.28);
+    --dj-accent-2: #d9d9d9;
+    --dj-texte: #ffffff;
+    --dj-texte-muet: #999999;
+    --dj-succes: #f2f2f2;
+    --dj-succes-conteneur: rgba(255, 255, 255, 0.12);
+    --dj-inactif: #4d4d4d;
+    --dj-code-accent: #ffffff;
+    --dj-code-variable: #bfbfbf;
+    --dj-code-deletion: #e6e6e6;
+    --dj-logo-1: #ffffff;
+    --dj-logo-2: #d9d9d9;
+    --dj-logo-3: #8c8c8c;
+    --dj-gradient: linear-gradient(135deg, #ffffff 0%, #e6e6e6 55%, #bfbfbf 100%);
+    --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 255, 255, 0.08), transparent 60%);
+    --dj-shimmer: linear-gradient(100deg, rgba(255, 255, 255, 0.03) 20%, rgba(153, 153, 153, 0.35) 50%, rgba(255, 255, 255, 0.03) 80%);
+    --dj-shimmer-texte: linear-gradient(100deg, #737373 38%, #ffffff 50%, #737373 62%);
+    --dj-erreur: #e6e6e6;
+    --dj-sur-accent: #000000;
   }
 }
 
 [data-theme="dark"] {
-  --dj-fond: #0f0d0b;
-  --dj-surface: #1a1714;
-  --dj-surface-haute: #221e18;
-  --dj-rail: #211d17;
-  --dj-rail-survol: #2e2921;
-  --dj-rail-texte: #b8b0a2;
-  --dj-bordure: rgba(245, 240, 230, 0.08);
-  --dj-bordure-forte: rgba(227, 179, 65, 0.35);
-  --dj-accent-1: #e8bf60;
+  --dj-fond: #000000;
+  --dj-surface: #0d0d0d;
+  --dj-surface-haute: #1a1a1a;
+  --dj-rail: #0a0a0a;
+  --dj-rail-survol: #1f1f1f;
+  --dj-rail-texte: #bfbfbf;
+  --dj-bordure: rgba(255, 255, 255, 0.12);
+  --dj-bordure-forte: rgba(255, 255, 255, 0.40);
+  --dj-accent-1: #ffffff;
   --dj-accent-1-texte: var(--dj-accent-1);
-  --dj-accent-1-conteneur: rgba(232, 191, 96, 0.16);
-  --dj-selection: rgba(232, 191, 96, 0.30);
-  --dj-accent-2: #da9f0d;
-  --dj-texte: #f5f0e6;
-  --dj-texte-muet: #9a9184;
-  --dj-succes: #34d399;
-  --dj-succes-conteneur: rgba(52, 211, 153, 0.14);
-  --dj-inactif: #4a453c;
-  --dj-code-accent: #f0c766;
-  --dj-code-variable: #c9a9e0;
-  --dj-code-deletion: #f87171;
-  --dj-logo-1: #f0c766;
-  --dj-logo-2: #d9a438;
-  --dj-logo-3: #8a6a1f;
-  --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
-  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
-  --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
-  --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
-  --dj-erreur: #f87171;
+  --dj-accent-1-conteneur: rgba(255, 255, 255, 0.12);
+  --dj-selection: rgba(255, 255, 255, 0.28);
+  --dj-accent-2: #d9d9d9;
+  --dj-texte: #ffffff;
+  --dj-texte-muet: #999999;
+  --dj-succes: #f2f2f2;
+  --dj-succes-conteneur: rgba(255, 255, 255, 0.12);
+  --dj-inactif: #4d4d4d;
+  --dj-code-accent: #ffffff;
+  --dj-code-variable: #bfbfbf;
+  --dj-code-deletion: #e6e6e6;
+  --dj-logo-1: #ffffff;
+  --dj-logo-2: #d9d9d9;
+  --dj-logo-3: #8c8c8c;
+  --dj-gradient: linear-gradient(135deg, #ffffff 0%, #e6e6e6 55%, #bfbfbf 100%);
+  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 255, 255, 0.08), transparent 60%);
+  --dj-shimmer: linear-gradient(100deg, rgba(255, 255, 255, 0.03) 20%, rgba(153, 153, 153, 0.35) 50%, rgba(255, 255, 255, 0.03) 80%);
+  --dj-shimmer-texte: linear-gradient(100deg, #737373 38%, #ffffff 50%, #737373 62%);
+  --dj-erreur: #e6e6e6;
+  --dj-sur-accent: #000000;
 }
 
 * {
@@ -614,38 +619,38 @@ select:focus-visible {
 :root {
   --dj-mat-1: var(--dj-accent-2);
   --dj-mat-1-conteneur: var(--dj-accent-1-conteneur);
-  --dj-mat-2: #15803d;
-  --dj-mat-2-conteneur: rgba(21, 128, 61, 0.12);
-  --dj-mat-3: #3b5b8c;
-  --dj-mat-3-conteneur: rgba(59, 91, 140, 0.12);
-  --dj-mat-4: #8c4a7a;
-  --dj-mat-4-conteneur: rgba(140, 74, 122, 0.12);
-  --dj-mat-5: #b5562c;
-  --dj-mat-5-conteneur: rgba(181, 86, 44, 0.12);
+  --dj-mat-2: #404040;
+  --dj-mat-2-conteneur: rgba(0, 0, 0, 0.08);
+  --dj-mat-3: #666666;
+  --dj-mat-3-conteneur: rgba(0, 0, 0, 0.08);
+  --dj-mat-4: #808080;
+  --dj-mat-4-conteneur: rgba(0, 0, 0, 0.08);
+  --dj-mat-5: #333333;
+  --dj-mat-5-conteneur: rgba(0, 0, 0, 0.08);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --dj-mat-1: var(--dj-accent-1);
-    --dj-mat-2: #34d399;
-    --dj-mat-2-conteneur: rgba(52, 211, 153, 0.14);
-    --dj-mat-3: #7ea3d8;
-    --dj-mat-3-conteneur: rgba(126, 163, 216, 0.14);
-    --dj-mat-4: #c98ab6;
-    --dj-mat-4-conteneur: rgba(201, 138, 182, 0.14);
-    --dj-mat-5: #e08a5e;
-    --dj-mat-5-conteneur: rgba(224, 138, 94, 0.14);
+    --dj-mat-2: #cccccc;
+    --dj-mat-2-conteneur: rgba(255, 255, 255, 0.12);
+    --dj-mat-3: #a6a6a6;
+    --dj-mat-3-conteneur: rgba(255, 255, 255, 0.12);
+    --dj-mat-4: #8c8c8c;
+    --dj-mat-4-conteneur: rgba(255, 255, 255, 0.12);
+    --dj-mat-5: #d9d9d9;
+    --dj-mat-5-conteneur: rgba(255, 255, 255, 0.12);
   }
 }
 [data-theme="dark"] {
   --dj-mat-1: var(--dj-accent-1);
-  --dj-mat-2: #34d399;
-  --dj-mat-2-conteneur: rgba(52, 211, 153, 0.14);
-  --dj-mat-3: #7ea3d8;
-  --dj-mat-3-conteneur: rgba(126, 163, 216, 0.14);
-  --dj-mat-4: #c98ab6;
-  --dj-mat-4-conteneur: rgba(201, 138, 182, 0.14);
-  --dj-mat-5: #e08a5e;
-  --dj-mat-5-conteneur: rgba(224, 138, 94, 0.14);
+  --dj-mat-2: #cccccc;
+  --dj-mat-2-conteneur: rgba(255, 255, 255, 0.12);
+  --dj-mat-3: #a6a6a6;
+  --dj-mat-3-conteneur: rgba(255, 255, 255, 0.12);
+  --dj-mat-4: #8c8c8c;
+  --dj-mat-4-conteneur: rgba(255, 255, 255, 0.12);
+  --dj-mat-5: #d9d9d9;
+  --dj-mat-5-conteneur: rgba(255, 255, 255, 0.12);
 }
 @media (prefers-reduced-motion: reduce) {
   .dj-reveal {

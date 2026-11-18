@@ -17,7 +17,7 @@ import { PanneauFlottant } from "@/components/PanneauFlottant";
 // Fond blanc fixe (pas le thème sombre de l'app) : un trait noir sur fond
 // sombre serait à peine visible, et ça imite une feuille de papier -- plus
 // lisible pour le modèle de vision au moment de l'envoi.
-const COULEURS = ["#111111", "#dc2626", "#2563eb", "#16a34a"];
+const COULEURS = ["#111111", "#555555", "#888888", "#bbbbbb"];
 const EPAISSEURS = [2, 5, 10];
 
 export function CanvasDessin({
@@ -186,7 +186,7 @@ export function CanvasDessin({
         <button
           onClick={valider}
           disabled={!aDessine}
-          className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-medium text-dj-sur-accent disabled:opacity-40"
         >
           <Pencil size={14} /> Utiliser ce dessin
         </button>

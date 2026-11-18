@@ -391,7 +391,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-dj-texte">
                 Description / prompt{" "}
-                {famille === "image" ? <span className="text-red-500">*</span> : <span className="font-normal text-dj-texte-muet">(optionnel)</span>}
+                {famille === "image" ? <span className="text-dj-texte">*</span> : <span className="font-normal text-dj-texte-muet">(optionnel)</span>}
               </span>
               <textarea
                 value={prompt}
@@ -577,7 +577,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                     </button>
                   )}
                 </div>
-                {fichiersImage.length === 0 && <p className="text-xs text-amber-600">Au moins 1 image requise (ton visage ou ton personnage).</p>}
+                {fichiersImage.length === 0 && <p className="text-xs text-dj-texte">Au moins 1 image requise (ton visage ou ton personnage).</p>}
               </div>
             </>
           )}
@@ -707,29 +707,29 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
           )}
 
           {afficherErreur && (
-            <div className="flex animate-dj-fade-in-rapide gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="flex animate-dj-fade-in-rapide gap-2 rounded-xl border border-dj-bordure-forte bg-dj-surface-haute p-3 text-sm text-dj-texte">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span className="leading-snug">{erreur}</span>
             </div>
           )}
 
           {etat === "terminee" && resultatUrl && reveleCarte && (
-            <div className="flex animate-dj-fade-in-rapide flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-emerald-800">
+            <div className="flex animate-dj-fade-in-rapide flex-col gap-3 rounded-xl border border-dj-bordure-forte bg-dj-surface-haute p-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-dj-texte">
                 <CheckCircle2 className="h-4 w-4" /> Génération terminée !
               </div>
               <div className="flex flex-wrap gap-2">
-                <a href={resultatUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800">
+                <a href={resultatUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-dj-accent-1 px-4 py-2 text-xs font-bold text-dj-sur-accent transition-colors hover:opacity-90">
                   <ExternalLink className="h-3.5 w-3.5" /> Ouvrir
                 </a>
-                <a href={resultatUrl} download className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100">
+                <a href={resultatUrl} download className="inline-flex items-center gap-1.5 rounded-full border border-dj-bordure-forte bg-dj-surface px-4 py-2 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-surface-haute">
                   <Download className="h-3.5 w-3.5" /> Télécharger
                 </a>
-                <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-dj-surface px-3 py-1 text-[11px] font-semibold text-dj-texte">
                   <Clock className="h-3 w-3" /> Enregistré dans ta bibliothèque
                 </span>
               </div>
-              <button type="button" onClick={recommencer} className="self-start text-xs font-semibold text-emerald-700 underline">
+              <button type="button" onClick={recommencer} className="self-start text-xs font-semibold text-dj-texte underline">
                 Générer à nouveau
               </button>
             </div>

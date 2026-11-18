@@ -79,7 +79,7 @@ export function BoutonInstaller() {
             <button
               type="button"
               onClick={fermerInstructions}
-              className="mt-4 w-full rounded-cgpt-bouton bg-dj-accent-1 py-2 text-sm font-bold text-[#1A0D02]"
+              className="mt-4 w-full rounded-cgpt-bouton bg-dj-accent-1 py-2 text-sm font-bold text-dj-sur-accent"
             >
               Compris
             </button>

@@ -171,7 +171,7 @@ export function EditeurMathsRiche({
         ) : (
           <button
             onClick={arreterDicteeMaths}
-            className="flex animate-pulse items-center gap-1.5 rounded-lg border border-red-500 px-3 py-1.5 text-sm text-red-500"
+            className="flex animate-pulse items-center gap-1.5 rounded-lg border border-dj-bordure-forte px-3 py-1.5 text-sm text-dj-texte"
           >
             <Square size={14} /> Arrêter la dictée
           </button>
@@ -188,7 +188,7 @@ export function EditeurMathsRiche({
       <div className="flex justify-end gap-2 pt-4">
         <button
           onClick={inserer}
-          className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-medium text-dj-sur-accent transition-opacity hover:opacity-90"
         >
           <Check size={16} /> Insérer dans le message
         </button>

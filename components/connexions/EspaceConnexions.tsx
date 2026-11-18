@@ -109,7 +109,7 @@ export function EspaceConnexions() {
                   type="button"
                   onClick={() => app.modeConnexion === "jeton" ? setPanneau(app.nom) : ligne.etat === "erreur" ? void recharger() : void depuisCarte(app.nom, () => lancerConnexion(app.nom))}
                   disabled={!!enCours || ligne.etat === "chargement"}
-                  className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                  className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
                 >
                   {occupee ? "Connexion…" : ligne.etat === "reconnecter" ? "Reconnecter" : ligne.etat === "erreur" && app.modeConnexion !== "jeton" ? "Réessayer le statut" : "Connecter"}
                 </button>

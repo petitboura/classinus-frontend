@@ -40,7 +40,7 @@ export function CaseACocher({
           checked ? "border-dj-accent-1 bg-dj-accent-1" : "border-dj-bordure bg-dj-surface peer-hover:border-dj-bordure-forte"
         }`}
       >
-        {checked && <Check size={11} strokeWidth={3} className="text-[#1A0D02]" />}
+        {checked && <Check size={11} strokeWidth={3} className="text-dj-sur-accent" />}
       </span>
     </span>
   );

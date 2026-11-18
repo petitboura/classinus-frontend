@@ -146,7 +146,7 @@ export function QuestionMultiChamps({
           type="button"
           disabled={!toutComplet || desactive}
           onClick={valider}
-          className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+          className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
         >
           Valider
         </button>

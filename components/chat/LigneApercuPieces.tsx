@@ -37,14 +37,14 @@ const LONGUEUR_INFOBULLE_TEXTE = 160;
 // Accent par format de document, pour reconnaître d'un coup d'oeil un PDF,
 // un Word, un Excel ou un PowerPoint. Les autres restent neutres.
 const ACCENTS_EXTENSION: Record<string, { Icone: typeof FileText; classe: string }> = {
-  pdf: { Icone: FileText, classe: "text-red-400" },
-  doc: { Icone: FileText, classe: "text-blue-400" },
-  docx: { Icone: FileText, classe: "text-blue-400" },
-  xls: { Icone: FileSpreadsheet, classe: "text-emerald-400" },
-  xlsx: { Icone: FileSpreadsheet, classe: "text-emerald-400" },
-  csv: { Icone: FileSpreadsheet, classe: "text-emerald-400" },
-  ppt: { Icone: Presentation, classe: "text-orange-400" },
-  pptx: { Icone: Presentation, classe: "text-orange-400" },
+  pdf: { Icone: FileText, classe: "text-dj-texte" },
+  doc: { Icone: FileText, classe: "text-dj-texte" },
+  docx: { Icone: FileText, classe: "text-dj-texte" },
+  xls: { Icone: FileSpreadsheet, classe: "text-dj-texte" },
+  xlsx: { Icone: FileSpreadsheet, classe: "text-dj-texte" },
+  csv: { Icone: FileSpreadsheet, classe: "text-dj-texte" },
+  ppt: { Icone: Presentation, classe: "text-dj-texte" },
+  pptx: { Icone: Presentation, classe: "text-dj-texte" },
 };
 
 function iconePilule(piece: PieceApercu): { Icone: typeof FileText; classe: string } {
@@ -241,7 +241,7 @@ export function LigneApercuPieces({
                   title={infobulle}
                   className={`flex h-[calc((var(--taille-piece)-0.375rem)/2)] min-w-0 items-center gap-1.5 rounded-full border px-2.5 text-xs leading-none ${
                     enErreur
-                      ? "border-red-400/40 bg-red-400/10 text-red-400"
+                      ? "border-dj-bordure-forte bg-dj-accent-1-conteneur text-dj-texte"
                       : "border-dj-bordure bg-dj-surface-haute text-dj-texte-muet"
                   } ${classeAnimation(piece.id)}`}
                 >

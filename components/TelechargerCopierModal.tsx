@@ -129,7 +129,7 @@ export function TelechargerCopierModal({
         <button
           onClick={valider}
           disabled={enCours || (!perso && !reel)}
-          className="flex items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1a0f06] transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 disabled:opacity-50"
+          className="flex items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 disabled:opacity-50"
         >
           {enCours && <Loader2 size={14} className="animate-spin" />}
           {etatTelechargement?.statut === "encours"

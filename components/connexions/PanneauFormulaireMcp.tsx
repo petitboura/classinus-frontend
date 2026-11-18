@@ -105,7 +105,7 @@ export function PanneauFormulaireMcp({
 
           {erreur && <div role="alert" className="flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]"><CircleAlert size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 break-words">{erreur}</span></div>}
 
-          <button type="submit" disabled={enCours} className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent-1 px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">
+          <button type="submit" disabled={enCours} className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent-1 px-4 py-2.5 text-sm font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50">
             {enCours ? <LoaderCircle size={16} className="animate-spin" /> : <Plus size={16} />}
             {serveur ? "Enregistrer les modifications" : "Ajouter le serveur"}
           </button>

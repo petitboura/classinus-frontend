@@ -53,7 +53,7 @@ export function BoutonEtoile({
       title={active ? "Retirer mon étoile" : "Mettre une étoile"}
       className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs transition-transform disabled:cursor-not-allowed ${
         pop ? "scale-125" : "scale-100"
-      } ${active ? "text-amber-500" : "text-gray-400 hover:text-amber-500"}`}
+      } ${active ? "text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"}`}
     >
       <Star className="h-3.5 w-3.5" fill={active ? "currentColor" : "none"} />
       <span>{count}</span>

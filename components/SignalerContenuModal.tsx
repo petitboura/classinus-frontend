@@ -139,7 +139,7 @@ export function SignalerContenuModal({ cible, onFermer }: { cible: CibleSignalem
               type="button"
               disabled={envoiEnCours || !motif.trim() || !nom.trim() || !email.trim() || !declarationHonneur}
               onClick={envoyer}
-              className="mt-1 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+              className="mt-1 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-medium text-dj-sur-accent transition-opacity disabled:opacity-50"
             >
               {envoiEnCours ? "Envoi…" : "Envoyer le signalement"}
             </button>
