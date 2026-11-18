@@ -15,7 +15,8 @@ import { NOMBRE_PICS, formaterDuree, type MessageAudioBambara } from "@/lib/audi
 type Props = {
   /** Identifiant de la bulle dans la conversation (tour et sens). */
   id: string;
-  message: MessageAudioBambara;
+  /** Le message audio, ou null tant qu'il n'est pas prêt : la bulle est alors déjà là (même taille, barres qui pulsent). */
+  message: MessageAudioBambara | null;
   cote: "droite" | "gauche";
   /** Identifiant de la bulle qui joue en ce moment dans la conversation, null si aucune. */
   idEnLecture: string | null;
@@ -30,15 +31,21 @@ const BARRES_PAR_DEFAUT = Array.from({ length: NOMBRE_PICS }, () => 0.35);
 export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [adresse, setAdresse] = useState<string | null>(null);
+  const dureeMs = message?.dureeMs ?? 0;
+  const blob = message?.blob ?? null;
   const [progres, setProgres] = useState(0);
   const [enCours, setEnCours] = useState(false);
 
   // L'adresse du fichier vit avec la bulle et est libérée quand elle disparaît.
   useEffect(() => {
-    const url = URL.createObjectURL(message.blob);
+    if (!blob) {
+      setAdresse(null);
+      return;
+    }
+    const url = URL.createObjectURL(blob);
     setAdresse(url);
     return () => URL.revokeObjectURL(url);
-  }, [message.blob]);
+  }, [blob]);
 
   // Ce n'est plus cette bulle qui doit jouer (une autre démarre, une nouvelle demande arrive) : pause.
   useEffect(() => {
@@ -52,12 +59,12 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
     let image = 0;
     const suivre = () => {
       const audio = audioRef.current;
-      if (audio && message.dureeMs > 0) setProgres(Math.min(1, (audio.currentTime * 1000) / message.dureeMs));
+      if (audio && dureeMs > 0) setProgres(Math.min(1, (audio.currentTime * 1000) / dureeMs));
       image = requestAnimationFrame(suivre);
     };
     image = requestAnimationFrame(suivre);
     return () => cancelAnimationFrame(image);
-  }, [enCours, message.dureeMs]);
+  }, [enCours, dureeMs]);
 
   const basculer = () => {
     const audio = audioRef.current;
@@ -73,21 +80,22 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
 
   const placer = (e: MouseEvent<HTMLDivElement>) => {
     const audio = audioRef.current;
-    if (!audio || !adresse || message.dureeMs <= 0) return;
+    if (!audio || !adresse || dureeMs <= 0) return;
     const zone = e.currentTarget.getBoundingClientRect();
     if (zone.width <= 0) return;
     const fraction = Math.min(1, Math.max(0, (e.clientX - zone.left) / zone.width));
     try {
-      audio.currentTime = (fraction * message.dureeMs) / 1000;
+      audio.currentTime = (fraction * dureeMs) / 1000;
       setProgres(fraction);
     } catch {
       // Fichier pas encore prêt : le toucher est ignoré.
     }
   };
 
-  const barres = message.pics.length === NOMBRE_PICS ? message.pics : BARRES_PAR_DEFAUT;
+  const enPreparation = message === null;
+  const barres = message && message.pics.length === NOMBRE_PICS ? message.pics : BARRES_PAR_DEFAUT;
   const barresLues = Math.round(progres * NOMBRE_PICS);
-  const dureeAffichee = enCours || progres > 0 ? progres * message.dureeMs : message.dureeMs;
+  const dureeAffichee = enCours || progres > 0 ? progres * dureeMs : dureeMs;
 
   return (
     <motion.div
@@ -114,7 +122,7 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
       <button
         type="button"
         onClick={basculer}
-        disabled={!adresse}
+        disabled={!adresse || enPreparation}
         aria-label={enCours ? libelleMettreEnPause : libelleEcouter}
         aria-pressed={enCours}
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-40"
@@ -122,7 +130,10 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
       >
         {enCours ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
       </button>
-      <div onClick={placer} className="flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-[2px]">
+      <div
+        onClick={placer}
+        className={"flex h-8 min-w-0 flex-1 items-center gap-[2px] " + (enPreparation ? "animate-pulse" : "cursor-pointer")}
+      >
         {barres.map((pic, i) => (
           <span
             key={i}
@@ -136,7 +147,7 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
         ))}
       </div>
       <span className="shrink-0 text-xs tabular-nums" style={{ color: "var(--bb-encre)" }}>
-        {formaterDuree(dureeAffichee)}
+        {enPreparation ? "0:00" : formaterDuree(dureeAffichee)}
       </span>
     </motion.div>
   );

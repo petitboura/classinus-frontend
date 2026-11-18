@@ -20,9 +20,12 @@
 // à droite (components/bambara/BulleAudioBambara.tsx) et la voix de Classinus un message audio à gauche, tous deux
 // réécoutables. Ils restent dans la page avec le reste de la conversation. Pendant qu'un message se réécoute, le micro
 // est en pause (il entendrait le haut parleur) et il reprend ensuite.
+// Ordre (19/11/2026, demande de Bourama) : dans chaque message, le vocal est en haut puis le texte en dessous, replié par
+// défaut sur une seule ligne (components/bambara/TexteReplieBambara.tsx), même pour une demande parlée. La bulle audio
+// de la réponse est déjà là, en préparation, dès que la réponse se prépare : rien ne se décale quand la voix est prête.
 // Effet conversation (18/11/2026, demande de Bourama) : chaque demande s'ajoute à la suite des précédentes,
 // la plus récente en bas, au lieu de faire repartir l'écran de zéro. Une demande écrite montre aussi la
-// question écrite, une demande parlée n'affiche aucun texte. L'écran suit la dernière réponse tant que la
+// question écrite. L'écran suit la dernière réponse tant que la
 // personne n'est pas remontée lire plus haut.
 // Forme (18/11/2026, demande de Bourama) : les médias (images, vidéos, cadres de construction) ont des angles nets,
 // les commandes (micro, bouton clavier, champ d'écriture) sont rondes. La bulle du haut est la mini bulle du chat, en haut
@@ -45,8 +48,10 @@ import { supabase } from "@/lib/supabase";
 import { useDecalageClavier } from "@/lib/useDecalageClavier";
 import { useEcritureBambara } from "@/lib/useEcritureBambara";
 import { ouvrirVoixBambara, type SessionVoixBambara } from "@/lib/voixBambara";
+import { nettoyerPourVoix } from "@/lib/voixBambaraTexte";
 import { BulleAudioBambara } from "./BulleAudioBambara";
 import { ChampEcritureBambara } from "./ChampEcritureBambara";
+import { TexteReplieBambara } from "./TexteReplieBambara";
 import { EffetConstruction } from "./EffetConstruction";
 import { RangeesVisuelsBambara } from "./RangeesVisuelsBambara";
 
@@ -55,11 +60,13 @@ const TEXTES = {
     parler: "Parler", arreter: "Arrêter", lire: "Lancer la vidéo", fermerVideo: "Fermer la vidéo", ouvrirImage: "Voir l'image", erreur: "Un problème est survenu.",
     ecrire: "Écrire un message", masquerChamp: "Masquer le champ d'écriture", placeholder: "Écrire ici", envoyer: "Envoyer",
     ecouter: "Écouter le message", mettreEnPause: "Mettre le message en pause",
+    deplier: "Voir tout le texte", replier: "Réduire le texte",
   },
   en: {
     parler: "Speak", arreter: "Stop", lire: "Play the video", fermerVideo: "Close the video", ouvrirImage: "View the image", erreur: "Something went wrong.",
     ecrire: "Write a message", masquerChamp: "Hide the writing field", placeholder: "Write here", envoyer: "Send",
     ecouter: "Play the message", mettreEnPause: "Pause the message",
+    deplier: "Show the whole text", replier: "Collapse the text",
   },
 } as const;
 
@@ -229,8 +236,8 @@ export default function PageBambaraClient() {
           }
         },
         surErreur: setErreur,
-        // Dès que la personne a fini de parler, son message audio s'ajoute à la conversation, sans texte (elle ne lit
-        // pas) et sans attendre la transcription. Si rien n'est compris (bruit), ce message est retiré.
+        // Dès que la personne a fini de parler, son message audio s'ajoute à la conversation, sans attendre la
+        // transcription. Si rien n'est compris (bruit), ce message est retiré.
         surParole: (message) => {
           tourVocalRef.current = demarrerTour("", message);
         },
@@ -238,11 +245,18 @@ export default function PageBambaraClient() {
           const id = tourVocalRef.current;
           setTours((precedents) => retirerTour(precedents, id));
         },
-        surDemande: (question) =>
-          demanderPageBambara(question, conversationIdRef.current, {
+        // Le texte de la parole (transcription) et celui de la réponse apparaissent aussi, repliés sous leur bulle audio.
+        surDemande: async (question) => {
+          const id = tourVocalRef.current;
+          setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, question })));
+          const reponse = await demanderPageBambara(question, conversationIdRef.current, {
             surOutilsEnCours: setOutils,
             surVisuels: ajouterVisuels,
-          }),
+            surTexte: (cumule) => setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, texte: nettoyerPourVoix(cumule) }))),
+          });
+          setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, texte: nettoyerPourVoix(reponse) })));
+          return reponse;
+        },
         surReponseAudio: (message) => ajouterAudioReponse(tourVocalRef.current, message),
       });
       sessionRef.current = session;
@@ -276,6 +290,8 @@ export default function PageBambaraClient() {
   const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
   const etatBulle: EtatVoixDirecte = etat !== "inactif" ? etat : ecriture.etat;
   const enConnexion = etat === "connexion";
+  // Une réponse se prépare ou se lit : la dernière bulle audio de Classinus est déjà là, en préparation.
+  const reponseEnCours = etat === "travail" || etat === "reponse" || ecriture.etat === "travail" || ecriture.etat === "reponse";
 
   if (!connecte) return <div className="bb-page fixed inset-0" />;
 
@@ -297,8 +313,10 @@ export default function PageBambaraClient() {
         }}
       >
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-          {tours.map((tour) => {
-            if (!tour.question && !tour.audioQuestion && !tour.texte && tour.visuels.length === 0 && !tour.audioReponse) return null;
+          {tours.map((tour, rang) => {
+            const dernier = rang === tours.length - 1;
+            const bullePreparee = !tour.audioReponse && dernier && reponseEnCours;
+            if (!tour.question && !tour.audioQuestion && !tour.texte && tour.visuels.length === 0 && !tour.audioReponse && !bullePreparee) return null;
             return (
               <div key={tour.id} className="flex w-full flex-col gap-3">
                 {tour.audioQuestion && (
@@ -312,7 +330,10 @@ export default function PageBambaraClient() {
                     libelleMettreEnPause={textes.mettreEnPause}
                   />
                 )}
-                {tour.question && (
+                {tour.question && tour.audioQuestion && (
+                  <TexteReplieBambara texte={tour.question} cote="droite" libelleDeplier={textes.deplier} libelleReplier={textes.replier} />
+                )}
+                {tour.question && !tour.audioQuestion && (
                   <motion.p
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -323,16 +344,19 @@ export default function PageBambaraClient() {
                     {tour.question}
                   </motion.p>
                 )}
+                {(tour.audioReponse || bullePreparee) && (
+                  <BulleAudioBambara
+                    id={tour.id + ":reponse"}
+                    message={tour.audioReponse ?? null}
+                    cote="gauche"
+                    idEnLecture={messageEnLecture}
+                    surChangerLecture={changerMessageEnLecture}
+                    libelleEcouter={textes.ecouter}
+                    libelleMettreEnPause={textes.mettreEnPause}
+                  />
+                )}
                 {tour.texte && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="w-full whitespace-pre-line break-words font-lecture text-base leading-relaxed"
-                    style={{ color: "var(--bb-encre)" }}
-                  >
-                    {tour.texte}
-                  </motion.p>
+                  <TexteReplieBambara texte={tour.texte} cote="gauche" libelleDeplier={textes.deplier} libelleReplier={textes.replier} />
                 )}
                 <RangeesVisuelsBambara
                   idTour={tour.id}
@@ -343,17 +367,6 @@ export default function PageBambaraClient() {
                   libelleFermerVideo={textes.fermerVideo}
                   libelleOuvrirImage={textes.ouvrirImage}
                 />
-                {tour.audioReponse && (
-                  <BulleAudioBambara
-                    id={tour.id + ":reponse"}
-                    message={tour.audioReponse}
-                    cote="gauche"
-                    idEnLecture={messageEnLecture}
-                    surChangerLecture={changerMessageEnLecture}
-                    libelleEcouter={textes.ecouter}
-                    libelleMettreEnPause={textes.mettreEnPause}
-                  />
-                )}
               </div>
             );
           })}

@@ -99,7 +99,8 @@ const [carte, effet] = await Promise.all([
 ]);
 const sansCommentaires = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 const bulleAudio = await lire("../components/bambara/BulleAudioBambara.tsx");
-for (const [nom, texte] of [["PageBambaraClient", client], ["ChampEcritureBambara", champ], ["CarteVisuelBambara", carte], ["EffetConstruction", effet], ["BulleAudioBambara", bulleAudio]]) {
+const texteReplie = await lire("../components/bambara/TexteReplieBambara.tsx");
+for (const [nom, texte] of [["PageBambaraClient", client], ["ChampEcritureBambara", champ], ["CarteVisuelBambara", carte], ["EffetConstruction", effet], ["BulleAudioBambara", bulleAudio], ["TexteReplieBambara", texteReplie]]) {
   assert.doesNotMatch(sansCommentaires(texte), /dj-(accent|erreur|bordure-forte)|#[0-9a-fA-F]{3,8}\b|rgba?\(|bg-black\/|text-white/, nom + " : couleur interdite");
 }
 const cssCode = sansCommentaires(css);
@@ -189,5 +190,17 @@ assert.match(micro, /reperes/);
 assert.match(lecture, /surTampon\?\.\(tampon\)/);
 assert.match(ecriture, /surAudio\?\.\(idTour/);
 assert.match(ecriture, /avantLecture/);
+
+// Ordre et texte replié (19/11/2026, demande de Bourama) : dans chaque message le vocal est en haut, puis le texte replié sur
+// une seule ligne (jamais plus), même pour une demande parlée ; un toucher le déplie.
+assert.match(texteReplie, /truncate/);
+assert.match(texteReplie, /aria-expanded/);
+assert.match(texteReplie, /ResizeObserver/);
+assert.ok(client.indexOf('tour.id + ":reponse"') < client.indexOf("<TexteReplieBambara texte={tour.texte}"), "le vocal de la réponse est avant son texte");
+assert.ok(client.indexOf("<TexteReplieBambara texte={tour.texte}") < client.indexOf("<RangeesVisuelsBambara"), "le texte replié est avant les visuels");
+assert.ok(client.indexOf('tour.id + ":question"') < client.indexOf("<TexteReplieBambara texte={tour.question}"), "le vocal de la question est avant son texte");
+assert.match(client, /texte: nettoyerPourVoix\(reponse\)/);
+assert.match(client, /bullePreparee/);
+assert.match(bulleAudio, /enPreparation/);
 
 console.log("Page bambara : toutes les vérifications passent.");
