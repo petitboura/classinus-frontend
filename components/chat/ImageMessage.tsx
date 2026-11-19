@@ -31,7 +31,7 @@ export function ImageMessage({
       const url = new URL(sourceUrl);
       if (url.protocol === "https:" || url.protocol === "http:") {
         pageSource = url.href;
-        domaineSource = url.hostname.replace(/^www\\./i, "");
+        domaineSource = (url.hostname.toLowerCase().startsWith("www.") ? url.hostname.slice(4) : url.hostname);
       }
     } catch {
       // Une URL de provenance absente ou invalide ne produit aucun badge.
