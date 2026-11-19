@@ -135,7 +135,7 @@ export function CapacitesParCategorie({
 }
 
 // Les modèles d'une entreprise tiennent sur UNE ligne, comme les autres capacités (19/11/2026, demande de
-// Bourama) : un seul logo, celui de l'IA (Claude, GPT, Gemini...), puis le nom de l'entreprise et ses modèles.
+// Bourama) : un seul logo, celui de l'IA (Claude, GPT, Gemini...), puis le nom de l'entreprise et ses modèles, séparés par un petit trait vertical.
 // Plus de tableau à part, plus de logo d'entreprise, plus un logo par modèle.
 function LigneModeles({ entreprise, locale }: { entreprise: EntrepriseModeles; locale: string }) {
   return (
@@ -150,7 +150,12 @@ function LigneModeles({ entreprise, locale }: { entreprise: EntrepriseModeles; l
           const badge = modele.badge[locale] ?? modele.badge.fr ?? "";
           return (
             <span key={modele.label}>
-              {i > 0 && ", "}
+              {i > 0 && (
+                <>
+                  <span className="sr-only">, </span>
+                  <span aria-hidden className="mx-2.5 inline-block h-4 w-px bg-dj-bordure-forte align-middle" />
+                </>
+              )}
               {modele.label}
               {badge && (
                 <span className="ml-1.5 inline-block rounded-full border border-dj-bordure px-2 py-0.5 align-middle text-xs font-semibold text-dj-texte-muet">
