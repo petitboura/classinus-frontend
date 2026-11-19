@@ -15,8 +15,8 @@ type Traduire = (cle: string, valeurs?: Record<string, string | number>) => stri
 // - attente_comp_ordre : les identifiants de section, séparés par « | » ;
 // - attente_comp_<id>_titre et attente_comp_<id>_lignes ;
 // - une ligne = « libellé#valeur palier 1#valeur palier 2#valeur palier 3 », les lignes séparées par « | » ;
-// - une valeur est « oui » (coche), « non », « bientot » (horloge) ou un texte court ; « {credit} » y est
-//   remplacé par le crédit mensuel du palier de la colonne ;
+// - une valeur est « oui » (coche), « non », « bientot » (horloge) ou un texte court. Le montant du crédit
+//   de chaque palier n'est pas affiché (décision de Bourama, 19/11/2026) ;
 // - attente_comp_oui, attente_comp_non et attente_comp_bientot sont les mots affichés ou lus à voix haute.
 // Une ligne qui n'a pas une valeur par palier est ignorée.
 type Ligne = { libelle: string; valeurs: string[] };
@@ -88,7 +88,7 @@ export function TableauComparaison({ t, paliers }: { t: Traduire; paliers: Palie
   const non = t("attente_comp_non");
   const bientot = t("attente_comp_bientot");
 
-  function valeur(brut: string, palier: PalierListeAttente) {
+  function valeur(brut: string) {
     if (brut === "oui")
       return (
         <span className="inline-flex" role="img" aria-label={oui}>
@@ -103,7 +103,7 @@ export function TableauComparaison({ t, paliers }: { t: Traduire; paliers: Palie
           {bientot}
         </span>
       );
-    return <span>{brut.replace("{credit}", String(palier.credit_usd))}</span>;
+    return <span>{brut}</span>;
   }
 
   return (
@@ -133,7 +133,7 @@ export function TableauComparaison({ t, paliers }: { t: Traduire; paliers: Palie
               </span>
               {paliers.map((p, j) => (
                 <span key={p.prix_usd} role="cell" className="min-w-0">
-                  {valeur(ligne.valeurs[j], p)}
+                  {valeur(ligne.valeurs[j])}
                 </span>
               ))}
             </div>

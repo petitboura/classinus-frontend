@@ -88,7 +88,7 @@ export function noterEtapeListeAttente(etape: Etape, modeleId: string | null, la
   }).catch(() => {});
 }
 
-/** Remplace {modele}, {nom}, {prix} ou {credit} dans un texte du serveur. */
+/** Remplace {modele}, {nom} ou {prix} dans un texte du serveur. */
 export function remplirTexte(texte: string, valeurs: Record<string, string | number>): string {
   return texte.replace(/\{(\w+)\}/g, (reste, cle: string) => (cle in valeurs ? String(valeurs[cle]) : reste));
 }
