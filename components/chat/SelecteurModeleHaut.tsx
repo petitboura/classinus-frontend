@@ -219,7 +219,9 @@ function OptionModele({
         (verrouille ? "text-dj-texte-muet hover:bg-dj-surface-haute " : "hover:bg-dj-surface-haute ") +
         (actif ? "text-dj-accent-1-texte" : verrouille ? "" : "text-dj-texte")
       }>
-      <span className={verrouille ? "opacity-50" : ""}>
+      {/* Le logo du fournisseur n'est jamais grisé, même sur une ligne verrouillée : plus d'opacité, et les logos
+          d'une seule couleur (GPT, Grok, Z.ai), qui suivent la couleur du texte, gardent la couleur normale. */}
+      <span className={verrouille ? "text-dj-texte" : ""}>
         <IconeFournisseur distributeur={distributeur} />
       </span>
       <span className="min-w-0 flex-1 truncate">{children}</span>
