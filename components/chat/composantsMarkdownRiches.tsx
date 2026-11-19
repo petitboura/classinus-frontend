@@ -285,7 +285,16 @@ function estMediaPlace(enfant: ReactNode): boolean {
   if (!isValidElement(enfant)) return false;
   const props = enfant.props as { href?: string; src?: unknown };
   if (enfant.type === ImgMarkdown) return typeof props.src === "string";
-  if (enfant.type === LienMarkdown) return typeof props.href === "string" && idYoutube(props.href) !== null;
+  if (enfant.type === LienMarkdown && typeof props.href === "string") {
+    if (idYoutube(props.href)) return true;
+    try {
+      const hote = new URL(props.href).hostname.replace(/^www\\./, "");
+      return ["vimeo.com", "dailymotion.com", "dai.ly", "tiktok.com", "facebook.com", "fb.watch", "twitch.tv", "instagram.com", "streamable.com", "rumble.com"]
+        .some((domaine) => hote === domaine || hote.endsWith("." + domaine));
+    } catch {
+      return false;
+    }
+  }
   return false;
 }
 
