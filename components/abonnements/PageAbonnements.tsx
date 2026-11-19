@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
 import { CartePalierListeAttente } from "@/components/chat/CartePalierListeAttente";
 import { ParcoursPaiement } from "@/components/abonnements/ParcoursPaiement";
+import { SqueletteAbonnements } from "@/components/abonnements/SqueletteAbonnements";
 import { TableauComparaison } from "@/components/abonnements/TableauComparaison";
 import { effacerBrouillonPaiement, lireBrouillonPaiement } from "@/lib/brouillonPaiement";
 import { messageErreur } from "@/lib/erreurs";
@@ -108,26 +109,13 @@ export function PageAbonnements() {
         </button>
 
         <h1 className="text-3xl font-bold text-dj-texte sm:text-4xl">
-          {config ? t("attente_abo_titre") : <Skeleton className="h-9 w-64 rounded" />}
+          {config ? t("attente_abo_titre") : <Skeleton className="h-9 w-64 rounded sm:h-10" />}
         </h1>
       </header>
 
       {erreurChargement && <p className="text-base text-[var(--dj-erreur)]">{erreurChargement}</p>}
 
-      {!config && !erreurChargement && (
-        <div className="flex flex-col gap-8" aria-hidden>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Skeleton className="h-96 w-full rounded-2xl" />
-            <Skeleton className="h-96 w-full rounded-2xl" />
-            <Skeleton className="h-96 w-full rounded-2xl" />
-          </div>
-          <div className="flex flex-col gap-3">
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
-          </div>
-        </div>
-      )}
+      {!config && !erreurChargement && <SqueletteAbonnements />}
 
       {config && (
         <div className="flex animate-dj-fade-in-rapide flex-col gap-8 motion-reduce:animate-none">
