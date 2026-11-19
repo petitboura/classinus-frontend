@@ -63,9 +63,8 @@ export function CapacitesParCategorie({
   const libelleBientot = t("attente_cap_bientot");
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-xl font-bold text-dj-texte sm:text-2xl">{t("attente_cap_titre")}</h2>
-      <div className="flex flex-col">
+    <section aria-label={t("attente_cap_titre")} className="flex flex-col">
+      <div className="flex flex-col border-t border-dj-bordure">
         {categories.map((categorie) => {
           const ouverte = !repliees[categorie.id];
           const idPanneau = `capacites-${categorie.id}`;

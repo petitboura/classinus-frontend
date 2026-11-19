@@ -2,17 +2,17 @@
 
 [English version](LISTE_ATTENTE_MODELES.md) · **Version française**
 
-Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure la demande réelle avant de brancher Claude, GPT et Gemini. Dans le sélecteur de modèles en haut du chat, ces modèles restent grisés avec un **verrou** (le mot « Bientôt » n'existe plus depuis le 17 novembre 2026) et ne sont jamais sélectionnables. Les modèles frontière (groupe 1) portent un badge **Max** à la place du verrou, sur la même ligne grisée. Un clic dessus ouvre la page `/abonnements`, une vraie page (depuis le 18 novembre 2026, avant c'était une fenêtre avec son propre défilement) où l'on s'inscrit à une liste d'attente payante. **Aucun paiement n'est pris**, et le formulaire le dit en haut. Le côté serveur est décrit dans la documentation du backend (`docs/chantiers/LISTE_ATTENTE_MODELES.fr.md`).
+Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure la demande réelle avant de brancher Claude, GPT et Gemini. Dans le sélecteur de modèles en haut du chat, ces modèles restent grisés avec un **verrou** (le mot « Bientôt » n'existe plus depuis le 17 novembre 2026) et ne sont jamais sélectionnables. Les modèles frontière (groupe 1) portent un badge **Max** à la place du verrou, sur la même ligne grisée. Un clic dessus ouvre la page `/abonnements`, une vraie page (depuis le 18 novembre 2026, avant c'était une fenêtre avec son propre défilement) où l'on s'inscrit à une liste d'attente payante. **Aucun paiement n'est pris**, et la page le dit en petit sous les cartes. Le côté serveur est décrit dans la documentation du backend (`docs/chantiers/LISTE_ATTENTE_MODELES.fr.md`).
 
 ## Ce que voit la personne
 
 1. Elle ouvre le sélecteur de modèles. C'est la première étape de l'entonnoir (`selecteur_ouvert`), notée seulement quand le sélecteur montre au moins un modèle « Bientôt ».
 2. Elle clique sur un modèle grisé (`modele_grise_clique`). Le sélecteur se ferme et la page `/abonnements?modele=...&nom=...` s'ouvre (`formulaire_ouvert`). Un visiteur sans compte la voit aussi ; le compte n'est demandé qu'au moment de rejoindre la liste, par la fenêtre « Compte requis ». Ouverte par une adresse directe, sans modèle, la page envoie la valeur `page_abonnements` comme modèle.
-3. La page montre un squelette pendant le chargement, puis : une introduction, l'avertissement « aucun paiement », les trois paliers en cartes côte à côte (prix en grand, crédit mensuel, puis les points du palier), le profil (étudiant, administration ou développeur), un pays et un WhatsApp facultatifs, une case de consentement et une phrase sur l'usage des données.
+3. La page montre un squelette pendant le chargement, puis, sous un seul titre (sans introduction ni titres de section, depuis le 19 novembre 2026) : les trois paliers en cartes côte à côte, présentées comme sur la page de tarification de Claude (nom, courte phrase, prix en grand, crédit mensuel, bouton « Choisir ce palier », puis la liste de ce qui est inclus), une petite mention « aucun paiement », les capacités par catégorie, le profil (étudiant, administration ou développeur), un pays et un WhatsApp facultatifs, une case de consentement et une phrase sur l'usage des données.
 4. « Rejoindre la liste » reste inactif tant qu'un palier, un profil et la case de consentement ne sont pas tous renseignés.
 5. Il n'y a qu'UNE liste d'attente par personne (décision du 17 novembre 2026), pas une par modèle. Si la personne y est déjà, quel que soit le modèle cliqué, le formulaire le dit avec le nom du palier (Pro, Max ou Ultra) et propose « Modifier mon choix » ou « Me désinscrire ». La désinscription efface aussi le numéro WhatsApp.
 
-La page défile comme n'importe quelle page, avec un bouton « Retour » en haut qui ramène au chat. Sur ordinateur, les trois cartes de palier sont sur une ligne ; sur téléphone elles s'empilent, et toutes montrent leurs points. La barre du bas reste collée en bas de l'écran avec le prix choisi et le bouton « Rejoindre la liste ».
+La page défile comme n'importe quelle page, avec un bouton « Retour » en haut qui ramène au chat. Sur ordinateur, les trois cartes de palier sont sur une ligne ; sur téléphone elles s'empilent, et chaque carte garde le même contenu. Le bouton de la carte choisit le palier et amène au formulaire. À partir du deuxième palier, la liste commence par « Tout ce qui est inclus dans <palier précédent>, plus : » et ne montre que ce qui s'ajoute. Ces textes sont les clés `attente_palier_<prix>_accroche`, `_inclus_titre` et `_inclus`. Le bouton « Rejoindre la liste » est à la fin du formulaire, sans barre collée en bas (retirée le 19 novembre 2026).
 
 ## Où se trouvent les choses
 
@@ -20,7 +20,7 @@ La page défile comme n'importe quelle page, avec un bouton « Retour » en haut
 | --- | --- |
 | `app/(app)/abonnements/page.tsx` | La route `/abonnements`. |
 | `components/abonnements/PageAbonnements.tsx` | La page, avec ses états de chargement, déjà inscrit, merci et désinscrit. |
-| `components/chat/CartePalierListeAttente.tsx` | Une carte de palier : prix, crédit, points et badge facultatif. |
+| `components/chat/CartePalierListeAttente.tsx` | Une carte de palier : nom, phrase, prix, crédit, bouton de choix, liste de ce qui est inclus et badge facultatif. |
 | `components/chat/SelecteurModeleHaut.tsx` | Le sélecteur : un modèle grisé ouvre maintenant la page des abonnements, et les premières étapes de l'entonnoir sont notées ici. |
 | `lib/listeAttente.ts` | Les appels au serveur, les étapes de l'entonnoir, la source (web, android, ios, pc) et la liste des pays. |
 | `lib/erreurs.ts` | Les codes d'erreur `LISTE_ATTENTE_*`, en français et en anglais. |

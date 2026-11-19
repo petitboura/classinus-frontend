@@ -31,6 +31,12 @@ import {
 // peut la voir ; le compte n'est demandé qu'au moment de rejoindre la liste. Aucun paiement n'est pris.
 // Paliers, profils et tous les textes viennent du serveur (Supabase), en français et en anglais : rien
 // n'est écrit en dur ici. Voir api/liste_attente.py côté backend.
+// Épurée le 19/11/2026 (demande de Bourama, comme la page de tarification de Claude) : plus de pastille de
+// modèle, plus de phrase d'introduction, plus de titres de section ; un seul titre, puis les cartes, puis
+// les capacités. La mention « aucun paiement » reste, en petit, sous les cartes. Plus de barre collée en
+// bas. Cartes refaites comme celles de Claude (capture de Bourama, 19/11/2026) : nom, courte phrase, prix,
+// bouton « Choisir ce palier » (qui amène au formulaire) et liste de ce qui est inclus. Le bouton « Rejoindre
+// la liste » est à la fin du formulaire.
 
 const BOUTON_PRINCIPAL =
   "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-5 py-3 text-base font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:cursor-not-allowed disabled:opacity-50";
@@ -101,6 +107,12 @@ export function PageAbonnements() {
 
   const peutValider = palier !== null && profil !== null && consentement && !envoi;
 
+  // Le bouton d'une carte choisit le palier puis amène en douceur au formulaire (profil, consentement).
+  function choisirPalier(prix: number) {
+    setPalier(prix);
+    document.getElementById("formulaire-abonnement")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   // Retour au chat (ou à la page d'où la personne vient). Sans historique, on revient à l'accueil.
   function revenir() {
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
@@ -159,58 +171,49 @@ export function PageAbonnements() {
           {libelleRetour}
         </button>
 
-        <div className="flex flex-col gap-3">
-          {modeleLabel && (
-            <span className="w-fit max-w-full truncate rounded-full border border-dj-bordure bg-dj-surface-haute px-3 py-1 text-sm font-semibold text-dj-texte-muet">
-              {modeleLabel}
-            </span>
-          )}
-          <h1 className="text-3xl font-bold text-dj-texte sm:text-4xl">
-            {config ? t("attente_titre") : <Skeleton className="h-8 w-64 rounded" />}
-          </h1>
-          {config && etat === "formulaire" && <p className="max-w-2xl text-base text-dj-texte sm:text-lg">{t("attente_intro")}</p>}
-        </div>
+        <h1 className="text-3xl font-bold text-dj-texte sm:text-4xl">
+          {config ? t("attente_titre") : <Skeleton className="h-9 w-64 rounded" />}
+        </h1>
       </header>
 
       {erreurChargement && <p className="text-base text-[var(--dj-erreur)]">{erreurChargement}</p>}
 
       {!config && !erreurChargement && (
-        <div className="flex flex-col gap-4" aria-hidden>
-          <Skeleton className="h-4 w-full max-w-2xl rounded" />
-          <Skeleton className="h-10 w-full rounded-lg" />
+        <div className="flex flex-col gap-8" aria-hidden>
           <div className="grid gap-4 md:grid-cols-3">
-            <Skeleton className="h-64 w-full rounded-2xl" />
-            <Skeleton className="h-64 w-full rounded-2xl" />
-            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-96 w-full rounded-2xl" />
+            <Skeleton className="h-96 w-full rounded-2xl" />
+            <Skeleton className="h-96 w-full rounded-2xl" />
           </div>
-          <Skeleton className="h-40 w-full rounded-2xl" />
+          <div className="flex flex-col gap-3">
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </div>
         </div>
       )}
 
       {config && etat === "formulaire" && (
         <div className="flex animate-dj-fade-in-rapide flex-col gap-8 motion-reduce:animate-none">
-          <p className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-sm font-medium text-dj-texte sm:text-base">
-            {t("attente_aucun_paiement")}
-          </p>
-
-          <section role="radiogroup" aria-label={t("attente_palier_label")} className="flex flex-col gap-3">
-            <h2 className="text-xl font-bold text-dj-texte sm:text-2xl">{t("attente_palier_label")}</h2>
-            <div className="grid gap-4 pt-2 md:grid-cols-3">
-              {config.paliers.map((p) => (
+          <section role="group" aria-label={t("attente_palier_label")} className="flex flex-col gap-4">
+            <div className="grid items-start gap-4 pt-3 md:grid-cols-3">
+              {config.paliers.map((p, i) => (
                 <CartePalierListeAttente
                   key={p.prix_usd}
                   palier={p}
+                  nomPrecedent={i > 0 ? t(`attente_palier_nom_${config.paliers[i - 1].prix_usd}`) : ""}
                   choisi={palier === p.prix_usd}
-                  onChoisir={() => setPalier(p.prix_usd)}
+                  onChoisir={() => choisirPalier(p.prix_usd)}
                   t={t}
                 />
               ))}
             </div>
+            <p className="text-sm text-dj-texte-muet">{t("attente_aucun_paiement")}</p>
           </section>
 
           <CapacitesParCategorie t={t} locale={locale} modeles={config.modeles ?? []} />
 
-          <section className="flex flex-col gap-5 rounded-2xl border border-dj-bordure p-4 sm:p-6">
+          <section id="formulaire-abonnement" className="flex scroll-mt-6 flex-col gap-5 rounded-2xl border border-dj-bordure p-4 sm:p-6">
             <fieldset className="flex flex-col gap-2">
               <legend className={`mb-1 ${TITRE_CHAMP}`}>{t("attente_profil_label")}</legend>
               <div className="flex flex-wrap gap-2">
@@ -266,16 +269,10 @@ export function PageAbonnements() {
             {erreur && <p className="text-sm text-[var(--dj-erreur)] sm:text-base">{erreur}</p>}
           </section>
 
-          {/* Barre collée en bas de la page : le prix choisi et le bouton restent toujours visibles. */}
-          <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t border-dj-bordure bg-dj-surface px-4 py-3 sm:-mx-6 sm:px-6">
-            <span className="min-w-0 truncate text-sm font-medium text-dj-texte-muet sm:text-base">
-              {palier !== null ? t("attente_palier_prix", { prix: palier }) : ""}
-            </span>
-            <button type="button" onClick={valider} disabled={!peutValider} className={BOUTON_PRINCIPAL}>
-              {envoi && <LoaderCircle size={14} className="animate-spin" />}
-              {t("attente_valider")}
-            </button>
-          </div>
+          <button type="button" onClick={valider} disabled={!peutValider} className={`${BOUTON_PRINCIPAL} w-full sm:w-fit`}>
+            {envoi && <LoaderCircle size={14} className="animate-spin" />}
+            {t("attente_valider")}
+          </button>
         </div>
       )}
 
