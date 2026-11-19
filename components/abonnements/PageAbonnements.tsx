@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
 import { CartePalierListeAttente } from "@/components/chat/CartePalierListeAttente";
+import { ParcoursPaiement } from "@/components/abonnements/ParcoursPaiement";
 import { TableauComparaison } from "@/components/abonnements/TableauComparaison";
+import { effacerBrouillonPaiement, lireBrouillonPaiement } from "@/lib/brouillonPaiement";
 import { messageErreur } from "@/lib/erreurs";
 import { obtenirLocale } from "@/lib/i18n/locale";
-import { lireConfigListeAttente, remplirTexte, type ConfigListeAttente } from "@/lib/listeAttente";
+import {
+  lireConfigListeAttente,
+  remplirTexte,
+  type ConfigListeAttente,
+  type PalierListeAttente,
+} from "@/lib/listeAttente";
+import { supabase } from "@/lib/supabase";
 
 // Page des abonnements : une page de paiement (19/11/2026, demande de Bourama). Un seul titre, puis les
 // trois cartes de palier façon page de tarification de Claude, puis le tableau de comparaison des paliers. Chaque
@@ -16,7 +24,9 @@ import { lireConfigListeAttente, remplirTexte, type ConfigListeAttente } from "@
 // inscription, mention « aucun paiement ») a été retiré de cette page ; les tables, les routes et
 // lib/listeAttente.ts n'ont pas bougé. Ouverte depuis un modèle grisé du sélecteur, la page ne lit plus
 // les paramètres de l'adresse. Visible sans compte.
-// Le bouton Payer n'est pas encore relié à un service de paiement (voir payer() plus bas).
+// Le bouton Payer ouvre le parcours de paiement simulé (components/abonnements/ParcoursPaiement.tsx) :
+// conditions légales, connexion si besoin, moyen de paiement, formulaire, message de préparation. Aucun
+// service de paiement n'est branché, rien n'est débité.
 // Paliers, tableau et textes viennent du serveur (Supabase), en français et en anglais : rien n'est
 // écrit en dur ici. Les clés de texte gardent le préfixe attente_ car c'est celui que le serveur renvoie.
 
@@ -26,6 +36,10 @@ export function PageAbonnements() {
 
   const [config, setConfig] = useState<ConfigListeAttente | null>(null);
   const [erreurChargement, setErreurChargement] = useState<string | null>(null);
+  // Parcours de paiement ouvert : le palier payé et l'écran de départ (« moyen » quand la personne revient
+  // d'une connexion en plein parcours).
+  const [parcours, setParcours] = useState<{ palier: PalierListeAttente; etape: "legal" | "moyen" } | null>(null);
+  const reprisVerifiee = useRef(false);
 
   useEffect(() => {
     let actif = true;
@@ -49,16 +63,34 @@ export function PageAbonnements() {
     };
   }, [config, locale]);
 
+  // Retour d'une connexion en plein parcours : si un brouillon récent existe et que la personne est
+  // maintenant connectée, le parcours reprend au choix du moyen de paiement. Une seule vérification.
+  useEffect(() => {
+    if (!config || reprisVerifiee.current) return;
+    reprisVerifiee.current = true;
+    const brouillon = lireBrouillonPaiement();
+    if (!brouillon) return;
+    const palier = config.paliers.find((p) => p.prix_usd === brouillon.palier);
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (palier && session) setParcours({ palier, etape: "moyen" });
+        else effacerBrouillonPaiement();
+      })
+      .catch(() => effacerBrouillonPaiement());
+  }, [config]);
+
   // Retour au chat (ou à la page d'où la personne vient). Sans historique, on revient à l'accueil.
   function revenir() {
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
     else router.push("/");
   }
 
-  // Point d'entrée du paiement pour le palier cliqué (prix en dollars par mois). Volontairement vide pour
-  // l'instant (demande de Bourama du 19/11/2026 : la page d'abord, le service de paiement ensuite).
+  // Clic sur Payer d'un palier (prix en dollars par mois) : ouvre le parcours de paiement, qui commence
+  // par les conditions légales.
   function payer(prix: number) {
-    void prix;
+    const palier = config?.paliers.find((p) => p.prix_usd === prix);
+    if (palier) setParcours({ palier, etape: "legal" });
   }
 
   const libelleRetour = t("attente_retour") || (locale === "en" ? "Back" : "Retour");
@@ -113,6 +145,17 @@ export function PageAbonnements() {
 
           <TableauComparaison t={t} paliers={config.paliers} />
         </div>
+      )}
+
+      {config && parcours && (
+        <ParcoursPaiement
+          palier={parcours.palier}
+          etapeInitiale={parcours.etape}
+          moyens={config.moyens_paiement ?? []}
+          t={t}
+          locale={locale}
+          onFerme={() => setParcours(null)}
+        />
       )}
     </div>
   );

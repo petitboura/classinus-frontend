@@ -10,7 +10,7 @@ export type Etape = "selecteur_ouvert" | "modele_grise_clique" | "formulaire_ouv
 
 export type PalierListeAttente = { prix_usd: number; credit_usd: number; ordre: number };
 // Une seule liste d'attente par personne (17/11/2026) : modele_id est le modele cliqué à l'inscription.
-export type InscriptionListeAttente = { modele_id: string; palier_prix: number; profil: Profil; statut: string };
+export type InscriptionListeAttente = { modele_id: string; palier_prix: number; profil: Profil | null; statut: string };
 
 // Un modèle montré sur la page des abonnements : son nom et, pour les modèles les plus puissants, un
 // badge par langue (ex. "Max"). Groupés par entreprise, du plus puissant au moins puissant.
@@ -26,17 +26,22 @@ export type ConfigListeAttente = {
   profils: Profil[];
   // Les modèles de la page (même source que le sélecteur du chat). Absent ou vide : pas de tableau.
   modeles?: EntrepriseModeles[];
+  // Identifiants des moyens de paiement proposés après le clic sur Payer (19/11/2026) ; le nom affiché est
+  // le texte attente_moyen_<id>. Absent ou vide : l'étape est sautée.
+  moyens_paiement?: string[];
 };
 
 export type PayloadInscription = {
   modele_id: string;
   palier_prix: number;
-  profil: Profil;
+  // Facultatif depuis le parcours de paiement (19/11/2026) : la page ne le demande plus.
+  profil?: Profil | null;
   consentement: boolean;
   pays?: string | null;
   whatsapp?: string | null;
   langue: string;
   source: string | null;
+  moyen_paiement?: string | null;
 };
 
 /** Valeur envoyée quand la page /abonnements est ouverte sans passer par un modèle grisé (adresse directe). */
