@@ -20,6 +20,7 @@ The page scrolls like any page, with a "Back" button at the top that returns to 
 | --- | --- |
 | `app/(app)/abonnements/page.tsx` | The `/abonnements` route. |
 | `components/abonnements/PageAbonnements.tsx` | The payment page: plan cards with their Pay button and the comparison table, with its loading state. |
+| `components/abonnements/SqueletteAbonnements.tsx` | The loading skeleton, block by block like the real page: the three cards (name, phrase, price, credit, button, check list) and the table (title rows, 16 + 8 rows with check, clock and text cells), with the same containers and line heights so nothing jumps when the content arrives. If the real content changes a lot, adjust the widths and row counts in this file. |
 | `components/chat/CartePalierListeAttente.tsx` | One plan card: name, phrase, price, credit, Pay button, included list and an optional badge. |
 | `components/chat/SelecteurModeleHaut.tsx` | The picker: a greyed out model now opens the plans page, and the first funnel steps are noted here. |
 | `lib/listeAttente.ts` | Backend calls, funnel steps, the source (web, android, ios, pc) and the country list. |

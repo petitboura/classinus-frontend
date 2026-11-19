@@ -20,6 +20,7 @@ La page défile comme n'importe quelle page, avec un bouton « Retour » en haut
 | --- | --- |
 | `app/(app)/abonnements/page.tsx` | La route `/abonnements`. |
 | `components/abonnements/PageAbonnements.tsx` | La page de paiement : cartes de palier avec leur bouton Payer et tableau de comparaison, avec son état de chargement. |
+| `components/abonnements/SqueletteAbonnements.tsx` | Le squelette de chargement, bloc par bloc comme la vraie page : les trois cartes (nom, phrase, prix, crédit, bouton, liste à coches) et le tableau (lignes de titre, 16 + 8 lignes avec cellules coche, horloge et texte), avec les mêmes conteneurs et les mêmes hauteurs de ligne pour que rien ne saute à l'arrivée du contenu. Si le vrai contenu change beaucoup, ajuster les largeurs et les nombres de lignes dans ce fichier. |
 | `components/chat/CartePalierListeAttente.tsx` | Une carte de palier : nom, phrase, prix, crédit, bouton Payer, liste de ce qui est inclus et badge facultatif. |
 | `components/chat/SelecteurModeleHaut.tsx` | Le sélecteur : un modèle grisé ouvre maintenant la page des abonnements, et les premières étapes de l'entonnoir sont notées ici. |
 | `lib/listeAttente.ts` | Les appels au serveur, les étapes de l'entonnoir, la source (web, android, ios, pc) et la liste des pays. |
