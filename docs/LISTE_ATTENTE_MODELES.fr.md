@@ -8,7 +8,7 @@ Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure l
 
 1. Elle ouvre le sélecteur de modèles. C'est la première étape de l'entonnoir (`selecteur_ouvert`), notée seulement quand le sélecteur montre au moins un modèle « Bientôt ».
 2. Elle clique sur un modèle grisé (`modele_grise_clique`). Le sélecteur se ferme et la page `/abonnements?modele=...&nom=...` s'ouvre (`formulaire_ouvert`). Un visiteur sans compte la voit aussi ; le compte n'est demandé qu'au moment de rejoindre la liste, par la fenêtre « Compte requis ». Ouverte par une adresse directe, sans modèle, la page envoie la valeur `page_abonnements` comme modèle.
-3. La page montre un squelette pendant le chargement, puis, sous un seul titre (sans introduction ni titres de section, depuis le 19 novembre 2026) : les trois paliers en cartes côte à côte, présentées comme sur la page de tarification de Claude (nom, courte phrase, prix en grand, crédit mensuel, bouton « Payer », puis la liste de ce qui est inclus), puis les capacités par catégorie.
+3. La page montre un squelette pendant le chargement, puis, sous un seul titre (sans introduction ni titres de section, depuis le 19 novembre 2026) : les trois paliers en cartes côte à côte, présentées comme sur la page de tarification de Claude (nom, courte phrase, prix en grand, crédit mensuel, bouton « Payer », puis la liste de ce qui est inclus), puis un tableau de comparaison des paliers (composant `TableauComparaison.tsx`, comme celui de Claude : une colonne par palier, une ligne par fonction, deux sections, Fonctionnalités et Modèles et crédit ; une coche veut dire inclus, sinon « Non », une courte valeur comme « Illimités », ou « Bientôt »).
 4. Le modèle présent dans l'adresse (`modele`, `nom`) n'est plus lu par la page, et la page ne note plus l'étape `formulaire_ouvert`.
 5. Les nouveaux textes (clés `attente_abo_titre` et `attente_abo_payer`, français et anglais, dans `textes_modeles_llm`) viennent du serveur. Ils gardent le préfixe `attente_` parce que c'est celui que le backend renvoie.
 
@@ -19,7 +19,7 @@ La page défile comme n'importe quelle page, avec un bouton « Retour » en haut
 | Fichier | Rôle |
 | --- | --- |
 | `app/(app)/abonnements/page.tsx` | La route `/abonnements`. |
-| `components/abonnements/PageAbonnements.tsx` | La page de paiement : cartes de palier avec leur bouton Payer et capacités, avec son état de chargement. |
+| `components/abonnements/PageAbonnements.tsx` | La page de paiement : cartes de palier avec leur bouton Payer et tableau de comparaison, avec son état de chargement. |
 | `components/chat/CartePalierListeAttente.tsx` | Une carte de palier : nom, phrase, prix, crédit, bouton Payer, liste de ce qui est inclus et badge facultatif. |
 | `components/chat/SelecteurModeleHaut.tsx` | Le sélecteur : un modèle grisé ouvre maintenant la page des abonnements, et les premières étapes de l'entonnoir sont notées ici. |
 | `lib/listeAttente.ts` | Les appels au serveur, les étapes de l'entonnoir, la source (web, android, ios, pc) et la liste des pays. |
@@ -28,7 +28,7 @@ La page défile comme n'importe quelle page, avec un bouton « Retour » en haut
 ## Rien n'est écrit en dur
 
 - Les paliers (prix et crédit mensuel) viennent du serveur, de la table `paliers_liste_attente`.
-- Tous les textes du formulaire viennent du serveur, de `textes_modeles_llm` (clés qui commencent par `attente_`), en français et en anglais. Si une clé manque dans la langue choisie, le texte français est utilisé ; une clé brute n'est jamais affichée. Les points de chaque palier viennent de `attente_palier_<prix>_points` (séparés par `|` ; un point qui commence par `~` est une capacité que le palier n'a pas et s'affiche avec une croix grisée au lieu d'une coche ; les trois paliers citent les mêmes huit capacités dans le même ordre, tirées du tableau des paliers de Bourama du 16/11/2026) ; sans eux, la phrase `attente_palier_<prix>` est affichée. Un badge facultatif sur un palier vient de `attente_palier_<prix>_badge` : sans texte, pas de badge.
+- Tous les textes du formulaire viennent du serveur, de `textes_modeles_llm` (clés qui commencent par `attente_`), en français et en anglais. Si une clé manque dans la langue choisie, le texte français est utilisé ; une clé brute n'est jamais affichée. Le tableau de comparaison vient des sections de `attente_comp_ordre` : `attente_comp_<id>_titre` et `attente_comp_<id>_lignes`, une ligne par `|`, écrite `libellé#valeur palier 1#valeur palier 2#valeur palier 3` (une valeur est `oui`, `non`, `bientot` ou un court texte ; `{credit}` est remplacé par le crédit mensuel du palier). Les anciennes clés `attente_cap_*` et `attente_palier_<prix>_points` ne sont plus lues. Un badge facultatif sur un palier vient de `attente_palier_<prix>_badge` : sans texte, pas de badge.
 - Les noms de pays viennent du navigateur (`Intl.DisplayNames`) dans la langue de l'interface, donc aucun n'est traduit à la main. Seuls les codes ISO des pays proposés sont dans `lib/listeAttente.ts`.
 
 ## Les étapes de l'entonnoir ne bloquent jamais
