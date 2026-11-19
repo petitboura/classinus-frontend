@@ -48,19 +48,19 @@ export function CartePalierListeAttente({
       }`}
     >
       {badge && (
-        <span className="absolute -top-2.5 left-4 rounded-full bg-dj-accent-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1A0D02]">
+        <span className="absolute -top-2.5 left-4 rounded-full bg-dj-accent-1 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-[#1A0D02]">
           {badge}
         </span>
       )}
 
       <span className="flex items-start justify-between gap-3">
         <span className="flex flex-col">
-          {nom && <span className="mb-1 text-sm font-bold text-dj-texte">{nom}</span>}
+          {nom && <span className="mb-1 text-base font-bold text-dj-texte">{nom}</span>}
           <span className="flex items-baseline gap-1">
-            <span className="text-3xl font-extrabold leading-none text-dj-texte">${prix}</span>
-            <span className="text-xs font-medium text-dj-texte-muet">{t("attente_palier_par_mois")}</span>
+            <span className="text-4xl font-extrabold leading-none text-dj-texte">${prix}</span>
+            <span className="text-sm font-medium text-dj-texte-muet">{t("attente_palier_par_mois")}</span>
           </span>
-          <span className="mt-1.5 text-xs font-semibold text-dj-accent-1-texte">
+          <span className="mt-1.5 text-sm font-semibold text-dj-accent-1-texte">
             {t("attente_palier_credit", { credit: palier.credit_usd })}
           </span>
         </span>
@@ -79,19 +79,19 @@ export function CartePalierListeAttente({
           {points.map((point) => (
             <span
               key={point.texte}
-              className={`flex items-start gap-2 text-xs sm:text-[13px] ${point.inclus ? "text-dj-texte" : "text-dj-texte-muet"}`}
+              className={`flex items-start gap-2 text-sm sm:text-base ${point.inclus ? "text-dj-texte" : "text-dj-texte-muet"}`}
             >
               {point.inclus ? (
-                <Check size={13} className="mt-px shrink-0 text-dj-accent-1-texte" />
+                <Check size={16} className="mt-0.5 shrink-0 text-dj-accent-1-texte" />
               ) : (
-                <X size={13} className="mt-px shrink-0 text-dj-texte-muet" />
+                <X size={16} className="mt-0.5 shrink-0 text-dj-texte-muet" />
               )}
               <span>{point.texte}</span>
             </span>
           ))}
         </span>
       ) : (
-        description && <span className="block border-t border-dj-bordure pt-3 text-xs text-dj-texte-muet">{description}</span>
+        description && <span className="block border-t border-dj-bordure pt-3 text-sm text-dj-texte-muet">{description}</span>
       )}
     </button>
   );
