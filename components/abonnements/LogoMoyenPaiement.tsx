@@ -1,49 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import type { CSSProperties } from "react";
 
-// Vrais logos des moyens de paiement du parcours de paiement (19/11/2026, demande de Bourama).
-// Les fichiers sont dans public/logos-paiement/. PayPal, Visa et Mastercard viennent du paquet open source
-// simple-icons (couleurs officielles) ; Orange Money et Wave sont les logos envoyés par Bourama. Un moyen
-// peut avoir plusieurs logos (la carte bancaire : Visa et Mastercard). Pour ajouter ou remplacer un logo, il
-// suffit de déposer le fichier dans ce dossier sous le nom indiqué ci-dessous. Tant qu'un fichier manque, rien
-// n'est affiché à sa place, jamais une image cassée. Les logos sont posés sur une pastille blanche pour rester
-// lisibles sur le fond sombre, et la hauteur est réglée par logo car certains contiennent leur nom en toutes lettres.
-type LogoFichier = { fichier: string; haut: string };
+// Vrais logos des moyens de paiement du parcours de paiement (19/11/2026, demande de Bourama). Pas de fond
+// blanc autour : chaque logo s'adapte au thème clair ou sombre. Les fichiers sont dans public/logos-paiement/.
+// - Visa et PayPal (paquet open source simple-icons) : une seule couleur, celle du texte du thème.
+// - Mastercard (simple-icons) : sa couleur officielle, lisible sur les deux thèmes.
+// - Orange Money : seulement les deux flèches, sans le texte. La flèche orange garde sa couleur, la flèche
+//   noire prend la couleur du texte du thème (elle serait invisible en thème sombre sinon).
+// - Wave : seulement le pingouin, sans le texte, il a son propre fond bleu.
+// Les logos envoyés par Bourama (Orange Money, Wave) ont été découpés à partir de ses fichiers d'origine.
 
-const LOGOS_PAR_MOYEN: Record<string, LogoFichier[]> = {
-  carte: [
-    { fichier: "visa.svg", haut: "h-5" },
-    { fichier: "mastercard.svg", haut: "h-5" },
-  ],
-  paypal: [{ fichier: "paypal.svg", haut: "h-5" }],
-  orange_money: [{ fichier: "orange_money.png", haut: "h-7" }],
-  wave: [{ fichier: "wave.png", haut: "h-6" }],
-};
+function masque(fichier: string): CSSProperties {
+  const url = `url(/logos-paiement/${fichier})`;
+  return {
+    backgroundColor: "currentColor",
+    WebkitMaskImage: url,
+    maskImage: url,
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+    maskSize: "contain",
+    WebkitMaskPosition: "center",
+    maskPosition: "center",
+  };
+}
 
-function Pastille({ fichier, haut }: LogoFichier) {
-  const [absent, setAbsent] = useState(false);
-  if (absent) return null;
+function Monochrome({ fichier, classe }: { fichier: string; classe: string }) {
+  return <span aria-hidden style={masque(fichier)} className={`inline-block shrink-0 text-dj-texte ${classe}`} />;
+}
+
+function LogoImage({ fichier, classe }: { fichier: string; classe: string }) {
+  return <img src={`/logos-paiement/${fichier}`} alt="" draggable={false} className={`shrink-0 ${classe}`} />;
+}
+
+function OrangeMoney() {
   return (
-    <span className="flex h-9 min-w-12 items-center justify-center rounded-md bg-white px-1.5">
+    <span aria-hidden className="relative inline-block h-6 w-12 shrink-0">
       <img
-        src={`/logos-paiement/${fichier}`}
+        src="/logos-paiement/orange_money_fleche_orange.png"
         alt=""
-        className={`${haut} w-auto max-w-[6.5rem] object-contain`}
-        onError={() => setAbsent(true)}
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+      <span
+        style={masque("orange_money_fleche_noire.png")}
+        className="absolute inset-0 text-dj-texte"
       />
     </span>
   );
 }
 
+function logosDe(id: string) {
+  switch (id) {
+    case "carte":
+      return (
+        <>
+          <Monochrome fichier="visa.svg" classe="h-10 w-10" />
+          <LogoImage fichier="mastercard.svg" classe="h-9 w-9" />
+        </>
+      );
+    case "paypal":
+      return <Monochrome fichier="paypal.svg" classe="h-7 w-7" />;
+    case "orange_money":
+      return <OrangeMoney />;
+    case "wave":
+      return <LogoImage fichier="wave.png" classe="h-8 w-8 object-contain" />;
+    default:
+      return null;
+  }
+}
+
+// Zone de largeur fixe : les noms des moyens restent alignés d'une ligne à l'autre.
 export function LogoMoyenPaiement({ id }: { id: string }) {
-  const logos = LOGOS_PAR_MOYEN[id] ?? [];
-  if (logos.length === 0) return null;
-  return (
-    <span className="flex shrink-0 items-center gap-1.5">
-      {logos.map((l) => (
-        <Pastille key={l.fichier} {...l} />
-      ))}
-    </span>
-  );
+  const logos = logosDe(id);
+  if (!logos) return null;
+  return <span className="flex h-10 w-24 shrink-0 items-center gap-1">{logos}</span>;
 }
