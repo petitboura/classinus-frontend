@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { Check, ChevronRight, Clock } from "lucide-react";
 import { IconeFournisseur } from "@/components/chat/IconeFournisseur";
-import { IconeEntreprise } from "@/components/abonnements/IconeEntreprise";
 import type { EntrepriseModeles } from "@/lib/listeAttente";
 
 type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
@@ -16,9 +15,10 @@ type Traduire = (cle: string, valeurs?: Record<string, string | number>) => stri
 // - attente_cap_ordre : les identifiants des catégories, séparés par « | », dans l'ordre d'affichage ;
 // - attente_cap_<id>_titre et attente_cap_<id>_lignes (une capacité par ligne, séparées par « | ») ;
 // - une ligne qui commence par « ~ » est une capacité pas encore ouverte (étiquette attente_cap_bientot) ;
-// - la ligne spéciale « @modeles » place à cet endroit le tableau des modèles.
+// - la ligne spéciale « @modeles » place à cet endroit une ligne par entreprise (logo de l'IA, nom, modèles).
 // Voir migrations/2026_11_19_capacites_page_abonnements.sql côté backend.
 const LIGNE_MODELES = "@modeles";
+const CLASSE_LIGNE = "flex items-start gap-3 border-t border-dj-bordure py-3 text-base first:border-t-0 sm:text-lg";
 
 type Ligne = { texte: string; bientot: boolean; modeles: boolean };
 type Categorie = { id: string; titre: string; lignes: Ligne[] };
@@ -99,17 +99,13 @@ export function CapacitesParCategorie({
                   <ul className="flex flex-col pb-4 pl-[34px]">
                     {categorie.lignes.map((ligne, i) =>
                       ligne.modeles ? (
-                        modeles.length > 0 ? (
-                          <li key={`modeles-${i}`} className="py-3">
-                            <TableauModeles modeles={modeles} locale={locale} />
-                          </li>
-                        ) : null
+                        modeles.map((entreprise) => (
+                          <LigneModeles key={`modeles-${i}-${entreprise.distributeur}`} entreprise={entreprise} locale={locale} />
+                        ))
                       ) : (
                         <li
                           key={`${i}-${ligne.texte}`}
-                          className={`flex items-start gap-3 border-t border-dj-bordure py-3 text-base first:border-t-0 sm:text-lg ${
-                            ligne.bientot ? "text-dj-texte-muet" : "text-dj-texte"
-                          }`}
+                          className={`${CLASSE_LIGNE} ${ligne.bientot ? "text-dj-texte-muet" : "text-dj-texte"}`}
                         >
                           {ligne.bientot ? (
                             <Clock size={18} className="mt-1 shrink-0" aria-hidden />
@@ -138,38 +134,33 @@ export function CapacitesParCategorie({
   );
 }
 
-// Tableau des modèles, comme dans la liste des modèles de Claude : une ligne d'en-tête par entreprise
-// avec son logo, puis un modèle par ligne avec le logo de l'IA (Claude, GPT, Gemini...) juste avant son nom.
-function TableauModeles({ modeles, locale }: { modeles: EntrepriseModeles[]; locale: string }) {
+// Les modèles d'une entreprise tiennent sur UNE ligne, comme les autres capacités (19/11/2026, demande de
+// Bourama) : un seul logo, celui de l'IA (Claude, GPT, Gemini...), puis le nom de l'entreprise et ses modèles.
+// Plus de tableau à part, plus de logo d'entreprise, plus un logo par modèle.
+function LigneModeles({ entreprise, locale }: { entreprise: EntrepriseModeles; locale: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-dj-bordure">
-      {modeles.map((entreprise, i) => (
-        <div key={entreprise.distributeur} className={i > 0 ? "border-t border-dj-bordure" : ""}>
-          <div className="flex items-center gap-3 bg-dj-surface-haute px-4 py-3 text-dj-texte">
-            <IconeEntreprise distributeur={entreprise.distributeur} taille={24} />
-            <span className="text-base font-bold sm:text-lg">{entreprise.nom}</span>
-          </div>
-          <ul>
-            {entreprise.modeles.map((modele) => {
-              const badge = modele.badge[locale] ?? modele.badge.fr ?? "";
-              return (
-                <li
-                  key={modele.label}
-                  className="flex items-center gap-3 border-t border-dj-bordure px-4 py-2.5 text-base text-dj-texte sm:text-lg"
-                >
-                  <IconeFournisseur distributeur={entreprise.distributeur} taille={20} />
-                  <span className="min-w-0 truncate">{modele.label}</span>
-                  {badge && (
-                    <span className="shrink-0 rounded-full border border-dj-bordure px-2 py-0.5 text-xs font-semibold text-dj-texte-muet">
-                      {badge}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
-    </div>
+    <li className={`${CLASSE_LIGNE} text-dj-texte`}>
+      <span className="mt-1 shrink-0">
+        <IconeFournisseur distributeur={entreprise.distributeur} taille={18} />
+      </span>
+      <span className="min-w-0">
+        <span className="font-bold">{entreprise.nom}</span>
+        {" : "}
+        {entreprise.modeles.map((modele, i) => {
+          const badge = modele.badge[locale] ?? modele.badge.fr ?? "";
+          return (
+            <span key={modele.label}>
+              {i > 0 && ", "}
+              {modele.label}
+              {badge && (
+                <span className="ml-1.5 inline-block rounded-full border border-dj-bordure px-2 py-0.5 align-middle text-xs font-semibold text-dj-texte-muet">
+                  {badge}
+                </span>
+              )}
+            </span>
+          );
+        })}
+      </span>
+    </li>
   );
 }
