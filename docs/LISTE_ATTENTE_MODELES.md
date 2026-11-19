@@ -2,17 +2,17 @@
 
 **English version** · [Version française](LISTE_ATTENTE_MODELES.fr.md)
 
-Added on 16 November 2026 at Bourama's request. A fake door measures real demand before Claude, GPT and Gemini are plugged in. In the model picker at the top of the chat, these models stay greyed out with a **lock** (the word "Coming soon" is gone since 17 November 2026), and are never selectable. The frontier models (group 1) carry a **Max** badge in place of the lock, on the same greyed row. A click on one now opens the `/abonnements` page, a real page (since 18 November 2026, it used to be a window with its own scrolling) where the person signs up for a paid waiting list. **No payment is taken**, and the form says so at the top. The backend side is described in the backend documentation (`docs/chantiers/LISTE_ATTENTE_MODELES.md`).
+Added on 16 November 2026 at Bourama's request. A fake door measures real demand before Claude, GPT and Gemini are plugged in. In the model picker at the top of the chat, these models stay greyed out with a **lock** (the word "Coming soon" is gone since 17 November 2026), and are never selectable. The frontier models (group 1) carry a **Max** badge in place of the lock, on the same greyed row. A click on one now opens the `/abonnements` page, a real page (since 18 November 2026, it used to be a window with its own scrolling) where the person signs up for a paid waiting list. **No payment is taken**, and the page says so in small print under the cards. The backend side is described in the backend documentation (`docs/chantiers/LISTE_ATTENTE_MODELES.md`).
 
 ## What the person sees
 
 1. They open the model picker. This is the first funnel step (`selecteur_ouvert`), written only when the picker shows at least one "Coming soon" model.
 2. They click a greyed out model (`modele_grise_clique`). The picker closes and the `/abonnements?modele=...&nom=...` page opens (`formulaire_ouvert`). A visitor without an account sees it too; the account is only asked for when they join the list, through the "Account required" window. Opened by a direct address, without a model, the page sends the value `page_abonnements` as the model.
-3. The page shows a skeleton while it loads, then: an intro, the "no payment" notice, the three plans as side by side cards (big price, monthly credit, then the plan's points), the profile (student, administration or developer), an optional country and WhatsApp number, a consent tick and a sentence about data use.
+3. The page shows a skeleton while it loads, then, under a single title (no intro and no section titles, since 19 November 2026): the three plans as side by side cards, laid out like Claude's pricing page (name, short phrase, big price, monthly credit, a "Choose this plan" button, then the list of what is included), a small "no payment" note, the capabilities by category, the profile (student, administration or developer), an optional country and WhatsApp number, a consent tick and a sentence about data use.
 4. "Join the list" stays disabled until a plan, a profile and the consent tick are all set.
 5. There is ONE waiting list per person (decision of 17 November 2026), not one per model. If the person is already on it, whichever model they clicked, the form says so with the plan name (Pro, Max or Ultra) and offers "Change my choice" or "Unsubscribe". Unsubscribing also erases the WhatsApp number.
 
-The page scrolls like any page, with a "Back" button at the top that returns to the chat. On a computer the three plan cards sit in a row; on a phone they stack, and every card shows its points. The bottom bar stays stuck to the bottom of the screen with the chosen price and the "Join the list" button.
+The page scrolls like any page, with a "Back" button at the top that returns to the chat. On a computer the three plan cards sit in a row; on a phone they stack, and each card keeps the same content. The card button picks the plan and scrolls to the form. From the second plan, the list starts with "Everything in <previous plan>, plus:" and only shows what is added. These texts are the keys `attente_palier_<price>_accroche`, `_inclus_titre` and `_inclus`. The "Join the list" button is at the end of the form, with no bar stuck to the bottom (removed on 19 November 2026).
 
 ## Where things live
 
@@ -20,7 +20,7 @@ The page scrolls like any page, with a "Back" button at the top that returns to 
 | --- | --- |
 | `app/(app)/abonnements/page.tsx` | The `/abonnements` route. |
 | `components/abonnements/PageAbonnements.tsx` | The page, with its loading, already registered, thank you and unsubscribed states. |
-| `components/chat/CartePalierListeAttente.tsx` | One plan card: price, credit, points and an optional badge. |
+| `components/chat/CartePalierListeAttente.tsx` | One plan card: name, phrase, price, credit, choose button, included list and an optional badge. |
 | `components/chat/SelecteurModeleHaut.tsx` | The picker: a greyed out model now opens the plans page, and the first funnel steps are noted here. |
 | `lib/listeAttente.ts` | Backend calls, funnel steps, the source (web, android, ios, pc) and the country list. |
 | `lib/erreurs.ts` | The `LISTE_ATTENTE_*` error codes, in French and English. |
