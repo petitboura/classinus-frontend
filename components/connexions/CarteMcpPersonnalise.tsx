@@ -23,7 +23,7 @@ export function libelleStatutMcp(serveur: McpPersonnalise, teste: boolean): stri
   return teste ? "Connexion vérifiée" : "Pas encore testé";
 }
 
-const BOUTON_PRINCIPAL = "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-2 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50";
+const BOUTON_PRINCIPAL = "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50";
 const BOUTON_SECONDAIRE = "inline-flex items-center justify-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50";
 
 // Logo du service dans le cadre carré de la carte (28/10/2026, demande Bourama : plus de prise grise).

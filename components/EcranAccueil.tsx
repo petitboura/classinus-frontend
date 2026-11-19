@@ -182,7 +182,7 @@ export function EcranAccueil() {
           </div>
           <button
             onClick={() => ouvrirChat()}
-            className="group flex items-center gap-2 rounded-xl bg-dj-gradient px-5 py-3 text-sm font-bold text-dj-sur-accent shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-transform duration-200 ease-cgpt-geste hover:scale-[1.02] active:scale-[0.98]"
+            className="group flex items-center gap-2 rounded-xl bg-dj-gradient px-5 py-3 text-sm font-bold text-[#1A0D02] shadow-[0_4px_20px_rgba(184,134,11,0.25)] transition-transform duration-200 ease-cgpt-geste hover:scale-[1.02] active:scale-[0.98]"
           >
             <Bird size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
             {t("Ouvrir le chat")}

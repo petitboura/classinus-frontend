@@ -255,7 +255,7 @@ export function ChatSection() {
               <p className="text-sm text-dj-texte">{erreur ?? "Une erreur est survenue."}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-dj-sur-accent"
+                className="rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-[#1A0D02]"
               >
                 Réessayer
               </button>

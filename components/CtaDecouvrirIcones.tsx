@@ -37,7 +37,7 @@ export function CtaDecouvrirIcones() {
         href={CTA_CHAT_DECOUVRIR.href}
         aria-label={CTA_CHAT_DECOUVRIR.libelle}
         title={CTA_CHAT_DECOUVRIR.libelle}
-        className={`${CLASSES_BOUTON} bg-dj-accent-1 text-dj-sur-accent hover:bg-dj-accent-2`}
+        className={`${CLASSES_BOUTON} bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2`}
       >
         <MessageCircle size={18} aria-hidden="true" />
       </Link>

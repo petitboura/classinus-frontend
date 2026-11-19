@@ -82,7 +82,7 @@ export function CommentairesAgent({ agentId }: { agentId: string }) {
           <button
             type="submit"
             disabled={envoi || !brouillon.trim()}
-            className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="self-start rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Publier
           </button>

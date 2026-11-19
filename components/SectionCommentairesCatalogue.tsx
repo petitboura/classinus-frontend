@@ -204,7 +204,7 @@ export function SectionCommentairesCatalogue({
                   onClick={envoyerCommentaire}
                   disabled={envoiEnCours || !nouveauContenu.trim()}
                   aria-label="Envoyer le commentaire"
-                  className="flex-shrink-0 rounded-lg bg-dj-accent-1 p-2 text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                  className="flex-shrink-0 rounded-lg bg-dj-accent-1 p-2 text-[#1a0f06] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
                 >
                   <Send size={15} />
                 </button>

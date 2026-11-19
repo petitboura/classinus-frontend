@@ -110,7 +110,7 @@ export function EspaceDiffuser() {
               type="button"
               onClick={() => setOnglet("document")}
               className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
-                onglet === "document" ? "bg-dj-accent-1 text-dj-sur-accent" : "text-dj-texte-muet hover:text-dj-texte"
+                onglet === "document" ? "bg-dj-accent-1 text-[#1A0D02]" : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >
               Document
@@ -119,7 +119,7 @@ export function EspaceDiffuser() {
               type="button"
               onClick={() => setOnglet("lien")}
               className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
-                onglet === "lien" ? "bg-dj-accent-1 text-dj-sur-accent" : "text-dj-texte-muet hover:text-dj-texte"
+                onglet === "lien" ? "bg-dj-accent-1 text-[#1A0D02]" : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >
               Lien
@@ -170,7 +170,7 @@ export function EspaceDiffuser() {
           <button
             onClick={envoyer}
             disabled={!pretAEnvoyer || enCours}
-            className="mt-3 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-sm font-bold text-dj-sur-accent transition-opacity disabled:opacity-50"
+            className="mt-3 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-sm font-bold text-[#1A0D02] transition-opacity disabled:opacity-50"
           >
             {enCours ? "Diffusion…" : "Diffuser"}
           </button>

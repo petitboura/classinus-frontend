@@ -30,7 +30,7 @@ export function CtaDecouvrir() {
     >
       <Link
         href={CTA_CHAT_DECOUVRIR.href}
-        className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent-1 px-5 py-3 text-sm font-semibold text-dj-sur-accent transition-all duration-200 hover:bg-dj-accent-2 active:scale-[.98]"
+        className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent-1 px-5 py-3 text-sm font-semibold text-[#1A0D02] transition-all duration-200 hover:bg-dj-accent-2 active:scale-[.98]"
       >
         <MessageCircle size={16} aria-hidden="true" />
         {CTA_CHAT_DECOUVRIR.libelle}

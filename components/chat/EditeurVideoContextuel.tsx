@@ -334,7 +334,7 @@ export function EditeurVideoContextuel({
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
           {!conversationId && (
-            <div className="rounded-xl border border-dj-bordure-forte bg-dj-accent-1-conteneur p-3 text-sm text-dj-texte">
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-dj-texte">
               {t.conversationRequise}
             </div>
           )}
@@ -535,7 +535,7 @@ export function EditeurVideoContextuel({
               type="button"
               onClick={envoyer}
               disabled={!peutEnvoyer}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent-1 px-4 py-2.5 text-sm font-semibold text-dj-sur-accent shadow-sm transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-dj-accent-1 px-4 py-2.5 text-sm font-semibold text-[#1A0D02] shadow-sm transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
             >
               {t.demander}
             </button>

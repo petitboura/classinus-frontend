@@ -463,7 +463,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
             <button
               onClick={publier}
               disabled={!codePublicationId || !nomPublication.trim() || envoiPublication}
-              className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-dj-sur-accent hover:bg-dj-accent-2 disabled:opacity-50"
+              className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2 disabled:opacity-50"
             >
               {envoiPublication ? "Publication…" : "Publier"}
             </button>
@@ -591,7 +591,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
             </div>
             <button
               onClick={() => ouvrirCopie(apercu)}
-              className="flex items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-xs font-bold text-dj-sur-accent hover:bg-dj-accent-2"
+              className="flex items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2"
             >
               <Download size={14} /> Récupérer dans mon espace
             </button>
@@ -623,7 +623,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
             <button
               onClick={copierVersPerso}
               disabled={envoiCopie}
-              className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-dj-sur-accent hover:bg-dj-accent-2 disabled:opacity-50"
+              className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2 disabled:opacity-50"
             >
               {envoiCopie ? "Copie…" : "Récupérer"}
             </button>
@@ -649,7 +649,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
             <button
               onClick={enregistrerEdition}
               disabled={enregistrementEnCours}
-              className="rounded-md bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent disabled:opacity-50"
+              className="rounded-md bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] disabled:opacity-50"
             >
               {enregistrementEnCours ? "Enregistrement…" : "Enregistrer"}
             </button>

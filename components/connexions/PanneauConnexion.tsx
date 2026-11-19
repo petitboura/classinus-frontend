@@ -9,7 +9,7 @@ import { CadrePanneau } from "@/components/connexions/CadrePanneau";
 import { ActionsToujoursAutorisees } from "@/components/connexions/ActionsToujoursAutorisees";
 import { BadgePreversion, IndicateurEtatConnexion, type EtatConnexion } from "@/components/connexions/CarteConnexion";
 
-const BOUTON_PRINCIPAL = "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50";
+const BOUTON_PRINCIPAL = "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50";
 const BOUTON_SECONDAIRE = "inline-flex items-center justify-center gap-1.5 rounded-lg border border-dj-bordure px-4 py-2 text-sm font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50";
 
 // Panneau de la carte complète : texte entier, état, et saisie du jeton pour les services qui en

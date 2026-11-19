@@ -71,8 +71,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: estAndroidMobile ? "browser" : "standalone",
-    background_color: "#000000",
-    theme_color: "#000000",
+    background_color: "#0f0d0b",
+    theme_color: "#0f0d0b",
     icons: [
       { src: "/icone-48.png", sizes: "48x48", type: "image/png", purpose: "any" },
       { src: "/icone-72.png", sizes: "72x72", type: "image/png", purpose: "any" },

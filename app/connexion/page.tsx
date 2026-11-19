@@ -143,7 +143,7 @@ function FormulaireConnexion() {
               onClick={() => setMethode("email")}
               className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
                 methode === "email"
-                  ? "bg-dj-accent-1 text-dj-sur-accent"
+                  ? "bg-dj-accent-1 text-[#1A0D02]"
                   : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >
@@ -154,7 +154,7 @@ function FormulaireConnexion() {
               onClick={() => setMethode("telephone")}
               className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
                 methode === "telephone"
-                  ? "bg-dj-accent-1 text-dj-sur-accent"
+                  ? "bg-dj-accent-1 text-[#1A0D02]"
                   : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >

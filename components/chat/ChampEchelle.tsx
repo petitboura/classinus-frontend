@@ -41,7 +41,7 @@ export function ChampEchelle({
                 aria-pressed={selectionne}
                 className={`flex h-9 min-w-9 items-center justify-center rounded-cgpt-bouton border px-2 text-sm transition-colors ${
                   selectionne
-                    ? "border-dj-accent-1 bg-dj-accent-1 text-dj-sur-accent"
+                    ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02]"
                     : "border-dj-bordure bg-dj-surface-haute text-dj-texte hover:border-dj-bordure-forte"
                 } ${desactive ? "cursor-default opacity-60" : "cursor-pointer"}`}
               >

@@ -73,7 +73,7 @@ export function ActionsFichierPublic({
         <button
           onClick={ajouter}
           disabled={ajoutEnCours || ajoute}
-          className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 disabled:pointer-events-none disabled:opacity-70"
+          className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1a0f06] transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 disabled:pointer-events-none disabled:opacity-70"
         >
           {ajoutEnCours ? <Loader2 size={15} className="animate-spin" /> : ajoute ? <Check size={15} /> : <Library size={15} />}
           {ajoute ? "Ajouté" : "Ajouter à ma bibliothèque"}

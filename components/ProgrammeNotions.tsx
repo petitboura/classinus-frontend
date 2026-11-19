@@ -492,7 +492,7 @@ export function ProgrammeNotions() {
           placeholder={placeholder}
           className="min-w-0 flex-1 bg-transparent text-sm text-dj-texte outline-none placeholder:text-dj-texte-muet"
         />
-        <button type="submit" className="flex-shrink-0 rounded-md bg-dj-accent-1 px-2 py-1 text-xs font-bold text-dj-sur-accent">
+        <button type="submit" className="flex-shrink-0 rounded-md bg-dj-accent-1 px-2 py-1 text-xs font-bold text-[#1A0D02]">
           Ajouter
         </button>
         <button
@@ -733,7 +733,7 @@ export function ProgrammeNotions() {
                     <button
                       onClick={appliquerStructureProposee}
                       disabled={genererEnCours}
-                      className="rounded-md bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent disabled:opacity-50"
+                      className="rounded-md bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] disabled:opacity-50"
                     >
                       {genererEnCours ? "Application…" : "Appliquer"}
                     </button>
@@ -875,7 +875,7 @@ export function ProgrammeNotions() {
               <button
                 onClick={enregistrerEdition}
                 disabled={enregistrementEnCours}
-                className="rounded-md bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent disabled:opacity-50"
+                className="rounded-md bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] disabled:opacity-50"
               >
                 {enregistrementEnCours ? "Enregistrement…" : "Enregistrer"}
               </button>
@@ -943,7 +943,7 @@ export function ProgrammeNotions() {
                   type="button"
                   disabled={!cibleFusion}
                   onClick={() => fusionner(notionEnEdition.id)}
-                  className="flex-shrink-0 rounded-md bg-dj-accent-1 px-2 py-1 text-xs font-bold text-dj-sur-accent disabled:opacity-50"
+                  className="flex-shrink-0 rounded-md bg-dj-accent-1 px-2 py-1 text-xs font-bold text-[#1A0D02] disabled:opacity-50"
                 >
                   Fusionner
                 </button>

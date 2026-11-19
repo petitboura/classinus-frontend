@@ -151,7 +151,7 @@ export function EditionFiltresFichierModal({
         <button
           onClick={enregistrer}
           disabled={enregistrementEnCours}
-          className="flex items-center justify-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-2 text-sm font-medium text-dj-sur-accent transition-opacity disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
         >
           {enregistrementEnCours && <Loader2 size={14} className="animate-spin" />}
           Enregistrer

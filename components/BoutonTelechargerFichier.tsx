@@ -37,7 +37,7 @@ export function BoutonTelechargerFichier({
         onClick={() => void telecharger(url, nom)}
         disabled={etat?.statut === "encours"}
         className={
-          "flex flex-shrink-0 items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 " +
+          "flex flex-shrink-0 items-center justify-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1a0f06] transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 " +
           classeEtatTelechargement(etat) +
           " " +
           className

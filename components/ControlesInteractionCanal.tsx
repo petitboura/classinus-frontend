@@ -387,7 +387,7 @@ export function ControlesInteractionCanal({
   const classeBouton = (misEnAvant: boolean, occupe: boolean) =>
     `flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
       occupe
-        ? "border-dj-accent-1 bg-dj-accent-1 text-dj-sur-accent"
+        ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02]"
         : misEnAvant
           ? "border-dj-accent-1 bg-dj-surface text-dj-texte hover:bg-dj-surface-haute"
           : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
@@ -498,7 +498,7 @@ export function ControlesInteractionCanal({
                   onMouseDown={(e) => e.preventDefault()}
                   disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0 && !dessinAJoindre)}
                   aria-label="Envoyer le message"
-                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-dj-sur-accent transition-opacity disabled:opacity-40 ${
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1 text-[#1A0D02] transition-opacity disabled:opacity-40 ${
                     envoiEnCours ? "animate-pulse" : ""
                   }`}
                 >
@@ -534,7 +534,7 @@ export function ControlesInteractionCanal({
                     onClick={contexte.arreterTache}
                     aria-label="Arrêter la tâche en cours"
                     title="Arrêter la tâche en cours"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-dj-accent-1 bg-dj-accent-1 text-dj-sur-accent shadow-lg transition-colors hover:bg-dj-accent-2"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] shadow-lg transition-colors hover:bg-dj-accent-2"
                   >
                     <Square size={14} />
                   </motion.button>
@@ -765,7 +765,7 @@ export function ControlesInteractionCanal({
               onClick={() => void envoyerTexte().then((parti) => parti && fermerPleinEcran())}
               disabled={envoiEnCours || (!texteSaisi.trim() && piecesJointes.fichiers.length === 0 && !dessinAJoindre)}
               aria-label="Envoyer le message"
-              className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
+              className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >
               Envoyer <ArrowUp size={16} />
             </button>

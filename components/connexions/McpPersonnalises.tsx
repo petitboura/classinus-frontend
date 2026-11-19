@@ -205,7 +205,7 @@ export function McpPersonnalises() {
           <p className="mt-1 text-sm leading-6 text-dj-texte-muet">Ajoute les serveurs MCP distants que tu souhaites utiliser dans l’assistant Classinus. Chaque connexion reste liée à ton compte.</p>
         </div>
         <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto sm:flex-col sm:items-stretch">
-          <button type="button" onClick={() => { setErreur(null); setMessage(null); setFormulaire("nouveau"); }} disabled={!!enCours} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-2 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50">
+          <button type="button" onClick={() => { setErreur(null); setMessage(null); setFormulaire("nouveau"); }} disabled={!!enCours} className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">
             <Plus size={14} />Ajouter un serveur
           </button>
           {/* 27/10/2026, demande de Bourama : l'IA cherche le serveur officiel de l'outil et le propose dans une carte du chat. */}

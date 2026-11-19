@@ -43,8 +43,8 @@ const ACCENTS_EXTENSION: Record<string, { Icone: typeof FileText; classe: string
   xls: { Icone: FileSpreadsheet, classe: "text-emerald-400" },
   xlsx: { Icone: FileSpreadsheet, classe: "text-emerald-400" },
   csv: { Icone: FileSpreadsheet, classe: "text-emerald-400" },
-  ppt: { Icone: Presentation, classe: "text-dj-texte" },
-  pptx: { Icone: Presentation, classe: "text-dj-texte" },
+  ppt: { Icone: Presentation, classe: "text-orange-400" },
+  pptx: { Icone: Presentation, classe: "text-orange-400" },
 };
 
 function iconePilule(piece: PieceApercu): { Icone: typeof FileText; classe: string } {

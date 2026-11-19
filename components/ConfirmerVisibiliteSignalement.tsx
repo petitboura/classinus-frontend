@@ -83,7 +83,7 @@ export function ConfirmerVisibiliteSignalement({ signalementId }: { signalementI
               <button
                 onClick={() => setReponses((p) => ({ ...p, [c.id]: true }))}
                 className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                  reponses[c.id] === true ? "bg-dj-accent-1 text-dj-sur-accent" : "border border-dj-bordure text-dj-texte-muet"
+                  reponses[c.id] === true ? "bg-dj-accent-1 text-[#1A0D02]" : "border border-dj-bordure text-dj-texte-muet"
                 }`}
               >
                 Oui
@@ -104,7 +104,7 @@ export function ConfirmerVisibiliteSignalement({ signalementId }: { signalementI
       <button
         onClick={confirmer}
         disabled={enEnvoi || Object.keys(reponses).length < champsDemandes.length}
-        className="mt-3 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-sm font-medium text-dj-sur-accent disabled:opacity-50"
+        className="mt-3 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-sm font-medium text-[#1A0D02] disabled:opacity-50"
       >
         Confirmer
       </button>

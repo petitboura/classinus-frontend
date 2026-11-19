@@ -125,7 +125,7 @@ export function CanalEnDirectFlottant() {
             title={actif ? "Désactiver le canal en direct" : "Activer le canal en direct"}
             className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition-colors ${
               actif
-                ? "border-dj-accent-1 bg-dj-accent-1 text-dj-sur-accent hover:bg-dj-accent-2"
+                ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
                 : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
             }`}
           >

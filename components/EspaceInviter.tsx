@@ -107,7 +107,7 @@ export function EspaceInviter() {
           <button
             onClick={enregistrer}
             disabled={enCours || !texte.trim()}
-            className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+            className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {enCours ? "Enregistrement…" : contenuExistant ? "Mettre à jour" : "Enregistrer et générer le code"}
           </button>

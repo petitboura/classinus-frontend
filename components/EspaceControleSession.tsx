@@ -195,7 +195,7 @@ export function EspaceControleSession({ sansEnTete = false }: { sansEnTete?: boo
           </div>
           <button
             onClick={ouvrirReglages}
-            className="flex w-fit items-center gap-2 self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
+            className="flex w-fit items-center gap-2 self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
           >
             <Settings2 size={14} />
             Ouvrir les réglages
@@ -219,7 +219,7 @@ export function EspaceControleSession({ sansEnTete = false }: { sansEnTete?: boo
                     onClick={() => choisirDureePredefinie(minutes)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                       dureeChoisieMin === minutes && dureeLibre === ""
-                        ? "bg-dj-accent-1 text-dj-sur-accent"
+                        ? "bg-dj-accent-1 text-[#1A0D02]"
                         : "border border-dj-bordure bg-dj-surface text-dj-texte hover:bg-dj-surface-haute"
                     }`}
                   >
@@ -247,7 +247,7 @@ export function EspaceControleSession({ sansEnTete = false }: { sansEnTete?: boo
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50 ${
               sessionActive
                 ? "bg-dj-surface-haute text-dj-texte hover:bg-dj-bordure"
-                : "bg-dj-accent-1 text-dj-sur-accent hover:bg-dj-accent-2"
+                : "bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
             }`}
           >
             {sessionActive ? <Square size={14} /> : <Play size={14} />}

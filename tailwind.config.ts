@@ -54,18 +54,12 @@ const config: Config = {
           // commentaire sur --dj-accent-1-conteneur dans globals.css.
           "accent-1-conteneur": "var(--dj-accent-1-conteneur)",
           "accent-2": "var(--dj-accent-2)",
-          // Noir et blanc : texte posé SUR un fond --dj-accent-1 (blanc sur noir en clair, noir sur blanc en sombre).
-          "sur-accent": "var(--dj-sur-accent)",
           texte: "var(--dj-texte)",
           "texte-muet": "var(--dj-texte-muet)",
           succes: "var(--dj-succes)",
           inactif: "var(--dj-inactif)",
         },
       },
-      // Noir et blanc : la bordure par défaut de Tailwind est un gris bleuté.
-      // On la remplace par le ton de bordure du thème.
-      borderColor: { DEFAULT: "var(--dj-bordure)" },
-      divideColor: { DEFAULT: "var(--dj-bordure)" },
       backgroundImage: {
         "dj-gradient": "var(--dj-gradient)",
         "dj-hero-glow": "var(--dj-hero-glow)",

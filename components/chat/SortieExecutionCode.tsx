@@ -61,7 +61,7 @@ export function FormulaireValeursPrealables({
       <div className="flex items-center gap-2 pt-1">
         <button
           type="submit"
-          className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-medium text-dj-sur-accent transition-opacity hover:opacity-90"
+          className="rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
         >
           Lancer
         </button>

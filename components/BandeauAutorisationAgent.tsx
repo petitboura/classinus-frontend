@@ -20,7 +20,7 @@ const LIBELLES: Record<ChoixAutorisation, string> = {
 };
 
 const CLASSES_PRINCIPAL =
-  "rounded-lg border border-dj-accent-1 bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-dj-sur-accent hover:bg-dj-accent-2";
+  "rounded-lg border border-dj-accent-1 bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] hover:bg-dj-accent-2";
 const CLASSES_SECONDAIRE =
   "rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface";
 

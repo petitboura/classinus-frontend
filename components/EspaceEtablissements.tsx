@@ -224,7 +224,7 @@ function BoutonsRattachement({
       <button
         onClick={onConnecter}
         disabled={enCours !== null}
-        className="flex items-center gap-1 rounded-cgpt-bouton bg-dj-accent-1 px-2.5 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+        className="flex items-center gap-1 rounded-cgpt-bouton bg-dj-accent-1 px-2.5 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
       >
         <Link2 size={13} /> {enCours === "connecter" ? "..." : "Se connecter"}
       </button>

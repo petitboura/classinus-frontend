@@ -221,7 +221,7 @@ export function AuditComplet() {
     return (
       <div className="flex animate-dj-fade-in-rapide flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-surface p-4">
         <p className="text-sm text-dj-texte-muet">Tu n&apos;as pas encore créé de code à partager.</p>
-        <Link href="/bureau/codes" className="self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2">
+        <Link href="/bureau/codes" className="self-start rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2">
           Créer un code
         </Link>
       </div>

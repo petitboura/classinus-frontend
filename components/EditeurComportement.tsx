@@ -570,7 +570,7 @@ export function EditeurComportement({
               <button
                 onClick={enregistrer}
                 disabled={enregistrementEnCours || suppressionEnCours || !texteOuvert.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 <Check size={14} /> {enregistrementEnCours ? "Enregistrement…" : estCreation ? "Créer" : "Enregistrer"}
               </button>
@@ -649,7 +649,7 @@ export function EditeurComportement({
               <button
                 onClick={enregistrerSkill}
                 disabled={skillEnregistrementEnCours || skillChargement || !skillOuvert.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : categoriePreset ? "Enregistrer" : "Enregistrer le skill"}
               </button>

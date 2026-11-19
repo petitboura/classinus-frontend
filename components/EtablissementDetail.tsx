@@ -195,7 +195,7 @@ function ActionsRattachement({
       <button
         onClick={onConnecter}
         disabled={enCours !== null}
-        className="rounded-cgpt-bouton bg-dj-accent-1 px-2.5 py-1 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+        className="rounded-cgpt-bouton bg-dj-accent-1 px-2.5 py-1 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
       >
         {enCours === "connecter" ? "..." : "Se connecter"}
       </button>

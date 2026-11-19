@@ -36,7 +36,7 @@ import { estPageChat } from "@/lib/routesApp";
 // ne plus paraître floues/petites. Badge de fond noir arrondi retiré
 // (pas la norme demandée) : l'icône flotte seule au dessus du contenu,
 // donc sa couleur suit désormais le thème (text-dj-texte) au lieu d'un
-// blanc fixe, sinon invisible sur le fond clair de l'app (blanc).
+// blanc fixe, sinon invisible sur le fond clair de l'app (#faf8f5).
 //
 // 03/09/2026, test Bourama (même diagnostic et même principe que
 // MenuHamburgerWeb.tsx : ce panneau ne pose plus lui-même une marque

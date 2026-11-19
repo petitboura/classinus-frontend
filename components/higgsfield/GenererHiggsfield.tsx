@@ -577,7 +577,7 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
                     </button>
                   )}
                 </div>
-                {fichiersImage.length === 0 && <p className="text-xs text-dj-texte">Au moins 1 image requise (ton visage ou ton personnage).</p>}
+                {fichiersImage.length === 0 && <p className="text-xs text-amber-600">Au moins 1 image requise (ton visage ou ton personnage).</p>}
               </div>
             </>
           )}

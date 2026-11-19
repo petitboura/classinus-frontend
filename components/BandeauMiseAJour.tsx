@@ -29,7 +29,7 @@ export function BandeauMiseAJour() {
       </div>
       <button
         onClick={telecharger}
-        className="flex-shrink-0 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
+        className="flex-shrink-0 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
       >
         {t("Télécharger")}
       </button>

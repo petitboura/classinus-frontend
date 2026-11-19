@@ -73,7 +73,7 @@ export function LanceurMinuteur({
       >
         <Timer size={16} strokeWidth={TRAIT_ICONE_SECTION} />
         {masques.length > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-dj-accent-1 px-0.5 text-[9px] font-semibold text-dj-sur-accent">
+          <span className="absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-dj-accent-1 px-0.5 text-[9px] font-semibold text-[#1A0D02]">
             {masques.length}
           </span>
         )}
@@ -136,7 +136,7 @@ export function LanceurMinuteur({
                   type="button"
                   disabled={secondesSaisies === null}
                   onClick={() => secondesSaisies !== null && lancer(secondesSaisies)}
-                  className="h-8 rounded-cgpt-bouton bg-dj-accent-1 px-3 text-xs font-medium text-dj-sur-accent transition-opacity disabled:opacity-40"
+                  className="h-8 rounded-cgpt-bouton bg-dj-accent-1 px-3 text-xs font-medium text-[#1A0D02] transition-opacity disabled:opacity-40"
                 >
                   {t.lancer}
                 </button>

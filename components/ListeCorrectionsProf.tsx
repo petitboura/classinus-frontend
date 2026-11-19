@@ -284,7 +284,7 @@ export function ListeCorrectionsProf() {
               <div className="mt-2.5 flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => discuter(s)}
-                  className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-sm font-medium text-dj-sur-accent transition-transform hover:scale-[1.02]"
+                  className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-sm font-medium text-[#1A0D02] transition-transform hover:scale-[1.02]"
                 >
                   <MessageSquareText size={14} />
                   Discuter

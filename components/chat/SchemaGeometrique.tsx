@@ -316,7 +316,7 @@ export function SchemaGeometrique({ code }: { code: string }) {
               <polygon
                 key={index}
                 points={coords}
-                fill={el.rempli ? "var(--dj-accent-1-conteneur)" : "none"}
+                fill={el.rempli ? "rgba(227,179,65,0.18)" : "none"}
                 stroke={COULEUR_TRAIT}
                 strokeWidth={2}
                 strokeLinejoin="round"
