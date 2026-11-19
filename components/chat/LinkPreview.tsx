@@ -39,6 +39,16 @@ import { BoutonCopierLien } from "./BoutonCopierLien";
 // réseau, timeout...), on retombe sur un lien texte classique -- jamais de
 // carte vide ou cassée. Pendant le chargement, un squelette discret plutôt
 // qu'un vide brutal (cohérent avec la demande de fluidité de Bourama).
+function estPlateformeVideo(href: string): boolean {
+  try {
+    const hote = new URL(href).hostname.replace(/^www\./, "");
+    return ["vimeo.com", "dailymotion.com", "dai.ly", "tiktok.com", "facebook.com", "fb.watch", "twitch.tv", "instagram.com", "streamable.com", "rumble.com"]
+      .some((domaine) => hote === domaine || hote.endsWith("." + domaine));
+  } catch {
+    return false;
+  }
+}
+
 export function idYoutube(href: string): string | null {
   const motifs = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
@@ -162,8 +172,9 @@ export function LinkPreview({
   const [enLecture, setEnLecture] = useState(false);
   const [fichier, setFichier] = useState<FichierDetecte | null>(() => memoireApercus.lire(href)?.fichier ?? null);
   const idVideo = idYoutube(href);
-  // Carte seulement pour YouTube et pour l'aperçu ouvert au clic ; partout ailleurs, un lien souligné.
-  const enTexte = !idVideo && !detaille;
+  const videoExterne = !idVideo && estPlateformeVideo(href);
+  // Les plateformes vidéo reconnues ont aussi une vignette ; les autres liens restent soulignés.
+  const enTexte = !idVideo && !videoExterne && !detaille;
   const classeTitreModele = detaille ? "break-words" : titreDuModele ? "line-clamp-2" : "truncate";
 
   useEffect(() => {
@@ -251,7 +262,7 @@ export function LinkPreview({
         </span>
       );
     }
-    return idVideo ? (
+    return idVideo || videoExterne ? (
       <span className="my-2 block w-full max-w-md overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface">
         <Skeleton as="span" className="block aspect-video w-full" />
         <span className="block space-y-2 p-3">
@@ -352,6 +363,31 @@ export function LinkPreview({
         </span>
       </button>
       {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-2 top-2" />}
+      </span>
+    );
+  }
+
+  if (videoExterne) {
+    return (
+      <span className="my-2 block w-full max-w-md animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface">
+        <a href={href} target="_blank" rel="noopener noreferrer" className="block no-underline">
+          {apercu!.image && (
+            <span className="relative block aspect-video w-full overflow-hidden bg-dj-surface-haute">
+              {/* eslint-disable-next-line @next/next/no-img-element -- miniature du site vidéo */}
+              <img src={apercu!.image} alt="" className="h-full w-full object-cover" />
+              <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60">
+                  <Play size={20} className="fill-white text-white" />
+                </span>
+              </span>
+            </span>
+          )}
+          <span className="block p-3">
+            <span className="block truncate text-sm text-dj-texte">{titreDuModele || apercu!.titre || texteLien}</span>
+            <span className="block truncate text-[12px] text-dj-texte-muet">{adresseSite(href, apercu!.siteName)}</span>
+          </span>
+        </a>
+        {!sansBoutonCopier && <BoutonCopierLien href={href} variante="survol" className="right-2 top-2" />}
       </span>
     );
   }
