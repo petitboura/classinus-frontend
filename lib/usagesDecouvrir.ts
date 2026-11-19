@@ -327,7 +327,7 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
   {
     question: "Pourquoi certains modèles portent-ils un verrou ?",
     reponse:
-      "Le verrou indique qu'un modèle est présenté dans l'interface, mais qu'il n'est pas encore activé pour être utilisé. Un badge Max signale les modèles les plus puissants. Il reste indisponible à la sélection, mais un clic dessus te permet de rejoindre une liste d'attente, sans aucun paiement, pour être prévenu de son ouverture.",
+      "Le verrou indique qu'un modèle est présenté dans l'interface, mais qu'il n'est pas encore activé pour être utilisé. Un badge Max signale les modèles les plus puissants. Il reste indisponible à la sélection, mais un clic dessus ouvre la page des abonnements, où tu choisis un palier et où se trouve le bouton Payer.",
   },
   {
     question: "Puis-je faire analyser mon code Python dans Thonny ?",
