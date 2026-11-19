@@ -93,13 +93,8 @@ export function remplirTexte(texte: string, valeurs: Record<string, string | num
   return texte.replace(/\{(\w+)\}/g, (reste, cle: string) => (cle in valeurs ? String(valeurs[cle]) : reste));
 }
 
-// Codes ISO des pays proposés. Seuls les codes sont ici : le nom affiché vient d'Intl.DisplayNames,
+// Les pays proposés et leurs indicatifs sont dans lib/paysTelephone.ts. Le nom affiché vient d'Intl.DisplayNames,
 // dans la langue de l'interface, donc il n'y a aucun texte à traduire à la main.
-export const CODES_PAYS = [
-  "TN", "DZ", "MA", "SN", "CI", "ML", "BF", "NE", "GN", "BJ", "TG", "CM", "GA", "CG", "CD", "MG",
-  "MR", "TD", "RW", "BI", "DJ", "KM", "FR", "BE", "CH", "CA", "US", "GB", "DE", "ES", "IT",
-] as const;
-
 export function nomDuPays(code: string, locale: string): string {
   try {
     return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;

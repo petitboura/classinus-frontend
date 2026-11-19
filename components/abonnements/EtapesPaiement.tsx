@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
 import { Check, LoaderCircle } from "lucide-react";
+import { ChampTelephone } from "@/components/abonnements/ChampTelephone";
 import { LogoMoyenPaiement } from "@/components/abonnements/LogoMoyenPaiement";
 import { CaseACocher } from "@/components/CaseACocher";
-import { SelectPersonnalise, type OptionMenu } from "@/components/SelectPersonnalise";
-import { CODES_PAYS, nomDuPays } from "@/lib/listeAttente";
+import { chiffresApresIndicatif } from "@/lib/paysTelephone";
 
 // Les cinq écrans du parcours de paiement de la page Abonnements (19/11/2026, demande de Bourama).
 // Chaque écran ne fait qu'afficher et prévenir le parent ; la logique est dans ParcoursPaiement.tsx.
@@ -164,35 +163,24 @@ export function EtapeFormulaire({
   onValider: () => void;
   onRetour: () => void;
 }) {
-  const optionsPays: OptionMenu[] = useMemo(
-    () =>
-      CODES_PAYS.map((code) => ({ id: code, label: nomDuPays(code, locale) })).sort((a, b) =>
-        a.label.localeCompare(b.label, locale),
-      ),
-    [locale],
-  );
-  const valide = pays !== "" && whatsapp.replace(/\D/g, "").length >= 6 && !envoi;
+  // Au moins 6 chiffres après l'indicatif du pays (même seuil qu'avant, mais sur le numéro seul).
+  const valide = pays !== "" && chiffresApresIndicatif(whatsapp, pays).length >= 6 && !envoi;
 
   return (
     <div className="flex flex-col gap-4">
       <h2 className={TITRE_ECRAN}>{t("attente_pay_form_titre")}</h2>
       <p className="text-base text-dj-texte-muet">{t("attente_pay_form_detail")}</p>
       <div className="flex flex-col gap-1.5">
-        <span className={TITRE_CHAMP}>{t("attente_pay_pays_label")}</span>
-        <SelectPersonnalise options={optionsPays} valeur={pays} onChange={onPays} placeholder="" />
-      </div>
-      <label className="flex flex-col gap-1.5">
         <span className={TITRE_CHAMP}>{t("attente_pay_whatsapp_label")}</span>
-        <input
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          maxLength={32}
-          value={whatsapp}
-          onChange={(e) => onWhatsapp(e.target.value)}
-          className="rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2.5 text-base text-dj-texte outline-none transition-colors focus:border-dj-accent-1"
+        <ChampTelephone
+          locale={locale}
+          pays={pays}
+          onPays={onPays}
+          numero={whatsapp}
+          onNumero={onWhatsapp}
+          libellePays={t("attente_pay_pays_label")}
         />
-      </label>
+      </div>
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
       <button type="button" onClick={onValider} disabled={!valide} className={BOUTON_PRINCIPAL}>
         {envoi && <LoaderCircle size={14} className="animate-spin" />}

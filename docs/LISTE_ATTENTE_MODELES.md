@@ -23,14 +23,16 @@ The page scrolls like any page, with a "Back" button at the top that returns to 
 | `components/abonnements/SqueletteAbonnements.tsx` | The loading skeleton, block by block like the real page: the three cards (name, phrase, price, button, check list) and the table (title rows, 16 + 7 rows with check, clock and text cells), with the same containers and line heights so nothing jumps when the content arrives. If the real content changes a lot, adjust the widths and row counts in this file. |
 | `components/chat/CartePalierListeAttente.tsx` | One plan card: name, phrase, price, Pay button, included list and an optional badge. |
 | `components/chat/SelecteurModeleHaut.tsx` | The picker: a greyed out model now opens the plans page, and the first funnel steps are noted here. |
-| `lib/listeAttente.ts` | Backend calls, funnel steps, the source (web, android, ios, pc) and the country list. |
+| `components/abonnements/ChampTelephone.tsx` | The phone number field of the last payment step: a country picker (flag and dial code) on the left, the number on the right. Picking a country puts its dial code in the number; typing a dial code (+221...) shows the country by itself. No native `<select>`: the list opens with `FlottantAncre`. |
+| `lib/paysTelephone.ts` | The proposed countries and their dial codes (the 54 African countries, plus France, Belgium, Switzerland, the United States, Canada, the United Kingdom, Germany, Spain and Italy), and the small functions that read a typed number. |
+| `lib/listeAttente.ts` | Backend calls, funnel steps, the source (web, android, ios, pc) and the country name helper. |
 | `lib/erreurs.ts` | The `LISTE_ATTENTE_*` error codes, in French and English. |
 
 ## Nothing is hard coded
 
 - Plans (price and monthly credit) come from the backend, from the `paliers_liste_attente` table. Only the price is shown on the page; the credit amount stays in the data but is never displayed.
 - Every text of the form comes from the backend, from `textes_modeles_llm` (keys starting with `attente_`), in French and English. If a key is missing in the chosen language, the French text is used; a raw key is never shown. The comparison table comes from `attente_comp_ordre`'s sections: `attente_comp_<id>_titre` and `attente_comp_<id>_lignes`, one row per `|`, written `label#value plan 1#value plan 2#value plan 3` (a value is `oui`, `non`, `bientot` or a short text). A label with a list in brackets, such as the model names, is shown as the text with the list below it, items separated by a thin vertical line. The old keys `attente_cap_*` and `attente_palier_<price>_points` are no longer read. An optional badge on a plan comes from `attente_palier_<price>_badge`: no text, no badge.
-- Country names come from the browser (`Intl.DisplayNames`) in the interface language, so none is translated by hand. Only the ISO codes of the proposed countries are in `lib/listeAttente.ts`.
+- Country names come from the browser (`Intl.DisplayNames`) in the interface language, so none is translated by hand. Only the ISO codes and dial codes of the proposed countries are in `lib/paysTelephone.ts`. The server keeps the country code and the full number (dial code included, for example `+221 771234567`) as they arrive and does not check them against a list. Flags are drawn from the country code with emoji: Windows does not draw emoji flags (two letters show instead), so a flag image package would be needed to see them there.
 
 ## Funnel steps are never blocking
 
