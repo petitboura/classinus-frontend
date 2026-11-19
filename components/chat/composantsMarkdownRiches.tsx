@@ -146,8 +146,14 @@ function CodeMarkdown({ children }: { children?: ReactNode }) {
   );
 }
 
-function ImgMarkdown({ src, alt }: { src?: string | Blob; alt?: string }) {
-  return <ImageMessage src={typeof src === "string" ? src : undefined} alt={alt} />;
+function ImgMarkdown({ src, alt, title }: { src?: string | Blob; alt?: string; title?: string }) {
+  return (
+    <ImageMessage
+      src={typeof src === "string" ? src : undefined}
+      alt={alt}
+      sourceUrl={typeof title === "string" ? title : undefined}
+    />
+  );
 }
 
 function TableMarkdown({ children }: { children?: ReactNode }) {
@@ -288,6 +294,7 @@ function ParagrapheMarkdown({ children }: { children?: ReactNode }) {
     (e) => !(typeof e === "string" && e.trim() === "") && !(isValidElement(e) && e.type === "br"),
   );
   if (enfants.length >= 2 && enfants.every(estMediaPlace)) {
+    const uniquementImages = enfants.every((enfant) => isValidElement(enfant) && enfant.type === ImgMarkdown);
     const imagesDeLaRangee: ImageDeRangee[] = enfants.flatMap((e) => {
       if (!isValidElement(e) || e.type !== ImgMarkdown) return [];
       const props = e.props as { src?: unknown; alt?: string };
@@ -295,11 +302,21 @@ function ParagrapheMarkdown({ children }: { children?: ReactNode }) {
     });
     return (
       <ContexteRangeeImages.Provider value={imagesDeLaRangee}>
-      <div className="my-2 flex w-full snap-x items-start gap-3 overflow-x-auto overscroll-x-contain pb-1">
+      <div
+        className={
+          uniquementImages
+            ? "my-3 grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            : "my-2 flex w-full snap-x items-start gap-3 overflow-x-auto overscroll-x-contain pb-1"
+        }
+      >
         {enfants.map((enfant, i) => (
           <div
             key={i}
-            className={`shrink-0 snap-start ${isValidElement(enfant) && enfant.type === ImgMarkdown ? "" : "w-72 sm:w-80"}`}
+            className={
+              uniquementImages
+                ? "min-w-0"
+                : `shrink-0 snap-start ${isValidElement(enfant) && enfant.type === ImgMarkdown ? "" : "w-72 sm:w-80"}`
+            }
           >
             {enfant}
           </div>
