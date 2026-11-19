@@ -6,72 +6,119 @@ import { VisionneuseImage } from "./VisionneuseImage";
 import { ContexteRangeeImages } from "./RangeeImagesContexte";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
 
-// Remplace le <img> par défaut de ReactMarkdown (![alt](url) en markdown).
-// Trois problèmes réglés par rapport au <img> nu :
-//   1. Saut de layout : rien ne réserve d'espace tant que l'image n'a pas
-//      chargé -> les messages en dessous "sautent" au chargement. Ici on
-//      démarre invisible (opacity-0) et on ne fait le fondu qu'au onLoad,
-//      dans un conteneur qui a déjà sa taille max définie.
-//   2. Zoom : clic pour agrandir en plein écran (lightbox), pratique pour
-//      lire un diagramme ou un tableau capturé en image.
-//   3. Échec de chargement (2026-07-20, bug trouvé par Bourama en test réel
-//      -- le modèle avait halluciné une URL d'image, cassée au chargement) :
-//      sans onError, l'image restait en opacity-0 pour toujours -> case
-//      grise vide, aucun signal que quelque chose s'est mal passé. Fallback
-//      explicite désormais : icône + lien pour ouvrir l'URL directement
-//      (utile si l'image existe mais que le domaine bloque l'intégration).
-// 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
-export function ImageMessage({ src, alt }: { src?: string; alt?: string }) {
+// Le title Markdown contient la page d'origine de l'image. Le badge affiche
+// le favicon de ce domaine et ouvre cette page, jamais le moteur de recherche.
+export function ImageMessage({
+  src,
+  alt,
+  sourceUrl,
+}: {
+  src?: string;
+  alt?: string;
+  sourceUrl?: string;
+}) {
   const [chargee, setChargee] = useState(false);
   const [enErreur, setEnErreur] = useState(false);
   const [ouverte, setOuverte] = useState(false);
+  const [iconeSourceEnErreur, setIconeSourceEnErreur] = useState(false);
   const rangee = useContext(ContexteRangeeImages);
+  const dansGalerie = !!rangee && rangee.length > 1;
+
+  let pageSource: string | undefined;
+  let domaineSource: string | undefined;
+  if (sourceUrl) {
+    try {
+      const url = new URL(sourceUrl);
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        pageSource = url.href;
+        domaineSource = url.hostname.replace(/^www\\./i, "");
+      }
+    } catch {
+      // Une URL de provenance absente ou invalide ne produit aucun badge.
+    }
+  }
 
   if (!src) return null;
 
-  // 12/09/2026, Bourama : vrai téléchargement système sur Android (au
-  // lieu du fetch+blob web ici depuis toujours) -- voir lib/telecharger.ts.
   function telecharger() {
     telechargerFichier(src!, alt || "image");
   }
 
+  const badgeSource = pageSource && domaineSource && !iconeSourceEnErreur ? (
+    <a
+      href={pageSource}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={"Source de l’image : " + domaineSource}
+      aria-label={"Ouvrir la source de l’image : " + domaineSource}
+      onClick={(event) => event.stopPropagation()}
+      className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/25 bg-black/65 p-1 shadow-md backdrop-blur-sm transition-transform hover:scale-110"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- favicon du site source, domaine dynamique */}
+      <img
+        src={"https://www.google.com/s2/favicons?sz=32&domain=" + encodeURIComponent(domaineSource)}
+        alt=""
+        width={18}
+        height={18}
+        loading="lazy"
+        decoding="async"
+        onError={() => setIconeSourceEnErreur(true)}
+        className="h-[18px] w-[18px] rounded-[3px]"
+      />
+    </a>
+  ) : null;
+
   if (enErreur) {
     return (
-      <a
-        href={src}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="my-2 flex w-fit max-w-full animate-dj-fade-in items-center gap-2.5 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 no-underline text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
-      >
-        <ImageOff size={16} className="shrink-0" />
-        <span className="min-w-0 truncate text-sm">{alt || "Image indisponible"}</span>
-        <ExternalLink size={13} className="ml-1 shrink-0" />
-      </a>
+      <div className="relative my-2 w-fit max-w-full">
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-fit max-w-full animate-dj-fade-in items-center gap-2.5 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 no-underline text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+        >
+          <ImageOff size={16} className="shrink-0" />
+          <span className="min-w-0 truncate text-sm">{alt || "Image indisponible"}</span>
+          <ExternalLink size={13} className="ml-1 shrink-0" />
+        </a>
+        {badgeSource}
+      </div>
     );
   }
 
   return (
     <>
-      <button
-        onClick={() => chargee && setOuverte(true)}
-        className="my-2 block max-h-96 overflow-hidden rounded-xl"
-        aria-label={alt || "Agrandir l'image"}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique fournie par le modèle, pas un asset local optimisable */}
-        <img
-          src={src}
-          alt={alt || ""}
-          onLoad={() => setChargee(true)}
-          onError={() => setEnErreur(true)}
-          className={`max-h-96 w-auto transition-opacity duration-500 ${chargee ? "opacity-100" : "opacity-0"}`}
-        />
-      </button>
+      <div className={"relative " + (dansGalerie ? "group w-full min-w-0" : "my-2 w-fit max-w-full")}>
+        <button
+          type="button"
+          onClick={() => chargee && setOuverte(true)}
+          className={
+            dansGalerie
+              ? "relative block aspect-[4/3] w-full overflow-hidden rounded-xl bg-dj-surface-haute"
+              : "block max-h-96 overflow-hidden rounded-xl"
+          }
+          aria-label={alt || "Agrandir l'image"}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- image distante, URL fournie par la recherche */}
+          <img
+            src={src}
+            alt={alt || ""}
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setChargee(true)}
+            onError={() => setEnErreur(true)}
+            className={
+              dansGalerie
+                ? "h-full w-full object-cover transition-[opacity,transform] duration-300 " +
+                  (chargee ? "opacity-100 group-hover:scale-[1.02]" : "opacity-0")
+                : "max-h-96 w-auto transition-opacity duration-500 " + (chargee ? "opacity-100" : "opacity-0")
+            }
+          />
+        </button>
+        {badgeSource}
+      </div>
 
       {ouverte && (
-        // Consolidé (audit 25/08/2026) dans VisionneuseImage.tsx -- ce
-        // fichier était la seule des 4 copies déjà corrigée pour le bouton
-        // "Fermer" sans onClick propre, ce correctif vit maintenant dans le
-        // composant partagé.
         <VisionneuseImage
           src={src}
           alt={alt}
