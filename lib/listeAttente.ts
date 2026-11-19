@@ -12,6 +12,11 @@ export type PalierListeAttente = { prix_usd: number; credit_usd: number; ordre: 
 // Une seule liste d'attente par personne (17/11/2026) : modele_id est le modele cliqué à l'inscription.
 export type InscriptionListeAttente = { modele_id: string; palier_prix: number; profil: Profil; statut: string };
 
+// Un modèle montré sur la page des abonnements : son nom et, pour les modèles les plus puissants, un
+// badge par langue (ex. "Max"). Groupés par entreprise, du plus puissant au moins puissant.
+export type ModelePageAbonnements = { label: string; groupe: number | null; badge: Record<string, string> };
+export type EntrepriseModeles = { distributeur: string; nom: string; modeles: ModelePageAbonnements[] };
+
 export type ConfigListeAttente = {
   paliers: PalierListeAttente[];
   // Par langue puis par clé : { fr: { attente_titre: "..." }, en: { ... } }.
@@ -19,6 +24,8 @@ export type ConfigListeAttente = {
   // L'inscription active de la personne, ou null si elle n'est pas encore sur la liste.
   inscription: InscriptionListeAttente | null;
   profils: Profil[];
+  // Les modèles de la page (même source que le sélecteur du chat). Absent ou vide : pas de tableau.
+  modeles?: EntrepriseModeles[];
 };
 
 export type PayloadInscription = {

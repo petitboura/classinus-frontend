@@ -8,6 +8,7 @@ import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { SelectPersonnalise, type OptionMenu } from "@/components/SelectPersonnalise";
 import { Skeleton } from "@/components/Skeleton";
 import { CartePalierListeAttente } from "@/components/chat/CartePalierListeAttente";
+import { CapacitesParCategorie } from "@/components/abonnements/CapacitesParCategorie";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { obtenirLocale } from "@/lib/i18n/locale";
 import {
@@ -32,10 +33,10 @@ import {
 // n'est écrit en dur ici. Voir api/liste_attente.py côté backend.
 
 const BOUTON_PRINCIPAL =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-5 py-2.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-5 py-3 text-base font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:cursor-not-allowed disabled:opacity-50";
 const BOUTON_SECONDAIRE =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-dj-bordure px-4 py-2.5 text-sm font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50";
-const TITRE_CHAMP = "text-xs font-semibold text-dj-texte-muet";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg border border-dj-bordure px-4 py-3 text-base font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50";
+const TITRE_CHAMP = "text-sm font-semibold text-dj-texte-muet sm:text-base";
 
 type Etat = "formulaire" | "deja_inscrit" | "merci" | "desinscrit";
 
@@ -152,26 +153,26 @@ export function PageAbonnements() {
         <button
           type="button"
           onClick={revenir}
-          className="-ml-2 inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          className="-ml-2 inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-base font-medium text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={18} />
           {libelleRetour}
         </button>
 
         <div className="flex flex-col gap-3">
           {modeleLabel && (
-            <span className="w-fit max-w-full truncate rounded-full border border-dj-bordure bg-dj-surface-haute px-2.5 py-0.5 text-[11px] font-semibold text-dj-texte-muet">
+            <span className="w-fit max-w-full truncate rounded-full border border-dj-bordure bg-dj-surface-haute px-3 py-1 text-sm font-semibold text-dj-texte-muet">
               {modeleLabel}
             </span>
           )}
-          <h1 className="text-2xl font-bold text-dj-texte sm:text-3xl">
+          <h1 className="text-3xl font-bold text-dj-texte sm:text-4xl">
             {config ? t("attente_titre") : <Skeleton className="h-8 w-64 rounded" />}
           </h1>
-          {config && etat === "formulaire" && <p className="max-w-2xl text-sm text-dj-texte sm:text-base">{t("attente_intro")}</p>}
+          {config && etat === "formulaire" && <p className="max-w-2xl text-base text-dj-texte sm:text-lg">{t("attente_intro")}</p>}
         </div>
       </header>
 
-      {erreurChargement && <p className="text-sm text-[var(--dj-erreur)]">{erreurChargement}</p>}
+      {erreurChargement && <p className="text-base text-[var(--dj-erreur)]">{erreurChargement}</p>}
 
       {!config && !erreurChargement && (
         <div className="flex flex-col gap-4" aria-hidden>
@@ -188,12 +189,14 @@ export function PageAbonnements() {
 
       {config && etat === "formulaire" && (
         <div className="flex animate-dj-fade-in-rapide flex-col gap-8 motion-reduce:animate-none">
-          <p className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2.5 text-xs font-medium text-dj-texte sm:text-sm">
+          <p className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-sm font-medium text-dj-texte sm:text-base">
             {t("attente_aucun_paiement")}
           </p>
 
+          <CapacitesParCategorie t={t} locale={locale} modeles={config.modeles ?? []} />
+
           <section role="radiogroup" aria-label={t("attente_palier_label")} className="flex flex-col gap-3">
-            <h2 className="text-sm font-bold text-dj-texte">{t("attente_palier_label")}</h2>
+            <h2 className="text-xl font-bold text-dj-texte sm:text-2xl">{t("attente_palier_label")}</h2>
             <div className="grid gap-4 pt-2 md:grid-cols-3">
               {config.paliers.map((p) => (
                 <CartePalierListeAttente
@@ -220,7 +223,7 @@ export function PageAbonnements() {
                       role="radio"
                       aria-checked={choisi}
                       onClick={() => setProfil(p)}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors sm:text-sm ${
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors sm:text-base ${
                         choisi
                           ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02]"
                           : "border-dj-bordure text-dj-texte hover:bg-dj-surface-haute"
@@ -247,7 +250,7 @@ export function PageAbonnements() {
                   maxLength={32}
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
-                  className="rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-sm text-dj-texte outline-none transition-colors focus:border-dj-accent-1"
+                  className="rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2.5 text-base text-dj-texte outline-none transition-colors focus:border-dj-accent-1"
                 />
               </label>
             </div>
@@ -256,16 +259,16 @@ export function PageAbonnements() {
               <span className="mt-0.5">
                 <CaseACocher checked={consentement} onChange={setConsentement} />
               </span>
-              <span className="text-xs text-dj-texte sm:text-sm">{t("attente_consentement")}</span>
+              <span className="text-sm text-dj-texte sm:text-base">{t("attente_consentement")}</span>
             </label>
-            <p className="text-xs text-dj-texte-muet">{t("attente_donnees")}</p>
+            <p className="text-sm text-dj-texte-muet">{t("attente_donnees")}</p>
 
-            {erreur && <p className="text-xs text-[var(--dj-erreur)] sm:text-sm">{erreur}</p>}
+            {erreur && <p className="text-sm text-[var(--dj-erreur)] sm:text-base">{erreur}</p>}
           </section>
 
           {/* Barre collée en bas de la page : le prix choisi et le bouton restent toujours visibles. */}
           <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t border-dj-bordure bg-dj-surface px-4 py-3 sm:-mx-6 sm:px-6">
-            <span className="min-w-0 truncate text-xs font-medium text-dj-texte-muet sm:text-sm">
+            <span className="min-w-0 truncate text-sm font-medium text-dj-texte-muet sm:text-base">
               {palier !== null ? t("attente_palier_prix", { prix: palier }) : ""}
             </span>
             <button type="button" onClick={valider} disabled={!peutValider} className={BOUTON_PRINCIPAL}>
@@ -278,11 +281,11 @@ export function PageAbonnements() {
 
       {config && etat === "deja_inscrit" && (
         <div className="flex max-w-xl animate-dj-fade-in-rapide flex-col gap-4 motion-reduce:animate-none">
-          <p className="text-sm text-dj-texte sm:text-base">
+          <p className="text-base text-dj-texte sm:text-lg">
             {t("attente_deja_inscrit", { prix: palier ?? "", nom: palier === null ? "" : t(`attente_palier_nom_${palier}`) })}
           </p>
-          <p className="text-xs text-dj-texte-muet sm:text-sm">{t("attente_aucun_paiement")}</p>
-          {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
+          <p className="text-sm text-dj-texte-muet sm:text-base">{t("attente_aucun_paiement")}</p>
+          {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => setEtat("formulaire")} disabled={envoi} className={BOUTON_PRINCIPAL}>
               {t("attente_modifier")}
@@ -302,11 +305,11 @@ export function PageAbonnements() {
           </span>
           {etat === "merci" ? (
             <>
-              <p className="text-base font-bold text-dj-texte">{t("attente_merci_titre")}</p>
-              <p className="text-sm text-dj-texte-muet">{t("attente_merci_detail")}</p>
+              <p className="text-lg font-bold text-dj-texte">{t("attente_merci_titre")}</p>
+              <p className="text-base text-dj-texte-muet">{t("attente_merci_detail")}</p>
             </>
           ) : (
-            <p className="text-sm text-dj-texte">{t("attente_desinscrit")}</p>
+            <p className="text-base text-dj-texte">{t("attente_desinscrit")}</p>
           )}
           <button type="button" onClick={revenir} className={BOUTON_SECONDAIRE}>
             {t("attente_fermer")}
