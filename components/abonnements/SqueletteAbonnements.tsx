@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/Skeleton";
 // moment où le contenu arrive. Les icônes (coche de 16 px dans les cartes, coche de 18 px et horloge de 14 px
 // dans le tableau) ont leur propre petit bloc à la même taille.
 // Les largeurs et les nombres de lignes ci-dessous imitent le contenu réel actuel (3 cartes, 16 lignes de
-// fonctionnalités, 8 lignes de modèles) ; ce sont des formes, jamais des textes. Si le contenu change
+// fonctionnalités, 7 lignes de modèles) ; ce sont des formes, jamais des textes. Si le contenu change
 // beaucoup, il suffit d'ajuster ces tableaux.
 
 // Une ligne de texte : une barre arrondie, plus fine que la ligne, centrée dans la hauteur réelle de la ligne.
@@ -62,15 +62,12 @@ function SqueletteCarte({ forme }: { forme: CarteForme }) {
         ))}
       </div>
 
-      {/* Prix en grand (text-4xl) avec « par mois » à côté, puis le crédit (text-sm) */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-end gap-1.5">
-          <Skeleton className="h-9 w-16 rounded" />
-          <div className="flex h-5 items-center">
-            <Skeleton className="h-3 w-14 rounded" />
-          </div>
+      {/* Prix en grand (text-4xl) avec « par mois » à côté */}
+      <div className="flex items-end gap-1.5">
+        <Skeleton className="h-9 w-16 rounded" />
+        <div className="flex h-5 items-center">
+          <Skeleton className="h-3 w-14 rounded" />
         </div>
-        <Ligne largeur="w-44" />
       </div>
 
       {/* Bouton Payer : py-3 et text-base, donc 48 px de haut, sur toute la largeur */}
@@ -130,7 +127,6 @@ const SECTION_FONCTIONS: LigneTableau[] = [
 ];
 
 const SECTION_MODELES: LigneTableau[] = [
-  { lignes: ["w-2/5"], cellules: ["w-1/3", "w-1/3", "w-1/3"] },
   { debut: "w-2/5", liste: ["w-full", "w-1/3"], cellules: ["w-1/4", "w-5/6", "w-5/6"] },
   { debut: "w-1/4", liste: ["w-full", "w-1/2"], cellules: ["w-5/6", "w-5/6", "w-5/6"] },
   { debut: "w-1/3", liste: ["w-full", "w-2/5"], cellules: ["w-5/6", "w-5/6", "w-5/6"] },

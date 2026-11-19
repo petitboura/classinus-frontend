@@ -6,9 +6,9 @@ import type { PalierListeAttente } from "@/lib/listeAttente";
 type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
 
 // Carte d'un palier de la page des abonnements, sur le modèle de la page de tarification de Claude (capture
-// de Bourama, 19/11/2026). De haut en bas : le nom, une courte phrase, le prix en grand avec le crédit en
-// petit dessous, un bouton « Payer », un trait de séparation, puis la liste de ce qui est inclus avec des
-// coches. À partir du deuxième palier, un titre « Tout ce qui est inclus dans <palier précédent>, plus : »
+// de Bourama, 19/11/2026). De haut en bas : le nom, une courte phrase, le prix en grand, un bouton
+// « Payer », un trait de séparation, puis la liste de ce qui est inclus avec des coches. Le montant du
+// crédit donné à chaque palier n'est volontairement pas affiché (décision de Bourama, 19/11/2026). À partir du deuxième palier, un titre « Tout ce qui est inclus dans <palier précédent>, plus : »
 // ouvre la liste, qui ne montre alors que ce qui s'ajoute.
 //
 // Tout vient de Supabase (textes_modeles_llm), en français et en anglais :
@@ -49,13 +49,10 @@ export function CartePalierListeAttente({
         {accroche && <span className="text-base text-dj-texte-muet">{accroche}</span>}
       </div>
 
-      <div className="flex flex-col gap-1">
-        <span className="flex items-baseline gap-1.5">
-          <span className="text-4xl font-extrabold leading-none text-dj-texte">${prix}</span>
-          <span className="text-sm font-medium text-dj-texte-muet">{t("attente_palier_par_mois")}</span>
-        </span>
-        <span className="text-sm text-dj-texte-muet">{t("attente_palier_credit", { credit: palier.credit_usd })}</span>
-      </div>
+      <span className="flex items-baseline gap-1.5">
+        <span className="text-4xl font-extrabold leading-none text-dj-texte">${prix}</span>
+        <span className="text-sm font-medium text-dj-texte-muet">{t("attente_palier_par_mois")}</span>
+      </span>
 
       <button
         type="button"
