@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { noterEtapeListeAttente, urlPageAbonnements } from "@/lib/listeAttente";
 
 // libelles_bientot : l'info-bulle du verrou d'un modèle à crédit, par langue (le mot "Bientôt" n'est plus
-// affiché depuis le 17/11/2026). libelles_badge : le badge devant le nom, par langue (Max pour les modèles
+// affiché depuis le 17/11/2026). libelles_badge : le badge à droite à la place du verrou, par langue (Max pour les modèles
 // frontière, groupe 1). Les deux viennent du backend, qui les lit dans Supabase (table textes_modeles_llm),
 // donc ils se changent sans toucher au code.
 type ModeleDisponible = {
@@ -202,7 +202,7 @@ function OptionModele({
   verrouille?: boolean;
   // Info-bulle et nom accessible du verrou (réglés dans Supabase, voir libelleVerrou plus haut).
   libelleVerrou?: string;
-  // Badge devant le nom (Max pour les modèles frontière), vide sans badge.
+  // Badge Max des modèles frontière, à droite à la place du verrou ; vide sans badge.
   badge?: string;
   distributeur: string | null;
   onClick: () => void;
@@ -222,13 +222,17 @@ function OptionModele({
       <span className={verrouille ? "opacity-50" : ""}>
         <IconeFournisseur distributeur={distributeur} />
       </span>
-      {badge && (
-        <span className="flex-shrink-0 rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#1A0D02]">
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {/* Le badge (Max) prend la place du verrou, sur la ligne grisée ; sans badge, c'est le verrou. */}
+      {verrouille && badge && (
+        <span
+          title={libelleVerrou}
+          aria-label={libelleVerrou}
+          className="flex-shrink-0 rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#1A0D02]">
           {badge}
         </span>
       )}
-      <span className="min-w-0 flex-1 truncate">{children}</span>
-      {verrouille && <Lock size={13} aria-label={libelleVerrou} role="img" className="flex-shrink-0 text-dj-texte-muet" />}
+      {verrouille && !badge && <Lock size={13} aria-label={libelleVerrou} role="img" className="flex-shrink-0 text-dj-texte-muet" />}
       {actif && <Check size={14} className="flex-shrink-0" />}
     </button>
   );
