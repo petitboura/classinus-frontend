@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Check, LoaderCircle } from "lucide-react";
+import { LogoMoyenPaiement } from "@/components/abonnements/LogoMoyenPaiement";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise, type OptionMenu } from "@/components/SelectPersonnalise";
 import { CODES_PAYS, nomDuPays } from "@/lib/listeAttente";
@@ -121,7 +122,10 @@ export function EtapeMoyen({
                   : "border-dj-bordure text-dj-texte hover:bg-dj-surface-haute"
               }`}
             >
-              {t(`attente_moyen_${id}`)}
+              <span className="flex items-center gap-3">
+                <LogoMoyenPaiement id={id} />
+                {t(`attente_moyen_${id}`)}
+              </span>
               {choisi && <Check size={18} className="text-dj-accent-1" />}
             </button>
           );
