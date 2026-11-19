@@ -1,19 +1,16 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 import type { PalierListeAttente } from "@/lib/listeAttente";
 
 type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
 
-// Carte d'un palier de la liste d'attente. Le prix est en grand, le crédit en dessous, puis les points
-// du palier. Les points viennent du serveur (clé attente_palier_<prix>_points, séparés par « | ») ;
-// un point qui commence par « ~ » est une capacité que le palier n'a pas : il s'affiche avec une
-// croix grisée au lieu d'une coche (17/11/2026, les trois cartes citent les mêmes capacités dans le
-// même ordre, pour qu'on voie d'un coup d'œil ce que chaque palier contient ou non).
-// Sans points, la phrase de description du palier est affichée à la place. Même chose pour le badge
-// (clé attente_palier_<prix>_badge) : sans texte, aucun badge. Depuis que la liste d'attente est une
-// vraie page (18/11/2026), toutes les cartes montrent leurs points, sur téléphone comme sur PC : la
-// page défile, il n'y a plus de raison de les replier.
+// Carte d'un palier de la liste d'attente. Le prix est en grand, le crédit en dessous, puis une phrase
+// qui résume le palier (clé attente_palier_<prix>). La liste détaillée de ce que Classinus sait faire n'est
+// plus dans les cartes (19/11/2026, demande de Bourama, comme la page de tarification de Claude) : elle
+// est sur la page, par catégorie, voir components/abonnements/CapacitesParCategorie.tsx. Les anciennes
+// clés attente_palier_<prix>_points ne sont donc plus lues. Même chose pour le badge (clé
+// attente_palier_<prix>_badge) : sans texte, aucun badge.
 export function CartePalierListeAttente({
   palier,
   choisi,
@@ -26,11 +23,6 @@ export function CartePalierListeAttente({
   t: Traduire;
 }) {
   const prix = palier.prix_usd;
-  const points = t(`attente_palier_${prix}_points`)
-    .split("|")
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => (p.startsWith("~") ? { texte: p.slice(1).trim(), inclus: false } : { texte: p, inclus: true }));
   const description = t(`attente_palier_${prix}`);
   const badge = t(`attente_palier_${prix}_badge`);
   const nom = t(`attente_palier_nom_${prix}`);
@@ -74,25 +66,7 @@ export function CartePalierListeAttente({
         </span>
       </span>
 
-      {points.length > 0 ? (
-        <span className="flex flex-col gap-2 border-t border-dj-bordure pt-3">
-          {points.map((point) => (
-            <span
-              key={point.texte}
-              className={`flex items-start gap-2 text-sm sm:text-base ${point.inclus ? "text-dj-texte" : "text-dj-texte-muet"}`}
-            >
-              {point.inclus ? (
-                <Check size={16} className="mt-0.5 shrink-0 text-dj-accent-1-texte" />
-              ) : (
-                <X size={16} className="mt-0.5 shrink-0 text-dj-texte-muet" />
-              )}
-              <span>{point.texte}</span>
-            </span>
-          ))}
-        </span>
-      ) : (
-        description && <span className="block border-t border-dj-bordure pt-3 text-sm text-dj-texte-muet">{description}</span>
-      )}
+      {description && <span className="block border-t border-dj-bordure pt-3 text-sm text-dj-texte-muet sm:text-base">{description}</span>}
     </button>
   );
 }

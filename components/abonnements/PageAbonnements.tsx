@@ -193,8 +193,6 @@ export function PageAbonnements() {
             {t("attente_aucun_paiement")}
           </p>
 
-          <CapacitesParCategorie t={t} locale={locale} modeles={config.modeles ?? []} />
-
           <section role="radiogroup" aria-label={t("attente_palier_label")} className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-dj-texte sm:text-2xl">{t("attente_palier_label")}</h2>
             <div className="grid gap-4 pt-2 md:grid-cols-3">
@@ -209,6 +207,8 @@ export function PageAbonnements() {
               ))}
             </div>
           </section>
+
+          <CapacitesParCategorie t={t} locale={locale} modeles={config.modeles ?? []} />
 
           <section className="flex flex-col gap-5 rounded-2xl border border-dj-bordure p-4 sm:p-6">
             <fieldset className="flex flex-col gap-2">
