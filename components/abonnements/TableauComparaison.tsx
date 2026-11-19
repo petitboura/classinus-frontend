@@ -34,6 +34,37 @@ function lireLignes(brut: string, nbColonnes: number): Ligne[] {
     .filter((l) => l.libelle && l.valeurs.length === nbColonnes);
 }
 
+// Un libellé qui contient une liste entre parenthèses (« Haut de gamme (Claude Opus 5.5, GPT-6.1 Sol) »)
+// est coupé en deux : le texte en haut, puis les éléments de la liste en dessous, séparés par un petit trait
+// vertical plutôt que par des virgules (19/11/2026, demande de Bourama). Des parenthèses sans virgule,
+// comme « (OCR) », restent dans le texte.
+const LISTE_ENTRE_PARENTHESES = /^(.*?)\s*\(([^()]*,[^()]*)\)\s*(.*)$/;
+
+function Libelle({ texte }: { texte: string }) {
+  const m = LISTE_ENTRE_PARENTHESES.exec(texte);
+  if (!m) return <>{texte}</>;
+  const [, debut, liste, fin] = m;
+  const elements = liste.split(",").map((e) => e.trim()).filter(Boolean);
+  return (
+    <>
+      {[debut, fin].filter(Boolean).join(" ")}
+      <span className="mt-1 block text-dj-texte-muet">
+        {elements.map((element, i) => (
+          <span key={`${i}-${element}`}>
+            {i > 0 && (
+              <>
+                <span className="sr-only">, </span>
+                <span aria-hidden className="mx-2 inline-block h-3.5 w-px bg-dj-bordure-forte align-middle" />
+              </>
+            )}
+            {element}
+          </span>
+        ))}
+      </span>
+    </>
+  );
+}
+
 export function TableauComparaison({ t, paliers }: { t: Traduire; paliers: PalierListeAttente[] }) {
   const sections: Section[] = useMemo(
     () =>
@@ -98,7 +129,7 @@ export function TableauComparaison({ t, paliers }: { t: Traduire; paliers: Palie
               style={colonnes}
             >
               <span role="rowheader" className="min-w-0">
-                {ligne.libelle}
+                <Libelle texte={ligne.libelle} />
               </span>
               {paliers.map((p, j) => (
                 <span key={p.prix_usd} role="cell" className="min-w-0">
