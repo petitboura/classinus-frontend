@@ -8,7 +8,7 @@ Added on 16 November 2026 at Bourama's request. A fake door measures real demand
 
 1. They open the model picker. This is the first funnel step (`selecteur_ouvert`), written only when the picker shows at least one "Coming soon" model.
 2. They click a greyed out model (`modele_grise_clique`). The picker closes and the `/abonnements?modele=...&nom=...` page opens (`formulaire_ouvert`). A visitor without an account sees it too; the account is only asked for when they join the list, through the "Account required" window. Opened by a direct address, without a model, the page sends the value `page_abonnements` as the model.
-3. The page shows a skeleton while it loads, then, under a single title (no intro and no section titles, since 19 November 2026): the three plans as side by side cards, laid out like Claude's pricing page (name, short phrase, big price, monthly credit, a "Pay" button, then the list of what is included), then the capabilities by category.
+3. The page shows a skeleton while it loads, then, under a single title (no intro and no section titles, since 19 November 2026): the three plans as side by side cards, laid out like Claude's pricing page (name, short phrase, big price, monthly credit, a "Pay" button, then the list of what is included), then a comparison table of the plans (component `TableauComparaison.tsx`, like Claude's: one column per plan, one row per feature, two sections, Features and Models and credit; a tick means included, "No", a short value such as "Unlimited", or "Coming soon").
 4. The model in the address (`modele`, `nom`) is no longer read by the page, and the page no longer records the `formulaire_ouvert` step.
 5. The new texts (key `attente_abo_titre` and `attente_abo_payer`, French and English, in `textes_modeles_llm`) come from the server. They keep the `attente_` prefix because it is the one the backend returns.
 
@@ -19,7 +19,7 @@ The page scrolls like any page, with a "Back" button at the top that returns to 
 | File | Role |
 | --- | --- |
 | `app/(app)/abonnements/page.tsx` | The `/abonnements` route. |
-| `components/abonnements/PageAbonnements.tsx` | The payment page: plan cards with their Pay button and the capabilities, with its loading state. |
+| `components/abonnements/PageAbonnements.tsx` | The payment page: plan cards with their Pay button and the comparison table, with its loading state. |
 | `components/chat/CartePalierListeAttente.tsx` | One plan card: name, phrase, price, credit, Pay button, included list and an optional badge. |
 | `components/chat/SelecteurModeleHaut.tsx` | The picker: a greyed out model now opens the plans page, and the first funnel steps are noted here. |
 | `lib/listeAttente.ts` | Backend calls, funnel steps, the source (web, android, ios, pc) and the country list. |
@@ -28,7 +28,7 @@ The page scrolls like any page, with a "Back" button at the top that returns to 
 ## Nothing is hard coded
 
 - Plans (price and monthly credit) come from the backend, from the `paliers_liste_attente` table.
-- Every text of the form comes from the backend, from `textes_modeles_llm` (keys starting with `attente_`), in French and English. If a key is missing in the chosen language, the French text is used; a raw key is never shown. Each plan's points come from `attente_palier_<price>_points` (separated by `|`; a point starting with `~` is a capability the plan does not have and shows a greyed cross instead of a tick; all three plans list the same eight capabilities in the same order, taken from Bourama's plan table of 16 Nov 2026); without them the plan sentence `attente_palier_<price>` is shown. An optional badge on a plan comes from `attente_palier_<price>_badge`: no text, no badge.
+- Every text of the form comes from the backend, from `textes_modeles_llm` (keys starting with `attente_`), in French and English. If a key is missing in the chosen language, the French text is used; a raw key is never shown. The comparison table comes from `attente_comp_ordre`'s sections: `attente_comp_<id>_titre` and `attente_comp_<id>_lignes`, one row per `|`, written `label#value plan 1#value plan 2#value plan 3` (a value is `oui`, `non`, `bientot` or a short text; `{credit}` is replaced by the plan's monthly credit). The old keys `attente_cap_*` and `attente_palier_<price>_points` are no longer read. An optional badge on a plan comes from `attente_palier_<price>_badge`: no text, no badge.
 - Country names come from the browser (`Intl.DisplayNames`) in the interface language, so none is translated by hand. Only the ISO codes of the proposed countries are in `lib/listeAttente.ts`.
 
 ## Funnel steps are never blocking

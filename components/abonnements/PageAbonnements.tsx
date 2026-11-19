@@ -5,19 +5,19 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
 import { CartePalierListeAttente } from "@/components/chat/CartePalierListeAttente";
-import { CapacitesParCategorie } from "@/components/abonnements/CapacitesParCategorie";
+import { TableauComparaison } from "@/components/abonnements/TableauComparaison";
 import { messageErreur } from "@/lib/erreurs";
 import { obtenirLocale } from "@/lib/i18n/locale";
 import { lireConfigListeAttente, remplirTexte, type ConfigListeAttente } from "@/lib/listeAttente";
 
 // Page des abonnements : une page de paiement (19/11/2026, demande de Bourama). Un seul titre, puis les
-// trois cartes de palier façon page de tarification de Claude, puis les capacités par catégorie. Chaque
+// trois cartes de palier façon page de tarification de Claude, puis le tableau de comparaison des paliers. Chaque
 // carte a son bouton Payer. Tout ce qui touchait à la liste d'attente (formulaire, profil, consentement,
 // inscription, mention « aucun paiement ») a été retiré de cette page ; les tables, les routes et
 // lib/listeAttente.ts n'ont pas bougé. Ouverte depuis un modèle grisé du sélecteur, la page ne lit plus
 // les paramètres de l'adresse. Visible sans compte.
 // Le bouton Payer n'est pas encore relié à un service de paiement (voir payer() plus bas).
-// Paliers, capacités et textes viennent du serveur (Supabase), en français et en anglais : rien n'est
+// Paliers, tableau et textes viennent du serveur (Supabase), en français et en anglais : rien n'est
 // écrit en dur ici. Les clés de texte gardent le préfixe attente_ car c'est celui que le serveur renvoie.
 
 export function PageAbonnements() {
@@ -111,7 +111,7 @@ export function PageAbonnements() {
             ))}
           </section>
 
-          <CapacitesParCategorie t={t} locale={locale} modeles={config.modeles ?? []} />
+          <TableauComparaison t={t} paliers={config.paliers} />
         </div>
       )}
     </div>
