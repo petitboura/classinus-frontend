@@ -2,7 +2,7 @@
 
 **English version** · [Version française](LISTE_ATTENTE_MODELES.fr.md)
 
-Added on 16 November 2026 at Bourama's request. A fake door measures real demand before Claude, GPT and Gemini are plugged in. In the model picker at the top of the chat, these models stay greyed out with a **lock** (the word "Coming soon" is gone since 17 November 2026), and are never selectable. The frontier models (group 1) also carry a **Max** badge in front of their name. A click on one now opens the `/abonnements` page, a real page (since 18 November 2026, it used to be a window with its own scrolling) where the person signs up for a paid waiting list. **No payment is taken**, and the form says so at the top. The backend side is described in the backend documentation (`docs/chantiers/LISTE_ATTENTE_MODELES.md`).
+Added on 16 November 2026 at Bourama's request. A fake door measures real demand before Claude, GPT and Gemini are plugged in. In the model picker at the top of the chat, these models stay greyed out with a **lock** (the word "Coming soon" is gone since 17 November 2026), and are never selectable. The frontier models (group 1) carry a **Max** badge in place of the lock, on the same greyed row. A click on one now opens the `/abonnements` page, a real page (since 18 November 2026, it used to be a window with its own scrolling) where the person signs up for a paid waiting list. **No payment is taken**, and the form says so at the top. The backend side is described in the backend documentation (`docs/chantiers/LISTE_ATTENTE_MODELES.md`).
 
 ## What the person sees
 
@@ -37,7 +37,7 @@ The page scrolls like any page, with a "Back" button at the top that returns to 
 
 ## Lock and Max badge
 
-`SelecteurModeleHaut.tsx` shows a lock icon on every locked model. Its tooltip and accessible name come from the backend (`libelles_bientot`, the text under the key `bientot`, now "Available with a plan"). The badge in front of the name comes from `libelles_badge` (text `badge_groupe_1`, "Max"), sent only for group 1 models. Both texts live in Supabase in French and English.
+`SelecteurModeleHaut.tsx` shows a lock icon on every locked model, except group 1 models where the Max badge takes its place. The tooltip and accessible name come from the backend (`libelles_bientot`, the text under the key `bientot`, now "Available with a plan"). That badge, on the right in place of the lock, comes from `libelles_badge` (text `badge_groupe_1`, "Max"), sent only for group 1 models. Both texts live in Supabase in French and English.
 
 ## Known limits
 

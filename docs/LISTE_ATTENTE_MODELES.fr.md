@@ -2,7 +2,7 @@
 
 [English version](LISTE_ATTENTE_MODELES.md) · **Version française**
 
-Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure la demande réelle avant de brancher Claude, GPT et Gemini. Dans le sélecteur de modèles en haut du chat, ces modèles restent grisés avec un **verrou** (le mot « Bientôt » n'existe plus depuis le 17 novembre 2026) et ne sont jamais sélectionnables. Les modèles frontière (groupe 1) portent en plus un badge **Max** devant leur nom. Un clic dessus ouvre la page `/abonnements`, une vraie page (depuis le 18 novembre 2026, avant c'était une fenêtre avec son propre défilement) où l'on s'inscrit à une liste d'attente payante. **Aucun paiement n'est pris**, et le formulaire le dit en haut. Le côté serveur est décrit dans la documentation du backend (`docs/chantiers/LISTE_ATTENTE_MODELES.fr.md`).
+Ajoutée le 16 novembre 2026 à la demande de Bourama. Une fausse porte mesure la demande réelle avant de brancher Claude, GPT et Gemini. Dans le sélecteur de modèles en haut du chat, ces modèles restent grisés avec un **verrou** (le mot « Bientôt » n'existe plus depuis le 17 novembre 2026) et ne sont jamais sélectionnables. Les modèles frontière (groupe 1) portent un badge **Max** à la place du verrou, sur la même ligne grisée. Un clic dessus ouvre la page `/abonnements`, une vraie page (depuis le 18 novembre 2026, avant c'était une fenêtre avec son propre défilement) où l'on s'inscrit à une liste d'attente payante. **Aucun paiement n'est pris**, et le formulaire le dit en haut. Le côté serveur est décrit dans la documentation du backend (`docs/chantiers/LISTE_ATTENTE_MODELES.fr.md`).
 
 ## Ce que voit la personne
 
@@ -37,7 +37,7 @@ La page défile comme n'importe quelle page, avec un bouton « Retour » en haut
 
 ## Verrou et badge Max
 
-`SelecteurModeleHaut.tsx` montre une icône de verrou sur chaque modèle verrouillé. Son info-bulle et son nom accessible viennent du backend (`libelles_bientot`, le texte de la clé `bientot`, maintenant « Disponible avec un abonnement »). Le badge devant le nom vient de `libelles_badge` (texte `badge_groupe_1`, « Max »), envoyé seulement pour les modèles du groupe 1. Les deux textes sont dans Supabase, en français et en anglais.
+`SelecteurModeleHaut.tsx` montre une icône de verrou sur chaque modèle verrouillé, sauf les modèles du groupe 1 où le badge Max prend sa place. L'info-bulle et son nom accessible viennent du backend (`libelles_bientot`, le texte de la clé `bientot`, maintenant « Disponible avec un abonnement »). Ce badge, à droite à la place du verrou, vient de `libelles_badge` (texte `badge_groupe_1`, « Max »), envoyé seulement pour les modèles du groupe 1. Les deux textes sont dans Supabase, en français et en anglais.
 
 ## Limites connues
 
