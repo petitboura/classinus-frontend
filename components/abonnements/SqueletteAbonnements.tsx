@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/Skeleton";
+import { CLASSES_ENVELOPPE_CARTE, CLASSES_GRILLE_PALIERS } from "@/components/chat/CartePalierListeAttente";
 
 // Squelette de la page des abonnements (19/11/2026, demande de Bourama : très précis, icônes comprises).
 // Il reprend bloc par bloc ce que la page affiche une fois chargée : les trois cartes de palier
@@ -8,7 +9,7 @@ import { Skeleton } from "@/components/Skeleton";
 // vraie ligne (text-sm : h-5, text-base : h-6, text-lg : h-7, text-2xl : h-8), pour que rien ne saute au
 // moment où le contenu arrive. Les icônes (coche de 16 px dans les cartes, coche de 18 px et horloge de 14 px
 // dans le tableau) ont leur propre petit bloc à la même taille.
-// Les largeurs et les nombres de lignes ci-dessous imitent le contenu réel actuel (3 cartes, 16 lignes de
+// Les largeurs et les nombres de lignes ci-dessous imitent le contenu réel actuel (3 cartes de 11, 7 et 5 lignes, 16 lignes de
 // fonctionnalités, 7 lignes de modèles) ; ce sont des formes, jamais des textes. Si le contenu change
 // beaucoup, il suffit d'ajuster ces tableaux.
 
@@ -33,60 +34,68 @@ const CARTES: CarteForme[] = [
     nom: "w-12",
     accroche: ["w-full", "w-1/4"],
     titreInclus: false,
-    inclus: [["w-full", "w-2/3"], ["w-1/3"], ["w-full", "w-3/5"], ["w-2/5"], ["w-1/2"]],
+    inclus: [["w-5/6"], ["w-full", "w-1/2"], ["w-2/5"], ["w-1/2"], ["w-full", "w-1/3"], ["w-5/6"], ["w-full", "w-3/5"], ["w-3/4"], ["w-5/6"], ["w-full", "w-1/2"], ["w-4/5"]],
   },
   {
     nom: "w-14",
     accroche: ["w-full", "w-1/3"],
     titreInclus: true,
-    inclus: [["w-5/6"], ["w-2/5"], ["w-1/2"], ["w-3/5"], ["w-full", "w-1/2"]],
+    inclus: [["w-5/6"], ["w-2/5"], ["w-1/2"], ["w-3/5"], ["w-1/2"], ["w-2/5"], ["w-4/5"]],
   },
   {
     nom: "w-20",
     accroche: ["w-4/5"],
     titreInclus: true,
-    inclus: [["w-5/6"], ["w-3/4"]],
+    inclus: [["w-5/6"], ["w-full", "w-1/2"], ["w-5/6"], ["w-full", "w-1/3"], ["w-3/5"]],
   },
 ];
 
-function SqueletteCarte({ forme }: { forme: CarteForme }) {
+function SqueletteCarte({ forme, index }: { forme: CarteForme; index: number }) {
   return (
-    <div className="relative flex flex-col gap-5 rounded-2xl border border-dj-bordure p-5">
-      {/* Nom (text-2xl) puis courte phrase (text-base) */}
-      <div className="flex flex-col gap-1">
-        <div className="flex h-8 items-center">
-          <Skeleton className={`h-6 rounded ${forme.nom}`} />
+    <div className={CLASSES_ENVELOPPE_CARTE}>
+      <div className="relative flex h-full flex-col gap-5 rounded-2xl border border-dj-bordure p-5">
+        {/* Nom (text-2xl) puis courte phrase (text-base, deux lignes de hauteur réservées) */}
+        <div className="flex flex-col gap-1">
+          <div className="flex h-8 items-center">
+            <Skeleton className={`h-6 rounded ${forme.nom}`} />
+          </div>
+          <div className="min-h-12">
+            {forme.accroche.map((largeur, i) => (
+              <Ligne key={i} largeur={largeur} hauteur="h-6" />
+            ))}
+          </div>
         </div>
-        {forme.accroche.map((largeur, i) => (
-          <Ligne key={i} largeur={largeur} hauteur="h-6" />
-        ))}
-      </div>
 
-      {/* Prix en grand (text-4xl) avec « par mois » à côté */}
-      <div className="flex items-end gap-1.5">
-        <Skeleton className="h-9 w-16 rounded" />
-        <div className="flex h-5 items-center">
-          <Skeleton className="h-3 w-14 rounded" />
+        {/* Prix en grand (text-4xl) avec « par mois » à côté */}
+        <div className="flex items-end gap-1.5">
+          <Skeleton className="h-9 w-16 rounded" />
+          <div className="flex h-5 items-center">
+            <Skeleton className="h-3 w-14 rounded" />
+          </div>
         </div>
-      </div>
 
-      {/* Bouton Payer : py-3 et text-base, donc 48 px de haut, sur toute la largeur */}
-      <Skeleton className="h-12 w-full rounded-lg" />
+        {/* Bouton Payer : py-3 et text-base, donc 48 px de haut, sur toute la largeur */}
+        <Skeleton className="h-12 w-full rounded-lg" />
 
-      {/* Trait, titre « Tout ce qui est inclus dans... » (sauf le premier palier), puis la liste à coches */}
-      <div className="flex flex-col gap-3 border-t border-dj-bordure pt-5">
-        {forme.titreInclus && <Ligne largeur="w-4/5" />}
-        <div className="flex flex-col gap-3">
-          {forme.inclus.map((lignes, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <Skeleton className="mt-0.5 h-4 w-4 shrink-0 rounded-sm" />
-              <div className="flex min-w-0 flex-1 flex-col">
-                {lignes.map((largeur, j) => (
-                  <Ligne key={j} largeur={largeur} />
-                ))}
+        {/* Trait, titre « Tout ce qui est inclus dans... » (place réservée au premier palier sur ordinateur), puis la liste à coches */}
+        <div className="flex flex-1 flex-col gap-3 border-t border-dj-bordure pt-5">
+          {forme.titreInclus ? (
+            <Ligne largeur="w-4/5" />
+          ) : (
+            index === 0 && <div aria-hidden className="hidden h-5 md:block" />
+          )}
+          <div className="flex flex-col gap-3">
+            {forme.inclus.map((lignes, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <Skeleton className="mt-0.5 h-4 w-4 shrink-0 rounded-sm" />
+                <div className="flex min-w-0 flex-1 flex-col">
+                  {lignes.map((largeur, j) => (
+                    <Ligne key={j} largeur={largeur} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -202,9 +211,9 @@ function SqueletteSection({ titre, lignes }: { titre: string; lignes: LigneTable
 export function SqueletteAbonnements() {
   return (
     <div className="flex flex-col gap-8" aria-hidden>
-      <div className="grid items-start gap-4 pt-3 md:grid-cols-3">
+      <div className={CLASSES_GRILLE_PALIERS}>
         {CARTES.map((forme, i) => (
-          <SqueletteCarte key={i} forme={forme} />
+          <SqueletteCarte key={i} forme={forme} index={i} />
         ))}
       </div>
 

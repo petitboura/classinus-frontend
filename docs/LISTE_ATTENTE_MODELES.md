@@ -12,7 +12,7 @@ Added on 16 November 2026 at Bourama's request. A fake door measures real demand
 4. The model in the address (`modele`, `nom`) is no longer read by the page, and the page no longer records the `formulaire_ouvert` step.
 5. The new texts (key `attente_abo_titre` and `attente_abo_payer`, French and English, in `textes_modeles_llm`) come from the server. They keep the `attente_` prefix because it is the one the backend returns.
 
-The page scrolls like any page, with a "Back" button at the top that returns to the chat. On a computer the three plan cards sit in a row; on a phone they stack, and each card keeps the same content. The card button is the Pay button of that plan. From the second plan, the list starts with "Everything in <previous plan>, plus:" and only shows what is added. These texts are the keys `attente_palier_<price>_accroche`, `_inclus_titre` and `_inclus`. There is no bar stuck to the bottom (removed on 19 November 2026).
+The page scrolls like any page, with a "Back" button at the top that returns to the chat. On a computer the three plan cards sit in a row, with the same height and the button and the list at the same level from one card to the next; on a phone they scroll sideways, the next card peeking in, and each card keeps the same content. Since 20 November 2026, the plan that has a badge in the database is highlighted (accent border, badge, filled button, the others have an outline button), the cards appear one after the other and lift on hover. In `_inclus`, a line starting with `~` is a coming feature: clock and the word "Coming soon". The card button is the Pay button of that plan. From the second plan, the list starts with "Everything in <previous plan>, plus:" and only shows what is added. These texts are the keys `attente_palier_<price>_accroche`, `_inclus_titre` and `_inclus`. There is no bar stuck to the bottom (removed on 19 November 2026).
 
 ## Where things live
 
@@ -21,7 +21,7 @@ The page scrolls like any page, with a "Back" button at the top that returns to 
 | `app/(app)/abonnements/page.tsx` | The `/abonnements` route. |
 | `components/abonnements/PageAbonnements.tsx` | The payment page: plan cards with their Pay button and the comparison table, with its loading state. |
 | `components/abonnements/SqueletteAbonnements.tsx` | The loading skeleton, block by block like the real page: the three cards (name, phrase, price, button, check list) and the table (title rows, 16 + 7 rows with check, clock and text cells), with the same containers and line heights so nothing jumps when the content arrives. If the real content changes a lot, adjust the widths and row counts in this file. |
-| `components/chat/CartePalierListeAttente.tsx` | One plan card: name, phrase, price, Pay button, included list and an optional badge. |
+| `components/chat/CartePalierListeAttente.tsx` | One plan card: name, phrase, price, Pay button, included list ("Coming soon" lines with `~`) and an optional badge that highlights the plan. It also exports the layout classes shared with the skeleton. |
 | `components/chat/SelecteurModeleHaut.tsx` | The picker: a greyed out model now opens the plans page, and the first funnel steps are noted here. |
 | `lib/listeAttente.ts` | Backend calls, funnel steps, the source (web, android, ios, pc) and the country list. |
 | `lib/erreurs.ts` | The `LISTE_ATTENTE_*` error codes, in French and English. |
