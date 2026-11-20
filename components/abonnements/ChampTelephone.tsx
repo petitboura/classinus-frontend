@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Globe } from "lucide-react";
+import { DrapeauPays } from "@/components/abonnements/DrapeauPays";
 import { FlottantAncre } from "@/components/FlottantAncre";
 import { nomDuPays } from "@/lib/listeAttente";
 import {
   PAYS_TELEPHONE,
-  drapeauDuPays,
   nettoyerSaisie,
   numeroApresChoixPays,
   paysDepuisNumero,
@@ -22,6 +22,10 @@ import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 // <select> natif (règle du dépôt, voir CLAUDE.md).
 
 const COTES_LISTE: CoteFlottant[] = ["bas", "haut"];
+
+function sansAccents(texte: string): string {
+  return texte.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
 
 export function ChampTelephone({
   locale,
@@ -65,15 +69,35 @@ export function ChampTelephone({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fermer est stable via demarrerFermeture, l'état ouvert est lu via ouvertRef
   }, []);
 
+  const [recherche, setRecherche] = useState("");
+  const rechercheRef = useRef<HTMLInputElement>(null);
+
+  // Le nom est cherché en français et en anglais, sans accents ni majuscules, et l'indicatif aussi.
   const options = useMemo(
     () =>
-      PAYS_TELEPHONE.map((p) => ({ ...p, nom: nomDuPays(p.code, locale) })).sort((a, b) =>
-        a.nom.localeCompare(b.nom, locale),
-      ),
+      PAYS_TELEPHONE.map((p) => ({
+        ...p,
+        nom: nomDuPays(p.code, locale),
+        cherche: sansAccents(`${nomDuPays(p.code, "fr")} ${nomDuPays(p.code, "en")} +${p.indicatif}`),
+      })).sort((a, b) => a.nom.localeCompare(b.nom, locale)),
     [locale],
   );
+  const visibles = useMemo(() => {
+    const q = sansAccents(recherche.trim());
+    return q === "" ? options : options.filter((o) => o.cherche.includes(q));
+  }, [options, recherche]);
+
+  // La zone de recherche prend le curseur à l'ouverture de la liste, pour pouvoir écrire tout de suite.
+  useEffect(() => {
+    if (ouvert) rechercheRef.current?.focus();
+  }, [ouvert]);
 
   const choisi = paysParCode(pays);
+
+  function ouvrirListe() {
+    setRecherche("");
+    setOuvert(true);
+  }
 
   function choisirPays(code: string) {
     onNumero(numeroApresChoixPays(numero, pays, code));
@@ -101,14 +125,12 @@ export function ChampTelephone({
           aria-label={libellePays}
           aria-haspopup="listbox"
           aria-expanded={ouvert}
-          onClick={() => (ouvert ? fermer() : setOuvert(true))}
+          onClick={() => (ouvert ? fermer() : ouvrirListe())}
           className="flex flex-shrink-0 items-center gap-1.5 rounded-l-lg border-r border-dj-bordure px-3 py-2.5 text-base text-dj-texte transition-colors hover:bg-dj-surface-haute"
         >
           {choisi ? (
             <>
-              <span aria-hidden className="text-lg leading-none">
-                {drapeauDuPays(choisi.code)}
-              </span>
+              <DrapeauPays code={choisi.code} />
               <span>+{choisi.indicatif}</span>
             </>
           ) : (
@@ -139,7 +161,29 @@ export function ChampTelephone({
             enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
           }`}
         >
-          {options.map((o) => (
+          <input
+            ref={rechercheRef}
+            type="text"
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && visibles.length > 0) {
+                e.preventDefault();
+                choisirPays(visibles[0].code);
+              } else if (e.key === "Escape") {
+                // Échap ferme seulement la liste, pas toute la fenêtre de paiement.
+                e.stopPropagation();
+                fermer();
+              }
+            }}
+            placeholder={libellePays}
+            aria-label={libellePays}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="sticky top-0 z-10 mb-1 w-full rounded-md border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-base text-dj-texte outline-none transition-colors placeholder:text-dj-texte-muet focus:border-dj-accent-1"
+          />
+          {visibles.map((o) => (
             <button
               key={o.code}
               type="button"
@@ -150,9 +194,7 @@ export function ChampTelephone({
                 o.code === pays ? "text-dj-accent-1-texte" : "text-dj-texte"
               }`}
             >
-              <span aria-hidden className="text-base leading-none">
-                {drapeauDuPays(o.code)}
-              </span>
+              <DrapeauPays code={o.code} />
               <span className="min-w-0 flex-1 truncate">{o.nom}</span>
               <span className="flex-shrink-0 text-xs text-dj-texte-muet">+{o.indicatif}</span>
             </button>

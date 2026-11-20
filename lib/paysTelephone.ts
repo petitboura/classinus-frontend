@@ -84,12 +84,6 @@ export function paysParCode(code: string): PaysTelephone | null {
   return PAR_CODE.get(code) ?? null;
 }
 
-/** Drapeau d'un pays, dessiné à partir de son code (deux lettres). */
-export function drapeauDuPays(code: string): string {
-  if (!/^[A-Z]{2}$/.test(code)) return "";
-  return String.fromCodePoint(...[...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
-}
-
 /** Ne garde que le plus, les chiffres et les espaces ; le plus n'est gardé qu'en tête. */
 export function nettoyerSaisie(brut: string): string {
   const avecPlus = brut.trimStart().startsWith("+");
