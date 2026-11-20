@@ -23,6 +23,7 @@ import {
 } from "@/lib/listeAttente";
 import { supabase } from "@/lib/supabase";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { prechargerLogosPaiement } from "@/components/abonnements/LogoMoyenPaiement";
 
 // Parcours de paiement de la page Abonnements (19/11/2026, demande de Bourama). C'est une simulation :
 // rien n'est débité. Après le clic sur Payer d'un palier : 1) conditions légales à accepter, 2) connexion
@@ -72,6 +73,11 @@ export function ParcoursPaiement({
     // demarrerFermeture est stable et onFerme vient du parent : le reste des dépendances est volontairement ignoré.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onFerme]);
+
+  // Les images des logos (Orange Money, Wave) se téléchargent dès l'ouverture, avant l'écran du choix du moyen.
+  useEffect(() => {
+    prechargerLogosPaiement();
+  }, []);
 
   useEffect(() => {
     if (etape === "formulaire") noterEtapeListeAttente("formulaire_ouvert", MODELE_PAGE_DIRECTE, locale);
