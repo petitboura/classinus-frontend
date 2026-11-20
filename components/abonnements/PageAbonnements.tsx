@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
-import { CartePalierListeAttente } from "@/components/chat/CartePalierListeAttente";
+import { CartePalierListeAttente, CLASSES_GRILLE_PALIERS } from "@/components/chat/CartePalierListeAttente";
 import { ParcoursPaiement } from "@/components/abonnements/ParcoursPaiement";
 import { SqueletteAbonnements } from "@/components/abonnements/SqueletteAbonnements";
 import { TableauComparaison } from "@/components/abonnements/TableauComparaison";
@@ -25,7 +25,7 @@ import { supabase } from "@/lib/supabase";
 // inscription, mention « aucun paiement ») a été retiré de cette page ; les tables, les routes et
 // lib/listeAttente.ts n'ont pas bougé. Ouverte depuis un modèle grisé du sélecteur, la page ne lit plus
 // les paramètres de l'adresse. Visible sans compte.
-// Le bouton Payer ouvre le parcours de paiement simulé (components/abonnements/ParcoursPaiement.tsx) :
+// Les cartes : la mise en avant d'un palier, l'alignement, la ligne « Bientôt » et le défilement sur\n// téléphone sont décrits dans components/chat/CartePalierListeAttente.tsx.\n// Le bouton Payer ouvre le parcours de paiement simulé (components/abonnements/ParcoursPaiement.tsx) :
 // conditions légales, connexion si besoin, moyen de paiement, formulaire, message de préparation. Aucun
 // service de paiement n'est branché, rien n'est débité.
 // Paliers, tableau et textes viennent du serveur (Supabase), en français et en anglais : rien n'est
@@ -119,11 +119,13 @@ export function PageAbonnements() {
 
       {config && (
         <div className="flex animate-dj-fade-in-rapide flex-col gap-8 motion-reduce:animate-none">
-          <section aria-label={t("attente_abo_titre")} className="grid items-start gap-4 pt-3 md:grid-cols-3">
+          <section aria-label={t("attente_abo_titre")} className={CLASSES_GRILLE_PALIERS}>
             {config.paliers.map((p, i) => (
               <CartePalierListeAttente
                 key={p.prix_usd}
                 palier={p}
+                index={i}
+                titreReserve={i === 0 && config.paliers.length > 1}
                 nomPrecedent={i > 0 ? t(`attente_palier_nom_${config.paliers[i - 1].prix_usd}`) : ""}
                 onPayer={() => payer(p.prix_usd)}
                 t={t}
