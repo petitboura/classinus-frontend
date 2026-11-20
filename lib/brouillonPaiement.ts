@@ -5,7 +5,7 @@
 const CLE = "classinus:brouillon-paiement";
 const DUREE_VALIDITE_MS = 15 * 60 * 1000;
 
-export type BrouillonPaiement = { palier: number };
+export type BrouillonPaiement = { palier: number; modele?: { id: string; nom: string } };
 
 export function memoriserBrouillonPaiement(brouillon: BrouillonPaiement) {
   try {
@@ -23,13 +23,17 @@ export function lireBrouillonPaiement(): BrouillonPaiement | null {
   try {
     const brut = window.sessionStorage.getItem(CLE);
     if (!brut) return null;
-    const note = JSON.parse(brut) as { palier?: unknown; a?: unknown };
+    const note = JSON.parse(brut) as { palier?: unknown; a?: unknown; modele?: { id?: unknown; nom?: unknown } };
     const recent = typeof note.a === "number" && Date.now() - note.a < DUREE_VALIDITE_MS;
     if (!recent || typeof note.palier !== "number") {
       window.sessionStorage.removeItem(CLE);
       return null;
     }
-    return { palier: note.palier };
+    const modele =
+      typeof note.modele?.id === "string" && note.modele.id
+        ? { id: note.modele.id, nom: typeof note.modele.nom === "string" && note.modele.nom ? note.modele.nom : note.modele.id }
+        : undefined;
+    return { palier: note.palier, modele };
   } catch {
     return null;
   }
