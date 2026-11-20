@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Home, Plug, Code2, Bell, Share2, Star, Compass, Sparkles, type LucideIcon } from "lucide-react";
+import { Home, Plug, Code2, Bell, Share2, Star, Compass, Crown, type LucideIcon } from "lucide-react";
 import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
@@ -63,10 +63,6 @@ import {
 // exclusivement mobiles).
 export const SECTIONS_BASE: { icone: LucideIcon; titre: string; sousTitre?: string; href: string }[] = [
   { icone: Home, titre: "Tableau de bord", sousTitre: "Mon espace", href: ROUTES_APP.tableauDeBord },
-  // 20/11/2026, demande de Bourama : bouton d'abonnement dans la barre latérale, hors du panneau du
-  // sélecteur de modèle (qui n'a pas bougé). Même ligne pour le web mobile, le natif et le tiroir du chat ;
-  // sur ordinateur, c'est la ligne « S'abonner » du rail (AppSidebar.tsx).
-  { icone: Sparkles, titre: "S'abonner", sousTitre: "Choisir un palier", href: "/abonnements" },
   { icone: Plug, titre: "Connecter Claude", sousTitre: "Utiliser Classinus dans Claude", href: "/connecter-claude" },
   { icone: Code2, titre: "Connecter Thonny", sousTitre: "Utiliser Classinus dans Thonny", href: "/connecter-thonny" },
   { icone: Bell, titre: "Rappels", sousTitre: "Notifications programmées", href: "/rappels" },
@@ -127,6 +123,27 @@ function LigneSection({
 }
 
 const AGENT_ID = "clovis";
+
+// 20/11/2026, demande de Bourama : bouton d'abonnement de la barre latérale, hors du panneau du sélecteur de
+// modèle. Refait le même jour parce que la première version (une ligne grise comme les autres) était trop
+// discrète : c'est maintenant un vrai bouton plein couleur d'accent, en haut du menu, avec une couronne
+// pleine (abonnement, premium). Même bouton pour le web mobile, le natif et le tiroir du chat ; sur
+// ordinateur, c'est le bouton du rail (AppSidebar.tsx).
+function BoutonAbonnement({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-cgpt-carte bg-dj-accent-1 px-4 py-3.5 text-left text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+    >
+      <Crown size={20} strokeWidth={1.75} fill="currentColor" className="flex-shrink-0 transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-110" />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-base font-bold leading-tight">S'abonner</span>
+        <span className="truncate text-xs font-medium leading-tight opacity-80">Choisir un palier</span>
+      </span>
+    </button>
+  );
+}
 
 // Rendu réel des deux blocs (navigation + actions), partagé entre
 // MenuHamburgerNatif.tsx (natif) et MenuHamburgerWeb.tsx (web mobile).
@@ -212,6 +229,9 @@ export function BlocsMenuPlus({
   if (plat) {
     return (
       <div className="flex flex-col">
+        <div className="px-2 pb-2">
+          <BoutonAbonnement onClick={() => naviguer("/abonnements")} />
+        </div>
         {lignesNavigation}
         <div className="my-2 h-px w-full bg-dj-bordure" />
         {lignesActions}
@@ -221,6 +241,7 @@ export function BlocsMenuPlus({
 
   return (
     <div className="flex flex-col gap-4">
+      <BoutonAbonnement onClick={() => naviguer("/abonnements")} />
       <div className={GROUPE_ENFERME}>{lignesNavigation}</div>
       <div className={GROUPE_ENFERME}>{lignesActions}</div>
     </div>

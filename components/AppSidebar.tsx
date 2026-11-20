@@ -31,7 +31,7 @@ import {
   ArrowUpRight,
   Hourglass,
   MonitorDown,
-  Sparkles,
+  Crown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useMonProfilAffiche } from "@/lib/useMonProfilAffiche";
@@ -745,24 +745,30 @@ export function AppSidebar({
         )}
 
         {/* 20/11/2026, demande de Bourama : bouton « S'abonner » dans la barre latérale, hors du panneau du
-            sélecteur de modèle. Il ouvre la page des abonnements sans modèle. Il prend la place du mt-auto
-            quand la barre est repliée, pour que ce bloc du bas (S'abonner, Télécharger, Plus) reste collé en bas. */}
+            sélecteur de modèle. Refait le même jour : la première version (une ligne grise) était trop
+            discrète. C'est maintenant un bouton plein couleur d'accent avec une couronne pleine, comme le
+            bouton d'abonnement des autres applications de chat. Ouvre la page des abonnements sans modèle.
+            Il prend la place du mt-auto quand la barre est repliée, pour que ce bloc du bas (S'abonner,
+            Télécharger, Plus) reste collé en bas. */}
         <Link
           href="/abonnements"
           title="S'abonner"
           aria-current={pathname === "/abonnements" ? "page" : undefined}
-          className={`group flex w-full items-center gap-2 rounded-xl transition-colors hover:bg-dj-surface-haute ${
+          className={`group flex w-full items-center gap-2 rounded-xl bg-dj-accent-1 text-[#1A0D02] transition-colors hover:bg-dj-accent-2 ${
             railOuvert ? "mt-2" : "mt-auto"
-          } ${pathname === "/abonnements" ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:text-dj-texte"}`}
+          } ${pathname === "/abonnements" ? "ring-2 ring-dj-accent-1 ring-offset-2 ring-offset-dj-rail" : ""}`}
         >
           <span className={CELLULE_ICONE_RAIL}>
-            <Sparkles
+            <Crown
               size={TAILLE_ICONE_RAIL}
-              strokeWidth={TRAIT_ICONE_RAIL}
-              className="transition-transform duration-200 group-hover:scale-110"
+              strokeWidth={1.75}
+              fill="currentColor"
+              className="transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-110"
             />
           </span>
-          <LibelleRail ouverte={railOuvert}>S'abonner</LibelleRail>
+          <LibelleRail ouverte={railOuvert}>
+            <span className="font-bold">S'abonner</span>
+          </LibelleRail>
         </Link>
 
         {/* 20/10/2026, demande de Bourama : le bouton "Télécharger pour PC" est une
