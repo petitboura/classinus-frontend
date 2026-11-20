@@ -26,9 +26,9 @@ import { supabase } from "@/lib/supabase";
 // carte a son bouton Payer. Tout ce qui touchait à la liste d'attente (formulaire, profil, consentement,
 // inscription, mention « aucun paiement ») a été retiré de cette page ; les tables, les routes et
 // lib/listeAttente.ts n'ont pas bougé. Ouverte depuis un modèle grisé du sélecteur
-// (?modele=...&nom=...), la page affiche une ligne « Pour utiliser <modèle>, choisis un palier » et envoie ce
-// modèle avec l'inscription (20/11/2026, demande de Bourama) ; ouverte directement ou depuis le bouton
-// S'abonner de la barre latérale, elle n'a pas de modèle. Visible sans compte.
+// (?modele=...&nom=...), la page garde ce modèle et l'envoie avec l'inscription (20/11/2026, demande de
+// Bourama), sans l'afficher ; ouverte directement ou depuis le bouton S'abonner de la barre latérale, elle
+// n'a pas de modèle. Visible sans compte.
 // Les cartes : la mise en avant d'un palier, l'alignement, la ligne « Bientôt » et le défilement sur
 // téléphone sont décrits dans components/chat/CartePalierListeAttente.tsx.
 // Le bouton Payer ouvre le parcours de paiement simulé (components/abonnements/ParcoursPaiement.tsx) :
@@ -128,10 +128,6 @@ export function PageAbonnements() {
           {config ? t("attente_abo_titre") : <Skeleton className="h-9 w-64 rounded sm:h-10" />}
         </h1>
 
-        {/* Ligne du modèle d'où la personne vient. Rien tant que le texte n'est pas chargé ou si la page est ouverte directement. */}
-        {config && modele && t("attente_abo_pour_modele", { modele: modele.nom }) && (
-          <p className="text-base text-dj-texte-muet">{t("attente_abo_pour_modele", { modele: modele.nom })}</p>
-        )}
       </header>
 
       {erreurChargement && <p className="text-base text-[var(--dj-erreur)]">{erreurChargement}</p>}
