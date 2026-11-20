@@ -31,6 +31,7 @@ import {
   ArrowUpRight,
   Hourglass,
   MonitorDown,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useMonProfilAffiche } from "@/lib/useMonProfilAffiche";
@@ -743,6 +744,27 @@ export function AppSidebar({
           </div>
         )}
 
+        {/* 20/11/2026, demande de Bourama : bouton « S'abonner » dans la barre latérale, hors du panneau du
+            sélecteur de modèle. Il ouvre la page des abonnements sans modèle. Il prend la place du mt-auto
+            quand la barre est repliée, pour que ce bloc du bas (S'abonner, Télécharger, Plus) reste collé en bas. */}
+        <Link
+          href="/abonnements"
+          title="S'abonner"
+          aria-current={pathname === "/abonnements" ? "page" : undefined}
+          className={`group flex w-full items-center gap-2 rounded-xl transition-colors hover:bg-dj-surface-haute ${
+            railOuvert ? "mt-2" : "mt-auto"
+          } ${pathname === "/abonnements" ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:text-dj-texte"}`}
+        >
+          <span className={CELLULE_ICONE_RAIL}>
+            <Sparkles
+              size={TAILLE_ICONE_RAIL}
+              strokeWidth={TRAIT_ICONE_RAIL}
+              className="transition-transform duration-200 group-hover:scale-110"
+            />
+          </span>
+          <LibelleRail ouverte={railOuvert}>S'abonner</LibelleRail>
+        </Link>
+
         {/* 20/10/2026, demande de Bourama : le bouton "Télécharger pour PC" est une
             ligne de la barre, juste au dessus de "Plus". Visible seulement dans
             un navigateur sur Windows (voir lib/useProposerTelechargementPc.ts).
@@ -752,9 +774,7 @@ export function AppSidebar({
           <Link
             href="/telecharger"
             title="Télécharger pour PC"
-            className={`group flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-              railOuvert ? "mt-2" : "mt-auto"
-            }`}
+            className="group mt-2 flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             <span className={CELLULE_ICONE_RAIL}>
               <MonitorDown
@@ -769,7 +789,7 @@ export function AppSidebar({
 
         <div
           ref={actionsRef}
-          className={`relative rounded-xl ${railOuvert || proposerTelechargementPc ? "mt-2" : "mt-auto"}`}
+          className="relative mt-2 rounded-xl"
         >
           <button
             onClick={basculerActions}

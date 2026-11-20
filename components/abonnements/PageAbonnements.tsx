@@ -13,7 +13,9 @@ import { messageErreur } from "@/lib/erreurs";
 import { obtenirLocale } from "@/lib/i18n/locale";
 import {
   lireConfigListeAttente,
+  lireModeleDansAdresse,
   remplirTexte,
+  type ModeleCible,
   type ConfigListeAttente,
   type PalierListeAttente,
 } from "@/lib/listeAttente";
@@ -23,9 +25,13 @@ import { supabase } from "@/lib/supabase";
 // trois cartes de palier façon page de tarification de Claude, puis le tableau de comparaison des paliers. Chaque
 // carte a son bouton Payer. Tout ce qui touchait à la liste d'attente (formulaire, profil, consentement,
 // inscription, mention « aucun paiement ») a été retiré de cette page ; les tables, les routes et
-// lib/listeAttente.ts n'ont pas bougé. Ouverte depuis un modèle grisé du sélecteur, la page ne lit plus
-// les paramètres de l'adresse. Visible sans compte.
-// Les cartes : la mise en avant d'un palier, l'alignement, la ligne « Bientôt » et le défilement sur\n// téléphone sont décrits dans components/chat/CartePalierListeAttente.tsx.\n// Le bouton Payer ouvre le parcours de paiement simulé (components/abonnements/ParcoursPaiement.tsx) :
+// lib/listeAttente.ts n'ont pas bougé. Ouverte depuis un modèle grisé du sélecteur
+// (?modele=...&nom=...), la page affiche une ligne « Pour utiliser <modèle>, choisis un palier » et envoie ce
+// modèle avec l'inscription (20/11/2026, demande de Bourama) ; ouverte directement ou depuis le bouton
+// S'abonner de la barre latérale, elle n'a pas de modèle. Visible sans compte.
+// Les cartes : la mise en avant d'un palier, l'alignement, la ligne « Bientôt » et le défilement sur
+// téléphone sont décrits dans components/chat/CartePalierListeAttente.tsx.
+// Le bouton Payer ouvre le parcours de paiement simulé (components/abonnements/ParcoursPaiement.tsx) :
 // conditions légales, connexion si besoin, moyen de paiement, formulaire, message de préparation. Aucun
 // service de paiement n'est branché, rien n'est débité.
 // Paliers, tableau et textes viennent du serveur (Supabase), en français et en anglais : rien n'est
@@ -41,6 +47,13 @@ export function PageAbonnements() {
   // d'une connexion en plein parcours).
   const [parcours, setParcours] = useState<{ palier: PalierListeAttente; etape: "legal" | "moyen" } | null>(null);
   const reprisVerifiee = useRef(false);
+  // Modèle grisé d'où la personne vient (adresse de la page), sinon null. Lu après l'affichage pour ne pas
+  // différer du rendu du serveur ; retrouvé aussi dans le brouillon quand elle revient d'une connexion.
+  const [modele, setModele] = useState<ModeleCible | null>(null);
+
+  useEffect(() => {
+    setModele(lireModeleDansAdresse());
+  }, []);
 
   useEffect(() => {
     let actif = true;
@@ -75,7 +88,10 @@ export function PageAbonnements() {
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
-        if (palier && session) setParcours({ palier, etape: "moyen" });
+        if (palier && session) {
+          if (brouillon.modele) setModele((actuel) => actuel ?? brouillon.modele ?? null);
+          setParcours({ palier, etape: "moyen" });
+        }
         else effacerBrouillonPaiement();
       })
       .catch(() => effacerBrouillonPaiement());
@@ -111,6 +127,11 @@ export function PageAbonnements() {
         <h1 className="text-3xl font-bold text-dj-texte sm:text-4xl">
           {config ? t("attente_abo_titre") : <Skeleton className="h-9 w-64 rounded sm:h-10" />}
         </h1>
+
+        {/* Ligne du modèle d'où la personne vient. Rien tant que le texte n'est pas chargé ou si la page est ouverte directement. */}
+        {config && modele && t("attente_abo_pour_modele", { modele: modele.nom }) && (
+          <p className="text-base text-dj-texte-muet">{t("attente_abo_pour_modele", { modele: modele.nom })}</p>
+        )}
       </header>
 
       {erreurChargement && <p className="text-base text-[var(--dj-erreur)]">{erreurChargement}</p>}
@@ -140,6 +161,7 @@ export function PageAbonnements() {
       {config && parcours && (
         <ParcoursPaiement
           palier={parcours.palier}
+          modele={modele}
           etapeInitiale={parcours.etape}
           moyens={config.moyens_paiement ?? []}
           t={t}

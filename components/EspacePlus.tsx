@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Home, Plug, Code2, Bell, Share2, Star, Compass, type LucideIcon } from "lucide-react";
+import { Home, Plug, Code2, Bell, Share2, Star, Compass, Sparkles, type LucideIcon } from "lucide-react";
 import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
@@ -63,6 +63,10 @@ import {
 // exclusivement mobiles).
 export const SECTIONS_BASE: { icone: LucideIcon; titre: string; sousTitre?: string; href: string }[] = [
   { icone: Home, titre: "Tableau de bord", sousTitre: "Mon espace", href: ROUTES_APP.tableauDeBord },
+  // 20/11/2026, demande de Bourama : bouton d'abonnement dans la barre latérale, hors du panneau du
+  // sélecteur de modèle (qui n'a pas bougé). Même ligne pour le web mobile, le natif et le tiroir du chat ;
+  // sur ordinateur, c'est la ligne « S'abonner » du rail (AppSidebar.tsx).
+  { icone: Sparkles, titre: "S'abonner", sousTitre: "Choisir un palier", href: "/abonnements" },
   { icone: Plug, titre: "Connecter Claude", sousTitre: "Utiliser Classinus dans Claude", href: "/connecter-claude" },
   { icone: Code2, titre: "Connecter Thonny", sousTitre: "Utiliser Classinus dans Thonny", href: "/connecter-thonny" },
   { icone: Bell, titre: "Rappels", sousTitre: "Notifications programmées", href: "/rappels" },

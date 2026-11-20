@@ -53,6 +53,25 @@ export function urlPageAbonnements(modeleId: string, modeleLabel: string): strin
   return `/abonnements?${params.toString()}`;
 }
 
+/** Un modèle grisé cliqué dans le sélecteur : son identifiant (celui que le serveur enregistre) et son nom affiché. */
+export type ModeleCible = { id: string; nom: string };
+
+const LONGUEUR_MAX_MODELE = 80;
+
+/**
+ * Modèle transmis dans l'adresse de la page des abonnements (?modele=...&nom=...), ou null quand la page est
+ * ouverte directement. Les valeurs viennent de l'adresse : elles sont nettoyées et raccourcies (le serveur
+ * les nettoie aussi), et le nom n'est affiché que comme texte.
+ */
+export function lireModeleDansAdresse(): ModeleCible | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const id = (params.get("modele") ?? "").trim().slice(0, LONGUEUR_MAX_MODELE);
+  if (!id) return null;
+  const nom = (params.get("nom") ?? "").trim().slice(0, LONGUEUR_MAX_MODELE);
+  return { id, nom: nom || id };
+}
+
 /** Source annoncée au serveur : web, android, ios ou pc (jamais devinée côté serveur). */
 export function sourceListeAttente(): string | null {
   const origine = obtenirOrigineAppareil();

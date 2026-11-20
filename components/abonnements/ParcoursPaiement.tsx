@@ -16,6 +16,7 @@ import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { effacerBrouillonPaiement, memoriserBrouillonPaiement } from "@/lib/brouillonPaiement";
 import {
   MODELE_PAGE_DIRECTE,
+  type ModeleCible,
   noterEtapeListeAttente,
   sInscrireListeAttente,
   sourceListeAttente,
@@ -34,6 +35,7 @@ import { prechargerLogosPaiement } from "@/components/abonnements/LogoMoyenPaiem
 
 export function ParcoursPaiement({
   palier,
+  modele,
   etapeInitiale,
   moyens,
   t,
@@ -41,6 +43,7 @@ export function ParcoursPaiement({
   onFerme,
 }: {
   palier: PalierListeAttente;
+  modele: ModeleCible | null;
   etapeInitiale: "legal" | "moyen";
   moyens: string[];
   t: Traduire;
@@ -80,7 +83,7 @@ export function ParcoursPaiement({
   }, []);
 
   useEffect(() => {
-    if (etape === "formulaire") noterEtapeListeAttente("formulaire_ouvert", MODELE_PAGE_DIRECTE, locale);
+    if (etape === "formulaire") noterEtapeListeAttente("formulaire_ouvert", modele?.id ?? MODELE_PAGE_DIRECTE, locale);
     // Une seule note par ouverture du formulaire.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [etape]);
@@ -101,7 +104,7 @@ export function ParcoursPaiement({
   }
 
   function allerConnexion(chemin: string) {
-    memoriserBrouillonPaiement({ palier: palier.prix_usd });
+    memoriserBrouillonPaiement({ palier: palier.prix_usd, modele: modele ?? undefined });
     router.push(chemin);
   }
 
@@ -110,7 +113,7 @@ export function ParcoursPaiement({
     setErreur(null);
     try {
       await sInscrireListeAttente({
-        modele_id: MODELE_PAGE_DIRECTE,
+        modele_id: modele?.id ?? MODELE_PAGE_DIRECTE,
         palier_prix: palier.prix_usd,
         consentement,
         pays: pays || null,
