@@ -1,14 +1,22 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Check, LoaderCircle } from "lucide-react";
-import { ChampTelephone } from "@/components/abonnements/ChampTelephone";
 import { LogoMoyenPaiement } from "@/components/abonnements/LogoMoyenPaiement";
 import { CaseACocher } from "@/components/CaseACocher";
+import { Skeleton } from "@/components/Skeleton";
 import { chiffresApresIndicatif } from "@/lib/paysTelephone";
 
 // Les cinq écrans du parcours de paiement de la page Abonnements (19/11/2026, demande de Bourama).
 // Chaque écran ne fait qu'afficher et prévenir le parent ; la logique est dans ParcoursPaiement.tsx.
 // Tous les textes viennent du serveur (clés attente_pay_* et attente_moyen_*), jamais écrits ici.
+
+// Le champ du numéro embarque les drapeaux de tous les pays : il ne se charge qu'à l'ouverture de cette
+// étape, avec un squelette de la même hauteur pour que rien ne saute à son arrivée.
+const ChampTelephone = dynamic(() => import("@/components/abonnements/ChampTelephone").then((m) => m.ChampTelephone), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[46px] w-full rounded-lg" />,
+});
 
 export type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
 export type EtapeParcours = "legal" | "connexion" | "moyen" | "formulaire" | "merci";

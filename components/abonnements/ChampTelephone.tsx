@@ -7,8 +7,10 @@ import { FlottantAncre } from "@/components/FlottantAncre";
 import { nomDuPays } from "@/lib/listeAttente";
 import {
   PAYS_TELEPHONE,
+  affichageIndicatif,
   nettoyerSaisie,
   numeroApresChoixPays,
+  partieLocale,
   paysDepuisNumero,
   paysParCode,
 } from "@/lib/paysTelephone";
@@ -16,9 +18,10 @@ import type { CoteFlottant } from "@/lib/placementFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // Champ de numéro de téléphone façon formulaire classique (19/11/2026, demande de Bourama) : un sélecteur
-// de pays (drapeau et indicatif) à gauche, la zone du numéro à droite. Choisir un pays met son indicatif
-// dans le numéro ; écrire un indicatif (+221...) fait apparaître le pays tout seul. Les pays et leurs
-// indicatifs sont dans lib/paysTelephone.ts. La liste s'ouvre avec FlottantAncre et ne contient aucun
+// de pays (drapeau et indicatif) à gauche, la zone du numéro à droite. L'indicatif ne se lit qu'une fois,
+// dans le sélecteur : la zone ne montre que le numéro. Choisir un pays met son indicatif dans le numéro
+// complet gardé par le parent ; écrire un indicatif (+221...) dans la zone fait apparaître le pays tout
+// seul et l'indicatif passe dans le sélecteur. Les pays et leurs indicatifs sont dans lib/paysTelephone.ts. La liste s'ouvre avec FlottantAncre et ne contient aucun
 // <select> natif (règle du dépôt, voir CLAUDE.md).
 
 const COTES_LISTE: CoteFlottant[] = ["bas", "haut"];
@@ -78,7 +81,7 @@ export function ChampTelephone({
       PAYS_TELEPHONE.map((p) => ({
         ...p,
         nom: nomDuPays(p.code, locale),
-        cherche: sansAccents(`${nomDuPays(p.code, "fr")} ${nomDuPays(p.code, "en")} +${p.indicatif}`),
+        cherche: sansAccents(`${nomDuPays(p.code, "fr")} ${nomDuPays(p.code, "en")} ${affichageIndicatif(p)} +${p.indicatif}`),
       })).sort((a, b) => a.nom.localeCompare(b.nom, locale)),
     [locale],
   );
@@ -106,15 +109,27 @@ export function ChampTelephone({
     saisieRef.current?.focus();
   }
 
+  // La zone ne montre que le numéro : l'indicatif du pays choisi est déjà dans le sélecteur.
+  const affiche = choisi ? (partieLocale(numero, choisi.indicatif) ?? numero) : numero;
+
   function surSaisie(brut: string) {
-    let valeur = nettoyerSaisie(brut);
-    // Un numéro tapé sans + : avec un pays choisi, c'est la suite de son indicatif ; sans pays, c'est un
-    // indicatif international qu'on laisse commencer par +.
-    if (valeur !== "" && !valeur.startsWith("+")) {
-      valeur = choisi ? `+${choisi.indicatif} ${valeur}` : `+${valeur}`;
+    const saisie = nettoyerSaisie(brut);
+    if (choisi && !saisie.startsWith("+")) {
+      // Un numéro tapé avec un pays choisi : c'est la suite de son indicatif.
+      onNumero(`+${choisi.indicatif} ${saisie}`);
+      return;
     }
-    onNumero(valeur);
-    if (valeur.startsWith("+")) onPays(paysDepuisNumero(valeur, pays)?.code ?? "");
+    // Sans pays choisi, des chiffres seuls sont un indicatif international qu'on laisse commencer par +.
+    const international = saisie === "" || saisie.startsWith("+") ? saisie : `+${saisie}`;
+    if (international === "") {
+      onNumero("");
+      onPays("");
+      return;
+    }
+    const trouve = paysDepuisNumero(international, pays);
+    const local = trouve ? partieLocale(international, trouve.indicatif) : null;
+    onNumero(trouve && local !== null ? `+${trouve.indicatif} ${local}` : international);
+    onPays(trouve?.code ?? "");
   }
 
   return (
@@ -131,7 +146,7 @@ export function ChampTelephone({
           {choisi ? (
             <>
               <DrapeauPays code={choisi.code} />
-              <span>+{choisi.indicatif}</span>
+              <span>{affichageIndicatif(choisi)}</span>
             </>
           ) : (
             <Globe size={18} className="text-dj-texte-muet" />
@@ -144,7 +159,7 @@ export function ChampTelephone({
           inputMode="tel"
           autoComplete="tel"
           maxLength={32}
-          value={numero}
+          value={affiche}
           onChange={(e) => surSaisie(e.target.value)}
           className="min-w-0 flex-1 rounded-r-lg bg-transparent px-3 py-2.5 text-base text-dj-texte outline-none"
         />
@@ -196,7 +211,7 @@ export function ChampTelephone({
             >
               <DrapeauPays code={o.code} />
               <span className="min-w-0 flex-1 truncate">{o.nom}</span>
-              <span className="flex-shrink-0 text-xs text-dj-texte-muet">+{o.indicatif}</span>
+              <span className="flex-shrink-0 text-xs text-dj-texte-muet">{affichageIndicatif(o)}</span>
             </button>
           ))}
         </FlottantAncre>
