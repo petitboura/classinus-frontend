@@ -2340,6 +2340,11 @@ export function BarreDeSaisie({
               )}
             </button>
           ))}
+          {plusDeDepots && (
+            <p className="border-t border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet" role="status">
+              Seuls les {maximumDepotsAffiches} dépôts les plus récemment mis à jour sont affichés. D'autres dépôts existent sur GitHub.
+            </p>
+          )}
         </div>
       )}
 
