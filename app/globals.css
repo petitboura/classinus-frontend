@@ -43,7 +43,7 @@ math-field {
 .hljs-selector-tag,
 .hljs-literal,
 .hljs-type {
-  color: var(--dj-accent-1-texte);
+  color: var(--dj-dore-texte);
 }
 .hljs-string,
 .hljs-attr,
@@ -107,32 +107,29 @@ math-field {
   --dj-rail-survol: #e5dfd2;
   --dj-rail-texte: #4f4b43;
   --dj-bordure: rgba(28, 26, 22, 0.08);
-  --dj-bordure-forte: rgba(184, 134, 11, 0.35);
-  --dj-accent-1: #b8860b;
-  /* Correctif contraste (29/08, audit UX partie 3) -- --dj-accent-1 sert
-     aussi de fond de bouton (texte fixe #1A0D02 dessus, 5.85:1, ok), donc
-     on ne peut pas le foncer sans casser ce contraste-là. En mode clair,
-     --dj-accent-1 utilisé comme COULEUR DE TEXTE (onglet actif, liens,
-     mots-clés code) ne passe pas 4.5:1 sur --dj-fond (3.07:1 mesuré).
-     --dj-accent-1-texte reprend donc la valeur de --dj-accent-2 (couleur
-     déjà existante dans la palette, utilisée pour le hover) uniquement
-     pour ces usages texte en clair -- 4.76:1, aucune nouvelle teinte
-     introduite. En sombre, --dj-accent-1 passait déjà large (11.13:1) :
-     --dj-accent-1-texte y reste identique à --dj-accent-1, rien ne change
-     visuellement pour le mode sombre. */
-  --dj-accent-1-texte: var(--dj-accent-2);
-  --dj-accent-2: #8a6a1f;
-  /* Ajouté 30/08/2026 (tâche 3, Material 3 Expressive) : conteneur "tonal"
-     -- fond translucide de --dj-accent-1, pour donner un vrai fond coloré
-     aux icônes/blocs importants (containment M3E) sans introduire de
-     nouvelle teinte ni assombrir --dj-accent-1 lui même (qui reste utilisé
-     tel quel en fond plein de bouton, voir correctif contraste ci-dessus).
-     Même opacité que --dj-bordure-forte (même accent, juste une surface
-     au lieu d'un trait) pour rester cohérent avec ce qui existait déjà. */
-  --dj-accent-1-conteneur: rgba(184, 134, 11, 0.14);
-  /* Surlignage du texte sélectionné (03/11/2026, demande Bourama : l'ancien doré plein était
-     trop foncé). Doré transparent : le texte garde sa couleur et reste lisible dessous. */
-  --dj-selection: rgba(184, 134, 11, 0.28);
+  --dj-bordure-forte: rgba(17, 17, 17, 0.28);
+  /* Couleur principale, neutre (21/11/2026, demande Bourama : trop de doré
+     partout). Noir en thème clair, blanc en thème sombre : fonds de boutons
+     principaux, bordures de sélection, anneaux de focus. Le texte posé
+     dessus est dj-sur-accent. dj-accent-2 est son état au survol. Le doré
+     n'existe plus que par les variables dj-dore plus bas, réservées à
+     quelques repères (logo, onglet actif, notifications, graphiques). */
+  --dj-accent-1: #111111;
+  --dj-sur-accent: #ffffff;
+  --dj-accent-1-texte: var(--dj-texte);
+  --dj-accent-2: #3a3a3a;
+  /* Fond translucide neutre pour les icônes et blocs importants (containment
+     Material 3 Expressive), même rôle qu'avant mais sans teinte. */
+  --dj-accent-1-conteneur: rgba(17, 17, 17, 0.06);
+  /* Doré, dosé : seulement là où la couleur a un sens précis. */
+  --dj-dore: #b8860b;
+  --dj-dore-texte: #8a6a1f;
+  --dj-dore-survol: #8a6a1f;
+  --dj-dore-conteneur: rgba(184, 134, 11, 0.14);
+  --dj-sur-dore: #1a0d02;
+  /* Surlignage du texte sélectionné : gris translucide, le texte garde sa
+     couleur et reste lisible dessous. */
+  --dj-selection: rgba(17, 17, 17, 0.16);
   --dj-texte: #1c1a16;
   --dj-texte-muet: #6b675e;
   --dj-succes: #15803d;
@@ -145,7 +142,7 @@ math-field {
   --dj-logo-2: #b8860b;
   --dj-logo-3: #6b5416;
   --dj-gradient: linear-gradient(135deg, #e3b341 0%, #b8860b 55%, #6b5416 100%);
-  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(184, 134, 11, 0.1), transparent 60%);
+  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(17, 17, 17, 0.05), transparent 60%);
   --dj-shimmer: linear-gradient(100deg, rgba(28, 26, 22, 0.03) 20%, rgba(107, 103, 94, 0.35) 50%, rgba(28, 26, 22, 0.03) 80%);
   --dj-shimmer-texte: linear-gradient(100deg, #9a968b 38%, #1c1a16 50%, #9a968b 62%);
   --dj-erreur: #dc2626;
@@ -285,12 +282,18 @@ math-field {
     --dj-rail-survol: #2e2921;
     --dj-rail-texte: #b8b0a2;
     --dj-bordure: rgba(245, 240, 230, 0.08);
-    --dj-bordure-forte: rgba(227, 179, 65, 0.35);
-    --dj-accent-1: #e8bf60;
-    --dj-accent-1-texte: var(--dj-accent-1);
-    --dj-accent-1-conteneur: rgba(232, 191, 96, 0.16);
-    --dj-selection: rgba(232, 191, 96, 0.30);
-    --dj-accent-2: #da9f0d;
+    --dj-bordure-forte: rgba(255, 255, 255, 0.30);
+    --dj-accent-1: #f5f5f5;
+    --dj-sur-accent: #111111;
+    --dj-accent-1-texte: var(--dj-texte);
+    --dj-accent-1-conteneur: rgba(255, 255, 255, 0.10);
+    --dj-selection: rgba(255, 255, 255, 0.22);
+    --dj-accent-2: #cfcfcf;
+    --dj-dore: #e8bf60;
+    --dj-dore-texte: #e8bf60;
+    --dj-dore-survol: #da9f0d;
+    --dj-dore-conteneur: rgba(232, 191, 96, 0.16);
+    --dj-sur-dore: #1a0d02;
     --dj-texte: #f5f0e6;
     --dj-texte-muet: #9a9184;
     --dj-succes: #34d399;
@@ -303,7 +306,7 @@ math-field {
     --dj-logo-2: #d9a438;
     --dj-logo-3: #8a6a1f;
     --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
-    --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
+    --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 60%);
     --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
     --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
     --dj-erreur: #f87171;
@@ -318,12 +321,18 @@ math-field {
   --dj-rail-survol: #2e2921;
   --dj-rail-texte: #b8b0a2;
   --dj-bordure: rgba(245, 240, 230, 0.08);
-  --dj-bordure-forte: rgba(227, 179, 65, 0.35);
-  --dj-accent-1: #e8bf60;
-  --dj-accent-1-texte: var(--dj-accent-1);
-  --dj-accent-1-conteneur: rgba(232, 191, 96, 0.16);
-  --dj-selection: rgba(232, 191, 96, 0.30);
-  --dj-accent-2: #da9f0d;
+  --dj-bordure-forte: rgba(255, 255, 255, 0.30);
+  --dj-accent-1: #f5f5f5;
+  --dj-sur-accent: #111111;
+  --dj-accent-1-texte: var(--dj-texte);
+  --dj-accent-1-conteneur: rgba(255, 255, 255, 0.10);
+  --dj-selection: rgba(255, 255, 255, 0.22);
+  --dj-accent-2: #cfcfcf;
+  --dj-dore: #e8bf60;
+  --dj-dore-texte: #e8bf60;
+  --dj-dore-survol: #da9f0d;
+  --dj-dore-conteneur: rgba(232, 191, 96, 0.16);
+  --dj-sur-dore: #1a0d02;
   --dj-texte: #f5f0e6;
   --dj-texte-muet: #9a9184;
   --dj-succes: #34d399;
@@ -336,7 +345,7 @@ math-field {
   --dj-logo-2: #d9a438;
   --dj-logo-3: #8a6a1f;
   --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
-  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
+  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 60%);
   --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
   --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
   --dj-erreur: #f87171;
@@ -535,7 +544,7 @@ select:focus-visible {
   0%,
   70% {
     background-color: var(--dj-accent-1-conteneur);
-    box-shadow: inset 3px 0 0 var(--dj-accent-1);
+    box-shadow: inset 3px 0 0 var(--dj-dore);
   }
   100% {
     background-color: transparent;

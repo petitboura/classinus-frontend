@@ -131,7 +131,8 @@ n'a plus de fond, son texte blanc devient invisible (c'est arrivé au bouton
 "Nouveau skill", blanc en thème sombre).
 - Les seules couleurs `dj-...` permises sont celles de `tailwind.config.ts`
   (bloc `colors.dj` et `backgroundImage`).
-- Bouton principal : `bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2`.
+- Bouton principal : `bg-dj-accent-1 text-dj-sur-accent hover:bg-dj-accent-2`. Depuis le 21 novembre 2026, `accent-1` est neutre (noir en thème clair, blanc en thème sombre) et `sur-accent` est le texte posé dessus. Ne jamais écrire une couleur de texte en dur sur un bouton principal.
+- Le doré est dosé (Bourama, 21 novembre 2026) : `dore`, `dore-texte`, `dore-survol`, `dore-conteneur`, `sur-dore` seulement pour quelques repères précis (logo, élément actif de la navigation, notifications, graphiques, mise en avant des abonnements). Ne pas l'étaler dans l'interface.
 - `tests/verifier-couleurs-theme.mjs` tourne avant chaque build (`prebuild`, et
   les builds Capacitor) et l'arrête avec le fichier et la ligne fautifs. Ne pas
   le contourner ni l'assouplir. Pour une vraie nouvelle couleur, l'ajouter

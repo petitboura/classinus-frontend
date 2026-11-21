@@ -140,7 +140,7 @@ export function BoutonNotifications({ connecte }: { connecte: boolean }) {
       >
         <Bell size={22} className="transition-transform duration-200 group-hover:scale-95" />
         {nonLues > 0 && (
-          <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-dj-accent-1 px-1 text-[10px] font-medium leading-none text-white">
+          <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-dj-dore px-1 text-[10px] font-medium leading-none text-dj-sur-dore">
             {nonLues > 9 ? "9+" : nonLues}
           </span>
         )}
@@ -175,13 +175,13 @@ export function BoutonNotifications({ connecte }: { connecte: boolean }) {
                     className={`rounded-xl px-3 py-2 ${n.lu ? "" : "bg-dj-surface-haute/60"}`}
                   >
                     <div className="flex items-start gap-2">
-                      {!n.lu && <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-dj-accent-1" />}
+                      {!n.lu && <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-dj-dore" />}
                       <div className={n.lu ? "ml-3.5 flex-1" : "flex-1"}>
                         <p className="text-sm text-dj-texte">{n.titre}</p>
                         {n.contenu && <p className="mt-0.5 text-xs text-dj-texte-muet">{n.contenu}</p>}
                         <button
                           onClick={() => onClicNotification(n)}
-                          className="mt-2 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+                          className="mt-2 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
                         >
                           Télécharger
                         </button>
@@ -197,7 +197,7 @@ export function BoutonNotifications({ connecte }: { connecte: boolean }) {
                     }`}
                   >
                     <div className="flex items-start gap-2">
-                      {!n.lu && <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-dj-accent-1" />}
+                      {!n.lu && <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-dj-dore" />}
                       <div className={n.lu ? "ml-3.5" : ""}>
                         <p className="text-sm text-dj-texte">{n.titre}</p>
                         {n.contenu && <p className="mt-0.5 text-xs text-dj-texte-muet">{n.contenu}</p>}

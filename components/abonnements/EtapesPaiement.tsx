@@ -15,7 +15,7 @@ export type Traduire = (cle: string, valeurs?: Record<string, string | number>) 
 export type EtapeParcours = "legal" | "connexion" | "moyen" | "formulaire" | "merci";
 
 const BOUTON_PRINCIPAL =
-  "inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-5 py-3 text-base font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-dj-accent-1 px-5 py-3 text-base font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:cursor-not-allowed disabled:opacity-50";
 const BOUTON_TEXTE = "text-sm font-medium text-dj-texte-muet transition-colors hover:text-dj-texte";
 const TITRE_ECRAN = "text-xl font-bold text-dj-texte";
 const TITRE_CHAMP = "text-sm font-semibold text-dj-texte-muet";
@@ -126,7 +126,7 @@ export function EtapeMoyen({
                 <LogoMoyenPaiement id={id} />
                 {t(`attente_moyen_${id}`)}
               </span>
-              {choisi && <Check size={18} className="text-dj-accent-1" />}
+              {choisi && <Check size={18} className="text-dj-dore" />}
             </button>
           );
         })}

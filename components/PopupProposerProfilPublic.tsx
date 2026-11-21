@@ -75,7 +75,7 @@ export function PopupProposerProfilPublic({ onFermer }: { onFermer: () => void }
           <button
             onClick={activer}
             disabled={enregistrement}
-            className="flex-1 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+            className="flex-1 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {enregistrement ? "…" : "Activer"}
           </button>

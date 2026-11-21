@@ -134,7 +134,7 @@ function BoutonAbonnement({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-cgpt-carte bg-dj-accent-1 px-4 py-3.5 text-left text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+      className="group flex w-full items-center gap-3 rounded-cgpt-carte bg-dj-accent-1 px-4 py-3.5 text-left text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
     >
       <Crown size={20} strokeWidth={1.75} fill="currentColor" className="flex-shrink-0 transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-110" />
       <span className="flex min-w-0 flex-1 flex-col">

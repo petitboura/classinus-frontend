@@ -158,7 +158,7 @@ export function EspaceEntrerCode({ sansEnTete = false }: { sansEnTete?: boolean 
         <button
           onClick={valider}
           disabled={enCours || !code.trim()}
-          className="flex-shrink-0 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-3 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+          className="flex-shrink-0 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-3 text-sm font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
         >
           {enCours ? "…" : "Valider"}
         </button>

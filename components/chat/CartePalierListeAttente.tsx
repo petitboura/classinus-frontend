@@ -77,7 +77,7 @@ export function CartePalierListeAttente({
         }`}
       >
         {badge && (
-          <span className="absolute -top-2.5 left-5 rounded-full bg-dj-accent-1 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-[#1A0D02]">
+          <span className="absolute -top-2.5 left-5 rounded-full bg-dj-accent-1 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-dj-sur-accent">
             {badge}
           </span>
         )}
@@ -98,7 +98,7 @@ export function CartePalierListeAttente({
           onClick={onPayer}
           className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-3 text-base font-bold transition-colors ${
             enAvant
-              ? "bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2"
+              ? "bg-dj-accent-1 text-dj-sur-accent hover:bg-dj-accent-2"
               : "border border-dj-bordure-forte bg-transparent text-dj-texte hover:bg-dj-surface-haute"
           }`}
         >

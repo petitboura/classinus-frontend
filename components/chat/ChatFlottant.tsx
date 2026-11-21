@@ -435,7 +435,7 @@ export function ChatFlottant({
         // Levée au-dessus de BarreOngletsWeb via --dj-barre-onglets-web
         // (retombe à la zone de sécurité seule quand le clavier est ouvert,
         // la bulle reste alors visible en bas).
-        className="group fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-12 w-12 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2"
+        className="group fixed bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-12 w-12 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-dj-sur-accent shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2"
       >
         <Bird size={20} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
       </button>
@@ -630,7 +630,7 @@ export function ChatFlottant({
               <p className="text-sm text-dj-texte">{erreur ?? "Une erreur est survenue."}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-[#1A0D02]"
+                className="rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-dj-sur-accent"
               >
                 Réessayer
               </button>

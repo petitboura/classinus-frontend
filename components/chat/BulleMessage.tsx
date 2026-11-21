@@ -1071,7 +1071,7 @@ function BulleMessageInterne({
               setEnEdition(false);
               onEditer?.(texteEdition);
             }}
-            className="rounded-md bg-dj-accent-1 px-3 py-1.5 font-semibold text-[#1A0D02]"
+            className="rounded-md bg-dj-accent-1 px-3 py-1.5 font-semibold text-dj-sur-accent"
           >
             Renvoyer
           </button>
@@ -1421,7 +1421,7 @@ function BulleMessageInterne({
               <button
                 type="button"
                 onClick={validerReponsesGroupees}
-                className="mt-2 animate-dj-fade-in-rapide rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02]"
+                className="mt-2 animate-dj-fade-in-rapide rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent"
               >
                 Valider mes réponses
               </button>
@@ -1440,7 +1440,7 @@ function BulleMessageInterne({
               window.getSelection()?.removeAllRanges();
             }}
             style={{ left: selection.x, top: selection.y - 40 }}
-            className="fixed z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] shadow-lg"
+            className="fixed z-20 -translate-x-1/2 flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-dj-sur-accent shadow-lg"
           >
             <MessageSquareQuote size={13} />
             Expliquer

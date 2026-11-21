@@ -754,9 +754,9 @@ export function AppSidebar({
           href="/abonnements"
           title="S'abonner"
           aria-current={pathname === "/abonnements" ? "page" : undefined}
-          className={`group flex w-full items-center gap-2 rounded-xl bg-dj-accent-1 text-[#1A0D02] transition-colors hover:bg-dj-accent-2 ${
+          className={`group flex w-full items-center gap-2 rounded-xl bg-dj-dore text-dj-sur-dore transition-colors hover:bg-dj-dore-survol ${
             railOuvert ? "mt-2" : "mt-auto"
-          } ${pathname === "/abonnements" ? "ring-2 ring-dj-accent-1 ring-offset-2 ring-offset-dj-rail" : ""}`}
+          } ${pathname === "/abonnements" ? "ring-2 ring-dj-dore ring-offset-2 ring-offset-dj-rail" : ""}`}
         >
           <span className={CELLULE_ICONE_RAIL}>
             <Crown
@@ -838,7 +838,7 @@ export function AppSidebar({
                           }
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
-                          actif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                          actif ? "text-dj-dore-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
                         }`}
                       >
                         <o.Icone size={16} className="flex-shrink-0" />

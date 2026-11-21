@@ -139,7 +139,7 @@ export function MenuGroupe({
 
   const classeBouton = plus
     ? `group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
-        actif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+        actif ? "text-dj-dore-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
       } ${ouvert && !actif ? "bg-dj-surface-haute text-dj-texte" : ""}`
     : `group flex w-full items-center ${mobile ? `${ECART_LIBELLE_TIROIR} px-2` : "gap-2"} rounded-xl transition-colors ${
         actif || ouvert ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -251,7 +251,7 @@ export function MenuGroupe({
                   }}
                   className={`flex w-full items-center rounded-lg text-left transition-colors ${
                     mobile ? "gap-2.5 px-2.5 py-2 text-sm font-semibold" : "gap-2 px-2 py-1 text-xs font-semibold"
-                  } ${estActif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
+                  } ${estActif ? "text-dj-dore-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
                 >
                   <s.Icone
                     size={mobile ? 16 : TAILLE_ICONE_BULLE}

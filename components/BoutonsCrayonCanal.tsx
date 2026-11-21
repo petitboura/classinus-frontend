@@ -38,7 +38,7 @@ export function BoutonCrayonCanal() {
       title={libelle}
       className={`${CLASSE_BASE} ${
         actif
-          ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02]"
+          ? "border-dj-accent-1 bg-dj-accent-1 text-dj-sur-accent"
           : "border-dj-bordure bg-dj-surface text-dj-texte-muet hover:text-dj-texte"
       }`}
     >

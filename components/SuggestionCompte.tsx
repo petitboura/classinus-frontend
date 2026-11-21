@@ -40,7 +40,7 @@ export function SuggestionCompte({ texte }: { texte: string }) {
       <p className="text-xs text-dj-texte-muet">{texte}</p>
       <button
         onClick={() => setOuverte(true)}
-        className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-dj-accent-1 px-2.5 py-1 text-xs font-semibold text-[#1a0f06] transition-colors hover:bg-dj-accent-2"
+        className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-dj-accent-1 px-2.5 py-1 text-xs font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
       >
         <UserPlus size={12} />
         Créer un compte

@@ -137,7 +137,7 @@ export function ConnecteurNotionCarte() {
           <button
             onClick={connecter}
             disabled={enCours}
-            className="flex-shrink-0 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+            className="flex-shrink-0 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {enCours ? "Connexion…" : "Connecter"}
           </button>

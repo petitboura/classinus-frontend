@@ -48,7 +48,7 @@ export function BoutonsCompteVisiteur() {
       </Link>
       <Link
         href="/inscription"
-        className="rounded-cgpt-bouton bg-dj-accent-1 px-[22px] py-3 text-sm font-semibold text-[#1a0f06] transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 active:scale-[.98]"
+        className="rounded-cgpt-bouton bg-dj-accent-1 px-[22px] py-3 text-sm font-semibold text-dj-sur-accent transition-colors duration-200 ease-cgpt-doux hover:bg-dj-accent-2 active:scale-[.98]"
       >
         {t("Créer un compte")}
       </Link>

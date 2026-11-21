@@ -1917,7 +1917,7 @@ export function BibliothequePublique() {
           <SlidersHorizontal size={13} />
           Filtre
           {nombreFiltresActifs > 0 && (
-            <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-[#1A0D02]">
+            <span className="rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] leading-none text-dj-sur-accent">
               {nombreFiltresActifs}
             </span>
           )}
@@ -2068,7 +2068,7 @@ export function BibliothequePublique() {
                     setDossierEnAttenteStatut(null);
                     if (fichiers) envoyerDossierDirect(fichiers, "contribution_libre");
                   }}
-                  className="flex items-center gap-1 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2"
+                  className="flex items-center gap-1 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent hover:bg-dj-accent-2"
                 >
                   <Globe size={14} />
                   Contribution libre
@@ -2344,7 +2344,7 @@ export function BibliothequePublique() {
                 </button>
                 <button
                   onClick={creerDossier}
-                  className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2"
+                  className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent hover:bg-dj-accent-2"
                 >
                   Créer
                 </button>
@@ -2908,7 +2908,7 @@ export function BibliothequePublique() {
       <button
         onClick={() => setMenuAjoutOuvert((v) => !v)}
         aria-label={menuAjoutOuvert ? "Fermer le menu d'ajout" : "Ajouter"}
-        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
+        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-dj-sur-accent shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
       >
         <Plus size={18} className={`transition-transform ${menuAjoutOuvert ? "rotate-45" : ""}`} />
       </button>
@@ -2990,7 +2990,7 @@ export function BibliothequePublique() {
               <button
                 onClick={ajouterFichier}
                 disabled={envoi || fichiers.length === 0}
-                className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 {envoi ? "Envoi…" : "Ajouter"}
               </button>
@@ -3071,7 +3071,7 @@ export function BibliothequePublique() {
               <button
                 onClick={envoyerTexteOuLien}
                 disabled={!texteOuLien.trim() || envoi}
-                className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 {envoi ? "Envoi…" : "Ajouter"}
               </button>
@@ -3107,7 +3107,7 @@ export function BibliothequePublique() {
                       key={t.id}
                       onClick={() => setFiltreType(t.id)}
                       className={`rounded-cgpt-bouton px-2.5 py-1 text-xs font-medium transition-colors ${
-                        filtreType === t.id ? "bg-dj-accent-1 text-[#1A0D02]" : "border border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
+                        filtreType === t.id ? "bg-dj-accent-1 text-dj-sur-accent" : "border border-dj-bordure text-dj-texte-muet hover:text-dj-texte"
                       }`}
                     >
                       {t.label}
@@ -3173,7 +3173,7 @@ export function BibliothequePublique() {
               )}
               <button
                 onClick={() => setPanneauFiltreOuvert(false)}
-                className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+                className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
               >
                 Fermer
               </button>

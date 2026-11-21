@@ -75,7 +75,7 @@ export function OndeVoix({ mini = false, className }: Props) {
     observateur.observe(toile);
 
     // Couleur du thème, relue de temps en temps pour suivre le mode clair ou sombre.
-    let couleur = "#b8860b";
+    let couleur = "#111111";
     let derniereLectureCouleur = -Infinity;
 
     const etatAffiche = { amplitude: 0.04, remplissage: 0, epaisseur: 2 };

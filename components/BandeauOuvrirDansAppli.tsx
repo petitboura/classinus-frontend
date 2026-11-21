@@ -68,7 +68,7 @@ export function BandeauOuvrirDansAppli() {
       <a
         href={adresseOuvertureAppliPc(suiteAdresse)}
         onClick={fermer}
-        className="shrink-0 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1a0f06] transition-colors hover:bg-dj-accent-2"
+        className="shrink-0 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2"
       >
         Ouvrir
       </a>

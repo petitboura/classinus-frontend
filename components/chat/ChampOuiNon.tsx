@@ -30,7 +30,7 @@ export function ChampOuiNon({
             aria-pressed={selectionne}
             className={`flex items-center gap-1.5 rounded-cgpt-bouton border px-4 py-2 text-sm capitalize transition-colors ${
               selectionne
-                ? "border-dj-accent-1 bg-dj-accent-1 text-[#1A0D02]"
+                ? "border-dj-accent-1 bg-dj-accent-1 text-dj-sur-accent"
                 : "border-dj-bordure bg-dj-surface-haute text-dj-texte hover:border-dj-bordure-forte"
             } ${desactive ? "cursor-default opacity-60" : "cursor-pointer"}`}
           >

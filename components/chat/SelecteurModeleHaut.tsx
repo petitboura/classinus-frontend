@@ -230,7 +230,7 @@ function OptionModele({
         <span
           title={libelleVerrou}
           aria-label={libelleVerrou}
-          className="flex-shrink-0 rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] font-bold leading-none text-[#1A0D02]">
+          className="flex-shrink-0 rounded-full bg-dj-accent-1 px-1.5 py-0.5 text-[10px] font-bold leading-none text-dj-sur-accent">
           {badge}
         </span>
       )}

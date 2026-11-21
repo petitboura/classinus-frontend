@@ -133,7 +133,7 @@ function ChampStandalone({
               type="button"
               disabled={desactive || !valeurComplete(champ, valeur)}
               onClick={() => envoyer(valeur)}
-              className="mt-2 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="mt-2 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
             >
               Valider
             </button>
@@ -158,7 +158,7 @@ function ChampStandalone({
               type="button"
               disabled={desactive || !valeurComplete(champ, valeur)}
               onClick={() => envoyer(valeur)}
-              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
             >
               Valider
             </button>
@@ -181,7 +181,7 @@ function ChampStandalone({
               type="button"
               disabled={desactive || !valeurComplete(champ, valeur)}
               onClick={() => envoyer(valeur)}
-              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
             >
               Valider
             </button>
@@ -221,7 +221,7 @@ function ChampStandalone({
               type="button"
               disabled={desactive || !valeurComplete(champ, valeur)}
               onClick={() => envoyer(valeur)}
-              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
             >
               Valider
             </button>
@@ -244,7 +244,7 @@ function ChampStandalone({
               type="button"
               disabled={desactive || !valeurComplete(champ, valeur)}
               onClick={() => envoyer(valeur)}
-              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
             >
               Valider
             </button>
@@ -267,7 +267,7 @@ function ChampStandalone({
               type="button"
               disabled={desactive || !valeurComplete(champ, valeur)}
               onClick={() => envoyer(valeur)}
-              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="mt-3 self-start rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
             >
               Valider
             </button>

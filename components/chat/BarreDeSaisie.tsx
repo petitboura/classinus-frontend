@@ -1135,7 +1135,7 @@ export function BarreDeSaisie({
             type="button"
             onClick={soumettreCreationNotion}
             disabled={creationNotionEnCours || !titreCreationNotion.trim()}
-            className="w-full rounded-lg bg-dj-accent-1 px-3 py-2 text-sm text-white transition-opacity disabled:opacity-50"
+            className="w-full rounded-lg bg-dj-accent-1 px-3 py-2 text-sm text-dj-sur-accent transition-opacity disabled:opacity-50"
           >
             {creationNotionEnCours ? "Création..." : "Créer la page"}
           </button>
@@ -1988,7 +1988,7 @@ export function BarreDeSaisie({
               <button
                 onClick={arreterDictee}
                 aria-label="Arrêter la dictée"
-                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-2 text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-2 text-dj-sur-accent"
               >
                 <Square size={14} />
               </button>
@@ -1996,7 +1996,7 @@ export function BarreDeSaisie({
               <button
                 onClick={onArreter}
                 aria-label="Arrêter la génération"
-                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02]"
+                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-dj-sur-accent"
               >
                 <Square size={14} />
               </button>
@@ -2005,7 +2005,7 @@ export function BarreDeSaisie({
                 onClick={envoyer}
                 disabled={desactive || genererEnCours}
                 aria-label="Envoyer"
-                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
+                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-dj-sur-accent disabled:opacity-60"
               >
                 <ArrowUp size={16} strokeWidth={TRAIT_ICONE_SECTION} />
               </button>
@@ -2154,7 +2154,7 @@ export function BarreDeSaisie({
           <button
             onClick={arreterDictee}
             aria-label="Arrêter la dictée"
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-2 text-white"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-2 text-dj-sur-accent"
           >
             <Square size={14} />
           </button>
@@ -2162,7 +2162,7 @@ export function BarreDeSaisie({
           <button
             onClick={onArreter}
             aria-label="Arrêter la génération"
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02]"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-dj-sur-accent"
           >
             <Square size={14} />
           </button>
@@ -2171,7 +2171,7 @@ export function BarreDeSaisie({
             onClick={envoyer}
             disabled={desactive || genererEnCours}
             aria-label="Envoyer"
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-dj-sur-accent disabled:opacity-60"
           >
             <ArrowUp size={16} strokeWidth={TRAIT_ICONE_SECTION} />
           </button>
@@ -2556,7 +2556,7 @@ export function BarreDeSaisie({
               }}
               disabled={(!texte.trim() && textesColles.length === 0 && fichiers.length === 0 && !localisation) || desactive || genererEnCours}
               aria-label="Envoyer"
-              className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-dj-sur-accent disabled:opacity-60"
             >
               Envoyer <ArrowUp size={16} strokeWidth={TRAIT_ICONE_SECTION} />
             </button>

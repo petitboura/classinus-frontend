@@ -186,7 +186,7 @@ export function CanvasDessin({
         <button
           onClick={valider}
           disabled={!aDessine}
-          className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-medium text-dj-sur-accent disabled:opacity-40"
         >
           <Pencil size={14} /> Utiliser ce dessin
         </button>

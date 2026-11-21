@@ -30,10 +30,10 @@ function intensite(valeur: number, max: number): string {
   // lisible d'un coup d'œil, et évite une case "presque invisible" pour
   // une petite valeur non nulle (mauvais signal : on veut voir qu'il
   // s'est passé quelque chose, même peu).
-  if (ratio > 0.75) return "var(--dj-accent-1)";
-  if (ratio > 0.45) return "color-mix(in srgb, var(--dj-accent-1) 65%, var(--dj-surface-haute))";
-  if (ratio > 0.15) return "color-mix(in srgb, var(--dj-accent-1) 35%, var(--dj-surface-haute))";
-  return "color-mix(in srgb, var(--dj-accent-1) 15%, var(--dj-surface-haute))";
+  if (ratio > 0.75) return "var(--dj-dore)";
+  if (ratio > 0.45) return "color-mix(in srgb, var(--dj-dore) 65%, var(--dj-surface-haute))";
+  if (ratio > 0.15) return "color-mix(in srgb, var(--dj-dore) 35%, var(--dj-surface-haute))";
+  return "color-mix(in srgb, var(--dj-dore) 15%, var(--dj-surface-haute))";
 }
 
 export function CarteChaleurHeures({ donnees }: { donnees: HeuresPointe }) {
@@ -53,7 +53,7 @@ export function CarteChaleurHeures({ donnees }: { donnees: HeuresPointe }) {
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-dj-texte">Heures de pointe</p>
         {donnees.jour_plus_frequente && (
-          <span className="rounded-full bg-dj-accent-1-conteneur px-2.5 py-1 text-[11px] font-medium text-dj-accent-1-texte">
+          <span className="rounded-full bg-dj-dore-conteneur px-2.5 py-1 text-[11px] font-medium text-dj-dore-texte">
             Jour le plus actif : {LABELS_JOURS[donnees.jour_plus_frequente] ?? donnees.jour_plus_frequente}
           </span>
         )}

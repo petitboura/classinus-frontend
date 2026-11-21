@@ -54,6 +54,15 @@ const config: Config = {
           // commentaire sur --dj-accent-1-conteneur dans globals.css.
           "accent-1-conteneur": "var(--dj-accent-1-conteneur)",
           "accent-2": "var(--dj-accent-2)",
+          // 21/11/2026 : accent-1 et accent-2 sont devenus neutres (noir en clair,
+          // blanc en sombre). sur-accent est le texte posé dessus. Le doré vit
+          // dans les variables dore, à réserver à quelques repères précis.
+          "sur-accent": "var(--dj-sur-accent)",
+          dore: "var(--dj-dore)",
+          "dore-texte": "var(--dj-dore-texte)",
+          "dore-survol": "var(--dj-dore-survol)",
+          "dore-conteneur": "var(--dj-dore-conteneur)",
+          "sur-dore": "var(--dj-sur-dore)",
           texte: "var(--dj-texte)",
           "texte-muet": "var(--dj-texte-muet)",
           succes: "var(--dj-succes)",

@@ -82,7 +82,8 @@ Claude must:
 Bourama's decision from 29 October 2026 must never be reversed. A class such as `bg-dj-primaire` does nothing when `primaire` is not defined. The button then loses its background, and white text can become invisible. This happened to the white **New skill** button in dark mode.
 
 - The only permitted `dj-...` colors are those defined in `tailwind.config.ts` (the `colors.dj` and `backgroundImage` blocks).
-- Primary button: `bg-dj-accent-1 text-[#1A0D02] hover:bg-dj-accent-2`.
+- Primary button: `bg-dj-accent-1 text-dj-sur-accent hover:bg-dj-accent-2`. Since 21 November 2026 `accent-1` is neutral (black in the light theme, white in the dark theme) and `sur-accent` is the text on top of it. Never hard-code a text color on a primary button.
+- Gold is rationed (Bourama, 21 November 2026): use `dore`, `dore-texte`, `dore-survol`, `dore-conteneur`, `sur-dore` only for a few precise markers (logo, active navigation item, notifications, charts, subscription highlight). Do not spread it across the interface.
 - `tests/verifier-couleurs-theme.mjs` runs before every build (`prebuild` and Capacitor builds) and stops the build with the offending file and line. Do not bypass or weaken it.
 - To add a genuinely new color, define it first in `tailwind.config.ts` and `app/globals.css` for both light and dark themes.
 

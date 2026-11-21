@@ -239,7 +239,7 @@ export function EditionFiltresDossierModal({
           <button
             onClick={onEnregistrer}
             disabled={enregistrementEnCours}
-            className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-dj-sur-accent hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {enregistrementEnCours && <Loader2 size={12} className="animate-spin" />}
             Enregistrer

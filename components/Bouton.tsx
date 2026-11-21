@@ -11,7 +11,7 @@ interface ButonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const classesParVariante: Record<string, string> = {
   primaire:
-    "bg-dj-accent-1 text-[#1a0f06] hover:bg-dj-accent-2 active:scale-[.98]",
+    "bg-dj-accent-1 text-dj-sur-accent hover:bg-dj-accent-2 active:scale-[.98]",
   secondaire:
     "bg-dj-surface-haute text-dj-texte border border-dj-bordure hover:bg-dj-surface hover:border-dj-bordure-forte",
   fantome:

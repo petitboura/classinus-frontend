@@ -163,7 +163,7 @@ export function SkillsIndependants() {
         <div className="flex flex-wrap gap-2">
           <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={e => void envoyerZip(e.target.files?.[0])} />
           <button type="button" disabled={zipEnCours} onClick={() => champZip.current?.click()} className={`border border-dj-bordure ${bouton}`}>{zipEnCours ? "Envoi du zip…" : "Envoyer un zip"}</button>
-          <button type="button" onClick={nouveau} className={`bg-dj-accent-1 font-semibold text-[#1A0D02] hover:bg-dj-accent-2 ${bouton}`}>Nouveau skill</button>
+          <button type="button" onClick={nouveau} className={`bg-dj-accent-1 font-semibold text-dj-sur-accent hover:bg-dj-accent-2 ${bouton}`}>Nouveau skill</button>
         </div>
       </header>
       <ImportDepuisAutreIA origine="skills" />
@@ -204,7 +204,7 @@ export function SkillsIndependants() {
           </div>
         </div>
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
+          <button type="button" disabled={busy || !modifie} onClick={() => void sauver()} className="rounded bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-dj-sur-accent transition-colors hover:bg-dj-accent-2 disabled:opacity-50">{busy ? "Enregistrement…" : "Enregistrer"}</button>
         </div>
       </div>
     </div>}
