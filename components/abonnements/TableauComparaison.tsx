@@ -5,7 +5,7 @@ import { Check, Clock } from "lucide-react";
 import type { EntrepriseModeles, PalierListeAttente } from "@/lib/listeAttente";
 import { distributeurParNomDeModele, LibelleAvecLogos } from "./LibelleAvecLogos";
 
-type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
+export type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
 
 // Tableau de comparaison des paliers, comme celui de la page de tarification de Claude (19/11/2026, demande
 // de Bourama, à la place des catégories repliables). Une colonne par palier, une ligne par fonction, et des

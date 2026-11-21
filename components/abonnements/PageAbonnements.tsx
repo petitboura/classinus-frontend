@@ -8,6 +8,8 @@ import { CartePalierListeAttente, CLASSES_GRILLE_PALIERS } from "@/components/ch
 import { ParcoursPaiement } from "@/components/abonnements/ParcoursPaiement";
 import { SqueletteAbonnements } from "@/components/abonnements/SqueletteAbonnements";
 import { TableauComparaison } from "@/components/abonnements/TableauComparaison";
+import { LogosEntreprises } from "@/components/abonnements/LogosEntreprises";
+import { BlocModeles } from "@/components/abonnements/BlocModeles";
 import { effacerBrouillonPaiement, lireBrouillonPaiement } from "@/lib/brouillonPaiement";
 import { messageErreur } from "@/lib/erreurs";
 import { obtenirLocale } from "@/lib/i18n/locale";
@@ -21,8 +23,8 @@ import {
 } from "@/lib/listeAttente";
 import { supabase } from "@/lib/supabase";
 
-// Page des abonnements : une page de paiement (19/11/2026, demande de Bourama). Un seul titre, puis les
-// trois cartes de palier façon page de tarification de Claude, puis le tableau de comparaison des paliers. Chaque
+// Page des abonnements : une page de paiement (19/11/2026, demande de Bourama). Un seul titre, puis la rangée
+// des logos des entreprises (21/11/2026, LogosEntreprises.tsx), les trois cartes de palier façon page de tarification de Claude, puis le tableau de comparaison des paliers et le bloc des modèles disponibles avec leurs logos (BlocModeles.tsx). Chaque
 // carte a son bouton Payer. Tout ce qui touchait à la liste d'attente (formulaire, profil, consentement,
 // inscription, mention « aucun paiement ») a été retiré de cette page ; les tables, les routes et
 // lib/listeAttente.ts n'ont pas bougé. Ouverte depuis un modèle grisé du sélecteur
@@ -136,6 +138,8 @@ export function PageAbonnements() {
 
       {config && (
         <div className="flex animate-dj-fade-in-rapide flex-col gap-8 motion-reduce:animate-none">
+          <LogosEntreprises entreprises={config.modeles ?? []} t={t} />
+
           <section aria-label={t("attente_abo_titre")} className={CLASSES_GRILLE_PALIERS}>
             {config.paliers.map((p, i) => (
               <CartePalierListeAttente
@@ -151,6 +155,8 @@ export function PageAbonnements() {
           </section>
 
           <TableauComparaison t={t} paliers={config.paliers} entreprises={config.modeles} />
+
+          <BlocModeles entreprises={config.modeles ?? []} t={t} locale={locale} />
         </div>
       )}
 
