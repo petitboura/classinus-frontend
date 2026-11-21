@@ -55,9 +55,11 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="${hoteLiensApp}" />
                 <data android:path="/" />
+                <data android:pathPrefix="/abonnements" />
                 <data android:pathPrefix="/admin" />
                 <data android:pathPrefix="/applications-connectees" />
                 <data android:pathPrefix="/bibliotheque" />
+                <data android:pathPrefix="/bambara" />
                 <data android:pathPrefix="/bureau" />
                 <data android:pathPrefix="/cgu" />
                 <data android:pathPrefix="/comportements" />
@@ -71,6 +73,7 @@
                 <data android:pathPrefix="/decouvrir" />
                 <data android:pathPrefix="/dossiers" />
                 <data android:pathPrefix="/etablissements" />
+                <data android:pathPrefix="/higgsfield" />
                 <data android:pathPrefix="/inscription" />
                 <data android:pathPrefix="/memoire" />
                 <data android:pathPrefix="/mon-espace" />
