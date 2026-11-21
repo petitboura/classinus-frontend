@@ -150,7 +150,7 @@ export function PageAbonnements() {
             ))}
           </section>
 
-          <TableauComparaison t={t} paliers={config.paliers} />
+          <TableauComparaison t={t} paliers={config.paliers} entreprises={config.modeles} />
         </div>
       )}
 
