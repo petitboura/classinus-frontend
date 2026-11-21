@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { IconeFournisseur } from "@/components/chat/IconeFournisseur";
 import { IconeGithub } from "@/components/icons/IconeGithub";
 import { IconeNotion } from "@/components/icons/IconeNotion";
+import { IconeRailway } from "@/components/icons/IconeRailway";
 import { IconeSupabase } from "@/components/icons/IconeSupabase";
 import { IconeVercel } from "@/components/icons/IconeVercel";
 import type { EntrepriseModeles } from "@/lib/listeAttente";
@@ -52,7 +53,7 @@ const CONNECTEURS: Record<string, () => ReactNode> = {
   notion: () => <IconeNotion size={TAILLE_LOGO} aria-hidden className="shrink-0" />,
   vercel: () => <IconeVercel size={TAILLE_LOGO} aria-hidden className="shrink-0" />,
   supabase: () => <IconeSupabase size={TAILLE_LOGO} uneCouleur aria-hidden className="shrink-0" />,
-  google: () => <LogoMasque url="/logos-entreprises/google.svg" />,
+  railway: () => <IconeRailway size={TAILLE_LOGO} aria-hidden className="shrink-0" />,
   mcp: () => <LogoMasque url="/logos-connecteurs/mcp.svg" />,
 };
 
