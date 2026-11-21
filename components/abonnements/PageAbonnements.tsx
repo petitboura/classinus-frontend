@@ -9,7 +9,7 @@ import { ParcoursPaiement } from "@/components/abonnements/ParcoursPaiement";
 import { SqueletteAbonnements } from "@/components/abonnements/SqueletteAbonnements";
 import { TableauComparaison } from "@/components/abonnements/TableauComparaison";
 import { LogosEntreprises } from "@/components/abonnements/LogosEntreprises";
-import { BlocModeles } from "@/components/abonnements/BlocModeles";
+import { BlocModeles, idCarteEntreprise } from "@/components/abonnements/BlocModeles";
 import { effacerBrouillonPaiement, lireBrouillonPaiement } from "@/lib/brouillonPaiement";
 import { messageErreur } from "@/lib/erreurs";
 import { obtenirLocale } from "@/lib/i18n/locale";
@@ -52,6 +52,27 @@ export function PageAbonnements() {
   // Modèle grisé d'où la personne vient (adresse de la page), sinon null. Lu après l'affichage pour ne pas
   // différer du rendu du serveur ; retrouvé aussi dans le brouillon quand elle revient d'une connexion.
   const [modele, setModele] = useState<ModeleCible | null>(null);
+  // Entreprise dont la carte est mise en évidence après un clic sur sa pastille (quelques secondes).
+  const [entrepriseEnAvant, setEntrepriseEnAvant] = useState<string | null>(null);
+  const minuterieEnAvant = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (minuterieEnAvant.current) clearTimeout(minuterieEnAvant.current);
+    };
+  }, []);
+
+  // Clic sur la pastille d'une entreprise : la page défile jusqu'à sa carte (sans animation si la personne a
+  // demandé moins de mouvement) et la carte se démarque environ deux secondes.
+  function allerAuxModeles(distributeur: string) {
+    const carte = document.getElementById(idCarteEntreprise(distributeur));
+    if (!carte) return;
+    const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    carte.scrollIntoView({ behavior: reduit ? "auto" : "smooth", block: "center" });
+    if (minuterieEnAvant.current) clearTimeout(minuterieEnAvant.current);
+    setEntrepriseEnAvant(distributeur);
+    minuterieEnAvant.current = setTimeout(() => setEntrepriseEnAvant(null), 2200);
+  }
 
   useEffect(() => {
     setModele(lireModeleDansAdresse());
@@ -138,7 +159,7 @@ export function PageAbonnements() {
 
       {config && (
         <div className="flex animate-dj-fade-in-rapide flex-col gap-8 motion-reduce:animate-none">
-          <LogosEntreprises entreprises={config.modeles ?? []} t={t} />
+          <LogosEntreprises entreprises={config.modeles ?? []} t={t} onChoisir={allerAuxModeles} />
 
           <section aria-label={t("attente_abo_titre")} className={CLASSES_GRILLE_PALIERS}>
             {config.paliers.map((p, i) => (
@@ -156,7 +177,7 @@ export function PageAbonnements() {
 
           <TableauComparaison t={t} paliers={config.paliers} entreprises={config.modeles} />
 
-          <BlocModeles entreprises={config.modeles ?? []} t={t} locale={locale} />
+          <BlocModeles entreprises={config.modeles ?? []} t={t} locale={locale} miseEnAvant={entrepriseEnAvant} />
         </div>
       )}
 
