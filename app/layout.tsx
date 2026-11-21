@@ -75,6 +75,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Classinus",
   description: RESUME_CLASSINUS.description,
+  keywords: [
+    "Classinus",
+    "accès aux grands modèles d'IA en Afrique",
+    "plateforme d'IA",
+    "agents IA",
+    "connecteurs MCP",
+    "création de documents",
+    "exécution de code",
+  ],
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Classinus" },
   // Correctif (02/09/2026) : Next.js (appleWebApp ci-dessus) ne génère
   // que la balise préfixée "apple-", dépréciée par Chrome/Android au

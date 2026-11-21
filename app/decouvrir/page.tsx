@@ -8,7 +8,7 @@ import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDeco
 export const metadata: Metadata = {
   title: "Découvrir Classinus : modèles d'IA, agents et applications connectées",
   description:
-    "Découvre une plateforme qui réunit plusieurs modèles d'IA, des agents personnalisables, des connecteurs MCP, la recherche, la création de documents et l'exécution de code.",
+    "Découvre la plateforme qui donne accès aux grands modèles d'IA en Afrique : agents personnalisables, connecteurs MCP, recherche, création de documents et exécution de code.",
 };
 
 export default function PageDecouvrir() {
@@ -18,7 +18,7 @@ export default function PageDecouvrir() {
         <p className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">Guide des fonctionnalités</p>
         <h1 className="mt-2 font-display text-2xl font-bold text-dj-texte">Découvrir Classinus</h1>
         <p className="mt-3 text-base leading-relaxed text-dj-texte">
-          Classinus réunit plusieurs modèles d'IA, des agents personnalisables et des connecteurs vers tes applications, avec des outils pour rechercher, créer des documents, développer et organiser tes projets. Les usages pédagogiques et les outils pour enseignants existent aussi, sans définir à eux seuls la plateforme. Explore les guides pour découvrir chaque fonction et ses conditions d'utilisation.
+          Classinus est le moyen d'accéder aux grands modèles d'IA en Afrique, avec des agents personnalisables, des connecteurs vers tes applications et des outils pour rechercher, créer des documents, développer et organiser tes projets. Les usages pédagogiques et les outils pour enseignants existent aussi, sans définir à eux seuls la plateforme. Explore les guides pour découvrir chaque fonction et ses conditions d'utilisation.
         </p>
       </header>
 
