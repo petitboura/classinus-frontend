@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Check, Clock } from "lucide-react";
 import type { PalierListeAttente } from "@/lib/listeAttente";
 
-type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
+export type Traduire = (cle: string, valeurs?: Record<string, string | number>) => string;
 
 // Tableau de comparaison des paliers, comme celui de la page de tarification de Claude (19/11/2026, demande
 // de Bourama, à la place des catégories repliables). Une colonne par palier, une ligne par fonction, et des

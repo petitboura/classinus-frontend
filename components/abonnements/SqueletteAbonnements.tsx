@@ -208,9 +208,62 @@ function SqueletteSection({ titre, lignes }: { titre: string; lignes: LigneTable
   );
 }
 
+// Rangée des entreprises sous le titre (components/abonnements/LogosEntreprises.tsx) : une ligne de texte
+// puis des pastilles arrondies (logo de 20 px et nom). Largeurs de nom et nombre de modèles par entreprise
+// imitent le contenu réel actuel (9 entreprises).
+const LARGEURS_PASTILLES = ["w-24", "w-28", "w-32", "w-20", "w-28", "w-32", "w-24", "w-24", "w-20"];
+const MODELES_PAR_ENTREPRISE = [2, 2, 2, 4, 1, 4, 4, 4, 3];
+
+function SqueletteLogos() {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex h-5 items-center sm:h-6">
+        <Skeleton className="h-3 w-64 max-w-full rounded" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {LARGEURS_PASTILLES.map((largeur, i) => (
+          <Skeleton key={i} className={`h-[34px] rounded-full sm:h-[38px] ${largeur}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Bloc des modèles disponibles (components/abonnements/BlocModeles.tsx) : un titre puis une carte par
+// entreprise (logo de 24 px et nom, trait, puis une ligne par modèle avec son petit logo de 18 px).
+function SqueletteBlocModeles() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex h-7 items-center">
+        <Skeleton className="h-5 w-48 rounded" />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {MODELES_PAR_ENTREPRISE.map((nb, i) => (
+          <div key={i} className="flex min-w-0 flex-col gap-3 rounded-2xl border border-dj-bordure p-4">
+            <div className="flex items-center gap-2.5 border-b border-dj-bordure pb-3">
+              <Skeleton className="h-6 w-6 shrink-0 rounded" />
+              <Skeleton className="h-4 w-24 rounded" />
+            </div>
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: nb }, (_, j) => (
+                <div key={j} className="flex h-5 items-center gap-2.5 sm:h-6">
+                  <Skeleton className="h-[18px] w-[18px] shrink-0 rounded" />
+                  <Skeleton className="h-3 w-32 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SqueletteAbonnements() {
   return (
     <div className="flex flex-col gap-8" aria-hidden>
+      <SqueletteLogos />
+
       <div className={CLASSES_GRILLE_PALIERS}>
         {CARTES.map((forme, i) => (
           <SqueletteCarte key={i} forme={forme} index={i} />
@@ -221,6 +274,8 @@ export function SqueletteAbonnements() {
         <SqueletteSection titre="w-1/2" lignes={SECTION_FONCTIONS} />
         <SqueletteSection titre="w-3/5" lignes={SECTION_MODELES} />
       </div>
+
+      <SqueletteBlocModeles />
     </div>
   );
 }
