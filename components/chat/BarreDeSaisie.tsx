@@ -734,6 +734,8 @@ export function BarreDeSaisie({
   const [depots, setDepots] = useState<{ nom_complet: string; prive: boolean; description: string | null }[] | null>(
     null
   );
+  const [plusDeDepots, setPlusDeDepots] = useState(false);
+  const [maximumDepotsAffiches, setMaximumDepotsAffiches] = useState(100);
   const [selecteurOuvert, setSelecteurOuvert] = useState(false);
   const selecteurRef = useRef<HTMLDivElement>(null);
   // Panneau mobile ajouté séparément du bloc desktop (2026-07-30, voir plus
@@ -1273,10 +1275,13 @@ export function BarreDeSaisie({
     if (depots === null) {
       setGithubEnCours(true);
       try {
-        const { depots: liste } = await depotsGithub();
+        const { depots: liste, plus_de_depots, maximum_affiche } = await depotsGithub();
         setDepots(liste);
+        setPlusDeDepots(plus_de_depots);
+        setMaximumDepotsAffiches(maximum_affiche);
       } catch (e) {
         setDepots([]);
+        setPlusDeDepots(false);
         alert(messageErreur(e));
       } finally {
         setGithubEnCours(false);
@@ -1840,6 +1845,11 @@ export function BarreDeSaisie({
                           )}
                         </button>
                       ))}
+                      {plusDeDepots && (
+                        <p className="border-t border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet" role="status">
+                          Seuls les {maximumDepotsAffiches} dépôts les plus récemment mis à jour sont affichés. D'autres dépôts existent sur GitHub.
+                        </p>
+                      )}
                     </div>
                   )}
                   </div>
