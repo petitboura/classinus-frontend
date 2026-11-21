@@ -24,6 +24,11 @@ export function BoutonRepriseAgent({
 
   return (
     <div className="mt-2">
+      <p className="mb-2 text-xs text-dj-texte-secondaire" role="status">
+        {estRepetition
+          ? "L'agent a répété la même action plusieurs fois et s'est arrêté pour éviter de tourner en boucle. Tu peux réessayer."
+          : "La limite d'actions pour cette réponse est atteinte. Le travail déjà réalisé est conservé. Sélectionne « Continuer » pour reprendre avec un nouveau budget d'actions."}
+      </p>
       <button
         onClick={onReprendre}
         disabled={enAttente}
