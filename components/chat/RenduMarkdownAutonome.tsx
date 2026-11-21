@@ -32,6 +32,7 @@ import { CarteConnecteur } from "./CarteConnecteur";
 import { CarteServeurMcp } from "./CarteServeurMcp";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { AnimationLecteur } from "./AnimationLecteur";
+import { DessinSvg } from "./DessinSvg";
 import { ImageMessage } from "./ImageMessage";
 import { TableauMessage } from "./TableauMessage";
 import { FichierChip, extensionFichier } from "./FichierChip";
@@ -91,6 +92,8 @@ function creerComposants({ conversationId, sources, onRepondreQuestion, question
           return <CarteServeurMcp code={code} onUtiliser={onRepondreQuestion} />;
         case "fiche":
           return <FicheRevision code={code} />;
+        case "svg":
+          return <DessinSvg code={code} />;
         case "animation":
           return <AnimationLecteur code={code} />;
         case "widget":

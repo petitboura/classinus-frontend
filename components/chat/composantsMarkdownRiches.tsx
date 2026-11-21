@@ -39,6 +39,7 @@ import { CarteConnecteur } from "./CarteConnecteur";
 import { CarteServeurMcp } from "./CarteServeurMcp";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { AnimationLecteur } from "./AnimationLecteur";
+import { DessinSvg } from "./DessinSvg";
 import { ImageMessage } from "./ImageMessage";
 import { ContexteRangeeImages, type ImageDeRangee } from "./RangeeImagesContexte";
 import { TableauMessage } from "./TableauMessage";
@@ -125,6 +126,8 @@ function PreMarkdown({ children }: { children?: ReactNode }) {
       return <CarteServeurMcp code={code} onUtiliser={etat?.onRepondreQuestion} />;
     case "fiche":
       return <FicheRevision code={code} />;
+    case "svg":
+      return <DessinSvg code={code} />;
     case "animation":
       return <AnimationLecteur code={code} />;
     case "widget":
