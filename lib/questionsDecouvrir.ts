@@ -85,7 +85,7 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
       {
         question: "Qu'est-ce que Classinus ?",
         reponse:
-          "Classinus est une plateforme d'intelligence artificielle et de productivité. Elle réunit plusieurs modèles d'IA, des agents personnalisables, des connecteurs vers des applications, la recherche web et documentaire, la création de fichiers et l'exécution de code.",
+          "Classinus est une plateforme qui permet d'accéder aux grands modèles d'IA en Afrique, avec les outils pour s'en servir : agents personnalisables, connecteurs vers des applications, recherche web et documentaire, création de fichiers et exécution de code.",
       },
       {
         question: "Que peut-on faire avec Classinus au-delà du chat ?",
@@ -100,7 +100,7 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
       {
         question: "À qui s'adresse Classinus ?",
         reponse:
-          "Classinus s'adresse aux personnes qui veulent accéder à plusieurs modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il comprend aussi des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants lorsqu'un usage pédagogique le nécessite.",
+          "Classinus s'adresse d'abord aux personnes en Afrique qui veulent accéder à plusieurs grands modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il comprend aussi des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants lorsqu'un usage pédagogique le nécessite.",
       },
     ],
   },

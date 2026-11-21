@@ -38,14 +38,15 @@ export function donneesOrganisation(): Record<string, unknown> {
         logo: { "@type": "ImageObject", url: `${URL_BASE}/icone-512.png`, width: 512, height: 512 },
         slogan: RESUME_CLASSINUS.accroche.replace(/\.$/, ""),
         description: RESUME_CLASSINUS.description,
-        disambiguatingDescription: "Plateforme d'intelligence artificielle et de productivité réunissant modèles, agents et connecteurs, sur le web, Android et Windows",
+        disambiguatingDescription: RESUME_CLASSINUS.type,
+        areaServed: { "@type": "Continent", name: "Africa" },
       },
       {
         "@type": "WebSite",
         "@id": ID_SITE,
         name: RESUME_CLASSINUS.nom,
         url: URL_BASE,
-        inLanguage: "fr",
+        inLanguage: ["fr", "en"],
         description: RESUME_CLASSINUS.description,
         publisher: { "@id": ID_ORGANISATION },
       },
@@ -63,8 +64,19 @@ export function donneesApplication(): Record<string, unknown> {
     description: RESUME_CLASSINUS.description,
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Web, Android, Windows",
-    inLanguage: "fr",
+    inLanguage: ["fr", "en"],
     publisher: { "@id": ID_ORGANISATION },
     featureList: [...RESUME_CLASSINUS.fonctions],
+    disambiguatingDescription: RESUME_CLASSINUS.type,
+    applicationSubCategory: "Accès aux grands modèles d'IA, agents et connecteurs",
+    areaServed: { "@type": "Continent", name: "Africa" },
+    audience: {
+      "@type": "PeopleAudience",
+      audienceType: RESUME_CLASSINUS.public,
+      suggestedMinAge: RESUME_CLASSINUS.ageMinimum,
+      geographicArea: { "@type": "Continent", name: "Africa" },
+    },
+    keywords:
+      "accès aux grands modèles d'IA en Afrique, plateforme d'IA, agents IA, connecteurs MCP, recherche, création de documents, exécution de code",
   };
 }

@@ -12,7 +12,7 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     slug: "applications-connectees",
     href: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
     titre: "Modèles d'IA et applications connectées",
-    description: "Choisis parmi les modèles d'IA disponibles, configure tes agents et relie Classinus à GitHub, Notion, Google, Vercel, Supabase ou à tes propres outils via MCP.",
+    description: "Choisis parmi les grands modèles d'IA disponibles, configure tes agents et relie Classinus à GitHub, Notion, Vercel, Railway, Supabase ou à tes propres outils via MCP.",
   },
   {
     slug: "usages",
