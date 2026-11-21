@@ -116,6 +116,10 @@ mise à jour, avec la conformité adaptée à ce moment (âge à l'inscription
 et/ou invitation par l'établissement, à retrancher de ce fichier quand
 ce chantier sera lancé).
 
+## Positionnement éditorial mis à jour le 21/11/2026
+
+Classinus est désormais positionné comme une plateforme d'intelligence artificielle et de productivité destinée à un public large : utilisateurs individuels, créateurs, développeurs, professionnels, étudiants et enseignants. Les outils d'apprentissage et le Bureau enseignant sont des cas d'usage spécifiques ; ils ne définissent pas l'identité du produit. Cette évolution éditoriale ne modifie ni les règles d'âge ni les exigences de protection des mineurs décrites ci-dessous.
+
 Conséquence pratique sur les formulaires :
 - Google Play, questionnaire de classification de contenu : public visé
   = 13 ans et plus (pas "Designed for children" ni "Mixed Audience").
@@ -201,11 +205,7 @@ vos données en nous contactant à [email de contact].
 
 ## Mineurs
 
-Clovis est actuellement destiné aux lycéens (15 ans et plus), aux
-étudiants et aux enseignants. Nous ne visons pas sciemment les enfants
-de moins de 13 ans avec la version actuelle de l'application. Si vous
-pensez qu'un enfant de moins de 13 ans a créé un compte, contactez-nous
-à [email de contact] pour que nous puissions le supprimer.
+Classinus est une plateforme d'intelligence artificielle et de productivité destinée aux utilisateurs de 15 ans et plus. Elle réunit plusieurs modèles d'IA, des agents personnalisables, des applications connectées, des outils de recherche, de création de documents et de développement. Elle comprend également des fonctions d'apprentissage et des outils réservés aux enseignants. Nous ne visons pas sciemment les enfants de moins de 13 ans avec la version actuelle de l'application. Si vous pensez qu'un enfant de moins de 13 ans a créé un compte, contactez-nous à [email de contact] pour que nous puissions le supprimer.
 ```
 
 ---

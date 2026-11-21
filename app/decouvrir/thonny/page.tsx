@@ -181,7 +181,7 @@ export default function PageDecouvrirThonny() {
         <LienExterne href="https://github.com/petitboura/thonny-classinus">dépôt Thonny-Classinus</LienExterne>.
         Pour découvrir les autres usages de Classinus, retourne au
         <Link href={ROUTES_DECOUVRIR.usages.accueil} className="ml-1 font-medium text-dj-texte underline underline-offset-4">
-          guide des usages étudiants
+          guide des usages de Classinus
         </Link>.
       </p>
 

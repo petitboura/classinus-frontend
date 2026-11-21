@@ -37,7 +37,7 @@ import { Skeleton } from "@/components/Skeleton";
 // coexistent.
 const LIMITE_MESSAGES_INVITE = 5;
 const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
-const SOUS_TITRE_ACCUEIL_CLOVIS = "Le coin des étudiants.";
+const SOUS_TITRE_ACCUEIL_CLOVIS = "L'IA et tes outils, réunis dans un même espace.";
 
 export function ChatSection() {
   const locale = useLocale();

@@ -19,7 +19,7 @@ export const SECTIONS_PERSONNALISER: SectionDeGroupe[] = [
   {
     href: ROUTES_PERSONNALISER.skillsPublics,
     label: "Skills publics",
-    description: "Le catalogue de skills publiés par les autres étudiants",
+    description: "Le catalogue de skills partagées par la communauté",
     Icone: Download,
   },
   {

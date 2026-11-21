@@ -36,10 +36,9 @@ export const ROUTES_DECOUVRIR = {
     session: "/decouvrir/concentration/session",
     tempsEcran: "/decouvrir/concentration/temps-ecran",
   },
-  // Pages d'usage (11/10/2026, chantier "visibilité auprès des IA") : une
-  // page par question que se pose un étudiant avant de choisir une appli
-  // (trouver des PDF, apprendre à coder, trouver des vidéos, étudier). Le
-  // contenu vit dans lib/usagesDecouvrir.ts.
+  // Pages d'usage (11/10/2026, chantier "visibilité auprès des IA") :
+  // des pages par besoin concret (recherche de documents, développement,
+  // contenus vidéo et apprentissage). Le contenu vit dans lib/usagesDecouvrir.ts.
   usages: {
     accueil: "/decouvrir/usages",
     pdf: "/decouvrir/usages/trouver-des-pdf",

@@ -4,7 +4,7 @@ import { RESUME_CLASSINUS } from "./usagesDecouvrir";
 // d'identité de Classinus pour les machines (schema.org, WebApplication),
 // placée dans l'en-tête de toutes les pages par app/layout.tsx. Elle dit aux
 // moteurs de recherche et aux IA, sans ambiguïté : le nom, l'adresse, la
-// catégorie (application éducative), la langue et la liste des fonctions.
+// catégorie (plateforme d'IA et de productivité), la langue et la liste des fonctions.
 //
 // Tout vient de RESUME_CLASSINUS (lib/usagesDecouvrir.ts), la même source que
 // les pages /decouvrir et /llms.txt. Même base d'adresse que robots.ts et
@@ -19,8 +19,8 @@ export const ID_SITE = `${URL_BASE}/#site`;
 
 // Fiche "organisation et site" (12/10/2026, chantier données structurées,
 // demande Bourama : nom d'éditeur "Classinus"). Elle dit sans ambiguïté à
-// Google et aux IA que Classinus est un service éducatif (le nom existe aussi
-// pour une pâtisserie, source d'une confusion constatée dans l'AI Overview).
+// Google et aux IA que Classinus est une plateforme logicielle d'IA et de
+// productivité (le nom existe aussi pour une pâtisserie, source d'une confusion constatée dans l'AI Overview).
 //
 // Volontairement absents : "sameAs" (liens vers des comptes ou profils
 // officiels, aucun fourni par Bourama, on n'invente jamais un lien) et tout
@@ -38,7 +38,7 @@ export function donneesOrganisation(): Record<string, unknown> {
         logo: { "@type": "ImageObject", url: `${URL_BASE}/icone-512.png`, width: 512, height: 512 },
         slogan: RESUME_CLASSINUS.accroche.replace(/\.$/, ""),
         description: RESUME_CLASSINUS.description,
-        disambiguatingDescription: "Application d'études avec IA pour les étudiants, sur le web et sur Android",
+        disambiguatingDescription: "Plateforme d'intelligence artificielle et de productivité réunissant modèles, agents et connecteurs, sur le web, Android et Windows",
       },
       {
         "@type": "WebSite",
@@ -61,8 +61,8 @@ export function donneesApplication(): Record<string, unknown> {
     alternateName: RESUME_CLASSINUS.accroche.replace(/\.$/, ""),
     url: URL_BASE,
     description: RESUME_CLASSINUS.description,
-    applicationCategory: "EducationalApplication",
-    operatingSystem: "Web, Android",
+    applicationCategory: "ProductivityApplication",
+    operatingSystem: "Web, Android, Windows",
     inLanguage: "fr",
     publisher: { "@id": ID_ORGANISATION },
     featureList: [...RESUME_CLASSINUS.fonctions],
