@@ -95,18 +95,18 @@ math-field {
    de tailwind.config.ts (colors + backgroundImage, qui référencent ces
    mêmes variables), les deux ne se synchronisent pas automatiquement. */
 :root {
-  --dj-fond: #faf8f5;
-  --dj-surface: #ffffff;
-  --dj-surface-haute: #ebebe9;
+  --dj-fond: #ffffff;
+  --dj-surface: #f7f7f7;
+  --dj-surface-haute: #ececec;
   /* Barre latérale PC (16/10/2026) : un ton à part, ni le fond de la page ni
      le blanc des cartes. Même principe que Notion : le rail est un peu plus
      foncé que la page en clair. --dj-rail-survol sert au survol et à l'état
      actif des boutons du rail, --dj-rail-texte à leur texte et icônes au repos
      (plus soutenu que --dj-texte-muet pour que les boutons restent nets). */
-  --dj-rail: #f1ece2;
-  --dj-rail-survol: #e5dfd2;
-  --dj-rail-texte: #4f4b43;
-  --dj-bordure: rgba(28, 26, 22, 0.08);
+  --dj-rail: #f4f4f4;
+  --dj-rail-survol: #e8e8e8;
+  --dj-rail-texte: #4a4a4a;
+  --dj-bordure: rgba(0, 0, 0, 0.08);
   --dj-bordure-forte: rgba(17, 17, 17, 0.28);
   /* Couleur principale, neutre (21/11/2026, demande Bourama : trop de doré
      partout). Noir en thème clair, blanc en thème sombre : fonds de boutons
@@ -130,11 +130,11 @@ math-field {
   /* Surlignage du texte sélectionné : gris translucide, le texte garde sa
      couleur et reste lisible dessous. */
   --dj-selection: rgba(17, 17, 17, 0.16);
-  --dj-texte: #1c1a16;
-  --dj-texte-muet: #6b675e;
+  --dj-texte: #111111;
+  --dj-texte-muet: #6b6b6b;
   --dj-succes: #15803d;
   --dj-succes-conteneur: rgba(21, 128, 61, 0.12);
-  --dj-inactif: #b3afa3;
+  --dj-inactif: #b3b3b3;
   --dj-code-accent: #8a6a1f;
   --dj-code-variable: #7c5ba6;
   --dj-code-deletion: #dc2626;
@@ -143,8 +143,8 @@ math-field {
   --dj-logo-3: #6b5416;
   --dj-gradient: linear-gradient(135deg, #e3b341 0%, #b8860b 55%, #6b5416 100%);
   --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(17, 17, 17, 0.05), transparent 60%);
-  --dj-shimmer: linear-gradient(100deg, rgba(28, 26, 22, 0.03) 20%, rgba(107, 103, 94, 0.35) 50%, rgba(28, 26, 22, 0.03) 80%);
-  --dj-shimmer-texte: linear-gradient(100deg, #9a968b 38%, #1c1a16 50%, #9a968b 62%);
+  --dj-shimmer: linear-gradient(100deg, rgba(0, 0, 0, 0.03) 20%, rgba(107, 107, 107, 0.35) 50%, rgba(0, 0, 0, 0.03) 80%);
+  --dj-shimmer-texte: linear-gradient(100deg, #9a9a9a 38%, #111111 50%, #9a9a9a 62%);
   --dj-erreur: #dc2626;
 }
 
@@ -275,13 +275,13 @@ math-field {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --dj-fond: #0f0d0b;
-    --dj-surface: #1a1714;
-    --dj-surface-haute: #221e18;
-    --dj-rail: #211d17;
-    --dj-rail-survol: #2e2921;
-    --dj-rail-texte: #b8b0a2;
-    --dj-bordure: rgba(245, 240, 230, 0.08);
+    --dj-fond: #0d0d0d;
+    --dj-surface: #171717;
+    --dj-surface-haute: #212121;
+    --dj-rail: #181818;
+    --dj-rail-survol: #262626;
+    --dj-rail-texte: #b4b4b4;
+    --dj-bordure: rgba(255, 255, 255, 0.09);
     --dj-bordure-forte: rgba(255, 255, 255, 0.30);
     --dj-accent-1: #f5f5f5;
     --dj-sur-accent: #111111;
@@ -294,11 +294,11 @@ math-field {
     --dj-dore-survol: #da9f0d;
     --dj-dore-conteneur: rgba(232, 191, 96, 0.16);
     --dj-sur-dore: #1a0d02;
-    --dj-texte: #f5f0e6;
-    --dj-texte-muet: #9a9184;
+    --dj-texte: #f2f2f2;
+    --dj-texte-muet: #9a9a9a;
     --dj-succes: #34d399;
     --dj-succes-conteneur: rgba(52, 211, 153, 0.14);
-    --dj-inactif: #4a453c;
+    --dj-inactif: #484848;
     --dj-code-accent: #f0c766;
     --dj-code-variable: #c9a9e0;
     --dj-code-deletion: #f87171;
@@ -307,20 +307,20 @@ math-field {
     --dj-logo-3: #8a6a1f;
     --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
     --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 60%);
-    --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
-    --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
+    --dj-shimmer: linear-gradient(100deg, rgba(255, 255, 255, 0.03) 20%, rgba(154, 154, 154, 0.35) 50%, rgba(255, 255, 255, 0.03) 80%);
+    --dj-shimmer-texte: linear-gradient(100deg, #777777 38%, #f2f2f2 50%, #777777 62%);
     --dj-erreur: #f87171;
   }
 }
 
 [data-theme="dark"] {
-  --dj-fond: #0f0d0b;
-  --dj-surface: #1a1714;
-  --dj-surface-haute: #221e18;
-  --dj-rail: #211d17;
-  --dj-rail-survol: #2e2921;
-  --dj-rail-texte: #b8b0a2;
-  --dj-bordure: rgba(245, 240, 230, 0.08);
+  --dj-fond: #0d0d0d;
+  --dj-surface: #171717;
+  --dj-surface-haute: #212121;
+  --dj-rail: #181818;
+  --dj-rail-survol: #262626;
+  --dj-rail-texte: #b4b4b4;
+  --dj-bordure: rgba(255, 255, 255, 0.09);
   --dj-bordure-forte: rgba(255, 255, 255, 0.30);
   --dj-accent-1: #f5f5f5;
   --dj-sur-accent: #111111;
@@ -333,11 +333,11 @@ math-field {
   --dj-dore-survol: #da9f0d;
   --dj-dore-conteneur: rgba(232, 191, 96, 0.16);
   --dj-sur-dore: #1a0d02;
-  --dj-texte: #f5f0e6;
-  --dj-texte-muet: #9a9184;
+  --dj-texte: #f2f2f2;
+  --dj-texte-muet: #9a9a9a;
   --dj-succes: #34d399;
   --dj-succes-conteneur: rgba(52, 211, 153, 0.14);
-  --dj-inactif: #4a453c;
+  --dj-inactif: #484848;
   --dj-code-accent: #f0c766;
   --dj-code-variable: #c9a9e0;
   --dj-code-deletion: #f87171;
@@ -346,8 +346,8 @@ math-field {
   --dj-logo-3: #8a6a1f;
   --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
   --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 60%);
-  --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
-  --dj-shimmer-texte: linear-gradient(100deg, #7d7569 38%, #f5f0e6 50%, #7d7569 62%);
+  --dj-shimmer: linear-gradient(100deg, rgba(255, 255, 255, 0.03) 20%, rgba(154, 154, 154, 0.35) 50%, rgba(255, 255, 255, 0.03) 80%);
+  --dj-shimmer-texte: linear-gradient(100deg, #777777 38%, #f2f2f2 50%, #777777 62%);
   --dj-erreur: #f87171;
 }
 
