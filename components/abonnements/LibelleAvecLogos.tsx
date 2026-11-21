@@ -16,6 +16,8 @@ import type { EntrepriseModeles } from "@/lib/listeAttente";
 //   son nom grâce aux modèles que renvoie le serveur, donc sans aucune liste de modèles écrite ici ;
 // - un connecteur : le logo du tableau CONNECTEURS ci-dessous, retrouvé par son nom. Pour en ajouter un,
 //   ajouter une ligne dans ce tableau (et son logo dans components/icons si besoin).
+// Tous les logos du tableau sont d'une seule couleur, celle du texte (demande de Bourama, 21/11/2026), pas leurs
+// couleurs de marque : on garde ainsi un tableau calme et lisible en thème clair comme sombre.
 // Un élément sans logo connu, comme « et plus », reste du texte seul. Des parenthèses sans virgule, comme
 // « (OCR) », restent dans le texte.
 const LISTE_ENTRE_PARENTHESES = /^(.*?)\s*\(([^()]*,[^()]*)\)\s*(.*)$/;
@@ -49,8 +51,8 @@ const CONNECTEURS: Record<string, () => ReactNode> = {
   github: () => <IconeGithub size={TAILLE_LOGO} aria-hidden className="shrink-0" />,
   notion: () => <IconeNotion size={TAILLE_LOGO} aria-hidden className="shrink-0" />,
   vercel: () => <IconeVercel size={TAILLE_LOGO} aria-hidden className="shrink-0" />,
-  supabase: () => <IconeSupabase size={TAILLE_LOGO} aria-hidden className="shrink-0" />,
-  google: () => <img src="/logos-entreprises/google.svg" alt="" draggable={false} width={TAILLE_LOGO} height={TAILLE_LOGO} className="shrink-0" />,
+  supabase: () => <IconeSupabase size={TAILLE_LOGO} uneCouleur aria-hidden className="shrink-0" />,
+  google: () => <LogoMasque url="/logos-entreprises/google.svg" />,
   mcp: () => <LogoMasque url="/logos-connecteurs/mcp.svg" />,
 };
 
@@ -65,7 +67,7 @@ export function distributeurParNomDeModele(entreprises: EntrepriseModeles[] | un
 function LogoDeElement({ element, distributeurs }: { element: string; distributeurs: Map<string, string> }) {
   const cle = element.toLowerCase();
   const distributeur = distributeurs.get(cle);
-  if (distributeur) return <IconeFournisseur distributeur={distributeur} taille={TAILLE_LOGO} />;
+  if (distributeur) return <IconeFournisseur distributeur={distributeur} taille={TAILLE_LOGO} uneCouleur />;
   const connecteur = CONNECTEURS[cle];
   return connecteur ? <>{connecteur()}</> : null;
 }
