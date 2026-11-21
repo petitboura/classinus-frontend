@@ -1656,6 +1656,8 @@ export async function depotsGithub() {
   const resultat = await appelerApi("/api/connexions/github/depots");
   return resultat as {
     depots: { nom_complet: string; prive: boolean; description: string | null; url: string }[];
+    plus_de_depots: boolean;
+    maximum_affiche: number;
   };
 }
 
