@@ -26,7 +26,7 @@ export function BoutonRepriseAgent({
 
   return (
     <div className="mt-2">
-      <p className="mb-2 animate-dj-fade-in-rapide text-xs text-dj-texte-secondaire" role="status">
+      <p className="mb-2 animate-dj-fade-in-rapide text-xs text-dj-texte-muet" role="status">
         {estRepetition ? t.repriseRepetition : t.repriseLimite(t.continuer)}
       </p>
       <button
