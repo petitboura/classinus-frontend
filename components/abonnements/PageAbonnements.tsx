@@ -175,7 +175,7 @@ export function PageAbonnements() {
             ))}
           </section>
 
-          <TableauComparaison t={t} paliers={config.paliers} />
+          <TableauComparaison t={t} paliers={config.paliers} entreprises={config.modeles} />
 
           <BlocModeles entreprises={config.modeles ?? []} t={t} locale={locale} miseEnAvant={entrepriseEnAvant} />
         </div>
