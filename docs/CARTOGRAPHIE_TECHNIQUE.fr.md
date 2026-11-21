@@ -43,6 +43,7 @@ Le dossier **app/** utilise l’App Router de Next.js.
 | Application connectée | **app/(app)/** |
 | Connexion et inscription | **app/connexion/**, **app/inscription/** |
 | Pages publiques de découverte | **app/decouvrir/** |
+| Fichiers pour moteurs de recherche et IA | **app/sitemap.ts** (refabriqué automatiquement toutes les heures, avec une vraie date de modification seulement là où la donnée en a une), **app/robots.ts**, **app/llms.txt/** |
 | Espace public | **app/mon-espace/** |
 | Retour et consentement OAuth | **app/oauth/** |
 | Téléchargements | **app/telecharger/** |
