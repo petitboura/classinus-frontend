@@ -13,11 +13,21 @@ import type { LucideProps } from "lucide-react";
 // instance ses propres identifiants de dégradé (le logo peut apparaître
 // plusieurs fois dans la même page). strokeWidth et color sont acceptés pour
 // rester interchangeables avec les icônes lucide et ignorés.
-export const IconeSupabase = forwardRef<SVGSVGElement, LucideProps>(
-  ({ size = 24, color: _color, strokeWidth: _strokeWidth, className, ...reste }, ref) => {
+// uneCouleur (21/11/2026, demande de Bourama, tableau des abonnements) : le même éclair, sans dégradé ni vert,
+// d'une seule couleur (celle du texte autour).
+export const IconeSupabase = forwardRef<SVGSVGElement, LucideProps & { uneCouleur?: boolean }>(
+  ({ size = 24, color: _color, strokeWidth: _strokeWidth, uneCouleur = false, className, ...reste }, ref) => {
     const id = useId().replace(/:/g, "");
     const a = `supabase-a-${id}`;
     const b = `supabase-b-${id}`;
+    if (uneCouleur) {
+      return (
+        <svg ref={ref} xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 512 512" fill="currentColor" className={className} {...reste}>
+          <path d="M297.6 501c-12.9 16.3-39.2 7.4-39.5-13.4L253.6 183h204.8c37.1 0 57.8 42.8 34.7 71.9z" />
+          <path d="M214.4 11c12.9-16.3 39.2-7.4 39.5 13.4l2 304.5H53.7c-37.1 0-57.8-42.8-34.7-71.9z" />
+        </svg>
+      );
+    }
     return (
       <svg
         ref={ref}
