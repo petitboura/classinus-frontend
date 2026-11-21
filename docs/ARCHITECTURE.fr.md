@@ -59,6 +59,10 @@ La configuration Capacitor se trouve dans `capacitor.config.ts`. La configuratio
 
 Sur natif et PC, une adresse tierce (`text/uri-list`) se dégrade en carte « Ouvrir le widget », car la CSP Electron n’autorise que YouTube en `frame-src`. Test : `npm run test:widget-mcp-ui`.
 
+## Dessins SVG dans le chat
+
+`components/chat/DessinSvg.tsx` affiche le bloc de code `svg` écrit par le modèle (schémas libres et illustrations qui ne rentrent ni dans `mermaid`, ni dans `chart`, ni dans `geometrie`). Le dessin est affiché comme une image (`<img>` avec une adresse de données) et n’est jamais injecté dans la page : il ne peut ni exécuter de script ni charger de ressource extérieure. `lib/preparerSvg.ts` répare les oublis fréquents du modèle (espace de noms, entités HTML), retire les scripts, `foreignObject`, attributs d’événement et liens extérieurs, puis résout les variables du thème (`var(--dj-texte)`, `var(--dj-a)` et les autres, voir `lib/paletteIframe.ts`) pour que le dessin suive le thème clair ou sombre sans être redemandé. Le dessin garde sa taille naturelle, n’est jamais étiré, et sa hauteur est plafonnée. Un appui l’ouvre en plein écran, et il se télécharge en PNG. Les textes sont dans `lib/textesSvg.ts` (français et anglais). Le modèle apprend le format dans `INSTRUCTIONS_FORMATS_AFFICHAGE` (backend, `core/profils_agents.py`).
+
 ## Règles de maintenance
 
 1. Une évolution d’interface partagée doit rester compatible avec les environnements qui réutilisent le frontend.
