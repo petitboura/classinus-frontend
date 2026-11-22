@@ -49,7 +49,15 @@ import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
 import { effetPrincipal, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
-import { enregistrerPremierMessageBambara, lireAudioConversationBambara, lireMessagesConversationBambara, type ConversationBambara } from "@/lib/bambaraEspace";
+import {
+  enregistrerAudioMessageBambara,
+  enregistrerPremierMessageBambara,
+  listerAudiosConversationBambara,
+  lireAudioConversationBambara,
+  lireAudioMessageBambara,
+  lireMessagesConversationBambara,
+  type ConversationBambara,
+} from "@/lib/bambaraEspace";
 import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { supabase } from "@/lib/supabase";
 import { useBambaraEspace } from "@/lib/useBambaraEspace";
@@ -167,10 +175,43 @@ export default function PageBambaraClient() {
     return id;
   }, [fixerMessageEnLecture]);
 
+  // Toutes les voix sont gardées par le serveur (22/11/2026, demande de Bourama), rattachées aux messages écrits de
+  // la conversation : on attend d'avoir les identifiants de ces messages (fin de l'échange) et le son, puis on envoie.
+  const idsToursRef = useRef(new Map<string, { conversationId: string; idUser: number | string | null; idAssistant: number | string | null }>());
+  const audiosToursRef = useRef(new Map<string, { question?: MessageAudioBambara; reponse?: MessageAudioBambara }>());
+  const audiosEnvoyesRef = useRef(new Set<string>());
+  const envoyerAudiosTour = useCallback((idTour: string) => {
+    const ids = idsToursRef.current.get(idTour);
+    const audios = audiosToursRef.current.get(idTour);
+    if (!ids || !audios) return;
+    const lots = [
+      { sens: "question" as const, messageId: ids.idUser, audio: audios.question },
+      { sens: "reponse" as const, messageId: ids.idAssistant, audio: audios.reponse },
+    ];
+    for (const { sens, messageId, audio } of lots) {
+      const cle = idTour + ":" + sens;
+      if (messageId === null || !audio || audiosEnvoyesRef.current.has(cle)) continue;
+      audiosEnvoyesRef.current.add(cle);
+      void enregistrerAudioMessageBambara({ conversationId: ids.conversationId, messageId, sens, audio }).catch(() => {
+        // Rien n'est montré : le son reste réécoutable dans la page, seul l'historique ne l'aura pas.
+        audiosEnvoyesRef.current.delete(cle);
+      });
+    }
+  }, []);
+  const noterIdsTour = useCallback(
+    (idTour: string, conversationId: string, ids: { idUser: number | string | null; idAssistant: number | string | null }) => {
+      idsToursRef.current.set(idTour, { conversationId, ...ids });
+      envoyerAudiosTour(idTour);
+    },
+    [envoyerAudiosTour]
+  );
+
   // Ce que la voix de Classinus a lu devient un message audio du tour concerné.
   const ajouterAudioReponse = useCallback((idTour: string, message: MessageAudioBambara) => {
     setTours((precedents) => modifierTour(precedents, idTour, (tour) => ({ ...tour, audioReponse: message })));
-  }, []);
+    audiosToursRef.current.set(idTour, { ...audiosToursRef.current.get(idTour), reponse: message });
+    envoyerAudiosTour(idTour);
+  }, [envoyerAudiosTour]);
 
   const ajouterVisuels = useCallback((nouveaux: Parameters<typeof fusionnerVisuels>[1]) => {
     const id = tourCourantRef.current;
@@ -215,6 +256,7 @@ export default function PageBambaraClient() {
       return demarrerTour(question);
     },
     surAudio: ajouterAudioReponse,
+    surIds: (idTour, ids) => noterIdsTour(idTour, conversationIdRef.current, ids),
     avantLecture: attendreFinMessage,
     surOutilsEnCours: setOutils,
     surVisuels: ajouterVisuels,
@@ -284,15 +326,18 @@ export default function PageBambaraClient() {
     setOutils([]);
     setErreur(null);
     try {
-      const [messages, audioPremier] = await Promise.all([
+      const [messages, audioPremier, listeAudios] = await Promise.all([
         lireMessagesConversationBambara(conversation.id),
         conversation.a_audio ? lireAudioConversationBambara(conversation.id).catch(() => null) : Promise.resolve(null),
+        listerAudiosConversationBambara(conversation.id).catch(() => []),
       ]);
       if (numero !== ouvertureRef.current) return;
       const reconstruits: TourBambara[] = [];
+      const idsMessages: Array<{ idUser: number | string | null; idAssistant: number | string | null }> = [];
       for (const message of messages) {
         if (message.role === "user") {
           reconstruits.push({ id: nouvelIdentifiant(), question: message.content, texte: "", visuels: [], audioQuestion: null, audioReponse: null });
+          idsMessages.push({ idUser: message.id, idAssistant: null });
         } else {
           const dernier = reconstruits[reconstruits.length - 1];
           const texte = nettoyerPourVoix(message.content);
@@ -300,10 +345,19 @@ export default function PageBambaraClient() {
           if (dernier && !dernier.texte && dernier.visuels.length === 0) {
             dernier.texte = texte;
             dernier.visuels = visuels;
+            idsMessages[idsMessages.length - 1].idAssistant = message.id;
           } else {
             reconstruits.push({ id: nouvelIdentifiant(), question: "", texte, visuels, audioQuestion: null, audioReponse: null });
+            idsMessages.push({ idUser: null, idAssistant: message.id });
           }
         }
+      }
+      // Les tours dont la personne avait parlé n'affichent pas son texte : sa voix arrive juste après.
+      const rangDeAudio = (audio: { message_id: number | string; sens: "question" | "reponse" }) =>
+        idsMessages.findIndex((ids) => String(audio.sens === "question" ? ids.idUser : ids.idAssistant) === String(audio.message_id));
+      for (const audio of listeAudios) {
+        const rang = rangDeAudio(audio);
+        if (rang >= 0 && audio.sens === "question") reconstruits[rang].question = "";
       }
       if (audioPremier && reconstruits[0]) {
         reconstruits[0].audioQuestion = audioPremier;
@@ -311,11 +365,30 @@ export default function PageBambaraClient() {
       }
       conversationIdRef.current = conversation.id;
       premierMessageGardeRef.current = true;
+      // Ces voix sont déjà gardées : elles ne repartent pas au serveur.
+      for (const audio of listeAudios) {
+        const rang = rangDeAudio(audio);
+        if (rang >= 0) audiosEnvoyesRef.current.add(reconstruits[rang].id + ":" + audio.sens);
+      }
       ecrireEtatDepuisChat(conversation.id, messages);
       prochesDuBasRef.current = false;
       setTours(reconstruits);
       const zone = defilementRef.current;
       if (zone) zone.scrollTo({ top: 0 });
+      // Les voix arrivent une à une, dans l'ordre : le texte et les images sont déjà là, chaque bulle audio s'ajoute à son tour.
+      for (const audio of listeAudios) {
+        const rang = rangDeAudio(audio);
+        if (rang < 0) continue;
+        const message = await lireAudioMessageBambara(audio.id).catch(() => null);
+        if (!message || numero !== ouvertureRef.current) {
+          if (numero !== ouvertureRef.current) return;
+          continue;
+        }
+        const idTour = reconstruits[rang].id;
+        setTours((precedents) =>
+          modifierTour(precedents, idTour, (tour) => (audio.sens === "question" ? { ...tour, audioQuestion: message } : { ...tour, audioReponse: message }))
+        );
+      }
     } catch {
       // Silencieux : la page est faite pour quelqu'un qui ne lit pas, la conversation en cours reste telle quelle.
     }
@@ -358,7 +431,9 @@ export default function PageBambaraClient() {
         // transcription. Si rien n'est compris (bruit), ce message est retiré.
         surParole: (message) => {
           audioParoleRef.current = message;
-          tourVocalRef.current = demarrerTour("", message);
+          const idTourVocal = demarrerTour("", message);
+          tourVocalRef.current = idTourVocal;
+          audiosToursRef.current.set(idTourVocal, { question: message });
         },
         surParoleVide: () => {
           const id = tourVocalRef.current;
@@ -368,7 +443,9 @@ export default function PageBambaraClient() {
         surDemande: async (question) => {
           const id = tourVocalRef.current;
           garderPremierMessage(question, audioParoleRef.current);
-          const reponse = await demanderPageBambara(question, conversationIdRef.current, {
+          const conversationDeLaDemande = conversationIdRef.current;
+          const reponse = await demanderPageBambara(question, conversationDeLaDemande, {
+            surIds: (ids) => noterIdsTour(id, conversationDeLaDemande, ids),
             surOutilsEnCours: setOutils,
             surVisuels: ajouterVisuels,
             surTexte: (cumule) => setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, texte: nettoyerPourVoix(cumule) }))),
@@ -385,7 +462,7 @@ export default function PageBambaraClient() {
     } finally {
       ouvertureEnCoursRef.current = false;
     }
-  }, [demarrerTour, ajouterVisuels, ajouterAudioReponse, garderPremierMessage]);
+  }, [demarrerTour, ajouterVisuels, ajouterAudioReponse, garderPremierMessage, noterIdsTour]);
 
   const basculer = useCallback(() => {
     // Un message audio se réécoutait : toucher le micro l'arrête (le micro, lui, est ouvert ou fermé juste après).

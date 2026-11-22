@@ -120,6 +120,47 @@ export async function lireMessagesConversationBambara(conversationId: string): P
   return chaine.map((l) => ({ id: l.id ?? null, role: l.role as "user" | "assistant", content: l.content as string }));
 }
 
+export type AudioMessageListeBambara = { id: string; message_id: number | string; sens: "question" | "reponse"; duree_ms: number };
+
+/**
+ * Garde le son d'un message de la conversation (22/11/2026, demande de Bourama : toutes les voix, pas seulement le
+ * premier vocal). `sens` : « question » pour la voix de la personne, « reponse » pour celle de Classinus.
+ * Le serveur ignore un second envoi pour le même message.
+ */
+export async function enregistrerAudioMessageBambara(params: {
+  conversationId: string;
+  messageId: number | string;
+  sens: "question" | "reponse";
+  audio: MessageAudioBambara;
+}): Promise<void> {
+  const base64 = await blobVersBase64(params.audio.blob);
+  // Trop lourd pour le serveur : on ne l'envoie pas, le texte reste lisible dans l'historique.
+  if (!base64 || base64.length > LONGUEUR_MAX_AUDIO_BASE64) return;
+  await appelerApi(
+    `/api/bambara/conversations/${encodeURIComponent(params.conversationId)}/messages/${encodeURIComponent(String(params.messageId))}/audio`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ sens: params.sens, base64, duree_ms: Math.round(params.audio.dureeMs), pics: params.audio.pics }),
+    }
+  );
+}
+
+/** La liste légère des sons d'une conversation (sans le son lui-même), dans l'ordre des messages. */
+export async function listerAudiosConversationBambara(conversationId: string): Promise<AudioMessageListeBambara[]> {
+  const reponse = await appelerApi(`/api/bambara/conversations/${encodeURIComponent(conversationId)}/audios`);
+  return Array.isArray(reponse?.audios) ? reponse.audios : [];
+}
+
+/** Un son de la liste, prêt pour la bulle audio. */
+export async function lireAudioMessageBambara(audioId: string): Promise<MessageAudioBambara> {
+  const reponse = await appelerApi(`/api/bambara/audios/${encodeURIComponent(audioId)}`);
+  return {
+    blob: base64VersBlob(String(reponse?.base64 ?? ""), "audio/wav"),
+    dureeMs: Number(reponse?.duree_ms) || 0,
+    pics: Array.isArray(reponse?.pics) ? reponse.pics.map(Number) : [],
+  };
+}
+
 export async function listerGardesBambara(profilId: string | null): Promise<GardeBambara[]> {
   const reponse = await appelerApi(`/api/bambara/gardes${chaineProfil(profilId)}`);
   return Array.isArray(reponse?.gardes) ? reponse.gardes : [];

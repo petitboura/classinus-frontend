@@ -27,6 +27,8 @@ type Options = {
   avantEnvoi: (question: string) => string;
   /** La voix a lu la réponse (en entier, ou jusqu'à son arrêt) : elle devient un message audio réécoutable du tour donné. */
   surAudio?: (idTour: string, message: MessageAudioBambara) => void;
+  /** Les identifiants des messages sauvegardés pour le tour donné, une fois l'échange terminé (pour garder les voix). */
+  surIds?: (idTour: string, ids: Parameters<NonNullable<RappelsPageBambara["surIds"]>>[0]) => void;
   /** Attendue avant de lire la réponse à voix haute : la page y fait patienter la lecture tant qu'un message audio se réécoute. */
   avantLecture?: () => Promise<void>;
   surOutilsEnCours: RappelsPageBambara["surOutilsEnCours"];
@@ -78,6 +80,7 @@ export function useEcritureBambara(options: Options) {
         surOutilsEnCours: (noms) => { if (courante()) o.surOutilsEnCours(noms); },
         surVisuels: (visuels) => { if (courante()) o.surVisuels(visuels); },
         surTexte: (cumule) => { if (courante()) o.surTexte(nettoyerPourVoix(cumule)); },
+        surIds: (ids) => { if (courante()) o.surIds?.(idTour, ids); },
       });
       if (!courante()) return;
       o.surTexte(nettoyerPourVoix(reponse));

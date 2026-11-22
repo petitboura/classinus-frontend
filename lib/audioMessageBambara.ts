@@ -3,8 +3,8 @@
 // Page bambara (19/11/2026, demande de Bourama) : la conversation fonctionne comme sur WhatsApp. Ce que la
 // personne dit devient un message audio qu'elle peut réécouter, et la voix de Classinus aussi. Ce fichier
 // fabrique ces messages : un fichier son simple (WAV, lu partout), sa durée exacte et les hauteurs des
-// barres dessinées dans la bulle. Rien n'est envoyé nulle part : les messages restent dans la page, comme
-// le reste de la conversation (recharger la page ouvre une nouvelle conversation).
+// barres dessinées dans la bulle. Depuis le 22/11/2026 (demande de Bourama), le serveur garde toutes ces voix :
+// elles se réécoutent en rouvrant la conversation depuis l'historique (lib/bambaraEspace.ts).
 
 export type MessageAudioBambara = {
   blob: Blob;

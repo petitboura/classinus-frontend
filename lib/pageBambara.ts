@@ -29,6 +29,8 @@ export type RappelsPageBambara = {
   surVisuels: (visuels: VisuelBambara[]) => void;
   /** Texte de la réponse écrit jusqu'ici, à chaque morceau reçu (seulement pour une demande écrite). */
   surTexte?: (texteCumule: string) => void;
+  /** Les identifiants des deux messages sauvegardés par le serveur, une fois l'échange terminé (pour rattacher les voix). */
+  surIds?: (ids: { idUser: IdMessage | null; idAssistant: IdMessage | null }) => void;
 };
 
 export async function demanderPageBambara(question: string, conversationId: string, rappels: RappelsPageBambara): Promise<string> {
@@ -102,5 +104,6 @@ export async function demanderPageBambara(question: string, conversationId: stri
   // Seuls les visuels que l'IA a écrits dans sa réponse sont montrés, avec les détails de la recherche quand elle les a.
   rappels.surVisuels(extraireVisuelsDuTexte(reponse).map((visuel) => candidats.get(visuel.url) ?? visuel));
   ajouterTourDirect(conversationId, question, reponse, idUser, idAssistant);
+  rappels.surIds?.({ idUser, idAssistant });
   return reponse;
 }
