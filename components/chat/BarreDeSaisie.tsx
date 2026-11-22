@@ -41,6 +41,8 @@ import { detecterLangageCode, type TexteColle } from "@/lib/texteColle";
 import { ContexteVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { entreeDoitEnvoyer } from "@/lib/toucheEntreeEnvoi";
 import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
+import { useLocale } from "@/lib/i18n/useLocale";
+import { textesLimitesChat } from "@/lib/textesLimitesChat";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -734,6 +736,9 @@ export function BarreDeSaisie({
   const [depots, setDepots] = useState<{ nom_complet: string; prive: boolean; description: string | null }[] | null>(
     null
   );
+  const [plusDeDepots, setPlusDeDepots] = useState(false);
+  const [maximumDepotsAffiches, setMaximumDepotsAffiches] = useState(100);
+  const textesLimites = textesLimitesChat(useLocale());
   const [selecteurOuvert, setSelecteurOuvert] = useState(false);
   const selecteurRef = useRef<HTMLDivElement>(null);
   // Panneau mobile ajouté séparément du bloc desktop (2026-07-30, voir plus
@@ -1273,10 +1278,13 @@ export function BarreDeSaisie({
     if (depots === null) {
       setGithubEnCours(true);
       try {
-        const { depots: liste } = await depotsGithub();
+        const { depots: liste, plus_de_depots, maximum_affiche } = await depotsGithub();
         setDepots(liste);
+        setPlusDeDepots(plus_de_depots);
+        setMaximumDepotsAffiches(maximum_affiche);
       } catch (e) {
         setDepots([]);
+        setPlusDeDepots(false);
         alert(messageErreur(e));
       } finally {
         setGithubEnCours(false);
@@ -1840,6 +1848,11 @@ export function BarreDeSaisie({
                           )}
                         </button>
                       ))}
+                      {plusDeDepots && (
+                        <p className="animate-dj-fade-in-rapide border-t border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet" role="status">
+                          {textesLimites.depotsTronques(maximumDepotsAffiches)}
+                        </p>
+                      )}
                     </div>
                   )}
                   </div>
@@ -2330,6 +2343,11 @@ export function BarreDeSaisie({
               )}
             </button>
           ))}
+          {plusDeDepots && (
+            <p className="animate-dj-fade-in-rapide border-t border-dj-bordure px-3 py-2 text-xs text-dj-texte-muet" role="status">
+              {textesLimites.depotsTronques(maximumDepotsAffiches)}
+            </p>
+          )}
         </div>
       )}
 

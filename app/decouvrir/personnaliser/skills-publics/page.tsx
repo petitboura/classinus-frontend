@@ -3,7 +3,7 @@ import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPe
 
 export const metadata: Metadata = {
   title: "Skills publics Classinus : découvrir et réutiliser les consignes partagées",
-  description: "Explore les skills publiées par d'autres élèves, consulte leur contenu avant de les activer et ajoute une copie à tes skills personnelles.",
+  description: "Explore les skills partagées par la communauté, consulte leur contenu avant de les activer et ajoute une copie à tes skills personnelles.",
 };
 
 export default function PageDecouvrirPersonnaliserSkillsPublics() {
@@ -11,7 +11,7 @@ export default function PageDecouvrirPersonnaliserSkillsPublics() {
     <MiseEnPageDecouvrirPersonnaliser>
       <h1 className="font-display text-2xl font-bold text-dj-texte">Skills publics</h1>
       <p className="mt-4 text-base leading-relaxed text-dj-texte">
-        Le catalogue public rassemble des skills que d'autres élèves ont choisi de partager. Une skill peut proposer une méthode de révision, une façon de présenter les explications ou des consignes utiles pour un type de tâche.
+        Le catalogue public rassemble des skills que d'autres utilisateurs ont choisi de partager. Une skill peut proposer une méthode de travail, une façon de présenter les explications ou des consignes utiles pour un type de tâche.
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Choisir une skill en connaissance de cause</h2>

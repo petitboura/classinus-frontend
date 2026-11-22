@@ -9,10 +9,16 @@ export type CarteDecouvrir = {
 
 export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
+    slug: "applications-connectees",
+    href: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
+    titre: "Modèles d'IA et applications connectées",
+    description: "Choisis parmi les grands modèles d'IA disponibles, configure tes agents et relie Classinus à GitHub, Notion, Vercel, Railway, Supabase ou à tes propres outils via MCP.",
+  },
+  {
     slug: "usages",
     href: ROUTES_DECOUVRIR.usages.accueil,
     titre: "Ce que tu peux faire avec Classinus",
-    description: "Explore les usages de l’assistant, les outils d’étude, la programmation, les documents et les fonctions qui complètent le chat.",
+    description: "Découvre les usages de Classinus : agents, recherche, création de documents, développement, organisation et outils d'apprentissage.",
   },
   {
     slug: "bibliotheque",
@@ -51,7 +57,7 @@ export const SOUS_PAGES_DECOUVRIR_BIBLIOTHEQUE: CarteDecouvrir[] = [
     slug: "perso",
     href: ROUTES_DECOUVRIR.bibliotheque.perso,
     titre: "Bibliothèque personnelle",
-    description: "Range tes cours et tes fichiers par dossier, puis demande à Classinus de travailler à partir de tes documents.",
+    description: "Importe et organise tes documents, puis demande à Classinus de les retrouver, les analyser ou de travailler à partir de leur contenu.",
   },
   {
     slug: "publique",
@@ -78,7 +84,7 @@ export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
     slug: "skills-publics",
     href: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
     titre: "Skills publics",
-    description: "Parcours les consignes publiées par d'autres élèves, consulte leur contenu et active une copie si elle te convient.",
+    description: "Parcours les skills partagées par la communauté, consulte leur contenu et active une copie pour l'adapter à tes besoins.",
   },
   {
     slug: "memoire",
@@ -96,7 +102,7 @@ export const SOUS_PAGES_DECOUVRIR_PERSONNALISER: CarteDecouvrir[] = [
     slug: "applications-connectees",
     href: ROUTES_DECOUVRIR.personnaliser.applicationsConnectees,
     titre: "Applications connectées",
-    description: "Relie GitHub, Notion, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
+    description: "Connecte les applications et services proposés, ajoute tes propres serveurs MCP et gère les autorisations depuis ton compte.",
   },
 ];
 

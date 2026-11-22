@@ -12,11 +12,13 @@ Point d'entrée central de toute la documentation du frontend Classinus. L'angla
 - [Plateformes prises en charge](./PLATEFORMES.fr.md)
 - [Mises à jour et publication de l'application Windows](./appli-pc-mise-a-jour-et-publication.fr.md)
 - [Suivi des soumissions aux stores](./soumission-stores.fr.md)
+- [Liste d'attente des modèles « Bientôt »](./LISTE_ATTENTE_MODELES.fr.md)
 
 ## Historique et spécifications du projet
 
 - [Consolidation des branches, 31 octobre 2026](./project-history/BRANCHES-CONSOLIDATION-2026-10-31.fr.md)
 - [État du catalogue Higgsfield](./status/HIGGSFIELD_TODO.fr.md)
+- [Parrainage et crédits d'images gratuits, étape 5](./chantiers/parrainage-credits-images.fr.md)
 - [Désactivation de la fonctionnalité Programme](./archive/PROGRAMME_DESACTIVE.fr.md)
 - [Plan du canal en direct sur PC](./specs/plan-canal-en-direct-pc.fr.md)
 - [Spécifications de l'agent applicatif](./specs/specs-agent-applicatif.fr.md)

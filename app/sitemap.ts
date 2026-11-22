@@ -17,6 +17,21 @@ import { USAGES_DECOUVRIR } from "@/lib/usagesDecouvrir";
 
 const URL_BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+// 21/11/2026, demande Bourama : le plan du site se refabrique tout seul toutes
+// les heures. Un fichier, un dossier ou un skill publié apparaît ainsi sans
+// attendre le prochain déploiement (les lectures de l'API ci dessous suivent
+// le même rythme).
+export const revalidate = 3600;
+
+// Date de dernière modification (lastmod) : seulement quand une vraie date
+// existe dans les données. Les pages fixes n'en reçoivent pas, car une date
+// inventée (celle du build) ferait ignorer toutes les dates par les moteurs.
+function dateModification(valeur: string | null | undefined): Date | undefined {
+  if (!valeur) return undefined;
+  const date = new Date(valeur);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 async function urlsBibliothequePublique(): Promise<MetadataRoute.Sitemap> {
   const urls: MetadataRoute.Sitemap = [];
   const LIMITE_PAGE = 200;
@@ -29,7 +44,9 @@ async function urlsBibliothequePublique(): Promise<MetadataRoute.Sitemap> {
     } catch {
       break;
     }
-    for (const entree of page) urls.push({ url: `${URL_BASE}/bibliotheque/${entree.id}` });
+    for (const entree of page) {
+      urls.push({ url: `${URL_BASE}/bibliotheque/${entree.id}`, lastModified: dateModification(entree.created_at) });
+    }
     if (page.length < LIMITE_PAGE) break;
     decalage += LIMITE_PAGE;
   }
@@ -48,7 +65,10 @@ async function urlsSkillsPubliques(): Promise<MetadataRoute.Sitemap> {
 async function urlsEtablissements(): Promise<MetadataRoute.Sitemap> {
   try {
     const etablissements = await listerEtablissementsPublics();
-    return etablissements.map((etablissement) => ({ url: `${URL_BASE}/etablissements/${etablissement.id}` }));
+    return etablissements.map((etablissement) => ({
+      url: `${URL_BASE}/etablissements/${etablissement.id}`,
+      lastModified: dateModification(etablissement.created_at),
+    }));
   } catch {
     return [];
   }
@@ -57,7 +77,10 @@ async function urlsEtablissements(): Promise<MetadataRoute.Sitemap> {
 async function urlsDossiers(): Promise<MetadataRoute.Sitemap> {
   try {
     const dossiers = await listerDossiersCataloguePublic();
-    return dossiers.map((dossier) => ({ url: `${URL_BASE}/dossiers/${dossier.id}` }));
+    return dossiers.map((dossier) => ({
+      url: `${URL_BASE}/dossiers/${dossier.id}`,
+      lastModified: dateModification(dossier.created_at),
+    }));
   } catch {
     return [];
   }

@@ -43,6 +43,7 @@ The **app/** directory uses the Next.js App Router.
 | Authenticated app | **app/(app)/** |
 | Sign-in and registration | **app/connexion/**, **app/inscription/** |
 | Public discovery pages | **app/decouvrir/** |
+| Search engine and AI files | **app/sitemap.ts** (rebuilt automatically every hour, with a real last modified date only where the data has one), **app/robots.ts**, **app/llms.txt/** |
 | Public space | **app/mon-espace/** |
 | OAuth return and consent | **app/oauth/** |
 | Downloads | **app/telecharger/** |

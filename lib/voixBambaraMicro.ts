@@ -22,6 +22,9 @@ export const REGLAGES_MICRO = {
 
 const TYPES_AUDIO = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
 
+/** Où la parole commence et finit dans l'enregistrement, en millisecondes depuis son début. */
+export type ReperesParole = { debutMs: number; finMs: number };
+
 export type Micro = {
   /** Niveau sonore actuel entre 0 et 1 (0 hors écoute). */
   niveau: () => number;
@@ -36,7 +39,7 @@ export type Micro = {
 type OptionsMicro = {
   contexte: AudioContext;
   /** Appelée à chaque prise de parole terminée, l'écoute est alors en pause. */
-  surEnregistrement: (audio: Blob, mime: string) => void;
+  surEnregistrement: (audio: Blob, mime: string, reperes: ReperesParole) => void;
 };
 
 function choisirType(): string {
@@ -72,8 +75,13 @@ export async function ouvrirMicro({ contexte, surEnregistrement }: OptionsMicro)
     if (!courant) return;
     const lot = morceaux;
     morceaux = [];
+    // Repères pris maintenant : un nouvel enregistreur peut démarrer avant que celui ci ne s'arrête.
+    const reperes: ReperesParole = {
+      debutMs: Math.max(0, debutParole - debutEnregistrement),
+      finMs: Math.max(0, dernierSon - debutEnregistrement),
+    };
     // Le dernier morceau arrive encore dans `lot` (même tableau que celui de l'enregistreur) avant onstop.
-    courant.onstop = garder ? () => surEnregistrement(new Blob(lot, { type: mime || courant.mimeType }), mime || courant.mimeType) : null;
+    courant.onstop = garder ? () => surEnregistrement(new Blob(lot, { type: mime || courant.mimeType }), mime || courant.mimeType, reperes) : null;
     if (courant.state !== "inactive") courant.stop();
   }
 

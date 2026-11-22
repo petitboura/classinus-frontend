@@ -67,7 +67,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "Classinus",
     short_name: "Classinus",
-    description: "Le coin des étudiants.",
+    description: "L'IA et tes outils, réunis dans un même espace.",
     start_url: "/",
     scope: "/",
     display: estAndroidMobile ? "browser" : "standalone",

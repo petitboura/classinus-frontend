@@ -23,7 +23,7 @@ export default function PageDecouvrirPersonnaliser() {
         <p className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">Réglages personnels</p>
         <h1 className="mt-2 font-display text-2xl font-bold text-dj-texte">Personnaliser Classinus</h1>
         <p className="mt-3 text-base leading-relaxed text-dj-texte">
-          Tu n'apprends pas forcément comme les autres. Avec les skills, tu peux donner à Classinus des consignes qui correspondent à ta manière de travailler ou reprendre celles partagées par d'autres élèves. La mémoire, elle, te permet de consulter et de gérer certaines informations retenues au fil des conversations.
+          Chacun travaille à sa manière. Avec les skills, tu peux donner à Classinus des consignes qui correspondent à ta manière de travailler ou reprendre celles partagées par d'autres utilisateurs. La mémoire, elle, te permet de consulter et de gérer certaines informations retenues au fil des conversations.
         </p>
       </header>
       <nav className="mt-8" aria-label="Options de personnalisation">

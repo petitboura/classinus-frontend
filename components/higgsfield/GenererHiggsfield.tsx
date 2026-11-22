@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronDown, Clock, Download, ExternalLink, ImagePlus, Loader2, MessageSquare, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, Clock, ImagePlus, Loader2, MessageSquare, Sparkles, Trash2, Upload, Video, X } from "lucide-react";
+import { ActionsResultatHiggsfield } from "@/components/higgsfield/ActionsResultatHiggsfield";
 import { CarteGenerationHiggsfield, type EtapeCarteGeneration } from "@/components/higgsfield/CarteGenerationHiggsfield";
+import { CreditsImagesHiggsfield } from "@/components/higgsfield/CreditsImagesHiggsfield";
+import { PlusDeCreditsHiggsfield } from "@/components/higgsfield/PlusDeCreditsHiggsfield";
 import { CaseACocher } from "@/components/CaseACocher";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { descriptionEffet, promptInitialEffet, type EffetHiggsfield } from "@/lib/effetsHiggsfield";
@@ -31,6 +34,7 @@ import {
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 import { messageChatHiggsfield, titreParDefaut } from "@/lib/messageChatHiggsfield";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
+import { useMonParrainage } from "@/lib/useMonParrainage";
 import { useSuiviGenerationHiggsfield } from "@/lib/useSuiviGenerationHiggsfield";
 
 const CLASSE_BLOC_OPTIONS = "m-0 flex min-w-0 flex-col gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-3 transition-opacity duration-200";
@@ -82,6 +86,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
 
   const suivi = useSuiviGenerationHiggsfield();
   const { etat, resultatUrl, erreur, etape, delaiDepasse } = suivi;
+  // Une image coûte un crédit (retiré au lancement, rendu si la génération échoue) : le solde se relit à chaque étape.
+  const { resume: resumeCredits, rafraichir: rafraichirCredits } = useMonParrainage();
   // Heure à laquelle la personne a touché Générer (compteur de temps réel) et fin de la révélation de la carte.
   const [debutMs, setDebutMs] = useState(0);
   const [reveleCarte, setReveleCarte] = useState(false);
@@ -128,6 +134,14 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
   }
 
   const enCours = etat === "upload" || etat === "lancement" || etat === "en_cours";
+
+  useEffect(() => {
+    if (famille === "image" && (etat === "terminee" || etat === "echec" || etat === "bloquee" || etat === "annulee")) rafraichirCredits();
+  }, [famille, etat, rafraichirCredits]);
+
+  // Plus de crédits : solde à zéro, ou refus du serveur. Le bloc « invite tes amis » remplace alors le message d'erreur.
+  const creditsEpuises =
+    famille === "image" && !enCours && (suivi.codeErreur === "CREDITS_IMAGES_EPUISES" || (!!resumeCredits && resumeCredits.solde <= 0));
   // La carte remplace le formulaire pendant toute la génération, puis jusqu'à la révélation du résultat.
   const carteVisible = enCours || (etat === "terminee" && !!resultatUrl);
   const etapeCarte: EtapeCarteGeneration = etat === "upload" || etat === "lancement" ? "envoi" : etape;
@@ -258,12 +272,14 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
       }
 
       suivi.demarrerSuivi(res.request_id, titre.trim());
+      if (famille === "image") rafraichirCredits();
     } catch (e: unknown) {
       suivi.echouer(e);
+      if (famille === "image") rafraichirCredits();
     }
   }
 
-  const afficherErreur = !!erreur && !enCours;
+  const afficherErreur = !!erreur && !enCours && suivi.codeErreur !== "CREDITS_IMAGES_EPUISES";
 
   return (
     <div
@@ -455,6 +471,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
               </div>
             </fieldset>
           )}
+
+          {famille === "image" && <CreditsImagesHiggsfield />}
 
           {famille === "image" && (
             <fieldset disabled={enCours} className={`${CLASSE_BLOC_OPTIONS} ${enCours ? "opacity-60" : ""}`}>
@@ -706,6 +724,8 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
             </div>
           )}
 
+          {creditsEpuises && <PlusDeCreditsHiggsfield />}
+
           {afficherErreur && (
             <div className="flex animate-dj-fade-in-rapide gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -718,17 +738,19 @@ export function PanneauGenererHiggsfield({ effet, onClose }: { effet: EffetHiggs
               <div className="flex items-center gap-2 text-sm font-bold text-emerald-800">
                 <CheckCircle2 className="h-4 w-4" /> Génération terminée !
               </div>
-              <div className="flex flex-wrap gap-2">
-                <a href={resultatUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800">
-                  <ExternalLink className="h-3.5 w-3.5" /> Ouvrir
-                </a>
-                <a href={resultatUrl} download className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-white px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100">
-                  <Download className="h-3.5 w-3.5" /> Télécharger
-                </a>
-                <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700">
-                  <Clock className="h-3 w-3" /> Enregistré dans ta bibliothèque
-                </span>
-              </div>
+              <ActionsResultatHiggsfield
+                genre={famille === "image" ? "image" : "video"}
+                requestId={suivi.requestId}
+                url={resultatUrl}
+                titre={titre.trim()}
+                debloque={suivi.telechargementDebloque}
+                onDebloque={suivi.marquerDebloque}
+                aCote={
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700">
+                    <Clock className="h-3 w-3" /> Enregistré dans ta bibliothèque
+                  </span>
+                }
+              />
               <button type="button" onClick={recommencer} className="self-start text-xs font-semibold text-emerald-700 underline">
                 Générer à nouveau
               </button>

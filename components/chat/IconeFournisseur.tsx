@@ -19,11 +19,21 @@ const ICONES_MONOCHROME = new Set(["gpt", "grok", "zai"]);
 // Fournisseur dont le fichier d'icône n'a pas le même nom que la clé "distributeur".
 const FICHIER_ICONE: Record<string, string> = { alibaba: "qwen" };
 
-export function IconeFournisseur({ distributeur, taille = 16 }: { distributeur: string | null; taille?: number }) {
+// uneCouleur (21/11/2026, demande de Bourama, tableau des abonnements) : même les icônes en couleur
+// s'affichent alors en une seule couleur, celle du texte, comme les icônes d'une seule couleur.
+export function IconeFournisseur({
+  distributeur,
+  taille = 16,
+  uneCouleur = false,
+}: {
+  distributeur: string | null;
+  taille?: number;
+  uneCouleur?: boolean;
+}) {
   const dimension = { width: taille, height: taille };
   const fichier = distributeur ? FICHIER_ICONE[distributeur] ?? distributeur : null;
 
-  if (distributeur && ICONES_COULEUR.has(distributeur)) {
+  if (distributeur && ICONES_COULEUR.has(distributeur) && !uneCouleur) {
     return (
       <img
         src={`/icones-fournisseurs/${fichier}.svg`}
@@ -35,7 +45,7 @@ export function IconeFournisseur({ distributeur, taille = 16 }: { distributeur: 
     );
   }
 
-  if (distributeur && ICONES_MONOCHROME.has(distributeur)) {
+  if (distributeur && (ICONES_MONOCHROME.has(distributeur) || (uneCouleur && ICONES_COULEUR.has(distributeur)))) {
     const url = `url(/icones-fournisseurs/${fichier}.svg)`;
     return (
       <span

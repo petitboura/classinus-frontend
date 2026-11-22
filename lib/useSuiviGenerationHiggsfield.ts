@@ -31,6 +31,12 @@ export function useSuiviGenerationHiggsfield() {
   const [etape, setEtape] = useState<"attente" | "creation">("attente");
   // Vrai quand les vérifications automatiques sont épuisées alors que la génération n'est pas finie.
   const [delaiDepasse, setDelaiDepasse] = useState(false);
+  // Vrai quand le serveur autorise le téléchargement (vidéo, ou image déjà partagée). Lu sur le statut,
+  // et passé à vrai tout de suite par marquerDebloque() quand la personne vient de terminer un partage.
+  const [telechargementDebloque, setTelechargementDebloque] = useState(false);
+  // Code stable de la dernière erreur du serveur (par exemple CREDITS_IMAGES_EPUISES), pour que l'écran
+  // réagisse au code et non au texte.
+  const [codeErreur, setCodeErreur] = useState<string | null>(null);
 
   const minuteurRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jetonRef = useRef(0);
@@ -53,6 +59,7 @@ export function useSuiviGenerationHiggsfield() {
   }, []);
 
   const echouer = useCallback((e: unknown) => {
+    setCodeErreur(e instanceof ErreurApi ? (e.code ?? null) : null);
     setErreur(messageErreur(e));
     setEtat("echec");
     setProgression(0);
@@ -66,8 +73,10 @@ export function useSuiviGenerationHiggsfield() {
     setRequestId(id);
     setErreur(null);
     setDelaiDepasse(false);
+    setCodeErreur(null);
     setEtat("en_cours");
     setEtape("attente");
+    setTelechargementDebloque(false);
     setProgression(PROGRESSION_DEBUT_SUIVI);
 
     const terminerAvec = (etatFinal: EtatGeneration, message: string | null) => {
@@ -86,6 +95,7 @@ export function useSuiviGenerationHiggsfield() {
         if (statut.etape) setEtape(statut.etape);
         if (statut.etat === "terminee" && statut.url) {
           setResultatUrl(statut.url);
+          setTelechargementDebloque(statut.telechargement_debloque === true);
           setProgression(100);
           terminerAvec("terminee", null);
           return;
@@ -135,12 +145,18 @@ export function useSuiviGenerationHiggsfield() {
     setProgression(0);
     setEtape("attente");
     setDelaiDepasse(false);
+    setTelechargementDebloque(false);
+    setCodeErreur(null);
   }, [arreterSuivi]);
 
   const effacerMessages = useCallback(() => {
     setErreur(null);
+    setCodeErreur(null);
     setResultatUrl(null);
+    setTelechargementDebloque(false);
   }, []);
+
+  const marquerDebloque = useCallback(() => setTelechargementDebloque(true), []);
 
   return {
     etat,
@@ -150,6 +166,9 @@ export function useSuiviGenerationHiggsfield() {
     progression,
     etape,
     delaiDepasse,
+    telechargementDebloque,
+    marquerDebloque,
+    codeErreur,
     definirEtape,
     definirErreur: setErreur,
     effacerMessages,

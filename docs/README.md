@@ -12,11 +12,13 @@ Central entry point for all Classinus frontend documentation. English is the def
 - [Supported platforms](./PLATEFORMES.md)
 - [Windows app updates and publishing](./appli-pc-mise-a-jour-et-publication.md)
 - [Store submission tracking](./soumission-stores.md)
+- [Waiting list for "Coming soon" models](./LISTE_ATTENTE_MODELES.md)
 
 ## Project history and specifications
 
 - [Branch consolidation, 31 October 2026](./project-history/BRANCHES-CONSOLIDATION-2026-10-31.md)
 - [Higgsfield catalogue status](./status/HIGGSFIELD_TODO.md)
+- [Referral and free image credits, step 5](./chantiers/parrainage-credits-images.md)
 - [Programme feature deactivation](./archive/PROGRAMME_DESACTIVE.md)
 - [PC live-channel project plan](./specs/plan-canal-en-direct-pc.md)
 - [Application agent specifications](./specs/specs-agent-applicatif.md)

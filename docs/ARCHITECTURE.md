@@ -61,6 +61,10 @@ Capacitor is configured in `capacitor.config.ts`. Electron is configured in `ele
 
 On native and desktop, a third-party address (`text/uri-list`) degrades to an "Open the widget" card, because the Electron CSP only allows YouTube in `frame-src`. Test: `npm run test:widget-mcp-ui`.
 
+## SVG drawings in the chat
+
+`components/chat/DessinSvg.tsx` renders the `svg` code block written by the model (free diagrams and illustrations that do not fit `mermaid`, `chart` or `geometrie`). The drawing is displayed as an image (`<img>` with a data address) and never injected into the page, so it cannot run a script or load an external resource. `lib/preparerSvg.ts` repairs common model mistakes (missing namespace, HTML entities), removes scripts, `foreignObject`, event attributes and external links, then resolves the theme variables (`var(--dj-texte)`, `var(--dj-a)` and the others, see `lib/paletteIframe.ts`) so the drawing follows the light or dark theme without being asked again. The drawing keeps its natural size, is never stretched, and its height is capped. A tap opens it in full screen, and it can be downloaded as a PNG. Texts are in `lib/textesSvg.ts` (French and English). The model learns the format in `INSTRUCTIONS_FORMATS_AFFICHAGE` (backend, `core/profils_agents.py`).
+
 ## Maintenance principles
 
 1. Shared interface changes must remain compatible with every environment that reuses the frontend.

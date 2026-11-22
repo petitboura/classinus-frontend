@@ -1,4 +1,7 @@
-import { appelerApi, appelerApiFichier } from "./api";
+import { API_URL, appelerApi, appelerApiFichier } from "./api";
+import { ErreurApi } from "./erreurs";
+import { obtenirLocale } from "./i18n/locale";
+import { supabase } from "./supabase";
 
 export type HiggsfieldStatut = {
   etat: "en_cours" | "terminee" | "echec" | "bloquee" | "annulee";
@@ -6,6 +9,8 @@ export type HiggsfieldStatut = {
   etape?: "attente" | "creation";
   url: string | null;
   erreur: string | null;
+  /** Une image se télécharge après un partage terminé ; une vidéo est toujours débloquée (étape 4 du serveur). */
+  telechargement_debloque?: boolean;
 };
 
 export async function higgsfieldDisponible(): Promise<boolean> {
@@ -47,6 +52,7 @@ export type GenerationHiggsfield = {
   erreur: string | null;
   cree_a: string;
   termine_a: string | null;
+  telechargement_debloque?: boolean;
 };
 
 export async function listerGenerationsHiggsfield(limite = 8): Promise<GenerationHiggsfield[]> {
@@ -60,6 +66,50 @@ export async function annulerHiggsfield(request_id: string) {
 
 export async function estimerHiggsfield(payload: Record<string, unknown>) {
   return (await appelerApi("/api/higgsfield/estimation", { method: "POST", body: JSON.stringify(payload) })) as { credits: number | null };
+}
+
+/**
+ * Signale au serveur que la personne a terminé le partage de son image : le téléchargement se débloque.
+ * Sans risque à répéter. Le signal vient de l'appli, il sert à pousser le partage et non à protéger un secret
+ * (voir core/higgsfield_telechargement.py côté backend).
+ */
+export async function signalerPartageTermineHiggsfield(request_id: string): Promise<boolean> {
+  const r = (await appelerApi(`/api/higgsfield/partage-termine/${encodeURIComponent(request_id)}`, { method: "POST" })) as {
+    telechargement_debloque?: boolean;
+  };
+  return r.telechargement_debloque === true;
+}
+
+/** Nom de fichier proposé par le serveur (en-tête Content-Disposition), sinon un nom neutre. */
+function nomDepuisEntete(entete: string | null, parDefaut: string): string {
+  const m = entete ? /filename="?([^";]+)"?/i.exec(entete) : null;
+  return m?.[1]?.trim() || parDefaut;
+}
+
+/**
+ * Récupère le fichier d'une génération avec la session de la personne : le serveur refuse une image
+ * qui n'est pas débloquée (TELECHARGEMENT_PARTAGE_REQUIS). Un lien direct ne peut pas porter cette session.
+ */
+export async function recupererFichierHiggsfield(request_id: string): Promise<{ blob: Blob; nom: string }> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const entetes = new Headers({ "Accept-Language": obtenirLocale() });
+  if (session?.access_token) entetes.set("Authorization", `Bearer ${session.access_token}`);
+
+  const reponse = await fetch(`${API_URL}/api/higgsfield/telecharger/${encodeURIComponent(request_id)}`, { headers: entetes });
+  if (!reponse.ok) {
+    let detail: { code?: string; message?: string; params?: Record<string, string | number> } | undefined;
+    try {
+      const corps = (await reponse.json()) as { detail?: unknown };
+      if (corps.detail && typeof corps.detail === "object") detail = corps.detail as typeof detail;
+    } catch {
+      detail = undefined;
+    }
+    throw new ErreurApi(reponse.status, detail?.message ?? "", detail?.code ?? "ERREUR_INCONNUE", detail?.params);
+  }
+  const blob = await reponse.blob();
+  return { blob, nom: nomDepuisEntete(reponse.headers.get("content-disposition"), "classinus.png") };
 }
 
 export async function uploaderFichierHiggsfield(fichier: File): Promise<string> {

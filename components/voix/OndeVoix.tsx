@@ -11,11 +11,16 @@
 
 import { useContext, useEffect, useRef } from "react";
 import { ContexteVoixDirecte, type EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
+import type { NiveauxVoix } from "@/lib/geminiLive";
 
 type Props = {
   // Onde réduite pour la bulle : moins de courbes, trait plus épais.
   mini?: boolean;
   className?: string;
+  // Page bambara (16/11/2026) : une page qui pilote sa propre session vocale, sans le contexte global,
+  // donne l'état et les niveaux directement. Absents : comportement d'avant, lus dans le contexte.
+  etat?: EtatVoixDirecte;
+  lireNiveaux?: () => NiveauxVoix;
 };
 
 type Aspect = { amplitude: number; remplissage: number; epaisseur: number; vitesse: number };
@@ -41,16 +46,18 @@ function aspectCible(etat: EtatVoixDirecte, entree: number, sortie: number, t: n
   }
 }
 
-export function OndeVoix({ mini = false, className }: Props) {
+export function OndeVoix({ mini = false, className, etat, lireNiveaux }: Props) {
   const voix = useContext(ContexteVoixDirecte);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const etatCourant = etat ?? voix?.etat ?? "inactif";
+  const lireNiveauxCourant = lireNiveaux ?? voix?.lireNiveaux;
   // Lus à chaque image : on les garde dans des refs pour ne jamais relancer la boucle.
-  const etatRef = useRef<EtatVoixDirecte>(voix?.etat ?? "inactif");
-  const lireNiveauxRef = useRef(voix?.lireNiveaux);
+  const etatRef = useRef<EtatVoixDirecte>(etatCourant);
+  const lireNiveauxRef = useRef(lireNiveauxCourant);
   useEffect(() => {
-    etatRef.current = voix?.etat ?? "inactif";
-    lireNiveauxRef.current = voix?.lireNiveaux;
-  }, [voix?.etat, voix?.lireNiveaux]);
+    etatRef.current = etatCourant;
+    lireNiveauxRef.current = lireNiveauxCourant;
+  }, [etatCourant, lireNiveauxCourant]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -74,8 +81,10 @@ export function OndeVoix({ mini = false, className }: Props) {
     const observateur = new ResizeObserver(ajuster);
     observateur.observe(toile);
 
-    // Couleur du thème, relue de temps en temps pour suivre le mode clair ou sombre.
-    let couleur = "#808080";
+    // Couleur du thème, relue de temps en temps pour suivre le mode clair ou sombre. Elle est lue sur
+    // le canevas lui même (les variables CSS se transmettent aux enfants) : une page peut ainsi
+    // redéfinir --dj-accent-1 pour son contenu, la page bambara en noir et blanc par exemple.
+    let couleur = "#b8860b";
     let derniereLectureCouleur = -Infinity;
 
     const etatAffiche = { amplitude: 0.04, remplissage: 0, epaisseur: 2 };
@@ -89,7 +98,7 @@ export function OndeVoix({ mini = false, className }: Props) {
       dernierTemps = maintenant;
       if (maintenant - derniereLectureCouleur > 1000) {
         derniereLectureCouleur = maintenant;
-        const lue = getComputedStyle(document.documentElement).getPropertyValue("--dj-accent-1").trim();
+        const lue = getComputedStyle(toile).getPropertyValue("--dj-accent-1").trim();
         if (lue) couleur = lue;
       }
 

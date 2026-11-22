@@ -178,7 +178,7 @@ export function EcranAccueil() {
             <h1 className="font-display text-3xl font-bold tracking-tight text-dj-texte md:text-4xl">
               {titreRevele}
             </h1>
-            <p className="mt-2 text-base text-dj-texte-muet">{t("Le coin des étudiants.")}</p>
+            <p className="mt-2 text-base text-dj-texte-muet">{t("L'IA et tes outils, réunis dans un même espace.")}</p>
           </div>
           <button
             onClick={() => ouvrirChat()}

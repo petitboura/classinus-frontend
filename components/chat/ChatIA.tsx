@@ -91,6 +91,19 @@ function outilsPourHistorique(m: MessageAffiche) {
   }));
 }
 
+// Vrai quand personne ne regarde l'écran : onglet masqué, ou fenêtre de
+// l'appli PC passée derrière une autre application. Dans ce cas le navigateur
+// ralentit fortement les minuteries, donc l'écriture mot par mot ne doit pas
+// être utilisée : le texte et les outils s'affichent tout de suite, dans
+// l'ordre exact où ils arrivent (20/11/2026, demande Bourama : les outils
+// partaient à la fin de la réponse quand il était dans une autre fenêtre).
+function ecranCache(): boolean {
+  if (typeof document === "undefined") return false;
+  if (document.visibilityState !== "visible") return true;
+  const capacitor = (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
+  return capacitor?.getPlatform?.() === "electron" && !document.hasFocus();
+}
+
 export function ChatIA({
   agentId,
   nomAgent,
@@ -153,7 +166,7 @@ export function ChatIA({
   // cette feature). Le modele actif est resolu par lib/modeleActif.ts.
   modelesDisponibles?: ModeleDisponible[];
   // Modèles affichés grisés avec la mention Bientôt dans le bouton du modèle (14/10/2026).
-  modelesBientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string> }[];
+  modelesBientot?: { modele_id: string; label: string; distributeur: string; palier: string; libelles_bientot?: Record<string, string>; groupe?: number | null; libelles_badge?: Record<string, string> }[];
   // Agent "Classinus" / contenu dynamique par matière (06/08/2026) -- voir
   // core/contenu_dynamique_matiere.py. Passé jusqu'à BarreDeSaisie pour
   // afficher le bouton "Sans enseignant" (forcer le prompt généraliste
@@ -219,6 +232,10 @@ export function ChatIA({
   const collePresBasRef = useRef(true);
   const { activer: activerNotificationsPush } = useNotificationsPush();
   const [genEnCours, setGenEnCours] = useState(false);
+  // Copie lisible depuis les minuteries et la file d'attente : sert à ne plus
+  // allumer l'indicateur "réfléchit" quand la réponse est déjà terminée.
+  const genEnCoursRef = useRef(false);
+  genEnCoursRef.current = genEnCours;
   const [accesBloqueMineur, setAccesBloqueMineur] = useState(false);
   // Rythme d'affichage du texte de réponse DÉCOUPLÉ de son arrivée
   // réseau (demande Bourama : "le streaming n'est pas contrôlé, si
@@ -425,6 +442,7 @@ export function ChatIA({
       tickerActifRef.current = false;
       setAffichageEnCours(false);
       viderFileOutilsEnAttente();
+      if (!genEnCoursRef.current && !tickerActifRef.current) setRaisonnementEnCours(false);
       return;
     }
     // Rattrapage : si le buffer s'accumule (le réseau va plus vite que
@@ -457,13 +475,71 @@ export function ChatIA({
     tickerIdRef.current = setTimeout(tickAffichage, 42);
   }
 
-  function pousserTexteAffichage(texte: string) {
+  // Ajoute un morceau de texte d'un seul coup au dernier message, sans
+  // écriture mot par mot.
+  function ecrireTexteDirect(texte: string) {
+    if (!texte) return;
+    majMessages((prec) => {
+      const copie = [...prec];
+      const dernier = copie[copie.length - 1];
+      copie[copie.length - 1] = {
+        ...dernier,
+        content: dernier.content + texte,
+        segments: segmentsAvecTexteFusionne(dernier.segments, "texte", texte),
+      };
+      return copie;
+    });
+  }
+
+  function demarrerAffichageTexte(texte: string) {
     bufferAffichageRef.current += texte;
     setAffichageEnCours(true);
     if (tickerActifRef.current) return;
     tickerActifRef.current = true;
     tickerIdRef.current = setTimeout(tickAffichage, 42);
   }
+
+  // Le texte qui arrive après un outil déjà mis en attente passe lui aussi dans
+  // la file, pour que chaque outil garde sa vraie place entre les morceaux de
+  // texte. Si l'écran est caché, tout s'affiche tout de suite.
+  function pousserTexteAffichage(texte: string) {
+    if (ecranCache()) {
+      viderToutImmediatement();
+      ecrireTexteDirect(texte);
+      return;
+    }
+    if (fileOutilsEnAttenteRef.current.length > 0) {
+      fileOutilsEnAttenteRef.current.push({ type: "texte", evenement: { texte } });
+      return;
+    }
+    demarrerAffichageTexte(texte);
+  }
+
+  // Écrit d'un coup le texte encore en attente puis applique la file dans
+  // l'ordre d'arrivée (texte et outils mélangés).
+  function viderToutImmediatement() {
+    if (tickerIdRef.current) clearTimeout(tickerIdRef.current);
+    tickerActifRef.current = false;
+    const restant = bufferAffichageRef.current;
+    bufferAffichageRef.current = "";
+    setAffichageEnCours(false);
+    ecrireTexteDirect(restant);
+    viderFileOutilsEnAttente(true);
+  }
+
+  const viderToutRef = useRef<() => void>(() => {});
+  viderToutRef.current = viderToutImmediatement;
+  useEffect(() => {
+    const surChangement = () => {
+      if (ecranCache()) viderToutRef.current();
+    };
+    document.addEventListener("visibilitychange", surChangement);
+    window.addEventListener("blur", surChangement);
+    return () => {
+      document.removeEventListener("visibilitychange", surChangement);
+      window.removeEventListener("blur", surChangement);
+    };
+  }, []);
 
   function reinitialiserAffichageControle() {
     if (tickerIdRef.current) clearTimeout(tickerIdRef.current);
@@ -713,7 +789,7 @@ export function ChatIA({
       // s'afficher mot par mot. Cette application réelle est désormais
       // appelée soit tout de suite, soit via viderFileOutilsEnAttente(),
       // selon traiterEvenement() -- logique interne inchangée.
-      setRaisonnementEnCours(true);
+      if (genEnCoursRef.current) setRaisonnementEnCours(true);
       const premierApresRepli = repliEnAttenteRef.current;
       if (premierApresRepli) repliEnAttenteRef.current = false;
       majMessages((prec) => {
@@ -746,10 +822,34 @@ export function ChatIA({
   // les N premiers "statut"/"statut_termine" (dans l'ordre d'arrivée) aux
   // N "outil_resultat" présents dans cette même file -- la meilleure
   // approximation possible avec les informations disponibles.
-  function viderFileOutilsEnAttente() {
+  function viderFileOutilsEnAttente(toutDAuCoup = false) {
     const file = fileOutilsEnAttenteRef.current;
     if (file.length === 0) return;
     fileOutilsEnAttenteRef.current = [];
+    let debut = 0;
+    while (debut < file.length) {
+      let fin = debut;
+      while (fin < file.length && file[fin].type !== "texte") fin++;
+      appliquerSegmentOutils(file.slice(debut, fin));
+      if (fin >= file.length) break;
+      const texte = file[fin].evenement.texte as string;
+      // Le texte reprend la parole : la réflexion est terminée.
+      setRaisonnementEnCours(false);
+      if (toutDAuCoup) {
+        ecrireTexteDirect(texte);
+        debut = fin + 1;
+        continue;
+      }
+      // Le texte suivant s'écrit mot par mot ; ce qui vient après lui reste en
+      // attente jusqu'à ce qu'il soit entièrement affiché.
+      fileOutilsEnAttenteRef.current = file.slice(fin + 1);
+      demarrerAffichageTexte(texte);
+      return;
+    }
+  }
+
+  function appliquerSegmentOutils(file: Array<{ type: string; evenement: any }>) {
+    if (file.length === 0) return;
     const nbResultats = file.filter((e) => e.type === "outil_resultat").length;
     let indexStatut = 0;
     let indexStatutTermine = 0;
@@ -1739,24 +1839,10 @@ export function ChatIA({
 
     // Le texte encore en attente d'affichage est ecrit d'un coup, pour que la
     // version quittee soit rangee complete.
-    const restant = bufferAffichageRef.current;
-    if (tickerIdRef.current) clearTimeout(tickerIdRef.current);
-    tickerActifRef.current = false;
-    bufferAffichageRef.current = "";
-    setAffichageEnCours(false);
-    viderFileOutilsEnAttente();
+    viderToutImmediatement();
 
     majMessages((prec) => {
-      let base = prec;
-      if (restant) {
-        base = [...prec];
-        const dernier = base[base.length - 1];
-        base[base.length - 1] = {
-          ...dernier,
-          content: dernier.content + restant,
-          segments: segmentsAvecTexteFusionne(dernier.segments, "texte", restant),
-        };
-      }
+      const base = prec;
       const courant = base[index];
       if (!courant?.versions || courant.versionActive === undefined) return base;
       const nouvelIndex = courant.versionActive + direction;

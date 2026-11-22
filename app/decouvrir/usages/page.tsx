@@ -26,7 +26,7 @@ import { ROUTES_DECOUVRIR } from "@/lib/routesDecouvrir";
 import { QUESTIONS_GENERALES_CLASSINUS, RESUME_CLASSINUS, USAGES_DECOUVRIR } from "@/lib/usagesDecouvrir";
 
 export const metadata: Metadata = {
-  title: "Ce que tu peux faire avec Classinus : étudier, créer, chercher et programmer",
+  title: "Classinus : modèles d'IA, connecteurs, création et développement",
   description: RESUME_CLASSINUS.description,
 };
 
@@ -47,7 +47,7 @@ const AUTRES_PARCOURS: {
   {
     titre: "Retrouver et organiser tes documents",
     description:
-      "Range tes cours dans ta bibliothèque personnelle, explore les ressources partagées et, sur mobile, donne accès aux dossiers utiles de ton téléphone.",
+      "Range tes documents dans ta bibliothèque personnelle, explore les ressources partagées et, sur mobile, donne accès aux dossiers utiles de ton téléphone.",
     href: ROUTES_DECOUVRIR.bibliotheque.accueil,
     lien: "Explorer la bibliothèque",
     Icone: Library,
@@ -103,7 +103,7 @@ const AUTRES_PARCOURS: {
   {
     titre: "Travailler avec différents formats",
     description:
-      "Envoie des documents, des images, du code ou des médias dans la conversation. Selon ta demande et les outils disponibles, Classinus peut aussi créer des documents, des images ou des animations.",
+      "Envoie des documents, des images, du code ou des médias dans la conversation. Selon ta demande et les outils disponibles, Classinus peut aussi créer ou modifier des documents, des images ou des animations.",
     href: "/",
     lien: "Voir les possibilités du chat",
     Icone: FileText,
@@ -131,11 +131,10 @@ export default function PageDecouvrirUsages() {
           Que peux-tu faire avec Classinus ?
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-dj-texte">
-          Tu peux partir d'une question, d'un cours, d'une image ou d'un problème à résoudre.
-          Classinus t'aide à chercher des ressources, comprendre une notion, préparer tes révisions,
-          programmer et produire des supports de travail. Tu peux aussi reprendre une conversation,
-          choisir un modèle d'IA activé et personnaliser tes échanges. Choisis ton objectif pour
-          voir comment commencer et quelles limites garder en tête.
+          Tu peux partir d'une idée, d'un document, d'un projet, d'un code à analyser ou d'un service à connecter.
+          Classinus te permet de choisir un modèle d'IA, de configurer des agents, de rechercher des informations,
+          de créer des fichiers, de programmer et d'utiliser tes applications connectées. Les outils d'apprentissage
+          et d'organisation complètent ces usages. Choisis ton objectif pour découvrir les fonctions et leurs limites.
         </p>
       </header>
 

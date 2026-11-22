@@ -23,7 +23,7 @@ export const QUESTIONS_DECOUVRIR_BIBLIOTHEQUE: GroupeQuestionsDecouvrir[] = [
       {
         question: "Pourquoi utiliser une bibliothèque personnelle ?",
         reponse:
-          "Elle te permet de réunir tes cours, exercices et autres fichiers dans des dossiers. Tu peux ensuite demander à Classinus de retrouver ou d'exploiter ces documents au lieu de repartir de zéro à chaque question.",
+          "Elle te permet de réunir tes fichiers et ressources dans des dossiers. Tu peux ensuite demander à Classinus de retrouver, analyser ou exploiter ces documents au lieu de repartir de zéro à chaque demande.",
       },
       {
         question: "Les fichiers que j'envoie dans le chat sont-ils ajoutés à ma bibliothèque ?",
@@ -46,9 +46,9 @@ export const QUESTIONS_DECOUVRIR_BIBLIOTHEQUE: GroupeQuestionsDecouvrir[] = [
           "C'est un catalogue de ressources que les utilisateurs partagent avec la communauté. Tu peux rechercher des documents, consulter les informations sur la ressource et découvrir le profil de la personne qui l'a publiée.",
       },
       {
-        question: "Puis-je partager un document avec les autres élèves ?",
+        question: "Puis-je partager un document avec les autres utilisateurs ?",
         reponse:
-          "Oui, à condition de disposer des droits nécessaires pour le partager. Ajoute une ressource avec un titre et les informations utiles pour permettre aux autres de la retrouver. Avant toute publication, vérifie les conditions d'utilisation et les droits d'auteur.",
+          "Oui, à condition de disposer des droits nécessaires pour le partager. Ajoute une ressource avec un titre et les informations utiles pour permettre à la communauté de la retrouver. Avant toute publication, vérifie les conditions d'utilisation et les droits d'auteur.",
         liens: [
           { texte: "Conditions générales d'utilisation", href: "/cgu" },
           { texte: "Politique de copyright", href: "/copyright" },
@@ -57,7 +57,7 @@ export const QUESTIONS_DECOUVRIR_BIBLIOTHEQUE: GroupeQuestionsDecouvrir[] = [
       {
         question: "Comment évaluer une ressource partagée ?",
         reponse:
-          "Tu peux consulter les informations de la ressource, noter le document et ouvrir le profil de la personne qui l'a partagé. Ces éléments t'aident à apprécier la ressource, sans remplacer la vérification de sa qualité et de sa pertinence pour ton cours.",
+          "Tu peux consulter les informations de la ressource, noter le document et ouvrir le profil de la personne qui l'a partagé. Ces éléments t'aident à apprécier la ressource, sans remplacer la vérification de sa qualité et de sa pertinence pour ton besoin.",
       },
     ],
   },
@@ -85,22 +85,22 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
       {
         question: "Qu'est-ce que Classinus ?",
         reponse:
-          "Classinus est une application d'étude avec IA. Elle réunit un chat, une bibliothèque de documents, des outils de recherche, des supports de révision et des fonctions pour apprendre à programmer.",
+          "Classinus est une plateforme qui permet d'accéder aux grands modèles d'IA en Afrique, avec les outils pour s'en servir : agents personnalisables, connecteurs vers des applications, recherche web et documentaire, création de fichiers et exécution de code.",
       },
       {
         question: "Que peut-on faire avec Classinus au-delà du chat ?",
         reponse:
-          "Tu peux rechercher des livres, des PDF et des vidéos, travailler à partir de tes documents, créer des fiches de révision et des QCM, générer des animations, exécuter du Python dans le chat et personnaliser certaines réponses avec des skills.",
+          "Tu peux choisir parmi plusieurs modèles d'IA, personnaliser des agents avec des skills, connecter des applications et services via des intégrations ou MCP, rechercher sur le web, créer des documents, générer du contenu et exécuter du code dans un espace isolé. Tu peux aussi utiliser les outils d'apprentissage et d'organisation prévus pour ces usages.",
       },
       {
-        question: "Puis-je choisir le modèle d'IA utilisé par Classinus ?",
+        question: "Quels modèles d'IA puis-je utiliser dans Classinus ?",
         reponse:
-          "Oui. Le chat présente les modèles disponibles, regroupés par fournisseur. Les modèles qui ne sont pas encore activés sont indiqués « Bientôt » et ne peuvent pas être sélectionnés.",
+          "Le sélecteur du chat affiche les modèles actuellement disponibles, regroupés par fournisseur. La sélection peut évoluer selon les modèles activés et les conditions de ton offre. Les modèles non encore disponibles sont signalés séparément.",
       },
       {
-        question: "Classinus est-il destiné uniquement aux élèves ?",
+        question: "À qui s'adresse Classinus ?",
         reponse:
-          "Classinus propose un espace d'étude pour les élèves ainsi qu'un Bureau avec des outils de partage et de gestion de classe. Certaines fonctions du Bureau, notamment le programme et le suivi des signalements, sont réservées aux enseignants.",
+          "Classinus s'adresse d'abord aux personnes en Afrique qui veulent accéder à plusieurs grands modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il comprend aussi des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants lorsqu'un usage pédagogique le nécessite.",
       },
     ],
   },
@@ -116,7 +116,7 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
           "Une skill est un ensemble de consignes qui aide à orienter les réponses de Classinus. Tu peux créer ou modifier tes propres skills, par exemple pour demander des explications plus progressives ou un format de réponse particulier.",
       },
       {
-        question: "Puis-je utiliser une skill créée par un autre élève ?",
+        question: "Puis-je utiliser une skill partagée par un autre utilisateur ?",
         reponse:
           "Oui. Parcours le catalogue des skills publiques, consulte celle qui t'intéresse puis active-la. Une copie est ajoutée à tes skills personnelles ; tu peux ainsi l'adapter à tes besoins sans modifier l'original publié par son auteur.",
       },
