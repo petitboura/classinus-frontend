@@ -1476,7 +1476,7 @@ const EN: Record<string, string> = {
   "Dans l'application native compatible, programme une notification ou ajoute un événement à ton calendrier. Ces fonctions dépendent de l'appareil et des autorisations accordées.": "In a supported native app, schedule a notification or add an event to your calendar. These features depend on the device and the permissions granted.",
   "Découvrir les rappels": "Explore reminders",
   "Travailler avec différents formats": "Work with different formats",
-  "Envoie des documents, des images, du code ou des médias dans la conversation. Selon ta demande et les outils disponibles, Classinus peut aussi créer des documents, des images ou des animations.": "Send documents, images, code, or media in the conversation. Depending on your request and the available tools, Classinus can also create documents, images, or animations.",
+  "Envoie des documents, des images, du code ou des médias dans la conversation. Selon ta demande et les outils disponibles, Classinus peut aussi créer ou modifier des documents, des images ou des animations.": "Send documents, images, code, or media in the conversation. Depending on your request and the available tools, Classinus can also create or edit documents, images, or animations.",
   "Voir les possibilités du chat": "Explore chat capabilities",
   "Vérifie ta boîte mail": "Check your inbox",
   "Mot de passe oublié": "Forgot password",
