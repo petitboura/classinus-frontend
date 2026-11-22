@@ -250,3 +250,35 @@ for (const code of ["BAMBARA_PROFIL_NOM_INVALIDE", "BAMBARA_TROP_DE_PROFILS", "B
   assert.equal((erreurs.match(new RegExp("^\\s+" + code + ":", "gm")) ?? []).length, 2, code + " en français et en anglais");
 }
 console.log("page bambara : boutons du haut vérifiés");
+
+// Affichage progressif (22/11/2026) : un bloc `bloc_media` déjà trié par le serveur est montré tout de suite.
+{
+  const bi = m.visuelsDepuisBloc({
+    genre: "images",
+    images: [{ url: "https://x.org/a.jpg", titre: "a", miniature: "https://x.org/a_m.jpg" }, { url: "javascript:alert(1)" }, { url: "" }, { titre: "sans adresse" }],
+  });
+  assert.equal(bi.length, 1, "seules les adresses http ou https sont gardées");
+  assert.equal(bi[0].genre, "image");
+  assert.equal(bi[0].miniature, "https://x.org/a_m.jpg");
+  const bv = m.visuelsDepuisBloc({ genre: "videos", videos: [{ url: "https://www.youtube.com/watch?v=abcdefghijk", titre: "v" }, { url: "ftp://x.org/v.mp4" }] });
+  assert.equal(bv.length, 1);
+  assert.equal(bv[0].genre, "video");
+  assert.equal(bv[0].idVideo, "abcdefghijk");
+  // Genre inconnu, bloc absent ou vide : rien n'est montré, jamais d'erreur.
+  assert.deepEqual(m.visuelsDepuisBloc({ genre: "autre", images: [{ url: "https://x.org/a.jpg" }] }), []);
+  assert.deepEqual(m.visuelsDepuisBloc(undefined), []);
+  assert.deepEqual(m.visuelsDepuisBloc(null), []);
+  assert.deepEqual(m.visuelsDepuisBloc({ genre: "images" }), []);
+  // Deux blocs qui se recoupent, puis la même image citée par l'IA dans sa réponse : une seule carte.
+  const a = m.visuelsDepuisBloc({ genre: "images", images: [{ url: "https://x.org/1.jpg" }, { url: "https://x.org/2.jpg" }] });
+  const b = m.visuelsDepuisBloc({ genre: "images", images: [{ url: "https://x.org/2.jpg" }, { url: "https://x.org/3.jpg" }] });
+  const fusion = m.fusionnerVisuels(m.fusionnerVisuels(a, b), m.extraireVisuelsDuTexte("![un](https://x.org/1.jpg)"));
+  assert.deepEqual(fusion.map((v) => v.url), ["https://x.org/1.jpg", "https://x.org/2.jpg", "https://x.org/3.jpg"]);
+  // Branchement : le flux de la page reçoit l'événement et l'affiche sans attendre la fin de la réponse.
+  const flux = await lire("../lib/pageBambara.ts");
+  assert.match(flux, /case "bloc_media"/, "le flux gère bloc_media");
+  assert.match(flux, /visuelsDepuisBloc\(evenement\)/);
+  assert.match(flux, /rappels\.surVisuels\(visuels\)/, "le bloc est montré tout de suite");
+  assert.match(flux, /candidats\.set\(visuel\.url, visuel\)[\s\S]*surVisuels\(visuels\)/, "le bloc complète aussi les candidats");
+  console.log("page bambara : affichage progressif vérifié");
+}

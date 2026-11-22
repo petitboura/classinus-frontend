@@ -3,7 +3,9 @@
 // sont montrées. C'est l'IA qui choisit lesquelles (19/11/2026, demande de Bourama) : les liens qu'elle
 // écrit elle même dans sa réponse, et les fichiers qu'elle génère. Les listes d'images et de vidéos que
 // le serveur envoie pendant une recherche ne sont jamais montrées d'office : elles servent seulement à
-// compléter (miniature, titre) celles que l'IA cite.
+// compléter (miniature, titre) celles que l'IA cite. Une seule exception (22/11/2026, demande de Bourama,
+// affichage progressif) : un bloc `bloc_media`, que le serveur n'envoie qu'après qu'un petit LLM de tri a
+// déjà choisi ce qui correspond à la demande. Ce bloc est montré tout de suite, voir visuelsDepuisBloc.
 
 import type { MessageAudioBambara } from "./audioMessageBambara";
 
@@ -121,6 +123,22 @@ export function visuelsDepuisImages(images: ImageServeur[] | undefined): VisuelB
 
 export function visuelsDepuisVideos(videos: VideoServeur[] | undefined): VisuelBambara[] {
   return (videos ?? []).filter((v) => v?.url).map((v) => visuelVideo(v.url, v.titre || "", v.miniature, v.id_video));
+}
+
+/** Bloc de l'événement `bloc_media` : le genre dit s'il contient des images ou des vidéos. */
+export type BlocMedia = { genre?: string; images?: ImageServeur[]; videos?: VideoServeur[] };
+
+/**
+ * Visuels d'un bloc `bloc_media` (22/11/2026, affichage progressif). Le serveur l'envoie dès qu'une source a répondu
+ * et qu'un petit LLM a gardé ce qui correspond à la demande (core/medias_progressifs.py) : c'est donc déjà un choix de
+ * l'IA, à montrer sans attendre la fin de la réponse. Une adresse qui n'est pas en http ou https est écartée.
+ */
+export function visuelsDepuisBloc(bloc: BlocMedia | null | undefined): VisuelBambara[] {
+  if (!bloc) return [];
+  const valide = (u: { url?: string }) => typeof u?.url === "string" && /^https?:\/\//i.test(u.url);
+  if (bloc.genre === "videos") return visuelsDepuisVideos((bloc.videos ?? []).filter(valide));
+  if (bloc.genre === "images") return visuelsDepuisImages((bloc.images ?? []).filter(valide));
+  return [];
 }
 
 /** Les fichiers générés par un outil : seuls les images et vidéos sont montrés, le reste est ignoré. */

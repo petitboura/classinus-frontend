@@ -4,7 +4,10 @@
 // suit le flux pour montrer ce qui compte à l'écran (outils en cours, vidéos, images). C'est l'IA qui choisit quelles
 // images et quelles vidéos s'affichent (demande de Bourama, 19/11/2026) : celles qu'elle écrit dans sa réponse. Les
 // résultats de recherche qu'elle ne cite pas ne sont pas montrés ; ils servent seulement à compléter ceux qu'elle cite
-// (miniature, titre). Les images qu'elle crée elle-même (outil generer_image) sont toujours montrées. Même route que
+// (miniature, titre). Une exception (22/11/2026, demande de Bourama) : pendant une recherche d'images ou de vidéos, le
+// serveur envoie des blocs `bloc_media`, chacun déjà trié par un petit LLM dès qu'une source a répondu ; ils sont montrés
+// tout de suite, sans attendre la fin de la réponse. Les images qu'elle crée elle-même (outil generer_image) sont toujours
+// montrées. Même route que
 // le mode vocal bambara (lib/geminiLive.ts : demanderAClovisDirectement), avec `client` = `page_bambara` :
 // le serveur ne propose alors que la recherche, la génération visuelle et la mémoire, répond en
 // bambara oral et garde l'effort de réflexion au plus faible. La réflexion n'est jamais montrée.
@@ -13,6 +16,7 @@ import { appelerApiStream } from "./api";
 import { ajouterTourDirect, lireEtatConversation, type IdMessage } from "./conversationPartagee";
 import {
   extraireVisuelsDuTexte,
+  visuelsDepuisBloc,
   visuelsDepuisFichiersGeneres,
   visuelsDepuisImages,
   visuelsDepuisVideos,
@@ -78,6 +82,14 @@ export async function demanderPageBambara(question: string, conversationId: stri
           if (evenement.id_appel != null) enCours.delete(String(evenement.id_appel));
           else if (enCours.size > 0) enCours.delete([...enCours.keys()].pop() as string);
           publierOutils();
+          break;
+        }
+        case "bloc_media": {
+          // Déjà trié par le serveur : montré tout de suite. Gardé aussi dans les candidats, pour que le titre et la
+          // miniature complètent un visuel que l'IA citerait ensuite dans sa réponse.
+          const visuels = visuelsDepuisBloc(evenement);
+          for (const visuel of visuels) candidats.set(visuel.url, visuel);
+          if (visuels.length > 0) rappels.surVisuels(visuels);
           break;
         }
         case "images":
