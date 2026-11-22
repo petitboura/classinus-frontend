@@ -172,8 +172,33 @@ export function effetPourOutil(nomOutil: string | undefined | null): EffetConstr
   return null;
 }
 
+const ORDRE_EFFETS = ["creation", "videos", "images", "recherche"] as const;
+
 /** Tous les effets des outils qui travaillent en même temps, dans l'ordre : création, vidéos, images, web. Chacun une seule fois. */
 export function effetsActifs(nomsOutils: (string | undefined | null)[]): EffetConstruction[] {
   const effets = new Set(nomsOutils.map(effetPourOutil).filter((e): e is EffetConstruction => e !== null));
-  return (["creation", "videos", "images", "recherche"] as const).filter((e) => effets.has(e));
+  return ORDRE_EFFETS.filter((e) => effets.has(e));
+}
+
+/**
+ * Demande de Bourama du 22/11/2026 : l'effet ne disparaît plus dès que l'outil a fini, puis laisse un vide pendant que
+ * l'IA écrit, puis fait surgir les résultats d'un coup. Un effet déjà montré reste jusqu'à ce que ce qu'il annonçait
+ * soit là : les images (création ou recherche) quand une image est arrivée, les vidéos quand une vidéo est arrivée,
+ * la recherche web quand la réponse commence. Les effets des outils encore en route restent toujours.
+ * `gardes` : les effets déjà montrés pendant ce tour. `genres` : les genres de visuels arrivés dans ce tour.
+ */
+export function effetsAffiches(
+  actifs: EffetConstruction[],
+  gardes: EffetConstruction[],
+  genres: ReadonlySet<string>,
+  texteCommence: boolean
+): EffetConstruction[] {
+  const restes = gardes.filter((e) => {
+    if (actifs.includes(e)) return false;
+    if (e === "videos") return !genres.has("video");
+    if (e === "recherche") return !texteCommence;
+    return !genres.has("image");
+  });
+  const tous = new Set<EffetConstruction>([...actifs, ...restes]);
+  return ORDRE_EFFETS.filter((e) => tous.has(e));
 }

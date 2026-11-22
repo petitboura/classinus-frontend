@@ -48,7 +48,7 @@ import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
-import { effetsActifs, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
+import { effetsActifs, effetsAffiches, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type EffetConstruction as EffetOutil, type TourBambara } from "@/lib/pageBambaraVisuels";
 import {
   enregistrerAudioMessageBambara,
   enregistrerPremierMessageBambara,
@@ -482,12 +482,32 @@ export default function PageBambaraClient() {
     void ouvrir();
   }, [ouvrir, ecritureActive, arreterEcriture, fixerMessageEnLecture]);
 
-  const effets = effetsActifs(outils);
   const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
   const etatBulle: EtatVoixDirecte = etat !== "inactif" ? etat : ecriture.etat;
   const enConnexion = etat === "connexion";
   // Une réponse se prépare ou se lit : la dernière bulle audio de Classinus est déjà là, en préparation.
   const reponseEnCours = etat === "travail" || etat === "reponse" || ecriture.etat === "travail" || ecriture.etat === "reponse";
+
+  // La requête n'est pas finie : les résultats (images, vidéos) arrivent à sa fin, juste avant que la voix lise la réponse.
+  const requeteEnCours = etat === "travail" || ecriture.etat === "travail";
+
+  // Effets de construction (demande de Bourama du 22/11/2026) : un effet déjà montré reste jusqu'à ce que ses résultats
+  // soient là, au lieu de disparaître dès que l'outil a fini (vide, puis texte, puis résultats d'un coup).
+  // `effetsMontres` retient les effets vus pendant le tour en cours (il repart de zéro à chaque nouveau tour).
+  const tourEnCours = tours[tours.length - 1];
+  const [effetsMontres, setEffetsMontres] = useState<{ idTour: string; effets: EffetOutil[] }>({ idTour: "", effets: [] });
+  useEffect(() => {
+    const actifs = effetsActifs(outils);
+    if (!actifs.length) return;
+    const idTour = tourCourantRef.current;
+    setEffetsMontres((precedent) => {
+      const base = precedent.idTour === idTour ? precedent.effets : [];
+      return actifs.every((e) => base.includes(e)) ? precedent : { idTour, effets: [...base, ...actifs.filter((e) => !base.includes(e))] };
+    });
+  }, [outils]);
+  const genresVisuels = new Set(tourEnCours?.visuels.map((v) => v.genre) ?? []);
+  const effetsDuTour = tourEnCours && effetsMontres.idTour === tourEnCours.id ? effetsMontres.effets : [];
+  const effets = effetsAffiches(effetsActifs(outils), requeteEnCours ? effetsDuTour : [], genresVisuels, Boolean(tourEnCours?.texte));
 
   if (!connecte) return <div className="bb-page fixed inset-0" />;
 
@@ -573,9 +593,9 @@ export default function PageBambaraClient() {
                   key={effet}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
+                  exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="w-full"
+                  className="w-full overflow-hidden"
                 >
                   <EffetConstruction effet={effet} />
                 </motion.div>

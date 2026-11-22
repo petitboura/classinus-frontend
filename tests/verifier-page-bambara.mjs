@@ -59,6 +59,14 @@ assert.deepEqual(m.effetsActifs(["rechercher_image", "rechercher_video", "genere
 assert.deepEqual(m.effetsActifs(["memoire_lire", "tavily_search"]), ["recherche"]);
 assert.deepEqual(m.effetsActifs(["memoire_lire"]), []);
 assert.deepEqual(m.effetsActifs([]), []);
+// Un effet déjà montré reste jusqu'à ce que ses résultats soient là (22/11/2026).
+const aucun = new Set();
+assert.deepEqual(m.effetsAffiches([], ["videos"], aucun, true), ["videos"]);
+assert.deepEqual(m.effetsAffiches([], ["videos"], new Set(["video"]), true), []);
+assert.deepEqual(m.effetsAffiches([], ["images", "creation"], new Set(["image"]), false), []);
+assert.deepEqual(m.effetsAffiches([], ["recherche"], aucun, false), ["recherche"]);
+assert.deepEqual(m.effetsAffiches([], ["recherche"], aucun, true), []);
+assert.deepEqual(m.effetsAffiches(["videos"], ["creation"], new Set(["video"]), false), ["creation", "videos"]);
 
 // Branchement : le client est annoncé, la réflexion jamais montrée, la page n'a ni texte ni menu.
 const [api, page, client] = await Promise.all([
