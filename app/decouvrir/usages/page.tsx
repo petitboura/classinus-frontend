@@ -103,7 +103,7 @@ const AUTRES_PARCOURS: {
   {
     titre: "Travailler avec différents formats",
     description:
-      "Envoie des documents, des images, du code ou des médias dans la conversation. Selon ta demande et les outils disponibles, Classinus peut aussi créer des documents, des images ou des animations.",
+      "Envoie des documents, des images, du code ou des médias dans la conversation. Selon ta demande et les outils disponibles, Classinus peut aussi créer ou modifier des documents, des images ou des animations.",
     href: "/",
     lien: "Voir les possibilités du chat",
     Icone: FileText,
