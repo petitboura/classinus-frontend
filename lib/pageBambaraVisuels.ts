@@ -156,20 +156,23 @@ export function visuelsDepuisFichiersGeneres(nomOutil: string | undefined, fichi
  * construire sous tes yeux », jamais une ligne avec icône et libellé). Mémoire et autres outils :
  * aucun effet, la bulle suffit.
  */
-export type EffetConstruction = "recherche" | "images" | "videos" | "creation";
+export type EffetConstruction = "images" | "videos" | "creation";
 
+/**
+ * Mise à jour du 22/11/2026 (demande de Bourama : l'effet de la recherche web n'avait aucun sens, et deux effets ne
+ * s'affichaient jamais ensemble). La recherche web n'a plus d'effet : elle ne produit rien à regarder, des cases
+ * grises qui n'aboutissent à rien trompaient. Seuls les outils qui produisent des images ou des vidéos ont leur effet.
+ */
 export function effetPourOutil(nomOutil: string | undefined | null): EffetConstruction | null {
   if (!nomOutil) return null;
   if (nomOutil === "generer_image") return "creation";
   if (nomOutil === "rechercher_image") return "images";
   if (nomOutil === "rechercher_video" || nomOutil === "lire_video") return "videos";
-  if (nomOutil.startsWith("tavily_")) return "recherche";
   return null;
 }
 
-/** Quand plusieurs outils tournent ensemble, la création passe avant les vidéos, puis les images, puis le web. */
-export function effetPrincipal(nomsOutils: (string | undefined | null)[]): EffetConstruction | null {
+/** Tous les effets des outils qui travaillent en même temps, dans l'ordre : création, vidéos, images. Chacun une seule fois. */
+export function effetsActifs(nomsOutils: (string | undefined | null)[]): EffetConstruction[] {
   const effets = new Set(nomsOutils.map(effetPourOutil).filter((e): e is EffetConstruction => e !== null));
-  for (const e of ["creation", "videos", "images", "recherche"] as const) if (effets.has(e)) return e;
-  return null;
+  return (["creation", "videos", "images"] as const).filter((e) => effets.has(e));
 }

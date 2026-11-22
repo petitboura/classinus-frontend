@@ -48,7 +48,7 @@ import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
-import { effetPrincipal, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
+import { effetsActifs, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
 import {
   enregistrerAudioMessageBambara,
   enregistrerPremierMessageBambara,
@@ -482,7 +482,7 @@ export default function PageBambaraClient() {
     void ouvrir();
   }, [ouvrir, ecritureActive, arreterEcriture, fixerMessageEnLecture]);
 
-  const effet = effetPrincipal(outils);
+  const effets = effetsActifs(outils);
   const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
   const etatBulle: EtatVoixDirecte = etat !== "inactif" ? etat : ecriture.etat;
   const enConnexion = etat === "connexion";
@@ -565,20 +565,23 @@ export default function PageBambaraClient() {
             );
           })}
           {/* L'effet de construction du tour en cours, tout en bas, sous ce qui est déjà arrivé. */}
-          <AnimatePresence mode="wait">
-            {effet && (
-              <motion.div
-                key={effet}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="w-full"
-              >
-                <EffetConstruction effet={effet} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Plusieurs outils peuvent travailler en même temps : leurs effets s'affichent ensemble, l'un sous l'autre. */}
+          <div className="flex w-full flex-col gap-3">
+            <AnimatePresence initial={false}>
+              {effets.map((effet) => (
+                <motion.div
+                  key={effet}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="w-full"
+                >
+                  <EffetConstruction effet={effet} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
       </main>
 

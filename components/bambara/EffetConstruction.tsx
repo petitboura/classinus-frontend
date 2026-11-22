@@ -16,7 +16,6 @@ import { styleHauteur, styleRangee } from "./rangeesImages";
 // Ratios (largeur divisée par hauteur) des cases d'images : suite fixe (jamais de hasard), variée comme de vraies rangées.
 const RATIOS_IMAGES = [1.5, 0.8, 1.33, 1, 1.78, 0.75];
 const VIDEOS = [0, 1];
-const SONDES = [0, 1, 2];
 
 // Retard de la lueur de chaque case : elles ne brillent pas toutes au même instant, ce qui donne la vague.
 function retard(i: number): CSSProperties {
@@ -54,14 +53,6 @@ export function EffetConstruction({ effet }: { effet: Effet }) {
             <div key={i} className="bb-case" style={{ ...retard(i), ...styleRangee(ratio) }}>
               <span style={styleHauteur(ratio)} />
             </div>
-          ))}
-        </div>
-      );
-    case "recherche":
-      return (
-        <div aria-hidden="true" className="grid w-full grid-cols-3 gap-2">
-          {SONDES.map((i) => (
-            <Case key={i} proportion="1 / 1" i={i} />
           ))}
         </div>
       );

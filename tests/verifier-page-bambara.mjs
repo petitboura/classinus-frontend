@@ -51,12 +51,13 @@ assert.equal(m.modifierTour(toursDepart, "inconnu", (t) => ({ ...t, texte: "y" }
 assert.equal(m.effetPourOutil("generer_image"), "creation");
 assert.equal(m.effetPourOutil("rechercher_image"), "images");
 assert.equal(m.effetPourOutil("rechercher_video"), "videos");
-assert.equal(m.effetPourOutil("tavily_search"), "recherche");
+assert.equal(m.effetPourOutil("tavily_search"), null);
 assert.equal(m.effetPourOutil("memoire_lire"), null);
 assert.equal(m.effetPourOutil(undefined), null);
-assert.equal(m.effetPrincipal(["tavily_search", "generer_image"]), "creation");
-assert.equal(m.effetPrincipal(["memoire_lire"]), null);
-assert.equal(m.effetPrincipal([]), null);
+assert.deepEqual(m.effetsActifs(["tavily_search", "generer_image"]), ["creation"]);
+assert.deepEqual(m.effetsActifs(["rechercher_image", "rechercher_video", "generer_image", "rechercher_image"]), ["creation", "videos", "images"]);
+assert.deepEqual(m.effetsActifs(["memoire_lire", "tavily_search"]), []);
+assert.deepEqual(m.effetsActifs([]), []);
 
 // Branchement : le client est annoncé, la réflexion jamais montrée, la page n'a ni texte ni menu.
 const [api, page, client] = await Promise.all([
