@@ -54,6 +54,7 @@ import { supabase } from "@/lib/supabase";
 import { useBambaraEspace } from "@/lib/useBambaraEspace";
 import { useDecalageClavier } from "@/lib/useDecalageClavier";
 import { useEcritureBambara } from "@/lib/useEcritureBambara";
+import { usePhrasesBambara } from "@/lib/usePhrasesBambara";
 import { ouvrirVoixBambara, type SessionVoixBambara } from "@/lib/voixBambara";
 import { nettoyerPourVoix } from "@/lib/voixBambaraTexte";
 import { BarreHautBambara } from "./BarreHautBambara";
@@ -116,6 +117,34 @@ export default function PageBambaraClient() {
   // Ce qui attend la fin d'un message audio réécouté (la lecture d'une réponse écrite).
   const attentesMessageRef = useRef<Array<() => void>>([]);
 
+  // Phrases proactives (22/11/2026, demande de Bourama) : la page parle d'elle même à l'arrivée, quand un outil cherche ou
+  // crée, et quand il prend du temps (lib/usePhrasesBambara.ts). Pendant qu'une phrase parle, le micro est en pause (il
+  // entendrait le haut parleur) ; il reprend ensuite. Une phrase n'est jamais coupée par la réponse : la réponse attend.
+  const {
+    phraseEnCours,
+    suivreOutils: suivreOutilsPhrases,
+    nouveauTour: nouveauTourPhrases,
+    interrompre: interrompreLesPhrases,
+    attendreFin: attendreFinPhrases,
+    niveau: niveauPhrases,
+    enCours: phraseParle,
+  } = usePhrasesBambara({
+    actif: connecte,
+    surDebut: () => sessionRef.current?.suspendreEcoute(),
+    surFin: () => {
+      if (!messageEnLectureRef.current) sessionRef.current?.reprendreEcoute();
+    },
+  });
+
+  // Les outils en cours : montrés par l'effet de construction, et suivis par les phrases.
+  const changerOutils = useCallback(
+    (noms: string[]) => {
+      setOutils(noms);
+      suivreOutilsPhrases(noms);
+    },
+    [suivreOutilsPhrases]
+  );
+
   const racineRef = useRef<HTMLDivElement>(null);
   const defilementRef = useRef<HTMLElement>(null);
   const prochesDuBasRef = useRef(true);
@@ -160,9 +189,10 @@ export default function PageBambaraClient() {
     prochesDuBasRef.current = true;
     fixerMessageEnLecture(null);
     setOutils([]);
+    nouveauTourPhrases();
     setTours((precedents) => [...precedents, { id, question, texte: "", visuels: [], audioQuestion, audioReponse: null }]);
     return id;
-  }, [fixerMessageEnLecture]);
+  }, [fixerMessageEnLecture, nouveauTourPhrases]);
 
   // Ce que la voix de Classinus a lu devient un message audio du tour concerné.
   const ajouterAudioReponse = useCallback((idTour: string, message: MessageAudioBambara) => {
@@ -207,13 +237,19 @@ export default function PageBambaraClient() {
     conversationId: () => conversationIdRef.current,
     avantEnvoi: (question) => {
       sessionRef.current?.fermer();
+      // Envoyer est un geste explicite : une phrase qui parlait s'arrête.
+      interrompreLesPhrases();
       setErreur(null);
       garderPremierMessage(question, null);
       return demarrerTour(question);
     },
     surAudio: ajouterAudioReponse,
-    avantLecture: attendreFinMessage,
-    surOutilsEnCours: setOutils,
+    // La réponse attend la fin d'un message réécouté et celle de la phrase qui parle : elle ne coupe ni l'un ni l'autre.
+    avantLecture: async () => {
+      await attendreFinMessage();
+      await attendreFinPhrases();
+    },
+    surOutilsEnCours: changerOutils,
     surVisuels: ajouterVisuels,
     surTexte: changerTexte,
     surErreur: setErreur,
@@ -227,6 +263,8 @@ export default function PageBambaraClient() {
     fixerMessageEnLecture(id);
     const session = sessionRef.current;
     if (id) {
+      // Réécouter un message est un geste explicite : la phrase qui parlait s'arrête.
+      interrompreLesPhrases();
       setVideoEnLecture(null);
       session?.suspendreEcoute();
       session?.interrompre();
@@ -234,16 +272,17 @@ export default function PageBambaraClient() {
     } else {
       session?.reprendreEcoute();
     }
-  }, [couperVoixEcriture, fixerMessageEnLecture]);
+  }, [couperVoixEcriture, fixerMessageEnLecture, interrompreLesPhrases]);
 
   // Une vidéo qui démarre arrête le message audio en cours (et rend l'écoute au micro).
   const changerVideoEnLecture = useCallback((id: string | null) => {
+    if (id) interrompreLesPhrases();
     if (id && messageEnLectureRef.current) {
       fixerMessageEnLecture(null);
       sessionRef.current?.reprendreEcoute();
     }
     setVideoEnLecture(id);
-  }, [fixerMessageEnLecture]);
+  }, [fixerMessageEnLecture, interrompreLesPhrases]);
 
   // Le « + » : on repart d'une conversation vide. L'écoute du micro, la voix, une réponse écrite en cours et la vidéo qui
   // jouait s'arrêtent, les tours disparaissent, et la prochaine demande ouvre une nouvelle conversation (nouvel
@@ -251,6 +290,7 @@ export default function PageBambaraClient() {
   const nouvelleConversation = useCallback(() => {
     sessionRef.current?.fermer();
     arreterEcriture();
+    interrompreLesPhrases();
     fixerMessageEnLecture(null);
     setVideoEnLecture(null);
     // Une réponse encore en route pour l'ancienne conversation n'écrit plus rien dans la nouvelle.
@@ -262,7 +302,7 @@ export default function PageBambaraClient() {
     setTours([]);
     setOutils([]);
     setErreur(null);
-  }, [arreterEcriture, fixerMessageEnLecture]);
+  }, [arreterEcriture, fixerMessageEnLecture, interrompreLesPhrases]);
 
   // Le cœur des vidéos et images : garder ou retirer, avec ses libellés dans la langue de la page.
   const { gardeDeUrl, basculerGarde } = espace;
@@ -277,10 +317,13 @@ export default function PageBambaraClient() {
   );
 
   // Pendant la lecture d'une réponse écrite, c'est cette lecture qui fait bouger l'onde.
-  const lireNiveaux = useCallback(
-    () => sessionRef.current?.niveaux() ?? { entree: 0, sortie: niveauEcriture() },
-    [niveauEcriture]
-  );
+  // Pendant une phrase proactive, c'est elle qui fait bouger l'onde.
+  const lireNiveaux = useCallback(() => {
+    const phrase = niveauPhrases();
+    const session = sessionRef.current?.niveaux();
+    if (session) return { entree: session.entree, sortie: Math.max(session.sortie, phrase) };
+    return { entree: 0, sortie: Math.max(niveauEcriture(), phrase) };
+  }, [niveauEcriture, niveauPhrases]);
 
   const ouvrir = useCallback(async () => {
     if (sessionRef.current || ouvertureEnCoursRef.current) return;
@@ -297,6 +340,8 @@ export default function PageBambaraClient() {
           }
         },
         surErreur: setErreur,
+        // La réponse attend la fin de la phrase proactive qui parle (elle n'est jamais coupée).
+        avantLecture: attendreFinPhrases,
         // Dès que la personne a fini de parler, son message audio s'ajoute à la conversation, sans attendre la
         // transcription. Si rien n'est compris (bruit), ce message est retiré.
         surParole: (message) => {
@@ -312,7 +357,7 @@ export default function PageBambaraClient() {
           const id = tourVocalRef.current;
           garderPremierMessage(question, audioParoleRef.current);
           const reponse = await demanderPageBambara(question, conversationIdRef.current, {
-            surOutilsEnCours: setOutils,
+            surOutilsEnCours: changerOutils,
             surVisuels: ajouterVisuels,
             surTexte: (cumule) => setTours((precedents) => modifierTour(precedents, id, (tour) => ({ ...tour, texte: nettoyerPourVoix(cumule) }))),
           });
@@ -322,13 +367,15 @@ export default function PageBambaraClient() {
         surReponseAudio: (message) => ajouterAudioReponse(tourVocalRef.current, message),
       });
       sessionRef.current = session;
+      // Une phrase parlait déjà (l'accueil) : le micro attend qu'elle finisse avant d'écouter.
+      if (phraseParle()) session.suspendreEcoute();
     } catch (e) {
       setEtat("erreur");
       setErreur(messageErreurVoix(e));
     } finally {
       ouvertureEnCoursRef.current = false;
     }
-  }, [demarrerTour, ajouterVisuels, ajouterAudioReponse, garderPremierMessage]);
+  }, [demarrerTour, ajouterVisuels, ajouterAudioReponse, garderPremierMessage, changerOutils, attendreFinPhrases, phraseParle]);
 
   const basculer = useCallback(() => {
     // Un message audio se réécoutait : toucher le micro l'arrête (le micro, lui, est ouvert ou fermé juste après).
@@ -337,20 +384,23 @@ export default function PageBambaraClient() {
     // Arrêter ne supprime rien de la conversation : seul l'effet de construction en cours disparaît.
     if (ecritureActive) {
       arreterEcriture();
-      setOutils([]);
+      interrompreLesPhrases();
+      changerOutils([]);
       return;
     }
     if (sessionRef.current) {
       sessionRef.current.fermer();
-      setOutils([]);
+      interrompreLesPhrases();
+      changerOutils([]);
       return;
     }
     void ouvrir();
-  }, [ouvrir, ecritureActive, arreterEcriture, fixerMessageEnLecture]);
+  }, [ouvrir, ecritureActive, arreterEcriture, fixerMessageEnLecture, interrompreLesPhrases, changerOutils]);
 
   const effet = effetPrincipal(outils);
   const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
-  const etatBulle: EtatVoixDirecte = etat !== "inactif" ? etat : ecriture.etat;
+  // Une phrase proactive qui parle : la bulle montre que Classinus parle, même sans session ouverte.
+  const etatBulle: EtatVoixDirecte = phraseEnCours ? "reponse" : etat !== "inactif" ? etat : ecriture.etat;
   const enConnexion = etat === "connexion";
   // Une réponse se prépare ou se lit : la dernière bulle audio de Classinus est déjà là, en préparation.
   const reponseEnCours = etat === "travail" || etat === "reponse" || ecriture.etat === "travail" || ecriture.etat === "reponse";

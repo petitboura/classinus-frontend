@@ -33,6 +33,11 @@ type OptionsVoixBambara = {
   surParoleVide?: () => void;
   /** Ce que la voix de Classinus a lu (en entier, ou jusqu'à son arrêt) devient un message audio réécoutable. */
   surReponseAudio?: (message: MessageAudioBambara) => void;
+  /**
+   * Attendue juste avant de lire la réponse (22/11/2026, demande de Bourama) : la page y fait patienter la lecture tant
+   * qu'une phrase proactive parle. La réponse ne coupe jamais une phrase, elle attend sa fin.
+   */
+  avantLecture?: () => Promise<void>;
 };
 
 /**
@@ -95,6 +100,8 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
         if (ferme) return;
         const morceaux = decouperEnMorceaux(nettoyerPourVoix(reponse), etat.texte_max);
         if (morceaux.length === 0) return;
+        await options.avantLecture?.();
+        if (ferme) return;
         while (ecouteSuspendue && !ferme) await new Promise<void>((resoudre) => { reveil = resoudre; });
         if (ferme) return;
         options.surEtat("reponse");

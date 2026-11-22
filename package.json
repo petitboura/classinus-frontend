@@ -11,6 +11,7 @@
     "test:connexions": "node tests/verifier-connexions.mjs",
     "test:voix-bambara": "node tests/verifier-voix-bambara.mjs",
     "test:page-bambara": "node tests/verifier-page-bambara.mjs",
+    "test:phrases-bambara": "node tests/verifier-phrases-bambara.mjs",
     "start": "next start",
     "lint": "next lint",
     "build:capacitor": "node tests/verifier-composants-natifs.mjs && node tests/verifier-couleurs-theme.mjs && cross-env CAPACITOR_BUILD=true next build && npx cap sync",
