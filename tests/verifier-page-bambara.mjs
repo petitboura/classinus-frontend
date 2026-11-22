@@ -130,7 +130,10 @@ assert.match(decalage, /visualViewport/);
 // Effet conversation (18/11/2026) : chaque demande s'ajoute à la suite, rien n'efface les tours précédents.
 assert.match(client, /demarrerTour/);
 assert.match(client, /tours\.map/);
-assert.doesNotMatch(client, /setVisuels|setTexteReponse|setTours\(\[\]\)/);
+assert.doesNotMatch(client, /setVisuels|setTexteReponse/);
+// Seul le bouton « + » (nouvelle conversation) vide les tours, jamais une nouvelle demande.
+assert.equal((client.match(/setTours\(\[\]\)/g) ?? []).length, 1);
+assert.match(client, /const nouvelleConversation = useCallback\(\(\) => \{[\s\S]*?setTours\(\[\]\);/);
 assert.match(ecriture, /avantEnvoi\(question\)/);
 // Pellicule (18/11/2026) : grille de 3 vignettes par ligne (4 sur grand écran), jamais de défilement de côté.
 assert.match(rangees, /grid-cols-3/);
@@ -227,3 +230,20 @@ assert.match(client, /bullePreparee/);
 assert.match(bulleAudio, /enPreparation/);
 
 console.log("Page bambara : toutes les vérifications passent.");
+
+// Boutons du haut, profils, historique et gardés (18/11/2026) : le branchement de la page.
+const pageClient = await lire("../components/bambara/PageBambaraClient.tsx");
+const barreHaut = await lire("../components/bambara/BarreHautBambara.tsx");
+const hookEspace = await lire("../lib/useBambaraEspace.ts");
+assert.match(pageClient, /<BarreHautBambara/, "la rangée de boutons est dans la page");
+assert.match(pageClient, /garde=\{gardeUi\}/, "les cartes reçoivent le cœur");
+assert.match(pageClient, /garderPremierMessage\(question, null\)/, "le premier message écrit est gardé");
+assert.match(pageClient, /garderPremierMessage\(question, audioParoleRef\.current\)/, "le premier vocal est gardé avec sa transcription");
+assert.match(pageClient, /conversationIdRef\.current = nouvelIdentifiant\(\)/, "le « + » ouvre une nouvelle conversation");
+assert.match(barreHaut, /nouveauProfil[\s\S]*nouvelleConversation[\s\S]*historique[\s\S]*gardes/, "ordre des boutons : profil, +, historique, gardés");
+assert.match(hookEspace, /listerGardesBambara\(profilId\)/, "les gardés suivent le profil choisi");
+for (const code of ["BAMBARA_PROFIL_NOM_INVALIDE", "BAMBARA_TROP_DE_PROFILS", "BAMBARA_PROFIL_INTROUVABLE", "BAMBARA_CONVERSATION_INVALIDE", "BAMBARA_CONVERSATION_INTROUVABLE", "BAMBARA_MESSAGE_VIDE", "BAMBARA_AUDIO_INVALIDE", "BAMBARA_GARDE_INVALIDE", "BAMBARA_INDISPONIBLE"]) {
+  const erreurs = await lire("../lib/erreurs.ts");
+  assert.equal((erreurs.match(new RegExp("^\\s+" + code + ":", "gm")) ?? []).length, 2, code + " en français et en anglais");
+}
+console.log("page bambara : boutons du haut vérifiés");

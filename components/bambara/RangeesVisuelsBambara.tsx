@@ -9,9 +9,11 @@
 // c'est la page qui garde la vidéo en lecture (`idEnLecture`). Une image touchée s'agrandit en plein écran
 // avec le visionneur du chat (VisionneuseImage.tsx : flèches, balayage, fermeture).
 
+import { AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { VisionneuseImage } from "@/components/chat/VisionneuseImage";
 import type { VisuelBambara } from "@/lib/pageBambaraVisuels";
+import type { GardeUiBambara } from "./BoutonCoeurBambara";
 import { CarteImageBambara, CarteVideoBambara } from "./CarteVisuelBambara";
 
 type Props = {
@@ -23,13 +25,15 @@ type Props = {
   libelleLire: string;
   libelleFermerVideo: string;
   libelleOuvrirImage: string;
+  /** Le cœur pour garder chaque vidéo et image, quand la page le propose. */
+  garde?: GardeUiBambara;
 };
 
 // Planche en grille : 3 colonnes (4 sur grand écran), aucune barre de défilement horizontale. Une vidéo en
 // lecture prend toute la largeur de la ligne (voir CarteVisuelBambara.tsx).
 const CLASSE_PLANCHE = "grid w-full grid-cols-3 gap-2 lg:grid-cols-4";
 
-export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChangerLecture, libelleLire, libelleFermerVideo, libelleOuvrirImage }: Props) {
+export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChangerLecture, libelleLire, libelleFermerVideo, libelleOuvrirImage, garde }: Props) {
   const [indexImage, setIndexImage] = useState<number | null>(null);
 
   const images = visuels.filter((v) => v.genre === "image");
@@ -41,24 +45,29 @@ export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChanger
     <div className="flex w-full flex-col gap-3">
       {images.length > 0 && (
         <div className={CLASSE_PLANCHE}>
-          {images.map((visuel, index) => (
-            <CarteImageBambara key={visuel.id} visuel={visuel} surOuvrir={() => setIndexImage(index)} libelleOuvrir={libelleOuvrirImage} />
-          ))}
+          <AnimatePresence initial={false}>
+            {images.map((visuel, index) => (
+              <CarteImageBambara key={visuel.id} visuel={visuel} surOuvrir={() => setIndexImage(index)} libelleOuvrir={libelleOuvrirImage} garde={garde} />
+            ))}
+          </AnimatePresence>
         </div>
       )}
       {videos.length > 0 && (
         <div className={CLASSE_PLANCHE}>
-          {videos.map((visuel) => (
-            <CarteVideoBambara
-              key={visuel.id}
-              visuel={visuel}
-              enLecture={idEnLecture === idTour + ":" + visuel.id}
-              surLire={() => surChangerLecture(idTour + ":" + visuel.id)}
-              surFermer={() => surChangerLecture(null)}
-              libelleLire={libelleLire}
-              libelleFermer={libelleFermerVideo}
-            />
-          ))}
+          <AnimatePresence initial={false}>
+            {videos.map((visuel) => (
+              <CarteVideoBambara
+                key={visuel.id}
+                visuel={visuel}
+                enLecture={idEnLecture === idTour + ":" + visuel.id}
+                surLire={() => surChangerLecture(idTour + ":" + visuel.id)}
+                surFermer={() => surChangerLecture(null)}
+                libelleLire={libelleLire}
+                libelleFermer={libelleFermerVideo}
+                garde={garde}
+              />
+            ))}
+          </AnimatePresence>
         </div>
       )}
       {indexImage !== null && images[indexImage] && (

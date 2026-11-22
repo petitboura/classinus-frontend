@@ -32,12 +32,16 @@
 // les commandes (micro, bouton clavier, champ d'écriture) sont rondes. La bulle du haut est la mini bulle du chat, en haut
 // à droite ; le micro et le bouton clavier sont petits et bas, sous le pouce (demande de Bourama, 18/11/2026).
 // Le texte de la page (réponse, question écrite, champ d'écriture) est en font-lecture, la police des réponses du chat.
+// Boutons du haut (18/11/2026, demande de Bourama) : en haut à gauche, nouveau profil, nouvelle conversation (« + »),
+// historique et éléments gardés (components/bambara/BarreHautBambara.tsx). Chaque vidéo et image a un cœur pour la garder.
+// Tout est rangé dans le compte (lib/useBambaraEspace.ts, api/bambara_profils.py côté backend) : chaque profil a son
+// historique et ses éléments gardés. Le premier message de chaque conversation est gardé pour l'historique.
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { Keyboard, Loader2, Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OndeVoix } from "@/components/voix/OndeVoix";
 import type { MessageAudioBambara } from "@/lib/audioMessageBambara";
 import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
@@ -45,11 +49,14 @@ import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
 import { effetPrincipal, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
+import { enregistrerPremierMessageBambara } from "@/lib/bambaraEspace";
 import { supabase } from "@/lib/supabase";
+import { useBambaraEspace } from "@/lib/useBambaraEspace";
 import { useDecalageClavier } from "@/lib/useDecalageClavier";
 import { useEcritureBambara } from "@/lib/useEcritureBambara";
 import { ouvrirVoixBambara, type SessionVoixBambara } from "@/lib/voixBambara";
 import { nettoyerPourVoix } from "@/lib/voixBambaraTexte";
+import { BarreHautBambara } from "./BarreHautBambara";
 import { BulleAudioBambara } from "./BulleAudioBambara";
 import { ChampEcritureBambara } from "./ChampEcritureBambara";
 import { TexteReplieBambara } from "./TexteReplieBambara";
@@ -62,12 +69,16 @@ const TEXTES = {
     ecrire: "Écrire un message", masquerChamp: "Masquer le champ d'écriture", placeholder: "Écrire ici", envoyer: "Envoyer",
     ecouter: "Écouter le message", mettreEnPause: "Mettre le message en pause",
     deplier: "Voir tout le texte", replier: "Réduire le texte",
+    nouveauProfil: "Nouveau profil", nouvelleConversation: "Nouvelle conversation", historique: "Historique", gardes: "Gardés",
+    nom: "Nom", prenom: "Prénom", valider: "Valider", videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
   },
   en: {
     parler: "Speak", arreter: "Stop", lire: "Play the video", fermerVideo: "Close the video", ouvrirImage: "View the image", erreur: "Something went wrong.",
     ecrire: "Write a message", masquerChamp: "Hide the writing field", placeholder: "Write here", envoyer: "Send",
     ecouter: "Play the message", mettreEnPause: "Pause the message",
     deplier: "Show the whole text", replier: "Collapse the text",
+    nouveauProfil: "New profile", nouvelleConversation: "New conversation", historique: "History", gardes: "Kept",
+    nom: "Last name", prenom: "First name", valider: "Confirm", videos: "Videos", images: "Images", garder: "Keep", retirerGarde: "Remove from kept",
   },
 } as const;
 
@@ -87,6 +98,14 @@ export default function PageBambaraClient() {
   const [tours, setTours] = useState<TourBambara[]>([]);
   const [outils, setOutils] = useState<string[]>([]);
   const [champOuvert, setChampOuvert] = useState(false);
+  // Profils, historique et éléments gardés du compte (lib/useBambaraEspace.ts).
+  const espace = useBambaraEspace(connecte);
+  const profilIdRef = useRef<string | null>(null);
+  profilIdRef.current = espace.profilId;
+  // Le premier message de la conversation est gardé une seule fois, pour l'historique ; le vocal de la demande
+  // parlée en cours attend sa transcription (la demande), c'est elle qui déclenche l'enregistrement.
+  const premierMessageGardeRef = useRef(false);
+  const audioParoleRef = useRef<MessageAudioBambara | null>(null);
   // Une seule vidéo se lit à la fois dans toute la conversation (identifiant : tour + vidéo).
   const [videoEnLecture, setVideoEnLecture] = useState<string | null>(null);
   // Un seul message audio se réécoute à la fois (identifiant : tour + sens). Quand l'un joue, le micro est en pause.
@@ -121,6 +140,15 @@ export default function PageBambaraClient() {
   const attendreFinMessage = useCallback((): Promise<void> => {
     if (!messageEnLectureRef.current) return Promise.resolve();
     return new Promise<void>((resoudre) => { attentesMessageRef.current.push(resoudre); });
+  }, []);
+
+  const garderPremierMessage = useCallback((texte: string, audio: MessageAudioBambara | null) => {
+    if (premierMessageGardeRef.current) return;
+    premierMessageGardeRef.current = true;
+    void enregistrerPremierMessageBambara({ conversationId: conversationIdRef.current, profilId: profilIdRef.current, texte, audio }).catch(() => {
+      // Rien n'est montré : le message suivant de la conversation retentera.
+      premierMessageGardeRef.current = false;
+    });
   }, []);
 
   // Nouvelle demande : un tour s'ajoute en bas, les précédents restent. On suit alors la nouvelle réponse.
@@ -180,6 +208,7 @@ export default function PageBambaraClient() {
     avantEnvoi: (question) => {
       sessionRef.current?.fermer();
       setErreur(null);
+      garderPremierMessage(question, null);
       return demarrerTour(question);
     },
     surAudio: ajouterAudioReponse,
@@ -216,6 +245,37 @@ export default function PageBambaraClient() {
     setVideoEnLecture(id);
   }, [fixerMessageEnLecture]);
 
+  // Le « + » : on repart d'une conversation vide. L'écoute du micro, la voix, une réponse écrite en cours et la vidéo qui
+  // jouait s'arrêtent, les tours disparaissent, et la prochaine demande ouvre une nouvelle conversation (nouvel
+  // identifiant côté serveur) dont le premier message sera gardé à son tour pour l'historique.
+  const nouvelleConversation = useCallback(() => {
+    sessionRef.current?.fermer();
+    arreterEcriture();
+    fixerMessageEnLecture(null);
+    setVideoEnLecture(null);
+    // Une réponse encore en route pour l'ancienne conversation n'écrit plus rien dans la nouvelle.
+    tourCourantRef.current = "";
+    tourVocalRef.current = "";
+    audioParoleRef.current = null;
+    premierMessageGardeRef.current = false;
+    conversationIdRef.current = nouvelIdentifiant();
+    setTours([]);
+    setOutils([]);
+    setErreur(null);
+  }, [arreterEcriture, fixerMessageEnLecture]);
+
+  // Le cœur des vidéos et images : garder ou retirer, avec ses libellés dans la langue de la page.
+  const { gardeDeUrl, basculerGarde } = espace;
+  const gardeUi = useMemo(
+    () => ({
+      estGarde: (url: string) => gardeDeUrl(url) !== null,
+      basculer: basculerGarde,
+      libelleGarder: textes.garder,
+      libelleRetirer: textes.retirerGarde,
+    }),
+    [gardeDeUrl, basculerGarde, textes.garder, textes.retirerGarde]
+  );
+
   // Pendant la lecture d'une réponse écrite, c'est cette lecture qui fait bouger l'onde.
   const lireNiveaux = useCallback(
     () => sessionRef.current?.niveaux() ?? { entree: 0, sortie: niveauEcriture() },
@@ -240,6 +300,7 @@ export default function PageBambaraClient() {
         // Dès que la personne a fini de parler, son message audio s'ajoute à la conversation, sans attendre la
         // transcription. Si rien n'est compris (bruit), ce message est retiré.
         surParole: (message) => {
+          audioParoleRef.current = message;
           tourVocalRef.current = demarrerTour("", message);
         },
         surParoleVide: () => {
@@ -249,6 +310,7 @@ export default function PageBambaraClient() {
         // Le texte de la réponse apparaît aussi, replié sous sa bulle audio. Rien n'est écrit dans la bulle de la personne.
         surDemande: async (question) => {
           const id = tourVocalRef.current;
+          garderPremierMessage(question, audioParoleRef.current);
           const reponse = await demanderPageBambara(question, conversationIdRef.current, {
             surOutilsEnCours: setOutils,
             surVisuels: ajouterVisuels,
@@ -266,7 +328,7 @@ export default function PageBambaraClient() {
     } finally {
       ouvertureEnCoursRef.current = false;
     }
-  }, [demarrerTour, ajouterVisuels, ajouterAudioReponse]);
+  }, [demarrerTour, ajouterVisuels, ajouterAudioReponse, garderPremierMessage]);
 
   const basculer = useCallback(() => {
     // Un message audio se réécoutait : toucher le micro l'arrête (le micro, lui, est ouvert ou fermé juste après).
@@ -363,6 +425,7 @@ export default function PageBambaraClient() {
                   libelleLire={textes.lire}
                   libelleFermerVideo={textes.fermerVideo}
                   libelleOuvrirImage={textes.ouvrirImage}
+                  garde={gardeUi}
                 />
               </div>
             );
@@ -384,6 +447,18 @@ export default function PageBambaraClient() {
           </AnimatePresence>
         </div>
       </main>
+
+      <BarreHautBambara
+        espace={espace}
+        garde={gardeUi}
+        textes={textes}
+        surNouvelleConversation={nouvelleConversation}
+        surProfilChange={nouvelleConversation}
+        messageEnLecture={messageEnLecture}
+        changerMessageEnLecture={changerMessageEnLecture}
+        videoEnLecture={videoEnLecture}
+        changerVideoEnLecture={changerVideoEnLecture}
+      />
 
       {/* La mini bulle, comme dans le chat (VoixDirecteSuperposition.tsx) : un petit rond de 56 px en haut à droite avec l'onde
           de la voix, qui montre qui écoute, qui parle et qui travaille. Elle flotte par dessus le contenu (fond plein, le

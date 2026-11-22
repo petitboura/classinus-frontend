@@ -14,9 +14,11 @@ import { motion } from "framer-motion";
 import { Play, X } from "lucide-react";
 import { useState } from "react";
 import type { VisuelBambara } from "@/lib/pageBambaraVisuels";
+import { BoutonCoeurBambara, type GardeUiBambara } from "./BoutonCoeurBambara";
 
 const ENTREE = { opacity: 0, y: 12 };
 const ARRIVEE = { opacity: 1, y: 0 };
+const SORTIE = { opacity: 0, scale: 0.9 };
 const TRANSITION = { duration: 0.35, ease: "easeOut" } as const;
 
 type PropsVideo = {
@@ -26,9 +28,10 @@ type PropsVideo = {
   surFermer: () => void;
   libelleLire: string;
   libelleFermer: string;
+  garde?: GardeUiBambara;
 };
 
-export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libelleLire, libelleFermer }: PropsVideo) {
+export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libelleLire, libelleFermer, garde }: PropsVideo) {
   const [vignetteCassee, setVignetteCassee] = useState(false);
   const estFichier = !visuel.idVideo;
 
@@ -36,6 +39,7 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
     <motion.div
       initial={ENTREE}
       animate={ARRIVEE}
+      exit={SORTIE}
       transition={TRANSITION}
       className={`relative overflow-hidden border bg-black ${enLecture ? "col-span-full aspect-video" : "aspect-square"}`}
       style={{ borderColor: "var(--bb-trait)" }}
@@ -84,6 +88,7 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
           </span>
         </button>
       )}
+      {garde && <BoutonCoeurBambara visuel={visuel} garde={garde} />}
     </motion.div>
   );
 }
@@ -92,30 +97,32 @@ type PropsImage = {
   visuel: VisuelBambara;
   surOuvrir: () => void;
   libelleOuvrir: string;
+  garde?: GardeUiBambara;
 };
 
-export function CarteImageBambara({ visuel, surOuvrir, libelleOuvrir }: PropsImage) {
+export function CarteImageBambara({ visuel, surOuvrir, libelleOuvrir, garde }: PropsImage) {
   const [cassee, setCassee] = useState(false);
   if (cassee) return null;
   return (
-    <motion.button
-      type="button"
+    <motion.div
       initial={ENTREE}
       animate={ARRIVEE}
+      exit={SORTIE}
       transition={TRANSITION}
-      onClick={surOuvrir}
-      aria-label={visuel.titre || libelleOuvrir}
-      className="group relative aspect-square w-full overflow-hidden border"
+      className="relative aspect-square w-full overflow-hidden border"
       style={{ backgroundColor: "var(--bb-voile)", borderColor: "var(--bb-trait)" }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={visuel.miniature || visuel.url}
-        alt={visuel.titre || ""}
-        loading="lazy"
-        onError={() => setCassee(true)}
-        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-      />
-    </motion.button>
+      <button type="button" onClick={surOuvrir} aria-label={visuel.titre || libelleOuvrir} className="group absolute inset-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={visuel.miniature || visuel.url}
+          alt={visuel.titre || ""}
+          loading="lazy"
+          onError={() => setCassee(true)}
+          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+        />
+      </button>
+      {garde && <BoutonCoeurBambara visuel={visuel} garde={garde} />}
+    </motion.div>
   );
 }
