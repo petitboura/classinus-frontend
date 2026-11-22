@@ -131,8 +131,8 @@ const [rangees, decalage, layout] = await Promise.all([
 assert.match(layout, /interactiveWidget: "overlays-content"/);
 assert.match(client, /useDecalageClavier/);
 assert.match(client, /RangeesVisuelsBambara/);
-// La bulle du haut est la mini bulle du chat : un petit rond flottant en haut à droite, qui ne prend aucune place.
-assert.match(client, /pointer-events-none absolute right-3 z-10 h-14 w-14 overflow-hidden rounded-full/);
+// Plus de bulle en haut à droite (demande de Bourama du 22/11/2026).
+assert.doesNotMatch(client, /OndeVoix/);
 assert.doesNotMatch(client, /absolute inset-x-0 top-0/);
 assert.match(client, /absolute inset-x-0 bottom-0/);
 assert.doesNotMatch(client, /flex-col"\s*\n?\s*style=\{\{\s*\n?\s*paddingTop/);

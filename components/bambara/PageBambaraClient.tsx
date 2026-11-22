@@ -42,7 +42,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Keyboard, Loader2, Mic } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { OndeVoix } from "@/components/voix/OndeVoix";
 import type { MessageAudioBambara } from "@/lib/audioMessageBambara";
 import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
@@ -263,7 +262,7 @@ export default function PageBambaraClient() {
     surTexte: changerTexte,
     surErreur: setErreur,
   });
-  const { actif: ecritureActive, arreter: arreterEcriture, couperVoix: couperVoixEcriture, niveau: niveauEcriture } = ecriture;
+  const { actif: ecritureActive, arreter: arreterEcriture, couperVoix: couperVoixEcriture } = ecriture;
 
   // Un message audio démarre ou s'arrête. Quand il démarre : la voix de Classinus qui parlait est coupée, une vidéo
   // qui jouait s'arrête, et le micro se met en pause (il entendrait le haut parleur et prendrait ce son pour une
@@ -406,12 +405,6 @@ export default function PageBambaraClient() {
     [gardeDeUrl, basculerGarde, textes.garder, textes.retirerGarde]
   );
 
-  // Pendant la lecture d'une réponse écrite, c'est cette lecture qui fait bouger l'onde.
-  const lireNiveaux = useCallback(
-    () => sessionRef.current?.niveaux() ?? { entree: 0, sortie: niveauEcriture() },
-    [niveauEcriture]
-  );
-
   const ouvrir = useCallback(async () => {
     if (sessionRef.current || ouvertureEnCoursRef.current) return;
     ouvertureEnCoursRef.current = true;
@@ -483,7 +476,6 @@ export default function PageBambaraClient() {
   }, [ouvrir, ecritureActive, arreterEcriture, fixerMessageEnLecture]);
 
   const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
-  const etatBulle: EtatVoixDirecte = etat !== "inactif" ? etat : ecriture.etat;
   const enConnexion = etat === "connexion";
   // Une réponse se prépare ou se lit : la dernière bulle audio de Classinus est déjà là, en préparation.
   const reponseEnCours = etat === "travail" || etat === "reponse" || ecriture.etat === "travail" || ecriture.etat === "reponse";
@@ -617,20 +609,6 @@ export default function PageBambaraClient() {
         videoEnLecture={videoEnLecture}
         changerVideoEnLecture={changerVideoEnLecture}
       />
-
-      {/* La mini bulle, comme dans le chat (VoixDirecteSuperposition.tsx) : un petit rond de 56 px en haut à droite avec l'onde
-          de la voix, qui montre qui écoute, qui parle et qui travaille. Elle flotte par dessus le contenu (fond plein, le
-          contenu passe dessous) et ne prend aucune place dans la page. */}
-      <div
-        className="pointer-events-none absolute right-3 z-10 h-14 w-14 overflow-hidden rounded-full border"
-        style={{
-          top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
-          borderColor: "var(--bb-trait)",
-          backgroundColor: "var(--bb-voile)",
-        }}
-      >
-        <OndeVoix mini etat={etatBulle} lireNiveaux={lireNiveaux} />
-      </div>
 
       {/* En bas, par dessus le contenu : le champ d'écriture (caché par défaut), puis le micro avec le petit bouton clavier
           à côté. Quand le clavier du téléphone s'ouvre, cette couche remonte juste au dessus de lui. */}
