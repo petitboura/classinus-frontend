@@ -1,62 +1,31 @@
 "use client";
 
 // Page bambara (16/11/2026, demande de Bourama) : effet visuel montré pendant qu'un outil travaille.
-// « Une ligne avec icône et libellé ne fera pas l'affaire, il faut un effet de construire sous tes
-// yeux. » Aucun texte, et rien qui ressemble à du texte (pas de fausses lignes d'écriture) : l'utilisateur
-// ne sait pas lire.
-// Refonte du 18/11/2026 : un cadre de photo (coins de repérage, trame de points qui se développe, fine
-// ligne de balayage) pour créer une image ou chercher une vidéo ; trois petits cadres de photo pour les
-// images ; trois cadres vides qui s'allument l'un après l'autre pour la recherche. Styles : bambara.css.
+// « Une ligne avec icône et libellé ne fera pas l'affaire. » Aucun texte, et rien qui ressemble à du texte :
+// l'utilisateur ne sait pas lire.
+// Refonte du 22/11/2026 (demande de Bourama : « les effets sont nuls, fais comme chez Google ») : des cases
+// grises dont une lueur douce traverse la surface, comme l'attente de Google Images. Les cases ont la forme
+// et la disposition exactes des résultats qui vont arriver (RangeesVisuelsBambara.tsx : mosaïque pour les
+// images, format vidéo pour les vidéos), donc rien ne saute quand les vraies vignettes apparaissent.
+// Styles : bambara.css (.bb-case).
 
 import type { CSSProperties } from "react";
 import type { EffetConstruction as Effet } from "@/lib/pageBambaraVisuels";
 
-type StyleVariables = CSSProperties & Record<`--${string}`, string | number>;
+// Proportions des cases d'images : suite fixe (jamais de hasard), variée comme une vraie mosaïque.
+const PROPORTIONS_IMAGES = ["4 / 5", "1 / 1", "3 / 4", "4 / 3", "1 / 1", "5 / 4"];
+const VIDEOS = [0, 1, 2, 3];
+const SONDES = [0, 1, 2];
 
-// Taille et retard de chaque point de la trame : suite fixe (jamais de hasard). Le retard suit la
-// diagonale, donc la trame se développe en vague d'un coin à l'autre ; la taille varie doucement, ce qui
-// dessine des formes sans jamais montrer de texte.
-function points(colonnes: number, lignes: number, etalement: number, decalage: number) {
-  return Array.from({ length: colonnes * lignes }, (_, i) => {
-    const x = i % colonnes;
-    const y = Math.floor(i / colonnes);
-    const retard = ((x + y) / (colonnes + lignes - 2)) * etalement;
-    const relief = 0.5 + 0.5 * Math.sin(x * 0.55 + decalage) * Math.cos(y * 0.7 + decalage * 0.8);
-    const style: StyleVariables = { "--d": `${retard.toFixed(2)}s`, "--s": (0.18 + 0.82 * relief).toFixed(2) };
-    return <span key={i} className="bb-point" style={style} />;
-  });
+// Retard de la lueur de chaque case : elles ne brillent pas toutes au même instant, ce qui donne la vague.
+function retard(i: number): CSSProperties {
+  return { "--d": `${(i * 0.18).toFixed(2)}s` } as CSSProperties;
 }
 
-function Cadre({ colonnes, lignes, etalement = 1.5, decalage = 0, lecture = false, className }: {
-  colonnes: number;
-  lignes: number;
-  etalement?: number;
-  decalage?: number;
-  lecture?: boolean;
-  className?: string;
-}) {
+function Case({ proportion, i, className, lecture = false }: { proportion?: string; i: number; className?: string; lecture?: boolean }) {
   return (
-    <div className={`bb-cadre ${className ?? ""}`} style={{ aspectRatio: `${colonnes} / ${lignes}` }}>
-      <div className="bb-grille" style={{ gridTemplateColumns: `repeat(${colonnes}, 1fr)`, gridTemplateRows: `repeat(${lignes}, 1fr)` }}>
-        {points(colonnes, lignes, etalement, decalage)}
-      </div>
-      <span className="bb-balayage" />
-      <span className="bb-coin bb-coin-hg" />
-      <span className="bb-coin bb-coin-hd" />
-      <span className="bb-coin bb-coin-bg" />
-      <span className="bb-coin bb-coin-bd" />
-      {lecture && <span className="bb-lecture" />}
-    </div>
-  );
-}
-
-function Sondes() {
-  return (
-    <div className="grid w-full grid-cols-3 gap-3">
-      {[0, 1, 2].map((i) => {
-        const style: StyleVariables = { "--d": `${(i * 0.55).toFixed(2)}s` };
-        return <span key={i} className="bb-sonde" style={style} />;
-      })}
+    <div className={`bb-case ${className ?? ""}`} style={{ ...retard(i), ...(proportion ? { aspectRatio: proportion } : {}) }}>
+      {lecture && <span className="bb-case-lecture" />}
     </div>
   );
 }
@@ -64,18 +33,34 @@ function Sondes() {
 export function EffetConstruction({ effet }: { effet: Effet }) {
   switch (effet) {
     case "creation":
-      return <Cadre colonnes={24} lignes={14} className="w-full" />;
+      return (
+        <div aria-hidden="true" className="w-full">
+          <Case proportion="4 / 3" i={0} className="w-full" />
+        </div>
+      );
     case "videos":
-      return <Cadre colonnes={24} lignes={14} lecture className="w-full" />;
+      return (
+        <div aria-hidden="true" className="grid w-full grid-cols-2 gap-2 lg:grid-cols-3">
+          {VIDEOS.map((i) => (
+            <Case key={i} proportion="16 / 9" i={i} lecture className={i === 3 ? "lg:hidden" : ""} />
+          ))}
+        </div>
+      );
     case "images":
       return (
-        <div className="grid w-full grid-cols-3 gap-3">
-          {[0, 1, 2].map((i) => (
-            <Cadre key={i} colonnes={10} lignes={10} etalement={1.3} decalage={i * 2.3} />
+        <div aria-hidden="true" className="w-full columns-2 gap-2 sm:columns-3">
+          {PROPORTIONS_IMAGES.map((proportion, i) => (
+            <Case key={i} proportion={proportion} i={i} className="mb-2 w-full break-inside-avoid" />
           ))}
         </div>
       );
     case "recherche":
-      return <Sondes />;
+      return (
+        <div aria-hidden="true" className="grid w-full grid-cols-3 gap-2">
+          {SONDES.map((i) => (
+            <Case key={i} proportion="1 / 1" i={i} />
+          ))}
+        </div>
+      );
   }
 }
