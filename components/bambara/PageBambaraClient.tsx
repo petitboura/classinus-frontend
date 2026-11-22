@@ -70,6 +70,7 @@ const TEXTES = {
     ecouter: "Écouter le message", mettreEnPause: "Mettre le message en pause",
     deplier: "Voir tout le texte", replier: "Réduire le texte",
     nouveauProfil: "Nouveau profil", nouvelleConversation: "Nouvelle conversation", historique: "Historique", gardes: "Gardés",
+    ouvrirMenu: "Ouvrir les boutons", fermerMenu: "Fermer les boutons",
     nom: "Nom", prenom: "Prénom", valider: "Valider", videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
   },
   en: {
@@ -78,6 +79,7 @@ const TEXTES = {
     ecouter: "Play the message", mettreEnPause: "Pause the message",
     deplier: "Show the whole text", replier: "Collapse the text",
     nouveauProfil: "New profile", nouvelleConversation: "New conversation", historique: "History", gardes: "Kept",
+    ouvrirMenu: "Open the buttons", fermerMenu: "Close the buttons",
     nom: "Last name", prenom: "First name", valider: "Confirm", videos: "Videos", images: "Images", garder: "Keep", retirerGarde: "Remove from kept",
   },
 } as const;

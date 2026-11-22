@@ -15,6 +15,10 @@ export type GardeUiBambara = {
   libelleRetirer: string;
 };
 
+// Pas de fond derrière l'icône (demande de Bourama du 22/11/2026) : seul un fin halo de la couleur du fond
+// la garde lisible sur n'importe quelle image sans cacher la vidéo.
+const HALO_ICONE = "drop-shadow(0 0 1.5px var(--bb-fond)) drop-shadow(0 0 3px var(--bb-fond))";
+
 type Props = { visuel: VisuelBambara; garde: GardeUiBambara };
 
 export function BoutonCoeurBambara({ visuel, garde }: Props) {
@@ -30,7 +34,7 @@ export function BoutonCoeurBambara({ visuel, garde }: Props) {
       aria-label={plein ? garde.libelleRetirer : garde.libelleGarder}
       aria-pressed={plein}
       className="absolute left-1.5 top-1.5 z-10 flex h-8 w-8 items-center justify-center rounded-full"
-      style={{ backgroundColor: "color-mix(in srgb, var(--bb-fond) 92%, transparent)", color: "var(--bb-encre)" }}
+      style={{ color: "var(--bb-encre)", filter: HALO_ICONE }}
     >
       <motion.span
         key={plein ? "plein" : "vide"}

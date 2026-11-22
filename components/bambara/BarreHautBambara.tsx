@@ -8,7 +8,7 @@
 // Noir et blanc seulement (couleurs de .bb-page).
 
 import { AnimatePresence, motion } from "framer-motion";
-import { History, Heart, Plus, UserRound, type LucideIcon } from "lucide-react";
+import { History, Heart, Menu, Plus, UserRound, X, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { EspaceBambara } from "@/lib/useBambaraEspace";
 import type { GardeUiBambara } from "./BoutonCoeurBambara";
@@ -31,6 +31,8 @@ export type TextesBarreBambara = {
   lire: string;
   fermerVideo: string;
   ouvrirImage: string;
+  ouvrirMenu: string;
+  fermerMenu: string;
 };
 
 type Panneau = "profil" | "historique" | "gardes";
@@ -52,9 +54,15 @@ const CLASSE_BOUTON = "flex h-11 w-11 items-center justify-center rounded-full b
 
 export function BarreHautBambara({ espace, garde, textes, surNouvelleConversation, surProfilChange, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
   const [panneau, setPanneau] = useState<Panneau | null>(null);
+  // Demande de Bourama du 22/11/2026 : un seul bouton ouvre et ferme la rangée des quatre boutons.
+  const [rangeeOuverte, setRangeeOuverte] = useState(false);
   const { profils, profilId, choisirProfil, creerProfil } = espace;
 
   const fermer = useCallback(() => setPanneau(null), []);
+  const basculerRangee = () => {
+    if (rangeeOuverte) setPanneau(null);
+    setRangeeOuverte((ouverte) => !ouverte);
+  };
   const basculer = (cible: Panneau) => setPanneau((courant) => (courant === cible ? null : cible));
 
   useEffect(() => {
@@ -87,24 +95,44 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
       {/* Un toucher à côté du panneau le referme, sans rien faire d'autre. */}
       {panneau && <div className="absolute inset-0 z-10" onClick={fermer} aria-hidden />}
 
-      <div className="absolute left-3 z-20 flex gap-2" style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
-        {boutons.map(({ id, libelle, Icone, actif, surClic }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={surClic}
-            aria-label={libelle}
-            aria-pressed={id === "nouvelle" ? undefined : actif}
-            className={CLASSE_BOUTON}
-            style={{
-              borderColor: actif ? "var(--bb-encre)" : "var(--bb-trait-fort)",
-              backgroundColor: actif ? "var(--bb-encre)" : "var(--bb-fond)",
-              color: actif ? "var(--bb-fond)" : "var(--bb-encre)",
-            }}
-          >
-            <Icone size={20} />
-          </button>
-        ))}
+      <div className="absolute left-3 z-20 flex items-center gap-2" style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
+        <button
+          type="button"
+          onClick={basculerRangee}
+          aria-label={rangeeOuverte ? textes.fermerMenu : textes.ouvrirMenu}
+          aria-expanded={rangeeOuverte}
+          className={CLASSE_BOUTON}
+          style={{
+            borderColor: rangeeOuverte ? "var(--bb-encre)" : "var(--bb-trait-fort)",
+            backgroundColor: rangeeOuverte ? "var(--bb-encre)" : "var(--bb-fond)",
+            color: rangeeOuverte ? "var(--bb-fond)" : "var(--bb-encre)",
+          }}
+        >
+          {rangeeOuverte ? <X size={20} /> : <Menu size={20} />}
+        </button>
+        <AnimatePresence initial={false}>
+          {rangeeOuverte &&
+            boutons.map(({ id, libelle, Icone, actif, surClic }, i) => (
+              <motion.button
+                key={id}
+                type="button"
+                onClick={surClic}
+                aria-label={libelle}
+                aria-pressed={id === "nouvelle" ? undefined : actif}
+                initial={{ opacity: 0, x: -12, scale: 0.8 }}
+                animate={{ opacity: 1, x: 0, scale: 1, transition: { duration: 0.2, ease: "easeOut", delay: i * 0.04 } }}
+                exit={{ opacity: 0, x: -12, scale: 0.8, transition: { duration: 0.15 } }}
+                className={CLASSE_BOUTON}
+                style={{
+                  borderColor: actif ? "var(--bb-encre)" : "var(--bb-trait-fort)",
+                  backgroundColor: actif ? "var(--bb-encre)" : "var(--bb-fond)",
+                  color: actif ? "var(--bb-fond)" : "var(--bb-encre)",
+                }}
+              >
+                <Icone size={20} />
+              </motion.button>
+            ))}
+        </AnimatePresence>
       </div>
 
       <AnimatePresence>

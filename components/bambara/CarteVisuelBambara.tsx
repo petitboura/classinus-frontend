@@ -21,6 +21,10 @@ const ARRIVEE = { opacity: 1, y: 0 };
 const SORTIE = { opacity: 0, scale: 0.9 };
 const TRANSITION = { duration: 0.35, ease: "easeOut" } as const;
 
+// Demande de Bourama du 22/11/2026 : les boutons posés sur les images et vidéos n'ont plus de fond, ils cachaient
+// le contenu. Un fin halo de la couleur du fond garde l'icône lisible sur n'importe quelle image.
+const HALO_ICONE = "drop-shadow(0 0 1.5px var(--bb-fond)) drop-shadow(0 0 3px var(--bb-fond))";
+
 type PropsVideo = {
   visuel: VisuelBambara;
   enLecture: boolean;
@@ -63,9 +67,9 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
             onClick={surFermer}
             aria-label={libelleFermer}
             className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full transition-transform active:scale-95"
-            style={{ backgroundColor: "color-mix(in srgb, var(--bb-fond) 92%, transparent)", color: "var(--bb-encre)" }}
+            style={{ color: "var(--bb-encre)", filter: HALO_ICONE }}
           >
-            <X size={15} />
+            <X size={18} />
           </button>
         </>
       ) : (
@@ -82,9 +86,9 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
           )}
           <span
             className="relative flex h-9 w-9 items-center justify-center rounded-full transition-transform group-active:scale-95 sm:h-11 sm:w-11"
-            style={{ backgroundColor: "var(--bb-fond)", color: "var(--bb-encre)", border: "2px solid var(--bb-encre)" }}
+            style={{ color: "var(--bb-encre)", filter: HALO_ICONE }}
           >
-            <Play size={18} fill="currentColor" />
+            <Play size={26} fill="currentColor" />
           </span>
         </button>
       )}
