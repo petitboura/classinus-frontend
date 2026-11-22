@@ -31,11 +31,11 @@ type Props = {
 
 // Mise à jour du 22/11/2026 (demande de Bourama, « comme chez Google ») : les images forment des rangées de hauteur
 // égale et de largeurs différentes, d'après la forme de chaque photo (.bb-rangees-images dans bambara.css, calcul dans
-// rangeesImages.ts), comme Google Images. Les vidéos sont en grille de 2 colonnes (3 sur grand écran), au format
-// vidéo. Aucune barre de défilement horizontale. Une vidéo en lecture prend toute la largeur de la ligne (voir
+// rangeesImages.ts), comme Google Images. Les vidéos (demande de Bourama du 22/11/2026) sont une par ligne sur petit écran et deux par
+// ligne sur grand écran, au format vidéo. Aucune barre de défilement horizontale. Une vidéo en lecture prend toute la largeur de la ligne (voir
 // CarteVisuelBambara.tsx).
 const CLASSE_RANGEES_IMAGES = "bb-rangees-images w-full";
-const CLASSE_PLANCHE_VIDEOS = "grid w-full grid-cols-2 gap-2 lg:grid-cols-3";
+const CLASSE_PLANCHE_VIDEOS = "grid w-full grid-cols-1 gap-2 md:grid-cols-2";
 
 export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChangerLecture, libelleLire, libelleFermerVideo, libelleOuvrirImage, garde }: Props) {
   const [indexImage, setIndexImage] = useState<number | null>(null);

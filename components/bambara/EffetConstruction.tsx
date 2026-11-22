@@ -15,7 +15,7 @@ import { styleHauteur, styleRangee } from "./rangeesImages";
 
 // Ratios (largeur divisée par hauteur) des cases d'images : suite fixe (jamais de hasard), variée comme de vraies rangées.
 const RATIOS_IMAGES = [1.5, 0.8, 1.33, 1, 1.78, 0.75];
-const VIDEOS = [0, 1, 2, 3];
+const VIDEOS = [0, 1];
 const SONDES = [0, 1, 2];
 
 // Retard de la lueur de chaque case : elles ne brillent pas toutes au même instant, ce qui donne la vague.
@@ -41,9 +41,9 @@ export function EffetConstruction({ effet }: { effet: Effet }) {
       );
     case "videos":
       return (
-        <div aria-hidden="true" className="grid w-full grid-cols-2 gap-2 lg:grid-cols-3">
+        <div aria-hidden="true" className="grid w-full grid-cols-1 gap-2 md:grid-cols-2">
           {VIDEOS.map((i) => (
-            <Case key={i} proportion="16 / 9" i={i} lecture className={i === 3 ? "lg:hidden" : ""} />
+            <Case key={i} proportion="16 / 9" i={i} lecture />
           ))}
         </div>
       );

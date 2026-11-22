@@ -136,10 +136,10 @@ assert.equal((client.match(/setTours\(\[\]\)/g) ?? []).length, 1);
 assert.match(client, /const nouvelleConversation = useCallback\(\(\) => \{[\s\S]*?setTours\(\[\]\);/);
 assert.match(ecriture, /avantEnvoi\(question\)/);
 // Résultats comme chez Google (22/11/2026) : images en rangées de hauteur égale (.bb-rangees-images), vidéos en
-// grille de 2 colonnes (3 sur grand écran), jamais de défilement de côté.
+// grille d'une colonne sur petit écran et de 2 colonnes sur grand écran, jamais de défilement de côté.
 assert.match(rangees, /bb-rangees-images/);
-assert.match(rangees, /grid-cols-2/);
-assert.match(rangees, /lg:grid-cols-3/);
+assert.match(rangees, /grid-cols-1/);
+assert.match(rangees, /md:grid-cols-2/);
 assert.match(css, /\.bb-rangees-images \{[^}]*flex-wrap: wrap/);
 assert.doesNotMatch(rangees, /overflow-x-auto/);
 assert.doesNotMatch(carte, /snap-start|shrink-0/);
