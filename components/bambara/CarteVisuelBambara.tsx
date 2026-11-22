@@ -2,19 +2,21 @@
 
 // Page bambara (16/11/2026, demande de Bourama) : une vidéo ou une image dans une planche de vignettes.
 // Refonte du 18/11/2026 (demande de Bourama) : c'est une conversation, pas une page de résultats Google.
-// Mise à jour du 22/11/2026 : les cartes sont plus grandes ; les images gardent leurs proportions en mosaïque
-// (2 colonnes, 3 dès les écrans moyens), les vidéos sont au format vidéo, 2 par ligne (RangeesVisuelsBambara.tsx). Une vidéo en lecture prend toute la largeur de la ligne. Une vidéo YouTube se lance d'un
+// Mise à jour du 22/11/2026 : les cartes sont plus grandes, les vidéos au format vidéo, 2 par ligne (RangeesVisuelsBambara.tsx).
+// Refonte du 22/11/2026 (demande de Bourama, « comme chez Google ») : les images sont des rangées de hauteur égale
+// et de largeurs différentes, d'après la forme de chaque photo (rangeesImages.ts), comme Google Images. Les angles
+// des médias sont légèrement arrondis. Une vidéo en lecture prend toute la largeur de la ligne. Une vidéo YouTube se lance d'un
 // toucher dans la carte (lecteur officiel), un fichier vidéo se lit avec le lecteur du navigateur ; une
 // image s'agrandit au toucher. Aucun texte visible : l'utilisateur ne sait pas lire.
-// Le cadre et le bouton de lecture sont en noir et blanc (18/11/2026), les angles des cartes sont nets
-// (les médias sont carrés, les commandes sont rondes) ; les images et vignettes elles mêmes gardent leurs
-// vraies couleurs, car elles font comprendre le contenu.
+// Le cadre et le bouton de lecture sont en noir et blanc (18/11/2026) ; les images et vignettes elles mêmes
+// gardent leurs vraies couleurs, car elles font comprendre le contenu.
 
 import { motion } from "framer-motion";
 import { Play, X } from "lucide-react";
 import { useState } from "react";
 import type { VisuelBambara } from "@/lib/pageBambaraVisuels";
 import { BoutonCoeurBambara, type GardeUiBambara } from "./BoutonCoeurBambara";
+import { limiterRatio, RATIO_ATTENTE, styleHauteur, styleRangee } from "./rangeesImages";
 
 const ENTREE = { opacity: 0, y: 12 };
 const ARRIVEE = { opacity: 1, y: 0 };
@@ -45,7 +47,7 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
       animate={ARRIVEE}
       exit={SORTIE}
       transition={TRANSITION}
-      className={`relative overflow-hidden border bg-black ${enLecture ? "col-span-full aspect-video" : "aspect-video"}`}
+      className={`relative overflow-hidden rounded-lg border bg-black ${enLecture ? "col-span-full aspect-video" : "aspect-video"}`}
       style={{ borderColor: "var(--bb-trait)" }}
     >
       {enLecture ? (
@@ -106,6 +108,8 @@ type PropsImage = {
 
 export function CarteImageBambara({ visuel, surOuvrir, libelleOuvrir, garde }: PropsImage) {
   const [cassee, setCassee] = useState(false);
+  const [ratio, setRatio] = useState(RATIO_ATTENTE);
+  const [chargee, setChargee] = useState(false);
   if (cassee) return null;
   return (
     <motion.div
@@ -113,17 +117,22 @@ export function CarteImageBambara({ visuel, surOuvrir, libelleOuvrir, garde }: P
       animate={ARRIVEE}
       exit={SORTIE}
       transition={TRANSITION}
-      className="relative mb-2 w-full break-inside-avoid overflow-hidden border"
-      style={{ backgroundColor: "var(--bb-voile)", borderColor: "var(--bb-trait)" }}
+      className={`relative overflow-hidden rounded-lg border ${chargee ? "" : "bb-case"}`}
+      style={{ ...styleRangee(ratio), backgroundColor: "var(--bb-voile)", borderColor: "var(--bb-trait)" }}
     >
-      <button type="button" onClick={surOuvrir} aria-label={visuel.titre || libelleOuvrir} className="group block w-full">
+      <span style={styleHauteur(ratio)} />
+      <button type="button" onClick={surOuvrir} aria-label={visuel.titre || libelleOuvrir} className="group absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={visuel.miniature || visuel.url}
           alt={visuel.titre || ""}
           loading="lazy"
+          onLoad={(e) => {
+            setRatio(limiterRatio(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight));
+            setChargee(true);
+          }}
           onError={() => setCassee(true)}
-          className="block h-auto w-full transition-transform duration-200 group-hover:scale-105"
+          className={`h-full w-full object-cover transition duration-300 group-hover:scale-105 ${chargee ? "opacity-100" : "opacity-0"}`}
         />
       </button>
       {garde && <BoutonCoeurBambara visuel={visuel} garde={garde} />}

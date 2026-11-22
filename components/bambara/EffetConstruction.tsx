@@ -5,15 +5,16 @@
 // l'utilisateur ne sait pas lire.
 // Refonte du 22/11/2026 (demande de Bourama : « les effets sont nuls, fais comme chez Google ») : des cases
 // grises dont une lueur douce traverse la surface, comme l'attente de Google Images. Les cases ont la forme
-// et la disposition exactes des résultats qui vont arriver (RangeesVisuelsBambara.tsx : mosaïque pour les
-// images, format vidéo pour les vidéos), donc rien ne saute quand les vraies vignettes apparaissent.
+// et la disposition exactes des résultats qui vont arriver (RangeesVisuelsBambara.tsx : rangées de hauteur
+// égale pour les images, format vidéo pour les vidéos), donc rien ne saute quand les vraies vignettes apparaissent.
 // Styles : bambara.css (.bb-case).
 
 import type { CSSProperties } from "react";
 import type { EffetConstruction as Effet } from "@/lib/pageBambaraVisuels";
+import { styleHauteur, styleRangee } from "./rangeesImages";
 
-// Proportions des cases d'images : suite fixe (jamais de hasard), variée comme une vraie mosaïque.
-const PROPORTIONS_IMAGES = ["4 / 5", "1 / 1", "3 / 4", "4 / 3", "1 / 1", "5 / 4"];
+// Ratios (largeur divisée par hauteur) des cases d'images : suite fixe (jamais de hasard), variée comme de vraies rangées.
+const RATIOS_IMAGES = [1.5, 0.8, 1.33, 1, 1.78, 0.75];
 const VIDEOS = [0, 1, 2, 3];
 const SONDES = [0, 1, 2];
 
@@ -48,9 +49,11 @@ export function EffetConstruction({ effet }: { effet: Effet }) {
       );
     case "images":
       return (
-        <div aria-hidden="true" className="w-full columns-2 gap-2 sm:columns-3">
-          {PROPORTIONS_IMAGES.map((proportion, i) => (
-            <Case key={i} proportion={proportion} i={i} className="mb-2 w-full break-inside-avoid" />
+        <div aria-hidden="true" className="bb-rangees-images w-full">
+          {RATIOS_IMAGES.map((ratio, i) => (
+            <div key={i} className="bb-case" style={{ ...retard(i), ...styleRangee(ratio) }}>
+              <span style={styleHauteur(ratio)} />
+            </div>
           ))}
         </div>
       );

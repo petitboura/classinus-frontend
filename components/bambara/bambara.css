@@ -1,9 +1,10 @@
 /* Page bambara (16/11/2026, demande de Bourama) : effets visuels de la page. Aucun texte nulle part :
    l'utilisateur ne sait ni lire ni écrire.
    Refonte du 18/11/2026 (demande de Bourama) : noir et blanc uniquement, et des blocs entièrement
-   repensés. Une règle de forme : les médias (images, vidéos, cases d'attente) ont des angles nets, les
-   commandes (micro, clavier, champ) sont rondes. Refonte du 22/11/2026 (demande de Bourama, « comme chez
-   Google ») : l'attente des images et vidéos est une case grise dont une lueur douce traverse la surface.
+   repensés. Une règle de forme : les commandes (micro, clavier, champ) sont rondes. Refonte du 22/11/2026
+   (demande de Bourama, « comme chez Google ») : les médias (images, vidéos, cases d'attente) ont les angles
+   légèrement arrondis, l'attente est une case grise dont une lueur douce traverse la surface, et les images
+   forment des rangées de hauteur égale comme Google Images.
    Les couleurs sont définies une seule fois ici, dans .bb-page : encre et fond s'inversent selon le
    thème clair ou sombre, tout le reste en est déduit par des gris. --dj-accent-1 est redéfini pour que
    l'onde (components/voix/OndeVoix.tsx) soit noire ou blanche elle aussi. */
@@ -45,13 +46,14 @@
   100% { transform: scale(1.7); opacity: 0; }
 }
 
-/* Case d'attente : un gris doux, un trait fin, angles nets comme les vraies vignettes. La lueur est la bande
+/* Case d'attente : un gris doux, un trait fin, mêmes angles arrondis que les vraies vignettes. La lueur est la bande
    ::after, retardée par --d pour que les cases brillent en vague. */
 .bb-case {
   position: relative;
   overflow: hidden;
   background: var(--bb-voile);
   border: 1px solid var(--bb-trait);
+  border-radius: 0.5rem;
 }
 .bb-case::after {
   content: "";
@@ -61,6 +63,27 @@
   transform: translateX(-100%);
   animation: bb-lueur 1.6s ease-in-out infinite;
   animation-delay: var(--d, 0s);
+  pointer-events: none;
+}
+
+/* Rangées d'images de hauteur égale, comme Google Images : les vignettes passent à la ligne et chacune grandit
+   selon sa forme (rangeesImages.ts) pour que la ligne soit pleine. Le filler ::after empêche la dernière ligne,
+   souvent incomplète, de s'étirer sur toute la largeur. --bb-hauteur-rangee est la hauteur visée d'une rangée. */
+.bb-rangees-images {
+  --bb-hauteur-rangee: 7.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.bb-rangees-images::after {
+  content: "";
+  flex-grow: 10000;
+}
+@media (min-width: 640px) {
+  .bb-rangees-images { --bb-hauteur-rangee: 10rem; }
+}
+@media (min-width: 1024px) {
+  .bb-rangees-images { --bb-hauteur-rangee: 12rem; }
 }
 
 /* Rond de lecture discret au centre d'une case vidéo : un disque cerné d'un trait fin, avec son triangle. */

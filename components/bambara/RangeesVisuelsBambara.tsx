@@ -29,12 +29,12 @@ type Props = {
   garde?: GardeUiBambara;
 };
 
-// Mise à jour du 22/11/2026 (demande de Bourama) : les cartes sont plus grandes. Les images forment une
-// mosaïque de vignettes en colonnes (2 colonnes, 3 dès les écrans moyens), chacune gardant ses vraies
-// proportions au lieu d'un carré identique. Les vidéos sont en grille de 2 colonnes (3 sur grand écran),
-// au format vidéo. Aucune barre de défilement horizontale. Une vidéo en lecture prend toute la largeur
-// de la ligne (voir CarteVisuelBambara.tsx).
-const CLASSE_MOSAIQUE_IMAGES = "w-full columns-2 gap-2 sm:columns-3";
+// Mise à jour du 22/11/2026 (demande de Bourama, « comme chez Google ») : les images forment des rangées de hauteur
+// égale et de largeurs différentes, d'après la forme de chaque photo (.bb-rangees-images dans bambara.css, calcul dans
+// rangeesImages.ts), comme Google Images. Les vidéos sont en grille de 2 colonnes (3 sur grand écran), au format
+// vidéo. Aucune barre de défilement horizontale. Une vidéo en lecture prend toute la largeur de la ligne (voir
+// CarteVisuelBambara.tsx).
+const CLASSE_RANGEES_IMAGES = "bb-rangees-images w-full";
 const CLASSE_PLANCHE_VIDEOS = "grid w-full grid-cols-2 gap-2 lg:grid-cols-3";
 
 export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChangerLecture, libelleLire, libelleFermerVideo, libelleOuvrirImage, garde }: Props) {
@@ -48,7 +48,7 @@ export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChanger
   return (
     <div className="flex w-full flex-col gap-3">
       {images.length > 0 && (
-        <div className={CLASSE_MOSAIQUE_IMAGES}>
+        <div className={CLASSE_RANGEES_IMAGES}>
           <AnimatePresence initial={false}>
             {images.map((visuel, index) => (
               <CarteImageBambara key={visuel.id} visuel={visuel} surOuvrir={() => setIndexImage(index)} libelleOuvrir={libelleOuvrirImage} garde={garde} />

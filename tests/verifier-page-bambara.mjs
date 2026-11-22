@@ -135,9 +135,12 @@ assert.doesNotMatch(client, /setVisuels|setTexteReponse/);
 assert.equal((client.match(/setTours\(\[\]\)/g) ?? []).length, 1);
 assert.match(client, /const nouvelleConversation = useCallback\(\(\) => \{[\s\S]*?setTours\(\[\]\);/);
 assert.match(ecriture, /avantEnvoi\(question\)/);
-// Pellicule (18/11/2026) : grille de 3 vignettes par ligne (4 sur grand écran), jamais de défilement de côté.
-assert.match(rangees, /grid-cols-3/);
-assert.match(rangees, /lg:grid-cols-4/);
+// Résultats comme chez Google (22/11/2026) : images en rangées de hauteur égale (.bb-rangees-images), vidéos en
+// grille de 2 colonnes (3 sur grand écran), jamais de défilement de côté.
+assert.match(rangees, /bb-rangees-images/);
+assert.match(rangees, /grid-cols-2/);
+assert.match(rangees, /lg:grid-cols-3/);
+assert.match(css, /\.bb-rangees-images \{[^}]*flex-wrap: wrap/);
 assert.doesNotMatch(rangees, /overflow-x-auto/);
 assert.doesNotMatch(carte, /snap-start|shrink-0/);
 assert.match(rangees, /VisionneuseImage/);
