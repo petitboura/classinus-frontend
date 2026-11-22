@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { IconeTelechargement, classeEtatTelechargement } from "@/components/EtatTelechargement";
 import { useEtatTelechargement } from "@/lib/etatTelechargements";
+
+// Glissement entre deux images : l'image qui arrive vient du côté vers lequel on va, celle qui part s'en va de l'autre côté.
+const VARIANTES_GLISSEMENT = {
+  entree: (sens: 1 | -1) => ({ x: sens * 60 + "vw", opacity: 0 }),
+  centre: { x: 0, opacity: 1 },
+  sortie: (sens: 1 | -1) => ({ x: sens * -60 + "vw", opacity: 0 }),
+};
 
 // Zoom plein écran d'image, réutilisé partout où le chat affiche une
 // image cliquable (audit 25/08/2026 : ce même overlay était réécrit
@@ -48,11 +56,15 @@ export function VisionneuseImage({
   const plusieurs = !!liste && liste.length > 1;
   const courante = liste && liste[index] ? liste[index] : { src, alt };
   const etatTelechargement = useEtatTelechargement(courante.src);
+  // 22/11/2026 (Bourama : « quand on glisse il faut que ça glisse au lieu de ce changement brusque ») : l'image suit
+  // le doigt, puis la suivante entre en glissant du côté opposé. Les flèches et les touches glissent de la même façon.
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const reduit = useReducedMotion();
   const aller = (sens: 1 | -1) => {
     if (!liste || liste.length < 2) return;
+    setDirection(sens);
     setIndex((i) => (i + sens + liste.length) % liste.length);
   };
-  const departToucher = useRef<number | null>(null);
 
   // 24/09/2026 (même bug que PleinEcranApercu.tsx, corrigé le 20/09) : rendu
   // dans l'arbre du message, un "position: fixed" est recadré par tout
@@ -141,23 +153,30 @@ export function VisionneuseImage({
           </button>
         </>
       )}
-      {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique, pas un asset local optimisable */}
-      <img
-        key={courante.src}
-        src={courante.src}
-        alt={courante.alt || ""}
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={(e) => {
-          departToucher.current = e.touches[0].clientX;
-        }}
-        onTouchEnd={(e) => {
-          if (departToucher.current === null) return;
-          const ecart = e.changedTouches[0].clientX - departToucher.current;
-          departToucher.current = null;
-          if (Math.abs(ecart) > 50) aller(ecart < 0 ? 1 : -1);
-        }}
-        className="max-h-[90vh] max-w-[90vw] animate-dj-fade-in-rapide rounded-xl object-contain"
-      />
+      <AnimatePresence initial={false} custom={direction} mode="popLayout">
+        {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique, pas un asset local optimisable */}
+        <motion.img
+          key={courante.src}
+          src={courante.src}
+          alt={courante.alt || ""}
+          custom={direction}
+          variants={VARIANTES_GLISSEMENT}
+          initial="entree"
+          animate="centre"
+          exit="sortie"
+          transition={reduit ? { duration: 0 } : { duration: 0.28, ease: "easeOut" }}
+          drag={plusieurs ? "x" : false}
+          dragSnapToOrigin
+          dragElastic={0.6}
+          onClick={(e) => e.stopPropagation()}
+          onDragEnd={(_, info) => {
+            if (Math.abs(info.offset.x) > 80 || Math.abs(info.velocity.x) > 500) aller(info.offset.x < 0 ? 1 : -1);
+          }}
+          draggable={false}
+          style={{ touchAction: "pan-y" }}
+          className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
+        />
+      </AnimatePresence>
     </div>,
     document.body
   );

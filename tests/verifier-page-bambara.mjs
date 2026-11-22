@@ -145,6 +145,8 @@ assert.doesNotMatch(client, /setVisuels|setTexteReponse/);
 assert.equal((client.match(/setTours\(\[\]\)/g) ?? []).length, 1);
 assert.match(client, /const nouvelleConversation = useCallback\(\(\) => \{[\s\S]*?setTours\(\[\]\);/);
 assert.match(ecriture, /avantEnvoi\(question\)/);
+// Le visionneur d'images glisse entre deux images au lieu de changer d'un coup (22/11/2026).
+assert.match(await lire("../components/chat/VisionneuseImage.tsx"), /drag=\{plusieurs \? "x" : false\}/);
 // Résultats comme chez Google (22/11/2026) : images en rangées de hauteur égale (.bb-rangees-images), vidéos en
 // grille d'une colonne sur petit écran et de 2 colonnes sur grand écran, jamais de défilement de côté.
 assert.match(rangees, /bb-rangees-images/);
