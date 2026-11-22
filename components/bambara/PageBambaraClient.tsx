@@ -48,8 +48,9 @@ import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { demanderPageBambara } from "@/lib/pageBambara";
-import { effetPrincipal, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
-import { enregistrerPremierMessageBambara } from "@/lib/bambaraEspace";
+import { effetPrincipal, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type TourBambara } from "@/lib/pageBambaraVisuels";
+import { enregistrerPremierMessageBambara, lireAudioConversationBambara, lireMessagesConversationBambara, type ConversationBambara } from "@/lib/bambaraEspace";
+import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { supabase } from "@/lib/supabase";
 import { useBambaraEspace } from "@/lib/useBambaraEspace";
 import { useDecalageClavier } from "@/lib/useDecalageClavier";
@@ -70,7 +71,7 @@ const TEXTES = {
     ecouter: "Écouter le message", mettreEnPause: "Mettre le message en pause",
     deplier: "Voir tout le texte", replier: "Réduire le texte",
     nouveauProfil: "Nouveau profil", nouvelleConversation: "Nouvelle conversation", historique: "Historique", gardes: "Gardés",
-    ouvrirMenu: "Ouvrir les boutons", fermerMenu: "Fermer les boutons",
+    ouvrirMenu: "Ouvrir les boutons", fermerMenu: "Fermer les boutons", ouvrirConversation: "Ouvrir la conversation",
     nom: "Nom", prenom: "Prénom", valider: "Valider", videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
   },
   en: {
@@ -79,7 +80,7 @@ const TEXTES = {
     ecouter: "Play the message", mettreEnPause: "Pause the message",
     deplier: "Show the whole text", replier: "Collapse the text",
     nouveauProfil: "New profile", nouvelleConversation: "New conversation", historique: "History", gardes: "Kept",
-    ouvrirMenu: "Open the buttons", fermerMenu: "Close the buttons",
+    ouvrirMenu: "Open the buttons", fermerMenu: "Close the buttons", ouvrirConversation: "Open the conversation",
     nom: "Last name", prenom: "First name", valider: "Confirm", videos: "Videos", images: "Images", garder: "Keep", retirerGarde: "Remove from kept",
   },
 } as const;
@@ -264,6 +265,60 @@ export default function PageBambaraClient() {
     setTours([]);
     setOutils([]);
     setErreur(null);
+  }, [arreterEcriture, fixerMessageEnLecture]);
+
+  // Une conversation de l'historique est touchée (22/11/2026, demande de Bourama) : on la rouvre en entier, comme
+  // si on ne l'avait jamais quittée. Le texte vient du serveur, qui garde tous les échanges de la page ; le premier
+  // vocal de la personne est réécoutable. Les images et vidéos citées par l'IA sont retrouvées dans ses réponses.
+  // La prochaine demande continue cette même conversation (même identifiant, même historique).
+  const ouvertureRef = useRef(0);
+  const ouvrirConversation = useCallback(async (conversation: ConversationBambara) => {
+    const numero = (ouvertureRef.current += 1);
+    sessionRef.current?.fermer();
+    arreterEcriture();
+    fixerMessageEnLecture(null);
+    setVideoEnLecture(null);
+    tourCourantRef.current = "";
+    tourVocalRef.current = "";
+    audioParoleRef.current = null;
+    setOutils([]);
+    setErreur(null);
+    try {
+      const [messages, audioPremier] = await Promise.all([
+        lireMessagesConversationBambara(conversation.id),
+        conversation.a_audio ? lireAudioConversationBambara(conversation.id).catch(() => null) : Promise.resolve(null),
+      ]);
+      if (numero !== ouvertureRef.current) return;
+      const reconstruits: TourBambara[] = [];
+      for (const message of messages) {
+        if (message.role === "user") {
+          reconstruits.push({ id: nouvelIdentifiant(), question: message.content, texte: "", visuels: [], audioQuestion: null, audioReponse: null });
+        } else {
+          const dernier = reconstruits[reconstruits.length - 1];
+          const texte = nettoyerPourVoix(message.content);
+          const visuels = extraireVisuelsDuTexte(message.content);
+          if (dernier && !dernier.texte && dernier.visuels.length === 0) {
+            dernier.texte = texte;
+            dernier.visuels = visuels;
+          } else {
+            reconstruits.push({ id: nouvelIdentifiant(), question: "", texte, visuels, audioQuestion: null, audioReponse: null });
+          }
+        }
+      }
+      if (audioPremier && reconstruits[0]) {
+        reconstruits[0].audioQuestion = audioPremier;
+        reconstruits[0].question = "";
+      }
+      conversationIdRef.current = conversation.id;
+      premierMessageGardeRef.current = true;
+      ecrireEtatDepuisChat(conversation.id, messages);
+      prochesDuBasRef.current = false;
+      setTours(reconstruits);
+      const zone = defilementRef.current;
+      if (zone) zone.scrollTo({ top: 0 });
+    } catch {
+      // Silencieux : la page est faite pour quelqu'un qui ne lit pas, la conversation en cours reste telle quelle.
+    }
   }, [arreterEcriture, fixerMessageEnLecture]);
 
   // Le cœur des vidéos et images : garder ou retirer, avec ses libellés dans la langue de la page.
@@ -455,6 +510,7 @@ export default function PageBambaraClient() {
         garde={gardeUi}
         textes={textes}
         surNouvelleConversation={nouvelleConversation}
+        surOuvrirConversation={ouvrirConversation}
         surProfilChange={nouvelleConversation}
         messageEnLecture={messageEnLecture}
         changerMessageEnLecture={changerMessageEnLecture}

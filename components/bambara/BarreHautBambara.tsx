@@ -10,6 +10,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { History, Heart, Menu, Plus, UserRound, X, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import type { ConversationBambara } from "@/lib/bambaraEspace";
 import type { EspaceBambara } from "@/lib/useBambaraEspace";
 import type { GardeUiBambara } from "./BoutonCoeurBambara";
 import { PanneauGardesBambara } from "./PanneauGardesBambara";
@@ -33,6 +34,7 @@ export type TextesBarreBambara = {
   ouvrirImage: string;
   ouvrirMenu: string;
   fermerMenu: string;
+  ouvrirConversation: string;
 };
 
 type Panneau = "profil" | "historique" | "gardes";
@@ -42,6 +44,8 @@ type Props = {
   garde: GardeUiBambara;
   textes: TextesBarreBambara;
   surNouvelleConversation: () => void;
+  /** Une conversation de l'historique est touchée : la page la rouvre en entier. */
+  surOuvrirConversation: (conversation: ConversationBambara) => void;
   /** Un profil vient d'être choisi ou créé : la conversation en cours n'est plus la sienne, on repart de zéro. */
   surProfilChange: () => void;
   messageEnLecture: string | null;
@@ -52,7 +56,7 @@ type Props = {
 
 const CLASSE_BOUTON = "flex h-11 w-11 items-center justify-center rounded-full border transition-[transform,background-color,color] active:scale-95";
 
-export function BarreHautBambara({ espace, garde, textes, surNouvelleConversation, surProfilChange, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
+export function BarreHautBambara({ espace, garde, textes, surNouvelleConversation, surOuvrirConversation, surProfilChange, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   // Demande de Bourama du 22/11/2026 : un seul bouton ouvre et ferme la rangée des quatre boutons.
   const [rangeeOuverte, setRangeeOuverte] = useState(false);
@@ -180,6 +184,11 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
                 surChangerLecture={changerMessageEnLecture}
                 libelleEcouter={textes.ecouter}
                 libelleMettreEnPause={textes.mettreEnPause}
+                surOuvrir={(conversation) => {
+                  fermer();
+                  surOuvrirConversation(conversation);
+                }}
+                libelleOuvrir={textes.ouvrirConversation}
               />
             )}
             {panneau === "gardes" && (

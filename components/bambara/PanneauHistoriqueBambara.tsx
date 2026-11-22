@@ -4,9 +4,11 @@
 // profil, son premier message seulement : le texte écrit, ou, quand la personne avait parlé, son premier vocal,
 // qu'on peut réécouter comme dans la conversation. Une conversation qui commence par un vocal montre donc le vocal
 // et non du texte. Le plus récent est en haut. Noir et blanc seulement (couleurs de .bb-page).
+// Mise à jour du 22/11/2026 (demande de Bourama) : toucher une conversation l'ouvre en entier (le texte est cliquable, et
+// un bouton flèche est à côté de chaque ligne, y compris celles qui montrent un vocal), au lieu de n'afficher que la première.
 
 import { motion } from "framer-motion";
-import { History } from "lucide-react";
+import { ArrowRight, History } from "lucide-react";
 import { useEffect, useState } from "react";
 import { lireAudioConversationBambara, type ConversationBambara } from "@/lib/bambaraEspace";
 import type { MessageAudioBambara } from "@/lib/audioMessageBambara";
@@ -20,6 +22,9 @@ type Props = {
   surChangerLecture: (id: string | null) => void;
   libelleEcouter: string;
   libelleMettreEnPause: string;
+  /** Ouvre la conversation touchée (le texte, le bouton flèche à côté du vocal). */
+  surOuvrir: (conversation: ConversationBambara) => void;
+  libelleOuvrir: string;
 };
 
 const ENTREE = { opacity: 0, y: 8 };
@@ -30,7 +35,7 @@ function LignePatience() {
   return <div className="h-12 w-full animate-pulse rounded-full" style={{ backgroundColor: "var(--bb-voile)" }} />;
 }
 
-function PremierVocal({ conversation, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause }: Omit<Props, "conversations" | "charger"> & { conversation: ConversationBambara }) {
+function PremierVocal({ conversation, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause }: Omit<Props, "conversations" | "charger" | "surOuvrir" | "libelleOuvrir"> & { conversation: ConversationBambara }) {
   const [message, setMessage] = useState<MessageAudioBambara | null>(null);
   const [perdu, setPerdu] = useState(false);
 
@@ -63,7 +68,7 @@ function PremierVocal({ conversation, idEnLecture, surChangerLecture, libelleEco
   );
 }
 
-export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause }: Props) {
+export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause, surOuvrir, libelleOuvrir }: Props) {
   // La liste est relue à chaque ouverture du panneau : elle montre toujours les conversations les plus récentes.
   useEffect(() => {
     charger();
@@ -97,22 +102,37 @@ export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, 
           transition={{ duration: 0.25, ease: "easeOut", delay: Math.min(index, 8) * 0.04 }}
           className="flex w-full flex-col"
         >
-          {conversation.a_audio ? (
-            <PremierVocal
-              conversation={conversation}
-              idEnLecture={idEnLecture}
-              surChangerLecture={surChangerLecture}
-              libelleEcouter={libelleEcouter}
-              libelleMettreEnPause={libelleMettreEnPause}
-            />
-          ) : (
-            <p
-              className="line-clamp-2 max-w-[85%] self-end whitespace-pre-line break-words rounded-2xl border px-4 py-2 font-lecture text-base leading-snug"
-              style={{ borderColor: "var(--bb-trait)", backgroundColor: "var(--bb-voile)", color: "var(--bb-encre)" }}
+          <div className="flex w-full items-center gap-2">
+            <div className="min-w-0 flex-1">
+              {conversation.a_audio ? (
+                <PremierVocal
+                  conversation={conversation}
+                  idEnLecture={idEnLecture}
+                  surChangerLecture={surChangerLecture}
+                  libelleEcouter={libelleEcouter}
+                  libelleMettreEnPause={libelleMettreEnPause}
+                />
+              ) : (
+                <button type="button" onClick={() => surOuvrir(conversation)} aria-label={libelleOuvrir} className="flex w-full justify-end text-left">
+                  <p
+                    className="line-clamp-2 max-w-[85%] whitespace-pre-line break-words rounded-2xl border px-4 py-2 font-lecture text-base leading-snug"
+                    style={{ borderColor: "var(--bb-trait)", backgroundColor: "var(--bb-voile)", color: "var(--bb-encre)" }}
+                  >
+                    {conversation.texte}
+                  </p>
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => surOuvrir(conversation)}
+              aria-label={libelleOuvrir}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-transform active:scale-95"
+              style={{ borderColor: "var(--bb-trait-fort)", backgroundColor: "var(--bb-fond)", color: "var(--bb-encre)" }}
             >
-              {conversation.texte}
-            </p>
-          )}
+              <ArrowRight size={20} />
+            </button>
+          </div>
         </motion.div>
       ))}
     </div>

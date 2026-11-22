@@ -87,6 +87,39 @@ export async function lireAudioConversationBambara(conversationId: string): Prom
   };
 }
 
+export type MessageConversationBambara = { id: number | string | null; role: "user" | "assistant"; content: string };
+
+type LigneHistoriqueBambara = { id?: number | string | null; parent_id?: number | string | null; role?: string; content?: string };
+
+/**
+ * Les messages d'une conversation de l'historique, dans l'ordre (22/11/2026, demande de Bourama : on doit pouvoir
+ * ouvrir une conversation de l'historique). Le serveur garde déjà tout le texte des échanges de la page : on relit le
+ * fil et on suit la branche la plus récente (une même question reposée crée une version alternative).
+ */
+export async function lireMessagesConversationBambara(conversationId: string): Promise<MessageConversationBambara[]> {
+  const lignes: LigneHistoriqueBambara[] = await appelerApi(`/api/historique/clovis/conversations/${encodeURIComponent(conversationId)}`);
+  const liste = (Array.isArray(lignes) ? lignes : []).filter((l) => (l?.role === "user" || l?.role === "assistant") && typeof l.content === "string");
+  const avecId = liste.filter((l) => l.id !== null && l.id !== undefined);
+  let chaine: LigneHistoriqueBambara[] = liste;
+  if (avecId.length === liste.length && liste.length > 0) {
+    const parId = new Map(liste.map((l) => [String(l.id), l]));
+    const parents = new Set(liste.map((l) => (l.parent_id === null || l.parent_id === undefined ? "" : String(l.parent_id))));
+    // La feuille la plus récente : le dernier message (dans l'ordre du serveur) que personne n'a pour parent.
+    let feuille: LigneHistoriqueBambara | undefined;
+    for (const l of liste) if (!parents.has(String(l.id))) feuille = l;
+    const suite: LigneHistoriqueBambara[] = [];
+    const vus = new Set<string>();
+    let courant: LigneHistoriqueBambara | undefined = feuille ?? liste[liste.length - 1];
+    while (courant && !vus.has(String(courant.id))) {
+      vus.add(String(courant.id));
+      suite.unshift(courant);
+      courant = courant.parent_id === null || courant.parent_id === undefined ? undefined : parId.get(String(courant.parent_id));
+    }
+    chaine = suite;
+  }
+  return chaine.map((l) => ({ id: l.id ?? null, role: l.role as "user" | "assistant", content: l.content as string }));
+}
+
 export async function listerGardesBambara(profilId: string | null): Promise<GardeBambara[]> {
   const reponse = await appelerApi(`/api/bambara/gardes${chaineProfil(profilId)}`);
   return Array.isArray(reponse?.gardes) ? reponse.gardes : [];
