@@ -29,9 +29,13 @@ type Props = {
   garde?: GardeUiBambara;
 };
 
-// Planche en grille : 3 colonnes (4 sur grand écran), aucune barre de défilement horizontale. Une vidéo en
-// lecture prend toute la largeur de la ligne (voir CarteVisuelBambara.tsx).
-const CLASSE_PLANCHE = "grid w-full grid-cols-3 gap-2 lg:grid-cols-4";
+// Mise à jour du 22/11/2026 (demande de Bourama) : les cartes sont plus grandes. Les images forment une
+// mosaïque de vignettes en colonnes (2 colonnes, 3 dès les écrans moyens), chacune gardant ses vraies
+// proportions au lieu d'un carré identique. Les vidéos sont en grille de 2 colonnes (3 sur grand écran),
+// au format vidéo. Aucune barre de défilement horizontale. Une vidéo en lecture prend toute la largeur
+// de la ligne (voir CarteVisuelBambara.tsx).
+const CLASSE_MOSAIQUE_IMAGES = "w-full columns-2 gap-2 sm:columns-3";
+const CLASSE_PLANCHE_VIDEOS = "grid w-full grid-cols-2 gap-2 lg:grid-cols-3";
 
 export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChangerLecture, libelleLire, libelleFermerVideo, libelleOuvrirImage, garde }: Props) {
   const [indexImage, setIndexImage] = useState<number | null>(null);
@@ -44,7 +48,7 @@ export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChanger
   return (
     <div className="flex w-full flex-col gap-3">
       {images.length > 0 && (
-        <div className={CLASSE_PLANCHE}>
+        <div className={CLASSE_MOSAIQUE_IMAGES}>
           <AnimatePresence initial={false}>
             {images.map((visuel, index) => (
               <CarteImageBambara key={visuel.id} visuel={visuel} surOuvrir={() => setIndexImage(index)} libelleOuvrir={libelleOuvrirImage} garde={garde} />
@@ -53,7 +57,7 @@ export function RangeesVisuelsBambara({ idTour, visuels, idEnLecture, surChanger
         </div>
       )}
       {videos.length > 0 && (
-        <div className={CLASSE_PLANCHE}>
+        <div className={CLASSE_PLANCHE_VIDEOS}>
           <AnimatePresence initial={false}>
             {videos.map((visuel) => (
               <CarteVideoBambara

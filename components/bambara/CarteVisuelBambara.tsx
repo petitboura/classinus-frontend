@@ -2,8 +2,8 @@
 
 // Page bambara (16/11/2026, demande de Bourama) : une vidéo ou une image dans une planche de vignettes.
 // Refonte du 18/11/2026 (demande de Bourama) : c'est une conversation, pas une page de résultats Google.
-// Les cartes sont donc de petites vignettes carrées, toutes de la même taille, qui se suivent en grille de
-// 3 par ligne (RangeesVisuelsBambara.tsx). Une vidéo en lecture prend toute la largeur de la ligne. Une vidéo YouTube se lance d'un
+// Mise à jour du 22/11/2026 : les cartes sont plus grandes ; les images gardent leurs proportions en mosaïque
+// (2 colonnes, 3 dès les écrans moyens), les vidéos sont au format vidéo, 2 par ligne (RangeesVisuelsBambara.tsx). Une vidéo en lecture prend toute la largeur de la ligne. Une vidéo YouTube se lance d'un
 // toucher dans la carte (lecteur officiel), un fichier vidéo se lit avec le lecteur du navigateur ; une
 // image s'agrandit au toucher. Aucun texte visible : l'utilisateur ne sait pas lire.
 // Le cadre et le bouton de lecture sont en noir et blanc (18/11/2026), les angles des cartes sont nets
@@ -41,7 +41,7 @@ export function CarteVideoBambara({ visuel, enLecture, surLire, surFermer, libel
       animate={ARRIVEE}
       exit={SORTIE}
       transition={TRANSITION}
-      className={`relative overflow-hidden border bg-black ${enLecture ? "col-span-full aspect-video" : "aspect-square"}`}
+      className={`relative overflow-hidden border bg-black ${enLecture ? "col-span-full aspect-video" : "aspect-video"}`}
       style={{ borderColor: "var(--bb-trait)" }}
     >
       {enLecture ? (
@@ -109,17 +109,17 @@ export function CarteImageBambara({ visuel, surOuvrir, libelleOuvrir, garde }: P
       animate={ARRIVEE}
       exit={SORTIE}
       transition={TRANSITION}
-      className="relative aspect-square w-full overflow-hidden border"
+      className="relative mb-2 w-full break-inside-avoid overflow-hidden border"
       style={{ backgroundColor: "var(--bb-voile)", borderColor: "var(--bb-trait)" }}
     >
-      <button type="button" onClick={surOuvrir} aria-label={visuel.titre || libelleOuvrir} className="group absolute inset-0">
+      <button type="button" onClick={surOuvrir} aria-label={visuel.titre || libelleOuvrir} className="group block w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={visuel.miniature || visuel.url}
           alt={visuel.titre || ""}
           loading="lazy"
           onError={() => setCassee(true)}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          className="block h-auto w-full transition-transform duration-200 group-hover:scale-105"
         />
       </button>
       {garde && <BoutonCoeurBambara visuel={visuel} garde={garde} />}
