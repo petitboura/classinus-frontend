@@ -9,6 +9,7 @@
 // égale pour les images, format vidéo pour les vidéos), donc rien ne saute quand les vraies vignettes apparaissent.
 // Styles : bambara.css (.bb-case).
 
+import { Search } from "lucide-react";
 import type { CSSProperties } from "react";
 import type { EffetConstruction as Effet } from "@/lib/pageBambaraVisuels";
 import { styleHauteur, styleRangee } from "./rangeesImages";
@@ -54,6 +55,20 @@ export function EffetConstruction({ effet }: { effet: Effet }) {
               <span style={styleHauteur(ratio)} />
             </div>
           ))}
+        </div>
+      );
+    case "recherche":
+      // Recherche web (22/11/2026) : rien à montrer de ce qui arrive, donc une loupe qui balaie, entourée de cercles
+      // qui s'élargissent (.bb-halo). Aucune case, aucun texte.
+      return (
+        <div aria-hidden="true" className="flex h-24 w-full items-center justify-center">
+          <span className="relative flex h-14 w-14 items-center justify-center">
+            <span className="bb-halo" />
+            <span className="bb-halo" style={{ animationDelay: "0.8s" }} />
+            <span className="bb-loupe flex">
+              <Search size={28} strokeWidth={2.2} />
+            </span>
+          </span>
         </div>
       );
   }

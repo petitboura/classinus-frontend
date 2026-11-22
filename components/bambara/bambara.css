@@ -46,6 +46,16 @@
   100% { transform: scale(1.7); opacity: 0; }
 }
 
+/* Loupe de la recherche web : elle balaie la zone de gauche à droite, légèrement penchée. */
+@keyframes bb-loupe {
+  0%, 100% { transform: translate(-1.75rem, 0.25rem) rotate(-8deg); }
+  50% { transform: translate(1.75rem, -0.25rem) rotate(8deg); }
+}
+
+.bb-loupe {
+  animation: bb-loupe 2.4s ease-in-out infinite;
+}
+
 /* Case d'attente : un gris doux, un trait fin, mêmes angles arrondis que les vraies vignettes. La lueur est la bande
    ::after, retardée par --d pour que les cases brillent en vague. */
 .bb-case {
@@ -129,5 +139,6 @@
 @media (prefers-reduced-motion: reduce) {
   .bb-clavier { transition: none; }
   .bb-halo { animation: none; }
+  .bb-loupe { animation: none; }
   .bb-case::after { animation: none; display: none; }
 }
