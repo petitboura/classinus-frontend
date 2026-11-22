@@ -67,3 +67,7 @@ Known limits: Higgsfield generation is not offered on this page yet; the global 
 - **Keep.** Each video and image has a heart in its corner (`BoutonCoeurBambara.tsx`): empty when not kept, full when kept. The kept button opens two icon tabs, videos and images, with the same cards (a video plays in its card, an image opens full screen); the heart there removes the item.
 
 Everything is stored on the account (`lib/useBambaraEspace.ts`, `lib/bambaraEspace.ts`; tables and routes described in the backend document `PAGE_BAMBARA_PROFILS.md`). Failures are silent: the page never shows an error. Known limits of this first version: the history lists first messages only and does not reopen a past conversation, and the page's browser back button does not close an open panel.
+
+## Voice sign-up journey (22 November 2026)
+
+The profile button's `+` starts a full-screen sign-up journey with no reading: a voice asks for the name, the person says it, it is transcribed, and they can replay their own voice and the voice of Classinus saying that name. Then two pictures (woman, man), then an optional spoken introduction. The sentences the voice reads are never in the code: they come from the Supabase table `bambara_parcours_textes` (`GET /api/bambara/parcours/textes`), written by the team. Details and keys: backend `docs/chantiers/PAGE_BAMBARA_PROFILS.md`. Code: `components/bambara/ParcoursInscriptionBambara.tsx`, `lib/useParcoursBambara.ts`, `lib/parcoursBambara.ts`. Test: `tests/verifier-parcours-bambara.mjs`.

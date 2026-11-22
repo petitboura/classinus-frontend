@@ -5,6 +5,7 @@
 // profil a son propre historique et ses propres éléments gardés ; sans profil choisi, ils vont dans un espace
 // commun du compte. Les échecs du serveur sont silencieux : la page reste utilisable sans rien montrer.
 
+import { creerProfilParcoursBambara, type GenreProfil } from "./parcoursBambara";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   creerProfilBambara,
@@ -99,6 +100,21 @@ export function useBambaraEspace(actif: boolean) {
     [choisirProfil]
   );
 
+  /** Crée le profil du parcours d'inscription vocal (nom dit à voix haute, genre, présentation) et le choisit. */
+  const creerProfilParcours = useCallback(
+    async (nom: string, genre: GenreProfil, presentation: string | null): Promise<boolean> => {
+      try {
+        const profil = await creerProfilParcoursBambara(nom, genre, presentation);
+        setProfils((precedents) => [...precedents, profil]);
+        choisirProfil(profil.id);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [choisirProfil]
+  );
+
   const chargerConversations = useCallback(() => {
     const profil = profilIdRef.current;
     setConversations(null);
@@ -151,6 +167,7 @@ export function useBambaraEspace(actif: boolean) {
     profilId,
     choisirProfil,
     creerProfil,
+    creerProfilParcours,
     gardes,
     gardeDeUrl,
     basculerGarde,

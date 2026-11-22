@@ -79,7 +79,7 @@ const TEXTES = {
     deplier: "Voir tout le texte", replier: "Réduire le texte",
     nouveauProfil: "Nouveau profil", nouvelleConversation: "Nouvelle conversation", historique: "Historique", gardes: "Gardés",
     ouvrirMenu: "Ouvrir les boutons", fermerMenu: "Fermer les boutons", ouvrirConversation: "Ouvrir la conversation",
-    nom: "Nom", prenom: "Prénom", valider: "Valider", videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
+    videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
   },
   en: {
     parler: "Speak", arreter: "Stop", lire: "Play the video", fermerVideo: "Close the video", ouvrirImage: "View the image", erreur: "Something went wrong.",
@@ -88,7 +88,7 @@ const TEXTES = {
     deplier: "Show the whole text", replier: "Collapse the text",
     nouveauProfil: "New profile", nouvelleConversation: "New conversation", historique: "History", gardes: "Kept",
     ouvrirMenu: "Open the buttons", fermerMenu: "Close the buttons", ouvrirConversation: "Open the conversation",
-    nom: "Last name", prenom: "First name", valider: "Confirm", videos: "Videos", images: "Images", garder: "Keep", retirerGarde: "Remove from kept",
+    videos: "Videos", images: "Images", garder: "Keep", retirerGarde: "Remove from kept",
   },
 } as const;
 

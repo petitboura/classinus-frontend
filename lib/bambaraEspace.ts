@@ -8,7 +8,7 @@ import { appelerApi } from "./api";
 import type { MessageAudioBambara } from "./audioMessageBambara";
 import type { VisuelBambara } from "./pageBambaraVisuels";
 
-export type ProfilBambara = { id: string; nom: string; prenom: string };
+export type ProfilBambara = { id: string; nom: string; prenom: string; genre?: "femme" | "homme" | null };
 export type ConversationBambara = { id: string; texte: string | null; a_audio: boolean; cree_a: string };
 export type GardeBambara = {
   id: string;

@@ -15,6 +15,7 @@ import type { EspaceBambara } from "@/lib/useBambaraEspace";
 import type { GardeUiBambara } from "./BoutonCoeurBambara";
 import { PanneauGardesBambara } from "./PanneauGardesBambara";
 import { PanneauHistoriqueBambara } from "./PanneauHistoriqueBambara";
+import { ParcoursInscriptionBambara } from "./ParcoursInscriptionBambara";
 import { PanneauProfilBambara } from "./PanneauProfilBambara";
 
 export type TextesBarreBambara = {
@@ -22,9 +23,6 @@ export type TextesBarreBambara = {
   nouvelleConversation: string;
   historique: string;
   gardes: string;
-  nom: string;
-  prenom: string;
-  valider: string;
   videos: string;
   images: string;
   ecouter: string;
@@ -60,7 +58,9 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   // Demande de Bourama du 22/11/2026 : un seul bouton ouvre et ferme la rangée des quatre boutons.
   const [rangeeOuverte, setRangeeOuverte] = useState(false);
-  const { profils, profilId, choisirProfil, creerProfil } = espace;
+  // Parcours d'inscription vocal (22/11/2026) : plein écran, lancé par le bouton « + » du panneau profil.
+  const [parcoursOuvert, setParcoursOuvert] = useState(false);
+  const { profils, profilId, choisirProfil, creerProfilParcours } = espace;
 
   const fermer = useCallback(() => setPanneau(null), []);
   const basculerRangee = () => {
@@ -159,11 +159,6 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
               <PanneauProfilBambara
                 profils={profils}
                 profilId={profilId}
-                creerProfil={async (nom, prenom) => {
-                  const reussi = await creerProfil(nom, prenom);
-                  if (reussi) surProfilChange();
-                  return reussi;
-                }}
                 choisirProfil={(id) => {
                   if (id !== profilId) {
                     choisirProfil(id);
@@ -171,9 +166,11 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
                   }
                 }}
                 surTermine={fermer}
-                libelleNom={textes.nom}
-                libellePrenom={textes.prenom}
-                libelleValider={textes.valider}
+                surNouveauParcours={() => {
+                  fermer();
+                  setParcoursOuvert(true);
+                }}
+                libelleNouveau={textes.nouveauProfil}
               />
             )}
             {panneau === "historique" && (
@@ -205,6 +202,19 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
               />
             )}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {parcoursOuvert && (
+          <ParcoursInscriptionBambara
+            creer={creerProfilParcours}
+            surTermine={() => {
+              setParcoursOuvert(false);
+              surProfilChange();
+            }}
+            surFermer={() => setParcoursOuvert(false)}
+          />
         )}
       </AnimatePresence>
     </>
