@@ -32,7 +32,8 @@
 // les commandes (micro, bouton clavier, champ d'écriture) sont rondes. La bulle du haut est la mini bulle du chat, en haut
 // à droite ; le micro et le bouton clavier sont petits et bas, sous le pouce (demande de Bourama, 18/11/2026).
 // Le texte de la page (réponse, question écrite, champ d'écriture) est en font-lecture, la police des réponses du chat.
-// Boutons du haut (18/11/2026, demande de Bourama) : en haut à gauche, nouveau profil, nouvelle conversation (« + »),
+// Boutons du haut (18/11/2026, demande de Bourama) : en haut à gauche, paramètres (depuis le 23/11/2026, à la place du
+// bouton profil), nouvelle conversation (« + »),
 // historique et éléments gardés (components/bambara/BarreHautBambara.tsx). Chaque vidéo et image a un cœur pour la garder.
 // Tout est rangé dans le compte (lib/useBambaraEspace.ts, api/bambara_profils.py côté backend) : chaque profil a son
 // historique et ses éléments gardés. Le premier message de chaque conversation est gardé pour l'historique.
@@ -60,6 +61,7 @@ import {
 import { ecrireEtatDepuisChat } from "@/lib/conversationPartagee";
 import { supabase } from "@/lib/supabase";
 import { useBambaraEspace } from "@/lib/useBambaraEspace";
+import { useReglagesBambara } from "@/lib/reglagesBambara";
 import { useDecalageClavier } from "@/lib/useDecalageClavier";
 import { useEcritureBambara } from "@/lib/useEcritureBambara";
 import { ouvrirVoixBambara, type SessionVoixBambara } from "@/lib/voixBambara";
@@ -78,7 +80,7 @@ const TEXTES = {
     ecrire: "Écrire un message", masquerChamp: "Masquer le champ d'écriture", placeholder: "Écrire ici", envoyer: "Envoyer",
     ecouter: "Écouter le message", mettreEnPause: "Mettre le message en pause",
     deplier: "Voir tout le texte", replier: "Réduire le texte",
-    nouveauProfil: "Nouveau profil", nouvelleConversation: "Nouvelle conversation", historique: "Historique", gardes: "Gardés",
+    parametres: "Paramètres", afficherTexteReponse: "Afficher le texte des réponses", nouvelleConversation: "Nouvelle conversation", historique: "Historique", gardes: "Gardés",
     ouvrirMenu: "Ouvrir les boutons", fermerMenu: "Fermer les boutons", ouvrirConversation: "Ouvrir la conversation",
     videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
   },
@@ -87,7 +89,7 @@ const TEXTES = {
     ecrire: "Write a message", masquerChamp: "Hide the writing field", placeholder: "Write here", envoyer: "Send",
     ecouter: "Play the message", mettreEnPause: "Pause the message",
     deplier: "Show the whole text", replier: "Collapse the text",
-    nouveauProfil: "New profile", nouvelleConversation: "New conversation", historique: "History", gardes: "Kept",
+    parametres: "Settings", afficherTexteReponse: "Show the text of the answers", nouvelleConversation: "New conversation", historique: "History", gardes: "Kept",
     ouvrirMenu: "Open the buttons", fermerMenu: "Close the buttons", ouvrirConversation: "Open the conversation",
     videos: "Videos", images: "Images", garder: "Keep", retirerGarde: "Remove from kept",
   },
@@ -111,6 +113,8 @@ export default function PageBambaraClient() {
   const [champOuvert, setChampOuvert] = useState(false);
   // Profils, historique et éléments gardés du compte (lib/useBambaraEspace.ts).
   const espace = useBambaraEspace(connecte);
+  // Réglages de la page (23/11/2026) : afficher ou non le texte des réponses, non par défaut.
+  const reglages = useReglagesBambara();
   const profilIdRef = useRef<string | null>(null);
   profilIdRef.current = espace.profilId;
   // Le premier message de la conversation est gardé une seule fois, pour l'historique ; le vocal de la demande
@@ -569,7 +573,7 @@ export default function PageBambaraClient() {
           {tours.map((tour, rang) => {
             const dernier = rang === tours.length - 1;
             const bullePreparee = !tour.audioReponse && dernier && reponseEnCours;
-            if (!tour.question && !tour.audioQuestion && !tour.texte && tour.visuels.length === 0 && !tour.audioReponse && !bullePreparee) return null;
+            if (!tour.question && !tour.audioQuestion && !(tour.texte && reglages.afficherTexteReponse) && tour.visuels.length === 0 && !tour.audioReponse && !bullePreparee) return null;
             return (
               <div key={tour.id} className="flex w-full flex-col gap-3">
                 {tour.audioQuestion && (
@@ -605,7 +609,7 @@ export default function PageBambaraClient() {
                     libelleMettreEnPause={textes.mettreEnPause}
                   />
                 )}
-                {tour.texte && (
+                {tour.texte && reglages.afficherTexteReponse && (
                   <TexteReplieBambara texte={tour.texte} libelleDeplier={textes.deplier} libelleReplier={textes.replier} />
                 )}
                 <RangeesVisuelsBambara
@@ -644,11 +648,11 @@ export default function PageBambaraClient() {
 
       <BarreHautBambara
         espace={espace}
+        reglages={reglages}
         garde={gardeUi}
         textes={textes}
         surNouvelleConversation={nouvelleConversation}
         surOuvrirConversation={ouvrirConversation}
-        surProfilChange={nouvelleConversation}
         messageEnLecture={messageEnLecture}
         changerMessageEnLecture={changerMessageEnLecture}
         videoEnLecture={videoEnLecture}

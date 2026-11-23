@@ -1,25 +1,27 @@
 "use client";
 
 // Page bambara (18/11/2026, demande de Bourama) : la rangée de boutons en haut à gauche, qui flotte par dessus
-// la conversation comme la bulle à droite. Dans l'ordre : nouveau profil, nouvelle conversation (un simple « + »),
-// historique, éléments gardés. Seules des icônes : la personne ne lit pas. Le profil, l'historique et les gardés
+// la conversation comme la bulle à droite. Dans l'ordre : paramètres (23/11/2026, demande de Bourama : à la place du
+// bouton profil), nouvelle conversation (un simple « + »), historique, éléments gardés. Seules des icônes : la personne
+// ne lit pas. Les paramètres, l'historique et les gardés
 // ouvrent un petit panneau sous la rangée (un seul à la fois, un second toucher ou un toucher à côté le referme) ;
 // le « + » ne ferme rien d'autre que ces panneaux, il repart d'une conversation vide.
 // Noir et blanc seulement (couleurs de .bb-page).
 
 import { AnimatePresence, motion } from "framer-motion";
-import { History, Heart, Menu, Plus, UserRound, X, type LucideIcon } from "lucide-react";
+import { History, Heart, Menu, Plus, Settings, X, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { ConversationBambara } from "@/lib/bambaraEspace";
 import type { EspaceBambara } from "@/lib/useBambaraEspace";
 import type { GardeUiBambara } from "./BoutonCoeurBambara";
 import { PanneauGardesBambara } from "./PanneauGardesBambara";
 import { PanneauHistoriqueBambara } from "./PanneauHistoriqueBambara";
-import { ParcoursInscriptionBambara } from "./ParcoursInscriptionBambara";
-import { PanneauProfilBambara } from "./PanneauProfilBambara";
+import { PanneauParametresBambara } from "./PanneauParametresBambara";
+import type { ReglagesBambara } from "@/lib/reglagesBambara";
 
 export type TextesBarreBambara = {
-  nouveauProfil: string;
+  parametres: string;
+  afficherTexteReponse: string;
   nouvelleConversation: string;
   historique: string;
   gardes: string;
@@ -35,17 +37,16 @@ export type TextesBarreBambara = {
   ouvrirConversation: string;
 };
 
-type Panneau = "profil" | "historique" | "gardes";
+type Panneau = "parametres" | "historique" | "gardes";
 
 type Props = {
   espace: EspaceBambara;
+  reglages: ReglagesBambara;
   garde: GardeUiBambara;
   textes: TextesBarreBambara;
   surNouvelleConversation: () => void;
   /** Une conversation de l'historique est touchée : la page la rouvre en entier. */
   surOuvrirConversation: (conversation: ConversationBambara) => void;
-  /** Un profil vient d'être choisi ou créé : la conversation en cours n'est plus la sienne, on repart de zéro. */
-  surProfilChange: () => void;
   messageEnLecture: string | null;
   changerMessageEnLecture: (id: string | null) => void;
   videoEnLecture: string | null;
@@ -54,13 +55,10 @@ type Props = {
 
 const CLASSE_BOUTON = "flex h-11 w-11 items-center justify-center rounded-full border transition-[transform,background-color,color] active:scale-95";
 
-export function BarreHautBambara({ espace, garde, textes, surNouvelleConversation, surOuvrirConversation, surProfilChange, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
+export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleConversation, surOuvrirConversation, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   // Demande de Bourama du 22/11/2026 : un seul bouton ouvre et ferme la rangée des quatre boutons.
   const [rangeeOuverte, setRangeeOuverte] = useState(false);
-  // Parcours d'inscription vocal (22/11/2026) : plein écran, lancé par le bouton « + » du panneau profil.
-  const [parcoursOuvert, setParcoursOuvert] = useState(false);
-  const { profils, profilId, choisirProfil, creerProfilParcours } = espace;
 
   const fermer = useCallback(() => setPanneau(null), []);
   const basculerRangee = () => {
@@ -79,7 +77,7 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
   }, [panneau]);
 
   const boutons: Array<{ id: string; libelle: string; Icone: LucideIcon; actif: boolean; surClic: () => void }> = [
-    { id: "profil", libelle: textes.nouveauProfil, Icone: UserRound, actif: panneau === "profil", surClic: () => basculer("profil") },
+    { id: "parametres", libelle: textes.parametres, Icone: Settings, actif: panneau === "parametres", surClic: () => basculer("parametres") },
     {
       id: "nouvelle",
       libelle: textes.nouvelleConversation,
@@ -155,22 +153,11 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
               borderColor: "var(--bb-trait-fort)",
             }}
           >
-            {panneau === "profil" && (
-              <PanneauProfilBambara
-                profils={profils}
-                profilId={profilId}
-                choisirProfil={(id) => {
-                  if (id !== profilId) {
-                    choisirProfil(id);
-                    surProfilChange();
-                  }
-                }}
-                surTermine={fermer}
-                surNouveauParcours={() => {
-                  fermer();
-                  setParcoursOuvert(true);
-                }}
-                libelleNouveau={textes.nouveauProfil}
+            {panneau === "parametres" && (
+              <PanneauParametresBambara
+                afficherTexteReponse={reglages.afficherTexteReponse}
+                changerAfficherTexteReponse={reglages.changerAfficherTexteReponse}
+                libelleAfficherTexte={textes.afficherTexteReponse}
               />
             )}
             {panneau === "historique" && (
@@ -202,19 +189,6 @@ export function BarreHautBambara({ espace, garde, textes, surNouvelleConversatio
               />
             )}
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {parcoursOuvert && (
-          <ParcoursInscriptionBambara
-            creer={creerProfilParcours}
-            surTermine={() => {
-              setParcoursOuvert(false);
-              surProfilChange();
-            }}
-            surFermer={() => setParcoursOuvert(false)}
-          />
         )}
       </AnimatePresence>
     </>

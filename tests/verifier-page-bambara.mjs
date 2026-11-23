@@ -255,10 +255,29 @@ assert.match(pageClient, /garde=\{gardeUi\}/, "les cartes reçoivent le cœur");
 assert.match(pageClient, /garderPremierMessage\(question, null\)/, "le premier message écrit est gardé");
 assert.match(pageClient, /garderPremierMessage\(question, audioParoleRef\.current\)/, "le premier vocal est gardé avec sa transcription");
 assert.match(pageClient, /conversationIdRef\.current = nouvelIdentifiant\(\)/, "le « + » ouvre une nouvelle conversation");
-assert.match(barreHaut, /nouveauProfil[\s\S]*nouvelleConversation[\s\S]*historique[\s\S]*gardes/, "ordre des boutons : profil, +, historique, gardés");
+assert.match(barreHaut, /parametres[\s\S]*nouvelleConversation[\s\S]*historique[\s\S]*gardes/, "ordre des boutons : paramètres, +, historique, gardés");
+assert.doesNotMatch(barreHaut, /nouveauProfil|PanneauProfilBambara/, "le bouton profil est remplacé par les paramètres (23/11/2026)");
 assert.match(hookEspace, /listerGardesBambara\(profilId\)/, "les gardés suivent le profil choisi");
 for (const code of ["BAMBARA_PROFIL_NOM_INVALIDE", "BAMBARA_TROP_DE_PROFILS", "BAMBARA_PROFIL_INTROUVABLE", "BAMBARA_CONVERSATION_INVALIDE", "BAMBARA_CONVERSATION_INTROUVABLE", "BAMBARA_MESSAGE_VIDE", "BAMBARA_AUDIO_INVALIDE", "BAMBARA_GARDE_INVALIDE", "BAMBARA_INDISPONIBLE"]) {
   const erreurs = await lire("../lib/erreurs.ts");
   assert.equal((erreurs.match(new RegExp("^\\s+" + code + ":", "gm")) ?? []).length, 2, code + " en français et en anglais");
 }
 console.log("page bambara : boutons du haut vérifiés");
+
+// Paramètres (23/11/2026) : un seul réglage, afficher ou non le texte de la réponse, non par défaut.
+{
+  const reglages = await lire("../lib/reglagesBambara.ts");
+  const panneauParametres = await lire("../components/bambara/PanneauParametresBambara.tsx");
+  assert.match(reglages, /useState\(false\)/, "par défaut le texte de la réponse n'est pas affiché");
+  assert.match(reglages, /getItem\(CLE_AFFICHER_TEXTE\) === "1"/, "seul un choix gardé à « oui » l'affiche");
+  assert.match(reglages, /catch/, "stockage du navigateur indisponible géré");
+  assert.match(pageClient, /tour\.texte && reglages\.afficherTexteReponse && \(\s*<TexteReplieBambara/, "le texte n'est montré que si le réglage est actif");
+  assert.match(pageClient, /!\(tour\.texte && reglages\.afficherTexteReponse\)/, "un tour réduit à son texte caché ne laisse pas de vide");
+  assert.match(pageClient, /reglages=\{reglages\}/, "les réglages arrivent dans la barre du haut");
+  assert.match(barreHaut, /PanneauParametresBambara/, "le panneau des paramètres est branché");
+  assert.match(panneauParametres, /role="switch"/, "interrupteur accessible");
+  assert.equal((pageClient.match(/afficherTexteReponse: "/g) ?? []).length, 2, "libellé du réglage en français et en anglais");
+  assert.equal((pageClient.match(/\bparametres: "/g) ?? []).length, 2, "libellé du bouton en français et en anglais");
+  assert.doesNotMatch(reglages + panneauParametres, / -- /, "pas de double tiret");
+  console.log("page bambara : paramètres vérifiés");
+}

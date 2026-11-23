@@ -38,7 +38,8 @@ assert.match(ecran, /fr: \{[\s\S]*en: \{/, "libellés d'accessibilité en franç
 // Le panneau profil n'a plus de champs écrits : un bouton lance le parcours.
 assert.doesNotMatch(panneau, /<input/, "plus de champ écrit");
 assert.match(panneau, /surNouveauParcours/);
-assert.match(barre, /ParcoursInscriptionBambara/);
+// Depuis le 23/11/2026 le bouton profil est remplacé par les paramètres : la barre du haut ne lance plus le parcours.
+assert.doesNotMatch(barre, /ParcoursInscriptionBambara/);
 
 // Codes d'erreur dans les deux langues.
 for (const code of ["BAMBARA_NOM_PARLE_INVALIDE", "BAMBARA_PROFIL_GENRE_INVALIDE", "BAMBARA_PRESENTATION_INVALIDE"]) {
