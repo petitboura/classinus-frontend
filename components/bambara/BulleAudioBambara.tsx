@@ -23,12 +23,19 @@ type Props = {
   surChangerLecture: (id: string | null) => void;
   libelleEcouter: string;
   libelleMettreEnPause: string;
+  /**
+   * Tant que le message n'est pas prêt : "attente" (rien ne se dit encore, les barres bougent) ou "lecture" (la voix de
+   * Classinus lit la réponse en direct : le bouton met en pause, ce qui coupe la voix).
+   */
+  direct?: "attente" | "lecture";
+  /** Coupe la voix qui lit en direct ; la partie déjà lue reste réécoutable dans cette même bulle. */
+  surArreterDirect?: () => void;
 };
 
 // Quand le message n'a pas de forme d'onde (enregistrement gardé tel quel), des barres régulières.
 const BARRES_PAR_DEFAUT = Array.from({ length: NOMBRE_PICS }, () => 0.35);
 
-export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause }: Props) {
+export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause, direct, surArreterDirect }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [adresse, setAdresse] = useState<string | null>(null);
   const dureeMs = message?.dureeMs ?? 0;
@@ -67,6 +74,10 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
   }, [enCours, dureeMs]);
 
   const basculer = () => {
+    if (message === null) {
+      if (direct === "lecture") surArreterDirect?.();
+      return;
+    }
     const audio = audioRef.current;
     if (!audio || !adresse) return;
     if (!audio.paused) {
@@ -93,6 +104,7 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
   };
 
   const enPreparation = message === null;
+  const lectureDirecte = enPreparation && direct === "lecture";
   const barres = message && message.pics.length === NOMBRE_PICS ? message.pics : BARRES_PAR_DEFAUT;
   const barresLues = Math.round(progres * NOMBRE_PICS);
   const dureeAffichee = enCours || progres > 0 ? progres * dureeMs : dureeMs;
@@ -122,32 +134,33 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
       <button
         type="button"
         onClick={basculer}
-        disabled={!adresse || enPreparation}
-        aria-label={enCours ? libelleMettreEnPause : libelleEcouter}
-        aria-pressed={enCours}
+        disabled={enPreparation ? !lectureDirecte : !adresse}
+        aria-label={enCours || lectureDirecte ? libelleMettreEnPause : libelleEcouter}
+        aria-pressed={enCours || lectureDirecte}
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-40"
         style={{ backgroundColor: "var(--bb-encre)", color: "var(--bb-fond)" }}
       >
-        {enCours ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+        {enCours || lectureDirecte ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
       </button>
       <div
         onClick={placer}
-        className={"flex h-8 min-w-0 flex-1 items-center gap-[2px] " + (enPreparation ? "animate-pulse" : "cursor-pointer")}
+        className={"flex h-8 min-w-0 flex-1 items-center gap-[2px] " + (enPreparation ? "" : "cursor-pointer")}
       >
         {barres.map((pic, i) => (
           <span
             key={i}
-            className="min-w-[2px] max-w-[4px] flex-1 rounded-full"
+            className={"min-w-[2px] max-w-[4px] flex-1 rounded-full" + (enPreparation ? " bb-onde-barre" : "")}
             style={{
               height: Math.max(12, Math.round(pic * 100)) + "%",
-              backgroundColor: i < barresLues ? "var(--bb-encre)" : "var(--bb-trait-fort)",
+              backgroundColor: enPreparation ? "var(--bb-encre)" : i < barresLues ? "var(--bb-encre)" : "var(--bb-trait-fort)",
               transition: "background-color 0.15s ease-out",
+              animationDelay: enPreparation ? (i % 12) * 90 + "ms" : undefined,
             }}
           />
         ))}
       </div>
       <span className="shrink-0 text-xs tabular-nums" style={{ color: "var(--bb-encre)" }}>
-        {enPreparation ? "0:00" : formaterDuree(dureeAffichee)}
+        {enPreparation ? <span className="invisible">0:00</span> : formaterDuree(dureeAffichee)}
       </span>
     </motion.div>
   );

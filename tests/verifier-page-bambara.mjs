@@ -282,3 +282,19 @@ console.log("page bambara : boutons du haut vérifiés");
   assert.doesNotMatch(reglages + panneauParametres, / -- /, "pas de double tiret");
   console.log("page bambara : paramètres vérifiés");
 }
+
+// Bulle de réponse (23/11/2026) : jamais muette ni grisée pendant l'attente, et pause active quand la voix lit en direct.
+{
+  const bulle = await lire("../components/bambara/BulleAudioBambara.tsx");
+  const pageClient = await lire("../components/bambara/PageBambaraClient.tsx");
+  const css = await lire("../components/bambara/bambara.css");
+  assert.doesNotMatch(bulle, /animate-pulse/, "plus de bulle qui pulse sans rien faire");
+  assert.match(bulle, /bb-onde-barre/, "les barres bougent pendant l'attente et la lecture en direct");
+  assert.match(bulle, /disabled=\{enPreparation \? !lectureDirecte : !adresse\}/, "le bouton est actif quand la voix lit en direct");
+  assert.match(bulle, /surArreterDirect\?\.\(\)/, "le bouton coupe la voix en direct");
+  assert.match(css, /@keyframes bb-onde/, "animation des barres définie");
+  assert.match(css, /\.bb-onde-barre \{ animation: none; \}/, "animation coupée si mouvement réduit");
+  assert.match(pageClient, /direct=\{lectureEnDirect \? "lecture" : "attente"\}/, "la page dit à la bulle si la voix lit");
+  assert.match(pageClient, /sessionRef\.current\?\.interrompre\(\);\s*couperVoixEcriture\(\);/, "la pause coupe la voix du micro et celle de l'écriture");
+  console.log("page bambara : bulle de réponse vérifiée");
+}

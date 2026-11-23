@@ -141,6 +141,17 @@
   pointer-events: none;
 }
 
+/* Les barres vivantes de la bulle de réponse tant que la voix de Classinus n'est pas prête ou qu'elle lit (BulleAudioBambara.tsx). */
+@keyframes bb-onde {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+.bb-onde-barre {
+  transform-origin: center;
+  animation: bb-onde 1.1s ease-in-out infinite;
+}
+
 /* Les commandes du bas remontent doucement au dessus du clavier du téléphone (lib/useDecalageClavier.ts). */
 .bb-clavier {
   transition: transform 0.2s ease-out;
@@ -151,5 +162,6 @@
   .bb-halo { animation: none; }
   .bb-point-enregistrement { animation: none; }
   .bb-loupe { animation: none; }
+  .bb-onde-barre { animation: none; }
   .bb-case::after { animation: none; display: none; }
 }

@@ -526,6 +526,12 @@ export default function PageBambaraClient() {
   const enregistre = etat === "ecoute";
   const actif = (etat !== "inactif" && etat !== "erreur" && etat !== "connecte") || ecritureActive;
   const enConnexion = etat === "connexion";
+  // La voix de Classinus lit la réponse en direct (par le micro ou après un message écrit) : la bulle sert alors à la couper.
+  const lectureEnDirect = etat === "reponse" || ecriture.etat === "reponse";
+  const arreterVoixEnDirect = useCallback(() => {
+    sessionRef.current?.interrompre();
+    couperVoixEcriture();
+  }, [couperVoixEcriture]);
   // Une réponse se prépare ou se lit : la dernière bulle audio de Classinus est déjà là, en préparation.
   const reponseEnCours = etat === "travail" || etat === "reponse" || ecriture.etat === "travail" || ecriture.etat === "reponse";
 
@@ -610,6 +616,8 @@ export default function PageBambaraClient() {
                     surChangerLecture={changerMessageEnLecture}
                     libelleEcouter={textes.ecouter}
                     libelleMettreEnPause={textes.mettreEnPause}
+                    direct={lectureEnDirect ? "lecture" : "attente"}
+                    surArreterDirect={arreterVoixEnDirect}
                   />
                 )}
                 {texteVisible && (
