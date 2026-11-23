@@ -18,6 +18,8 @@ export const REGLAGES_MICRO = {
   // Attente maximale avant la première parole, puis durée maximale d'une prise de parole.
   attenteMaxMs: 8000,
   enonceMaxMs: 60000,
+  // Appuyer pour parler (page bambara) : durée maximale d'un enregistrement, coupé ensuite tout seul.
+  manuelMaxMs: 120000,
 };
 
 const TYPES_AUDIO = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
@@ -32,6 +34,13 @@ export type Micro = {
   ecouter: () => void;
   /** Arrête l'écoute et jette ce qui était en cours. Le micro reste ouvert. */
   pause: () => void;
+  /**
+   * Appuyer pour parler (22/11/2026, demande de Bourama, comme WhatsApp) : l'enregistrement démarre tout de suite et
+   * ne s'arrête que sur ordre (terminerManuel), jamais à cause d'un silence.
+   */
+  commencerManuel: () => void;
+  /** Arrête l'enregistrement manuel. Rend vrai si une parole est envoyée à surEnregistrement, faux si rien n'a été dit (jeté). */
+  terminerManuel: () => boolean;
   /** Libère le micro. */
   fermer: () => void;
 };
@@ -40,6 +49,8 @@ type OptionsMicro = {
   contexte: AudioContext;
   /** Appelée à chaque prise de parole terminée, l'écoute est alors en pause. */
   surEnregistrement: (audio: Blob, mime: string, reperes: ReperesParole) => void;
+  /** L'enregistrement manuel a atteint sa durée maximale : l'appelant doit le terminer. */
+  surLimiteManuelle?: () => void;
 };
 
 function choisirType(): string {
@@ -47,7 +58,7 @@ function choisirType(): string {
   return TYPES_AUDIO.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
 }
 
-export async function ouvrirMicro({ contexte, surEnregistrement }: OptionsMicro): Promise<Micro> {
+export async function ouvrirMicro({ contexte, surEnregistrement, surLimiteManuelle }: OptionsMicro): Promise<Micro> {
   if (typeof MediaRecorder === "undefined") throw new Error("Enregistrement audio non pris en charge");
   const flux = await navigator.mediaDevices.getUserMedia({
     audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -60,6 +71,8 @@ export async function ouvrirMicro({ contexte, surEnregistrement }: OptionsMicro)
   const mime = choisirType();
 
   let ecoute = false;
+  // Enregistrement lancé à la main : seul l'ordre de la personne l'arrête.
+  let manuel = false;
   let enregistreur: MediaRecorder | null = null;
   let morceaux: Blob[] = [];
   let debutEnregistrement = 0;
@@ -101,10 +114,22 @@ export async function ouvrirMicro({ contexte, surEnregistrement }: OptionsMicro)
     let somme = 0;
     for (let i = 0; i < echantillons.length; i += 1) somme += echantillons[i] * echantillons[i];
     const rms = Math.sqrt(somme / echantillons.length);
-    niveauAffiche = ecoute ? Math.min(1, rms * 8) : 0;
-    if (!ecoute) return;
+    niveauAffiche = ecoute || manuel ? Math.min(1, rms * 8) : 0;
+    if (!ecoute && !manuel) return;
     const maintenant = Date.now();
     const seuil = Math.max(REGLAGES_MICRO.seuilMin, bruit * REGLAGES_MICRO.facteurBruit);
+    if (manuel) {
+      // On retient seulement où la parole commence et finit (pour la bulle audio), rien ne coupe l'enregistrement.
+      if (rms > seuil) {
+        if (!parle) {
+          parle = true;
+          debutParole = maintenant;
+        }
+        dernierSon = maintenant;
+      }
+      if (maintenant - debutEnregistrement > REGLAGES_MICRO.manuelMaxMs) surLimiteManuelle?.();
+      return;
+    }
     if (rms > seuil) {
       if (!parle) {
         parle = true;
@@ -142,11 +167,29 @@ export async function ouvrirMicro({ contexte, surEnregistrement }: OptionsMicro)
     },
     pause() {
       ecoute = false;
+      manuel = false;
       arreterEnregistreur(false);
+    },
+    commencerManuel() {
+      arreterEnregistreur(false);
+      ecoute = false;
+      manuel = true;
+      demarrerEnregistreur();
+    },
+    terminerManuel() {
+      if (!manuel) return false;
+      manuel = false;
+      if (!parle || dernierSon - debutParole < REGLAGES_MICRO.paroleMinMs) {
+        arreterEnregistreur(false);
+        return false;
+      }
+      arreterEnregistreur(true);
+      return true;
     },
     fermer() {
       clearInterval(minuteur);
       ecoute = false;
+      manuel = false;
       arreterEnregistreur(false);
       source.disconnect();
       flux.getTracks().forEach((piste) => piste.stop());

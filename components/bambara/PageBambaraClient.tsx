@@ -39,7 +39,7 @@
 
 import "./bambara.css";
 import { AnimatePresence, motion } from "framer-motion";
-import { Keyboard, Loader2, Mic } from "lucide-react";
+import { Keyboard, Loader2, Mic, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MessageAudioBambara } from "@/lib/audioMessageBambara";
@@ -67,13 +67,14 @@ import { nettoyerPourVoix } from "@/lib/voixBambaraTexte";
 import { BarreHautBambara } from "./BarreHautBambara";
 import { BulleAudioBambara } from "./BulleAudioBambara";
 import { ChampEcritureBambara } from "./ChampEcritureBambara";
+import { IndicateurEnregistrementBambara } from "./IndicateurEnregistrementBambara";
 import { TexteReplieBambara } from "./TexteReplieBambara";
 import { EffetConstruction } from "./EffetConstruction";
 import { RangeesVisuelsBambara } from "./RangeesVisuelsBambara";
 
 const TEXTES = {
   fr: {
-    parler: "Parler", arreter: "Arrêter", lire: "Lancer la vidéo", fermerVideo: "Fermer la vidéo", ouvrirImage: "Voir l'image", erreur: "Un problème est survenu.",
+    parler: "Parler", arreter: "Arrêter", enregistrement: "Enregistrement de ta voix", lire: "Lancer la vidéo", fermerVideo: "Fermer la vidéo", ouvrirImage: "Voir l'image", erreur: "Un problème est survenu.",
     ecrire: "Écrire un message", masquerChamp: "Masquer le champ d'écriture", placeholder: "Écrire ici", envoyer: "Envoyer",
     ecouter: "Écouter le message", mettreEnPause: "Mettre le message en pause",
     deplier: "Voir tout le texte", replier: "Réduire le texte",
@@ -82,7 +83,7 @@ const TEXTES = {
     videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
   },
   en: {
-    parler: "Speak", arreter: "Stop", lire: "Play the video", fermerVideo: "Close the video", ouvrirImage: "View the image", erreur: "Something went wrong.",
+    parler: "Speak", arreter: "Stop", enregistrement: "Recording your voice", lire: "Play the video", fermerVideo: "Close the video", ouvrirImage: "View the image", erreur: "Something went wrong.",
     ecrire: "Write a message", masquerChamp: "Hide the writing field", placeholder: "Write here", envoyer: "Send",
     ecouter: "Play the message", mettreEnPause: "Pause the message",
     deplier: "Show the whole text", replier: "Collapse the text",
@@ -411,6 +412,8 @@ export default function PageBambaraClient() {
     setErreur(null);
     try {
       const session = await ouvrirVoixBambara({
+        // Appuyer pour parler, comme WhatsApp : le micro n'écoute plus tout seul (demande de Bourama du 22/11/2026).
+        pousserPourParler: true,
         surEtat: (nouvelEtat) => {
           if (nouvelEtat === "ferme") {
             sessionRef.current = null;
@@ -457,25 +460,67 @@ export default function PageBambaraClient() {
     }
   }, [demarrerTour, ajouterVisuels, ajouterAudioReponse, garderPremierMessage, noterIdsTour]);
 
-  const basculer = useCallback(() => {
-    // Un message audio se réécoutait : toucher le micro l'arrête (le micro, lui, est ouvert ou fermé juste après).
+  // Le micro fonctionne comme sur WhatsApp (demande de Bourama du 22/11/2026) : on appuie pour parler. Maintenu appuyé,
+  // l'enregistrement s'arrête et part quand on lâche. Un simple toucher le lance et le laisse tourner : un second toucher
+  // l'arrête et l'envoie. Pendant que Classinus travaille ou parle, toucher le micro arrête tout (le bouton Arrêter).
+  const etatRef = useRef(etat);
+  etatRef.current = etat;
+  const enregistrementRef = useRef(false);
+  const appuiEnCoursRef = useRef(false);
+  const debutAppuiRef = useRef(0);
+  useEffect(() => {
+    if (etat !== "ecoute") enregistrementRef.current = false;
+  }, [etat]);
+
+  const surAppui = useCallback(async () => {
+    appuiEnCoursRef.current = true;
+    debutAppuiRef.current = Date.now();
+    // Un message audio se réécoutait : toucher le micro l'arrête.
     if (messageEnLectureRef.current) fixerMessageEnLecture(null);
     // Une réponse écrite est en cours : le micro sert d'abord à l'arrêter.
     // Arrêter ne supprime rien de la conversation : seul l'effet de construction en cours disparaît.
     if (ecritureActive) {
       arreterEcriture();
       setOutils([]);
+      appuiEnCoursRef.current = false;
       return;
     }
-    if (sessionRef.current) {
+    // Un enregistrement est en cours (lancé par un toucher) : ce second toucher l'arrête et l'envoie.
+    if (enregistrementRef.current) {
+      enregistrementRef.current = false;
+      sessionRef.current?.terminerParole();
+      return;
+    }
+    // Classinus travaille ou parle : le micro arrête tout.
+    if (sessionRef.current && (etatRef.current === "travail" || etatRef.current === "reponse")) {
       sessionRef.current.fermer();
       setOutils([]);
+      appuiEnCoursRef.current = false;
       return;
     }
-    void ouvrir();
+    if (!sessionRef.current) await ouvrir();
+    const session = sessionRef.current;
+    if (!session) {
+      appuiEnCoursRef.current = false;
+      return;
+    }
+    enregistrementRef.current = true;
+    session.commencerParole();
   }, [ouvrir, ecritureActive, arreterEcriture, fixerMessageEnLecture]);
 
-  const actif = (etat !== "inactif" && etat !== "erreur") || ecritureActive;
+  const surRelache = useCallback(() => {
+    if (!appuiEnCoursRef.current) return;
+    appuiEnCoursRef.current = false;
+    if (!enregistrementRef.current) return;
+    // Maintenu : on a lâché, c'est fini. Un simple toucher (court) laisse l'enregistrement tourner.
+    if (Date.now() - debutAppuiRef.current < 400) return;
+    enregistrementRef.current = false;
+    sessionRef.current?.terminerParole();
+  }, []);
+
+  // Le micro est « actif » quand il enregistre ou que Classinus travaille : une session ouverte au repos ne compte pas.
+  const enregistre = etat === "ecoute";
+  const actif = (etat !== "inactif" && etat !== "erreur" && etat !== "connecte") || ecritureActive;
   const enConnexion = etat === "connexion";
   // Une réponse se prépare ou se lit : la dernière bulle audio de Classinus est déjà là, en préparation.
   const reponseEnCours = etat === "travail" || etat === "reponse" || ecriture.etat === "travail" || ecriture.etat === "reponse";
@@ -630,23 +675,49 @@ export default function PageBambaraClient() {
             />
           )}
         </AnimatePresence>
-        {/* Le micro : un toucher pour parler, un toucher pour arrêter. */}
+        {/* L'indicateur d'enregistrement : il montre que la voix de la personne est en train d'être enregistrée. */}
+        <AnimatePresence initial={false}>
+          {enregistre && (
+            <IndicateurEnregistrementBambara
+              key="enregistrement"
+              niveau={() => sessionRef.current?.niveaux().entree ?? 0}
+              libelle={textes.enregistrement}
+            />
+          )}
+        </AnimatePresence>
+        {/* Le micro : appuyer pour parler (maintenu, on lâche à la fin ; ou un toucher pour lancer et un second pour envoyer). */}
         <div className="pointer-events-auto relative h-16 w-16">
           {actif && !enConnexion && <span className="bb-halo" />}
           <button
             type="button"
-            onClick={basculer}
-            aria-label={actif ? textes.arreter : textes.parler}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture?.(e.pointerId);
+              void surAppui();
+            }}
+            onPointerUp={surRelache}
+            onPointerCancel={surRelache}
+            onKeyDown={(e) => {
+              if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+                e.preventDefault();
+                void surAppui();
+              }
+            }}
+            onKeyUp={(e) => {
+              if (e.key === " " || e.key === "Enter") surRelache();
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+            aria-label={enregistre ? textes.envoyer : actif ? textes.arreter : textes.parler}
             aria-pressed={actif}
-            className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 transition-transform active:scale-95"
+            className="relative flex h-16 w-16 touch-none select-none items-center justify-center rounded-full border-2 transition-transform active:scale-95"
             style={{
               // Une erreur ne se dit pas par une couleur : le micro se vide (fond clair, trait d'encre).
               backgroundColor: erreur ? "var(--bb-fond)" : "var(--bb-encre)",
               color: erreur ? "var(--bb-encre)" : "var(--bb-fond)",
               borderColor: "var(--bb-encre)",
+              WebkitTouchCallout: "none",
             }}
           >
-            {enConnexion ? <Loader2 size={28} className="animate-spin" /> : <Mic size={28} />}
+            {enConnexion ? <Loader2 size={28} className="animate-spin" /> : enregistre ? <Square size={24} fill="currentColor" /> : <Mic size={28} />}
           </button>
           <button
             type="button"

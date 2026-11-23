@@ -33,6 +33,11 @@ type OptionsVoixBambara = {
   surParoleVide?: () => void;
   /** Ce que la voix de Classinus a lu (en entier, ou jusqu'à son arrêt) devient un message audio réécoutable. */
   surReponseAudio?: (message: MessageAudioBambara) => void;
+  /**
+   * Appuyer pour parler (page bambara, 22/11/2026, demande de Bourama, comme WhatsApp) : le micro n'écoute plus tout
+   * seul. La personne lance l'enregistrement (commencerParole) puis l'arrête (terminerParole) quand elle a fini.
+   */
+  pousserPourParler?: boolean;
 };
 
 /**
@@ -43,6 +48,10 @@ type OptionsVoixBambara = {
 export type SessionVoixBambara = SessionGeminiLive & {
   suspendreEcoute: () => void;
   reprendreEcoute: () => void;
+  /** Appuyer pour parler : lance l'enregistrement (état « ecoute »). Sans effet dans l'écoute automatique. */
+  commencerParole: () => void;
+  /** Appuyer pour parler : arrête l'enregistrement et envoie la parole. Rien d'audible : retour au repos. */
+  terminerParole: () => void;
 };
 
 export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<SessionVoixBambara> {
@@ -69,8 +78,22 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
 
     const reprendre = () => {
       if (ferme || occupe || ecouteSuspendue) return;
+      if (options.pousserPourParler) {
+        options.surEtat("connecte");
+        return;
+      }
       options.surEtat("ecoute");
       micro.ecouter();
+    };
+
+    const terminerParole = () => {
+      if (ferme || !options.pousserPourParler) return;
+      if (micro.terminerManuel()) {
+        occupe = true;
+        options.surEtat("travail");
+      } else {
+        options.surEtat("connecte");
+      }
     };
 
     const traiter = async (audio: Blob, mime: string, reperes: ReperesParole) => {
@@ -113,7 +136,11 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
       }
     };
 
-    const micro = await ouvrirMicro({ contexte, surEnregistrement: (audio, mime, reperes) => void traiter(audio, mime, reperes) });
+    const micro = await ouvrirMicro({
+      contexte,
+      surEnregistrement: (audio, mime, reperes) => void traiter(audio, mime, reperes),
+      surLimiteManuelle: terminerParole,
+    });
     options.surEtat("connecte");
     reprendre();
 
@@ -143,6 +170,12 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
         liberer();
         reprendre();
       },
+      commencerParole() {
+        if (ferme || occupe || ecouteSuspendue || !options.pousserPourParler) return;
+        micro.commencerManuel();
+        options.surEtat("ecoute");
+      },
+      terminerParole,
     };
   } catch (e) {
     void contexte.close().catch(() => {});

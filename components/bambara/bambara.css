@@ -122,6 +122,16 @@
   border-color: transparent transparent transparent var(--bb-encre);
 }
 
+/* Le point qui bat pendant l'enregistrement de la voix (IndicateurEnregistrementBambara.tsx). */
+@keyframes bb-point {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+
+.bb-point-enregistrement {
+  animation: bb-point 1s ease-in-out infinite;
+}
+
 .bb-halo {
   position: absolute;
   inset: 0;
@@ -139,6 +149,7 @@
 @media (prefers-reduced-motion: reduce) {
   .bb-clavier { transition: none; }
   .bb-halo { animation: none; }
+  .bb-point-enregistrement { animation: none; }
   .bb-loupe { animation: none; }
   .bb-case::after { animation: none; display: none; }
 }
