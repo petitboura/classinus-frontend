@@ -260,6 +260,9 @@ export function useParcoursBambara({ creer, surTermine }: Options) {
   /** Réécoute la consigne de l'étape en cours. */
   const reecouterConsigne = useCallback(() => {
     const cle: CleTexteParcours = etapeRef.current === "nom" ? "nom_demande" : etapeRef.current === "genre" ? "genre_demande" : "presentation_demande";
+    // Les phrases sont relues à chaque réécoute : un texte changé dans Supabase est lu tout de suite, sans rouvrir le parcours.
+    const anciennes = textesRef.current;
+    textesRef.current = listerTextesParcoursBambara().catch(() => anciennes);
     sequenceRef.current += 1;
     const sequence = sequenceRef.current;
     arreterSons();

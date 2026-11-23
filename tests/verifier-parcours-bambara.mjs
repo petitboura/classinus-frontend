@@ -47,3 +47,14 @@ for (const code of ["BAMBARA_NOM_PARLE_INVALIDE", "BAMBARA_PROFIL_GENRE_INVALIDE
 assert.doesNotMatch(crochet + api + ecran + panneau, / -- /, "pas de double tiret");
 
 console.log("parcours bambara : ok");
+
+// Le système suit les changements : phrases jamais mises en cache, relues à chaque réécoute de la consigne,
+// et la voix du nom passe par la même synthèse que le reste de la page (si la voix change, elle change ici aussi).
+{
+  const api2 = readFileSync(new URL("../lib/parcoursBambara.ts", import.meta.url), "utf8");
+  const crochet2 = readFileSync(new URL("../lib/useParcoursBambara.ts", import.meta.url), "utf8");
+  assert.match(api2, /cache: "no-store"/, "phrases jamais gardées en cache");
+  assert.match(crochet2, /textesRef\.current = listerTextesParcoursBambara\(\)/, "phrases relues à la réécoute");
+  assert.match(crochet2, /import \{ synthetiserVoixBambara, transcrireVoixBambara \} from "\.\/voixBambaraApi"/, "même synthèse que la page");
+  console.log("parcours bambara : suivi des changements ok");
+}

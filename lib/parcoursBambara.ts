@@ -17,7 +17,8 @@ const CLES: readonly CleTexteParcours[] = ["nom_demande", "nom_reecoute", "genre
 
 /** Les phrases du parcours en bambara. Toute erreur donne aucune phrase : le parcours continue sans consigne vocale. */
 export async function listerTextesParcoursBambara(): Promise<TextesParcours> {
-  const reponse = await appelerApi("/api/bambara/parcours/textes?langue=bm");
+  // Jamais de copie gardée par le navigateur : si le texte change dans Supabase, la voix lit le nouveau texte.
+  const reponse = await appelerApi("/api/bambara/parcours/textes?langue=bm", { cache: "no-store" });
   const brut = reponse?.textes;
   const textes: TextesParcours = {};
   if (brut && typeof brut === "object") {
