@@ -136,8 +136,8 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className={"flex w-72 max-w-[85%] items-center gap-3 rounded-2xl border px-3 py-2 " + (cote === "droite" ? "self-end" : "self-start")}
-      style={{ borderColor: "var(--bb-trait)", backgroundColor: cote === "droite" ? "var(--bb-voile)" : "var(--bb-fond)" }}
+      className={"flex w-72 max-w-[85%] items-center gap-3 rounded-2xl px-3 py-2 " + (cote === "droite" ? "self-end" : "self-start")}
+      style={{ backgroundColor: cote === "droite" ? "var(--bb-voile)" : "var(--bb-fond)" }}
     >
       <audio
         ref={audioRef}

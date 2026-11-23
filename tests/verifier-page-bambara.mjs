@@ -306,3 +306,10 @@ console.log("page bambara : boutons du haut vérifiés");
   assert.match(bulle, /aria-busy="true"/, "l'attente est signalée aux lecteurs d'écran");
   console.log("page bambara : onde d'attente vérifiée");
 }
+
+// Les messages audio n'ont plus de cadre (23/11/2026, demande de Bourama).
+{
+  const bulle = await lire("../components/bambara/BulleAudioBambara.tsx");
+  assert.doesNotMatch(bulle, /rounded-2xl border|borderColor: "var\(--bb-trait\)"/, "pas de cadre autour des messages audio");
+  console.log("page bambara : messages audio sans cadre vérifiés");
+}
