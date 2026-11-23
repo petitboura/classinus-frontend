@@ -84,6 +84,7 @@ const TEXTES = {
     parametres: "Paramètres", afficherTexteReponse: "Afficher le texte des réponses", nouvelleConversation: "Nouvelle conversation", historique: "Historique", gardes: "Gardés",
     ouvrirMenu: "Ouvrir les boutons", fermerMenu: "Fermer les boutons", ouvrirConversation: "Ouvrir la conversation",
     videos: "Vidéos", images: "Images", garder: "Garder", retirerGarde: "Ne plus garder",
+    theme: "Thème", themeSysteme: "Système", themeClair: "Clair", themeSombre: "Sombre", afficherBoutonClavier: "Afficher le bouton clavier",
   },
   en: {
     parler: "Speak", arreter: "Stop", enregistrement: "Recording your voice", lire: "Play the video", fermerVideo: "Close the video", ouvrirImage: "View the image", erreur: "Something went wrong.",
@@ -93,6 +94,7 @@ const TEXTES = {
     parametres: "Settings", afficherTexteReponse: "Show the text of the answers", nouvelleConversation: "New conversation", historique: "History", gardes: "Kept",
     ouvrirMenu: "Open the buttons", fermerMenu: "Close the buttons", ouvrirConversation: "Open the conversation",
     videos: "Videos", images: "Images", garder: "Keep", retirerGarde: "Remove from kept",
+    theme: "Theme", themeSysteme: "System", themeClair: "Light", themeSombre: "Dark", afficherBoutonClavier: "Show the keyboard button",
   },
 } as const;
 
@@ -116,8 +118,13 @@ export default function PageBambaraClient() {
   const [champOuvert, setChampOuvert] = useState(false);
   // Profils, historique et éléments gardés du compte (lib/useBambaraEspace.ts).
   const espace = useBambaraEspace(connecte);
-  // Réglages de la page (23/11/2026) : afficher ou non le texte des réponses, non par défaut.
+  // Réglages de la page (23/11/2026) : le texte des réponses (non par défaut), le thème et le bouton clavier (masqué par défaut).
   const reglages = useReglagesBambara();
+  // Le bouton clavier est masqué dans les paramètres : le champ d'écriture ne reste pas ouvert sans lui.
+  const { afficherBoutonClavier } = reglages;
+  useEffect(() => {
+    if (!afficherBoutonClavier) setChampOuvert(false);
+  }, [afficherBoutonClavier]);
   const profilIdRef = useRef<string | null>(null);
   profilIdRef.current = espace.profilId;
   // Le premier message de la conversation est gardé une seule fois, pour l'historique ; le vocal de la demande
@@ -760,20 +767,33 @@ export default function PageBambaraClient() {
           >
             {enConnexion ? <Loader2 size={28} className="animate-spin" /> : enregistre ? <Square size={24} fill="currentColor" /> : <Mic size={28} />}
           </button>
-          <button
-            type="button"
-            onClick={() => setChampOuvert((ouvert) => !ouvert)}
-            aria-label={champOuvert ? textes.masquerChamp : textes.ecrire}
-            aria-pressed={champOuvert}
-            className="absolute left-full top-1/2 ml-5 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border transition-transform active:scale-95"
-            style={{
-              borderColor: champOuvert ? "var(--bb-encre)" : "var(--bb-trait-fort)",
-              backgroundColor: champOuvert ? "var(--bb-encre)" : "var(--bb-fond)",
-              color: champOuvert ? "var(--bb-fond)" : "var(--bb-encre)",
-            }}
-          >
-            <Keyboard size={20} />
-          </button>
+          {/* Le bouton clavier n'est là que si la personne l'a activé dans les paramètres (masqué par défaut). */}
+          <span className="absolute left-full top-1/2 ml-5 -translate-y-1/2">
+            <AnimatePresence initial={false}>
+              {afficherBoutonClavier && (
+                <motion.button
+                  key="clavier"
+                  type="button"
+                  onClick={() => setChampOuvert((ouvert) => !ouvert)}
+                  aria-label={champOuvert ? textes.masquerChamp : textes.ecrire}
+                  aria-pressed={champOuvert}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border transition-colors duration-200"
+                  style={{
+                    borderColor: champOuvert ? "var(--bb-encre)" : "var(--bb-trait-fort)",
+                    backgroundColor: champOuvert ? "var(--bb-encre)" : "var(--bb-fond)",
+                    color: champOuvert ? "var(--bb-fond)" : "var(--bb-encre)",
+                  }}
+                >
+                  <Keyboard size={20} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </span>
         </div>
       </div>
 

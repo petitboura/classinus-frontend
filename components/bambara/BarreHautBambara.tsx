@@ -25,6 +25,11 @@ import type { ReglagesBambara } from "@/lib/reglagesBambara";
 export type TextesBarreBambara = {
   parametres: string;
   afficherTexteReponse: string;
+  afficherBoutonClavier: string;
+  theme: string;
+  themeSysteme: string;
+  themeClair: string;
+  themeSombre: string;
   nouvelleConversation: string;
   historique: string;
   gardes: string;
@@ -196,6 +201,11 @@ export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleC
                 afficherTexteReponse={reglages.afficherTexteReponse}
                 changerAfficherTexteReponse={reglages.changerAfficherTexteReponse}
                 libelleAfficherTexte={textes.afficherTexteReponse}
+                afficherBoutonClavier={reglages.afficherBoutonClavier}
+                changerAfficherBoutonClavier={reglages.changerAfficherBoutonClavier}
+                libelleAfficherBoutonClavier={textes.afficherBoutonClavier}
+                libelleTheme={textes.theme}
+                libellesTheme={{ systeme: textes.themeSysteme, clair: textes.themeClair, sombre: textes.themeSombre }}
               />
             )}
             {panneau === "historique" && (
