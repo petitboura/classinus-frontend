@@ -1,9 +1,10 @@
 "use client";
 
 // Page bambara : demande écrite au clavier. Le texte part à l'IA par le même chemin que la parole
-// transcrite (lib/pageBambara.ts), la réponse s'affiche en texte au fur et à mesure, puis elle est
-// lue à voix haute par la voix bambara, comme avec le micro. Si la voix n'est pas branchée côté
-// serveur ou si elle échoue, le texte reste affiché.
+// transcrite (lib/pageBambara.ts), la réponse s'affiche en texte au fur et à mesure et elle est
+// lue à voix haute par la voix bambara, comme avec le micro, phrase par phrase pendant qu'elle s'écrit
+// (lib/voixBambaraFlux.ts). Si la voix n'est pas branchée côté serveur ou si elle échoue, le texte
+// reste affiché.
 //
 // Le son n'est autorisé par le navigateur qu'à la suite d'un geste : le contexte audio est donc créé
 // au moment de l'envoi, pas plus tard.
@@ -13,8 +14,9 @@ import { messageDepuisTampons, type MessageAudioBambara } from "./audioMessageBa
 import { messageErreurVoix } from "./erreurs";
 import { demanderPageBambara, type RappelsPageBambara } from "./pageBambara";
 import { lireEtatVoixBambara, synthetiserVoixBambara } from "./voixBambaraApi";
+import { creerLectureEnFlux, type LectureEnFlux } from "./voixBambaraFlux";
 import { creerLecteurBambara, type LecteurBambara } from "./voixBambaraLecture";
-import { decouperEnMorceaux, nettoyerPourVoix } from "./voixBambaraTexte";
+import { nettoyerPourVoix } from "./voixBambaraTexte";
 
 export type EtatEcritureBambara = "inactif" | "travail" | "reponse";
 
@@ -29,6 +31,8 @@ type Options = {
   surAudio?: (idTour: string, message: MessageAudioBambara) => void;
   /** Les identifiants des messages sauvegardés pour le tour donné, une fois l'échange terminé (pour garder les voix). */
   surIds?: (idTour: string, ids: Parameters<NonNullable<RappelsPageBambara["surIds"]>>[0]) => void;
+  /** La demande est finie (réponse lue, coupée ou en échec), après `surAudio` : la page y envoie au serveur les sons à garder. */
+  surFinTour?: (idTour: string) => void;
   /** Attendue avant de lire la réponse à voix haute : la page y fait patienter la lecture tant qu'un message audio se réécoute. */
   avantLecture?: () => Promise<void>;
   surOutilsEnCours: RappelsPageBambara["surOutilsEnCours"];
@@ -50,7 +54,7 @@ export function useEcritureBambara(options: Options) {
   const contexteRef = useRef<AudioContext | null>(null);
 
   const liberer = useCallback(() => {
-    lecteurRef.current?.interrompre();
+    lecteurRef.current?.arreter();
     lecteurRef.current = null;
     const contexte = contexteRef.current;
     contexteRef.current = null;
@@ -74,33 +78,39 @@ export function useEcritureBambara(options: Options) {
     lecteurRef.current = lecteur;
     setEtat("travail");
 
+    const tampons: AudioBuffer[] = [];
+    let lecture: LectureEnFlux | null = null;
     try {
       const voix = await lireEtatVoixBambara();
+      // La voix lit chaque phrase dès qu'elle est terminée, pendant que l'IA écrit la suite (23/11/2026, demande de
+      // Bourama). La première phrase attend la fin d'une réécoute en cours : les deux sons ne se mélangent pas.
+      lecture = voix.disponible
+        ? creerLectureEnFlux({ lecteur, texteMax: voix.texte_max, surTampon: (tampon) => tampons.push(tampon), avantJouer: o.avantLecture })
+        : null;
       const reponse = await demanderPageBambara(question, o.conversationId(), {
         surOutilsEnCours: (noms) => { if (courante()) o.surOutilsEnCours(noms); },
         surVisuels: (visuels) => { if (courante()) o.surVisuels(visuels); },
-        surTexte: (cumule) => { if (courante()) o.surTexte(nettoyerPourVoix(cumule)); },
+        surTexte: (cumule) => {
+          if (!courante()) return;
+          o.surTexte(nettoyerPourVoix(cumule));
+          lecture?.alimenter(cumule);
+        },
         surIds: (ids) => { if (courante()) o.surIds?.(idTour, ids); },
       });
       if (!courante()) return;
       o.surTexte(nettoyerPourVoix(reponse));
-      if (!voix.disponible) return;
-      const morceaux = decouperEnMorceaux(nettoyerPourVoix(reponse), voix.texte_max);
-      if (morceaux.length === 0) return;
-      await o.avantLecture?.();
-      if (!courante()) return;
+      if (!lecture) return;
+      // Le travail est fini : il ne reste qu'à finir de lire (l'état « travail » dure tant que la demande tourne).
       setEtat("reponse");
-      const tampons: AudioBuffer[] = [];
-      try {
-        await lecteur.lire(morceaux, (tampon) => tampons.push(tampon));
-      } finally {
-        // Même coupée par le bouton Arrêter, la partie déjà lue reste réécoutable.
-        const lu = messageDepuisTampons(tampons);
-        if (lu) o.surAudio?.(idTour, lu);
-      }
+      await lecture.terminer(reponse);
     } catch (e) {
+      lecture?.annuler();
       if (courante()) o.surErreur(messageErreurVoix(e));
     } finally {
+      // Même coupée par le bouton Arrêter, la partie déjà lue reste réécoutable.
+      const lu = messageDepuisTampons(tampons);
+      if (lu) o.surAudio?.(idTour, lu);
+      o.surFinTour?.(idTour);
       if (courante()) {
         liberer();
         actifRef.current = false;

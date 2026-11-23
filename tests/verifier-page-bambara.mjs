@@ -39,6 +39,28 @@ assert.equal(vs[0].idVideo, "zzzzzzzzzzz");
 assert.equal(m.fusionnerVisuels(v1, m.extraireVisuelsDuTexte(t1)).length, 1);
 assert.equal(m.fusionnerVisuels(v1, v2).length, 3);
 
+// Visuels pendant que la réponse s'écrit (23/11/2026, demande de Bourama) : une adresse n'est lue qu'une fois fermée par un
+// espace ou un retour à la ligne, jamais à moitié écrite ; à tout moment, ce qui est montré fait partie du résultat final.
+assert.deepEqual(m.extraireVisuelsStables("Voici https://youtu.be/abcdefghijk"), [], "adresse pas encore fermée");
+assert.equal(m.extraireVisuelsStables("Voici https://youtu.be/abcdefghijk ").length, 1, "adresse fermée par un espace");
+assert.deepEqual(m.extraireVisuelsStables("![mon chat](https://exemple.org/chat.png)"), [], "image markdown pas encore fermée par un espace");
+const imageFermee = m.extraireVisuelsStables("![mon chat](https://exemple.org/chat.png)\n");
+assert.equal(imageFermee.length, 1);
+assert.equal(imageFermee[0].titre, "mon chat", "le texte alternatif de l'image est gardé");
+assert.deepEqual(m.extraireVisuelsStables("![mon chat](https://exemple.org/chat.png"), [], "image markdown coupée");
+assert.deepEqual(m.extraireVisuelsStables(""), []);
+for (const texte of [t1, t2, "Regarde ![un chat](https://exemple.org/chat.png) puis https://exemple.org/chien.jpg?w=300&h=200 voilà."]) {
+  const finaux = new Set(m.extraireVisuelsDuTexte(texte).map((v) => v.id));
+  const vus = new Set();
+  for (let i = 0; i <= texte.length; i += 1) {
+    for (const visuel of m.extraireVisuelsStables(texte.slice(0, i))) {
+      assert.ok(finaux.has(visuel.id), "un visuel montré en cours d'écriture est dans le résultat final : " + visuel.url + " (au caractère " + i + ")");
+      vus.add(visuel.id);
+    }
+  }
+  assert.ok(vus.size > 0, "au moins un visuel apparaît avant la fin de la réponse");
+}
+
 // Conversation : modifier un tour ne touche jamais aux autres tours ni à la liste d'origine.
 const toursDepart = [{ id: "a", question: "", texte: "", visuels: [] }, { id: "b", question: "q", texte: "t", visuels: [] }];
 const toursApres = m.modifierTour(toursDepart, "a", (t) => ({ ...t, texte: "x" }));
@@ -240,6 +262,8 @@ assert.doesNotMatch(api, /surVisuels\(visuelsDepuisImages/);
 assert.doesNotMatch(api, /surVisuels\(visuelsDepuisVideos/);
 assert.match(api, /candidats\.get\(visuel\.url\)/);
 assert.match(api, /extraireVisuelsDuTexte\(reponse\)/);
+assert.match(api, /extraireVisuelsStables\(reponse\)/, "les visuels s'affichent pendant que la réponse s'écrit");
+assert.match(api, /\.filter\(\(visuel\) => !montres\.has\(visuel\.id\)\)/, "un visuel déjà montré n'est pas rappelé");
 assert.match(client, /texte: nettoyerPourVoix\(reponse\)/);
 assert.match(client, /bullePreparee/);
 assert.match(bulleAudio, /enPreparation/);
@@ -253,7 +277,16 @@ const hookEspace = await lire("../lib/useBambaraEspace.ts");
 assert.match(pageClient, /<BarreHautBambara/, "la rangée de boutons est dans la page");
 assert.match(pageClient, /garde=\{gardeUi\}/, "les cartes reçoivent le cœur");
 assert.match(pageClient, /garderPremierMessage\(question, null\)/, "le premier message écrit est gardé");
-assert.match(pageClient, /garderPremierMessage\(question, audioParoleRef\.current\)/, "le premier vocal est gardé avec sa transcription");
+// Le premier vocal (jusqu'à 2 Mo) n'est plus envoyé en même temps que la réponse (23/11/2026, demande de Bourama) : il est
+// gardé avec sa transcription mais ne part qu'à la fin du tour, avant tout autre premier message ou changement de conversation.
+assert.match(pageClient, /mettreEnAttentePremierMessage\(question, audioParoleRef\.current\)/, "le premier vocal est gardé avec sa transcription");
+assert.doesNotMatch(pageClient, /garderPremierMessage\(question, audioParoleRef\.current\)/, "le premier vocal ne part plus pendant la réponse");
+assert.match(pageClient, /surFinTour: \(\) => \{\s*envoyerPremierMessageEnAttente\(\);/, "le premier vocal part à la fin du tour parlé");
+assert.match(pageClient, /envoyerPremierMessageEnAttente\(\);\s*garderPremierMessage\(question, null\)/, "un premier message écrit ne passe pas devant un vocal en attente");
+assert.match(pageClient, /const nouvelleConversation = useCallback\(\(\) => \{\s*\/\/[^\n]*\n\s*envoyerPremierMessageEnAttente\(\)/, "le « + » envoie d'abord le premier message en attente");
+assert.match(pageClient, /if \(!toursFinisRef\.current\.has\(idTour\)\) return;/, "les sons du tour ne partent qu'une fois le tour fini");
+assert.match(pageClient, /surFinTour: finirTour/, "la demande écrite finit son tour aussi");
+assert.match(pageClient, /alimenter\(cumule\)/, "la voix reçoit le texte à mesure qu'il arrive");
 assert.match(pageClient, /conversationIdRef\.current = nouvelIdentifiant\(\)/, "le « + » ouvre une nouvelle conversation");
 assert.match(barreHaut, /nouveauProfil[\s\S]*nouvelleConversation[\s\S]*historique[\s\S]*gardes/, "ordre des boutons : profil, +, historique, gardés");
 assert.match(hookEspace, /listerGardesBambara\(profilId\)/, "les gardés suivent le profil choisi");

@@ -13,9 +13,9 @@ import { messageDepuisEnregistrement, messageDepuisTampons, type MessageAudioBam
 import { messageErreurVoix } from "./erreurs";
 import type { SessionGeminiLive } from "./geminiLive";
 import { lireEtatVoixBambara, synthetiserVoixBambara, transcrireVoixBambara } from "./voixBambaraApi";
+import { creerLectureEnFlux, type LectureEnFlux } from "./voixBambaraFlux";
 import { creerLecteurBambara } from "./voixBambaraLecture";
 import { ouvrirMicro, type ReperesParole } from "./voixBambaraMicro";
-import { decouperEnMorceaux, nettoyerPourVoix } from "./voixBambaraTexte";
 
 /** Valeur envoyée avec chaque message du mode bambara : le serveur y répond en bambara oral. */
 export const CLIENT_VOIX_BAMBARA = "voix_bambara";
@@ -25,14 +25,23 @@ type EtatVoix = "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "s
 type OptionsVoixBambara = {
   surEtat: (etat: EtatVoix) => void;
   surErreur: (message: string) => void;
-  /** Dépose la parole transcrite dans le chat et rend la réponse écrite de Classinus. */
-  surDemande: (question: string) => Promise<string>;
+  /**
+   * Dépose la parole transcrite dans le chat et rend la réponse écrite de Classinus. `alimenter` (23/11/2026, demande
+   * de Bourama) est à appeler avec le texte brut cumulé à mesure qu'il arrive : la voix commence alors dès la première
+   * phrase terminée. Sans l'appeler, la réponse est lue en entier à la fin, comme avant.
+   */
+  surDemande: (question: string, alimenter: (brutCumule: string) => void) => Promise<string>;
   /** La personne vient de finir de parler : sa parole est prête comme message audio, avant même la transcription. */
   surParole?: (message: MessageAudioBambara) => void;
   /** Rien de compris dans cette parole (bruit) : le message audio annoncé juste avant est à retirer. */
   surParoleVide?: () => void;
   /** Ce que la voix de Classinus a lu (en entier, ou jusqu'à son arrêt) devient un message audio réécoutable. */
   surReponseAudio?: (message: MessageAudioBambara) => void;
+  /**
+   * La demande est finie (réponse lue, coupée ou en échec), après `surReponseAudio`. La page y envoie au serveur les sons
+   * à garder (23/11/2026, demande de Bourama) : plus en même temps que la réponse, qu'ils ralentissaient.
+   */
+  surFinTour?: () => void;
   /**
    * Appuyer pour parler (page bambara, 22/11/2026, demande de Bourama, comme WhatsApp) : le micro n'écoute plus tout
    * seul. La personne lance l'enregistrement (commencerParole) puis l'arrête (terminerParole) quand elle a fini.
@@ -101,6 +110,7 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
       occupe = true;
       options.surEtat("travail");
       const tampons: AudioBuffer[] = [];
+      let lecture: LectureEnFlux | null = null;
       try {
         // La transcription part tout de suite ; pendant ce temps le message audio est préparé pour l'écran.
         const transcription = transcrireVoixBambara(audio, mime);
@@ -114,23 +124,29 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
           options.surParoleVide?.();
           return;
         }
-        const reponse = await options.surDemande(texte);
+        // La voix lit chaque phrase dès qu'elle est terminée, pendant que l'IA écrit la suite (23/11/2026, demande de
+        // Bourama). La première phrase attend la fin d'une réécoute en cours : les deux sons ne se mélangent pas.
+        lecture = creerLectureEnFlux({
+          lecteur,
+          texteMax: etat.texte_max,
+          surTampon: (tampon) => tampons.push(tampon),
+          avantJouer: async () => {
+            while (ecouteSuspendue && !ferme) await new Promise<void>((resoudre) => { reveil = resoudre; });
+          },
+        });
+        const reponse = await options.surDemande(texte, lecture.alimenter);
         if (ferme) return;
-        const morceaux = decouperEnMorceaux(nettoyerPourVoix(reponse), etat.texte_max);
-        if (morceaux.length === 0) return;
-        while (ecouteSuspendue && !ferme) await new Promise<void>((resoudre) => { reveil = resoudre; });
-        if (ferme) return;
+        // Le travail est fini : il ne reste qu'à finir de lire (l'état « travail » dure tant que la demande tourne).
         options.surEtat("reponse");
-        try {
-          await lecteur.lire(morceaux, (tampon) => tampons.push(tampon));
-        } finally {
-          // Même coupée par le bouton Arrêter, la partie déjà lue reste réécoutable.
-          const lu = messageDepuisTampons(tampons);
-          if (lu) options.surReponseAudio?.(lu);
-        }
+        await lecture.terminer(reponse);
       } catch (e) {
+        lecture?.annuler();
         if (!ferme) options.surErreur(messageErreurVoix(e));
       } finally {
+        // Même coupée par le bouton Arrêter, la partie déjà lue reste réécoutable.
+        const lu = messageDepuisTampons(tampons);
+        if (lu) options.surReponseAudio?.(lu);
+        options.surFinTour?.();
         occupe = false;
         reprendre();
       }
@@ -150,7 +166,7 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
         if (ferme) return;
         ferme = true;
         liberer();
-        lecteur.interrompre();
+        lecteur.arreter();
         micro.fermer();
         void contexte.close().catch(() => {});
         options.surEtat("ferme");
