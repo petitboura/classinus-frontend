@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
+import { estHoteMaame } from "@/lib/maame";
 
 // Ajouté le 09/08 (Bourama, priorité #2 après le correctif de la barre
 // latérale) : jusqu'ici BoutonInstaller.tsx et useNotificationsPush.ts
@@ -53,7 +54,35 @@ import { headers } from "next/headers";
 // /Android.*Mobile/i (et non simplement /Android/i) pour ne viser que
 // les téléphones -- les tablettes Android n'incluent pas le token
 // "Mobile" dans leur User-Agent et gardent donc le PWA, comme le PC.
+//
+// Maame (23/11/2026, demande de Bourama) : sur l'adresse de Maame, le manifeste est celui de Maame (nom, icônes en noir et
+// blanc, fond blanc) et l'installation est toujours proposée, y compris sur Android mobile : Maame n'a pas d'appli native,
+// la PWA est sa seule façon d'être installée. Voir lib/maame.ts.
+function manifesteMaame(): MetadataRoute.Manifest {
+  return {
+    id: "/",
+    name: "Maame",
+    short_name: "Maame",
+    description: "Parle, Maame te répond.",
+    lang: "fr",
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+    orientation: "portrait",
+    background_color: "#ffffff",
+    theme_color: "#ffffff",
+    icons: [
+      { src: "/maame/icone-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/maame/icone-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/maame/icone-192-maskable.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: "/maame/icone-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  };
+}
+
 export default function manifest(): MetadataRoute.Manifest {
+  if (process.env.CAPACITOR_BUILD !== "true" && estHoteMaame(headers().get("host"))) return manifesteMaame();
+
   // headers() est incompatible avec l'export statique (build:capacitor) :
   // son seul appel fait planter tout l'export ("couldn't be rendered
   // statically because it used headers"), constaté le 11/09/2026. Sans

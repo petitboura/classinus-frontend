@@ -60,9 +60,26 @@ const redirectionsWeb =
         },
       };
 
+// Maame (23/11/2026, demande de Bourama) : sur l'adresse de Maame, la racine "/" ouvre directement la page
+// bambara, sans rien d'autre de Classinus. Le début de l'adresse doit rester identique à DEBUT_HOTE_MAAME
+// (lib/maame.ts). Ignoré dans l'export statique Capacitor, qui ne gère pas les réécritures.
+const reecrituresWeb =
+  process.env.CAPACITOR_BUILD === "true"
+    ? {}
+    : {
+        async rewrites() {
+          return {
+            beforeFiles: [
+              { source: "/", has: [{ type: "host", value: "maame\\..*" }], destination: "/bambara" },
+            ],
+          };
+        },
+      };
+
 const nextConfig = {
   ...(process.env.CAPACITOR_BUILD === "true" ? { output: "export" } : {}),
   ...redirectionsWeb,
+  ...reecrituresWeb,
   // Heure de construction (millisecondes), lue par lib/miseAJourOta.ts pour
   // savoir si un bundle OTA publié est plus récent que le code qui tourne.
   // Le workflow .github/workflows/ota.yml la fixe lui-même pour qu'elle soit

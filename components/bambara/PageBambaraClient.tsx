@@ -47,8 +47,9 @@ import type { MessageAudioBambara } from "@/lib/audioMessageBambara";
 import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
+import { estMaameDansNavigateur } from "@/lib/maame";
 import { demanderPageBambara } from "@/lib/pageBambara";
-import { effetsActifs, effetsAffiches, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type EffetConstruction as EffetOutil, type TourBambara } from "@/lib/pageBambaraVisuels";
+import { effetsActifs, effetsAffiches, fusionnerVisuels, modifierTour, retirerTour, visuelsDepuisMessageGarde, type EffetConstruction as EffetOutil, type TourBambara } from "@/lib/pageBambaraVisuels";
 import {
   enregistrerAudioMessageBambara,
   enregistrerPremierMessageBambara,
@@ -109,6 +110,8 @@ export default function PageBambaraClient() {
   const [connecte, setConnecte] = useState(false);
   const [etat, setEtat] = useState<EtatVoixDirecte>("inactif");
   const [erreur, setErreur] = useState<string | null>(null);
+  // Sur Maame, le logo prend la place de l'icône du bouton du haut (page chargée côté navigateur seulement, window existe).
+  const surMaame = useMemo(() => estMaameDansNavigateur(), []);
   const [tours, setTours] = useState<TourBambara[]>([]);
   const [outils, setOutils] = useState<string[]>([]);
   const [champOuvert, setChampOuvert] = useState(false);
@@ -141,6 +144,8 @@ export default function PageBambaraClient() {
   const ouvertureEnCoursRef = useRef(false);
   const conversationIdRef = useRef<string>("");
   if (!conversationIdRef.current) conversationIdRef.current = nouvelIdentifiant();
+  // La conversation affichée, pour la montrer dans l'historique (demande de Bourama du 23/11/2026).
+  const [idConversationCourante, setIdConversationCourante] = useState<string>(() => conversationIdRef.current);
 
   // Un message audio démarre (identifiant) ou s'arrête (null). À l'arrêt, ce qui attendait la fin de la réécoute repart.
   const fixerMessageEnLecture = useCallback((id: string | null) => {
@@ -278,18 +283,35 @@ export default function PageBambaraClient() {
     zone.scrollTo({ top: zone.scrollHeight, behavior: reduit ? "auto" : "smooth" });
   }, [tours, outils]);
 
-  // Page réservée aux utilisateurs connectés : sans session, retour à la connexion.
+  // Page réservée aux utilisateurs connectés : sans session, retour à la connexion. Sur Maame (lib/maame.ts), il n'y a ni
+  // inscription ni connexion : au premier passage, un compte anonyme est créé en silence et gardé sur le téléphone, la
+  // page s'ouvre donc directement. Si la création échoue, la page reste ouverte avec le message d'erreur habituel.
   useEffect(() => {
     let annule = false;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (annule) return;
-      if (data.session) setConnecte(true);
-      else router.replace("/connexion");
-    });
+    void supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (annule) return;
+        if (data.session) {
+          setConnecte(true);
+          return;
+        }
+        if (!estMaameDansNavigateur()) {
+          router.replace("/connexion");
+          return;
+        }
+        const { data: anonyme, error } = await supabase.auth.signInAnonymously();
+        if (annule) return;
+        if (error || !anonyme.session) setErreur(TEXTES[locale].erreur);
+        else setConnecte(true);
+      })
+      .catch(() => {
+        if (!annule) setErreur(TEXTES[locale].erreur);
+      });
     return () => {
       annule = true;
     };
-  }, [router]);
+  }, [router, locale]);
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 
@@ -352,6 +374,7 @@ export default function PageBambaraClient() {
     audioParoleRef.current = null;
     premierMessageGardeRef.current = false;
     conversationIdRef.current = nouvelIdentifiant();
+    setIdConversationCourante(conversationIdRef.current);
     setTours([]);
     setOutils([]);
     setErreur(null);
@@ -390,7 +413,7 @@ export default function PageBambaraClient() {
         } else {
           const dernier = reconstruits[reconstruits.length - 1];
           const texte = nettoyerPourVoix(message.content);
-          const visuels = extraireVisuelsDuTexte(message.content);
+          const visuels = visuelsDepuisMessageGarde(message.content, message.meta);
           if (dernier && !dernier.brut) {
             dernier.texte = texte;
             dernier.brut = message.content;
@@ -414,6 +437,7 @@ export default function PageBambaraClient() {
         reconstruits[0].question = "";
       }
       conversationIdRef.current = conversation.id;
+      setIdConversationCourante(conversation.id);
       premierMessageGardeRef.current = true;
       // Ces voix sont déjà gardées : elles ne repartent pas au serveur.
       for (const audio of listeAudios) {
@@ -751,10 +775,12 @@ export default function PageBambaraClient() {
         textes={textes}
         surNouvelleConversation={nouvelleConversation}
         surOuvrirConversation={ouvrirConversation}
+        idConversationCourante={idConversationCourante}
         messageEnLecture={messageEnLecture}
         changerMessageEnLecture={changerMessageEnLecture}
         videoEnLecture={videoEnLecture}
         changerVideoEnLecture={changerVideoEnLecture}
+        logoMaame={surMaame}
       />
 
       {/* En bas, par dessus le contenu : le champ d'écriture (caché par défaut), puis le micro avec le petit bouton clavier

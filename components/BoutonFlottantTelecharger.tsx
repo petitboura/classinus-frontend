@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { useDeplacable } from "@/lib/useDeplacable";
+import { estMaameDansNavigateur } from "@/lib/maame";
 
 // Créé le 29/08/2026, mission Bourama : rendre l'appli téléchargeable hors
 // Play Store. Remplace les liens texte dispersés (page connexion, Paramètres)
@@ -33,6 +34,8 @@ export function BoutonFlottantTelecharger() {
     async function verifier() {
       try {
         if (!/Android/i.test(navigator.userAgent)) return;
+        // Maame (23/11/2026) : le bouton propose l'appli Classinus, il n'a rien à faire dans Maame.
+        if (estMaameDansNavigateur()) return;
 
         const { Capacitor } = await import("@capacitor/core");
         if (annule) return;
