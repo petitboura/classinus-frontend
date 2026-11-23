@@ -5,6 +5,7 @@
 // les barres avance ou recule), et la durée. Il sert pour ce que dit la personne (bulle à droite) et pour
 // la voix de Classinus (bulle à gauche). Une seule bulle joue à la fois dans toute la conversation : la page
 // garde l'identifiant de celle qui joue (`idEnLecture`) et chaque bulle se met en pause quand ce n'est plus la sienne.
+// Sans fond ni cadre (24/11/2026, demande de Bourama) : ni cercle derrière le bouton, ni encadré autour du message.
 // Noir et blanc seulement : les couleurs viennent de .bb-page (bambara.css).
 
 import { motion } from "framer-motion";
@@ -136,8 +137,7 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className={"flex w-72 max-w-[85%] items-center gap-3 rounded-2xl px-3 py-2 " + (cote === "droite" ? "self-end" : "self-start")}
-      style={{ backgroundColor: cote === "droite" ? "var(--bb-voile)" : "var(--bb-fond)" }}
+      className={"flex w-72 max-w-[85%] items-center gap-3 px-3 py-2 " + (cote === "droite" ? "self-end" : "self-start")}
     >
       <audio
         ref={audioRef}
@@ -159,10 +159,10 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
         disabled={enPreparation ? !lectureDirecte : !adresse}
         aria-label={enCours || lectureDirecte ? libelleMettreEnPause : libelleEcouter}
         aria-pressed={enCours || lectureDirecte}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-40"
-        style={{ backgroundColor: "var(--bb-encre)", color: "var(--bb-fond)" }}
+        className="flex h-10 w-10 shrink-0 items-center justify-center transition-transform active:scale-95 disabled:opacity-40"
+        style={{ color: "var(--bb-encre)" }}
       >
-        {enCours || lectureDirecte ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+        {enCours || lectureDirecte ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-0.5" />}
       </button>
       <div
         onClick={placer}
