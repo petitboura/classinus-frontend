@@ -49,7 +49,7 @@ import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { estMaameDansNavigateur } from "@/lib/maame";
 import { demanderPageBambara } from "@/lib/pageBambara";
-import { effetsActifs, effetsAffiches, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type EffetConstruction as EffetOutil, type TourBambara } from "@/lib/pageBambaraVisuels";
+import { effetsActifs, effetsAffiches, fusionnerVisuels, modifierTour, retirerTour, visuelsDepuisMessageGarde, type EffetConstruction as EffetOutil, type TourBambara } from "@/lib/pageBambaraVisuels";
 import {
   enregistrerAudioMessageBambara,
   enregistrerPremierMessageBambara,
@@ -141,6 +141,8 @@ export default function PageBambaraClient() {
   const ouvertureEnCoursRef = useRef(false);
   const conversationIdRef = useRef<string>("");
   if (!conversationIdRef.current) conversationIdRef.current = nouvelIdentifiant();
+  // La conversation affichée, pour la montrer dans l'historique (demande de Bourama du 23/11/2026).
+  const [idConversationCourante, setIdConversationCourante] = useState<string>(() => conversationIdRef.current);
 
   // Un message audio démarre (identifiant) ou s'arrête (null). À l'arrêt, ce qui attendait la fin de la réécoute repart.
   const fixerMessageEnLecture = useCallback((id: string | null) => {
@@ -326,6 +328,7 @@ export default function PageBambaraClient() {
     audioParoleRef.current = null;
     premierMessageGardeRef.current = false;
     conversationIdRef.current = nouvelIdentifiant();
+    setIdConversationCourante(conversationIdRef.current);
     setTours([]);
     setOutils([]);
     setErreur(null);
@@ -363,7 +366,7 @@ export default function PageBambaraClient() {
         } else {
           const dernier = reconstruits[reconstruits.length - 1];
           const texte = nettoyerPourVoix(message.content);
-          const visuels = extraireVisuelsDuTexte(message.content);
+          const visuels = visuelsDepuisMessageGarde(message.content, message.meta);
           if (dernier && !dernier.texte && dernier.visuels.length === 0) {
             dernier.texte = texte;
             dernier.visuels = visuels;
@@ -386,6 +389,7 @@ export default function PageBambaraClient() {
         reconstruits[0].question = "";
       }
       conversationIdRef.current = conversation.id;
+      setIdConversationCourante(conversation.id);
       premierMessageGardeRef.current = true;
       // Ces voix sont déjà gardées : elles ne repartent pas au serveur.
       for (const audio of listeAudios) {
@@ -682,6 +686,7 @@ export default function PageBambaraClient() {
         textes={textes}
         surNouvelleConversation={nouvelleConversation}
         surOuvrirConversation={ouvrirConversation}
+        idConversationCourante={idConversationCourante}
         messageEnLecture={messageEnLecture}
         changerMessageEnLecture={changerMessageEnLecture}
         videoEnLecture={videoEnLecture}

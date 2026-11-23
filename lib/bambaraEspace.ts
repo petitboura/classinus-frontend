@@ -87,9 +87,9 @@ export async function lireAudioConversationBambara(conversationId: string): Prom
   };
 }
 
-export type MessageConversationBambara = { id: number | string | null; role: "user" | "assistant"; content: string };
+export type MessageConversationBambara = { id: number | string | null; role: "user" | "assistant"; content: string; meta?: Record<string, unknown> | null };
 
-type LigneHistoriqueBambara = { id?: number | string | null; parent_id?: number | string | null; role?: string; content?: string };
+type LigneHistoriqueBambara = { id?: number | string | null; parent_id?: number | string | null; role?: string; content?: string; meta?: Record<string, unknown> | null };
 
 /**
  * Les messages d'une conversation de l'historique, dans l'ordre (22/11/2026, demande de Bourama : on doit pouvoir
@@ -117,7 +117,7 @@ export async function lireMessagesConversationBambara(conversationId: string): P
     }
     chaine = suite;
   }
-  return chaine.map((l) => ({ id: l.id ?? null, role: l.role as "user" | "assistant", content: l.content as string }));
+  return chaine.map((l) => ({ id: l.id ?? null, role: l.role as "user" | "assistant", content: l.content as string, meta: l.meta ?? null }));
 }
 
 export type AudioMessageListeBambara = { id: string; message_id: number | string; sens: "question" | "reponse"; duree_ms: number };

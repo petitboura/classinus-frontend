@@ -112,6 +112,41 @@ export function extraireVisuelsDuTexte(texte: string): VisuelBambara[] {
   return fusionnerVisuels([], trouves);
 }
 
+// Le serveur ajoute à la fin du texte gardé un bloc par fichier annoncé comme « généré » pendant le tour, donc aussi les
+// miniatures et les images d'une recherche. Ces blocs ne sont pas le choix de l'IA : ils sont retirés avant de chercher
+// ce qu'elle a cité (23/11/2026, demande de Bourama : à la réouverture, toutes les images et vidéos s'ouvraient).
+const MOTIF_BLOC_FICHIER = /\n*\[(?:Image jointe|Audio joint|Vidéo jointe|Document joint) : [^\]]*\](?:\s*\[Lien réel du fichier : [^\]]*\])?/g;
+const MOTIF_IMAGE_JOINTE = /\[Image jointe : ([^\]\s]+)\]/g;
+
+/**
+ * Les vidéos et images à montrer pour un message de l'IA relu depuis l'historique : seulement celles qu'elle a écrites
+ * dans sa réponse (avec titre et miniature de la recherche quand ils sont gardés), plus les images d'un outil qui crée
+ * vraiment l'image. Rien d'autre, comme en direct.
+ */
+export function visuelsDepuisMessageGarde(contenu: string, meta?: Record<string, unknown> | null): VisuelBambara[] {
+  if (!contenu) return [];
+  const outils = Array.isArray(meta?.outils) ? (meta?.outils as Array<Record<string, unknown>>) : [];
+  const candidats = new Map<string, VisuelBambara>();
+  const deRecherche = new Set<string>();
+  for (const outil of outils) {
+    const images = visuelsDepuisImages(outil?.images as ImageServeur[] | undefined);
+    const videos = visuelsDepuisVideos(outil?.videos as VideoServeur[] | undefined);
+    for (const visuel of [...images, ...videos]) {
+      candidats.set(visuel.url, visuel);
+      deRecherche.add(visuel.url);
+      if (visuel.miniature) deRecherche.add(visuel.miniature);
+    }
+  }
+  const generes: VisuelBambara[] = [];
+  if (outils.some((o) => typeof o?.nomOutil === "string" && OUTILS_GENERATION_PAGE.includes(o.nomOutil))) {
+    for (const m of contenu.matchAll(MOTIF_IMAGE_JOINTE)) {
+      if (!deRecherche.has(m[1])) generes.push(visuelImage(m[1], ""));
+    }
+  }
+  const cites = extraireVisuelsDuTexte(contenu.replace(MOTIF_BLOC_FICHIER, "")).map((visuel) => candidats.get(visuel.url) ?? visuel);
+  return fusionnerVisuels([], [...generes, ...cites]);
+}
+
 type ImageServeur = { titre?: string; url: string; miniature?: string | null };
 type VideoServeur = { titre?: string; url: string; miniature?: string | null; id_video?: string | null };
 

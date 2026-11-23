@@ -25,6 +25,8 @@ type Props = {
   /** Ouvre la conversation touchée (le texte, le bouton flèche à côté du vocal). */
   surOuvrir: (conversation: ConversationBambara) => void;
   libelleOuvrir: string;
+  /** La conversation affichée en ce moment : sa ligne est entourée et son bouton flèche est plein. */
+  idConversationCourante: string;
 };
 
 const ENTREE = { opacity: 0, y: 8 };
@@ -35,7 +37,7 @@ function LignePatience() {
   return <div className="h-12 w-full animate-pulse rounded-full" style={{ backgroundColor: "var(--bb-voile)" }} />;
 }
 
-function PremierVocal({ conversation, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause }: Omit<Props, "conversations" | "charger" | "surOuvrir" | "libelleOuvrir"> & { conversation: ConversationBambara }) {
+function PremierVocal({ conversation, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause }: Omit<Props, "conversations" | "charger" | "surOuvrir" | "libelleOuvrir" | "idConversationCourante"> & { conversation: ConversationBambara }) {
   const [message, setMessage] = useState<MessageAudioBambara | null>(null);
   const [perdu, setPerdu] = useState(false);
 
@@ -68,7 +70,7 @@ function PremierVocal({ conversation, idEnLecture, surChangerLecture, libelleEco
   );
 }
 
-export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause, surOuvrir, libelleOuvrir }: Props) {
+export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, surChangerLecture, libelleEcouter, libelleMettreEnPause, surOuvrir, libelleOuvrir, idConversationCourante }: Props) {
   // La liste est relue à chaque ouverture du panneau : elle montre toujours les conversations les plus récentes.
   useEffect(() => {
     charger();
@@ -94,7 +96,9 @@ export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, 
 
   return (
     <div className="flex flex-col gap-3">
-      {conversations.map((conversation, index) => (
+      {conversations.map((conversation, index) => {
+        const courante = conversation.id === idConversationCourante;
+        return (
         <motion.div
           key={conversation.id}
           initial={ENTREE}
@@ -102,7 +106,11 @@ export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, 
           transition={{ duration: 0.25, ease: "easeOut", delay: Math.min(index, 8) * 0.04 }}
           className="flex w-full flex-col"
         >
-          <div className="flex w-full items-center gap-2">
+          <div
+            className="flex w-full items-center gap-2 rounded-3xl p-1.5"
+            aria-current={courante ? "true" : undefined}
+            style={{ border: courante ? "2px solid var(--bb-encre)" : "2px solid transparent" }}
+          >
             <div className="min-w-0 flex-1">
               {conversation.a_audio ? (
                 <PremierVocal
@@ -128,13 +136,18 @@ export function PanneauHistoriqueBambara({ conversations, charger, idEnLecture, 
               onClick={() => surOuvrir(conversation)}
               aria-label={libelleOuvrir}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-transform active:scale-95"
-              style={{ borderColor: "var(--bb-trait-fort)", backgroundColor: "var(--bb-fond)", color: "var(--bb-encre)" }}
+              style={{
+                borderColor: courante ? "var(--bb-encre)" : "var(--bb-trait-fort)",
+                backgroundColor: courante ? "var(--bb-encre)" : "var(--bb-fond)",
+                color: courante ? "var(--bb-fond)" : "var(--bb-encre)",
+              }}
             >
               <ArrowRight size={20} />
             </button>
           </div>
         </motion.div>
-      ))}
+        );
+      })}
     </div>
   );
 }

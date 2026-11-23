@@ -47,6 +47,8 @@ type Props = {
   surNouvelleConversation: () => void;
   /** Une conversation de l'historique est touchée : la page la rouvre en entier. */
   surOuvrirConversation: (conversation: ConversationBambara) => void;
+  /** La conversation affichée en ce moment, montrée dans l'historique. */
+  idConversationCourante: string;
   messageEnLecture: string | null;
   changerMessageEnLecture: (id: string | null) => void;
   videoEnLecture: string | null;
@@ -55,7 +57,7 @@ type Props = {
 
 const CLASSE_BOUTON = "flex h-11 w-11 items-center justify-center rounded-full border transition-[transform,background-color,color] active:scale-95";
 
-export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleConversation, surOuvrirConversation, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
+export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleConversation, surOuvrirConversation, idConversationCourante, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   // Demande de Bourama du 22/11/2026 : un seul bouton ouvre et ferme la rangée des quatre boutons.
   const [rangeeOuverte, setRangeeOuverte] = useState(false);
@@ -173,6 +175,7 @@ export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleC
                   surOuvrirConversation(conversation);
                 }}
                 libelleOuvrir={textes.ouvrirConversation}
+                idConversationCourante={idConversationCourante}
               />
             )}
             {panneau === "gardes" && (
