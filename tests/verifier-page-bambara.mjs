@@ -298,3 +298,11 @@ console.log("page bambara : boutons du haut vérifiés");
   assert.match(pageClient, /sessionRef\.current\?\.interrompre\(\);\s*couperVoixEcriture\(\);/, "la pause coupe la voix du micro et celle de l'écriture");
   console.log("page bambara : bulle de réponse vérifiée");
 }
+
+// Option B (23/11/2026) : pendant l'attente, une onde vivante sans bulle, qui devient la bulle quand la voix lit.
+{
+  const bulle = await lire("../components/bambara/BulleAudioBambara.tsx");
+  assert.match(bulle, /if \(enPreparation && direct === "attente"\)/, "onde seule pendant l'attente");
+  assert.match(bulle, /aria-busy="true"/, "l'attente est signalée aux lecteurs d'écran");
+  console.log("page bambara : onde d'attente vérifiée");
+}

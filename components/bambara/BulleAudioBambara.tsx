@@ -109,6 +109,28 @@ export function BulleAudioBambara({ id, message, cote, idEnLecture, surChangerLe
   const barresLues = Math.round(progres * NOMBRE_PICS);
   const dureeAffichee = enCours || progres > 0 ? progres * dureeMs : dureeMs;
 
+  // Option B (demande de Bourama du 23/11/2026) : tant que rien ne se dit, pas de bulle, seulement une onde vivante de la
+  // même taille. Quand la voix lit, la bulle apparaît à sa place avec le bouton pause.
+  if (enPreparation && direct === "attente") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        aria-busy="true"
+        className={"flex h-14 w-72 max-w-[85%] items-center gap-[2px] px-3 " + (cote === "droite" ? "self-end" : "self-start")}
+      >
+        {barres.map((pic, i) => (
+          <span
+            key={i}
+            className="bb-onde-barre min-w-[2px] max-w-[4px] flex-1 rounded-full"
+            style={{ height: Math.max(12, Math.round(pic * 100)) + "%", backgroundColor: "var(--bb-encre)", animationDelay: (i % 12) * 90 + "ms" }}
+          />
+        ))}
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
