@@ -1108,3 +1108,8 @@ html[data-ouverture-vue="1"] #clovis-splash {
 .hf-point {
   animation: hf-point 1.4s ease-in-out infinite;
 }
+
+/* Maame : pas d'écran d'ouverture de Classinus (voir public/maame-hote.js et lib/maame.ts). */
+html[data-maame] #clovis-splash {
+  display: none;
+}

@@ -180,6 +180,8 @@ export default function RacineLayout({
             async/defer bloque le parseur exactement comme un script en
             ligne. */}
         <script src="/dj-anti-flash-theme.js" />
+        {/* Maame (23/11/2026) : repère posé avant le premier affichage, voir public/maame-hote.js. */}
+        <script src="/maame-hote.js" />
         {/* Écran d'ouverture : une seule fois par ouverture de l'appli (19/10/2026,
             demande de Bourama). Il se rejouait à chaque rechargement complet de
             page. Ce repère est posé avant le premier affichage pour que

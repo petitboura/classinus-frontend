@@ -47,6 +47,7 @@ import type { MessageAudioBambara } from "@/lib/audioMessageBambara";
 import type { EtatVoixDirecte } from "@/lib/contexteVoixDirecte";
 import { messageErreurVoix } from "@/lib/erreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
+import { estMaameDansNavigateur } from "@/lib/maame";
 import { demanderPageBambara } from "@/lib/pageBambara";
 import { effetsActifs, effetsAffiches, extraireVisuelsDuTexte, fusionnerVisuels, modifierTour, retirerTour, type EffetConstruction as EffetOutil, type TourBambara } from "@/lib/pageBambaraVisuels";
 import {
@@ -235,18 +236,35 @@ export default function PageBambaraClient() {
     zone.scrollTo({ top: zone.scrollHeight, behavior: reduit ? "auto" : "smooth" });
   }, [tours, outils]);
 
-  // Page réservée aux utilisateurs connectés : sans session, retour à la connexion.
+  // Page réservée aux utilisateurs connectés : sans session, retour à la connexion. Sur Maame (lib/maame.ts), il n'y a ni
+  // inscription ni connexion : au premier passage, un compte anonyme est créé en silence et gardé sur le téléphone, la
+  // page s'ouvre donc directement. Si la création échoue, la page reste ouverte avec le message d'erreur habituel.
   useEffect(() => {
     let annule = false;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (annule) return;
-      if (data.session) setConnecte(true);
-      else router.replace("/connexion");
-    });
+    void supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (annule) return;
+        if (data.session) {
+          setConnecte(true);
+          return;
+        }
+        if (!estMaameDansNavigateur()) {
+          router.replace("/connexion");
+          return;
+        }
+        const { data: anonyme, error } = await supabase.auth.signInAnonymously();
+        if (annule) return;
+        if (error || !anonyme.session) setErreur(TEXTES[locale].erreur);
+        else setConnecte(true);
+      })
+      .catch(() => {
+        if (!annule) setErreur(TEXTES[locale].erreur);
+      });
     return () => {
       annule = true;
     };
-  }, [router]);
+  }, [router, locale]);
 
   useEffect(() => () => { sessionRef.current?.fermer(); }, []);
 

@@ -47,6 +47,10 @@ npm run dev
 
 L’application est alors disponible sur `http://localhost:3000`. Le backend doit être accessible à l’adresse définie dans `NEXT_PUBLIC_API_URL`.
 
+## Maame (appli installable faite de la page bambara)
+
+Maame est la page bambara servie sur sa propre adresse (`maame.classinus.com`), avec son nom et son logo en noir et blanc, installable depuis le navigateur du téléphone (PWA, Android). Sur cette adresse, la racine `/` ouvre directement la page bambara (`rewrites` dans `next.config.mjs`), le manifeste et le titre de l'onglet sont ceux de Maame (`app/manifest.ts`, `app/bambara/layout.tsx`), et il n'y a ni inscription ni connexion : un compte anonyme est créé en silence à la première ouverture et gardé sur le téléphone (`components/bambara/PageBambaraClient.tsx`). Le début de l'adresse est défini dans `lib/maame.ts` et doit rester identique dans `public/maame-hote.js` et `next.config.mjs`. Les icônes sont dans `public/maame/`. Demande que « Allow anonymous sign-ins » soit activé dans le projet Supabase.
+
 ## Commandes utiles
 
 | Commande | Usage |
