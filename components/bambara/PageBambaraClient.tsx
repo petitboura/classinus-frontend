@@ -573,7 +573,10 @@ export default function PageBambaraClient() {
           {tours.map((tour, rang) => {
             const dernier = rang === tours.length - 1;
             const bullePreparee = !tour.audioReponse && dernier && reponseEnCours;
-            if (!tour.question && !tour.audioQuestion && !(tour.texte && reglages.afficherTexteReponse) && tour.visuels.length === 0 && !tour.audioReponse && !bullePreparee) return null;
+            // Réglage des paramètres ignoré pour une question écrite (23/11/2026, demande de Bourama) : la personne qui écrit
+            // reçoit toujours le texte. Une demande parlée n'a pas de texte de question (sa voix est dans audioQuestion).
+            const texteVisible = Boolean(tour.texte) && (reglages.afficherTexteReponse || Boolean(tour.question));
+            if (!tour.question && !tour.audioQuestion && !texteVisible && tour.visuels.length === 0 && !tour.audioReponse && !bullePreparee) return null;
             return (
               <div key={tour.id} className="flex w-full flex-col gap-3">
                 {tour.audioQuestion && (
@@ -609,7 +612,7 @@ export default function PageBambaraClient() {
                     libelleMettreEnPause={textes.mettreEnPause}
                   />
                 )}
-                {tour.texte && reglages.afficherTexteReponse && (
+                {texteVisible && (
                   <TexteReplieBambara texte={tour.texte} libelleDeplier={textes.deplier} libelleReplier={textes.replier} />
                 )}
                 <RangeesVisuelsBambara
