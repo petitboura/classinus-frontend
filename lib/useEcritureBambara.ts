@@ -9,12 +9,12 @@
 // au moment de l'envoi, pas plus tard.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { messageDepuisTampons, type MessageAudioBambara } from "./audioMessageBambara";
+import type { MessageAudioBambara } from "./audioMessageBambara";
 import { messageErreurVoix } from "./erreurs";
+import { creerLectureBlocs, type LectureBlocs } from "./lectureBlocsBambara";
 import { demanderPageBambara, type RappelsPageBambara } from "./pageBambara";
 import { lireEtatVoixBambara, synthetiserVoixBambara } from "./voixBambaraApi";
 import { creerLecteurBambara, type LecteurBambara } from "./voixBambaraLecture";
-import { decouperEnMorceaux, nettoyerPourVoix } from "./voixBambaraTexte";
 
 export type EtatEcritureBambara = "inactif" | "travail" | "reponse";
 
@@ -25,16 +25,19 @@ type Options = {
    * est fermée. Rend l'identifiant du tour créé, auquel sera rattaché le message audio de la réponse.
    */
   avantEnvoi: (question: string) => string;
-  /** La voix a lu la réponse (en entier, ou jusqu'à son arrêt) : elle devient un message audio réécoutable du tour donné. */
-  surAudio?: (idTour: string, message: MessageAudioBambara) => void;
+  /** La voix a lu un bloc de texte (en entier, ou jusqu'à sa coupure) : son vocal devient un message audio réécoutable du tour donné. */
+  surAudioBloc?: (idTour: string, rang: number, message: MessageAudioBambara) => void;
   /** Les identifiants des messages sauvegardés pour le tour donné, une fois l'échange terminé (pour garder les voix). */
   surIds?: (idTour: string, ids: Parameters<NonNullable<RappelsPageBambara["surIds"]>>[0]) => void;
-  /** Attendue avant de lire la réponse à voix haute : la page y fait patienter la lecture tant qu'un message audio se réécoute. */
-  avantLecture?: () => Promise<void>;
+  /**
+   * Attendue avant de lire un bloc de texte à voix haute (23/11/2026) : la page y fait patienter la lecture tant qu'un
+   * message audio se réécoute et jusqu'à ce que le bloc apparaisse à l'écran. false : le bloc n'est pas lu.
+   */
+  avantBloc?: (idTour: string, rang: number) => Promise<boolean>;
   surOutilsEnCours: RappelsPageBambara["surOutilsEnCours"];
   surVisuels: RappelsPageBambara["surVisuels"];
-  /** Texte de la réponse, nettoyé de ce qui ne se lit pas, à chaque morceau reçu. */
-  surTexte: (texte: string) => void;
+  /** Réponse brute du modèle écrite jusqu'ici, à chaque morceau reçu, et `fini` à la dernière fois. */
+  surTexte: (brut: string, fini: boolean) => void;
   surErreur: (message: string) => void;
 };
 
@@ -47,9 +50,12 @@ export function useEcritureBambara(options: Options) {
   const numeroRef = useRef(0);
   const actifRef = useRef(false);
   const lecteurRef = useRef<LecteurBambara | null>(null);
+  const lectureRef = useRef<LectureBlocs | null>(null);
   const contexteRef = useRef<AudioContext | null>(null);
 
   const liberer = useCallback(() => {
+    lectureRef.current?.annuler();
+    lectureRef.current = null;
     lecteurRef.current?.interrompre();
     lecteurRef.current = null;
     const contexte = contexteRef.current;
@@ -76,28 +82,35 @@ export function useEcritureBambara(options: Options) {
 
     try {
       const voix = await lireEtatVoixBambara();
+      // Chaque bloc de texte de la réponse est lu à part, dès qu'il est complet (lib/lectureBlocsBambara.ts).
+      const lecture = voix.disponible
+        ? creerLectureBlocs({
+            lecteur,
+            texteMax: voix.texte_max,
+            avantBloc: (rang) => (courante() ? (o.avantBloc ? o.avantBloc(idTour, rang) : Promise.resolve(true)) : Promise.resolve(false)),
+            surDebutBloc: () => { if (courante()) setEtat("reponse"); },
+            surAudioBloc: (rang, message) => o.surAudioBloc?.(idTour, rang, message),
+          })
+        : null;
+      lectureRef.current = lecture;
       const reponse = await demanderPageBambara(question, o.conversationId(), {
         surOutilsEnCours: (noms) => { if (courante()) o.surOutilsEnCours(noms); },
         surVisuels: (visuels) => { if (courante()) o.surVisuels(visuels); },
-        surTexte: (cumule) => { if (courante()) o.surTexte(nettoyerPourVoix(cumule)); },
+        surTexte: (cumule) => {
+          if (!courante()) return;
+          o.surTexte(cumule, false);
+          lecture?.suivre(cumule, false);
+        },
         surIds: (ids) => { if (courante()) o.surIds?.(idTour, ids); },
       });
-      if (!courante()) return;
-      o.surTexte(nettoyerPourVoix(reponse));
-      if (!voix.disponible) return;
-      const morceaux = decouperEnMorceaux(nettoyerPourVoix(reponse), voix.texte_max);
-      if (morceaux.length === 0) return;
-      await o.avantLecture?.();
-      if (!courante()) return;
-      setEtat("reponse");
-      const tampons: AudioBuffer[] = [];
-      try {
-        await lecteur.lire(morceaux, (tampon) => tampons.push(tampon));
-      } finally {
-        // Même coupée par le bouton Arrêter, la partie déjà lue reste réécoutable.
-        const lu = messageDepuisTampons(tampons);
-        if (lu) o.surAudio?.(idTour, lu);
+      if (!courante()) {
+        lecture?.annuler();
+        return;
       }
+      o.surTexte(reponse, true);
+      if (!lecture) return;
+      lecture.suivre(reponse, true);
+      await lecture.terminer();
     } catch (e) {
       if (courante()) o.surErreur(messageErreurVoix(e));
     } finally {

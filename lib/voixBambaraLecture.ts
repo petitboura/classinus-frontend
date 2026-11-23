@@ -11,6 +11,8 @@ export type LecteurBambara = {
    */
   lire: (morceaux: string[], surTampon?: (tampon: AudioBuffer) => void) => Promise<void>;
   interrompre: () => void;
+  /** Nombre de fois où la lecture a été coupée : sert à voir qu'une coupure a eu lieu pendant une lecture (lib/lectureBlocsBambara.ts). */
+  interruptions: () => number;
   /** Niveau sonore actuel entre 0 et 1. */
   niveau: () => number;
 };
@@ -24,6 +26,7 @@ export function creerLecteurBambara(
   analyseur.connect(contexte.destination);
   const echantillons = new Float32Array(analyseur.fftSize);
   let generation = 0;
+  let coupures = 0;
   let courant: AudioBufferSourceNode | null = null;
   let finCourant: (() => void) | null = null;
 
@@ -73,8 +76,12 @@ export function creerLecteurBambara(
         if (maGeneration !== generation) return;
       }
     },
+    interruptions() {
+      return coupures;
+    },
     interrompre() {
       generation += 1;
+      coupures += 1;
       const source = courant;
       courant = null;
       if (source) {

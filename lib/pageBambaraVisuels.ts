@@ -73,12 +73,18 @@ export function fusionnerVisuels(existants: VisuelBambara[], nouveaux: VisuelBam
 export type TourBambara = {
   id: string;
   question: string;
+  /** Texte propre de toute la réponse (sans liens ni mise en forme). */
   texte: string;
+  /** Réponse brute du modèle, telle qu'écrite : c'est elle qui est découpée en blocs (lib/blocsBambara.ts). */
+  brut: string;
+  /** La réponse est arrivée en entier (sinon seuls les blocs complets s'affichent). */
+  fini: boolean;
+  /** Détails (titre, miniature) des visuels cités, qui complètent ceux des blocs. */
   visuels: VisuelBambara[];
   /** Ce que la personne a dit, réécoutable comme un message vocal (demande parlée seulement). */
   audioQuestion?: MessageAudioBambara | null;
-  /** Ce que la voix de Classinus a lu, réécoutable comme un message vocal. */
-  audioReponse?: MessageAudioBambara | null;
+  /** Ce que la voix de Classinus a lu de chaque bloc de texte (par rang), réécoutable comme un message vocal. */
+  audiosBlocs: Record<number, MessageAudioBambara>;
 };
 
 /** Le tour d'identifiant donné est remplacé par la version changée, les autres tours restent tels quels. */

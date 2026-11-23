@@ -9,13 +9,13 @@
 // s'écoute pas elle même. Les messages tapés dans le chat et les bulles du canal ne sont pas lus :
 // seules les réponses aux paroles de l'utilisateur le sont.
 
-import { messageDepuisEnregistrement, messageDepuisTampons, type MessageAudioBambara } from "./audioMessageBambara";
+import { messageDepuisEnregistrement, type MessageAudioBambara } from "./audioMessageBambara";
 import { messageErreurVoix } from "./erreurs";
 import type { SessionGeminiLive } from "./geminiLive";
 import { lireEtatVoixBambara, synthetiserVoixBambara, transcrireVoixBambara } from "./voixBambaraApi";
+import { creerLectureBlocs, type LectureBlocs } from "./lectureBlocsBambara";
 import { creerLecteurBambara } from "./voixBambaraLecture";
 import { ouvrirMicro, type ReperesParole } from "./voixBambaraMicro";
-import { decouperEnMorceaux, nettoyerPourVoix } from "./voixBambaraTexte";
 
 /** Valeur envoyée avec chaque message du mode bambara : le serveur y répond en bambara oral. */
 export const CLIENT_VOIX_BAMBARA = "voix_bambara";
@@ -25,14 +25,19 @@ type EtatVoix = "connexion" | "connecte" | "ecoute" | "reponse" | "travail" | "s
 type OptionsVoixBambara = {
   surEtat: (etat: EtatVoix) => void;
   surErreur: (message: string) => void;
-  /** Dépose la parole transcrite dans le chat et rend la réponse écrite de Classinus. */
-  surDemande: (question: string) => Promise<string>;
+  /**
+   * Dépose la parole transcrite dans le chat et rend la réponse écrite de Classinus. Pendant qu'elle s'écrit, la page
+   * donne à `lecture` le texte brut cumulé (lecture.suivre) : chaque bloc de texte complet est lu à part, tout de suite.
+   */
+  surDemande: (question: string, lecture: LectureBlocs) => Promise<string>;
+  /** Attendue avant de lire un bloc de texte (23/11/2026) : il doit être apparu à l'écran, aucune réécoute en cours. false : pas lu. */
+  avantBloc?: (rang: number) => Promise<boolean>;
   /** La personne vient de finir de parler : sa parole est prête comme message audio, avant même la transcription. */
   surParole?: (message: MessageAudioBambara) => void;
   /** Rien de compris dans cette parole (bruit) : le message audio annoncé juste avant est à retirer. */
   surParoleVide?: () => void;
-  /** Ce que la voix de Classinus a lu (en entier, ou jusqu'à son arrêt) devient un message audio réécoutable. */
-  surReponseAudio?: (message: MessageAudioBambara) => void;
+  /** Ce que la voix de Classinus a lu d'un bloc de texte (en entier, ou jusqu'à sa coupure) devient un message audio réécoutable. */
+  surAudioBloc?: (rang: number, message: MessageAudioBambara) => void;
   /**
    * Appuyer pour parler (page bambara, 22/11/2026, demande de Bourama, comme WhatsApp) : le micro n'écoute plus tout
    * seul. La personne lance l'enregistrement (commencerParole) puis l'arrête (terminerParole) quand elle a fini.
@@ -64,6 +69,8 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
     if (!etat.disponible) throw new Error("La voix bambara n'est pas branchée pour le moment.");
     const lecteur = creerLecteurBambara(contexte, (texte) => synthetiserVoixBambara(texte));
     let ferme = false;
+    // La lecture par blocs de la réponse en cours : abandonnée à la fermeture de la session.
+    let lectureCourante: LectureBlocs | null = null;
     // Une demande est en cours de traitement ou de lecture.
     let occupe = false;
     // Un message audio est réécouté : le micro reste en pause jusqu'à la fin.
@@ -100,7 +107,7 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
       if (ferme) return;
       occupe = true;
       options.surEtat("travail");
-      const tampons: AudioBuffer[] = [];
+      let lecture: LectureBlocs | null = null;
       try {
         // La transcription part tout de suite ; pendant ce temps le message audio est préparé pour l'écran.
         const transcription = transcrireVoixBambara(audio, mime);
@@ -114,23 +121,31 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
           options.surParoleVide?.();
           return;
         }
-        const reponse = await options.surDemande(texte);
-        if (ferme) return;
-        const morceaux = decouperEnMorceaux(nettoyerPourVoix(reponse), etat.texte_max);
-        if (morceaux.length === 0) return;
-        while (ecouteSuspendue && !ferme) await new Promise<void>((resoudre) => { reveil = resoudre; });
-        if (ferme) return;
-        options.surEtat("reponse");
-        try {
-          await lecteur.lire(morceaux, (tampon) => tampons.push(tampon));
-        } finally {
-          // Même coupée par le bouton Arrêter, la partie déjà lue reste réécoutable.
-          const lu = messageDepuisTampons(tampons);
-          if (lu) options.surReponseAudio?.(lu);
+        // Chaque bloc de texte de la réponse est lu à part, dès qu'il est complet (lib/lectureBlocsBambara.ts).
+        lecture = creerLectureBlocs({
+          lecteur,
+          texteMax: etat.texte_max,
+          avantBloc: async (rang) => {
+            while (ecouteSuspendue && !ferme) await new Promise<void>((resoudre) => { reveil = resoudre; });
+            if (ferme) return false;
+            return options.avantBloc ? options.avantBloc(rang) : true;
+          },
+          surDebutBloc: () => { if (!ferme) options.surEtat("reponse"); },
+          surAudioBloc: (rang, message) => options.surAudioBloc?.(rang, message),
+        });
+        lectureCourante = lecture;
+        const reponse = await options.surDemande(texte, lecture);
+        if (ferme) {
+          lecture.annuler();
+          return;
         }
+        lecture.suivre(reponse, true);
+        await lecture.terminer();
       } catch (e) {
+        lecture?.annuler();
         if (!ferme) options.surErreur(messageErreurVoix(e));
       } finally {
+        if (lectureCourante === lecture) lectureCourante = null;
         occupe = false;
         reprendre();
       }
@@ -149,6 +164,7 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
       fermer() {
         if (ferme) return;
         ferme = true;
+        lectureCourante?.annuler();
         liberer();
         lecteur.interrompre();
         micro.fermer();

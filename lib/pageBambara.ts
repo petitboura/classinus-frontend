@@ -4,7 +4,8 @@
 // suit le flux pour montrer ce qui compte à l'écran (outils en cours, vidéos, images). C'est l'IA qui choisit quelles
 // images et quelles vidéos s'affichent (demande de Bourama, 19/11/2026) : celles qu'elle écrit dans sa réponse. Les
 // résultats de recherche qu'elle ne cite pas ne sont pas montrés ; ils servent seulement à compléter ceux qu'elle cite
-// (miniature, titre). Les images qu'elle crée elle-même (outil generer_image) sont toujours montrées. Même route que
+// (miniature, titre). Depuis le 23/11/2026 (demande de Bourama) les images qu'elle crée elle-même (outil generer_image)
+// ne sont plus montrées d'office non plus : elle doit écrire leur lien dans sa réponse, comme pour le reste. Même route que
 // le mode vocal bambara (lib/geminiLive.ts : demanderAClovisDirectement), avec `client` = `page_bambara` :
 // le serveur ne propose alors que la recherche, la génération visuelle et la mémoire, répond en
 // bambara oral et garde l'effort de réflexion au plus faible. La réflexion n'est jamais montrée.
@@ -89,9 +90,9 @@ export async function demanderPageBambara(question: string, conversationId: stri
           for (const visuel of visuelsDepuisVideos(evenement.videos)) candidats.set(visuel.url, visuel);
           break;
         case "fichiers_generes":
-          // Seul l'outil qui crée l'image compte : le serveur annonce aussi comme « fichier généré » les miniatures et
-          // images d'une recherche, qui ne doivent jamais s'afficher d'office.
-          rappels.surVisuels(visuelsDepuisFichiersGeneres(evenement.nom_outil, evenement.fichiers));
+          // Une image créée n'est plus montrée d'office (23/11/2026) : le modèle doit citer son lien dans sa réponse. Elle
+          // est seulement gardée comme candidate, pour compléter (titre) l'image quand il la cite.
+          for (const visuel of visuelsDepuisFichiersGeneres(evenement.nom_outil, evenement.fichiers)) candidats.set(visuel.url, visuel);
           break;
         default:
           // raisonnement, outil_resultat, sources, ressources_ui... : rien à montrer à quelqu'un qui ne lit pas.
