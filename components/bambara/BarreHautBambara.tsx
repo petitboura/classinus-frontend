@@ -6,16 +6,19 @@
 // ne lit pas. Les paramètres, l'historique et les gardés
 // ouvrent un petit panneau sous la rangée (un seul à la fois, un second toucher ou un toucher à côté le referme) ;
 // le « + » ne ferme rien d'autre que ces panneaux, il repart d'une conversation vide.
+// Un toucher à côté referme d'abord le panneau ouvert ; s'il n'y en a pas, il referme la rangée (23/11/2026, demande de
+// Bourama). Sur Maame, le logo remplace l'icône du bouton : il y arrive par l'animation d'ouverture (OuvertureMaame.tsx).
 // Noir et blanc seulement (couleurs de .bb-page).
 
 import { AnimatePresence, motion } from "framer-motion";
 import { History, Heart, Menu, Plus, Settings, X, type LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ConversationBambara } from "@/lib/bambaraEspace";
 import type { EspaceBambara } from "@/lib/useBambaraEspace";
 import type { GardeUiBambara } from "./BoutonCoeurBambara";
 import { PanneauGardesBambara } from "./PanneauGardesBambara";
 import { PanneauHistoriqueBambara } from "./PanneauHistoriqueBambara";
+import { LOGO_MAAME, OuvertureMaame } from "./OuvertureMaame";
 import { PanneauParametresBambara } from "./PanneauParametresBambara";
 import type { ReglagesBambara } from "@/lib/reglagesBambara";
 
@@ -53,12 +56,19 @@ type Props = {
   changerMessageEnLecture: (id: string | null) => void;
   videoEnLecture: string | null;
   changerVideoEnLecture: (id: string | null) => void;
+  /** Sur Maame : le logo prend la place de l'icône du bouton, après l'animation d'ouverture. */
+  logoMaame?: boolean;
 };
 
 const CLASSE_BOUTON = "flex h-11 w-11 items-center justify-center rounded-full border transition-[transform,background-color,color] active:scale-95";
 
-export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleConversation, surOuvrirConversation, idConversationCourante, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture }: Props) {
+export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleConversation, surOuvrirConversation, idConversationCourante, messageEnLecture, changerMessageEnLecture, videoEnLecture, changerVideoEnLecture, logoMaame = false }: Props) {
   const [panneau, setPanneau] = useState<Panneau | null>(null);
+  const boutonRef = useRef<HTMLButtonElement>(null);
+  const conteneurRef = useRef<HTMLDivElement>(null);
+  // Le logo n'est montré dans le bouton qu'une fois l'animation d'ouverture arrivée (ou sautée).
+  const [ouvertureFinie, setOuvertureFinie] = useState(!logoMaame);
+  const finirOuverture = useCallback(() => setOuvertureFinie(true), []);
   // Demande de Bourama du 22/11/2026 : un seul bouton ouvre et ferme la rangée des quatre boutons.
   const [rangeeOuverte, setRangeeOuverte] = useState(false);
 
@@ -68,6 +78,17 @@ export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleC
     setRangeeOuverte((ouverte) => !ouverte);
   };
   const basculer = (cible: Panneau) => setPanneau((courant) => (courant === cible ? null : cible));
+
+  // Un toucher à côté de la rangée, sans panneau ouvert, la referme. Le toucher n'est pas avalé : il agit aussi sur ce qu'il vise.
+  useEffect(() => {
+    if (!rangeeOuverte || panneau) return;
+    const surToucher = (e: PointerEvent) => {
+      if (conteneurRef.current?.contains(e.target as Node)) return;
+      setRangeeOuverte(false);
+    };
+    document.addEventListener("pointerdown", surToucher);
+    return () => document.removeEventListener("pointerdown", surToucher);
+  }, [rangeeOuverte, panneau]);
 
   useEffect(() => {
     if (!panneau) return;
@@ -99,20 +120,35 @@ export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleC
       {/* Un toucher à côté du panneau le referme, sans rien faire d'autre. */}
       {panneau && <div className="absolute inset-0 z-10" onClick={fermer} aria-hidden />}
 
-      <div className="absolute left-3 z-20 flex items-center gap-2" style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
+      {logoMaame && !ouvertureFinie && <OuvertureMaame cible={boutonRef} surFin={finirOuverture} />}
+
+      <div ref={conteneurRef} className="absolute left-3 z-20 flex items-center gap-2" style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
         <button
+          ref={boutonRef}
           type="button"
           onClick={basculerRangee}
           aria-label={rangeeOuverte ? textes.fermerMenu : textes.ouvrirMenu}
           aria-expanded={rangeeOuverte}
-          className={CLASSE_BOUTON}
+          className={`${CLASSE_BOUTON} overflow-hidden`}
           style={{
             borderColor: rangeeOuverte ? "var(--bb-encre)" : "var(--bb-trait-fort)",
             backgroundColor: rangeeOuverte ? "var(--bb-encre)" : "var(--bb-fond)",
             color: rangeeOuverte ? "var(--bb-fond)" : "var(--bb-encre)",
           }}
         >
-          {rangeeOuverte ? <X size={20} /> : <Menu size={20} />}
+          {rangeeOuverte ? (
+            <X size={20} />
+          ) : logoMaame ? (
+            <img
+              src={LOGO_MAAME}
+              alt=""
+              draggable={false}
+              className="bb-logo-maame h-full w-full select-none rounded-full transition-opacity duration-150"
+              style={{ opacity: ouvertureFinie ? 1 : 0 }}
+            />
+          ) : (
+            <Menu size={20} />
+          )}
         </button>
         <AnimatePresence initial={false}>
           {rangeeOuverte &&

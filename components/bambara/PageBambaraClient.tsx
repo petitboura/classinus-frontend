@@ -109,6 +109,8 @@ export default function PageBambaraClient() {
   const [connecte, setConnecte] = useState(false);
   const [etat, setEtat] = useState<EtatVoixDirecte>("inactif");
   const [erreur, setErreur] = useState<string | null>(null);
+  // Sur Maame, le logo prend la place de l'icône du bouton du haut (page chargée côté navigateur seulement, window existe).
+  const surMaame = useMemo(() => estMaameDansNavigateur(), []);
   const [tours, setTours] = useState<TourBambara[]>([]);
   const [outils, setOutils] = useState<string[]>([]);
   const [champOuvert, setChampOuvert] = useState(false);
@@ -691,6 +693,7 @@ export default function PageBambaraClient() {
         changerMessageEnLecture={changerMessageEnLecture}
         videoEnLecture={videoEnLecture}
         changerVideoEnLecture={changerVideoEnLecture}
+        logoMaame={surMaame}
       />
 
       {/* En bas, par dessus le contenu : le champ d'écriture (caché par défaut), puis le micro avec le petit bouton clavier

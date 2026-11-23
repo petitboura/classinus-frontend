@@ -35,6 +35,12 @@
   color-scheme: dark;
 }
 
+/* Logo de Maame (23/11/2026) : noir sur fond blanc ; en thème sombre il s'inverse avec le reste de la page. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bb-logo-maame { filter: invert(1); }
+}
+:root[data-theme="dark"] .bb-logo-maame { filter: invert(1); }
+
 /* Lueur de l'attente : une bande plus claire traverse la case de gauche à droite, puis recommence. */
 @keyframes bb-lueur {
   0% { transform: translateX(-100%); }
