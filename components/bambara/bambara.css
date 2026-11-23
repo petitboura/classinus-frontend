@@ -35,11 +35,13 @@
   color-scheme: dark;
 }
 
-/* Logo de Maame (23/11/2026) : noir sur fond blanc ; en thème sombre il s'inverse avec le reste de la page. */
+/* Logo de Maame : le visage n'est pas dessiné au trait, il est formé par le blanc entre les cheveux, le cou et les traits.
+   Inversé en blanc sur noir (essai du 23/11/2026) il ne ressemblait plus à rien. En thème sombre (24/11/2026), le logo
+   garde donc ses vraies couleurs, posé sur un disque blanc ; en thème clair il est directement noir sur la page. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .bb-logo-maame { filter: invert(1); }
+  :root:not([data-theme="light"]) .bb-logo-maame { background-color: #fff; padding: 7%; box-sizing: border-box; }
 }
-:root[data-theme="dark"] .bb-logo-maame { filter: invert(1); }
+:root[data-theme="dark"] .bb-logo-maame { background-color: #fff; padding: 7%; box-sizing: border-box; }
 
 /* Lueur de l'attente : une bande plus claire traverse la case de gauche à droite, puis recommence. */
 @keyframes bb-lueur {
