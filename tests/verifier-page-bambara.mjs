@@ -196,9 +196,9 @@ const [voixBambara, micro, lecture] = await Promise.all([
 ]);
 assert.match(client, /BulleAudioBambara/);
 assert.match(client, /cote="droite"/);
-assert.match(client, /cote="gauche"/);
+assert.match(await lire("../components/bambara/BlocTexteBambara.tsx"), /cote="gauche"/);
 assert.match(client, /audioQuestion/);
-assert.match(client, /audioReponse/);
+assert.match(client, /audiosBlocs/);
 assert.match(client, /suspendreEcoute/);
 assert.match(client, /reprendreEcoute/);
 assert.match(client, /attendreFinMessage/);
@@ -206,20 +206,23 @@ assert.match(bulleAudio, /<audio/);
 assert.match(bulleAudio, /idEnLecture/);
 assert.match(voixBambara, /surParole\?\.\(/);
 assert.match(voixBambara, /surParoleVide\?\.\(\)/);
-assert.match(voixBambara, /surReponseAudio\?\.\(/);
+assert.match(voixBambara, /surAudioBloc\?\.\(/);
 assert.match(voixBambara, /suspendreEcoute/);
 assert.match(micro, /reperes/);
 assert.match(lecture, /surTampon\?\.\(tampon\)/);
-assert.match(ecriture, /surAudio\?\.\(idTour/);
-assert.match(ecriture, /avantLecture/);
+assert.match(ecriture, /surAudioBloc\?\.\(idTour/);
+assert.match(ecriture, /avantBloc/);
 
 // Ordre et texte replié (19/11/2026, demande de Bourama) : dans chaque message le vocal est en haut, puis le texte replié sur
 // une seule ligne (jamais plus), même pour une demande parlée ; un toucher le déplie.
 assert.match(texteReplie, /truncate/);
 assert.match(texteReplie, /aria-expanded/);
 assert.match(texteReplie, /ResizeObserver/);
-assert.ok(client.indexOf('tour.id + ":reponse"') < client.indexOf("<TexteReplieBambara texte={tour.texte}"), "le vocal de la réponse est avant son texte");
-assert.ok(client.indexOf("<TexteReplieBambara texte={tour.texte}") < client.indexOf("<RangeesVisuelsBambara"), "le texte replié est avant les visuels");
+// Depuis le 23/11/2026 chaque bloc de texte a sa bulle audio puis son texte replié (BlocTexteBambara), et les blocs se suivent
+// dans l'ordre du modèle : textes et séries de visuels, au lieu d'un texte puis tous les visuels.
+const blocTexte = await lire("../components/bambara/BlocTexteBambara.tsx");
+assert.ok(blocTexte.indexOf("<BulleAudioBambara") < blocTexte.indexOf("<TexteReplieBambara"), "le vocal d'un bloc est avant son texte");
+assert.ok(client.indexOf("<BlocTexteBambara\n                        key={bloc.id}") < client.indexOf("<RangeesVisuelsBambara\n                      key={bloc.id}"), "chaque bloc est rendu dans l'ordre du modèle");
 // Aucun texte dans la bulle de la personne qui parle ; le texte de l'assistant n'est pas enfermé dans une case,
 // il ne change pas de mise en forme déplié, et sa flèche pointe vers la droite quand il est replié.
 assert.doesNotMatch(client, /TexteReplieBambara texte=\{tour\.question\}/);
@@ -240,7 +243,10 @@ assert.doesNotMatch(api, /surVisuels\(visuelsDepuisImages/);
 assert.doesNotMatch(api, /surVisuels\(visuelsDepuisVideos/);
 assert.match(api, /candidats\.get\(visuel\.url\)/);
 assert.match(api, /extraireVisuelsDuTexte\(reponse\)/);
-assert.match(client, /texte: nettoyerPourVoix\(reponse\)/);
+assert.match(client, /texte: nettoyerPourVoix\(brut\)/);
+// Une image créée n'est plus montrée d'office (23/11/2026) : le modèle doit citer son lien, elle ne sert qu'à compléter.
+assert.doesNotMatch(api, /surVisuels\(visuelsDepuisFichiersGeneres/);
+assert.match(api, /candidats\.set\(visuel\.url, visuel\)/);
 assert.match(client, /bullePreparee/);
 assert.match(bulleAudio, /enPreparation/);
 
@@ -271,9 +277,10 @@ console.log("page bambara : boutons du haut vérifiés");
   assert.match(reglages, /useState\(false\)/, "par défaut le texte de la réponse n'est pas affiché");
   assert.match(reglages, /getItem\(CLE_AFFICHER_TEXTE\) === "1"/, "seul un choix gardé à « oui » l'affiche");
   assert.match(reglages, /catch/, "stockage du navigateur indisponible géré");
-  assert.match(pageClient, /const texteVisible = Boolean\(tour\.texte\) && \(reglages\.afficherTexteReponse \|\| Boolean\(tour\.question\)\)/, "le texte est montré si le réglage est actif, ou toujours pour une question écrite");
-  assert.match(pageClient, /\{texteVisible && \(\s*<TexteReplieBambara/, "le texte n'est montré que si texteVisible");
-  assert.match(pageClient, /!texteVisible && tour\.visuels\.length === 0/, "un tour réduit à son texte caché ne laisse pas de vide");
+  assert.match(pageClient, /const texteAffiche = reglages\.afficherTexteReponse \|\| Boolean\(tour\.question\)/, "le texte est montré si le réglage est actif, ou toujours pour une question écrite");
+  assert.match(pageClient, /afficherTexte=\{texteAffiche\}/, "chaque bloc de texte suit ce réglage");
+  assert.match(await lire("../components/bambara/BlocTexteBambara.tsx"), /\{afficherTexte && <TexteReplieBambara/, "le texte d'un bloc n'est montré que si le réglage le veut");
+  assert.match(pageClient, /blocs\.length === 0 && !bullePreparee\) return null/, "un tour sans bloc ne laisse pas de vide");
   assert.match(pageClient, /reglages=\{reglages\}/, "les réglages arrivent dans la barre du haut");
   assert.match(barreHaut, /PanneauParametresBambara/, "le panneau des paramètres est branché");
   assert.match(panneauParametres, /role="switch"/, "interrupteur accessible");

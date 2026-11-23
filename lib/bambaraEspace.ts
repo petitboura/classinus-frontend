@@ -120,7 +120,8 @@ export async function lireMessagesConversationBambara(conversationId: string): P
   return chaine.map((l) => ({ id: l.id ?? null, role: l.role as "user" | "assistant", content: l.content as string }));
 }
 
-export type AudioMessageListeBambara = { id: string; message_id: number | string; sens: "question" | "reponse"; duree_ms: number };
+/** `bloc` : rang du bloc de texte de la réponse que ce son lit (0 pour le premier, et pour la voix de la personne). */
+export type AudioMessageListeBambara = { id: string; message_id: number | string; sens: "question" | "reponse"; bloc?: number; duree_ms: number };
 
 /**
  * Garde le son d'un message de la conversation (22/11/2026, demande de Bourama : toutes les voix, pas seulement le
@@ -132,6 +133,8 @@ export async function enregistrerAudioMessageBambara(params: {
   messageId: number | string;
   sens: "question" | "reponse";
   audio: MessageAudioBambara;
+  /** Rang du bloc de texte lu par ce son (23/11/2026, un vocal par bloc) ; 0 par défaut. */
+  bloc?: number;
 }): Promise<void> {
   const base64 = await blobVersBase64(params.audio.blob);
   // Trop lourd pour le serveur : on ne l'envoie pas, le texte reste lisible dans l'historique.
@@ -140,7 +143,7 @@ export async function enregistrerAudioMessageBambara(params: {
     `/api/bambara/conversations/${encodeURIComponent(params.conversationId)}/messages/${encodeURIComponent(String(params.messageId))}/audio`,
     {
       method: "PUT",
-      body: JSON.stringify({ sens: params.sens, base64, duree_ms: Math.round(params.audio.dureeMs), pics: params.audio.pics }),
+      body: JSON.stringify({ sens: params.sens, bloc: params.bloc ?? 0, base64, duree_ms: Math.round(params.audio.dureeMs), pics: params.audio.pics }),
     }
   );
 }
