@@ -125,8 +125,6 @@ export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleC
       {/* Un toucher à côté du panneau le referme, sans rien faire d'autre. */}
       {panneau && <div className="absolute inset-0 z-10" onClick={fermer} aria-hidden />}
 
-      {logoMaame && !ouvertureFinie && <OuvertureMaame cible={boutonRef} surFin={finirOuverture} />}
-
       <div ref={conteneurRef} className="absolute left-3 z-20 flex items-center gap-2" style={{ top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
         <button
           ref={boutonRef}
@@ -179,6 +177,11 @@ export function BarreHautBambara({ espace, reglages, garde, textes, surNouvelleC
             ))}
         </AnimatePresence>
       </div>
+
+      {/* Doit rester APRÈS le conteneur du bouton : React attache le ref du bouton dans l'ordre des éléments, et
+          OuvertureMaame mesure la place du bouton dès son premier affichage. Placée avant, la mesure ne trouvait
+          pas le bouton (ref encore vide), l'animation était abandonnée et le logo apparaissait sans mouvement. */}
+      {logoMaame && !ouvertureFinie && <OuvertureMaame cible={boutonRef} surFin={finirOuverture} />}
 
       <AnimatePresence>
         {panneau && (

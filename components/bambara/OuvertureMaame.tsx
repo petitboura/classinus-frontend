@@ -41,18 +41,33 @@ export function OuvertureMaame({ cible, surFin }: Props) {
   const [arrivee, setArrivee] = useState<Arrivee | null>(null);
 
   // La place du bouton est mesurée avant le premier affichage, pour que le logo parte du bon endroit sans saut.
+  // Si le bouton n'est pas encore là (ref vide), on réessaie à l'image suivante au lieu d'abandonner tout de suite.
   useLayoutEffect(() => {
-    const bouton = cible.current;
-    if (reduit || !bouton) {
+    if (reduit) {
       surFin();
       return;
     }
-    const r = bouton.getBoundingClientRect();
-    setArrivee({
-      dx: r.left + r.width / 2 - window.innerWidth / 2,
-      dy: r.top + r.height / 2 - window.innerHeight / 2,
-      echelle: r.width / TAILLE_LOGO,
-    });
+    let essais = 0;
+    let image = 0;
+    const mesurer = () => {
+      const bouton = cible.current;
+      if (!bouton) {
+        if (essais++ < 10) {
+          image = requestAnimationFrame(mesurer);
+        } else {
+          surFin();
+        }
+        return;
+      }
+      const r = bouton.getBoundingClientRect();
+      setArrivee({
+        dx: r.left + r.width / 2 - window.innerWidth / 2,
+        dy: r.top + r.height / 2 - window.innerHeight / 2,
+        echelle: r.width / TAILLE_LOGO,
+      });
+    };
+    mesurer();
+    return () => cancelAnimationFrame(image);
   }, [cible, reduit, surFin]);
 
   if (!arrivee) return null;
