@@ -73,6 +73,12 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  // 24/11/2026, demande Bourama : balise canonical sur chaque page, pour que
+  // Google sache quelle adresse garder (la version sans www, celle de
+  // NEXT_PUBLIC_APP_URL). La valeur "./" est relative à l'adresse de la page
+  // affichée : chaque page reçoit sa propre canonical (sans les paramètres
+  // d'adresse), construite à partir de metadataBase, donc rien en dur ici.
+  alternates: { canonical: "./" },
   title: "Classinus",
   description: RESUME_CLASSINUS.description,
   keywords: [
