@@ -321,6 +321,8 @@ export function ChatIA({
     arguments: Record<string, unknown>;
     etatReprise: unknown;
     cleAutorisation?: string | null;
+    // Outil non sensible d'un serveur personnalisé : nom du serveur, pour la case « autoriser tous les non sensibles ».
+    serveurNonSensibles?: string | null;
   } | null>(null);
   const [confirmationEnAttente, setConfirmationEnAttente] = useState(false);
   // La carte d'autorisation peut apparaître au bas d'une longue liste d'outils, donc derrière la
@@ -1036,6 +1038,7 @@ export function ChatIA({
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,
         cleAutorisation: evenement.cle_autorisation ?? null,
+        serveurNonSensibles: typeof evenement.serveur_non_sensibles === "string" ? evenement.serveur_non_sensibles : null,
       });
     } else if (evenement.type === "erreur_tour") {
       // Le serveur a échoué en plein tour (voir classinus-backend core/erreur_tour.py). Le texte
@@ -2063,7 +2066,7 @@ export function ChatIA({
     setJetonEdition((j) => j + 1);
   }
 
-  async function repriseApresConfirmation(approuve: boolean, toujoursAutoriser = false) {
+  async function repriseApresConfirmation(approuve: boolean, toujoursAutoriser = false, autoriserServeur = false) {
     if (!confirmation) return;
     // Demande traitée par ce clic : si la reprise en fait apparaître une nouvelle
     // (deuxième outil à approuver), elle doit rester affichée à la fin du flux.
@@ -2089,7 +2092,7 @@ export function ChatIA({
           agent_id: agentId,
           parent_id: idQuestionConfirmation,
           erreurs_typees: true,
-          reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve, ...(approuve && toujoursAutoriser ? { toujours_autoriser: true } : {}) },
+          reprise: { etat_reprise: confirmationTraitee.etatReprise, approuve, ...(approuve && toujoursAutoriser ? { toujours_autoriser: true } : {}), ...(approuve && autoriserServeur ? { toujours_autoriser_serveur: true } : {}) },
         },
         (evenement) => traiterEvenement(evenement),
         controleur.signal
@@ -2482,8 +2485,9 @@ export function ChatIA({
               agentNom={confirmation.agentNom}
               arguments={confirmation.arguments}
               enAttente={confirmationEnAttente}
-              onConfirmer={() => repriseApresConfirmation(true)}
-              onToujoursAutoriser={confirmation.cleAutorisation ? () => repriseApresConfirmation(true, true) : undefined}
+              serveurNonSensibles={confirmation.serveurNonSensibles ?? null}
+              onConfirmer={(autoriserServeur) => repriseApresConfirmation(true, false, !!autoriserServeur)}
+              onToujoursAutoriser={confirmation.cleAutorisation ? (autoriserServeur) => repriseApresConfirmation(true, true, !!autoriserServeur) : undefined}
               onAnnuler={() => repriseApresConfirmation(false)}
             />
           </div>

@@ -8,7 +8,7 @@ import { CadrePanneau } from "@/components/connexions/CadrePanneau";
 import { ETIQUETTES_AUTH, libelleStatutMcp } from "@/components/connexions/CarteMcpPersonnalise";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 
-export type ValeursMcp = { nom: string; url: string; authType: AuthTypeMcpPersonnalise; token: string | null };
+export type ValeursMcp = { nom: string; url: string; authType: AuthTypeMcpPersonnalise; token: string | null; autoriserNonSensibles?: boolean };
 
 const CHAMP = "min-w-0 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1";
 
@@ -27,6 +27,7 @@ export function PanneauFormulaireMcp({
   const [url, setUrl] = useState(serveur?.url ?? "");
   const [authType, setAuthType] = useState<AuthTypeMcpPersonnalise>(serveur?.auth_type ?? "none");
   const [token, setToken] = useState("");
+  const [autoriserNonSensibles, setAutoriserNonSensibles] = useState(serveur?.autoriser_non_sensibles ?? false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const jetonDejaEnregistre = serveur?.auth_type === "bearer";
@@ -51,7 +52,7 @@ export function PanneauFormulaireMcp({
     }
     setEnCours(true);
     try {
-      await onEnregistrer({ nom: nom.trim(), url: adresse.href, authType, token: authType === "bearer" ? (token.trim() || null) : null });
+      await onEnregistrer({ nom: nom.trim(), url: adresse.href, authType, token: authType === "bearer" ? (token.trim() || null) : null, autoriserNonSensibles });
       fermer();
     } catch (err) {
       setErreur(messageErreur(err));
@@ -102,6 +103,14 @@ export function PanneauFormulaireMcp({
               <p className="text-xs leading-5 text-dj-texte-muet">Le jeton est transmis au backend lors de l’enregistrement puis conservé côté serveur. Ne l’ajoute jamais à l’URL.</p>
             </div>
           )}
+
+          <label className="flex cursor-pointer items-start gap-2 text-sm text-dj-texte">
+            <input type="checkbox" checked={autoriserNonSensibles} onChange={(e) => setAutoriserNonSensibles(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--dj-accent-1)]" />
+            <span className="min-w-0">
+              Autoriser d'un coup les outils non sensibles (lecture seule)
+              <span className="block text-xs leading-5 text-dj-texte-muet">Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.</span>
+            </span>
+          </label>
 
           {erreur && <div role="alert" className="flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]"><CircleAlert size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 break-words">{erreur}</span></div>}
 

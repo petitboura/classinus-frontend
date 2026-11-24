@@ -7,6 +7,7 @@ import {
   definirMcpPersonnaliseActif,
   deconnecterMcpPersonnalise,
   enregistrerMcpPersonnalise,
+  definirMcpPersonnaliseAutorisationNonSensibles,
   listerMcpPersonnalises,
   supprimerMcpPersonnalise,
   testerMcpPersonnalise,
@@ -75,6 +76,7 @@ export function McpPersonnalises() {
         url: valeurs.url,
         auth_type: valeurs.authType,
         token: valeurs.token,
+        autoriser_non_sensibles: valeurs.autoriserNonSensibles,
       }, formulaire && formulaire !== "nouveau" ? formulaire : undefined);
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
@@ -99,6 +101,24 @@ export function McpPersonnalises() {
       setMessage(serveur.actif
         ? "Serveur désactivé. Ses outils ne seront plus proposés au chat."
         : "Serveur activé.");
+    } catch (e) {
+      gererErreur(e);
+    } finally {
+      setEnCours(null);
+    }
+  }
+
+  async function basculerNonSensibles(serveur: McpPersonnalise) {
+    setErreur(null);
+    setMessage(null);
+    setEnCours(serveur.id);
+    try {
+      const autoriser = !serveur.autoriser_non_sensibles;
+      await definirMcpPersonnaliseAutorisationNonSensibles(serveur.id, autoriser);
+      await recharger();
+      setMessage(autoriser
+        ? "Réglage enregistré. Les outils non sensibles de ce serveur ne demandent plus de confirmation."
+        : "Réglage enregistré. Chaque outil de ce serveur demande de nouveau une confirmation.");
     } catch (e) {
       gererErreur(e);
     } finally {
@@ -290,6 +310,7 @@ export function McpPersonnalises() {
           onConnecterOAuth={() => void connecterOAuth(serveurDetail)}
           onDeconnecterOAuth={() => void deconnecterOAuth(serveurDetail)}
           onBasculerActif={() => void basculerActif(serveurDetail)}
+          onBasculerNonSensibles={() => void basculerNonSensibles(serveurDetail)}
           onModifier={() => modifier(serveurDetail)}
           onSupprimer={() => void supprimer(serveurDetail)}
         />

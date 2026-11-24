@@ -105,6 +105,7 @@ export function CarteServeurMcp({ code, onUtiliser }: { code: string; onUtiliser
   const ajouter = async (valeurs: ValeursMcp) => {
     const { serveur } = await enregistrerMcpPersonnalise({
       nom: valeurs.nom, url: valeurs.url, auth_type: valeurs.authType, token: valeurs.token,
+      autoriser_non_sensibles: valeurs.autoriserNonSensibles,
     });
     invaliderRegistreOutils();
     setPhase({ nom: "ajoute", serveur, dejaLa: false });

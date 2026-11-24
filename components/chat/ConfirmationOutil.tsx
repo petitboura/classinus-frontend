@@ -21,6 +21,7 @@ export function ConfirmationOutil({
   agentNom,
   arguments: args,
   enAttente,
+  serveurNonSensibles,
   onConfirmer,
   onToujoursAutoriser,
   onAnnuler,
@@ -30,14 +31,20 @@ export function ConfirmationOutil({
   agentNom?: string | null;
   arguments: Record<string, unknown>;
   enAttente: boolean;
-  onConfirmer: () => void;
+  // Outil non sensible d'un serveur personnalisé : nom du serveur (peut être vide), pour proposer la case
+  // « Toujours autoriser tous les outils non sensibles de ce serveur ». null ou absent : pas de case.
+  serveurNonSensibles?: string | null;
+  // autoriserServeur : la case est cochée au moment du clic.
+  onConfirmer: (autoriserServeur?: boolean) => void;
   // Absent : le bouton « Toujours autoriser » n'est pas proposé pour cette action.
-  onToujoursAutoriser?: () => void;
+  onToujoursAutoriser?: (autoriserServeur?: boolean) => void;
   onAnnuler: () => void;
 }) {
   const locale = useLocale();
   const t = (texte: string) => traduireTexteInterface(texte, locale);
   const [detailsOuverts, setDetailsOuverts] = useState(false);
+  const [autoriserServeur, setAutoriserServeur] = useState(false);
+  const caseServeur = typeof serveurNonSensibles === "string";
 
   // Les détails techniques (nom exact de l'outil, paramètres) restent accessibles
   // mais repliés : la phrase du haut suffit pour décider.
@@ -87,9 +94,25 @@ export function ConfirmationOutil({
               </div>
             </div>
           )}
+          {caseServeur && (
+            <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs leading-5 text-dj-texte">
+              <input
+                type="checkbox"
+                checked={autoriserServeur}
+                onChange={(e) => setAutoriserServeur(e.target.checked)}
+                disabled={enAttente}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--dj-accent-1)]"
+              />
+              <span className="min-w-0">
+                {t("Toujours autoriser tous les outils non sensibles de")}{" "}
+                <span className="font-semibold">{serveurNonSensibles || t("ce serveur")}</span>
+                <span className="block text-dj-texte-muet">{t("Les outils qui modifient ou suppriment des données te redemanderont toujours.")}</span>
+              </span>
+            </label>
+          )}
           <div className="mt-3 flex flex-wrap gap-2">
             <button
-              onClick={onConfirmer}
+              onClick={() => onConfirmer(caseServeur && autoriserServeur)}
               disabled={enAttente}
               className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] disabled:opacity-50"
             >
@@ -97,7 +120,7 @@ export function ConfirmationOutil({
             </button>
             {onToujoursAutoriser && (
               <button
-                onClick={onToujoursAutoriser}
+                onClick={() => onToujoursAutoriser(caseServeur && autoriserServeur)}
                 disabled={enAttente}
                 className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface-haute disabled:opacity-50"
               >
