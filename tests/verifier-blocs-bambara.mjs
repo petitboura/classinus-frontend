@@ -7,7 +7,7 @@ import ts from "typescript";
 const lire = (chemin) => readFile(new URL(chemin, import.meta.url), "utf8");
 // Les fichiers sont assemblés en un seul module (sans leurs imports) : le test n'a pas de bundler.
 const sansImports = (source) => source.replace(/^import[\s\S]*?from\s+"[^"]+";\s*$/gm, "").replace(/^"use client";\s*$/gm, "");
-const sources = await Promise.all(["voixBambaraTexte", "pageBambaraVisuels", "blocsBambara", "lectureBlocsBambara"].map((n) => lire(`../lib/${n}.ts`)));
+const sources = await Promise.all(["voixBambaraTexte", "voixBambaraFlux", "pageBambaraVisuels", "blocsBambara", "lectureBlocsBambara"].map((n) => lire(`../lib/${n}.ts`)));
 const assemble = "const messageDepuisTampons = (t) => (t.length ? { tampons: t.length } : null);\n" + sources.map(sansImports).join("\n");
 const js = ts.transpileModule(assemble, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
 const m = await import("data:text/javascript;base64," + Buffer.from(js).toString("base64"));
@@ -56,7 +56,35 @@ function fauxLecteur(surLire) {
     lus,
     lecteur: {
       lire: async (morceaux, surTampon) => { lus.push(morceaux.join(" ")); surTampon?.({}); surLire?.(() => { coupures += 1; }); },
+      // Faux flux : chaque phrase ajoutée est « lue » à son tour, après le feu vert avantJouer du premier son.
+      flux: ({ surTampon, avantJouer } = {}) => {
+        const morceaux = [];
+        let termine = false;
+        let arrete = false;
+        let reveil = null;
+        const fini = (async () => {
+          let premier = true;
+          for (let rang = 0; ; rang += 1) {
+            while (rang >= morceaux.length) {
+              if (termine || arrete) return;
+              await new Promise((r) => { reveil = r; });
+            }
+            if (arrete) return;
+            if (premier) { await avantJouer?.(); premier = false; if (arrete) return; }
+            lus.push(morceaux[rang]);
+            surTampon?.({});
+            surLire?.(() => { coupures += 1; });
+          }
+        })();
+        return {
+          ajouter: (n) => { morceaux.push(...n); reveil?.(); },
+          terminer: () => { termine = true; reveil?.(); },
+          annuler: () => { arrete = true; reveil?.(); },
+          fini,
+        };
+      },
       interrompre: () => { coupures += 1; },
+      arreter: () => { coupures += 1; },
       interruptions: () => coupures,
       niveau: () => 0,
     },
@@ -98,6 +126,20 @@ function fauxLecteur(surLire) {
   lecture.suivre("Un.\n\nDeux.", true);
   await lecture.terminer();
   assert.ok(lus.length <= 1, "annulée, la lecture ne lit plus rien de nouveau");
+}
+
+{
+  // Au fil de l'eau : la première phrase d'un bloc encore en train de s'écrire part à la voix avant la fin du bloc.
+  const { lus, lecteur } = fauxLecteur();
+  const audios = [];
+  const lecture = m.creerLectureBlocs({ lecteur, texteMax: 500, avantBloc: async () => true, surAudioBloc: (rang) => audios.push(rang) });
+  lecture.suivre("Bonjour a tous. Comment", false);
+  for (let i = 0; i < 10; i += 1) await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(lus, ["Bonjour a tous."], "la phrase terminée est lue sans attendre la fin du bloc");
+  lecture.suivre("Bonjour a tous. Comment vas-tu ?\n\nDeux.", true);
+  await lecture.terminer();
+  assert.deepEqual(lus, ["Bonjour a tous.", "Comment vas-tu ?", "Deux."], "chaque phrase est lue une seule fois, dans l'ordre");
+  assert.deepEqual(audios, [0, 1], "un vocal par bloc, même lu phrase par phrase");
 }
 
 // Branchement : la page découpe la réponse, chaque bloc dit quand il est visible, la voix attend ce signal, et la

@@ -179,6 +179,27 @@ export default function PageBambaraClient() {
     });
   }, []);
 
+  // Le premier message parlé (avec son vocal, jusqu'à 2 Mo) n'est pas envoyé en même temps que la réponse, qu'il ralentissait
+  // sur un réseau faible (23/11/2026, demande de Bourama) : il attend ici la fin du tour. Le serveur le garde à part de la
+  // réponse, l'ordre n'a pas d'importance. L'identifiant de la conversation est noté tout de suite : s'il change entre
+  // temps (le « + », une conversation de l'historique), c'est bien l'ancienne qui reçoit son premier message.
+  const premierMessageEnAttenteRef = useRef<{ conversationId: string; profilId: string | null; texte: string; audio: MessageAudioBambara | null } | null>(null);
+  const mettreEnAttentePremierMessage = useCallback((texte: string, audio: MessageAudioBambara | null) => {
+    if (premierMessageGardeRef.current || premierMessageEnAttenteRef.current) return;
+    premierMessageEnAttenteRef.current = { conversationId: conversationIdRef.current, profilId: profilIdRef.current, texte, audio };
+  }, []);
+  // À appeler à la fin du tour, et avant tout ce qui change de conversation ou envoie un autre premier message.
+  const envoyerPremierMessageEnAttente = useCallback(() => {
+    const attente = premierMessageEnAttenteRef.current;
+    premierMessageEnAttenteRef.current = null;
+    if (!attente || premierMessageGardeRef.current) return;
+    premierMessageGardeRef.current = true;
+    void enregistrerPremierMessageBambara(attente).catch(() => {
+      // Rien n'est montré : le message suivant de la conversation retentera.
+      premierMessageGardeRef.current = false;
+    });
+  }, []);
+
   // Nouvelle demande : un tour s'ajoute en bas, les précédents restent. On suit alors la nouvelle réponse.
   // Un message audio en cours de réécoute s'arrête : la nouvelle demande reprend la main (le micro, lui, n'écoute
   // rien pendant une réécoute, donc il n'y a rien à rouvrir ici).
@@ -197,7 +218,11 @@ export default function PageBambaraClient() {
   const idsToursRef = useRef(new Map<string, { conversationId: string; idUser: number | string | null; idAssistant: number | string | null }>());
   const audiosToursRef = useRef(new Map<string, { question?: MessageAudioBambara; blocs?: Record<number, MessageAudioBambara> }>());
   const audiosEnvoyesRef = useRef(new Set<string>());
+  // Les sons ne partent qu'une fois la réponse lue (23/11/2026, demande de Bourama) : jusqu'à 2 Mo envoyés en même temps
+  // que la réponse la ralentissaient sur un réseau faible. Ils partent à la fin du tour, quoi qu'il arrive à la lecture.
+  const toursFinisRef = useRef(new Set<string>());
   const envoyerAudiosTour = useCallback((idTour: string) => {
+    if (!toursFinisRef.current.has(idTour)) return;
     const ids = idsToursRef.current.get(idTour);
     const audios = audiosToursRef.current.get(idTour);
     if (!ids || !audios) return;
@@ -223,6 +248,12 @@ export default function PageBambaraClient() {
     },
     [envoyerAudiosTour]
   );
+  // Le tour est fini (réponse lue, coupée ou en échec) : ses sons peuvent partir. Si les identifiants des messages
+  // n'étaient pas encore connus, ils partent dès qu'ils arrivent (noterIdsTour).
+  const finirTour = useCallback((idTour: string) => {
+    toursFinisRef.current.add(idTour);
+    envoyerAudiosTour(idTour);
+  }, [envoyerAudiosTour]);
 
   // Ce que la voix de Classinus a lu d'un bloc de texte devient le message audio de ce bloc, dans le tour concerné.
   const ajouterAudioBloc = useCallback((idTour: string, rang: number, message: MessageAudioBambara) => {
@@ -328,10 +359,13 @@ export default function PageBambaraClient() {
     avantEnvoi: (question) => {
       sessionRef.current?.fermer();
       setErreur(null);
+      // Un premier message parlé encore en attente est le vrai premier de la conversation : il part avant celui ci.
+      envoyerPremierMessageEnAttente();
       garderPremierMessage(question, null);
       return demarrerTour(question);
     },
     surAudioBloc: ajouterAudioBloc,
+    surFinTour: finirTour,
     surIds: (idTour, ids) => noterIdsTour(idTour, conversationIdRef.current, ids),
     avantBloc: avantBlocTexte,
     surOutilsEnCours: setOutils,
@@ -370,6 +404,8 @@ export default function PageBambaraClient() {
   // jouait s'arrêtent, les tours disparaissent, et la prochaine demande ouvre une nouvelle conversation (nouvel
   // identifiant côté serveur) dont le premier message sera gardé à son tour pour l'historique.
   const nouvelleConversation = useCallback(() => {
+    // Le premier message parlé de l'ancienne conversation, encore en attente, part avant le changement.
+    envoyerPremierMessageEnAttente();
     sessionRef.current?.fermer();
     arreterEcriture();
     abandonnerAttentesBlocs();
@@ -385,7 +421,7 @@ export default function PageBambaraClient() {
     setTours([]);
     setOutils([]);
     setErreur(null);
-  }, [arreterEcriture, fixerMessageEnLecture, abandonnerAttentesBlocs]);
+  }, [arreterEcriture, envoyerPremierMessageEnAttente, fixerMessageEnLecture, abandonnerAttentesBlocs]);
 
   // Une conversation de l'historique est touchée (22/11/2026, demande de Bourama) : on la rouvre en entier, comme
   // si on ne l'avait jamais quittée. Le texte vient du serveur, qui garde tous les échanges de la page ; le premier
@@ -394,6 +430,8 @@ export default function PageBambaraClient() {
   const ouvertureRef = useRef(0);
   const ouvrirConversation = useCallback(async (conversation: ConversationBambara) => {
     const numero = (ouvertureRef.current += 1);
+    // Le premier message parlé de la conversation quittée, encore en attente, part avant le changement.
+    envoyerPremierMessageEnAttente();
     sessionRef.current?.fermer();
     arreterEcriture();
     abandonnerAttentesBlocs();
@@ -473,7 +511,7 @@ export default function PageBambaraClient() {
     } catch {
       // Silencieux : la page est faite pour quelqu'un qui ne lit pas, la conversation en cours reste telle quelle.
     }
-  }, [arreterEcriture, fixerMessageEnLecture, abandonnerAttentesBlocs]);
+  }, [arreterEcriture, envoyerPremierMessageEnAttente, fixerMessageEnLecture, abandonnerAttentesBlocs]);
 
   // Le cœur des vidéos et images : garder ou retirer, avec ses libellés dans la langue de la page.
   const { gardeDeUrl, basculerGarde } = espace;
@@ -491,6 +529,9 @@ export default function PageBambaraClient() {
     if (sessionRef.current || ouvertureEnCoursRef.current) return;
     ouvertureEnCoursRef.current = true;
     setErreur(null);
+    // Propre à cette session : un arrêt en ouvre une autre pendant que l'ancienne demande finit encore, il ne faut pas
+    // qu'elle touche au tour de la nouvelle.
+    let tourDeLaSession = "";
     try {
       const session = await ouvrirVoixBambara({
         // Appuyer pour parler, comme WhatsApp : le micro n'écoute plus tout seul (demande de Bourama du 22/11/2026).
@@ -510,6 +551,7 @@ export default function PageBambaraClient() {
           audioParoleRef.current = message;
           const idTourVocal = demarrerTour("", message);
           tourVocalRef.current = idTourVocal;
+          tourDeLaSession = idTourVocal;
           audiosToursRef.current.set(idTourVocal, { question: message });
         },
         surParoleVide: () => {
@@ -517,9 +559,10 @@ export default function PageBambaraClient() {
           setTours((precedents) => retirerTour(precedents, id));
         },
         // Le texte de la réponse apparaît aussi, replié sous sa bulle audio. Rien n'est écrit dans la bulle de la personne.
+        // `lecture.suivre` donne le texte brut à la voix à mesure qu'il arrive : elle lit dès la première phrase terminée.
         surDemande: async (question, lecture) => {
           const id = tourVocalRef.current;
-          garderPremierMessage(question, audioParoleRef.current);
+          mettreEnAttentePremierMessage(question, audioParoleRef.current);
           const conversationDeLaDemande = conversationIdRef.current;
           const reponse = await demanderPageBambara(question, conversationDeLaDemande, {
             surIds: (ids) => noterIdsTour(id, conversationDeLaDemande, ids),
@@ -535,6 +578,10 @@ export default function PageBambaraClient() {
         },
         avantBloc: (rang) => avantBlocTexte(tourVocalRef.current, rang),
         surAudioBloc: (rang, message) => ajouterAudioBloc(tourVocalRef.current, rang, message),
+        surFinTour: () => {
+          envoyerPremierMessageEnAttente();
+          if (tourDeLaSession) finirTour(tourDeLaSession);
+        },
       });
       sessionRef.current = session;
     } catch (e) {
@@ -543,7 +590,7 @@ export default function PageBambaraClient() {
     } finally {
       ouvertureEnCoursRef.current = false;
     }
-  }, [demarrerTour, ajouterVisuels, ajouterAudioBloc, changerTexteTour, avantBlocTexte, garderPremierMessage, noterIdsTour]);
+  }, [demarrerTour, ajouterVisuels, ajouterAudioBloc, changerTexteTour, avantBlocTexte, mettreEnAttentePremierMessage, envoyerPremierMessageEnAttente, noterIdsTour, finirTour]);
 
   // Le micro fonctionne comme sur WhatsApp (demande de Bourama du 22/11/2026) : on appuie pour parler. Maintenu appuyé,
   // l'enregistrement s'arrête et part quand on lâche. Un simple toucher le lance et le laisse tourner : un second toucher

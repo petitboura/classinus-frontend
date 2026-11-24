@@ -27,10 +27,11 @@ type OptionsVoixBambara = {
   surErreur: (message: string) => void;
   /**
    * Dépose la parole transcrite dans le chat et rend la réponse écrite de Classinus. Pendant qu'elle s'écrit, la page
-   * donne à `lecture` le texte brut cumulé (lecture.suivre) : chaque bloc de texte complet est lu à part, tout de suite.
+   * donne à `lecture` le texte brut cumulé (lecture.suivre) : chaque phrase terminée est lue tout de suite, bloc de texte
+   * par bloc de texte (23/11/2026, demande de Bourama).
    */
   surDemande: (question: string, lecture: LectureBlocs) => Promise<string>;
-  /** Attendue avant de lire un bloc de texte (23/11/2026) : il doit être apparu à l'écran, aucune réécoute en cours. false : pas lu. */
+  /** Attendue avant le premier son d'un bloc de texte (23/11/2026) : il doit être apparu à l'écran, aucune réécoute en cours. false : pas lu. */
   avantBloc?: (rang: number) => Promise<boolean>;
   /** La personne vient de finir de parler : sa parole est prête comme message audio, avant même la transcription. */
   surParole?: (message: MessageAudioBambara) => void;
@@ -38,6 +39,11 @@ type OptionsVoixBambara = {
   surParoleVide?: () => void;
   /** Ce que la voix de Classinus a lu d'un bloc de texte (en entier, ou jusqu'à sa coupure) devient un message audio réécoutable. */
   surAudioBloc?: (rang: number, message: MessageAudioBambara) => void;
+  /**
+   * La demande est finie (réponse lue, coupée ou en échec), après `surAudioBloc`. La page y envoie au serveur les sons
+   * à garder (23/11/2026, demande de Bourama) : plus en même temps que la réponse, qu'ils ralentissaient.
+   */
+  surFinTour?: () => void;
   /**
    * Appuyer pour parler (page bambara, 22/11/2026, demande de Bourama, comme WhatsApp) : le micro n'écoute plus tout
    * seul. La personne lance l'enregistrement (commencerParole) puis l'arrête (terminerParole) quand elle a fini.
@@ -121,7 +127,7 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
           options.surParoleVide?.();
           return;
         }
-        // Chaque bloc de texte de la réponse est lu à part, dès qu'il est complet (lib/lectureBlocsBambara.ts).
+        // Chaque bloc de texte de la réponse est lu à part, phrase par phrase dès qu'elle est terminée (lib/lectureBlocsBambara.ts).
         lecture = creerLectureBlocs({
           lecteur,
           texteMax: etat.texte_max,
@@ -146,6 +152,7 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
         if (!ferme) options.surErreur(messageErreurVoix(e));
       } finally {
         if (lectureCourante === lecture) lectureCourante = null;
+        options.surFinTour?.();
         occupe = false;
         reprendre();
       }
@@ -166,7 +173,7 @@ export async function ouvrirVoixBambara(options: OptionsVoixBambara): Promise<Se
         ferme = true;
         lectureCourante?.annuler();
         liberer();
-        lecteur.interrompre();
+        lecteur.arreter();
         micro.fermer();
         void contexte.close().catch(() => {});
         options.surEtat("ferme");

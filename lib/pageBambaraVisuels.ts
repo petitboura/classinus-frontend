@@ -153,6 +153,18 @@ export function visuelsDepuisMessageGarde(contenu: string, meta?: Record<string,
   return fusionnerVisuels([], [...generes, ...cites]);
 }
 
+/**
+ * Les visuels déjà complets dans une réponse encore en train de s'écrire (23/11/2026, demande de Bourama : une image ou
+ * une vidéo apparaissait seulement quand toute la réponse était finie). Le dernier mot peut être une adresse coupée en
+ * route : il n'est pas lu tant qu'un espace ou un retour à la ligne ne l'a pas fermé, sinon une adresse à moitié écrite
+ * donnerait un faux visuel (ou le même visuel en double une fois l'adresse entière). Une image markdown `![alt](adresse)`
+ * contient des espaces dans son texte alternatif : coupée avant sa parenthèse fermante, elle n'est pas reconnue non plus.
+ * À la fin de la réponse, `extraireVisuelsDuTexte` lit tout, y compris ce dernier mot.
+ */
+export function extraireVisuelsStables(texte: string): VisuelBambara[] {
+  return extraireVisuelsDuTexte(texte.slice(0, texte.search(/\S*$/)));
+}
+
 type ImageServeur = { titre?: string; url: string; miniature?: string | null };
 type VideoServeur = { titre?: string; url: string; miniature?: string | null; id_video?: string | null };
 

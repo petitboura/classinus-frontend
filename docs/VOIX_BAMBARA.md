@@ -15,7 +15,8 @@ Requested by Bourama on 13 November 2026. The server side is described in `docs/
 - `lib/voixBambara.ts`: the session (same shape as `lib/geminiLive.ts`, so the wave and the Stop button work unchanged).
 - `lib/voixBambaraMicro.ts`: speech detection and recording. Thresholds are in `REGLAGES_MICRO`.
 - `lib/voixBambaraLecture.ts`: reading the chunks, the next one is prepared while the previous one plays.
-- `lib/voixBambaraTexte.ts`: removes what cannot be spoken and splits the answer.
+- `lib/voixBambaraTexte.ts`: removes what cannot be spoken and splits the answer; `suivreTexteVoix` releases the finished sentences while the text is still arriving.
+- `lib/voixBambaraFlux.ts`: streaming reading, the text goes in as it arrives and the voice starts at the first finished sentence.
 - `lib/voixBambaraApi.ts`: calls to the backend relay. The browser knows no service address.
 - `components/voix/ChoixLangueVoix.tsx`: the "Bambara or other" question.
 - The field `client: "voix_bambara"` is sent with every Bambara-mode message (`components/chat/ChatIA.tsx`, `lib/geminiLive.ts` for the direct path): the server then adds its two notes (plain text, answer in spoken Bambara).
@@ -24,7 +25,7 @@ Requested by Bourama on 13 November 2026. The server side is described in `docs/
 
 - While Classinus works or speaks, the microphone is paused: it cannot be interrupted by speaking, only with the Stop button.
 - Messages typed in the chat and live channel bubbles are not read aloud in Bambara.
-- Test: `npm run test:voix-bambara`. No test was run against the real services during development.
+- Tests: `npm run test:voix-bambara` (text preparation) and `npm run test:voix-flux-bambara` (streaming reading with a fake audio context). No test was run against the real services during development.
 
 ## Bambara page (`/bambara`)
 
@@ -71,3 +72,13 @@ Everything is stored on the account (`lib/useBambaraEspace.ts`, `lib/bambaraEspa
 ## Voice sign-up journey (22 November 2026)
 
 The profile button's `+` starts a full-screen sign-up journey with no reading: a voice asks for the name, the person says it, it is transcribed, and they can replay their own voice and the voice of Classinus saying that name. Then two pictures (woman, man), then an optional spoken introduction. The sentences the voice reads are never in the code: they come from the Supabase table `bambara_parcours_textes` (`GET /api/bambara/parcours/textes`), written by the team. Details and keys: backend `docs/chantiers/PAGE_BAMBARA_PROFILS.md`. Code: `components/bambara/ParcoursInscriptionBambara.tsx`, `lib/useParcoursBambara.ts`, `lib/parcoursBambara.ts`. Test: `tests/verifier-parcours-bambara.mjs`.
+
+## Faster answers (November 23, 2026, requested by Bourama)
+
+Three changes so the answer shows and speaks sooner on the Bambara page. The text, the voice and the saved data are the same as before, only the moment changes.
+
+- **Voice while the text is still arriving.** Before, the voice waited for the whole answer. Now each finished sentence goes to the voice (`lib/voixBambaraFlux.ts`, `suivreTexteVoix` in `lib/voixBambaraTexte.ts`) while the AI writes the rest. A sentence is released only once the next one has started, never inside an open code block or an unfinished link. Up to three sentences are prepared ahead (`MORCEAUX_PREPARES_D_AVANCE` in `lib/voixBambaraLecture.ts`), so there is no gap between them. The Stop button cuts everything (`arreter`); replaying an audio bubble (`interrompre`) does not kill a reading that has not made its first sound yet, it waits and then starts.
+- **Images and videos as soon as their link appears.** A link is shown once its text is complete (`extraireVisuelsStables` in `lib/pageBambaraVisuels.ts`, used by `lib/pageBambara.ts`), not at the end of the answer. Each one is shown once.
+- **Saved audio after the answer.** The first voice message and the audio of each question and answer are sent to the server only when the answer is finished (`finirTour`, `surFinTour` in `components/bambara/PageBambaraClient.tsx`), so they no longer slow down the answer. A new conversation, opening the history or typing a new question first sends the pending first message. Consequence: a conversation appears in the history of the profile a little after the reading ends.
+
+Known limits: more and smaller voice requests are made (one per sentence). The real gain was not measured with the live services.

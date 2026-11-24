@@ -15,7 +15,8 @@ Demandé par Bourama le 13 novembre 2026. Le côté serveur est décrit dans `do
 - `lib/voixBambara.ts` : la session (même forme que `lib/geminiLive.ts`, donc l'onde et le bouton Arrêter marchent sans changement).
 - `lib/voixBambaraMicro.ts` : détection de la parole et enregistrement. Les seuils sont dans `REGLAGES_MICRO`.
 - `lib/voixBambaraLecture.ts` : lecture des morceaux, le suivant est préparé pendant que le précédent joue.
-- `lib/voixBambaraTexte.ts` : retire ce qui ne se prononce pas et découpe la réponse.
+- `lib/voixBambaraTexte.ts` : retire ce qui ne se prononce pas et découpe la réponse ; `suivreTexteVoix` rend les phrases terminées pendant que le texte arrive encore.
+- `lib/voixBambaraFlux.ts` : lecture au fil de l'eau, le texte y entre à mesure et la voix commence à la première phrase terminée.
 - `lib/voixBambaraApi.ts` : appels vers le relais du backend. Le navigateur ne connaît aucune adresse de service.
 - `components/voix/ChoixLangueVoix.tsx` : la question « bambara ou autre ».
 - Le champ `client: "voix_bambara"` part avec chaque message du mode bambara (`components/chat/ChatIA.tsx`, `lib/geminiLive.ts` pour le chemin direct) : le serveur ajoute alors ses deux consignes (texte simple, réponse en bambara oral).
@@ -24,7 +25,7 @@ Demandé par Bourama le 13 novembre 2026. Le côté serveur est décrit dans `do
 
 - Pendant que Classinus travaille ou parle, le micro est en pause : on ne peut pas l'interrompre en parlant, seulement avec le bouton Arrêter.
 - Les messages tapés dans le chat et les bulles du canal en direct ne sont pas lus en bambara.
-- Test : `npm run test:voix-bambara`. Aucun essai avec les vrais services n'a été fait pendant le développement.
+- Tests : `npm run test:voix-bambara` (préparation du texte) et `npm run test:voix-flux-bambara` (lecture au fil de l'eau avec un faux contexte audio). Aucun essai avec les vrais services n'a été fait pendant le développement.
 
 ## Page bambara (`/bambara`)
 
@@ -71,3 +72,13 @@ Tout est rangé dans le compte (`lib/useBambaraEspace.ts`, `lib/bambaraEspace.ts
 ## Parcours d'inscription vocal (22 novembre 2026)
 
 Le `+` du bouton profil lance un parcours d'inscription plein écran sans aucune lecture : une voix demande le nom, la personne le dit, il est transcrit, et elle peut réécouter sa propre voix et la voix de Classinus qui dit ce nom. Puis deux images (femme, homme), puis une présentation parlée facultative. Les phrases lues par la voix ne sont jamais dans le code : elles viennent de la table Supabase `bambara_parcours_textes` (`GET /api/bambara/parcours/textes`), écrite par l'équipe. Détails et clés : `docs/chantiers/PAGE_BAMBARA_PROFILS.fr.md` du backend. Code : `components/bambara/ParcoursInscriptionBambara.tsx`, `lib/useParcoursBambara.ts`, `lib/parcoursBambara.ts`. Test : `tests/verifier-parcours-bambara.mjs`.
+
+## Réponses plus rapides (23 novembre 2026, demande de Bourama)
+
+Trois changements pour que la réponse s'affiche et se dise plus tôt sur la page bambara. Le texte, la voix et les données gardées sont les mêmes qu'avant, seul le moment change.
+
+- **La voix pendant que le texte arrive.** Avant, la voix attendait la réponse entière. Maintenant chaque phrase terminée part à la voix (`lib/voixBambaraFlux.ts`, `suivreTexteVoix` dans `lib/voixBambaraTexte.ts`) pendant que l'IA écrit la suite. Une phrase n'est rendue que quand la suivante a commencé, jamais au milieu d'un bloc de code ou d'un lien non terminé. Jusqu'à trois phrases sont préparées d'avance (`MORCEAUX_PREPARES_D_AVANCE` dans `lib/voixBambaraLecture.ts`), pour qu'il n'y ait pas de trou entre elles. Le bouton Arrêter coupe tout (`arreter`) ; réécouter une bulle audio (`interrompre`) ne tue pas une lecture qui n'a pas encore fait son premier son, elle patiente puis part.
+- **Images et vidéos dès que leur lien apparaît.** Un lien est montré dès que son texte est complet (`extraireVisuelsStables` dans `lib/pageBambaraVisuels.ts`, utilisé par `lib/pageBambara.ts`), pas à la fin de la réponse. Chacun n'est montré qu'une fois.
+- **Audios gardés après la réponse.** Le premier message vocal et l'audio de chaque question et réponse ne partent au serveur qu'à la fin de la réponse (`finirTour`, `surFinTour` dans `components/bambara/PageBambaraClient.tsx`), donc ils ne la ralentissent plus. Une nouvelle conversation, l'ouverture de l'historique ou une nouvelle question écrite envoient d'abord le premier message en attente. Conséquence : une conversation apparaît dans l'historique du profil un peu après la fin de la lecture.
+
+Limites connues : il y a plus de demandes de voix, plus petites (une par phrase). Le gain réel n'a pas été mesuré avec les vrais services.

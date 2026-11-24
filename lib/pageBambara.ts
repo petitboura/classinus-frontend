@@ -14,6 +14,7 @@ import { appelerApiStream } from "./api";
 import { ajouterTourDirect, lireEtatConversation, type IdMessage } from "./conversationPartagee";
 import {
   extraireVisuelsDuTexte,
+  extraireVisuelsStables,
   visuelsDepuisFichiersGeneres,
   visuelsDepuisImages,
   visuelsDepuisVideos,
@@ -43,6 +44,15 @@ export async function demanderPageBambara(question: string, conversationId: stri
   const candidats = new Map<string, VisuelBambara>();
   const publierOutils = () => rappels.surOutilsEnCours([...enCours.values()]);
   let sansId = 0;
+  // Visuels déjà montrés pendant que la réponse s'écrit (23/11/2026, demande de Bourama) : une image ou une vidéo
+  // apparaît dès que son lien est écrit, sans attendre la fin de la réponse. Chacun n'est annoncé qu'une fois.
+  const montres = new Set<string>();
+  const montrerVisuelsEcrits = () => {
+    const nouveaux = extraireVisuelsStables(reponse).filter((visuel) => !montres.has(visuel.id));
+    if (nouveaux.length === 0) return;
+    for (const visuel of nouveaux) montres.add(visuel.id);
+    rappels.surVisuels(nouveaux.map((visuel) => candidats.get(visuel.url) ?? visuel));
+  };
 
   const etat = lireEtatConversation(conversationId);
   await appelerApiStream(
@@ -65,6 +75,8 @@ export async function demanderPageBambara(question: string, conversationId: stri
           if (typeof evenement.texte === "string") {
             reponse += evenement.texte;
             rappels.surTexte?.(reponse);
+            // Le texte cumulé, pas ce seul morceau : l'espace qui ferme une adresse peut arriver dans un morceau suivant.
+            if (reponse.includes("http")) montrerVisuelsEcrits();
           }
           break;
         case "meta":
@@ -103,7 +115,12 @@ export async function demanderPageBambara(question: string, conversationId: stri
   enCours.clear();
   publierOutils();
   // Seuls les visuels que l'IA a écrits dans sa réponse sont montrés, avec les détails de la recherche quand elle les a.
-  rappels.surVisuels(extraireVisuelsDuTexte(reponse).map((visuel) => candidats.get(visuel.url) ?? visuel));
+  // Ceux déjà montrés pendant l'écriture ne sont pas rappelés ; ce dernier passage lit aussi le dernier mot de la réponse.
+  rappels.surVisuels(
+    extraireVisuelsDuTexte(reponse)
+      .filter((visuel) => !montres.has(visuel.id))
+      .map((visuel) => candidats.get(visuel.url) ?? visuel)
+  );
   ajouterTourDirect(conversationId, question, reponse, idUser, idAssistant);
   rappels.surIds?.({ idUser, idAssistant });
   return reponse;

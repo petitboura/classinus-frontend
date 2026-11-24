@@ -1,9 +1,10 @@
 "use client";
 
 // Page bambara : demande écrite au clavier. Le texte part à l'IA par le même chemin que la parole
-// transcrite (lib/pageBambara.ts), la réponse s'affiche en texte au fur et à mesure, puis elle est
-// lue à voix haute par la voix bambara, comme avec le micro. Si la voix n'est pas branchée côté
-// serveur ou si elle échoue, le texte reste affiché.
+// transcrite (lib/pageBambara.ts), la réponse s'affiche en texte au fur et à mesure et elle est
+// lue à voix haute par la voix bambara, comme avec le micro, bloc de texte par bloc de texte et phrase par phrase
+// pendant qu'elle s'écrit (lib/lectureBlocsBambara.ts). Si la voix n'est pas branchée côté serveur ou si elle échoue, le texte
+// reste affiché.
 //
 // Le son n'est autorisé par le navigateur qu'à la suite d'un geste : le contexte audio est donc créé
 // au moment de l'envoi, pas plus tard.
@@ -30,10 +31,12 @@ type Options = {
   /** Les identifiants des messages sauvegardés pour le tour donné, une fois l'échange terminé (pour garder les voix). */
   surIds?: (idTour: string, ids: Parameters<NonNullable<RappelsPageBambara["surIds"]>>[0]) => void;
   /**
-   * Attendue avant de lire un bloc de texte à voix haute (23/11/2026) : la page y fait patienter la lecture tant qu'un
+   * Attendue avant le premier son d'un bloc de texte (23/11/2026) : la page y fait patienter la lecture tant qu'un
    * message audio se réécoute et jusqu'à ce que le bloc apparaisse à l'écran. false : le bloc n'est pas lu.
    */
   avantBloc?: (idTour: string, rang: number) => Promise<boolean>;
+  /** La demande est finie (réponse lue, coupée ou en échec), après `surAudioBloc` : la page y envoie au serveur les sons à garder. */
+  surFinTour?: (idTour: string) => void;
   surOutilsEnCours: RappelsPageBambara["surOutilsEnCours"];
   surVisuels: RappelsPageBambara["surVisuels"];
   /** Réponse brute du modèle écrite jusqu'ici, à chaque morceau reçu, et `fini` à la dernière fois. */
@@ -56,7 +59,7 @@ export function useEcritureBambara(options: Options) {
   const liberer = useCallback(() => {
     lectureRef.current?.annuler();
     lectureRef.current = null;
-    lecteurRef.current?.interrompre();
+    lecteurRef.current?.arreter();
     lecteurRef.current = null;
     const contexte = contexteRef.current;
     contexteRef.current = null;
@@ -80,10 +83,11 @@ export function useEcritureBambara(options: Options) {
     lecteurRef.current = lecteur;
     setEtat("travail");
 
+    let lecture: LectureBlocs | null = null;
     try {
       const voix = await lireEtatVoixBambara();
-      // Chaque bloc de texte de la réponse est lu à part, dès qu'il est complet (lib/lectureBlocsBambara.ts).
-      const lecture = voix.disponible
+      // Chaque bloc de texte de la réponse est lu à part, phrase par phrase dès qu'elle est terminée (lib/lectureBlocsBambara.ts).
+      lecture = voix.disponible
         ? creerLectureBlocs({
             lecteur,
             texteMax: voix.texte_max,
@@ -112,8 +116,10 @@ export function useEcritureBambara(options: Options) {
       lecture.suivre(reponse, true);
       await lecture.terminer();
     } catch (e) {
+      lecture?.annuler();
       if (courante()) o.surErreur(messageErreurVoix(e));
     } finally {
+      o.surFinTour?.(idTour);
       if (courante()) {
         liberer();
         actifRef.current = false;
