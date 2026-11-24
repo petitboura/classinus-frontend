@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, ShieldCheck, X } from "lucide-react";
 import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { useLocale } from "@/lib/i18n/useLocale";
+import { CaseACocher } from "@/components/CaseACocher";
 
 function formaterValeur(valeur: unknown): string {
   if (typeof valeur === "string") return valeur;
@@ -96,13 +97,7 @@ export function ConfirmationOutil({
           )}
           {caseServeur && (
             <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs leading-5 text-dj-texte">
-              <input
-                type="checkbox"
-                checked={autoriserServeur}
-                onChange={(e) => setAutoriserServeur(e.target.checked)}
-                disabled={enAttente}
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--dj-accent-1)]"
-              />
+              <CaseACocher checked={autoriserServeur} onChange={setAutoriserServeur} disabled={enAttente} className="mt-0.5" />
               <span className="min-w-0">
                 {t("Toujours autoriser tous les outils non sensibles de")}{" "}
                 <span className="font-semibold">{serveurNonSensibles || t("ce serveur")}</span>

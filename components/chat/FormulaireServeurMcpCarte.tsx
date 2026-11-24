@@ -11,6 +11,7 @@ import type { ValeursMcp } from "@/components/connexions/PanneauFormulaireMcp";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
 import { ChampJetonServeurMcp, GuideJetonServeurMcp } from "@/components/chat/EtapeJetonServeurMcp";
 import { BOUTON_PRINCIPAL, BOUTON_SECONDAIRE, CHAMP } from "@/components/chat/stylesServeurMcp";
+import { CaseACocher } from "@/components/CaseACocher";
 
 // Formulaire d'ajout dans la carte du chat (27/10/2026, demande de Bourama : « le llm présente le
 // formulaire directement dans l'interface, pas besoin d'aller dans la page »). Mêmes champs et mêmes
@@ -101,7 +102,7 @@ export function FormulaireServeurMcpCarte({
         <p className="text-xs leading-5 text-dj-texte-muet">{t("Après l'ajout, tu autorises l'accès sur le site de l'outil. Tu n'as rien à copier.")}</p>
       )}
       <label className="flex cursor-pointer items-start gap-2 text-sm text-dj-texte">
-        <input type="checkbox" checked={autoriserNonSensibles} onChange={(e) => setAutoriserNonSensibles(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--dj-accent-1)]" />
+        <CaseACocher checked={autoriserNonSensibles} onChange={setAutoriserNonSensibles} className="mt-0.5" />
         <span className="min-w-0">
           {t("Autoriser d'un coup les outils non sensibles (lecture seule)")}
           <span className="block text-xs leading-5 text-dj-texte-muet">{t("Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.")}</span>

@@ -5,6 +5,7 @@ import type { AuthTypeMcpPersonnalise, McpPersonnalise } from "@/lib/api";
 import { CadrePanneau } from "@/components/connexions/CadrePanneau";
 import { ActionsToujoursAutorisees } from "@/components/connexions/ActionsToujoursAutorisees";
 import { LogoMcp } from "@/components/connexions/LogoMcp";
+import { CaseACocher } from "@/components/CaseACocher";
 
 export type ResultatTestMcp = {
   nombre_outils: number;
@@ -154,7 +155,7 @@ export function PanneauMcpPersonnalise({
           </dl>
 
           <label className="flex cursor-pointer items-start gap-2 text-sm text-dj-texte">
-            <input type="checkbox" checked={!!serveur.autoriser_non_sensibles} onChange={onBasculerNonSensibles} disabled={desactive} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--dj-accent-1)]" />
+            <CaseACocher checked={!!serveur.autoriser_non_sensibles} onChange={() => onBasculerNonSensibles()} disabled={desactive} className="mt-0.5" />
             <span className="min-w-0">
               Autoriser d'un coup les outils non sensibles (lecture seule)
               <span className="block text-xs leading-5 text-dj-texte-muet">Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.</span>

@@ -7,6 +7,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { CadrePanneau } from "@/components/connexions/CadrePanneau";
 import { ETIQUETTES_AUTH, libelleStatutMcp } from "@/components/connexions/CarteMcpPersonnalise";
 import { SelectPersonnalise } from "@/components/SelectPersonnalise";
+import { CaseACocher } from "@/components/CaseACocher";
 
 export type ValeursMcp = { nom: string; url: string; authType: AuthTypeMcpPersonnalise; token: string | null; autoriserNonSensibles?: boolean };
 
@@ -105,7 +106,7 @@ export function PanneauFormulaireMcp({
           )}
 
           <label className="flex cursor-pointer items-start gap-2 text-sm text-dj-texte">
-            <input type="checkbox" checked={autoriserNonSensibles} onChange={(e) => setAutoriserNonSensibles(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--dj-accent-1)]" />
+            <CaseACocher checked={autoriserNonSensibles} onChange={setAutoriserNonSensibles} className="mt-0.5" />
             <span className="min-w-0">
               Autoriser d'un coup les outils non sensibles (lecture seule)
               <span className="block text-xs leading-5 text-dj-texte-muet">Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.</span>
