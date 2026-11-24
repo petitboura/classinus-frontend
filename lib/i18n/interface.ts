@@ -7,6 +7,14 @@ import type { Locale } from "./locale";
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Autoriser d'un coup les outils non sensibles d'un serveur MCP personnalisé (17/11/2026).
+  "Toujours autoriser tous les outils non sensibles de": "Always allow all non-sensitive tools of",
+  "ce serveur": "this server",
+  "Les outils qui modifient ou suppriment des données te redemanderont toujours.": "Tools that change or delete data will still ask you every time.",
+  "Autoriser d'un coup les outils non sensibles (lecture seule)": "Allow non-sensitive (read-only) tools at once",
+  "Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.": "Tools that change or delete data always ask for your confirmation.",
+  "Réglage enregistré. Les outils non sensibles de ce serveur ne demandent plus de confirmation.": "Setting saved. The non-sensitive tools of this server no longer ask for confirmation.",
+  "Réglage enregistré. Chaque outil de ce serveur demande de nouveau une confirmation.": "Setting saved. Every tool of this server asks for confirmation again.",
   // Choix de la langue du mode vocal (13/11/2026).
   "Dans quelle langue veux-tu parler ?": "Which language do you want to speak?",
   "Bambara": "Bambara",

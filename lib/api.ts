@@ -3141,6 +3141,8 @@ export type McpPersonnalise = {
   connecte: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+  // Les outils non sensibles (lecture seule) de ce serveur n'ont plus à être confirmés un par un (17/11/2026).
+  autoriser_non_sensibles?: boolean;
 };
 
 export type PayloadMcpPersonnalise = {
@@ -3148,6 +3150,7 @@ export type PayloadMcpPersonnalise = {
   url: string;
   auth_type: AuthTypeMcpPersonnalise;
   token?: string | null;
+  autoriser_non_sensibles?: boolean | null;
 };
 
 export async function listerMcpPersonnalises() {
@@ -3169,6 +3172,13 @@ export async function definirMcpPersonnaliseActif(id: string, actif: boolean) {
     method: "POST",
     body: JSON.stringify({ actif }),
   }) as Promise<{ actif: boolean }>;
+}
+
+export async function definirMcpPersonnaliseAutorisationNonSensibles(id: string, autoriser: boolean) {
+  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/autorisation-non-sensibles`, {
+    method: "POST",
+    body: JSON.stringify({ autoriser }),
+  }) as Promise<{ autoriser_non_sensibles: boolean }>;
 }
 
 export async function supprimerMcpPersonnalise(id: string) {

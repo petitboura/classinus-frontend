@@ -41,6 +41,7 @@ export function FormulaireServeurMcpCarte({
   const [url, setUrl] = useState(proposition.url ?? "");
   const [authType, setAuthType] = useState<AuthTypeMcpPersonnalise>(accesConseille);
   const [jeton, setJeton] = useState("");
+  const [autoriserNonSensibles, setAutoriserNonSensibles] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -58,7 +59,7 @@ export function FormulaireServeurMcpCarte({
     if (authType === "bearer" && !jeton.trim()) { setErreur(t("Un jeton est nécessaire pour ce mode d'authentification.")); return; }
     setEnCours(true);
     try {
-      await onEnregistrer({ nom: nom.trim(), url: adresseSaisie, authType, token: authType === "bearer" ? jeton.trim() : null });
+      await onEnregistrer({ nom: nom.trim(), url: adresseSaisie, authType, token: authType === "bearer" ? jeton.trim() : null, autoriserNonSensibles });
       setJeton("");
     } catch (err) {
       setErreur(messageErreur(err));
@@ -99,6 +100,13 @@ export function FormulaireServeurMcpCarte({
       {authType === "oauth" && (
         <p className="text-xs leading-5 text-dj-texte-muet">{t("Après l'ajout, tu autorises l'accès sur le site de l'outil. Tu n'as rien à copier.")}</p>
       )}
+      <label className="flex cursor-pointer items-start gap-2 text-sm text-dj-texte">
+        <input type="checkbox" checked={autoriserNonSensibles} onChange={(e) => setAutoriserNonSensibles(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--dj-accent-1)]" />
+        <span className="min-w-0">
+          {t("Autoriser d'un coup les outils non sensibles (lecture seule)")}
+          <span className="block text-xs leading-5 text-dj-texte-muet">{t("Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.")}</span>
+        </span>
+      </label>
       {erreur && (
         <div role="alert" className="flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]">
           <CircleAlert size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 break-words">{erreur}</span>

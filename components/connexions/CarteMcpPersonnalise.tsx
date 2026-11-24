@@ -107,6 +107,7 @@ export function PanneauMcpPersonnalise({
   onConnecterOAuth,
   onDeconnecterOAuth,
   onBasculerActif,
+  onBasculerNonSensibles,
   onModifier,
   onSupprimer,
 }: {
@@ -122,6 +123,7 @@ export function PanneauMcpPersonnalise({
   onConnecterOAuth: () => void;
   onDeconnecterOAuth: () => void;
   onBasculerActif: () => void;
+  onBasculerNonSensibles: () => void;
   onModifier: () => void;
   onSupprimer: () => void;
 }) {
@@ -150,6 +152,14 @@ export function PanneauMcpPersonnalise({
               <dd className="mt-0.5 text-dj-texte-muet">{ETIQUETTES_AUTH[serveur.auth_type]}</dd>
             </div>
           </dl>
+
+          <label className="flex cursor-pointer items-start gap-2 text-sm text-dj-texte">
+            <input type="checkbox" checked={!!serveur.autoriser_non_sensibles} onChange={onBasculerNonSensibles} disabled={desactive} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--dj-accent-1)]" />
+            <span className="min-w-0">
+              Autoriser d'un coup les outils non sensibles (lecture seule)
+              <span className="block text-xs leading-5 text-dj-texte-muet">Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.</span>
+            </span>
+          </label>
 
           <ActionsToujoursAutorisees filtre={(a) => a.appli === "mcp_personnalise" && a.cle.includes("_" + serveur.id.replace(/-/g, "").slice(0, 6) + "_")} />
 
