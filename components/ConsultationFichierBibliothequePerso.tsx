@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { obtenirFichierBibliothequeConsultation, type FichierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
+import { descriptionUtileFichier } from "@/lib/nomFichierBibliotheque";
 
 /**
  * 11/09/2026, demande Bourama : lien de partage direct pour un fichier
@@ -132,7 +133,7 @@ export function ConsultationFichierBibliothequePerso({ id }: { id: string }) {
           </div>
         </div>
 
-        {fichier.description && <TexteAvecLiens texte={fichier.description} className="mt-2 text-sm text-dj-texte-muet" />}
+        {descriptionUtileFichier(fichier) && <TexteAvecLiens texte={descriptionUtileFichier(fichier) as string} className="mt-2 text-sm text-dj-texte-muet" />}
 
         {estLien && fichier.url_publique && (
           <div className="mt-3">

@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { LinkPreview } from "./chat/LinkPreview";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { telecharger } from "@/lib/telecharger";
+import { nomAffichageFichier } from "@/lib/nomFichierBibliotheque";
 import {
   IconeTelechargement,
   LibelleTelechargement,
@@ -491,7 +492,7 @@ export function VisionneuseBibliotheque({
   const estTexte = !estLien && !estMarkdown && estTypeTexteLisible(f.type_mime);
   const estAutre =
     !estPdf && !estImage && !estAudio && !estVideo && !estTexte && !estMarkdown && !estLien && !estOffice;
-  const titre = f.description || f.nom_fichier;
+  const titre = nomAffichageFichier(f);
 
   return (
     <div

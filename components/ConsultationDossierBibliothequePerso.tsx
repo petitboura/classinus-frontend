@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { obtenirDossierBibliothequeConsultation, type DossierBibliothequeConsultation } from "@/lib/api";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { ROUTES_BIBLIOTHEQUE } from "@/lib/routesBibliotheque";
+import { descriptionUtileFichier } from "@/lib/nomFichierBibliotheque";
 
 /**
  * 11/09/2026, demande Bourama : lien de partage direct pour un dossier
@@ -149,8 +150,8 @@ export function ConsultationDossierBibliothequePerso({ id }: { id: string }) {
                     )}
                     <div className="min-w-0">
                       <p className="truncate text-sm text-dj-texte">{fichier.nom_fichier}</p>
-                      {fichier.description && (
-                        <p className="truncate text-xs text-dj-texte-muet">{fichier.description}</p>
+                      {descriptionUtileFichier(fichier) && (
+                        <p className="truncate text-xs text-dj-texte-muet">{descriptionUtileFichier(fichier)}</p>
                       )}
                     </div>
                   </Link>

@@ -62,6 +62,7 @@ import { MenuActionsCarte } from "./MenuActionsCarte";
 import { BoutonAvecIA } from "./BoutonAvecIA";
 import { BarreActionsSelection, type ActionSelection } from "./BarreActionsSelection";
 import { useSelectionMultiple } from "@/lib/useSelectionMultiple";
+import { nomAffichageFichier } from "@/lib/nomFichierBibliotheque";
 import { SelecteurCodesPartage } from "./SelecteurCodesPartage";
 import { useOuvrirChatAvecTexte } from "@/lib/contexteChat";
 
@@ -807,7 +808,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         cle: "partager",
         label: "Partager",
         icone: <Share2 size={14} />,
-        onClick: () => partagerOuCopierLien(lienPartage("fichier-perso", f.id), f.description || f.nom_fichier),
+        onClick: () => partagerOuCopierLien(lienPartage("fichier-perso", f.id), nomAffichageFichier(f)),
       },
       {
         cle: "ranger",
@@ -819,7 +820,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         cle: "supprimer",
         label: "Supprimer",
         icone: <Trash2 size={14} />,
-        onClick: () => supprimer(f.id, f.description || f.nom_fichier),
+        onClick: () => supprimer(f.id, nomAffichageFichier(f)),
         destructif: true,
       },
     ];
@@ -1517,7 +1518,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                   <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1-conteneur">
                     <Icone size={14} className="text-dj-accent-1-texte" />
                   </span>
-                  <span className="truncate">{f.description || f.nom_fichier}</span>
+                  <span className="truncate">{nomAffichageFichier(f)}</span>
                 </button>
                 {selectionMultiple.actif ? (
                   <button
@@ -1575,7 +1576,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                     </span>
                   )}
                   <MenuActionsCarte
-                    ariaLabel={`Actions pour ${f.description || f.nom_fichier}`}
+                    ariaLabel={`Actions pour ${nomAffichageFichier(f)}`}
                     actions={actionsPourFichier(f)}
                   />
                 </div>
@@ -1600,7 +1601,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-dj-texte">
-                Ranger « {fichierARanger.description || fichierARanger.nom_fichier} »
+                Ranger « {nomAffichageFichier(fichierARanger)} »
               </p>
               <button onClick={() => setFichierARanger(null)} className="text-dj-texte-muet hover:text-dj-texte">
                 <X size={16} />
@@ -1745,7 +1746,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
             <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
               {(fichiers ?? [])
                 .filter((f) =>
-                  (f.description || f.nom_fichier).toLowerCase().includes(rechercheFichiersExistants.trim().toLowerCase())
+                  nomAffichageFichier(f).toLowerCase().includes(rechercheFichiersExistants.trim().toLowerCase())
                 )
                 .map((f) => {
                 const dossierActuel = (dossiers ?? []).find((d) => d.id === dossierCourantId);
@@ -1770,7 +1771,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
                         }
                       }}
                     />
-                    <span className="truncate">{f.description || f.nom_fichier}</span>
+                    <span className="truncate">{nomAffichageFichier(f)}</span>
                   </label>
                 );
               })}
