@@ -30,4 +30,6 @@ Un travail fini, fusionné et vérifié n'est plus un chantier : on le retire de
 
 ## Liste des chantiers en cours
 
-Aucun chantier n'est encore inscrit. Les ajouter ici au fur et à mesure, une ligne chacun, avec le lien vers son sous-dossier.
+Une ligne par chantier, avec le lien vers son sous-dossier.
+
+- [Page bambara : réponse plus rapide](bambara-vitesse/RESUME.md) : en attente d'une décision de Bourama (fusion avec la lecture par blocs).
