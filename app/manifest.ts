@@ -58,7 +58,7 @@ import { estHoteMaame } from "@/lib/maame";
 // Maame (23/11/2026, demande de Bourama) : sur l'adresse de Maame, le manifeste est celui de Maame (nom, icônes en noir et
 // blanc, fond blanc) et l'installation est toujours proposée, y compris sur Android mobile : Maame n'a pas d'appli native,
 // la PWA est sa seule façon d'être installée. Voir lib/maame.ts.
-function manifesteMaame(): MetadataRoute.Manifest {
+function manifesteMaame(hote: string): MetadataRoute.Manifest {
   return {
     id: "/",
     name: "Maame",
@@ -71,6 +71,9 @@ function manifesteMaame(): MetadataRoute.Manifest {
     orientation: "portrait",
     background_color: "#ffffff",
     theme_color: "#ffffff",
+    // Permet à la page de savoir, depuis le navigateur, que Maame est déjà installée (getInstalledRelatedApps, voir
+    // components/bambara/PorteInstallationMaame.tsx).
+    related_applications: [{ platform: "webapp", url: `https://${hote}/manifest.webmanifest` }],
     icons: [
       { src: "/maame/icone-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/maame/icone-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
@@ -81,7 +84,7 @@ function manifesteMaame(): MetadataRoute.Manifest {
 }
 
 export default function manifest(): MetadataRoute.Manifest {
-  if (process.env.CAPACITOR_BUILD !== "true" && estHoteMaame(headers().get("host"))) return manifesteMaame();
+  if (process.env.CAPACITOR_BUILD !== "true" && estHoteMaame(headers().get("host"))) return manifesteMaame(headers().get("host") || "");
 
   // headers() est incompatible avec l'export statique (build:capacitor) :
   // son seul appel fait planter tout l'export ("couldn't be rendered
