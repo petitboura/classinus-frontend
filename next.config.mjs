@@ -40,6 +40,39 @@ if (
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByY2hyY3ptY29xbmdlc2J6emZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3MDc5NTksImV4cCI6MjEwNjI4Mzk1OX0.zvWXP16CL8MIyLcRkXMUZwrArQNhKOSQkyriVweEUW0";
 }
+// STAGING SEULEMENT : la copie de test ne doit pas être indexée.
+// Le garde empêche ce bloc de se retrouver sur main ou en production.
+// Ce bloc avait disparu de staging le 05/11/2026 (alignement sur main) ; remis le 24/11/2026.
+// L'en-tête ne vise QUE l'adresse de staging et les adresses *.vercel.app : l'adresse de Maame
+// (maame.classinus.com), servie par la même branche, doit rester indexable.
+console.log(
+  "[garde-staging] VERCEL_ENV=" +
+    process.env.VERCEL_ENV +
+    " VERCEL_GIT_COMMIT_REF=" +
+    process.env.VERCEL_GIT_COMMIT_REF,
+);
+if (
+  process.env.VERCEL_ENV === "production" ||
+  process.env.VERCEL_GIT_COMMIT_REF === "main"
+) {
+  throw new Error(
+    "Le blocage d'indexation de staging est présent dans une construction main ou production. Retirer le bloc STAGING SEULEMENT de next.config.mjs.",
+  );
+}
+const enteteNoindexStaging =
+  process.env.CAPACITOR_BUILD === "true"
+    ? {}
+    : {
+        async headers() {
+          return [
+            {
+              source: "/:path*",
+              has: [{ type: "host", value: "(staging\\..*|.*\\.vercel\\.app)" }],
+              headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+            },
+          ];
+        },
+      };
 // 30/09/2026, demande Bourama : le chat a pris l'adresse "/" (voir
 // lib/routesApp.ts). L'ancienne adresse /chat redirige vers "/" pour ne
 // pas casser un lien ou un marque-page existant. Ignoré (et donc non
@@ -71,6 +104,10 @@ const reecrituresWeb =
           return {
             beforeFiles: [
               { source: "/", has: [{ type: "host", value: "maame\\..*" }], destination: "/bambara" },
+              // 24/11/2026, demande de Bourama : Maame se présente elle même aux robots et aux IA. Sur son adresse,
+              // /llms.txt et /robots.txt viennent de leurs propres routes, pas de ceux de Classinus.
+              { source: "/llms.txt", has: [{ type: "host", value: "maame\\..*" }], destination: "/maame-llms.txt" },
+              { source: "/robots.txt", has: [{ type: "host", value: "maame\\..*" }], destination: "/maame-robots.txt" },
             ],
           };
         },
@@ -80,6 +117,7 @@ const nextConfig = {
   ...(process.env.CAPACITOR_BUILD === "true" ? { output: "export" } : {}),
   ...redirectionsWeb,
   ...reecrituresWeb,
+  ...enteteNoindexStaging,
   // Heure de construction (millisecondes), lue par lib/miseAJourOta.ts pour
   // savoir si un bundle OTA publié est plus récent que le code qui tourne.
   // Le workflow .github/workflows/ota.yml la fixe lui-même pour qu'elle soit

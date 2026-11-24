@@ -43,7 +43,7 @@ Le dossier **app/** utilise l’App Router de Next.js.
 | Application connectée | **app/(app)/** |
 | Connexion et inscription | **app/connexion/**, **app/inscription/** |
 | Pages publiques de découverte | **app/decouvrir/** |
-| Fichiers pour moteurs de recherche et IA | **app/sitemap.ts** (refabriqué automatiquement toutes les heures, avec une vraie date de modification seulement là où la donnée en a une), **app/robots.ts**, **app/llms.txt/** |
+| Fichiers pour moteurs de recherche et IA | **app/sitemap.ts** (refabriqué automatiquement toutes les heures, avec une vraie date de modification seulement là où la donnée en a une), **app/robots.ts**, **app/llms.txt/**. Maame a ses propres **app/maame-robots.txt/** et **app/maame-llms.txt/**, servis à `/robots.txt` et `/llms.txt` sur son adresse par des réécritures dans `next.config.mjs`. Les règles communes des robots sont dans **lib/robotsAdresses.ts**. Les adresses canoniques viennent de `alternates` dans `app/layout.tsx` (et `app/bambara/layout.tsx` pour Maame). La branche `staging` seule envoie en plus `X-Robots-Tag: noindex, nofollow` pour l'adresse de staging et les adresses `*.vercel.app` (bloc STAGING SEULEMENT de `next.config.mjs`, jamais dans `main`) |
 | Espace public | **app/mon-espace/** |
 | Retour et consentement OAuth | **app/oauth/** |
 | Téléchargements | **app/telecharger/** |

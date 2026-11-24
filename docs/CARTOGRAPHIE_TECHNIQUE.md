@@ -43,7 +43,7 @@ The **app/** directory uses the Next.js App Router.
 | Authenticated app | **app/(app)/** |
 | Sign-in and registration | **app/connexion/**, **app/inscription/** |
 | Public discovery pages | **app/decouvrir/** |
-| Search engine and AI files | **app/sitemap.ts** (rebuilt automatically every hour, with a real last modified date only where the data has one), **app/robots.ts**, **app/llms.txt/** |
+| Search engine and AI files | **app/sitemap.ts** (rebuilt automatically every hour, with a real last modified date only where the data has one), **app/robots.ts**, **app/llms.txt/**. Maame has its own **app/maame-robots.txt/** and **app/maame-llms.txt/**, served at `/robots.txt` and `/llms.txt` on its address by rewrites in `next.config.mjs`. Shared crawler rules are in **lib/robotsAdresses.ts**. Canonical addresses come from `alternates` in `app/layout.tsx` (and `app/bambara/layout.tsx` for Maame). The `staging` branch alone also sends `X-Robots-Tag: noindex, nofollow` for the staging and `*.vercel.app` addresses (STAGING ONLY block in `next.config.mjs`, never in `main`) |
 | Public space | **app/mon-espace/** |
 | OAuth return and consent | **app/oauth/** |
 | Downloads | **app/telecharger/** |
