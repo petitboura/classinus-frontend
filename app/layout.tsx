@@ -82,10 +82,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "./" },
   title: "Classinus",
   description: RESUME_CLASSINUS.description,
-  // 24/11/2026, demande de Bourama : adresse canonique de chaque page publique, calculée à partir de
-  // metadataBase ("./" = l'adresse de la page elle même). Évite qu'une copie (staging, adresse *.vercel.app)
-  // soit prise pour un doublon concurrent de classinus.com.
-  alternates: { canonical: "./" },
   keywords: [
     "Classinus",
     "accès aux grands modèles d'IA en Afrique",
