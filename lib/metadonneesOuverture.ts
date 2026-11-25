@@ -7,6 +7,8 @@ import {
 import { ErreurApi } from "@/lib/erreurs";
 import { PARAMETRES_OUVERTURE } from "@/lib/ouvertureParUrl";
 
+// 25/11/2026 : /bibliotheque/[id] et /dossiers/[id] sont redevenues de vraies pages publiques (voir
+// components/PagePubliqueBibliotheque.tsx) ; ces métadonnées leur servent toujours.
 // 18/10/2026, demande Bourama : un lien de partage d'un élément public
 // ouvre l'appli sur l'aperçu de l'élément (voir lib/ouvertureParUrl.ts).
 // Les écrans d'arrivée (/bibliotheque/publique et /skills-publics) sont
