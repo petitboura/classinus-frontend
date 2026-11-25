@@ -12,7 +12,7 @@ import { LogosEntreprises } from "@/components/abonnements/LogosEntreprises";
 import { BlocModeles, idCarteEntreprise } from "@/components/abonnements/BlocModeles";
 import { effacerBrouillonPaiement, lireBrouillonPaiement } from "@/lib/brouillonPaiement";
 import { messageErreur } from "@/lib/erreurs";
-import { obtenirLocale } from "@/lib/i18n/locale";
+import { useLocale } from "@/lib/i18n/useLocale";
 import {
   lireConfigListeAttente,
   lireModeleDansAdresse,
@@ -39,11 +39,19 @@ import { supabase } from "@/lib/supabase";
 // Paliers, tableau et textes viennent du serveur (Supabase), en français et en anglais : rien n'est
 // écrit en dur ici. Les clés de texte gardent le préfixe attente_ car c'est celui que le serveur renvoie.
 
-export function PageAbonnements() {
+// Configuration préchargée (25/11/2026, demande de Bourama) : app/(app)/abonnements/page.tsx lit la
+// configuration côté serveur et la passe en configInitiale, pour que les robots, qui n'exécutent pas
+// JavaScript, reçoivent les paliers, le tableau et les modèles dans le HTML au lieu du squelette. Le
+// navigateur recharge ensuite la configuration comme avant. Sans configInitiale (serveur qui n'a pas pu
+// la lire), la page montre le squelette puis charge elle-même.
+export function PageAbonnements({ configInitiale = null }: { configInitiale?: ConfigListeAttente | null }) {
   const router = useRouter();
-  const locale = obtenirLocale();
+  // Langue lue après l'affichage (useLocale) : le premier rendu est en français, comme celui du serveur,
+  // pour que le HTML préchargé et celui du navigateur soient identiques.
+  const locale = useLocale();
 
-  const [config, setConfig] = useState<ConfigListeAttente | null>(null);
+  // Configuration préchargée par le serveur (voir app/(app)/abonnements/page.tsx), ou null s'il n'a pas pu la lire.
+  const [config, setConfig] = useState<ConfigListeAttente | null>(configInitiale);
   const [erreurChargement, setErreurChargement] = useState<string | null>(null);
   // Parcours de paiement ouvert : le palier payé et l'écran de départ (« moyen » quand la personne revient
   // d'une connexion en plein parcours).
@@ -85,7 +93,8 @@ export function PageAbonnements() {
         if (actif) setConfig(c);
       })
       .catch((e) => {
-        if (actif) setErreurChargement(messageErreur(e));
+        // Avec une configuration préchargée, un échec du rechargement ne cache pas ce qui est déjà affiché.
+        if (actif && !configInitiale) setErreurChargement(messageErreur(e));
       });
     return () => {
       actif = false;

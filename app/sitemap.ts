@@ -119,6 +119,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${URL_BASE}/bibliotheque` },
     { url: `${URL_BASE}/comportements` },
     { url: `${URL_BASE}/etablissements` },
+    { url: `${URL_BASE}/abonnements` },
     ...urlsDecouvrir(),
   ];
 
