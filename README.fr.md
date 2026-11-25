@@ -47,6 +47,10 @@ npm run dev
 
 L’application est alors disponible sur `http://localhost:3000`. Le backend doit être accessible à l’adresse définie dans `NEXT_PUBLIC_API_URL`.
 
+## Installer Classinus sur téléphone (PWA)
+
+L'appli APK n'est plus proposée. Sur Android et iPhone, Classinus s'installe depuis le navigateur. Le bouton flottant déplaçable (`components/BoutonFlottantTelecharger.tsx`) et le bouton de la barre latérale (`components/BoutonInstaller.tsx`) ouvrent la fenêtre d'installation du téléphone, ou à défaut la page des étapes (`components/PanneauInstallation.tsx`). Sur cette page, « Je n'arrive pas à l'installer » masque pour de bon le bouton flottant sur le téléphone ; le bouton de la barre latérale reste. L'état est partagé dans `lib/installationWeb.ts`, qui n'appelle volontairement jamais `preventDefault()` sur la proposition d'installation, pour que Chrome garde son propre bandeau. Rien de cela ne s'applique sur ordinateur, dans une appli native ou sur Maame.
+
 ## Maame (appli installable faite de la page bambara)
 
 Maame est la page bambara servie sur sa propre adresse (`maame.classinus.com`), avec son nom et son logo en noir et blanc, installable depuis le navigateur du téléphone (PWA, Android). Sur cette adresse, la racine `/` ouvre directement la page bambara (`rewrites` dans `next.config.mjs`), le manifeste et le titre de l'onglet sont ceux de Maame (`app/manifest.ts`, `app/bambara/layout.tsx`), et il n'y a ni inscription ni connexion : un compte anonyme est créé en silence à la première ouverture et gardé sur le téléphone (`components/bambara/PageBambaraClient.tsx`). Le début de l'adresse est défini dans `lib/maame.ts` et doit rester identique dans `public/maame-hote.js` et `next.config.mjs`. Les icônes sont dans `public/maame/` (le visage dans son cercle, sans le mot). Le logo n'est pas affiché dans la page elle même : une seule animation d'ouverture (`components/bambara/OuvertureMaame.tsx`) l'amène du milieu de l'écran jusqu'au bouton du haut à gauche, où il remplace l'icône menu. Demande que « Allow anonymous sign-ins » soit activé dans le projet Supabase.

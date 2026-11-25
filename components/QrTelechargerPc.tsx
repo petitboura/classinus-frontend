@@ -4,17 +4,16 @@ import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Copy, Check } from "lucide-react";
 
-// Créé le 08/09/2026, demande Bourama : sur PC, /telecharger.tsx ne peut
-// proposer aucun APK installable -- ce bloc remplace le bouton de
-// téléchargement direct par un moyen d'atteindre la page depuis un
-// téléphone, seul endroit où le fichier a un sens. Les trois façons
+// Créé le 08/09/2026, demande Bourama : sur Mac et Linux, la page /telecharger
+// n'a rien à installer -- ce bloc donne un moyen d'atteindre la page depuis un
+// téléphone, où Classinus s'installe. Les trois façons
 // (scanner, cliquer, copier) cohabitent volontairement plutôt qu'une
 // seule : selon le contexte (téléphone posé à côté ou besoin de
 // s'envoyer le lien autrement), l'une ou l'autre est la plus pratique.
 //
 // Composant client séparé (et non inline dans page.tsx, qui reste un
 // composant serveur) : seule la partie interactive (QR + copie) a besoin
-// du navigateur, le fetch de la release GitHub reste côté serveur.
+// du navigateur.
 export function QrTelechargerPc({ url }: { url: string }) {
   const [copie, setCopie] = useState(false);
 
