@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CircleAlert, Plus, RefreshCw, Server, Sparkles } from "lucide-react";
 import {
   demarrerConnexionMcpPersonnalise,
   definirMcpPersonnaliseActif,
   deconnecterMcpPersonnalise,
   enregistrerMcpPersonnalise,
-  definirMcpPersonnaliseAutorisationNonSensibles,
   listerMcpPersonnalises,
   supprimerMcpPersonnalise,
   testerMcpPersonnalise,
@@ -76,7 +75,6 @@ export function McpPersonnalises() {
         url: valeurs.url,
         auth_type: valeurs.authType,
         token: valeurs.token,
-        autoriser_non_sensibles: valeurs.autoriserNonSensibles,
       }, formulaire && formulaire !== "nouveau" ? formulaire : undefined);
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) setSansCompte(true);
@@ -106,51 +104,6 @@ export function McpPersonnalises() {
     } finally {
       setEnCours(null);
     }
-  }
-
-  // Case des outils non sensibles : elle change tout de suite au clic (mise à jour optimiste), puis
-  // l'enregistrement se fait en arrière-plan. La case n'est jamais grisée par cet enregistrement.
-  // Si la personne clique plusieurs fois vite, on garde seulement la dernière valeur voulue : une
-  // seule requête part à la fois, et la dernière valeur est renvoyée à la fin si elle a changé.
-  const envoisNonSensibles = useRef<Map<string, { voulu: boolean }>>(new Map());
-
-  function afficherNonSensibles(id: string, valeur: boolean) {
-    setServeurs((avant) => avant.map((s) => (s.id === id ? { ...s, autoriser_non_sensibles: valeur } : s)));
-  }
-
-  async function envoyerNonSensibles(id: string, suivi: { voulu: boolean }) {
-    let envoye = suivi.voulu;
-    try {
-      do {
-        envoye = suivi.voulu;
-        await definirMcpPersonnaliseAutorisationNonSensibles(id, envoye);
-      } while (suivi.voulu !== envoye);
-      setMessage(envoye
-        ? "Réglage enregistré. Les outils non sensibles de ce serveur ne demandent plus de confirmation."
-        : "Réglage enregistré. Chaque outil de ce serveur demande de nouveau une confirmation.");
-    } catch (e) {
-      // L'enregistrement a échoué : on remet la vraie valeur du serveur, puis on affiche l'erreur
-      // (recharger() efface l'erreur en cours, donc elle vient après).
-      await recharger();
-      gererErreur(e);
-    } finally {
-      envoisNonSensibles.current.delete(id);
-    }
-  }
-
-  function basculerNonSensibles(serveur: McpPersonnalise) {
-    const autoriser = !serveur.autoriser_non_sensibles;
-    setErreur(null);
-    setMessage(null);
-    afficherNonSensibles(serveur.id, autoriser);
-    const enCoursEnvoi = envoisNonSensibles.current.get(serveur.id);
-    if (enCoursEnvoi) {
-      enCoursEnvoi.voulu = autoriser;
-      return;
-    }
-    const suivi = { voulu: autoriser };
-    envoisNonSensibles.current.set(serveur.id, suivi);
-    void envoyerNonSensibles(serveur.id, suivi);
   }
 
   async function tester(serveur: McpPersonnalise) {
@@ -337,7 +290,6 @@ export function McpPersonnalises() {
           onConnecterOAuth={() => void connecterOAuth(serveurDetail)}
           onDeconnecterOAuth={() => void deconnecterOAuth(serveurDetail)}
           onBasculerActif={() => void basculerActif(serveurDetail)}
-          onBasculerNonSensibles={() => basculerNonSensibles(serveurDetail)}
           onModifier={() => modifier(serveurDetail)}
           onSupprimer={() => void supprimer(serveurDetail)}
         />

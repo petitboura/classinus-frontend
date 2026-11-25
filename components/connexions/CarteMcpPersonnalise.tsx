@@ -1,11 +1,10 @@
 "use client";
 
 import { Check, CircleAlert, LoaderCircle, MoreHorizontal, Pencil, PlugZap, RefreshCw, Trash2, Unplug } from "lucide-react";
-import type { AuthTypeMcpPersonnalise, McpPersonnalise } from "@/lib/api";
+import { groupePermissionsServeurMcp, type AuthTypeMcpPersonnalise, type McpPersonnalise } from "@/lib/api";
 import { CadrePanneau } from "@/components/connexions/CadrePanneau";
-import { ActionsToujoursAutorisees } from "@/components/connexions/ActionsToujoursAutorisees";
+import { PermissionsOutils } from "@/components/connexions/PermissionsOutils";
 import { LogoMcp } from "@/components/connexions/LogoMcp";
-import { CaseACocher } from "@/components/CaseACocher";
 
 export type ResultatTestMcp = {
   nombre_outils: number;
@@ -108,7 +107,6 @@ export function PanneauMcpPersonnalise({
   onConnecterOAuth,
   onDeconnecterOAuth,
   onBasculerActif,
-  onBasculerNonSensibles,
   onModifier,
   onSupprimer,
 }: {
@@ -124,7 +122,6 @@ export function PanneauMcpPersonnalise({
   onConnecterOAuth: () => void;
   onDeconnecterOAuth: () => void;
   onBasculerActif: () => void;
-  onBasculerNonSensibles: () => void;
   onModifier: () => void;
   onSupprimer: () => void;
 }) {
@@ -154,15 +151,7 @@ export function PanneauMcpPersonnalise({
             </div>
           </dl>
 
-          <label className="flex cursor-pointer items-start gap-2 text-sm text-dj-texte">
-            <CaseACocher checked={!!serveur.autoriser_non_sensibles} onChange={() => onBasculerNonSensibles()} disabled={desactive} className="mt-0.5" />
-            <span className="min-w-0">
-              Autoriser d'un coup les outils non sensibles (lecture seule)
-              <span className="block text-xs leading-5 text-dj-texte-muet">Les outils qui modifient ou suppriment des données demandent toujours ta confirmation.</span>
-            </span>
-          </label>
-
-          <ActionsToujoursAutorisees filtre={(a) => a.appli === "mcp_personnalise" && a.cle.includes("_" + serveur.id.replace(/-/g, "").slice(0, 6) + "_")} />
+          <PermissionsOutils groupe={groupePermissionsServeurMcp(serveur.id)} />
 
           {erreur && <div role="alert" className="flex items-start gap-2 rounded-xl border border-[var(--dj-erreur)]/30 p-3 text-sm text-[var(--dj-erreur)]"><CircleAlert size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 break-words">{erreur}</span></div>}
           {message && <p role="status" className="rounded-xl border border-dj-bordure p-3 text-sm text-dj-texte">{message}</p>}

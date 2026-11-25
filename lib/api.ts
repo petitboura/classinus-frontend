@@ -3174,13 +3174,6 @@ export async function definirMcpPersonnaliseActif(id: string, actif: boolean) {
   }) as Promise<{ actif: boolean }>;
 }
 
-export async function definirMcpPersonnaliseAutorisationNonSensibles(id: string, autoriser: boolean) {
-  return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}/autorisation-non-sensibles`, {
-    method: "POST",
-    body: JSON.stringify({ autoriser }),
-  }) as Promise<{ autoriser_non_sensibles: boolean }>;
-}
-
 export async function supprimerMcpPersonnalise(id: string) {
   return appelerApi(`/api/mcp-personnalises/${encodeURIComponent(id)}`, {
     method: "DELETE",
@@ -3229,19 +3222,47 @@ export async function sonderMcpPersonnalise(url: string, siteOfficiel?: string |
   }) as Promise<SondageMcpPersonnalise>;
 }
 
-export type AutorisationOutil = {
+// Permissions des outils (25/11/2026) : réglages d'une application connectée ou d'un serveur MCP
+// personnalisé. Le groupe est le nom de l'application, ou "custommcp_" suivi de 6 caractères pour un serveur.
+export type EtatPermissionOutil = "autoriser" | "demander" | "bloquer";
+export type TypeOutilPermission = "lecture" | "ecriture";
+
+export type OutilPermission = {
   cle: string;
   nom_lisible: string;
-  created_at: string;
-  appli: string | null;
+  etat: EtatPermissionOutil | null;
+  etat_effectif: EtatPermissionOutil;
+  autorisation_possible: boolean;
 };
 
-export async function listerAutorisationsOutils() {
-  return appelerApi("/api/autorisations-outils") as Promise<{ autorisations: AutorisationOutil[] }>;
+export type CategoriePermission = {
+  type: TypeOutilPermission;
+  etat: EtatPermissionOutil | null;
+  etat_effectif: EtatPermissionOutil;
+  par_defaut: EtatPermissionOutil;
+  outils: OutilPermission[];
+};
+
+export type VuePermissionsOutils = { groupe: string; categories: CategoriePermission[] };
+
+export function groupePermissionsServeurMcp(id: string) {
+  return `custommcp_${id.replace(/-/g, "").slice(0, 6).toLowerCase()}`;
 }
 
-export async function retirerAutorisationOutil(cle: string) {
-  await appelerApi(`/api/autorisations-outils?cle=${encodeURIComponent(cle)}`, { method: "DELETE" });
+export function clePermissionCategorie(groupe: string, type: TypeOutilPermission) {
+  return `categorie:${groupe}:${type}`;
+}
+
+export async function lirePermissionsOutils(groupe: string) {
+  return appelerApi(`/api/permissions-outils/${encodeURIComponent(groupe)}`) as Promise<VuePermissionsOutils>;
+}
+
+// etat null : retire le réglage, la valeur par défaut s'applique de nouveau.
+export async function reglerPermissionOutil(groupe: string, cle: string, etat: EtatPermissionOutil | null) {
+  await appelerApi(`/api/permissions-outils/${encodeURIComponent(groupe)}`, {
+    method: "PUT",
+    body: JSON.stringify({ cle, etat }),
+  });
 }
 
 // Appel d'outil lancé depuis un widget MCP (08/11/2026). Le backend vérifie que l'outil est du même
