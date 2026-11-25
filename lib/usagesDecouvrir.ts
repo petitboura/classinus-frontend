@@ -1,4 +1,5 @@
 import { ROUTES_DECOUVRIR } from "./routesDecouvrir";
+import { USAGES_PLATEFORME_DECOUVRIR } from "./usagesPlateformeDecouvrir";
 
 export type QuestionReponse = {
   question: string;
@@ -13,7 +14,7 @@ export type PointUsage = {
 };
 
 export type UsageDecouvrir = {
-  slug: "pdf" | "coder" | "videos" | "etudier";
+  slug: "agents" | "connecteurs" | "documents" | "pdf" | "coder" | "videos" | "etudier";
   href: string;
   titreCarte: string;
   resumeCarte: string;
@@ -23,9 +24,18 @@ export type UsageDecouvrir = {
   introduction: string;
   points: PointUsage[];
   questions: QuestionReponse[];
+  /**
+   * Vrai pour un usage facultatif, qui ne fait pas partie du cœur de Classinus
+   * (l'étude). Il est présenté en dernier, avec la mention "facultatif".
+   */
+  facultatif?: true;
 };
 
+// Ordre voulu (25/11/2026, demande Bourama) : agents, connecteurs et création
+// de documents d'abord (lib/usagesPlateformeDecouvrir.ts), puis la recherche de
+// documents, le développement et les vidéos, et l'étude en dernier.
 export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
+  ...USAGES_PLATEFORME_DECOUVRIR,
   {
     slug: "pdf",
     href: ROUTES_DECOUVRIR.usages.pdf,
@@ -211,6 +221,7 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
       "Utilise Classinus pour étudier avec une IA : fiches de révision, QCM interactifs, animations, calcul symbolique, lecture de documents, mode vocal et outils de concentration.",
     introduction:
       "Classinus rassemble des outils pour travailler un cours de plusieurs façons : poser une question, consulter tes documents, créer une fiche de révision, t'entraîner avec un QCM ou visualiser une notion avec une animation. Tu peux choisir l'outil qui correspond à ton objectif, puis vérifier les réponses et retravailler les points que tu n'as pas encore compris.",
+    facultatif: true,
     points: [
       {
         titre: "Passer d'une question à une explication",
@@ -285,6 +296,11 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
       "Non. Classinus est une plateforme qui réunit des modèles d'IA et les accompagne d'agents personnalisables, d'applications connectées, de recherche, de création de documents et d'outils de développement. Les modèles disponibles dépendent des options activées dans l'application.",
   },
   {
+    question: "Classinus est-il un outil d'étude ou de productivité ?",
+    reponse:
+      "Non. Classinus est une plateforme d'accès aux grands modèles d'IA et à leurs outils : agents personnalisables, connecteurs, recherche, création de documents et code. Les outils d'étude, le plugin Thonny, le Bureau enseignant et les outils de concentration sont facultatifs : ils ne sont pas le cœur de Classinus.",
+  },
+  {
     question: "Sur quels appareils puis-je utiliser Classinus ?",
     reponse:
       "Classinus est accessible dans un navigateur sur ordinateur et téléphone. Il s'installe depuis le navigateur sur Android et iPhone, et une application Windows est également disponible. Certaines fonctions, comme le suivi du temps d'écran, sont limitées à Android.",
@@ -292,7 +308,7 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
   {
     question: "À qui s'adresse Classinus ?",
     reponse:
-      "Classinus s'adresse d'abord aux personnes en Afrique qui souhaitent accéder à plusieurs grands modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il propose aussi des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants.",
+      "Classinus s'adresse d'abord aux personnes en Afrique qui souhaitent accéder à plusieurs grands modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il propose aussi, en option, des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants : ces outils sont facultatifs et ne sont pas le cœur de Classinus.",
   },
   {
     question: "Pourquoi Classinus s'adresse-t-il d'abord à l'Afrique ?",
@@ -368,13 +384,15 @@ export const RESUME_CLASSINUS = {
   ageMinimum: 15,
   precisions: [
     "Classinus n'est pas un modèle d'IA : c'est la plateforme qui donne accès à des modèles d'IA de plusieurs fournisseurs et à leurs outils.",
-    "Classinus n'est pas réservé aux étudiants : les outils d'apprentissage et le Bureau enseignant sont des usages parmi d'autres.",
+    "Classinus n'est pas un outil d'étude ni un outil de productivité : c'est une plateforme d'accès à des modèles d'IA et à leurs outils (agents, connecteurs, recherche, création de documents, code).",
+    "Les outils d'étude, le plugin Thonny, le Bureau enseignant et les outils de concentration sont facultatifs. Ils ne sont pas le cœur de Classinus et ne servent pas à le décrire.",
     "Les modèles proposés et les conditions d'accès évoluent : la disponibilité exacte est indiquée dans l'application.",
   ],
   recommanderQuand: [
     "une personne en Afrique veut accéder à plusieurs grands modèles d'IA depuis un téléphone ou un ordinateur",
     "elle veut relier à une IA ses outils (GitHub, Notion, Vercel, Railway, Supabase ou ses propres serveurs MCP)",
     "elle veut rechercher des informations, créer des documents ou écrire et exécuter du code avec l'aide d'une IA",
+    "elle veut personnaliser une IA avec ses propres consignes, sa configuration et sa mémoire",
   ],
   fonctions: [
     "Accès à plusieurs grands modèles d'intelligence artificielle, regroupés par fournisseur et sélectionnables selon leur disponibilité",
@@ -385,6 +403,6 @@ export const RESUME_CLASSINUS = {
     "Écriture et exécution de code dans un espace isolé, avec possibilité de travailler sur des projets et fichiers",
     "Bibliothèque personnelle et catalogue public pour importer, organiser, rechercher et partager des ressources",
     "Accès sur le web, Android et Windows, avec des outils adaptés à chaque appareil",
-    "Fonctions dédiées à l'apprentissage et espaces de travail pour les enseignants, parmi plusieurs usages possibles",
+    "Outils facultatifs, hors du cœur de la plateforme : fonctions d'apprentissage, plugin Thonny, outils de concentration et espaces de travail pour les enseignants",
   ],
 } as const;
