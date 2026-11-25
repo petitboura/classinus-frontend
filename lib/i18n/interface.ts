@@ -2652,7 +2652,7 @@ const EN: Record<string, string> = {
   "utilise une url https publique, sans identifiants ni fragment.": "Use a public HTTPS URL without credentials or a fragment.",
   "saisis une url https valide.": "Enter a valid HTTPS URL.",
   "saisis un nom pour ce serveur.": "Enter a name for this server.",
-  "Limite : 10 serveurs par compte et 50 outils découverts au maximum par serveur. Classinus utilise ces outils dans le chat et demande une confirmation avant chaque exécution.": "Limit: 10 servers per account and up to 50 discovered tools per server. Classinus uses these tools in the chat and asks for confirmation before each run.",
+  "Limite : 1000 serveurs par compte et 50 outils découverts au maximum par serveur. Classinus utilise ces outils dans le chat et demande une confirmation avant chaque exécution.": "Limit: 1000 servers per account and up to 50 discovered tools per server. Classinus uses these tools in the chat and asks for confirmation before each run.",
   "connecte-toi ou crée un compte pour gérer tes serveurs mcp personnalisés.": "Sign in or create an account to manage your custom MCP servers.",
   "serveur mcp personnalisé": "Custom MCP server",
   "connecté via oauth": "Connected via OAuth",

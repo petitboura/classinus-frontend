@@ -346,7 +346,7 @@ export function McpPersonnalises() {
         <PanneauFormulaireMcp serveur={serveurFormulaire} onFermer={() => setFormulaire(null)} onEnregistrer={enregistrer} />
       )}
 
-      <p className="text-xs leading-5 text-dj-texte-muet">Limite : 10 serveurs par compte et 50 outils découverts au maximum par serveur. Classinus utilise ces outils dans le chat et demande une confirmation avant chaque exécution.</p>
+      <p className="text-xs leading-5 text-dj-texte-muet">Limite : 1000 serveurs par compte et 50 outils découverts au maximum par serveur. Classinus utilise ces outils dans le chat et demande une confirmation avant chaque exécution.</p>
     </section>
   );
 }
