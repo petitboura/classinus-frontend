@@ -5,8 +5,17 @@ export type CarteDecouvrir = {
   href: string;
   titre: string;
   description: string;
+  /**
+   * Vrai pour un outil facultatif, qui ne fait pas partie du cœur de Classinus
+   * (concentration, Thonny, Bureau enseignant). Les pages /decouvrir et
+   * /llms.txt le présentent à part, sous la mention "facultatif".
+   */
+  facultatif?: boolean;
 };
 
+// Ordre voulu (25/11/2026, demande Bourama) : d'abord ce qui fait le cœur de
+// Classinus (modèles d'IA, connecteurs, usages, agents, bibliothèque), puis
+// les outils facultatifs en dernier.
 export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
     slug: "applications-connectees",
@@ -21,34 +30,37 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     description: "Découvre les usages de Classinus : agents, recherche, création de documents, développement, organisation et outils d'apprentissage.",
   },
   {
-    slug: "bibliotheque",
-    href: ROUTES_DECOUVRIR.bibliotheque.accueil,
-    titre: "Bibliothèque",
-    description: "Retrouve tes documents personnels, explore les ressources partagées et accède aux dossiers que tu désignes sur mobile.",
-  },
-  {
     slug: "personnaliser",
     href: ROUTES_DECOUVRIR.personnaliser.accueil,
     titre: "Personnaliser Classinus",
     description: "Crée tes propres consignes, découvre les skills partagées et gère les informations conservées dans la mémoire.",
   },
   {
+    slug: "bibliotheque",
+    href: ROUTES_DECOUVRIR.bibliotheque.accueil,
+    titre: "Bibliothèque",
+    description: "Retrouve tes documents personnels, explore les ressources partagées et accède aux dossiers que tu désignes sur mobile.",
+  },
+  {
     slug: "concentration",
     href: ROUTES_DECOUVRIR.concentration.accueil,
     titre: "Concentration et temps d'écran",
     description: "Limite les interruptions pendant une session et consulte le temps passé dans les applications sur Android.",
+    facultatif: true,
   },
   {
     slug: "thonny",
     href: ROUTES_DECOUVRIR.thonny,
     titre: "Classinus dans Thonny",
     description: "Installe le plugin pour demander des analyses et des corrections de code Python dans l'éditeur Thonny.",
+    facultatif: true,
   },
   {
     slug: "bureau",
     href: ROUTES_DECOUVRIR.bureau.accueil,
     titre: "Bureau et outils de classe",
     description: "Partage des ressources par code, organise le programme pédagogique et consulte les outils réservés aux enseignants.",
+    facultatif: true,
   },
 ];
 

@@ -1,4 +1,5 @@
 import type { Locale } from "./locale";
+import { EN_POSITIONNEMENT_DECOUVRIR } from "@/lib/i18n/positionnementDecouvrir";
 
 /**
  * Dictionnaire de l'interface Classinus.
@@ -2912,7 +2913,7 @@ function normaliser(texte: string): string {
 const INDEX_EN_EXACT = new Map(
   Object.entries(EN).map(([fr, en]) => [normaliserCasse(fr), en])
 );
-const INDEX_EN = new Map(Object.entries(EN).map(([fr, en]) => [normaliser(fr), en]));
+const INDEX_EN = new Map(Object.entries({ ...EN, ...EN_POSITIONNEMENT_DECOUVRIR }).map(([fr, en]) => [normaliser(fr), en]));
 
 export function traduireTexteInterface(texte: string, locale: Locale): string {
   if (locale !== "en") return texte;

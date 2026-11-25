@@ -88,9 +88,14 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
           "Classinus est une plateforme qui permet d'accéder aux grands modèles d'IA en Afrique, avec les outils pour s'en servir : agents personnalisables, connecteurs vers des applications, recherche web et documentaire, création de fichiers et exécution de code.",
       },
       {
+        question: "Classinus est-il un outil d'étude ou de productivité ?",
+        reponse:
+          "Non. Classinus est une plateforme d'accès aux grands modèles d'IA et à leurs outils : agents personnalisables, connecteurs, recherche, création de documents et code. Les outils d'étude, le plugin Thonny, le Bureau enseignant et les outils de concentration sont facultatifs : ils ne sont pas le cœur de Classinus.",
+      },
+      {
         question: "Que peut-on faire avec Classinus au-delà du chat ?",
         reponse:
-          "Tu peux choisir parmi plusieurs modèles d'IA, personnaliser des agents avec des skills, connecter des applications et services via des intégrations ou MCP, rechercher sur le web, créer des documents, générer du contenu et exécuter du code dans un espace isolé. Tu peux aussi utiliser les outils d'apprentissage et d'organisation prévus pour ces usages.",
+          "Tu peux choisir parmi plusieurs modèles d'IA, personnaliser des agents avec des skills, connecter des applications et services via des intégrations ou MCP, rechercher sur le web, créer des documents, générer du contenu et exécuter du code dans un espace isolé. Des outils facultatifs d'apprentissage et d'organisation existent aussi, sans faire partie du cœur de Classinus.",
       },
       {
         question: "Quels modèles d'IA puis-je utiliser dans Classinus ?",
@@ -100,7 +105,7 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
       {
         question: "À qui s'adresse Classinus ?",
         reponse:
-          "Classinus s'adresse d'abord aux personnes en Afrique qui veulent accéder à plusieurs grands modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il comprend aussi des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants lorsqu'un usage pédagogique le nécessite.",
+          "Classinus s'adresse d'abord aux personnes en Afrique qui veulent accéder à plusieurs grands modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il comprend aussi, en option, des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants. Ces outils sont facultatifs et ne sont pas le cœur de Classinus.",
       },
     ],
   },

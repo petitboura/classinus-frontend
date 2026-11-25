@@ -67,6 +67,11 @@ export function PageUsageDecouvrir({ usage }: { usage: UsageDecouvrir }) {
       <header className="mt-4">
         <h1 className="font-display text-2xl font-bold text-dj-texte">{usage.titreH1}</h1>
         <p className="mt-3 text-base leading-relaxed text-dj-texte">{usage.introduction}</p>
+        {usage.facultatif && (
+          <p className="mt-4 rounded-xl bg-dj-surface-haute p-4 text-sm leading-relaxed text-dj-texte-muet">
+            Ce guide présente un usage facultatif. Il n'est pas le cœur de Classinus, qui reste une plateforme d'accès aux grands modèles d'IA et à leurs outils.
+          </p>
+        )}
       </header>
 
       <section className="mt-8" aria-label="Comment utiliser Classinus">

@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Bell,
   BookOpen,
+  Bot,
   Brain,
   ChevronLeft,
   ChevronRight,
@@ -31,19 +32,26 @@ export const metadata: Metadata = {
 };
 
 const ICONES_USAGE: Record<(typeof USAGES_DECOUVRIR)[number]["slug"], LucideIcon> = {
+  agents: Bot,
+  connecteurs: Plug,
+  documents: FileText,
   pdf: BookOpen,
   coder: Code,
   videos: Video,
   etudier: Brain,
 };
 
-const AUTRES_PARCOURS: {
+type Parcours = {
   titre: string;
   description: string;
   href: string;
   lien: string;
   Icone: LucideIcon;
-}[] = [
+  /** Outil facultatif : il ne fait pas partie du cœur de Classinus et passe dans la liste du bas. */
+  facultatif?: boolean;
+};
+
+const AUTRES_PARCOURS: Parcours[] = [
   {
     titre: "Retrouver et organiser tes documents",
     description:
@@ -59,30 +67,6 @@ const AUTRES_PARCOURS: {
     href: ROUTES_DECOUVRIR.personnaliser.accueil,
     lien: "Découvrir la personnalisation",
     Icone: SlidersHorizontal,
-  },
-  {
-    titre: "Programmer dans un éditeur",
-    description:
-      "Écris et teste du code dans l'éditeur intégré, ou utilise le plugin Classinus dans Thonny pour analyser un programme Python et comprendre une erreur.",
-    href: ROUTES_DECOUVRIR.thonny,
-    lien: "Voir le guide Thonny",
-    Icone: Code,
-  },
-  {
-    titre: "Partager des ressources et travailler en classe",
-    description:
-      "Utilise des codes de partage pour transmettre des contenus, consulte les établissements et demande l'accès aux ressources auxquelles tu es autorisé. Le Bureau comprend aussi des outils réservés aux enseignants.",
-    href: ROUTES_DECOUVRIR.bureau.accueil,
-    lien: "Explorer le Bureau",
-    Icone: Users,
-  },
-  {
-    titre: "Protéger tes moments de concentration",
-    description:
-      "Active un contrôle de session pour limiter les interruptions et consulte le temps passé dans les applications sur Android.",
-    href: ROUTES_DECOUVRIR.concentration.accueil,
-    lien: "Découvrir les outils de concentration",
-    Icone: Timer,
   },
   {
     titre: "Connecter Classinus à Claude et à des outils",
@@ -108,7 +92,68 @@ const AUTRES_PARCOURS: {
     lien: "Voir les possibilités du chat",
     Icone: FileText,
   },
+  {
+    titre: "Programmer dans un éditeur",
+    description:
+      "Écris et teste du code dans l'éditeur intégré, ou utilise le plugin Classinus dans Thonny pour analyser un programme Python et comprendre une erreur.",
+    href: ROUTES_DECOUVRIR.thonny,
+    lien: "Voir le guide Thonny",
+    Icone: Code,
+    facultatif: true,
+  },
+  {
+    titre: "Partager des ressources et travailler en classe",
+    description:
+      "Utilise des codes de partage pour transmettre des contenus, consulte les établissements et demande l'accès aux ressources auxquelles tu es autorisé. Le Bureau comprend aussi des outils réservés aux enseignants.",
+    href: ROUTES_DECOUVRIR.bureau.accueil,
+    lien: "Explorer le Bureau",
+    Icone: Users,
+    facultatif: true,
+  },
+  {
+    titre: "Protéger tes moments de concentration",
+    description:
+      "Active un contrôle de session pour limiter les interruptions et consulte le temps passé dans les applications sur Android.",
+    href: ROUTES_DECOUVRIR.concentration.accueil,
+    lien: "Découvrir les outils de concentration",
+    Icone: Timer,
+    facultatif: true,
+  },
 ];
+
+const PARCOURS_PRINCIPAUX = AUTRES_PARCOURS.filter((parcours) => !parcours.facultatif);
+const PARCOURS_FACULTATIFS = AUTRES_PARCOURS.filter((parcours) => parcours.facultatif);
+
+function ListeParcours({ parcours }: { parcours: Parcours[] }) {
+  return (
+    <ul className="flex flex-col gap-3">
+      {parcours.map(({ titre, description, href, lien, Icone }) => (
+        <li key={titre}>
+          <Link
+            href={href}
+            className="group flex items-start gap-3 rounded-2xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dj-bordure-forte"
+          >
+            <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-dj-surface-haute text-dj-texte">
+              <Icone size={18} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-base font-semibold text-dj-texte">{titre}</span>
+              <span className="mt-1 block text-sm leading-relaxed text-dj-texte-muet">{description}</span>
+              <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-dj-texte">
+                {lien}
+                <ChevronRight
+                  size={15}
+                  className="transition-transform group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function PageDecouvrirUsages() {
   return (
@@ -133,8 +178,9 @@ export default function PageDecouvrirUsages() {
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-dj-texte">
           Tu peux partir d'une idée, d'un document, d'un projet, d'un code à analyser ou d'un service à connecter.
           Classinus te permet de choisir un modèle d'IA, de configurer des agents, de rechercher des informations,
-          de créer des fichiers, de programmer et d'utiliser tes applications connectées. Les outils d'apprentissage
-          et d'organisation complètent ces usages. Choisis ton objectif pour découvrir les fonctions et leurs limites.
+          de créer des fichiers, de programmer et d'utiliser tes applications connectées. Les outils d'étude, de
+          concentration et de classe sont facultatifs : ils ne sont pas le cœur de Classinus. Choisis ton objectif
+          pour découvrir les fonctions et leurs limites.
         </p>
       </header>
 
@@ -157,8 +203,15 @@ export default function PageDecouvrirUsages() {
                     href={usage.href}
                     className="group flex h-full flex-col rounded-2xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dj-bordure-forte"
                   >
-                    <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-dj-surface-haute text-dj-texte">
-                      <Icone size={18} aria-hidden="true" />
+                    <span className="mb-3 flex items-center justify-between gap-2">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-dj-surface-haute text-dj-texte">
+                        <Icone size={18} aria-hidden="true" />
+                      </span>
+                      {usage.facultatif && (
+                        <span className="rounded-full bg-dj-surface-haute px-2.5 py-1 text-xs font-medium text-dj-texte-muet">
+                          Facultatif
+                        </span>
+                      )}
                     </span>
                     <span className="font-display text-base font-semibold text-dj-texte">
                       {usage.titreCarte}
@@ -192,36 +245,19 @@ export default function PageDecouvrirUsages() {
             assistant et organiser ton travail au quotidien.
           </p>
         </div>
-        <ul className="flex flex-col gap-3">
-          {AUTRES_PARCOURS.map(({ titre, description, href, lien, Icone }) => (
-            <li key={titre}>
-              <Link
-                href={href}
-                className="group flex items-start gap-3 rounded-2xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dj-bordure-forte"
-              >
-                <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-dj-surface-haute text-dj-texte">
-                  <Icone size={18} aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-display text-base font-semibold text-dj-texte">
-                    {titre}
-                  </span>
-                  <span className="mt-1 block text-sm leading-relaxed text-dj-texte-muet">
-                    {description}
-                  </span>
-                  <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-dj-texte">
-                    {lien}
-                    <ChevronRight
-                      size={15}
-                      className="transition-transform group-hover:translate-x-0.5"
-                      aria-hidden="true"
-                    />
-                  </span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ListeParcours parcours={PARCOURS_PRINCIPAUX} />
+      </section>
+
+      <section className="mt-10" aria-labelledby="outils-facultatifs">
+        <div className="mb-4">
+          <h2 id="outils-facultatifs" className="font-display text-xl font-semibold text-dj-texte">
+            Outils facultatifs
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-dj-texte-muet">
+            Ces outils sont facultatifs. Ils ne sont pas le cœur de Classinus, qui reste une plateforme d'accès aux grands modèles d'IA et à leurs outils.
+          </p>
+        </div>
+        <ListeParcours parcours={PARCOURS_FACULTATIFS} />
       </section>
 
       <section className="mt-10 rounded-2xl border border-dj-bordure bg-dj-surface p-5 sm:p-6" aria-labelledby="de-la-demande-au-resultat">
@@ -232,19 +268,19 @@ export default function PageDecouvrirUsages() {
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">01 · Apporte le contexte</span>
             <p className="mt-2 text-sm leading-relaxed text-dj-texte">
-              Écris ta question, joins un cours ou une image, partage un extrait de code ou indique une page à consulter.
+              Écris ta question, joins un document ou une image, partage un extrait de code ou indique une page à consulter.
             </p>
           </div>
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">02 · Précise ton objectif</span>
             <p className="mt-2 text-sm leading-relaxed text-dj-texte">
-              Demande une explication pas à pas, une recherche de sources, une fiche, un QCM, du code ou un support adapté à ton travail.
+              Demande une explication pas à pas, une recherche de sources, un document, du code ou un support adapté à ton travail.
             </p>
           </div>
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">03 · Vérifie et améliore</span>
             <p className="mt-2 text-sm leading-relaxed text-dj-texte">
-              Demande les étapes ou les références, teste le code et compare les résultats à ton cours. Une réponse d'IA peut contenir des erreurs.
+              Demande les étapes ou les références, teste le code et compare les résultats à tes sources. Une réponse d'IA peut contenir des erreurs.
             </p>
           </div>
         </div>
@@ -261,7 +297,7 @@ export default function PageDecouvrirUsages() {
               <h3 className="text-sm font-semibold text-dj-texte">Tu peux apporter</h3>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">
-              Des questions, des PDF et autres documents, des images ou photos de formules, des extraits de code, des liens web et certains fichiers audio ou vidéo.
+              Des questions, des PDF et autres documents, des images ou des photos, des extraits de code, des liens web et certains fichiers audio ou vidéo.
             </p>
           </div>
           <div>
@@ -270,12 +306,12 @@ export default function PageDecouvrirUsages() {
               <h3 className="text-sm font-semibold text-dj-texte">Tu peux obtenir</h3>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">
-              Des explications, des fiches et QCM, des documents PDF ou Office, du code, des images et des animations. Les formats dépendent de la demande et des outils disponibles.
+              Des explications, des documents PDF ou Office, du code, des images et des animations. Les formats dépendent de la demande et des outils disponibles.
             </p>
           </div>
         </div>
         <p className="mt-4 text-xs leading-relaxed text-dj-texte-muet">
-          Les fonctions disponibles peuvent varier selon l'appareil, le modèle choisi et les outils activés. Vérifie les sources, les calculs et les contenus générés avant de les utiliser dans un devoir ou un projet.
+          Les fonctions disponibles peuvent varier selon l'appareil, le modèle choisi et les outils activés. Vérifie les sources, les calculs et les contenus générés avant de les utiliser dans ton travail ou ton projet.
         </p>
       </section>
 

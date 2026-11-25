@@ -37,10 +37,16 @@ export const ROUTES_DECOUVRIR = {
     tempsEcran: "/decouvrir/concentration/temps-ecran",
   },
   // Pages d'usage (11/10/2026, chantier "visibilité auprès des IA") :
-  // des pages par besoin concret (recherche de documents, développement,
-  // contenus vidéo et apprentissage). Le contenu vit dans lib/usagesDecouvrir.ts.
+  // des pages par besoin concret. Les trois premières (agents, connecteurs,
+  // création de documents) disent ce qu'est le cœur de Classinus ; la
+  // recherche de documents, le développement et les vidéos suivent ; l'étude
+  // est un usage facultatif. Le contenu vit dans lib/usagesDecouvrir.ts et
+  // lib/usagesPlateformeDecouvrir.ts.
   usages: {
     accueil: "/decouvrir/usages",
+    agents: "/decouvrir/usages/creer-des-agents",
+    connecteurs: "/decouvrir/usages/connecter-tes-outils",
+    documents: "/decouvrir/usages/creer-des-documents",
     pdf: "/decouvrir/usages/trouver-des-pdf",
     coder: "/decouvrir/usages/apprendre-a-coder",
     videos: "/decouvrir/usages/trouver-des-videos",
