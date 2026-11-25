@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import {
-  obtenirComportementPublic,
+  obtenirSkillPublic,
   obtenirDossierCataloguePublic,
   obtenirEntreeBibliothequePublique,
 } from "@/lib/api";
@@ -72,7 +72,7 @@ export async function metadonneesSkillsPublics(parametres: ParametresPage): Prom
   if (!idSkill) return {};
 
   try {
-    const skill = await obtenirComportementPublic(idSkill);
+    const skill = await obtenirSkillPublic(idSkill);
     return {
       title: `${skill.nom} · Skills Classinus`,
       description: skill.description || `Skill publique partagée sur Classinus : ${skill.nom}.`,

@@ -21,7 +21,7 @@ const AGENT_ID = "clovis";
  * PERSO, lecture seule, même affichage que la version publique
  * (app/(app)/skills/[id]/page.tsx), compte obligatoire pour consulter.
  * Aucune action automatique, aucun nouveau bouton : contrairement à la
- * version publique il n'y a pas d'ActionsSkillPublic ici (pas
+ * version publique il n'y a pas de bouton d'ajout ici (pas
  * d'équivalent "activer" pour un skill perso reçu par lien).
  *
  * Extrait en composant client séparé de sa page, même raisonnement que

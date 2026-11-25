@@ -12,7 +12,7 @@ import { BoutonAvecIA } from "@/components/BoutonAvecIA";
 // 16/09/2026, demande Bourama ("les pages si tu ouvres un lien de partage
 // n'ont aucun CTA") : la page d'un dossier public n'avait aucune action du
 // tout, juste la liste de son contenu. Pendant équivalent
-// d'ActionsFichierPublic.tsx et d'ActionsSkillPublic.tsx.
+// d'ActionsFichierPublic.tsx.
 //
 // L'ajout réutilise attacherDossierPublic, déjà en place côté
 // BibliothequePublique.tsx : le dossier apparaît dans la bibliothèque

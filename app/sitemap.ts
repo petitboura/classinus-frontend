@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import {
   listerBibliothequePublique,
-  rechercherComportementsPublics,
+  rechercherSkillsPublics,
   listerEtablissementsPublics,
   listerDossiersCataloguePublic,
 } from "@/lib/api";
@@ -55,7 +55,7 @@ async function urlsBibliothequePublique(): Promise<MetadataRoute.Sitemap> {
 
 async function urlsSkillsPubliques(): Promise<MetadataRoute.Sitemap> {
   try {
-    const skills = await rechercherComportementsPublics();
+    const skills = await rechercherSkillsPublics();
     return skills.map((skill) => ({ url: `${URL_BASE}/skills/${skill.id}` }));
   } catch {
     return [];

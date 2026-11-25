@@ -267,7 +267,7 @@ export const RUBRIQUES_AIDE: RubriqueAide[] = [
     texteCourt:
       "Parcours les skills partagées par la communauté. Consulte leur contenu avant de les activer : Classinus ajoute alors une copie à tes skills personnelles, que tu peux ensuite adapter.",
     texteComplet:
-      "Le catalogue public rassemble des skills que d'autres utilisateurs ont choisi de partager. Ouvre une skill pour consulter son contenu complet avant de l'activer. Si elle te convient, Classinus en ajoute une copie à tes skills personnelles, que tu peux ensuite modifier. Si tu as publié une skill, tu peux aussi la retirer du catalogue.",
+      "Le catalogue public rassemble des skills que d'autres utilisateurs ont choisi de partager. Ouvre une skill pour consulter son contenu complet avant de l'activer. Si elle te convient, Classinus en ajoute une copie à tes skills personnelles, que tu peux ensuite modifier. Pour publier une de tes skills, ouvre-la dans Mes skills, ajoute une description, enregistre puis clique sur Publier. Tu peux la retirer du catalogue à tout moment. Si l'auteur met à jour une skill que tu as ajoutée, Classinus te prévient dans le chat et te propose de la remplacer, seulement avec ton accord.",
 
     lienDecouvrir: ROUTES_DECOUVRIR.personnaliser.skillsPublics,
   },

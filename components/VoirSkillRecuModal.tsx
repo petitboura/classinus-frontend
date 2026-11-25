@@ -39,6 +39,7 @@ export function VoirSkillRecuModal({
   nom,
   proprietaireNom,
   skillMdInitial,
+  chargerSkillMd,
   sousTitre,
   lienPartage,
   texteAvecIA,
@@ -49,6 +50,9 @@ export function VoirSkillRecuModal({
   nom: string;
   proprietaireNom?: string;
   skillMdInitial?: string;
+  // 24/11/2026 : le catalogue public ne renvoie pas le contenu dans sa liste (il peut contenir
+  // plusieurs fichiers). L'aperçu le charge à l'ouverture avec cette fonction.
+  chargerSkillMd?: () => Promise<string>;
   sousTitre?: string;
   // 12/09/2026, demande Bourama : bouton Partager, uniquement pour
   // l'aperçu d'un skill du catalogue PUBLIC (ComportementsPublics.tsx) --
@@ -68,18 +72,25 @@ export function VoirSkillRecuModal({
   onFermer: () => void;
 }) {
   const [skillMd, setSkillMd] = useState<string | null>(skillMdInitial ?? null);
-  const [chargement, setChargement] = useState(skillMdInitial === undefined);
+  const [chargement, setChargement] = useState(skillMdInitial === undefined && !!(chargerSkillMd || comportementId));
   const [erreur, setErreur] = useState<string | null>(null);
 
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const fermer = () => demarrerFermeture(onFermer);
 
   useEffect(() => {
-    if (skillMdInitial !== undefined || !comportementId) return;
-    voirSkillRecu(comportementId)
-      .then((res) => setSkillMd(res.skill_md))
-      .catch((e) => setErreur(messageErreur(e)))
-      .finally(() => setChargement(false));
+    if (skillMdInitial !== undefined) return;
+    const lecture = chargerSkillMd ? chargerSkillMd() : comportementId ? voirSkillRecu(comportementId).then((res) => res.skill_md) : null;
+    if (!lecture) {
+      setChargement(false);
+      return;
+    }
+    let annule = false;
+    lecture
+      .then((contenu) => { if (!annule) setSkillMd(contenu); })
+      .catch((e) => { if (!annule) setErreur(messageErreur(e)); })
+      .finally(() => { if (!annule) setChargement(false); });
+    return () => { annule = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comportementId]);
 

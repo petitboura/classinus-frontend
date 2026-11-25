@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { listerSkillsIndependants, obtenirSkillIndependant, enregistrerSkillIndependant, supprimerSkillIndependant, importerSkillZip, type SkillIndependant } from "@/lib/api";
+import { listerSkillsIndependants, obtenirSkillIndependant, enregistrerSkillIndependant, supprimerSkillIndependant, importerSkillZip, publierSkill, retirerSkillPublic, type SkillIndependant } from "@/lib/api";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "@/components/Skeleton";
@@ -34,6 +34,9 @@ export function SkillsIndependants() {
   const [fichierActif, setFichierActif] = useState(CHEMIN_PRINCIPAL);
   const [vueBrute, setVueBrute] = useState(false);
   const [actif, setActif] = useState(true);
+  // Catalogue public (24/11/2026) : "public" quand le skill est publié, sinon "prive" ou "retire".
+  const [visibilite, setVisibilite] = useState("prive");
+  const [publication, setPublication] = useState(false);
   const [erreur, setErreur] = useState("");
   const [busy, setBusy] = useState(false);
   // La page montre d'abord la liste des skills ; un clic sur un skill (ou Nouveau skill) ouvre l'éditeur.
@@ -49,6 +52,13 @@ export function SkillsIndependants() {
     finally { setChargementListe(false); }
   }
   useEffect(() => { void charger(); }, []);
+  // Lien "Modifier dans Mes skills" du catalogue public : /comportements?skill=ID ouvre directement ce skill.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.location.pathname.replace(/\/+$/, "") !== "/comportements") return;
+    const id = new URLSearchParams(window.location.search).get("skill");
+    if (id) void ouvrir(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Quand l'IA crée ou modifie un skill depuis le chat, la liste se met à jour toute seule.
   useEffect(() => ecouterDonneesModifiees("skills", () => { void charger(); }), []);
 
@@ -74,8 +84,9 @@ export function SkillsIndependants() {
     return !modifie || window.confirm("Tu as des modifications non enregistrées. Les abandonner ?");
   }
 
-  function charge(id: string | null, n: string, d: string, a: boolean, f: FichierEdition[]) {
-    setVueEditeur(v => v + 1);
+  function charge(id: string | null, n: string, d: string, a: boolean, f: FichierEdition[], v = "prive") {
+    setVueEditeur(x => x + 1);
+    setVisibilite(v);
     setSelection(id); setNom(n); setDescription(d); setActif(a); setFichiers(f);
     setFichierActif(f.find(x => x.chemin === CHEMIN_PRINCIPAL)?.chemin ?? f[0]?.chemin ?? CHEMIN_PRINCIPAL);
     setNouveauChemin(""); setErreur(""); setVueBrute(false);
@@ -87,7 +98,7 @@ export function SkillsIndependants() {
     setOuverture(id); setErreur("");
     try {
       const s = await obtenirSkillIndependant(id);
-      charge(id, s.nom, s.description || "", s.actif, (s.fichiers || []).map(f => ({ chemin: f.chemin, contenu: f.contenu || "" })));
+      charge(id, s.nom, s.description || "", s.actif, (s.fichiers || []).map(f => ({ chemin: f.chemin, contenu: f.contenu || "" })), s.visibilite || "prive");
       setVue("editeur");
     } catch (e) { setErreur(messageErreur(e)); }
     finally { setOuverture(null); }
@@ -139,6 +150,19 @@ export function SkillsIndependants() {
     finally { setBusy(false); }
   }
 
+  // Publier ou retirer. Le catalogue publie la version enregistrée : on exige donc d'avoir enregistré d'abord.
+  async function basculerPublication() {
+    if (!selection || publication) return;
+    setPublication(true);
+    try {
+      const statut = visibilite === "public" ? await retirerSkillPublic(selection) : await publierSkill(selection);
+      setVisibilite(statut.visibilite);
+      setErreur("");
+      await charger();
+    } catch (e) { setErreur(messageErreur(e)); }
+    finally { setPublication(false); }
+  }
+
   function ajouterFichier() {
     const chemin = nouveauChemin.trim();
     if (!chemin || chemin.startsWith("/") || chemin.includes("\\") || chemin.split("/").some(p => !p || p === "." || p === "..") || fichiers.some(f => f.chemin === chemin)) {
@@ -170,7 +194,7 @@ export function SkillsIndependants() {
       <div className="flex min-w-0 flex-col" aria-busy={chargementListe}>
         {chargementListe && [0, 1, 2, 3].map(i => <Skeleton key={i} className="my-1 h-5 w-2/3" />)}
         {!chargementListe && liste.length === 0 && <p className="animate-dj-fade-in-rapide text-sm text-dj-texte-muet">Aucun skill pour le moment.</p>}
-        {!chargementListe && liste.map(s => <button key={s.id} type="button" disabled={!!ouverture} onClick={() => void ouvrir(s.id)} aria-busy={ouverture === s.id} className={`block w-full animate-dj-fade-in-rapide truncate py-2 text-left text-sm transition-colors hover:text-dj-accent-1-texte disabled:cursor-wait ${s.actif ? "" : "text-dj-texte-muet"}`}>{ouverture === s.id ? <span className="animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent">{s.nom}</span> : s.nom}</button>)}
+        {!chargementListe && liste.map(s => <button key={s.id} type="button" disabled={!!ouverture} onClick={() => void ouvrir(s.id)} aria-busy={ouverture === s.id} className={`block w-full animate-dj-fade-in-rapide truncate py-2 text-left text-sm transition-colors hover:text-dj-accent-1-texte disabled:cursor-wait ${s.actif ? "" : "text-dj-texte-muet"}`}>{ouverture === s.id ? <span className="animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent">{s.nom}</span> : s.nom}{s.visibilite === "public" && <span className="ml-2 rounded-full border border-dj-bordure px-2 py-0.5 text-[11px] text-dj-texte-muet">Public</span>}</button>)}
       </div>
     </div> : <div key="editeur" className="flex min-w-0 animate-dj-fade-in-rapide flex-col gap-4">
       <div>
@@ -179,6 +203,7 @@ export function SkillsIndependants() {
       <div key={vueEditeur} className="min-w-0 animate-dj-fade-in-rapide">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1 basis-56"><LigneNomSkill nom={nom} onNom={changerNom} /></div>
+          {selection && <button type="button" disabled={publication || (visibilite !== "public" && modifie)} title={visibilite !== "public" && modifie ? "Enregistre d'abord tes modifications pour publier ce skill." : undefined} onClick={() => void basculerPublication()} className="flex-shrink-0 text-sm text-dj-texte-muet transition-colors hover:text-dj-texte disabled:cursor-not-allowed disabled:opacity-50">{publication ? "Un instant…" : visibilite === "public" ? "Retirer du catalogue public" : "Publier"}</button>}
           {selection && <button type="button" disabled={busy} onClick={() => void supprimer()} className="flex-shrink-0 text-sm text-red-600 transition-opacity hover:underline disabled:opacity-50">Supprimer</button>}
           <button type="button" role="switch" aria-checked={actif} aria-label={actif ? "Skill actif" : "Skill désactivé"} title={actif ? "Skill actif" : "Skill désactivé"} onClick={() => setActif(a => !a)} className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-200 ${actif ? "bg-dj-accent-1" : "bg-dj-inactif"}`}>
             <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${actif ? "translate-x-5" : "translate-x-0"}`} />

@@ -17,6 +17,14 @@ export default function PageDecouvrirPersonnaliserSkillsPublics() {
         <h2 className="font-display text-lg font-semibold text-dj-texte">Choisir une skill en connaissance de cause</h2>
         <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux consulter le contenu complet d'une skill avant de l'activer. Si elle te convient, Classinus en ajoute une copie à tes skills personnelles, que tu peux ensuite adapter. Vérifie toujours les consignes avant de les utiliser et garde celles qui correspondent à tes objectifs.</p>
       </section>
+      <section className="mt-6">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Publier ta propre skill</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Dans Mes skills, ouvre une skill, ajoute une description, enregistre puis clique sur Publier. Elle apparaît dans le catalogue. Tu peux la retirer à tout moment : les copies déjà ajoutées par d'autres personnes leur restent.</p>
+      </section>
+      <section className="mt-6">
+        <h2 className="font-display text-lg font-semibold text-dj-texte">Trouver et mettre à jour avec l'IA</h2>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Dans le chat, Classinus peut chercher une skill publique pour toi et te proposer de l'ajouter, toujours avec ton accord. Si l'auteur met sa skill à jour, ta copie ne change pas toute seule : Classinus te prévient une fois et te propose de la remplacer, seulement si tu es d'accord.</p>
+      </section>
     </MiseEnPageDecouvrirPersonnaliser>
   );
 }

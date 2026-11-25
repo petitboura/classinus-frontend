@@ -1,17 +1,21 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, ScrollText, Download, Check, Upload, Plus, Trash2, Activity, Pencil } from "lucide-react";
 import {
-  rechercherComportementsPublics,
-  activerComportementPublic,
-  uploaderSkillPublic,
+  rechercherSkillsPublics,
+  obtenirSkillPublic,
+  ajouterSkillPublic,
+  enregistrerSkillIndependant,
+  supprimerSkillIndependant,
+  publierSkill,
   retirerSkillPublic,
   analytiqueCatalogueEnLot,
-  obtenirComportementPublic,
-  type ComportementPublic,
+  type SkillPublic,
   type CompteursCatalogue,
 } from "@/lib/api";
+import { appliquerEntete, lireEntete } from "@/lib/enteteSkill";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { SynchroUrlElement } from "@/components/SynchroUrlElement";
 import { PARAMETRES_OUVERTURE } from "@/lib/ouvertureParUrl";
@@ -26,24 +30,21 @@ import { MenuActionsCarte } from "@/components/MenuActionsCarte";
 import { lienPartage } from "@/components/ButtonPartager";
 import { BulleSurvol } from "@/components/BulleSurvol";
 import { BoutonEtoile } from "@/components/BoutonEtoile";
-import { ModifierSkillPublicModal } from "@/components/ModifierSkillPublicModal";
 
-// Catalogue public des comportements (21/08/2026, demande Bourama : "les
-// comportements aussi, je veux un onglet public, c'est à dire quelqu'un
-// peut l'uploader et l'activer"). Même esprit que EspacePlugins.tsx :
-// recherche publique (pas de compte requis pour consulter), activation
-// gatée par un compte (crée une copie perso dans "Mes comportements",
-// voir api/comportements_publics.py::activer_comportement_public).
+// Catalogue public des skills (21/08/2026, demande Bourama). Réécrit le 24/11/2026 : un skill
+// public est un vrai skill de la page Skills, publié par son auteur (api/skills_publics.py).
+// Recherche publique (pas de compte requis pour consulter), ajout gaté par un compte (crée une
+// copie indépendante dans Mes skills). Pour modifier un skill public, l'auteur passe par son
+// éditeur de Mes skills : la version publique suit, et l'IA des personnes qui l'ont ajouté leur
+// propose la mise à jour.
 export function ComportementsPublics({ onActive }: { onActive: () => void }) {
-  const [liste, setListe] = useState<ComportementPublic[] | undefined>(undefined);
+  const router = useRouter();
+  const [liste, setListe] = useState<SkillPublic[] | undefined>(undefined);
   const [recherche, setRecherche] = useState("");
   const [activationEnCours, setActivationEnCours] = useState<string | null>(null);
   const [actives, setActives] = useState<Set<string>>(new Set());
   const [sansCompte, setSansCompte] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  // 20/09/2026, demande Bourama ("pouvoir modifier le contenu réel") :
-  // voir ModifierSkillPublicModal.tsx.
-  const [skillEnEdition, setSkillEnEdition] = useState<ComportementPublic | null>(null);
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [fichierUpload, setFichierUpload] = useState<File | null>(null);
   const [fichiersUploadLot, setFichiersUploadLot] = useState<File[]>([]);
@@ -55,7 +56,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   const inputFichierRef = useRef<HTMLInputElement>(null);
   // 07/09/2026, demande Bourama : aperçu du skill au clic sur la ligne, et
   // retrait possible pour son propre auteur (aucun des deux n'existait).
-  const [apercu, setApercu] = useState<ComportementPublic | null>(null);
+  const [apercu, setApercu] = useState<SkillPublic | null>(null);
   // 18/10/2026, demande Bourama : ouverture de l'aperçu d'un skill depuis
   // l'adresse (lien de partage, bouton retour du navigateur), voir
   // SynchroUrlElement.tsx et lib/ouvertureParUrl.ts.
@@ -65,7 +66,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   // (analytiques + profil contributeur + commentaires) déjà appliqué aux
   // fichiers/dossiers de BibliothequePublique.tsx, mais oublié côté
   // skills publics jusqu'ici -- voir ProfilPublicModal.tsx. Pas de
-  // `userId` disponible sur ComportementPublic (pas de champ
+  // `userId` disponible sur SkillPublic (pas de champ
   // auteur/contributeur exposé par l'API pour les skills), donc la
   // section profil sera simplement absente (ProfilPublicModal gère déjà
   // ce cas), seules les analytiques + les commentaires apparaissent.
@@ -86,7 +87,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
     }
     setErreur(null);
     try {
-      const skill = liste?.find((c) => c.id === id) ?? (await obtenirComportementPublic(id));
+      const skill = liste?.find((c) => c.id === id) ?? (await obtenirSkillPublic(id));
       if (numero !== numeroSkillUrlRef.current) return;
       setApercu(skill);
     } catch (e) {
@@ -100,7 +101,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   }
 
   function charger(q?: string) {
-    rechercherComportementsPublics(q)
+    rechercherSkillsPublics(q)
       .then(setListe)
       .catch(() => setListe([]));
   }
@@ -130,14 +131,14 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsAnalytiqueSkills]);
 
-  async function activer(c: ComportementPublic) {
+  async function activer(c: SkillPublic) {
     if (activationEnCours) return;
     setActivationEnCours(c.id);
     setErreur(null);
     try {
-      await activerComportementPublic(c.id);
+      await ajouterSkillPublic(c.id);
       setActives((prec) => new Set(prec).add(c.id));
-      onActive(); // recharge "Mes comportements" pour que la copie apparaisse tout de suite
+      onActive(); // recharge Mes skills pour que la copie apparaisse tout de suite
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) {
         setSansCompte(true);
@@ -149,18 +150,23 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
     }
   }
 
-  // 25/08/2026, demande Bourama ("les skills soient téléchargeables en
-  // fichier MD") : le contenu est déjà en mémoire (skill_md dans la
-  // liste chargée), pas besoin d'appel réseau -- juste un Blob local.
-  function telechargerSkill(c: ComportementPublic) {
-    telechargerTexte(nomFichierDepuis(c.nom, "md"), c.skill_md);
+  // 25/08/2026, demande Bourama ("les skills soient téléchargeables en fichier MD").
+  // Depuis le 24/11/2026 la liste ne porte plus le contenu : on lit le détail, puis Blob local.
+  async function telechargerSkill(c: SkillPublic) {
+    setErreur(null);
+    try {
+      const detail = await obtenirSkillPublic(c.id);
+      telechargerTexte(nomFichierDepuis(c.nom, "md"), detail.skill_md);
+    } catch (e) {
+      setErreur(messageErreur(e));
+    }
   }
 
   // 07/09/2026, demande Bourama : retrait par l'auteur, n'existait pas.
   // Retrait doux côté backend, mais ici on retire simplement la ligne de
   // la liste affichée puisqu'un skill retiré ne doit plus apparaître
   // dans le catalogue public, y compris pour son propre auteur.
-  async function retirer(c: ComportementPublic) {
+  async function retirer(c: SkillPublic) {
     if (retraitEnCours) return;
     setRetraitEnCours(c.id);
     setErreur(null);
@@ -189,21 +195,52 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
     }
   }
 
-  // 25/08/2026, demande Bourama ("on peut y téléverser... depuis la
-  // section skill publique") : uploadé ici, un skill est publié
-  // IMMÉDIATEMENT pour tout le monde (confirmé par Bourama), contrairement
-  // à "Mes comportements" où publier reste une action séparée.
+  // 25/08/2026, demande Bourama ("on peut y téléverser... depuis la section skill publique") :
+  // un skill envoyé ici est publié IMMÉDIATEMENT pour tout le monde (confirmé par Bourama).
+  // Depuis le 24/11/2026 il naît comme un vrai skill de Mes skills, puis il est publié : il reste
+  // donc modifiable par son auteur. La description est obligatoire pour publier (c'est elle qui le
+  // fait trouver). Si la publication échoue, le skill tout juste créé est supprimé : rien ne reste.
+  async function creerEtPublier(f: File, nom: string, descriptionCommune: string): Promise<SkillPublic> {
+    const texte = await f.text();
+    const description = (lireEntete(texte).description ?? "").trim() || descriptionCommune.trim();
+    if (!description) throw new ErreurApi(422, "", "SKILL_DESCRIPTION_REQUISE_POUR_PUBLIER");
+    const cree = await enregistrerSkillIndependant({
+      nom: nom.trim(),
+      description,
+      actif: true,
+      fichiers: [{ chemin: "SKILL.md", contenu: appliquerEntete(texte, nom.trim(), description) }],
+    });
+    try {
+      await publierSkill(cree.id);
+    } catch (e) {
+      await supprimerSkillIndependant(cree.id).catch(() => {});
+      throw e;
+    }
+    return {
+      id: cree.id,
+      nom: cree.nom,
+      description,
+      activations_count: 0,
+      etoiles_count: 0,
+      version_publique: 1,
+      publie_le: new Date().toISOString(),
+      est_a_moi: true,
+      mon_etoile: false,
+    };
+  }
+
   async function uploaderSkill() {
     if (!fichierUpload || !nomUpload.trim()) return;
     setEnvoiUpload(true);
     setErreurUpload(null);
     try {
-      const cree = await uploaderSkillPublic(fichierUpload, nomUpload, descriptionUpload);
+      const cree = await creerEtPublier(fichierUpload, nomUpload, descriptionUpload);
       setListe((prec) => [cree, ...(prec || [])]);
       setFichierUpload(null);
       setNomUpload("");
       setDescriptionUpload("");
       setFormulaireOuvert(false);
+      onActive(); // le skill est aussi dans Mes skills
     } catch (e) {
       if (e instanceof ErreurApi && e.statusCode === 401) {
         setSansCompte(true);
@@ -215,25 +252,22 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
     }
   }
 
-  // 29/08/2026, demande Bourama : publier plusieurs skills publics en une
-  // fois. Chaque fichier garde son propre nom (déduit du nom de fichier,
-  // pas éditable individuellement -- éditer n noms un par un n'aurait
-  // pas de sens ici) ; la description saisie dans le formulaire (si
-  // remplie) s'applique à tous. Import séquentiel, une erreur sur un
-  // fichier n'empêche pas les suivants.
+  // 29/08/2026, demande Bourama : publier plusieurs skills en une fois. Chaque fichier garde son
+  // propre nom (déduit du nom de fichier). Sa description vient de son en-tête, sinon de la
+  // description commune du formulaire. Import séquentiel, une erreur sur un fichier n'empêche pas
+  // les suivants.
   async function uploaderPlusieursSkills() {
     if (fichiersUploadLot.length === 0) return;
     setEnvoiUpload(true);
     setErreurUpload(null);
     setErreursUploadLot([]);
     const erreurs: { nom: string; erreur: string }[] = [];
-    const creees: ComportementPublic[] = [];
+    const creees: SkillPublic[] = [];
 
     for (const f of fichiersUploadLot) {
       const nom = f.name.replace(/\.md$/i, "");
       try {
-        const cree = await uploaderSkillPublic(f, nom, descriptionUpload);
-        creees.push(cree);
+        creees.push(await creerEtPublier(f, nom, descriptionUpload));
       } catch (e) {
         if (e instanceof ErreurApi && e.statusCode === 401) {
           setSansCompte(true);
@@ -245,6 +279,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
 
     if (creees.length > 0) {
       setListe((prec) => [...creees, ...(prec || [])]);
+      onActive();
     }
     setErreursUploadLot(erreurs);
     setEnvoiUpload(false);
@@ -337,11 +372,11 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
           <textarea
             value={descriptionUpload}
             onChange={(e) => setDescriptionUpload(e.target.value)}
-            placeholder={fichiersUploadLot.length > 0 ? "Description commune (optionnel)" : "Décris-le en quelques mots"}
+            placeholder={fichiersUploadLot.length > 0 ? "Description commune (pour les fichiers sans description)" : "Décris-le en quelques mots (obligatoire)"}
             rows={3}
             className="resize-none rounded-xl border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
           />
-          <p className="text-xs text-dj-texte-muet">Publié immédiatement, visible par tout le monde.</p>
+          <p className="text-xs text-dj-texte-muet">Ajouté à Mes skills et publié immédiatement, visible par tout le monde.</p>
           {erreurUpload && <p className="text-xs text-[var(--dj-erreur)]">{erreurUpload}</p>}
           {erreursUploadLot.length > 0 && (
             <div className="flex flex-col gap-1 rounded-lg border border-[var(--dj-erreur)] px-3 py-2 text-xs text-[var(--dj-erreur)]">
@@ -426,7 +461,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
         <div className="flex flex-col">
           {liste.map((c) => {
             const dejaActive = actives.has(c.id);
-            const descriptionComplete = c.description || c.texte;
+            const descriptionComplete = c.description;
             return (
               <div
                 key={c.id}
@@ -486,9 +521,9 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
                       ? [
                           {
                             cle: "modifier",
-                            label: "Modifier (nom, description, contenu)",
+                            label: "Modifier dans Mes skills",
                             icone: <Pencil size={14} />,
-                            onClick: () => setSkillEnEdition(c),
+                            onClick: () => router.push(`${ROUTES_PERSONNALISER.comportements}?${PARAMETRES_OUVERTURE.skill}=${encodeURIComponent(c.id)}`),
                           },
                           {
                             cle: "retirer",
@@ -510,7 +545,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
       {apercu && (
         <VoirSkillRecuModal
           nom={apercu.nom}
-          skillMdInitial={apercu.skill_md}
+          chargerSkillMd={async () => (await obtenirSkillPublic(apercu.id)).skill_md}
           sousTitre={`${apercu.activations_count} activation(s) · ${apercu.etoiles_count ?? 0} étoile(s) · lecture seule`}
           lienPartage={lienPartage("skill-public", apercu.id)}
           texteAvecIA={
@@ -527,15 +562,6 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
           compteurs={profilOuvert.compteurs}
           element={profilOuvert.element}
           onFermer={() => setProfilOuvert(null)}
-        />
-      )}
-      {skillEnEdition && (
-        <ModifierSkillPublicModal
-          skill={skillEnEdition}
-          onModifie={(skillModifie) => {
-            setListe((prev) => prev?.map((x) => (x.id === skillModifie.id ? skillModifie : x)));
-          }}
-          onFermer={() => setSkillEnEdition(null)}
         />
       )}
     </div>

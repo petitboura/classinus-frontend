@@ -29,6 +29,9 @@ const PORTEE_PAR_OUTIL: Record<string, PorteeDonnees[]> = {
   // Skills avec dossier et fichiers (25/10/2026) : la liste de la page Skills est relue quand l'IA
   // lit, crée ou modifie un skill depuis le chat.
   gerer_skill: ["skills"],
+  // Catalogue public des skills (24/11/2026) : publier, retirer ou mettre à jour une copie depuis le chat
+  // change la liste de la page Skills (badge Public, contenu de la copie).
+  gerer_comportement_public: ["skills"],
   // annule la dernière modification de comportement -- on rafraîchit par
   // sécurité, le coût est négligeable (une poignée de petits GET,
   // uniquement si la section est déjà montée).

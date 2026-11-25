@@ -1810,92 +1810,68 @@ export async function obtenirComportementConsultation(agentId: string, comportem
   return resultat as ComportementConsultation;
 }
 
-export type ComportementPublic = {
+// Catalogue public des skills (24/11/2026, demande de Bourama). Un skill public est un vrai skill
+// de la page Skills, publié par son auteur. Le catalogue ne garde plus de copie à part : l'auteur
+// modifie son skill, la version publique suit. Détail dans api/skills_publics.py côté backend.
+export type FichierSkillPublic = { chemin: string; type_mime?: string | null; taille_octets: number };
+export type SkillPublic = {
   id: string;
   nom: string;
   description: string;
-  texte: string;
-  skill_md: string;
   activations_count: number;
+  etoiles_count: number;
+  version_publique: number;
+  publie_le: string | null;
   est_a_moi: boolean;
-  // 17/09/2026, demande Bourama : étoiles façon GitHub, même principe
-  // que sur EntreeBibliothequePublique/DossierCataloguePublic.
-  etoiles_count?: number;
-  mon_etoile?: boolean;
+  mon_etoile: boolean;
+  // Présents seulement dans le détail (obtenirSkillPublic), jamais dans la liste.
+  skill_md?: string;
+  fichiers?: FichierSkillPublic[];
 };
 
-export async function rechercherComportementsPublics(q?: string) {
+export async function rechercherSkillsPublics(q?: string) {
   const suffixe = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
-  const resultat = await appelerApi(`/api/comportements-publics${suffixe}`);
-  return resultat as ComportementPublic[];
+  const resultat = await appelerApi(`/api/skills-publics${suffixe}`);
+  return resultat as SkillPublic[];
 }
 
-// 10/09/2026, chantier "Classinus ouvert" -- détail d'un seul skill public,
-// pour /skills/[id] (page publique, generateMetadata côté serveur).
-// Lance une ErreurApi(404) si le skill n'existe pas ou a été retiré par
-// son auteur, voir GET /api/comportements-publics/{id} côté backend.
-export async function obtenirComportementPublic(comportementPublicId: string) {
-  const resultat = await appelerApi(`/api/comportements-publics/${comportementPublicId}`);
-  return resultat as ComportementPublic;
+// Détail d'un seul skill public (page /skills/[id], aperçu, téléchargement). Accepte aussi
+// l'ancien identifiant du catalogue, pour que les liens déjà partagés continuent de marcher.
+// Lance une ErreurApi(404) si le skill n'existe pas ou a été retiré par son auteur.
+export async function obtenirSkillPublic(identifiant: string) {
+  const resultat = await appelerApi(`/api/skills-publics/${identifiant}`);
+  return resultat as SkillPublic & { skill_md: string; fichiers: FichierSkillPublic[] };
 }
 
-export async function activerComportementPublic(comportementPublicId: string) {
-  const resultat = await appelerApi(`/api/comportements-publics/${comportementPublicId}/activer`, { method: "POST" });
-  return resultat as Comportement;
+// Ajoute le skill chez soi : copie indépendante, compte obligatoire (401 sinon).
+export type AjoutSkillPublic = { id: string; nom: string; description: string; deja_ajoute: boolean };
+export async function ajouterSkillPublic(identifiant: string) {
+  const resultat = await appelerApi(`/api/skills-publics/${identifiant}/activer`, { method: "POST" });
+  return resultat as AjoutSkillPublic;
 }
 
-// 25/08/2026, demande Bourama : uploader directement un fichier .md dans
-// le catalogue public, publié immédiatement pour tout le monde (pas de
-// passage par "Mes comportements"). Même pattern fetch manuel que
-// ajouterABibliothequePublique (appelerApi force le JSON, inadapté à un
-// FormData).
-export async function uploaderSkillPublic(fichier: File, nom: string, description?: string) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Connecte-toi pour envoyer un skill.");
-  }
-
-  const corps = new FormData();
-  corps.append("fichier", fichier);
-  corps.append("nom", nom.trim());
-  corps.append("description", description || "");
-
-  const reponse = await fetch(`${API_URL}/api/comportements-publics/uploader`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}`, "Accept-Language": obtenirLocale() },
-    body: corps,
-  });
-
-  if (!reponse.ok) {
-    throw await construireErreurApi(reponse, "/api/comportements-publics/uploader");
-  }
-
-  return (await reponse.json()) as ComportementPublic;
+// Publier ou retirer son propre skill. Retirer ne supprime rien : le skill redevient privé,
+// et les copies déjà ajoutées par d'autres restent chez eux.
+export type StatutPublicationSkill = { id: string; visibilite: string; publie_le: string | null; retire_le: string | null };
+export async function publierSkill(skillId: string) {
+  const resultat = await appelerApi(`/api/skills-publics/${skillId}/publier`, { method: "POST" });
+  return resultat as StatutPublicationSkill;
+}
+export async function retirerSkillPublic(skillId: string) {
+  const resultat = await appelerApi(`/api/skills-publics/${skillId}/retirer`, { method: "POST" });
+  return resultat as StatutPublicationSkill;
 }
 
-// 20/09/2026, demande Bourama : rien n'était modifiable après
-// publication d'un skill (copie figée) -- nom/description/texte/
-// skill_md, réservé à l'auteur d'origine côté backend. Bourama a été
-// prévenu que modifier texte/skill_md n'affecte que les activations
-// FUTURES (les copies déjà activées par d'autres restent inchangées),
-// voir core/comportements_etudiants.py::modifier_comportement_public.
-export async function modifierComportementPublic(comportementPublicId: string, champs: { nom?: string; description?: string; texte?: string; skill_md?: string }) {
-  const resultat = await appelerApi(`/api/comportements-publics/${comportementPublicId}`, {
-    method: "PATCH",
-    body: JSON.stringify(champs),
-  });
-  return resultat as ComportementPublic;
+// Mises à jour : l'auteur a modifié un skill que j'ai ajouté. La copie ne change jamais toute
+// seule, elle est remplacée seulement après un accord clair (modifiee_localement = j'ai changé ma copie).
+export type MiseAJourSkillDisponible = { copie_id: string; source_id: string; nom: string; modifiee_localement: boolean };
+export async function listerMisesAJourSkills() {
+  const resultat = await appelerApi("/api/skills-publics/mises-a-jour");
+  return resultat as MiseAJourSkillDisponible[];
 }
-
-// 07/09/2026, demande Bourama : l'auteur d'un skill public peut le
-// retirer du catalogue (n'existait pas avant). Retrait doux côté
-// backend (statut='retire'), pas une suppression -- voir
-// core/comportements_etudiants.py::retirer_skill_public.
-export async function retirerSkillPublic(comportementPublicId: string) {
-  return appelerApi(`/api/comportements-publics/${comportementPublicId}/retirer`, { method: "POST" });
+export async function mettreAJourCopieSkill(copieId: string) {
+  const resultat = await appelerApi(`/api/skills-publics/${copieId}/mettre-a-jour`, { method: "POST" });
+  return resultat as { copie_id: string; nom: string; version: number };
 }
 
 // nom = null/undefined -> mode "auto" (nom généré côté serveur avec le
@@ -1903,7 +1879,7 @@ export async function retirerSkillPublic(comportementPublicId: string) {
 // lienId optionnels (20/08) : rattache dès la création à un emplacement
 // du programme.
 // 22/09/2026, demande Bourama : catalogue public du Programme, même
-// principe que ComportementPublic ci-dessus mais pour une arborescence
+// principe que SkillPublic ci-dessus mais pour une arborescence
 // de notions entière (voir components/ProgrammesCataloguePublic.tsx).
 export type NotionPublique = {
   id: string;
@@ -2044,7 +2020,7 @@ export async function ajouterComportement(
 // 25/08/2026, demande Bourama : uploader un fichier .md directement dans
 // "Mes comportements", gardé TEL QUEL (pas de passage par l'IA -- voir
 // importer_comportement_depuis_skill_md côté backend). Même pattern
-// fetch manuel que uploaderSkillPublic ci-dessus.
+// fetch manuel que ajouterABibliothequePublique.
 export async function importerComportementDepuisFichier(agentId: string, fichier: File, nom: string) {
   const {
     data: { session },
@@ -3102,7 +3078,7 @@ export async function deconnecterApplication(service: string) {
 
 
 export type FichierSkillIndependant = { chemin: string; contenu?: string | null; binaire?: boolean; type_mime?: string | null; taille_octets?: number; mis_a_jour_le?: string | null };
-export type SkillIndependant = { id: string; nom: string; description: string; actif: boolean; created_at: string; updated_at: string; fichiers?: FichierSkillIndependant[] };
+export type SkillIndependant = { id: string; nom: string; description: string; actif: boolean; created_at: string; updated_at: string; fichiers?: FichierSkillIndependant[]; visibilite?: string; version_publique?: number; activations_count?: number; etoiles_count?: number };
 export async function listerSkillsIndependants() { return appelerApi("/api/skills") as Promise<SkillIndependant[]>; }
 export async function obtenirSkillIndependant(id: string) { return appelerApi(`/api/skills/${id}`) as Promise<SkillIndependant>; }
 export async function enregistrerSkillIndependant(skill: { nom: string; description: string; actif: boolean; fichiers: { chemin: string; contenu: string }[] }, id?: string) {

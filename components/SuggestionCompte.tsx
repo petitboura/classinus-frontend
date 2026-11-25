@@ -12,7 +12,7 @@ import { CompteRequisModal } from "@/components/CompteRequisModal";
 // tout visiteur). Seul ce qui dépend réellement d'un compte (Ajouter à
 // ma bibliothèque, Activer une skill) continue de le demander au moment
 // de l'action : inchangé, voir CTACompteRequis dans ActionsFichierPublic/
-// ActionsDossierPublic/ActionsSkillPublic.
+// ActionsDossierPublic.
 //
 // Différence avec CTACompteRequis : celui-ci REMPLACE tout un bloc quand
 // une action a échoué faute de compte (409/401 déjà survenu). Celui-ci

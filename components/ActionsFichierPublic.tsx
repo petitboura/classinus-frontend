@@ -13,7 +13,7 @@ import { SuggestionCompte } from "@/components/SuggestionCompte";
 // 16/09/2026, demande Bourama ("les pages si tu ouvres un lien de partage
 // n'ont aucun CTA") : la page d'un document de la bibliothèque publique
 // n'offrait que le téléchargement, donc rien qui ramène la personne dans
-// Classinus. Même rôle et même structure qu'ActionsSkillPublic.tsx pour une
+// Classinus. Même rôle et même structure qu'ActionsDossierPublic.tsx pour un
 // skill : un Client Component isolé, parce que la page elle même reste un
 // Server Component pour generateMetadata.
 //
