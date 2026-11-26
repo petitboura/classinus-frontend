@@ -118,7 +118,7 @@ ce chantier sera lancé).
 
 ## Positionnement éditorial mis à jour le 21/11/2026
 
-Classinus est désormais positionné comme une plateforme d'intelligence artificielle et de productivité destinée à un public large : utilisateurs individuels, créateurs, développeurs, professionnels, étudiants et enseignants. Les outils d'apprentissage et le Bureau enseignant sont des cas d'usage spécifiques ; ils ne définissent pas l'identité du produit. Cette évolution éditoriale ne modifie ni les règles d'âge ni les exigences de protection des mineurs décrites ci-dessous.
+Classinus est positionné comme une plateforme qui donne accès aux grands modèles d'IA de plusieurs fournisseurs et aux outils permettant de les utiliser : agents personnalisables, applications connectées, recherche, création de documents et outils de développement. Les fonctions d'apprentissage et le Bureau enseignant sont des usages facultatifs ; ils ne définissent pas l'identité du produit. Cette évolution éditoriale ne modifie ni les règles d'âge ni les exigences de protection des mineurs décrites ci-dessous.
 
 Conséquence pratique sur les formulaires :
 - Google Play, questionnaire de classification de contenu : public visé
@@ -205,7 +205,7 @@ vos données en nous contactant à [email de contact].
 
 ## Mineurs
 
-Classinus est une plateforme d'intelligence artificielle et de productivité destinée aux utilisateurs de 15 ans et plus. Elle réunit plusieurs modèles d'IA, des agents personnalisables, des applications connectées, des outils de recherche, de création de documents et de développement. Elle comprend également des fonctions d'apprentissage et des outils réservés aux enseignants. Nous ne visons pas sciemment les enfants de moins de 13 ans avec la version actuelle de l'application. Si vous pensez qu'un enfant de moins de 13 ans a créé un compte, contactez-nous à [email de contact] pour que nous puissions le supprimer.
+Classinus est une plateforme d'accès aux grands modèles d'IA de plusieurs fournisseurs et à leurs outils, destinée aux utilisateurs de 15 ans et plus. Elle réunit des agents personnalisables, des applications connectées, des outils de recherche, de création de documents et de développement. Elle comprend également des fonctions d'apprentissage facultatives et des outils réservés aux enseignants. Nous ne visons pas sciemment les enfants de moins de 13 ans avec la version actuelle de l'application. Si vous pensez qu'un enfant de moins de 13 ans a créé un compte, contactez-nous à [email de contact] pour que nous puissions le supprimer.
 ```
 
 ---
