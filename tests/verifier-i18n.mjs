@@ -3,13 +3,26 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 
-const source = readFileSync("lib/i18n/interface.ts", "utf8");
-const javascript = ts.transpile(source, {
-  module: ts.ModuleKind.CommonJS,
-  target: ts.ScriptTarget.ES2022,
+function charger(chemin, dependances = {}) {
+  const source = readFileSync(chemin, "utf8");
+  const javascript = ts.transpile(source, {
+    module: ts.ModuleKind.CommonJS,
+    target: ts.ScriptTarget.ES2022,
+  });
+  const module = { exports: {} };
+  const require = (nom) => {
+    if (!(nom in dependances)) throw new Error(`Dépendance non prévue dans le test : ${nom}`);
+    return dependances[nom];
+  };
+  vm.runInNewContext(javascript, { module, exports: module.exports, require });
+  return module;
+}
+
+// interface.ts fusionne la table du repositionnement : le test charge les deux fichiers.
+const positionnement = charger("lib/i18n/positionnementDecouvrir.ts");
+const module = charger("lib/i18n/interface.ts", {
+  "@/lib/i18n/positionnementDecouvrir": positionnement.exports,
 });
-const module = { exports: {} };
-vm.runInNewContext(javascript, { module, exports: module.exports });
 
 const { traduireTexteInterface } = module.exports;
 assert.equal(typeof traduireTexteInterface, "function");
@@ -23,6 +36,14 @@ assert.equal(traduireTexteInterface("Installer Classinus sur Android", "en"), "I
 assert.equal(traduireTexteInterface("Accéder à l'application Classinus", "en"), "Open the Classinus app");
 assert.equal(traduireTexteInterface("« Windows a protégé votre ordinateur »", "en"), "“Windows protected your PC”");
 assert.equal(traduireTexteInterface("Bibliothèque", "fr"), "Bibliothèque");
+
+// Textes du repositionnement (plateforme d'accès aux grands modèles d'IA).
+assert.equal(traduireTexteInterface("Outils facultatifs", "en"), "Optional tools");
+assert.equal(traduireTexteInterface("Facultatif", "en"), "Optional");
+assert.equal(
+  traduireTexteInterface("Classinus est-il un outil d'étude ou de productivité ?", "en"),
+  "Is Classinus a study or productivity tool?"
+);
 
 const texteUtilisateur = "Un texte propre à l'utilisateur qui ne doit pas être réécrit.";
 assert.equal(traduireTexteInterface(texteUtilisateur, "en"), texteUtilisateur);
