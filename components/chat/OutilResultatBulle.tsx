@@ -383,8 +383,10 @@ export function OutilResultatBulle({
         ) : (
           <span key="resume" className="flex min-w-0 animate-dj-fade-in-rapide items-center gap-1.5">
             <Layers size={13} className="shrink-0 text-dj-texte" />
+            {/* Un seul nœud de texte (26/11/2026) : en morceaux, la traduction anglaise de
+                l'interface donnait « 2Toolsuseds ». */}
             <span className="truncate">
-              {nbLignesOutils} outil{nbLignesOutils > 1 ? "s" : ""} utilisé{nbLignesOutils > 1 ? "s" : ""}
+              {nbLignesOutils > 1 ? `${nbLignesOutils} outils utilisés` : `${nbLignesOutils} outil utilisé`}
             </span>
           </span>
         )}

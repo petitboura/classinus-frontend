@@ -244,12 +244,12 @@ export function LigneOutil({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <button
                 onClick={() => setOuvert((precedent) => !precedent)}
-                className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+                className="flex items-center gap-1.5 text-left text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
                 <span>{nomLisible}</span>
                 {plusieursLogos && <LogosSites domaines={domaines!} />}
                 {pastille}
-                {ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                {ouvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />}
               </button>
               {aDesSources && (
                 <button
