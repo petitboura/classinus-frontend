@@ -194,6 +194,17 @@ const config: Config = {
           from: { transform: "scaleY(0)" },
           to: { transform: "scaleY(1)" },
         },
+        // Roue des outils (25/11/2026, demande Bourama) : la ligne qui arrive monte par le bas,
+        // celle qui part glisse vers le haut en s'estompant. Courtes (0.16s) : plusieurs outils
+        // appelés en même temps se remplacent vite, sans attendre la fin de l'animation précédente.
+        "dj-roue-entree": {
+          from: { opacity: "0", transform: "translateY(100%)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "dj-roue-sortie": {
+          from: { opacity: "1", transform: "translateY(0)" },
+          to: { opacity: "0", transform: "translateY(-100%)" },
+        },
       },
       animation: {
         "dj-fade-up": "dj-fade-up 0.5s ease both",
@@ -214,6 +225,8 @@ const config: Config = {
         // boucle.
         "dj-shimmer": "dj-shimmer 2.2s ease-in-out infinite",
         "dj-ligne-trace": "dj-ligne-trace 0.18s ease-out both",
+        "dj-roue-entree": "dj-roue-entree 0.16s ease-out both",
+        "dj-roue-sortie": "dj-roue-sortie 0.16s ease-in both",
       },
     },
   },
