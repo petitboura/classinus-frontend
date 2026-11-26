@@ -15,7 +15,7 @@ export default function PageDecouvrirBibliothequePublique() {
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Trouver et évaluer une ressource</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Les ressources peuvent être organisées par dossier et notées par les utilisateurs. Ces indications facilitent la découverte, mais vérifie toujours que le document correspond à ton niveau, à ton programme et à l'objectif de ton travail.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Les ressources peuvent être organisées par dossier et notées par les utilisateurs. Ces indications facilitent la découverte, mais vérifie toujours que le document est fiable et adapté à l'objectif pour lequel tu souhaites l'utiliser.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Partager dans le respect des droits</h2>
