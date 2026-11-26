@@ -2929,6 +2929,9 @@ export function traduireTexteInterface(texte: string, locale: Locale): string {
     [/^mes skills \((\d+)\)$/i, "My skills ($1)"],
     [/^page\s+(\d+)$/i, "Page $1"],
     [/^(\d+) outil\(s\) découvert\(s\)$/i, "$1 tool(s) discovered"],
+    // Résumé de la ligne des outils (25/11/2026) : « 1 outil utilisé », « 3 outils utilisés ».
+    [/^(\d+) outil utilisé$/i, "$1 tool used"],
+    [/^(\d+) outils utilisés$/i, "$1 tools used"],
     [/^chargement de (.+)…$/i, "Loading $1…"],
     [/^chargement de (.+)\.\.\.$/i, "Loading $1..."],
     [/^texte collé,?\s+([\d\s\u00a0.,]+) caractères$/i, "Pasted text, $1 characters"],
