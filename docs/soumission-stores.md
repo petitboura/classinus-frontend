@@ -48,7 +48,7 @@ Middle school may be added in a future release, with the appropriate compliance 
 
 ## Product positioning updated on 21 November 2026
 
-Classinus is now positioned as an AI and productivity platform for a broad audience, including individual users, creators, developers, professionals, students, and teachers. Learning tools and the teacher workspace are specific use cases; they do not define the product's identity. This editorial update does not change the age-rating decisions or minor-safety requirements described below.
+Classinus is positioned as a platform that gives users access to leading AI models from multiple providers and the tools to use them, including customizable agents, connected apps, search, document creation, and development tools. Learning features and the teacher workspace are optional use cases; they do not define the product's identity. This editorial update does not change the age-rating decisions or minor-safety requirements described below.
 
 Practical implications for the submission forms:
 
@@ -126,7 +126,7 @@ data by contacting us at [contact email].
 
 ## Minors
 
-Classinus is an AI and productivity platform intended for users aged 15 and older. It brings together multiple AI models, customizable agents, connected apps, search, document creation, and development tools. It also includes learning features and tools reserved for teachers. We do not knowingly target children under 13 with the current app version. If you believe a child under 13 has created an account, contact us at [contact email] so we can delete it.
+Classinus is a platform for accessing leading AI models from multiple providers and using their tools, intended for users aged 15 and older. It brings together customizable agents, connected apps, search, document creation, and development tools. It also includes optional learning features and tools reserved for teachers. We do not knowingly target children under 13 with the current app version. If you believe a child under 13 has created an account, contact us at [contact email] so we can delete it.
 ```
 
 ---
