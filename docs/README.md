@@ -20,6 +20,7 @@ Central entry point for all Classinus frontend documentation. English is the def
 - [Higgsfield catalogue status](./status/HIGGSFIELD_TODO.md)
 - [Referral and free image credits, step 5](./chantiers/parrainage-credits-images.md)
 - [Public skills (catalogue and My skills)](./chantiers/skills-publics/README.md)
+- [Messages and questions while Classinus works (chat)](./chantiers/messages-et-questions-en-cours.md)
 - [Programme feature deactivation](./archive/PROGRAMME_DESACTIVE.md)
 - [PC live-channel project plan](./specs/plan-canal-en-direct-pc.md)
 - [Application agent specifications](./specs/specs-agent-applicatif.md)

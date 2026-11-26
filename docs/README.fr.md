@@ -20,6 +20,7 @@ Point d'entrée central de toute la documentation du frontend Classinus. L'angla
 - [État du catalogue Higgsfield](./status/HIGGSFIELD_TODO.fr.md)
 - [Parrainage et crédits d'images gratuits, étape 5](./chantiers/parrainage-credits-images.fr.md)
 - [Skills publics (catalogue et Mes skills)](./chantiers/skills-publics/README.fr.md)
+- [Messages et questions pendant que Classinus travaille (chat)](./chantiers/messages-et-questions-en-cours.fr.md)
 - [Désactivation de la fonctionnalité Programme](./archive/PROGRAMME_DESACTIVE.fr.md)
 - [Plan du canal en direct sur PC](./specs/plan-canal-en-direct-pc.fr.md)
 - [Spécifications de l'agent applicatif](./specs/specs-agent-applicatif.fr.md)

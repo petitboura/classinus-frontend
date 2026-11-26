@@ -2,7 +2,15 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { appelerApi, appelerApiStream, lireEtatTourEnCours, signalerPedagogique, suivreTourEnCours } from "@/lib/api";
+import {
+  appelerApi,
+  appelerApiStream,
+  envoyerMessagePendantTour,
+  lireEtatTourEnCours,
+  repondreQuestionEnCours,
+  signalerPedagogique,
+  suivreTourEnCours,
+} from "@/lib/api";
 import { RAISON_DEMONTAGE, demontageDemande } from "@/lib/repriseFluxChat";
 import { dernierIdEnregistre, versionsAvecActiveMiseAJour, versionsExistantesPour } from "@/lib/versionsConversation";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
@@ -23,6 +31,8 @@ import { BandeauErreurReponse } from "./BandeauErreurReponse";
 import { codeDepuisException, codeErreurValide } from "@/lib/erreurTour";
 import { CtaImportIa } from "./CtaImportIa";
 import { BandeauReconnexionFlux } from "./BandeauReconnexionFlux";
+import { MessagesPendantTour, type MessagePendantTourAffiche } from "./MessagesPendantTour";
+import { QuestionEnDirect, type QuestionEnDirectAffichee } from "./QuestionEnDirect";
 import { RaccourcisChat } from "./RaccourcisChat";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
@@ -236,6 +246,11 @@ export function ChatIA({
   // allumer l'indicateur "réfléchit" quand la réponse est déjà terminée.
   const genEnCoursRef = useRef(false);
   genEnCoursRef.current = genEnCours;
+  // Messages écrits pendant que Classinus travaille (26/11/2026) et questions qu'il pose en route :
+  // listes à part, affichées sous la réponse en cours (le texte streamé s'écrit dans le DERNIER
+  // message, rien ne doit s'insérer après lui). Voir MessagesPendantTour.tsx et QuestionEnDirect.tsx.
+  const [messagesPendantTour, setMessagesPendantTour] = useState<MessagePendantTourAffiche[]>([]);
+  const [questionsEnDirect, setQuestionsEnDirect] = useState<(QuestionEnDirectAffichee & { repondue: boolean })[]>([]);
   const [accesBloqueMineur, setAccesBloqueMineur] = useState(false);
   // Rythme d'affichage du texte de réponse DÉCOUPLÉ de son arrivée
   // réseau (demande Bourama : "le streaming n'est pas contrôlé, si
@@ -752,6 +767,14 @@ export function ChatIA({
       if (evenement.id_appel) {
         textesTermineRef.current.delete(evenement.id_appel);
         setStatuts((prec) => prec.filter((s) => s.id !== evenement.id_appel));
+        // Question bloquante finie sans réponse (délai dépassé) : Classinus reposera la question dans
+        // son message, la carte ne doit plus rester ouverte. Une question non bloquante reste ouverte.
+        const idFini = evenement.id_appel;
+        setQuestionsEnDirect((prec) =>
+          prec.some((q) => q.id === idFini && q.bloquante && !q.repondue && !q.expiree)
+            ? prec.map((q) => (q.id === idFini ? { ...q, expiree: true } : q))
+            : prec
+        );
       }
       majMessages((prec) => {
         const copie = [...prec];
@@ -1029,6 +1052,27 @@ export function ChatIA({
       // évènement toujours émis côté backend mais volontairement ignoré
       // ici -- seul le lien que le modèle écrit lui-même dans sa réponse
       // (rendu par BulleMessage.tsx) est affiché désormais.
+    } else if (evenement.type === "question_en_direct") {
+      // Question posée par Classinus avec l'outil poser_question, envoyée avant même que l'outil
+      // n'attende la réponse. Rejouée telle quelle quand la page se rattache à un tour : la carte
+      // se redessine donc après un rechargement. Le même identifiant ne crée jamais deux cartes.
+      const idQuestion = typeof evenement.id_question === "string" ? evenement.id_question : "";
+      if (idQuestion && evenement.question && typeof evenement.question === "object") {
+        setQuestionsEnDirect((prec) =>
+          prec.some((q) => q.id === idQuestion)
+            ? prec
+            : [
+                ...prec,
+                {
+                  id: idQuestion,
+                  code: JSON.stringify(evenement.question),
+                  bloquante: evenement.bloquante === true,
+                  expiree: false,
+                  repondue: false,
+                },
+              ]
+        );
+      }
     } else if (evenement.type === "confirmation_requise") {
       setConfirmation({
         nomLisible: evenement.nom_lisible,
@@ -1293,6 +1337,53 @@ export function ChatIA({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls la file et l'état d'occupation du chat doivent déclencher cet envoi.
   }, [nbFinsMinuteurs, genEnCours, affichageEnCours, accesBloqueMineur]);
 
+  // Message écrit pendant que Classinus travaille (26/11/2026, demande de Bourama) : il ne coupe pas le
+  // tour, il rejoint sa file côté serveur et Classinus le lit au prochain aller-retour. S'il n'y a
+  // plus de tour à lire (fini entre-temps, ou texte trop long), il part comme un message normal dès
+  // que la réponse en cours est terminée : rien n'est perdu.
+  async function envoyerPendantTour(texte: string) {
+    const propre = texte.trim();
+    if (!propre) return;
+    const id = crypto.randomUUID();
+    setMessagesPendantTour((prec) => [...prec, { id, texte: propre, etat: "envoi" }]);
+    let prisEnCompte = false;
+    try {
+      prisEnCompte = (await envoyerMessagePendantTour(propre)).pris_en_compte;
+    } catch {
+      prisEnCompte = false;
+    }
+    setMessagesPendantTour((prec) => prec.map((m) => (m.id === id ? { ...m, etat: prisEnCompte ? "pris" : "attente" } : m)));
+  }
+
+  // Réponse donnée sur une carte de question en direct. Question bloquante : la réponse reprend l'appel
+  // qui attendait. Sinon elle rejoint la file du tour. Plus rien ne l'attend : message normal.
+  async function repondreQuestionEnDirect(idQuestion: string, reponse: string, question: string) {
+    setQuestionsEnDirect((prec) => prec.map((q) => (q.id === idQuestion ? { ...q, repondue: true } : q)));
+    let statut: "recue" | "en_file" | "a_renvoyer" = "a_renvoyer";
+    try {
+      statut = (await repondreQuestionEnCours(idQuestion, reponse, question)).statut;
+    } catch {
+      statut = "a_renvoyer";
+    }
+    if (statut !== "a_renvoyer") return;
+    const texteMessage = obtenirLocale() === "en" ? `Answer to your question "${question}": ${reponse}` : `Réponse à ta question « ${question} » : ${reponse}`;
+    if (genEnCoursRef.current) {
+      setMessagesPendantTour((prec) => [...prec, { id: crypto.randomUUID(), texte: texteMessage, etat: "attente" }]);
+    } else {
+      void envoyerMessage(texteMessage, "moyenne", []);
+    }
+  }
+
+  // Messages en attente d'un tour fini : envoyés ensemble, comme un seul message normal.
+  useEffect(() => {
+    if (genEnCours || affichageEnCours || accesBloqueMineur) return;
+    const enAttente = messagesPendantTour.filter((m) => m.etat === "attente");
+    if (enAttente.length === 0) return;
+    setMessagesPendantTour((prec) => prec.filter((m) => m.etat !== "attente"));
+    void envoyerMessage(enAttente.map((m) => m.texte).join("\n\n"), "moyenne", []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- envoyerMessage est recréée à chaque rendu, seuls l'état d'occupation du chat et la liste doivent déclencher cet envoi.
+  }, [messagesPendantTour, genEnCours, affichageEnCours, accesBloqueMineur]);
+
   async function envoyerMessage(
     texte: string,
     longueur: LongueurReponse,
@@ -1424,6 +1515,9 @@ export function ChatIA({
     reinitialiserAffichageControle();
     setGenEnCours(true);
     setStatuts([]);
+    // Nouveau tour : les messages pris en compte et les questions du tour précédent ne sont plus à afficher.
+    setMessagesPendantTour((prec) => prec.filter((m) => m.etat !== "pris"));
+    setQuestionsEnDirect([]);
     textesTermineRef.current.clear();
     setRaisonnementEnCours(false);
     setConfirmation(null);
@@ -1899,6 +1993,9 @@ export function ChatIA({
   // ligne ne doit pas continuer de tourner à l'écran).
   function arreterGeneration() {
     const enAnglais = obtenirLocale() === "en";
+    // Arrêter libère aussi une question en attente : sa carte n'a plus de sens, les messages non lus non plus.
+    setQuestionsEnDirect((prec) => prec.filter((q) => q.repondue));
+    setMessagesPendantTour((prec) => prec.filter((m) => m.etat === "attente"));
     setStatuts((prec) =>
       prec.some((s) => s.etat === "en_cours")
         ? prec.map((s) =>
@@ -2142,7 +2239,7 @@ export function ChatIA({
     // Se redéclenche à chaque octet reçu en streaming (content grandit),
     // pas seulement à l'ajout d'un message -- sinon le scroll se fige dès
     // la première ligne d'une réponse longue.
-  }, [messages, statuts, raisonnementEnCours]);
+  }, [messages, statuts, raisonnementEnCours, messagesPendantTour, questionsEnDirect]);
 
   // 18/10/2026, demande Bourama : sur téléphone, dans le chat plein écran, la
   // barre de saisie est posée par-dessus la liste des messages. On mesure sa
@@ -2251,8 +2348,9 @@ export function ChatIA({
             {!accesBloqueMineur && <CtaImportIa />}
             <BarreDeSaisie
               onEnvoyer={envoyerMessage}
-              desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+              desactive={(affichageEnCours && !genEnCours) || accesBloqueMineur}
               genererEnCours={genEnCours}
+              onEnvoyerPendantTour={envoyerPendantTour}
               onArreter={arreterGeneration}
               agentId={agentId}
               texteInitial={texteInitial}
@@ -2464,6 +2562,24 @@ export function ChatIA({
           );
         })}
 
+        <MessagesPendantTour messages={messagesPendantTour} />
+
+        {questionsEnDirect.map((q) => (
+          <QuestionEnDirect
+            key={q.id}
+            question={q}
+            onRepondre={(reponse) => {
+              let intitule = "";
+              try {
+                intitule = String(JSON.parse(q.code)?.question ?? "");
+              } catch {
+                intitule = "";
+              }
+              void repondreQuestionEnDirect(q.id, reponse, intitule);
+            }}
+          />
+        ))}
+
         <BandeauReconnexionFlux />
 
         {statutsFlottants.length > 0 && (
@@ -2543,8 +2659,9 @@ export function ChatIA({
           {!accesBloqueMineur && <CtaImportIa />}
           <BarreDeSaisie
             onEnvoyer={envoyerMessage}
-            desactive={genEnCours || affichageEnCours || accesBloqueMineur}
+            desactive={(affichageEnCours && !genEnCours) || accesBloqueMineur}
             genererEnCours={genEnCours}
+            onEnvoyerPendantTour={envoyerPendantTour}
             onArreter={arreterGeneration}
             agentId={agentId}
             modelesDisponibles={modelesDisponibles}
