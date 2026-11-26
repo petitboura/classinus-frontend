@@ -9,8 +9,8 @@ import { couleurMarque } from "@/lib/couleursIcones";
 // notes tiennent sur UNE seule ligne repliée. Quand une nouvelle ligne arrive, elle monte par le
 // bas et l'ancienne glisse vers le haut, comme une roue qui tourne. Aucune durée minimale pour un
 // outil : plusieurs outils appelés en même temps se remplacent vite, au rythme où ils arrivent.
-// Seule une note de l'IA reste affichée plus longtemps, selon sa longueur, pour qu'on ait le temps
-// de la lire.
+// Seule une note de l'IA ou une réflexion reste affichée plus longtemps, selon sa longueur, pour
+// qu'on ait le temps de la lire.
 //
 // Texte sur une seule ligne, coupé par « ... » quand il est trop long (surtout sur mobile), au lieu
 // de passer à la ligne comme dans la liste dépliée.
@@ -28,9 +28,9 @@ export type ElementRoue = {
   // Clés des appels réunis dans cette ligne (un même outil répété = une seule ligne) : la roue sait
   // ainsi qu'une ligne a déjà été montrée, même quand sa composition ou son ordre change.
   membres: string[];
-  genre: "outil" | "commentaire";
+  genre: "outil" | "commentaire" | "reflexion";
   texte: string;
-  // Outil encore en train de s'exécuter : son texte scintille (shimmer), comme dans la liste dépliée.
+  // Outil ou réflexion encore en cours : son texte scintille (shimmer), comme dans la liste dépliée.
   enCours: boolean;
   Icone?: LucideIcon;
   // Un seul site visé : son logo remplace l'icône de l'outil, comme dans LigneOutil.
@@ -100,7 +100,7 @@ export function RoueOutils({ elements, depart }: { elements: ElementRoue[]; depa
 
   useEffect(() => {
     if (!cleSuivante) return;
-    const delai = genreCourant === "commentaire" ? dureeCommentaireMs(longueurCourante) : DELAI_ROUE_MS;
+    const delai = genreCourant !== "outil" ? dureeCommentaireMs(longueurCourante) : DELAI_ROUE_MS;
     const minuteur = setTimeout(() => {
       const prochain = suivantRef.current;
       if (!prochain) return;

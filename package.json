@@ -18,6 +18,7 @@
     "build:capacitor:test": "node tests/verifier-composants-natifs.mjs && node tests/verifier-couleurs-theme.mjs && cross-env CAPACITOR_BUILD=true CLASSINUS_CIBLE_TEST=true next build && npx cap sync",
     "test:widget-mcp-ui": "node tests/verifier-widget-mcp-ui.mjs",
     "test:entete-skill": "node tests/verifier-entete-skill.mjs",
+    "test:titre-reflexion": "node tests/verifier-titre-reflexion.mjs",
     "test:canal-pc": "node tests/verifier-canal-pc.mjs",
     "test:mise-a-jour-pc": "node tests/verifier-mise-a-jour-pc.mjs",
     "test:relais-pc": "node tests/verifier-relais-pc.mjs",

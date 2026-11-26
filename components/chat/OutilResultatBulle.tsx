@@ -1,12 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Layers } from "lucide-react";
+import { BrainCog, ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
+import { useLocale } from "@/lib/i18n/useLocale";
+import { titreReflexion } from "@/lib/titreReflexion";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 import { LigneCommentaire } from "./LigneCommentaire";
+import { LigneReflexion } from "./LigneReflexion";
 import { RoueOutils, type ElementRoue } from "./RoueOutils";
 import { imagesNonPlacees, videosNonPlacees } from "./mediasNonPlaces";
 import { WidgetsMcpUi } from "./WidgetMcpUi";
@@ -164,7 +167,10 @@ export function OutilResultatBulle({
   // Notes de l'IA entre deux outils (25/11/2026, demande Bourama) : des lignes à point, jamais des
   // outils. `apres` = nombre d'outils terminés qui les précèdent dans la suite, pour les remettre à
   // leur place dans l'ordre réel (voir BulleMessage.tsx).
-  commentaires?: { texte: string; apres: number }[];
+  // Une réflexion du modèle (26/11/2026) est une note de plus dans cette suite : `texte` est son texte
+  // brut, `reflexion` donne son numéro dans le message (pour le mot du titre) et dit si le modèle
+  // est encore en train de réfléchir.
+  commentaires?: { texte: string; apres: number; reflexion?: { numero: number; enCours: boolean } }[];
   // Texte de la réponse et fin de génération : les vidéos et images que le
   // modèle a déjà placées dans sa réponse ne sont pas répétées sous le
   // message, seules celles qu'il a oublié de placer s'affichent, une fois la
@@ -193,6 +199,7 @@ export function OutilResultatBulle({
   travailFini?: boolean;
 }) {
   const { outils, verbes, prefixes } = useOutilsRegistre();
+  const locale = useLocale();
 
   const resultats = resultatsBruts?.map((r) => ({
     ...r,
@@ -268,7 +275,8 @@ export function OutilResultatBulle({
   // cours vient toujours après. Une note casse la fusion de deux lignes identiques.
   type ElementTimeline =
     | { genre: "ligne"; ligne: Ligne }
-    | { genre: "commentaire"; cle: string; texte: string };
+    | { genre: "commentaire"; cle: string; texte: string }
+    | { genre: "reflexion"; cle: string; titre: string; brut: string; enCours: boolean };
   const elements: ElementTimeline[] = [];
   let paquet: Rangee[] = [];
   const viderPaquet = () => {
@@ -279,7 +287,18 @@ export function OutilResultatBulle({
   const poserCommentaires = (jusqua: number) => {
     while (commentaires && iCommentaire < commentaires.length && commentaires[iCommentaire].apres <= jusqua) {
       viderPaquet();
-      elements.push({ genre: "commentaire", cle: `c-${iCommentaire}`, texte: commentaires[iCommentaire].texte });
+      const note = commentaires[iCommentaire];
+      if (note.reflexion) {
+        elements.push({
+          genre: "reflexion",
+          cle: `r-${iCommentaire}`,
+          titre: titreReflexion(note.texte, note.reflexion.numero, locale),
+          brut: note.texte,
+          enCours: note.reflexion.enCours,
+        });
+      } else {
+        elements.push({ genre: "commentaire", cle: `c-${iCommentaire}`, texte: note.texte });
+      }
       iCommentaire++;
     }
   };
@@ -309,6 +328,17 @@ export function OutilResultatBulle({
     if (element.genre === "commentaire") {
       return <LigneCommentaire key={element.cle} texte={element.texte} estDerniere={estDerniere} />;
     }
+    if (element.genre === "reflexion") {
+      return (
+        <LigneReflexion
+          key={element.cle}
+          titre={element.titre}
+          brut={element.brut}
+          enCours={element.enCours}
+          estDerniere={estDerniere}
+        />
+      );
+    }
     const ligne = element.ligne;
     const { Icone, appli } = iconePrincipalePour(outils, ligne.nomOutil, ligne.action, prefixes);
     return (
@@ -328,7 +358,8 @@ export function OutilResultatBulle({
 
   if (!estGroupe) {
     const premier = elements[0];
-    ligneSeuleRef.current = enDirect && premier?.genre === "ligne" ? premier.ligne.cle : null;
+    ligneSeuleRef.current =
+      enDirect && premier?.genre === "ligne" ? premier.ligne.cle : enDirect && premier?.genre === "reflexion" ? premier.cle : null;
     return <div className="my-1.5 flex max-w-[85%] flex-col">{elementsResultats}</div>;
   }
 
@@ -337,6 +368,9 @@ export function OutilResultatBulle({
   const elementsRoue: ElementRoue[] = elements.map((element): ElementRoue => {
     if (element.genre === "commentaire") {
       return { cle: element.cle, membres: [element.cle], genre: "commentaire", texte: element.texte, enCours: false };
+    }
+    if (element.genre === "reflexion") {
+      return { cle: element.cle, membres: [element.cle], genre: "reflexion", texte: element.titre, enCours: element.enCours, Icone: BrainCog };
     }
     const ligne = element.ligne;
     const donnees = donneesDeLigne(ligne);

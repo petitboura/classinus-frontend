@@ -1277,46 +1277,25 @@ function BulleMessageInterne({
                 // n'a ni l'un ni l'autre et retombe donc sur le rendu
                 // groupé normal, inchangé.
                 <div className="flex flex-col gap-1.5">
-                  {/* Fusion des segments de raisonnement (06/09/2026, demande
-                      Bourama) -- une même génération peut contenir plusieurs
-                      segments "raisonnement" (le modèle réfléchit, appelle un
-                      outil, réfléchit encore...), ce qui affichait avant
-                      autant de bulles "Raisonnement de Classinus" séparées et
-                      éparpillées dans le message. On calcule ici une seule
-                      fois l'index du PREMIER segment de raisonnement et le
-                      texte de TOUS les segments de raisonnement concaténé :
-                      seule la bulle à cette première position s'affiche,
-                      avec le texte fusionné ; les segments de raisonnement
-                      suivants ne rendent plus rien. Rien n'est perdu, juste
-                      regroupé dans une seule bulle, à l'endroit où la
-                      réflexion a réellement commencé. */}
+                  {/* Chaque phase de réflexion du modèle est une ligne de la
+                      timeline des outils (26/11/2026, demande Bourama), à sa
+                      place réelle entre les outils et les notes : plus de
+                      bulle unique en haut. Voir OutilResultatBulle (roue) et
+                      lib/titreReflexion.ts (titre). Seuls les messages sans
+                      segments gardent l'ancienne bulle RaisonnementBulle. */}
                   {(() => {
                     const segments = message.segments ?? [];
-                    const premierIndexRaisonnement = segments.findIndex(
-                      (s) => s.type === "raisonnement",
-                    );
-                    const dernierSegment = segments[segments.length - 1];
-                    const raisonnementFusionEnCours = !!raisonnementEnCours && dernierSegment?.type === "raisonnement";
-                    // Des outils ont commencé : déjà terminés (segment outil)
-                    // ou encore en cours. Sert à garder la bulle de
-                    // raisonnement repliée, voir RaisonnementBulle.
-                    const outilsCommences =
-                      segments.some((s) => s.type === "outil" || s.type === "commentaire") || (outilsEnCours?.length ?? 0) > 0;
-                    const texteRaisonnementFusionne = segments
-                      .filter((s): s is { type: "raisonnement"; texte: string } => s.type === "raisonnement")
-                      .map((s) => s.texte)
-                      .join("\n\n");
+                    // Numéro de la réflexion dans le message : choisit le mot de son titre.
+                    let numeroReflexion = 0;
 
                     // Regroupement des outils consécutifs (demande Bourama,
                     // 12/09/2026) : un "run" est une suite ininterrompue de
-                    // segments "outil" et "raisonnement" -- seul un segment
-                    // "texte" le coupe, le raisonnement ne compte pas comme
-                    // une interruption (même s'il rend sa bulle au milieu du
-                    // run, voir fusion ci-dessus). Tous les outils d'un même
-                    // run s'affichent en UNE SEULE ligne repliable "X outils
-                    // utilisés" dès qu'il y en a 2 ou plus (voir OutilResultatBulle,
-                    // prop `groupe`) ; un run d'un seul outil garde
-                    // l'affichage simple actuel, inchangé.
+                    // segments "outil", "commentaire" et "raisonnement" :
+                    // seul un segment "texte" le coupe. Tous les éléments d'un
+                    // même run s'affichent en UNE SEULE ligne repliable
+                    // (la roue, puis "X outils utilisés") dès qu'il y en a 2 ou
+                    // plus (voir OutilResultatBulle, prop `groupe`) ; un run
+                    // d'un seul élément garde l'affichage simple actuel.
                     const elements: ReactNode[] = [];
                     let i = 0;
                     let enCoursAttache = false;
@@ -1342,29 +1321,27 @@ function BulleMessageInterne({
                       // les outils rencontrés au passage.
                       const debutRun = i;
                       const outilsDuRun: Extract<SegmentMessage, { type: "outil" }>[] = [];
-                      // Notes de l'IA du run (25/11/2026) : `apres` = nombre d'outils terminés qui les
-                      // précèdent dans le run, pour les remettre à leur place dans l'ordre réel.
-                      const commentairesDuRun: { texte: string; apres: number }[] = [];
+                      // Notes de l'IA et réflexions du run (25/11/2026, 26/11/2026) : `apres` = nombre
+                      // d'outils terminés qui les précèdent dans le run, pour les remettre à leur place
+                      // dans l'ordre réel.
+                      const commentairesDuRun: { texte: string; apres: number; reflexion?: { numero: number; enCours: boolean } }[] = [];
                       while (i < segments.length && segments[i].type !== "texte") {
                         const segmentRun = segments[i];
                         if (segmentRun.type === "outil") {
                           outilsDuRun.push(segmentRun);
                         } else if (segmentRun.type === "commentaire") {
                           commentairesDuRun.push({ texte: segmentRun.texte, apres: outilsDuRun.length });
+                        } else if (segmentRun.type === "raisonnement" && segmentRun.texte.trim()) {
+                          commentairesDuRun.push({
+                            texte: segmentRun.texte,
+                            apres: outilsDuRun.length,
+                            reflexion: {
+                              numero: numeroReflexion++,
+                              enCours: !!raisonnementEnCours && i === segments.length - 1,
+                            },
+                          });
                         }
                         i += 1;
-                      }
-
-                      if (debutRun <= premierIndexRaisonnement && premierIndexRaisonnement < i) {
-                        elements.push(
-                          <RaisonnementBulle
-                            key={`raisonnement-${premierIndexRaisonnement}`}
-                            nomAgent={nomAgent ?? "Classinus"}
-                            texte={texteRaisonnementFusionne}
-                            enCours={raisonnementFusionEnCours}
-                            outilsCommences={outilsCommences}
-                          />,
-                        );
                       }
 
                       // Ce run est-il le DERNIER de la timeline (rien après,
