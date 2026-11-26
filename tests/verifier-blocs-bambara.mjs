@@ -163,4 +163,23 @@ assert.match(voix, /creerLectureBlocs/);
 assert.match(ecriture, /creerLectureBlocs/);
 assert.match(espace, /bloc: params\.bloc \?\? 0/, "le rang du bloc part au serveur");
 assert.doesNotMatch(sources.join("\n") + page + bloc, / -- /, "pas de double tiret");
+
+// Réponses réelles de staging (25/11/2026) : adresses Wikimédia avec parenthèses, images avec titre, blocs [Image jointe : ...] du serveur.
+{
+  const reelle = [
+    "Voici des photos.",
+    '![Mark](https://thumb.wikimedia.org/a/Foo_(2008).jpg/960px.jpg?utm=1 "https://commons.wikimedia.org/wiki/File:Foo_(2008).jpg")',
+    '![Elon](https://x.org/e.jpg "https://x.org/page")',
+    "",
+    "Fin.",
+    "",
+    "[Image jointe : https://thumb.wikimedia.org/a/Foo_(2008).jpg/960px.jpg]",
+    "",
+    "[Image jointe : https://x.org/e.jpg]",
+  ].join("\n");
+  const b = m.blocsDeReponse(reelle, true);
+  assert.deepEqual(b.filter((x) => x.genre === "texte").map((x) => x.texte), ["Voici des photos.", "Fin."], "aucun reste d'adresse ni de repère n'est lu");
+  const visuels = b.filter((x) => x.genre === "visuels").flatMap((x) => x.visuels);
+  assert.deepEqual(visuels.map((v) => v.url), ["https://thumb.wikimedia.org/a/Foo_(2008).jpg/960px.jpg?utm=1", "https://x.org/e.jpg"], "adresses entières, le titre n'est jamais un visuel");
+}
 console.log("blocs bambara : ok");

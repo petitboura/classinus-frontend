@@ -15,7 +15,7 @@ Demandé par Bourama le 13 novembre 2026. Le côté serveur est décrit dans `do
 - `lib/voixBambara.ts` : la session (même forme que `lib/geminiLive.ts`, donc l'onde et le bouton Arrêter marchent sans changement).
 - `lib/voixBambaraMicro.ts` : détection de la parole et enregistrement. Les seuils sont dans `REGLAGES_MICRO`.
 - `lib/voixBambaraLecture.ts` : lecture des morceaux, le suivant est préparé pendant que le précédent joue.
-- `lib/voixBambaraTexte.ts` : retire ce qui ne se prononce pas (mise en forme, liens, mais aussi noms de fichiers comme photo.jpg, chemins, adresses sans https, repères de fichiers joints, balises HTML ; depuis le 25/11/2026) et découpe la réponse ; `suivreTexteVoix` rend les phrases terminées pendant que le texte arrive encore.
+- `lib/voixBambaraTexte.ts` : retire ce qui ne se prononce pas (mise en forme, liens, mais aussi noms de fichiers comme photo.jpg, chemins, adresses sans https ou avec parenthèses (Wikimédia), images markdown avec titre, repères de fichiers joints, balises HTML ; depuis le 25/11/2026) et découpe la réponse ; `suivreTexteVoix` rend les phrases terminées pendant que le texte arrive encore.
 - `lib/voixBambaraFlux.ts` : lecture au fil de l'eau, le texte y entre à mesure et la voix commence à la première phrase terminée.
 - `lib/voixBambaraApi.ts` : appels vers le relais du backend. Le navigateur ne connaît aucune adresse de service.
 - `components/voix/ChoixLangueVoix.tsx` : la question « bambara ou autre ».

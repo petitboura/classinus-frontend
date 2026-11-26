@@ -19,8 +19,15 @@ const REPERES_FICHIERS_VOIX =
 const ADRESSE_DONNEES = /data:[\w.+-]+\/[\w.+-]+(?:;[\w=.+-]+)*,[^\s)"']*/gi;
 const BALISE_HTML = /<\/?[a-z][^>]*>/gi;
 const BALISE_HTML_COUPEE = /<\/?[a-z][^>]*$/i;
-// Fin d'adresse : jamais un signe de ponctuation, il appartient à la phrase et doit rester pour qu'elle se termine.
-const ADRESSE_HTTP = /https?:\/\/[^\s<>"']*[^\s<>"'.,;:!?)\]]/gi;
+// Une adresse peut contenir des parenthèses (Wikipédia, Wikimédia : Mali_(pays), Foo_(2008).jpg) : un niveau est accepté, sinon
+// la fin de l'adresse resterait dans le texte et serait lue. Sa fin n'est jamais un signe de ponctuation : il appartient à la
+// phrase et doit rester pour qu'elle se termine.
+const PARTIE_ADRESSE = '(?:[^\\s<>"\'()\\[\\]]|\\([^\\s()]*\\))';
+const ADRESSE_HTTP = new RegExp("https?:\\/\\/" + PARTIE_ADRESSE + "*(?:[^\\s<>\"'()\\[\\].,;:!?]|\\([^\\s()]*\\))", "gi");
+// Le complément d'un lien ou d'une image markdown : (adresse) ou (adresse "titre"), le titre pouvant lui même être une adresse.
+const COMPLEMENT_MARKDOWN = '\\((?:[^()\\s]|\\([^()\\s]*\\))*(?:\\s+"[^"]*")?\\s*\\)';
+const IMAGE_MARKDOWN = new RegExp("!\\[[^\\]]*\\]" + COMPLEMENT_MARKDOWN, "g");
+const LIEN_MARKDOWN = new RegExp("\\[([^\\]]*)\\]" + COMPLEMENT_MARKDOWN, "g");
 const ADRESSE_SANS_PROTOCOLE =
   /(?<![\p{L}\p{N}@/.-])(?:www\.[^\s<>"']*[^\s<>"'.,;:!?)\]]|(?:[\p{L}\p{N}-]+\.)+[a-z]{2,}\/(?:[^\s<>"']*[^\s<>"'.,;:!?)\]])?)/giu;
 const NOM_DE_FICHIER = new RegExp(
@@ -40,8 +47,8 @@ export function nettoyerPourVoix(texte: string): string {
     .replace(ADRESSE_DONNEES, " ")
     .replace(BALISE_HTML, " ")
     .replace(BALISE_HTML_COUPEE, " ")
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(IMAGE_MARKDOWN, " ")
+    .replace(LIEN_MARKDOWN, "$1")
     .replace(ADRESSE_HTTP, " ")
     .replace(/https?:\/\//gi, " ")
     .replace(ADRESSE_SANS_PROTOCOLE, " ")
@@ -108,7 +115,7 @@ export function decouperEnMorceaux(texte: string, max: number): string[] {
 // lit un texte qui s'écrit et rend, au fur et à mesure, les phrases terminées, prêtes à être confiées à la voix.
 
 const FIN_DE_PHRASE = /(?<=[.!?…])\s+|\n+/gu;
-const LIEN_MARKDOWN_COMPLET = /^\[[^\]]*\]\([^)]*\)/;
+const LIEN_MARKDOWN_COMPLET = /^\[[^\]]*\]\((?:[^()\s]|\([^()\s]*\))*(?:\s+"[^"]*")?\s*\)/;
 
 /**
  * Le début d'un texte encore en train de s'écrire qui ne changera plus quand la suite arrivera : sans un bloc de code

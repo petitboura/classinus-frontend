@@ -17,8 +17,10 @@ export type VisuelBambara = {
 };
 
 const MOTIF_ID_YOUTUBE = /(?:youtube\.com\/watch\?(?:[^#\s]*&)?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([\w-]{11})/;
-const MOTIF_IMAGE_MARKDOWN = /!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g;
-const MOTIF_URL = /https?:\/\/[^\s)\]>"'`]+/g;
+// Une adresse peut contenir des parenthèses (Wikimédia : Foo_(2008).jpg), un niveau est accepté ; une image markdown peut porter un
+// titre entre guillemets après son adresse (souvent une autre adresse, celle de la page), qui n'est jamais un visuel.
+const MOTIF_IMAGE_MARKDOWN = /!\[([^\]]*)\]\((https?:\/\/(?:[^()\s]|\([^()\s]*\))+)(?:\s+"([^"]*)")?\s*\)/g;
+const MOTIF_URL = /https?:\/\/(?:[^\s()\]>"'`]|\([^\s()]*\))+/g;
 const EXTENSIONS_IMAGE = /\.(png|jpe?g|gif|webp|avif|svg)(\?[^\s]*)?$/i;
 const EXTENSIONS_VIDEO = /\.(mp4|webm|mov|m4v)(\?[^\s]*)?$/i;
 
@@ -105,6 +107,7 @@ export function extraireVisuelsDuTexte(texte: string): VisuelBambara[] {
 
   for (const m of texte.matchAll(MOTIF_IMAGE_MARKDOWN)) {
     dejaPris.add(m[2]);
+    if (m[3]) dejaPris.add(m[3]);
     trouves.push(visuelImage(m[2], m[1] || ""));
   }
   for (const m of texte.matchAll(MOTIF_URL)) {

@@ -37,6 +37,14 @@ assert.equal(nettoyerPourVoix("Un lien https://x.org/page.html. Fin."), "Un lien
 // Ce qui se dit normalement reste intact : nombres, noms, mots avec tiret bas au milieu.
 assert.equal(nettoyerPourVoix("Rendez-vous à 10.30 puis 3.5 km. Le prix est 2.50."), "Rendez-vous à 10.30 puis 3.5 km. Le prix est 2.50.");
 assert.equal(nettoyerPourVoix("Écoute _bien_ ceci, mot_composé reste."), "Écoute bien ceci, mot_composé reste.");
+// Adresses avec parenthèses (Wikimédia, Wikipédia) et images markdown avec titre : rien de leur fin ne reste dans le texte.
+assert.equal(nettoyerPourVoix('![Mark](https://thumb.wikimedia.org/a/Foo_(2008).jpg/960px.jpg?utm=1 "https://commons.wikimedia.org/wiki/File:Foo_(2008).jpg") fin'), "fin");
+assert.equal(nettoyerPourVoix("Voir [la photo](https://fr.wikipedia.org/wiki/Mali_(pays)) maintenant."), "Voir la photo maintenant.");
+assert.equal(nettoyerPourVoix("![Mali](https://upload.wikimedia.org/Flag_of_Mali_(1).svg) fin"), "fin");
+assert.equal(nettoyerPourVoix("Voir la photo (https://x.org/a_(1).jpg) maintenant."), "Voir la photo maintenant.");
+assert.equal(nettoyerPourVoix("Voir https://x.org/Mali_(pays). Suite"), "Voir . Suite");
+assert.equal(partieStable('Salut ![d](https://x.org/F_(1).jpg "https://y.org/p'), "Salut ");
+assert.equal(partieStable('Salut ![d](https://x.org/F_(1).jpg "https://y.org/p") fin'), 'Salut ![d](https://x.org/F_(1).jpg "https://y.org/p") fin');
 assert.equal(partieStable('Avant <img src="a.jpg'), "Avant ");
 assert.equal(partieStable('Avant <img src="a.jpg"> après'), 'Avant <img src="a.jpg"> après');
 assert.equal(partieStable("3 < 5 donc oui"), "3 < 5 donc oui");
