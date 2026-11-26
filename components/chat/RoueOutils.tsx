@@ -25,6 +25,9 @@ function dureeCommentaireMs(longueur: number): number {
 
 export type ElementRoue = {
   cle: string;
+  // Clés des appels réunis dans cette ligne (un même outil répété = une seule ligne) : la roue sait
+  // ainsi qu'une ligne a déjà été montrée, même quand sa composition ou son ordre change.
+  membres: string[];
   genre: "outil" | "commentaire";
   texte: string;
   // Outil encore en train de s'exécuter : son texte scintille (shimmer), comme dans la liste dépliée.
@@ -62,29 +65,51 @@ function LigneRoue({ element, classe, onFin }: { element: ElementRoue; classe: s
   );
 }
 
-export function RoueOutils({ elements }: { elements: ElementRoue[] }) {
-  const [index, setIndex] = useState(0);
+// La roue n'avance que vers une ligne jamais montrée (26/11/2026, retour Bourama : après un outil,
+// tout repassait depuis le début). La dernière ligne reste affichée tant qu'aucune nouvelle
+// n'arrive. À la création, elle se pose sur la dernière ligne, sauf si `depart` désigne la ligne que
+// la personne voyait juste avant : elle part alors de celle-ci et tourne vers la suivante.
+export function RoueOutils({ elements, depart }: { elements: ElementRoue[]; depart?: string | null }) {
+  const dernier = elements[elements.length - 1];
+  const rangDepart = depart ? elements.findIndex((e) => e.membres.includes(depart)) : -1;
+  const [affiche, setAffiche] = useState<string>(() => (rangDepart >= 0 ? depart! : dernier?.membres[0] ?? ""));
   const [partant, setPartant] = useState<ElementRoue | null>(null);
+  const vusRef = useRef<Set<string> | null>(null);
+  if (vusRef.current === null) {
+    const dejaVus = rangDepart >= 0 ? elements.slice(0, rangDepart + 1) : elements;
+    vusRef.current = new Set(dejaVus.flatMap((e) => e.membres));
+  }
+  const vus = vusRef.current;
+  const courant = elements.find((e) => e.membres.includes(affiche)) ?? dernier;
+  const suivant = elements.find((e) => e !== courant && !e.membres.some((m) => vus.has(m)));
+
   // Les éléments sont reconstruits à chaque rendu : on les lit par un ref pour que le minuteur
   // ne soit pas relancé (et la roue bloquée) à chaque mise à jour du texte de la réponse.
-  const elementsRef = useRef(elements);
-  elementsRef.current = elements;
-
-  const cible = elements.length - 1;
-  const indexAffiche = Math.min(index, Math.max(0, cible));
-  const courant = elements[indexAffiche];
-  const genreCourant = courant?.genre;
-  const longueurCourante = courant?.texte.length ?? 0;
+  const courantRef = useRef(courant);
+  courantRef.current = courant;
+  const suivantRef = useRef(suivant);
+  suivantRef.current = suivant;
 
   useEffect(() => {
-    if (indexAffiche >= cible) return;
+    courantRef.current?.membres.forEach((m) => vus.add(m));
+  });
+
+  const genreCourant = courant?.genre;
+  const longueurCourante = courant?.texte.length ?? 0;
+  const cleSuivante = suivant?.cle;
+
+  useEffect(() => {
+    if (!cleSuivante) return;
     const delai = genreCourant === "commentaire" ? dureeCommentaireMs(longueurCourante) : DELAI_ROUE_MS;
     const minuteur = setTimeout(() => {
-      setPartant(elementsRef.current[indexAffiche] ?? null);
-      setIndex(indexAffiche + 1);
+      const prochain = suivantRef.current;
+      if (!prochain) return;
+      prochain.membres.forEach((m) => vus.add(m));
+      setPartant(courantRef.current ?? null);
+      setAffiche(prochain.membres[0]);
     }, delai);
     return () => clearTimeout(minuteur);
-  }, [indexAffiche, cible, genreCourant, longueurCourante]);
+  }, [cleSuivante, genreCourant, longueurCourante, vus]);
 
   if (!courant) return null;
 

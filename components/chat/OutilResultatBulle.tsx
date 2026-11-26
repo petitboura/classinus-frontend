@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
@@ -156,7 +156,7 @@ export function OutilResultatBulle({
   commentaires,
   enCours,
   groupe = false,
-  peutSeReplier = true,
+  travailFini = true,
   texteMessage = "",
   reponseTerminee = true,
 }: {
@@ -187,14 +187,10 @@ export function OutilResultatBulle({
   // message antérieur à ce chantier (pas de rétro-remplissage) retombe
   // encore sur l'ancien affichage groupé, qui ne passe jamais cette prop.
   groupe?: boolean;
-  // Ajouté (18/09/2026, demande Bourama : après deux ou trois outils, le
-  // groupe se repliait tout seul alors que d'autres outils tournaient
-  // encore, et l'utilisateur ne voyait plus rien). Depuis le 25/11/2026 (la roue), le groupe est
-  // toujours replié : cette prop dit seulement si le groupe est terminé pour de bon (du texte de
-  // réponse suit déjà, ou message plus ancien) ou s'il peut encore recevoir un nouvel outil au
-  // tour suivant du modèle, auquel cas la ligne unique reste une roue au lieu de devenir le
-  // résumé « X outils utilisés ».
-  peutSeReplier?: boolean;
+  // Faux tant que la réponse de ce message n'est pas finie (outils, réflexion, texte ou
+  // confirmation en attente). Le résumé « X outils utilisés » n'apparaît qu'ensuite
+  // (26/11/2026, demande Bourama) : avant, la dernière ligne reste affichée jusqu'à la suivante.
+  travailFini?: boolean;
 }) {
   const { outils, verbes, prefixes } = useOutilsRegistre();
 
@@ -262,6 +258,8 @@ export function OutilResultatBulle({
   // la ligne est une roue qui montre une ligne à la fois ; une fois le travail fini, elle devient
   // « X outils utilisés », comme avant. Seul un clic la déplie (liste complète dans l'ordre).
   const [groupeOuvert, setGroupeOuvert] = useState(false);
+  // Ligne seule montrée avant l'arrivée de la deuxième : la roue part d'elle pour tourner vers la suivante.
+  const ligneSeuleRef = useRef<string | null>(null);
 
   if (rangees.length === 0 && !(commentaires && commentaires.length > 0)) return null;
 
@@ -299,9 +297,9 @@ export function OutilResultatBulle({
   const estGroupe = groupe && rangees.length >= 1 && nbElementsBruts >= 2;
   const nbLignesOutils = elements.filter((e) => e.genre === "ligne").length;
 
-  // Le travail est-il encore en cours ? Des outils tournent, ou le groupe est le dernier de la
-  // réponse et la réponse n'est pas finie (l'IA réfléchit entre deux outils) : la roue reste là.
-  const enDirect = nbEnCours > 0 || (!peutSeReplier && !reponseTerminee);
+  // Le travail est-il encore en cours ? Un outil tourne, ou la réponse n'est pas finie (l'IA
+  // réfléchit ou écrit entre deux outils) : la roue reste là.
+  const enDirect = nbEnCours > 0 || !travailFini;
 
   // Même icône d'outil dès qu'on la connaît (nomOutil transmis dès
   // l'événement "statut" par ChatIA.tsx). Repli Wrench pour tout outil
@@ -329,6 +327,8 @@ export function OutilResultatBulle({
   });
 
   if (!estGroupe) {
+    const premier = elements[0];
+    ligneSeuleRef.current = enDirect && premier?.genre === "ligne" ? premier.ligne.cle : null;
     return <div className="my-1.5 flex max-w-[85%] flex-col">{elementsResultats}</div>;
   }
 
@@ -336,7 +336,7 @@ export function OutilResultatBulle({
   // (« en cours » pour un outil qui tourne, son nom une fois fini).
   const elementsRoue: ElementRoue[] = elements.map((element): ElementRoue => {
     if (element.genre === "commentaire") {
-      return { cle: element.cle, genre: "commentaire", texte: element.texte, enCours: false };
+      return { cle: element.cle, membres: [element.cle], genre: "commentaire", texte: element.texte, enCours: false };
     }
     const ligne = element.ligne;
     const donnees = donneesDeLigne(ligne);
@@ -349,6 +349,7 @@ export function OutilResultatBulle({
     const { Icone } = iconePrincipalePour(outils, ligne.nomOutil, ligne.action, prefixes);
     return {
       cle: ligne.cle,
+      membres: ligne.membres.map((m) => m.cle),
       genre: "outil",
       texte,
       enCours: enCoursLigne,
@@ -379,7 +380,7 @@ export function OutilResultatBulle({
         className="flex w-full min-w-0 items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
         {enDirect ? (
-          <RoueOutils elements={elementsRoue} />
+          <RoueOutils elements={elementsRoue} depart={ligneSeuleRef.current} />
         ) : (
           <span key="resume" className="flex min-w-0 animate-dj-fade-in-rapide items-center gap-1.5">
             <Layers size={13} className="shrink-0 text-dj-texte" />
