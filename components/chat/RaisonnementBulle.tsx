@@ -18,46 +18,45 @@ import { ChevronDown, ChevronRight, ChevronUp, BrainCog } from "lucide-react";
 // qui se replie automatiquement (mais reste consultable) une fois la
 // réponse commencée, plutôt que d'être jetée.
 //
+// Depuis le 26/11/2026 (demande Bourama), cette bulle ne sert plus qu'aux
+// anciens messages sans segments : dans la timeline, chaque réflexion est une
+// ligne de la roue des outils (voir OutilResultatBulle et LigneReflexion).
+//
 // Règles d'ouverture (10/10/2026, demande Bourama) :
-// 1. Une fois que des outils ont commencé à être utilisés (outilsCommences),
-//    la bulle ne s'ouvre jamais seule : elle reste repliée et ne se déplie
-//    que si la personne clique.
-// 2. Si la personne ferme la bulle, elle ne se rouvre plus jamais seule.
-// 3. Dès que la réflexion se termine, la bulle se referme, même si la
+// 1. Si la personne ferme la bulle, elle ne se rouvre plus jamais seule.
+// 2. Dès que la réflexion se termine, la bulle se referme, même si la
 //    personne l'avait fermée puis rouverte pendant la réflexion. Elle reste
 //    ensuite consultable d'un clic.
 export function RaisonnementBulle({
   nomAgent,
   texte,
   enCours,
-  outilsCommences = false,
 }: {
   nomAgent: string;
   texte: string;
   enCours: boolean;
-  outilsCommences?: boolean;
 }) {
   const locale = useLocale();
-  // Ouverte d'emblée seulement pour une première réflexion en direct, avant
-  // tout outil. Un message rechargé depuis l'historique démarre replié.
-  const [ouvert, setOuvert] = useState(enCours && !outilsCommences);
+  // Ouverte d'emblée seulement pour une réflexion en direct. Un message
+  // rechargé depuis l'historique démarre replié.
+  const [ouvert, setOuvert] = useState(enCours);
   // Vrai dès que la personne a fermé la bulle elle même (clic sur l'en tête
   // ou sur le bouton flottant). Ne repasse jamais à faux.
   const fermeeParPersonneRef = useRef(false);
   const enCoursPrecedentRef = useRef(enCours);
 
   // Ouverture et fermeture automatiques, uniquement sur un changement de
-  // enCours : début de réflexion (ouvre si les règles 1 et 2 le permettent)
-  // ou fin de réflexion (referme, règle 3).
+  // enCours : début de réflexion (ouvre si la règle 1 le permet) ou fin de
+  // réflexion (referme, règle 2).
   useEffect(() => {
     const etaitEnCours = enCoursPrecedentRef.current;
     enCoursPrecedentRef.current = enCours;
     if (enCours && !etaitEnCours) {
-      if (!outilsCommences && !fermeeParPersonneRef.current) setOuvert(true);
+      if (!fermeeParPersonneRef.current) setOuvert(true);
     } else if (!enCours && etaitEnCours) {
       setOuvert(false);
     }
-  }, [enCours, outilsCommences]);
+  }, [enCours]);
 
   function basculer() {
     if (ouvert) fermeeParPersonneRef.current = true;
