@@ -26,7 +26,7 @@ export type UsageDecouvrir = {
   questions: QuestionReponse[];
   /**
    * Vrai pour un usage facultatif, qui ne fait pas partie du cœur de Classinus
-   * (l'étude). Il est présenté en dernier, avec la mention "facultatif".
+   * (les outils d'apprentissage et d'étude). Il est présenté en dernier, avec la mention "facultatif".
    */
   facultatif?: true;
 };
