@@ -1,8 +1,8 @@
 # Visibilité de Classinus auprès de ChatGPT et des IA : publications
 
-- **Statut** : en attente (rien de plus ne doit être publié tant que le paiement par mobile money et l'ouverture des modèles Claude, GPT, Gemini et Grok ne sont pas réels)
-- **Dernière mise à jour** : 2026-11-25
-- **Dépôts concernés** : classinus-frontend (README, pages publiques /decouvrir), petitboura/petitboura (nouveau dépôt de profil GitHub), Supabase (lecture seule pour vérifier les modèles)
+- **Statut** : en cours, mais à clarifier (le 26/11 Bourama a publié le Show HN et préparé Hashnode et BetaList en disant honnêtement que le paiement et certains modèles ne sont pas encore ouverts ; la règle « rien de plus tant que ce n'est pas réel » du 25/11 est à reconfirmer)
+- **Dernière mise à jour** : 2026-11-26
+- **Dépôts concernés** : classinus-frontend (README, pages publiques /decouvrir), petitboura/petitboura (nouveau dépôt de profil GitHub), Supabase (lecture seule pour vérifier les modèles et les paliers), Hashnode, Bing Webmaster Tools, BetaList (services externes)
 - **Branche(s)** : aucune, c'est un travail de publication et pas de code
 
 ## Le but, en langage clair
@@ -14,7 +14,12 @@ Que ChatGPT et les autres IA connaissent Classinus, sachent à qui il s'adresse,
 - Texte pour Reddit rédigé en anglais : voir `textes/reddit-en.md`. Un premier post a été publié le 25/11 avec le compte u/Bouramani et **retiré tout de suite par les filtres automatiques de Reddit**. Il n'est plus en ligne.
 - E-mail de présentation aux médias africains rédigé en français et en anglais : voir `textes/email-medias-fr.md` et `textes/email-medias-en.md`. **Non envoyé.**
 - Contacts média trouvés sur leurs sites officiels le 25/11 : TechCabal, editor@techcabal.com (tips et pitches) ; Techpoint Africa, startups@techpoint.africa (présenter une startup).
-- Show HN (Hacker News) : Bourama dit que c'est déjà fait. L'IA ne l'a pas vérifié.
+- Show HN (Hacker News) : publié le 25/11 avec l'adresse https://classinus.com. Le texte d'ouverture a été collé dans le champ texte puis la publication a été confirmée correcte (adresse et commentaire en place). Le commentaire dit honnêtement que les crédits manquent pour certains grands modèles et que le paiement n'est pas encore ouvert. Voir `textes/show-hn-en.md`. Titre exact publié : à confirmer.
+- Bing Webmaster Tools : site ajouté. La page /decouvrir est connue de Bing (découverte le 21/11) mais refusée à l'exploration, sans raison précise donnée. Demande d'indexation faite le 26/11. Voir `constats/bing-et-robots-2026-11-26.md`.
+- Vérifié dans le code le 26/11 : `robots.txt` autorise OAI-SearchBot, ChatGPT-User et GPTBot, un sitemap et un fichier `llms.txt` existent.
+- Annuaires d'outils IA : vérifiés et mis de côté. Futurepedia est payant (aucune soumission gratuite). There's An AI For That : gratuit ou payant selon les sources, à confirmer. Toolify et AlternativeTo : non confirmés.
+- Hashnode : blog « Classinus » en cours de création (nom, adresse classinus.hashnode.dev à confirmer, logo, favicon, image d'aperçu en anglais, titre et description SEO, barre de navigation avec 4 liens externes). Premier article rédigé en anglais, à publier : voir `textes/hashnode-article-en.md`. Il est publié sous le nom de Bourama dans le blog Classinus.
+- BetaList : dossier de soumission prêt (`textes/betalist-submission.json`) mais **non envoyé** : l'environnement de l'IA ne pouvait pas joindre betalist.com. La publication y est payante (Lite, Standard, Premium) et c'est Bourama qui doit ouvrir le lien de validation et payer.
 
 ## Ce qui reste à faire
 1. Ouvrir réellement le paiement par Orange Money et Wave (voir `constats/etat-reel-2026-11-25.md`).
@@ -24,7 +29,9 @@ Que ChatGPT et les autres IA connaissent Classinus, sachent à qui il s'adresse,
 5. Envoyer l'e-mail aux médias, avec un compte de test déjà débloqué, une fois les points 1 et 2 faits.
 6. Vidéo YouTube : mise de côté pour l'instant.
 7. Tester dans ChatGPT avec la recherche activée « Qu'est-ce que Classinus ? », maintenant, puis dans 4 à 6 semaines.
-8. À confirmer : robots.txt qui autorise OAI-SearchBot, GPTBot et ChatGPT-User, inscription à Bing Webmaster Tools, sitemap soumis. Cela a été proposé, pas vérifié.
+8. Bing : suivre la demande d'indexation de /decouvrir ; vérifier dans Vercel (Firewall) que « Attack Challenge Mode » est désactivé ; regarder le rapport de scan de Bing Webmaster Tools.
+9. Publier l'article Hashnode (captures 1 et 2 retenues, la capture du skill refaite en anglais) puis Product Hunt, Dev.to, LinkedIn et X.
+10. Envoyer la soumission BetaList (autoriser betalist.com dans le réseau de l'IA, ou lancer la commande soi-même) et décider de payer ou non.
 
 ## Décisions prises par Bourama
 - Passer par les réseaux et les publications, pas par les annuaires de produits.
@@ -36,7 +43,16 @@ Que ChatGPT et les autres IA connaissent Classinus, sachent à qui il s'adresse,
 - Reddit : gardé uniquement pour être lu et cité par les IA, pas pour convaincre les gens de Reddit.
 - Rédiger d'abord en français, puis en anglais.
 
+## Décisions prises par Bourama le 26/11
+- Le titre du Show HN doit contenir l'Afrique. Il voulait aussi le mobile money ; l'IA a proposé de l'enlever tant que le paiement n'est pas réel. À confirmer ce qui a été publié.
+- Hashnode : publier sous son nom, dans un blog appelé Classinus. Ne pas parler de sa situation personnelle ni du prochain gros chantier. Dire que le plus dur a été de trouver des utilisateurs et de soigner l'interface.
+- Il veut que l'IA aille chercher elle-même les réponses dans ses dépôts et ses services au lieu de lui reposer des questions.
+
 ## Points ouverts
+- Conflit à trancher : la décision du 25/11 dit « pas d'histoire personnelle » et « rien de plus tant que le paiement n'est pas réel », alors que le 26/11 le Show HN et l'article Hashnode ont été préparés en disant honnêtement ce qui manque. Confirmer la règle voulue.
+- L'image d'aperçu du site (Open Graph) est en français ; une version anglaise a été créée mais le site ne l'utilise pas encore. Changement du site à faire seulement avec l'accord de Bourama.
+- Sur la page des applications connectées, les descriptions de Render et de Vercel sont en français dans l'interface anglaise.
+- La page d'accueil envoie presque rien de lisible aux robots (c'est le chat) ; une courte présentation visible par les robots pourrait aider, à décider par Bourama.
 - Nom et e-mail de contact à mettre dans la signature de l'e-mail aux médias.
 - Sur quel sous-forum Reddit le premier post a été publié : à confirmer.
 - Le Show HN est-il toujours en ligne et que disait-il : à confirmer.

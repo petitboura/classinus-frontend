@@ -1,0 +1,10 @@
+{
+  "website_url": "https://classinus.com",
+  "name": "Classinus",
+  "pitch": "Top AI models in one place, with a code sandbox and connectors",
+  "description": "Classinus brings the leading AI models together in one app, so you pick the right one for each job instead of juggling accounts. Beyond chat, it has a sandbox to run code, connectors to your apps and services (built-in or your own custom ones), customizable skills, web and document search, and file creation (PDF, Word, Excel, PowerPoint). Built with Africa in mind. Works on web, Android and Windows, in French and English. You can try it without creating an account.",
+  "topics": ["artificial-intelligence", "productivity", "developer-tools"],
+  "icon_url": "https://classinus.com/icone-512.png",
+  "signup_url": "https://classinus.com",
+  "agent": { "name": "claude", "version": "chat" }
+}
