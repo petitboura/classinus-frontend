@@ -1391,7 +1391,7 @@ export function BarreDeSaisie({
     !localisation;
   const placeholderSaisie =
     genererEnCours && onEnvoyerPendantTour
-      ? "Ajoute une précision, Classinus la lira en route..."
+      ? "Envoie un message, Classinus le lira en route..."
       : "Pose ta question...";
   function envoyer() {
     if (envoiEnCoursRef.current) return;
