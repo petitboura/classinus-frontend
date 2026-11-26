@@ -27,7 +27,7 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
     slug: "usages",
     href: ROUTES_DECOUVRIR.usages.accueil,
     titre: "Ce que tu peux faire avec Classinus",
-    description: "Découvre les usages de Classinus : agents, recherche, création de documents, développement, organisation et outils d'apprentissage.",
+    description: "Découvre comment utiliser les modèles d'IA de Classinus pour créer des agents, rechercher, produire des documents, développer et connecter tes outils.",
   },
   {
     slug: "personnaliser",
