@@ -47,6 +47,10 @@ npm run dev
 
 The app will be available at `http://localhost:3000`. The backend must be reachable at the address configured in `NEXT_PUBLIC_API_URL`.
 
+## Installing Classinus on phones (PWA)
+
+The APK app is no longer offered. On Android and iPhone, Classinus is installed from the browser. The draggable floating button (`components/BoutonFlottantTelecharger.tsx`) and the sidebar button (`components/BoutonInstaller.tsx`) open the phone's install dialog, or the steps panel when there is none (`components/PanneauInstallation.tsx`). On that panel, "I can't install it" permanently hides the floating button on that phone; the sidebar button stays. The shared state lives in `lib/installationWeb.ts`, which deliberately never calls `preventDefault()` on the install offer, so Chrome keeps its own banner. None of this applies on desktop or in a native app.
+
 ## Useful commands
 
 | Command | Purpose |

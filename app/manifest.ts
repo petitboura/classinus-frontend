@@ -36,32 +36,14 @@ import { headers } from "next/headers";
 // avec Maskable.app : le logo tient largement dans la zone de sécurité
 // (bien en dessous du rayon de 40% recommandé), rendu correct dans
 // les découpes cercle/carré arrondi/squircle testées.
-// Correctif (06/09/2026, demande Bourama) : l'installation PWA (bouton
-// BoutonInstaller.tsx + bannière/mini-infobar native du navigateur) est
-// désactivée spécifiquement sur Android mobile -- la vraie appli native
-// existe déjà pour cette plateforme (voir BoutonFlottantTelecharger.tsx,
-// qui pointe vers /telecharger). PC et iOS mobile gardent le PWA
-// installable (pas encore d'appli native sur iOS). "display: browser"
-// disqualifie la page des critères d'installabilité Chrome -- plus de
-// beforeinstallprompt, donc plus de bannière ET BoutonInstaller.tsx
-// retombe naturellement à `return null` (sa condition existante :
-// `!evenementInstall && !estIOS`), sans modification nécessaire côté
-// composant. Volontairement laissé intact ici : public/sw.js +
-// ServiceWorkerRegistration.tsx, partagés avec les notifications push
-// (useNotificationsPush.ts) -- Bourama a explicitement demandé de les
-// garder actives sur Android mobile malgré la désactivation du PWA.
-// /Android.*Mobile/i (et non simplement /Android/i) pour ne viser que
-// les téléphones -- les tablettes Android n'incluent pas le token
-// "Mobile" dans leur User-Agent et gardent donc le PWA, comme le PC.
+// Installation depuis le navigateur (25/11/2026, demande de Bourama) : l'appli APK est abandonnée, Classinus est de
+// nouveau installable partout, téléphones Android compris (la désactivation du 06/09/2026, "display: browser", est
+// retirée), ce qui fait revenir le bandeau d'installation de Chrome. Voir lib/installationWeb.ts.
+//
 export default function manifest(): MetadataRoute.Manifest {
-  // headers() est incompatible avec l'export statique (build:capacitor) :
-  // son seul appel fait planter tout l'export ("couldn't be rendered
-  // statically because it used headers"), constaté le 11/09/2026. Sans
-  // objet de toute façon pour l'app native (ce fichier ne sert qu'au PWA
-  // web) -- on saute la détection User-Agent dans ce cas précis, "browser"
-  // par défaut n'a aucun effet réel côté app native.
-  const estAndroidMobile =
-    process.env.CAPACITOR_BUILD === "true" ? false : /Android.*Mobile/i.test(headers().get("user-agent") || "");
+  // headers() est incompatible avec l'export statique (build:capacitor) : son seul appel fait planter tout l'export
+  // (constaté le 11/09/2026). Ce fichier ne sert de toute façon qu'au web, l'appli native n'a pas d'adresse à lire.
+  const hote = process.env.CAPACITOR_BUILD === "true" ? "" : headers().get("host") || "";
 
   return {
     id: "/",
@@ -70,9 +52,11 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "L'IA et tes outils, réunis dans un même espace.",
     start_url: "/",
     scope: "/",
-    display: estAndroidMobile ? "browser" : "standalone",
+    display: "standalone",
     background_color: "#0f0d0b",
     theme_color: "#0f0d0b",
+    // Permet au navigateur de dire que Classinus est déjà installé (getInstalledRelatedApps).
+    ...(hote ? { related_applications: [{ platform: "webapp", url: `https://${hote}/manifest.webmanifest` }] } : {}),
     icons: [
       { src: "/icone-48.png", sizes: "48x48", type: "image/png", purpose: "any" },
       { src: "/icone-72.png", sizes: "72x72", type: "image/png", purpose: "any" },

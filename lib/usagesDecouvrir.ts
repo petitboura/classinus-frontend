@@ -287,7 +287,7 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
   {
     question: "Sur quels appareils puis-je utiliser Classinus ?",
     reponse:
-      "Classinus est accessible dans un navigateur sur ordinateur et téléphone. Une application Android et une application Windows sont également disponibles. Certaines fonctions, comme le suivi du temps d'écran, sont limitées à Android.",
+      "Classinus est accessible dans un navigateur sur ordinateur et téléphone. Il s'installe depuis le navigateur sur Android et iPhone, et une application Windows est également disponible. Certaines fonctions, comme le suivi du temps d'écran, sont limitées à Android.",
   },
   {
     question: "À qui s'adresse Classinus ?",

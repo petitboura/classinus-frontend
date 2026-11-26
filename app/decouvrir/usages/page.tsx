@@ -282,7 +282,7 @@ export default function PageDecouvrirUsages() {
       <div className="mt-8 flex items-center gap-2 rounded-xl bg-dj-surface-haute p-4">
         <Smartphone size={18} className="flex-shrink-0 text-dj-texte-muet" aria-hidden="true" />
         <p className="text-sm leading-relaxed text-dj-texte-muet">
-          Classinus fonctionne dans un navigateur sur ordinateur et téléphone, avec une application Android. Certaines fonctions sont propres à un appareil, comme le suivi du temps d'écran sur Android.
+          Classinus fonctionne dans un navigateur sur ordinateur et téléphone, et s'installe depuis le navigateur sur Android et iPhone. Certaines fonctions sont propres à un appareil, comme le suivi du temps d'écran sur Android.
         </p>
       </div>
 

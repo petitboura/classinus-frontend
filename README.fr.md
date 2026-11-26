@@ -47,6 +47,10 @@ npm run dev
 
 L’application est alors disponible sur `http://localhost:3000`. Le backend doit être accessible à l’adresse définie dans `NEXT_PUBLIC_API_URL`.
 
+## Installer Classinus sur téléphone (PWA)
+
+L'appli APK n'est plus proposée. Sur Android et iPhone, Classinus s'installe depuis le navigateur. Le bouton flottant déplaçable (`components/BoutonFlottantTelecharger.tsx`) et le bouton de la barre latérale (`components/BoutonInstaller.tsx`) ouvrent la fenêtre d'installation du téléphone, ou à défaut la page des étapes (`components/PanneauInstallation.tsx`). Sur cette page, « Je n'arrive pas à l'installer » masque pour de bon le bouton flottant sur le téléphone ; le bouton de la barre latérale reste. L'état est partagé dans `lib/installationWeb.ts`, qui n'appelle volontairement jamais `preventDefault()` sur la proposition d'installation, pour que Chrome garde son propre bandeau. Rien de cela ne s'applique sur ordinateur ni dans une appli native.
+
 ## Commandes utiles
 
 | Commande | Usage |

@@ -4,84 +4,17 @@ import { Download, ShieldCheck, ExternalLink } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
 import { QrTelechargerPc } from "@/components/QrTelechargerPc";
+import { EtapesInstallation } from "@/components/PanneauInstallation";
+import { InstallationAndroid } from "@/components/InstallationAndroid";
 import { detecterAppareil, recupererDerniereReleasePc } from "@/lib/telechargementPc";
 
-// Page publique de téléchargement de l'APK "externe" (hors Play Store).
-// Créée le 29/08/2026, mission Bourama : combiner une page web dédiée +
-// le système de mise à jour interne existant (voir MiseAJourCarte.tsx /
-// VerificateurMiseAJour.kt, tous deux déjà branchés sur l'API publique
-// GitHub Releases, corrigée le même jour pour pointer sur ce dépôt
-// classinus-frontend plutôt que l'ancien clovis-mobile).
+// Page publique d'installation de Classinus. Composant serveur : la branche affichée dépend de l'appareil, lu dans
+// le User-Agent, et l'installeur Windows est lu dans la dernière publication GitHub (lib/telechargementPc.ts).
 //
-// Composant serveur volontairement : cette page n'est PAS incluse dans
-// l'export statique Capacitor (CAPACITOR_BUILD), elle vit uniquement sur
-// le déploiement web normal (Vercel), donc rien n'empêche un fetch côté
-// serveur -- voir next.config.mjs pour la logique conditionnelle.
+// Quatre branches : Windows (installeur de l'appli PC), Android et iPhone (installation depuis le navigateur, PWA),
+// autres ordinateurs (Mac, Linux : pas d'installeur, QR pour le téléphone).
 //
-// Complété le 08/09/2026, demande Bourama : un bouton "Télécharger
-// l'APK" ne résout rien depuis un PC (le fichier ne s'y installe pas),
-// alors que BandeauTelechargerApp.tsx et BoutonFlottantTelecharger.tsx
-// pointent tous les deux ici sans jamais garantir qu'on arrive depuis un
-// téléphone. Détection via le header User-Agent (comme déjà fait dans
-// app/manifest.ts) : PC affiche un QR + lien + copie (voir
-// QrTelechargerPc.tsx) vers cette même page plutôt que le bouton de
-// téléchargement direct.
-//
-// Complété une seconde fois le même jour, repéré en construisant ce qui
-// précède : le bouton "Télécharger l'APK" était jusqu'ici montré tel
-// quel à un iPhone aussi, alors qu'il n'existe pas d'app native iOS
-// distribuée (voir app/manifest.ts : "PC et iOS mobile gardent le PWA
-// installable, pas encore d'appli native sur iOS") -- un fichier .apk ne
-// s'installe de toute façon pas sur iOS. iOS a donc sa propre branche,
-// qui ne dépend plus de la release GitHub : les instructions
-// "Partager > Sur l'écran d'accueil", copiées mot pour mot de
-// BoutonInstaller.tsx pour rester cohérent avec le seul autre endroit du
-// site qui explique déjà ce geste.
-//
-// Trois branches désormais, pas deux : Android (flux APK existant,
-// inchangé), iOS (PWA, nouveau), PC (QR, ajouté plus haut le même jour).
-//
-// Quatre branches depuis le 19/10/2026, demande Bourama : Windows (nouveau,
-// installeur de l'appli PC publié dans les releases de
-// classinus-updates-pc, voir lib/telechargementPc.ts), Android, iOS, et les
-// autres ordinateurs (Mac, Linux : pas d'installeur, message clair et QR
-// pour le téléphone). Chaque visite ne lit que la release dont elle a
-// besoin : celle de l'installeur sur Windows, celle de l'APK ailleurs.
-//
-// Pas de mécanisme i18n branché ici, comme MiseAJourCarte.tsx : textes en
-// dur en français, cohérent avec le reste du projet à ce stade.
-
-const URL_DERNIERE_RELEASE = "https://api.github.com/repos/petitboura/classinus-frontend/releases/latest";
-
-// Une release GitHub peut contenir des assets qui ne sont pas l'APK
-// (source zip, changelog...), donc on prend explicitement celui qui finit
-// par .apk -- même règle que VerificateurMiseAJour.kt côté app, pour ne
-// jamais désynchroniser les deux logiques.
-type AssetGitHub = { name: string; browser_download_url: string; size: number };
-type ReleaseGitHub = {
-  tag_name: string;
-  html_url: string;
-  published_at: string;
-  body?: string;
-  assets: AssetGitHub[];
-};
-
-async function recupererDerniereRelease(): Promise<ReleaseGitHub | null> {
-  try {
-    // revalidate : évite de taper l'API GitHub à chaque visite (limite de
-    // taux basse sans authentification). Réduit de 1h à 1 min (05/09/2026,
-    // demande Bourama) pour que la page reflète une nouvelle release
-    // quasi-instantanément -- un webhook GitHub aurait été plus instantané
-    // encore, mais casserait l'export statique Capacitor de l'appli mobile
-    // (ce dépôt est volontairement sans route API, voir next.config.mjs) :
-    // ce cache court est le compromis retenu.
-    const reponse = await fetch(URL_DERNIERE_RELEASE, { next: { revalidate: 60 } });
-    if (!reponse.ok) return null;
-    return await reponse.json();
-  } catch {
-    return null;
-  }
-}
+// Depuis le 25/11/2026 (demande de Bourama), l'appli APK est abandonnée : la page ne la propose plus.
 
 function formatTaille(octets: number): string {
   return `${(octets / (1024 * 1024)).toFixed(1)} Mo`;
@@ -101,12 +34,7 @@ export default async function PageTelecharger() {
   const estIOS = appareil === "ios";
   const estWindows = appareil === "windows";
 
-  const [release, releasePc] = await Promise.all([
-    estWindows ? Promise.resolve(null) : recupererDerniereRelease(),
-    estWindows ? recupererDerniereReleasePc() : Promise.resolve(null),
-  ]);
-  const apk = release?.assets.find((a) => a.name.endsWith(".apk")) ?? null;
-  const version = release?.tag_name.replace(/^v/, "") ?? null;
+  const releasePc = estWindows ? await recupererDerniereReleasePc() : null;
   const urlPage = `${process.env.NEXT_PUBLIC_APP_URL}/telecharger`;
 
   return (
@@ -120,10 +48,9 @@ export default async function PageTelecharger() {
         <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">
           {estAndroid ? (
             <>
-              <h1 className="font-display text-xl font-bold text-dj-texte">Télécharger Classinus pour Android</h1>
+              <h1 className="font-display text-xl font-bold text-dj-texte">Installer Classinus sur Android</h1>
               <p className="mt-2 text-sm text-dj-texte-muet">
-                Cette version est distribuée directement en dehors du Google Play Store, avec les
-                fonctionnalités avancées de contrôle de l&apos;appareil (accessibilité).
+                Pas de fichier à télécharger : Classinus s&apos;installe directement depuis ton navigateur.
               </p>
             </>
           ) : estWindows ? (
@@ -155,35 +82,7 @@ export default async function PageTelecharger() {
 
           <div className="mt-5 rounded-xl border border-dj-bordure bg-dj-surface-haute p-4">
             {estAndroid ? (
-              apk && version ? (
-                <>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <span className="text-sm font-medium text-dj-texte">Version {version}</span>
-                      <span className="block text-xs text-dj-texte-muet">{formatTaille(apk.size)}</span>
-                    </div>
-                  </div>
-                  <a href={apk.browser_download_url} data-lien-libre className="mt-4 block">
-                    <Bouton className="flex w-full items-center justify-center gap-2">
-                      <Download size={16} />
-                      Télécharger l&apos;APK
-                    </Bouton>
-                  </a>
-                  {release?.html_url && (
-                    <Link
-                      href={release.html_url}
-                      className="mt-3 flex items-center justify-center gap-1.5 text-xs text-dj-texte-muet hover:text-dj-texte hover:underline"
-                    >
-                      Voir les notes de version
-                      <ExternalLink size={12} />
-                    </Link>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-dj-texte-muet">
-                  Aucune version n&apos;est disponible au téléchargement pour le moment.
-                </p>
-              )
+              <InstallationAndroid />
             ) : estWindows ? (
               releasePc ? (
                 <>
@@ -218,23 +117,9 @@ export default async function PageTelecharger() {
                 </p>
               )
             ) : estIOS ? (
-              <ol className="list-decimal space-y-2 pl-5 text-sm text-dj-texte-muet">
-                <li>
-                  Appuie sur <span className="text-dj-texte">Partager</span> en bas de Safari
-                </li>
-                <li>
-                  Choisis <span className="text-dj-texte">« Sur l&apos;écran d&apos;accueil »</span>
-                </li>
-              </ol>
+              <EtapesInstallation ios />
             ) : (
-              <>
-                <QrTelechargerPc url={urlPage} />
-                {apk && version && (
-                  <p className="mt-4 text-center text-xs text-dj-texte-muet">
-                    Version {version} &middot; {formatTaille(apk.size)}
-                  </p>
-                )}
-              </>
+              <QrTelechargerPc url={urlPage} />
             )}
           </div>
 
@@ -256,29 +141,6 @@ export default async function PageTelecharger() {
             </div>
           )}
 
-          {estAndroid && apk && version && (
-            <div className="mt-5 flex items-start gap-2.5 text-xs text-dj-texte-muet">
-              <ShieldCheck size={15} className="mt-0.5 flex-shrink-0" />
-              <div>
-                <p>
-                  Android bloque par défaut l&apos;installation d&apos;applications venant d&apos;ailleurs que le
-                  Play Store. Après le téléchargement, ouvre le fichier et autorise l&apos;installation
-                  depuis cette source si le téléphone te le demande.
-                </p>
-                <p className="mt-2">
-                  Un message <span className="text-dj-texte">« Application non reconnue »</span> peut
-                  ensuite s&apos;afficher : c&apos;est normal (l&apos;app n&apos;est pas encore installée
-                  assez de fois pour que Google la reconnaisse), appuie sur{" "}
-                  <span className="text-dj-texte">« Détails »</span> puis{" "}
-                  <span className="text-dj-texte">« Installer quand même »</span> pour continuer.
-                </p>
-                <p className="mt-2">
-                  L&apos;application vérifie elle-même si une mise à jour est disponible une fois
-                  installée.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </main>

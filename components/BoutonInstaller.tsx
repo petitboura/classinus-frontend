@@ -1,91 +1,54 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { TRAIT_ICONE_SECTION } from "@/lib/styleLignes";
+import { installerClassinus, useInstallationWeb } from "@/lib/installationWeb";
 
-// Porté de djiguigne-frontend/components/BoutonInstaller.tsx, texte
-// adapté à Classinus. app/manifest.ts + public/sw.js existent
-// désormais (voir ServiceWorkerRegistration.tsx) -- le bouton est
-// pleinement fonctionnel, plus seulement inerte-par-défaut.
+// Bouton d'installation de la barre latérale. Sur Android et iPhone (25/11/2026, demande de Bourama), il est toujours
+// là tant que Classinus n'est pas ouvert comme une appli, même après « Je n'arrive pas à l'installer » sur le bouton
+// flottant (voir lib/installationWeb.ts). Sur ordinateur, il n'apparaît que si le navigateur propose l'installation.
 export function BoutonInstaller() {
-  const [evenementInstall, setEvenementInstall] = useState<Event | null>(null);
-  const [estIOS, setEstIOS] = useState(false);
-  const [dejaInstalle, setDejaInstalle] = useState(false);
-  const [instructionsIOS, setInstructionsIOS] = useState(false);
-  // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
-  // brut") : ouverture animée mais fermeture instantanée -- même
-  // mécanisme que lib/useFermetureAnimee.ts.
-  const { enSortie, demarrerFermeture } = useFermetureAnimee();
-  const fermerInstructions = () => demarrerFermeture(() => setInstructionsIOS(false));
+  const { plateforme, ouvertCommeAppli } = useInstallationWeb();
+  const [evenementOrdinateur, setEvenementOrdinateur] = useState<Event | null>(null);
+  const surTelephone = plateforme !== null;
 
   useEffect(() => {
-    setDejaInstalle(window.matchMedia("(display-mode: standalone)").matches);
-    setEstIOS(/iphone|ipad|ipod/i.test(navigator.userAgent));
+    // Sur téléphone, la proposition du navigateur est suivie par lib/installationWeb.ts.
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
 
     function gererPrompt(e: Event) {
       e.preventDefault();
-      setEvenementInstall(e);
+      setEvenementOrdinateur(e);
     }
     window.addEventListener("beforeinstallprompt", gererPrompt);
     return () => window.removeEventListener("beforeinstallprompt", gererPrompt);
   }, []);
 
-  if (dejaInstalle) return null;
-  if (!evenementInstall && !estIOS) return null;
+  if (surTelephone ? ouvertCommeAppli : !evenementOrdinateur) return null;
 
   async function installer() {
-    if (!evenementInstall) return;
+    if (surTelephone) {
+      await installerClassinus();
+      return;
+    }
+    if (!evenementOrdinateur) return;
     // @ts-expect-error -- BeforeInstallPromptEvent n'est pas dans le typage TS standard
-    await evenementInstall.prompt();
-    setEvenementInstall(null);
+    await evenementOrdinateur.prompt();
+    setEvenementOrdinateur(null);
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={estIOS ? () => setInstructionsIOS(true) : installer}
-        className="flex items-center gap-1.5 rounded-cgpt-bouton px-3 py-2 text-sm font-semibold text-dj-texte-muet transition-colors hover:text-dj-texte"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={TRAIT_ICONE_SECTION}>
-          <path d="M12 3v13m0 0-4-4m4 4 4-4M5 19h14" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span className="hidden sm:inline">Télécharger</span>
-      </button>
-
-      {instructionsIOS && (
-        <div
-          className={`fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 pb-[calc(1rem+var(--dj-barre-onglets-web,0px))] sm:items-center sm:pb-4 ${
-            enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
-          }`}
-          onClick={fermerInstructions}
-        >
-          <div
-            className={`w-full max-w-sm rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5 text-sm text-dj-texte ${
-              enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="font-display text-base font-bold">Installer Classinus</p>
-            <ol className="mt-3 list-decimal space-y-2 pl-5 text-dj-texte-muet">
-              <li>
-                Appuie sur <span className="text-dj-texte">Partager</span> en bas de Safari
-              </li>
-              <li>
-                Choisis <span className="text-dj-texte">« Sur l&apos;écran d&apos;accueil »</span>
-              </li>
-            </ol>
-            <button
-              type="button"
-              onClick={fermerInstructions}
-              className="mt-4 w-full rounded-cgpt-bouton bg-dj-accent-1 py-2 text-sm font-bold text-[#1A0D02]"
-            >
-              Compris
-            </button>
-          </div>
-        </div>
-      )}
-    </>
+    <button
+      type="button"
+      onClick={() => void installer()}
+      aria-label="Télécharger"
+      className="flex animate-dj-fade-in-rapide items-center gap-1.5 rounded-cgpt-bouton px-3 py-2 text-sm font-semibold text-dj-texte-muet transition-colors hover:text-dj-texte"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={TRAIT_ICONE_SECTION}>
+        <path d="M12 3v13m0 0-4-4m4 4 4-4M5 19h14" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="hidden sm:inline">Télécharger</span>
+    </button>
   );
 }

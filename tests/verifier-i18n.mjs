@@ -19,7 +19,7 @@ assert.equal(traduireTexteInterface("Langue de l’interface", "en"), "Interface
 assert.equal(traduireTexteInterface("Étape 3", "en"), "Step 3");
 assert.equal(traduireTexteInterface("Âge", "en"), "Age");
 assert.equal(traduireTexteInterface("Mot de passe mis à jour", "en"), "Password updated");
-assert.equal(traduireTexteInterface("Télécharger Classinus pour Android", "en"), "Download Classinus for Android");
+assert.equal(traduireTexteInterface("Installer Classinus sur Android", "en"), "Install Classinus on Android");
 assert.equal(traduireTexteInterface("Accéder à l'application Classinus", "en"), "Open the Classinus app");
 assert.equal(traduireTexteInterface("« Windows a protégé votre ordinateur »", "en"), "“Windows protected your PC”");
 assert.equal(traduireTexteInterface("Bibliothèque", "fr"), "Bibliothèque");
