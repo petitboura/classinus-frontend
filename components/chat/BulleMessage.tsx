@@ -374,6 +374,9 @@ export interface VersionAlternative {
 export type SegmentMessage =
   | { type: "raisonnement"; texte: string }
   | { type: "texte"; texte: string }
+  // Note de l'IA entre deux outils (25/11/2026, demande Bourama) : une ligne à point dans la
+  // timeline des outils, jamais un outil. Voir OutilResultatBulle.tsx.
+  | { type: "commentaire"; texte: string }
   | {
       type: "outil";
       nomOutil: string;
@@ -1294,7 +1297,7 @@ function BulleMessageInterne({
                     // ou encore en cours. Sert à garder la bulle de
                     // raisonnement repliée, voir RaisonnementBulle.
                     const outilsCommences =
-                      segments.some((s) => s.type === "outil") || (outilsEnCours?.length ?? 0) > 0;
+                      segments.some((s) => s.type === "outil" || s.type === "commentaire") || (outilsEnCours?.length ?? 0) > 0;
                     const texteRaisonnementFusionne = segments
                       .filter((s): s is { type: "raisonnement"; texte: string } => s.type === "raisonnement")
                       .map((s) => s.texte)
@@ -1335,9 +1338,15 @@ function BulleMessageInterne({
                       // les outils rencontrés au passage.
                       const debutRun = i;
                       const outilsDuRun: Extract<SegmentMessage, { type: "outil" }>[] = [];
+                      // Notes de l'IA du run (25/11/2026) : `apres` = nombre d'outils terminés qui les
+                      // précèdent dans le run, pour les remettre à leur place dans l'ordre réel.
+                      const commentairesDuRun: { texte: string; apres: number }[] = [];
                       while (i < segments.length && segments[i].type !== "texte") {
-                        if (segments[i].type === "outil") {
-                          outilsDuRun.push(segments[i] as Extract<SegmentMessage, { type: "outil" }>);
+                        const segmentRun = segments[i];
+                        if (segmentRun.type === "outil") {
+                          outilsDuRun.push(segmentRun);
+                        } else if (segmentRun.type === "commentaire") {
+                          commentairesDuRun.push({ texte: segmentRun.texte, apres: outilsDuRun.length });
                         }
                         i += 1;
                       }
@@ -1375,12 +1384,13 @@ function BulleMessageInterne({
                       // automatique du groupe n'a lieu que si du texte
                       // suit ce run, ou si ce message n'est plus le
                       // message en cours (outilsEnCours absent).
-                      const total = outilsDuRun.length + (enCoursDuRun?.length ?? 0);
+                      const total = outilsDuRun.length + commentairesDuRun.length + (enCoursDuRun?.length ?? 0);
                       if (total >= 1) {
                         elements.push(
                           <OutilResultatBulle
                             key={`outils-${debutRun}`}
                             resultats={outilsDuRun.length ? outilsDuRun : undefined}
+                            commentaires={commentairesDuRun.length ? commentairesDuRun : undefined}
                             enCours={enCoursDuRun}
                             groupe={total > 1}
                             peutSeReplier={!dernierRun || outilsEnCours === undefined}

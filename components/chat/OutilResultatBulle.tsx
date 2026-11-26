@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
+import { LigneCommentaire } from "./LigneCommentaire";
+import { RoueOutils, type ElementRoue } from "./RoueOutils";
 import { imagesNonPlacees, videosNonPlacees } from "./mediasNonPlaces";
 import { WidgetsMcpUi } from "./WidgetMcpUi";
 import type { RessourceUi } from "@/lib/mcpUi";
@@ -151,6 +153,7 @@ function donneesDeLigne(ligne: Ligne): DonneesLigneOutil {
 
 export function OutilResultatBulle({
   resultats: resultatsBruts,
+  commentaires,
   enCours,
   groupe = false,
   peutSeReplier = true,
@@ -158,6 +161,10 @@ export function OutilResultatBulle({
   reponseTerminee = true,
 }: {
   resultats?: ResultatOutil[];
+  // Notes de l'IA entre deux outils (25/11/2026, demande Bourama) : des lignes à point, jamais des
+  // outils. `apres` = nombre d'outils terminés qui les précèdent dans la suite, pour les remettre à
+  // leur place dans l'ordre réel (voir BulleMessage.tsx).
+  commentaires?: { texte: string; apres: number }[];
   // Texte de la réponse et fin de génération : les vidéos et images que le
   // modèle a déjà placées dans sa réponse ne sont pas répétées sous le
   // message, seules celles qu'il a oublié de placer s'affichent, une fois la
@@ -182,11 +189,11 @@ export function OutilResultatBulle({
   groupe?: boolean;
   // Ajouté (18/09/2026, demande Bourama : après deux ou trois outils, le
   // groupe se repliait tout seul alors que d'autres outils tournaient
-  // encore, et l'utilisateur ne voyait plus rien). Le repli automatique
-  // n'a lieu que si aucun outil ne tourne ET si le groupe est terminé pour
-  // de bon (du texte de réponse suit déjà, ou message plus ancien). Tant
-  // que la réponse n'a pas commencé, le groupe reste ouvert : il peut
-  // encore recevoir un nouvel outil au tour suivant du modèle.
+  // encore, et l'utilisateur ne voyait plus rien). Depuis le 25/11/2026 (la roue), le groupe est
+  // toujours replié : cette prop dit seulement si le groupe est terminé pour de bon (du texte de
+  // réponse suit déjà, ou message plus ancien) ou s'il peut encore recevoir un nouvel outil au
+  // tour suivant du modèle, auquel cas la ligne unique reste une roue au lieu de devenir le
+  // résumé « X outils utilisés ».
   peutSeReplier?: boolean;
 }) {
   const { outils, verbes, prefixes } = useOutilsRegistre();
@@ -251,40 +258,60 @@ export function OutilResultatBulle({
 
   const nbEnCours = rangees.filter((r) => r.donnees.etat !== "resultat").length;
 
-  // Ligne groupée : ouverte automatiquement, se replie seule quelques
-  // secondes après la fin de TOUS les outils (voir peutSeReplier plus haut),
-  // même principe que RaisonnementBulle (repli automatique, jamais brut).
-  // `groupeOuvertManuel` respecte ensuite le choix de la personne si elle a
-  // cliqué entre-temps. Un nouvel outil qui démarre rouvre le groupe.
-  const [groupeOuvertManuel, setGroupeOuvertManuel] = useState<boolean | null>(null);
-  const [groupeOuvertAuto, setGroupeOuvertAuto] = useState(true);
+  // Ligne groupée (25/11/2026, la roue) : toujours repliée par défaut. Pendant que l'IA travaille,
+  // la ligne est une roue qui montre une ligne à la fois ; une fois le travail fini, elle devient
+  // « X outils utilisés », comme avant. Seul un clic la déplie (liste complète dans l'ordre).
+  const [groupeOuvert, setGroupeOuvert] = useState(false);
 
-  useEffect(() => {
-    if (!groupe) return;
-    if (!peutSeReplier || nbEnCours > 0) {
-      setGroupeOuvertAuto(true);
-      return;
+  if (rangees.length === 0 && !(commentaires && commentaires.length > 0)) return null;
+
+  // Suite réelle des lignes : outils (fusionnés quand le même outil se répète à la suite) et notes
+  // de l'IA, dans l'ordre. Une note remise après `apres` outils terminés ; ce qui est encore en
+  // cours vient toujours après. Une note casse la fusion de deux lignes identiques.
+  type ElementTimeline =
+    | { genre: "ligne"; ligne: Ligne }
+    | { genre: "commentaire"; cle: string; texte: string };
+  const elements: ElementTimeline[] = [];
+  let paquet: Rangee[] = [];
+  const viderPaquet = () => {
+    for (const ligne of fusionnerRangees(paquet)) elements.push({ genre: "ligne", ligne });
+    paquet = [];
+  };
+  let iCommentaire = 0;
+  const poserCommentaires = (jusqua: number) => {
+    while (commentaires && iCommentaire < commentaires.length && commentaires[iCommentaire].apres <= jusqua) {
+      viderPaquet();
+      elements.push({ genre: "commentaire", cle: `c-${iCommentaire}`, texte: commentaires[iCommentaire].texte });
+      iCommentaire++;
     }
-    const minuteur = setTimeout(() => setGroupeOuvertAuto(false), 3000);
-    return () => clearTimeout(minuteur);
-  }, [groupe, peutSeReplier, nbEnCours]);
+  };
+  rangees.forEach((rangee, position) => {
+    poserCommentaires(position);
+    paquet.push(rangee);
+  });
+  viderPaquet();
+  poserCommentaires(Number.POSITIVE_INFINITY);
 
-  if (rangees.length === 0) return null;
+  // `estGroupe` reste décidé sur le nombre d'APPELS et de notes (deux appels identiques = une seule
+  // ligne, mais sous l'en-tête « 1 outil utilisé »). Sans aucun outil (que des notes), pas de
+  // groupe : les notes s'affichent simplement l'une sous l'autre.
+  const nbElementsBruts = rangees.length + (commentaires?.length ?? 0);
+  const estGroupe = groupe && rangees.length >= 1 && nbElementsBruts >= 2;
+  const nbLignesOutils = elements.filter((e) => e.genre === "ligne").length;
 
-  // `estGroupe` reste décidé sur le nombre d'APPELS (deux appels identiques
-  // = une seule ligne, mais sous l'en-tête "1 outil utilisé"), le compteur de
-  // l'en-tête compte les LIGNES affichées.
-  const estGroupe = groupe && rangees.length >= 2;
-  const lignes = fusionnerRangees(rangees);
-  // Le "(N en cours)" de l'en-tête compte aussi les LIGNES (pas les appels) :
-  // dix appels du même outil dont un tourne encore = "(1 en cours)".
-  const nbLignesEnCours = lignes.filter((l) => l.membres.some((m) => m.donnees.etat !== "resultat")).length;
-  const groupeOuvert = groupeOuvertManuel ?? groupeOuvertAuto;
+  // Le travail est-il encore en cours ? Des outils tournent, ou le groupe est le dernier de la
+  // réponse et la réponse n'est pas finie (l'IA réfléchit entre deux outils) : la roue reste là.
+  const enDirect = nbEnCours > 0 || (!peutSeReplier && !reponseTerminee);
 
   // Même icône d'outil dès qu'on la connaît (nomOutil transmis dès
   // l'événement "statut" par ChatIA.tsx). Repli Wrench pour tout outil
   // absent du registre (voir iconePourOutil).
-  const elementsResultats = lignes.map((ligne, position) => {
+  const elementsResultats = elements.map((element, position) => {
+    const estDerniere = position === elements.length - 1;
+    if (element.genre === "commentaire") {
+      return <LigneCommentaire key={element.cle} texte={element.texte} estDerniere={estDerniere} />;
+    }
+    const ligne = element.ligne;
     const { Icone, appli } = iconePrincipalePour(outils, ligne.nomOutil, ligne.action, prefixes);
     return (
       <LigneOutil
@@ -295,7 +322,7 @@ export function OutilResultatBulle({
         domaines={ligne.domaines}
         langage={ligne.langage}
         nombre={ligne.membres.length}
-        estDerniere={position === lignes.length - 1}
+        estDerniere={estDerniere}
         estGroupe={estGroupe}
       />
     );
@@ -304,6 +331,31 @@ export function OutilResultatBulle({
   if (!estGroupe) {
     return <div className="my-1.5 flex max-w-[85%] flex-col">{elementsResultats}</div>;
   }
+
+  // Ce que montre la roue : une ligne par élément, avec le texte que montrerait la liste dépliée
+  // (« en cours » pour un outil qui tourne, son nom une fois fini).
+  const elementsRoue: ElementRoue[] = elements.map((element): ElementRoue => {
+    if (element.genre === "commentaire") {
+      return { cle: element.cle, genre: "commentaire", texte: element.texte, enCours: false };
+    }
+    const ligne = element.ligne;
+    const donnees = donneesDeLigne(ligne);
+    const enCoursLigne = donnees.etat === "en_cours";
+    const texte = enCoursLigne
+      ? donnees.texteEnCours ?? ligne.membres[0].nomLisible ?? ""
+      : donnees.etat === "termine"
+        ? donnees.texteTermine ?? ligne.membres[0].nomLisible ?? ""
+        : donnees.nomLisible ?? ligne.membres[0].nomLisible ?? "";
+    const { Icone } = iconePrincipalePour(outils, ligne.nomOutil, ligne.action, prefixes);
+    return {
+      cle: ligne.cle,
+      genre: "outil",
+      texte,
+      enCours: enCoursLigne,
+      Icone,
+      domaine: ligne.domaines && ligne.domaines.length === 1 ? ligne.domaines[0] : null,
+    };
+  });
 
   // Galeries des outils du groupe, rendues hors du bloc repliable
   // juste en dessous (voir le commentaire dans LigneOutil, 17/09) -- toujours
@@ -323,21 +375,27 @@ export function OutilResultatBulle({
   return (
     <div className="my-1.5 flex max-w-[85%] flex-col gap-1 animate-dj-fade-in">
       <button
-        onClick={() => setGroupeOuvertManuel(!groupeOuvert)}
-        className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+        onClick={() => setGroupeOuvert((precedent) => !precedent)}
+        className="flex w-full min-w-0 items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
-        <Layers size={13} className="text-dj-texte" />
-        <span>
-          {lignes.length} outil{lignes.length > 1 ? "s" : ""} utilisé{lignes.length > 1 ? "s" : ""}
-          {nbLignesEnCours > 0 ? ` (${nbLignesEnCours} en cours)` : ""}
-        </span>
-        {groupeOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        {enDirect ? (
+          <RoueOutils elements={elementsRoue} />
+        ) : (
+          <span key="resume" className="flex min-w-0 animate-dj-fade-in-rapide items-center gap-1.5">
+            <Layers size={13} className="shrink-0 text-dj-texte" />
+            <span className="truncate">
+              {nbLignesOutils} outil{nbLignesOutils > 1 ? "s" : ""} utilisé{nbLignesOutils > 1 ? "s" : ""}
+            </span>
+          </span>
+        )}
+        {groupeOuvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />}
       </button>
-      {/* La ligne connectrice entre les outils individuels reste bien
+      {/* La ligne connectrice entre les lignes individuelles reste bien
           présente une fois le groupe déplié (demande Bourama, 15/09) --
           rien de spécifique à faire ici : chaque ligne porte déjà sa
           propre colonne icône/ligne, ce wrapper ne fait que
-          plier/déplier l'ensemble, jamais la ligne à l'intérieur. */}
+          plier/déplier l'ensemble, jamais la ligne à l'intérieur. Les lignes restent
+          montées même repliées : leur état (shimmer, résultat) continue de vivre. */}
       <div
         className={`grid transition-[grid-template-rows] duration-300 ease-out ${
           groupeOuvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"

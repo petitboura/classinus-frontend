@@ -13,6 +13,7 @@ Central entry point for all Classinus frontend documentation. English is the def
 - [Windows app updates and publishing](./appli-pc-mise-a-jour-et-publication.md)
 - [Store submission tracking](./soumission-stores.md)
 - [Waiting list for "Coming soon" models](./LISTE_ATTENTE_MODELES.md)
+- [Tool line: the wheel and AI notes](./LIGNE_OUTILS_ROUE.md)
 
 ## Project history and specifications
 

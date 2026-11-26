@@ -782,6 +782,23 @@ export function ChatIA({
         };
         return copie;
       });
+    } else if (item.type === "commentaire") {
+      // Note de l'IA entre deux outils (25/11/2026, demande Bourama) : une ligne de la
+      // timeline avec un point, jamais un outil. Passe par la même file d'attente que les
+      // outils (le texte en cours finit de s'afficher avant), et reste dans l'ordre réel
+      // des segments. Voir core/boucle_agent.py (événement "commentaire").
+      const texteNote = typeof evenement.texte === "string" ? evenement.texte.trim() : "";
+      if (texteNote) {
+        majMessages((prec) => {
+          const copie = [...prec];
+          const dernier = copie[copie.length - 1];
+          copie[copie.length - 1] = {
+            ...dernier,
+            segments: [...(dernier.segments || []), { type: "commentaire" as const, texte: texteNote }],
+          };
+          return copie;
+        });
+      }
     } else if (item.type === "raisonnement") {
       // Correctif 12/09/2026 (Bourama : une ligne de raisonnement pouvait
       // couper la réponse en plein centre) -- même cause que le correctif
@@ -1007,6 +1024,7 @@ export function ChatIA({
       evenement.type === "videos" ||
       evenement.type === "ressources_ui" ||
       evenement.type === "outil_resultat" ||
+      evenement.type === "commentaire" ||
       evenement.type === "raisonnement"
     ) {
       // Correctif 09/09/2026 (Bourama : un outil qui finit pendant que le
