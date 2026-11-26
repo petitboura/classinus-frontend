@@ -15,7 +15,7 @@ Requested by Bourama on 13 November 2026. The server side is described in `docs/
 - `lib/voixBambara.ts`: the session (same shape as `lib/geminiLive.ts`, so the wave and the Stop button work unchanged).
 - `lib/voixBambaraMicro.ts`: speech detection and recording. Thresholds are in `REGLAGES_MICRO`.
 - `lib/voixBambaraLecture.ts`: reading the chunks, the next one is prepared while the previous one plays.
-- `lib/voixBambaraTexte.ts`: removes what cannot be spoken and splits the answer; `suivreTexteVoix` releases the finished sentences while the text is still arriving.
+- `lib/voixBambaraTexte.ts`: removes what cannot be spoken (formatting, links, and also file names such as photo.jpg, paths, addresses without https, attached file markers, HTML tags; since 25 Nov 2026) and splits the answer; `suivreTexteVoix` releases the finished sentences while the text is still arriving.
 - `lib/voixBambaraFlux.ts`: streaming reading, the text goes in as it arrives and the voice starts at the first finished sentence.
 - `lib/voixBambaraApi.ts`: calls to the backend relay. The browser knows no service address.
 - `components/voix/ChoixLangueVoix.tsx`: the "Bambara or other" question.

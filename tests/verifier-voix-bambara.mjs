@@ -20,6 +20,27 @@ assert.equal(nettoyerPourVoix("Bonjour 😀 !"), "Bonjour !");
 assert.equal(nettoyerPourVoix("![dessin](https://exemple.org/i.png) texte"), "texte");
 assert.equal(nettoyerPourVoix(""), "");
 
+// Page bambara de staging (25/11/2026, demande de Bourama) : la voix ne doit jamais dire « jpg » ni aucun reste de fichier ou d'adresse.
+assert.equal(nettoyerPourVoix("Regarde photo.jpg très belle."), "Regarde très belle.");
+assert.equal(nettoyerPourVoix("Voici l'image (chat_roux.PNG) pour toi."), "Voici l'image pour toi.");
+assert.equal(nettoyerPourVoix("Image : /api/fichiers/abc123/dessin.jpeg\nVoilà."), "Image :\nVoilà.");
+assert.equal(nettoyerPourVoix("Voir i.ytimg.com/vi/abcdefghijk/hqdefault.jpg ici."), "Voir ici.");
+assert.equal(nettoyerPourVoix("Va sur www.exemple.org/page. Ensuite repose-toi."), "Va sur . Ensuite repose-toi.");
+assert.equal(nettoyerPourVoix("[Image jointe : https://cdn.x.org/a.jpg] Le chat dort."), "Le chat dort.");
+assert.equal(nettoyerPourVoix("Le chat dort. [Image jointe : https://cdn.x.org/a"), "Le chat dort.");
+assert.equal(nettoyerPourVoix('<img src="a.jpg" alt="chat"> Le chat.'), "Le chat.");
+assert.equal(nettoyerPourVoix("Une image jpg et une vidéo mp4 sont là."), "Une image et une vidéo sont là.");
+assert.equal(nettoyerPourVoix("Le fichier .png est prêt."), "Le fichier est prêt.");
+assert.equal(nettoyerPourVoix("data:image/png;base64,iVBORw0KGgo= fin"), "fin");
+assert.equal(nettoyerPourVoix("Voir [https://x.org/a.jpg](https://x.org/a.jpg) ici."), "Voir ici.");
+assert.equal(nettoyerPourVoix("Un lien https://x.org/page.html. Fin."), "Un lien . Fin.");
+// Ce qui se dit normalement reste intact : nombres, noms, mots avec tiret bas au milieu.
+assert.equal(nettoyerPourVoix("Rendez-vous à 10.30 puis 3.5 km. Le prix est 2.50."), "Rendez-vous à 10.30 puis 3.5 km. Le prix est 2.50.");
+assert.equal(nettoyerPourVoix("Écoute _bien_ ceci, mot_composé reste."), "Écoute bien ceci, mot_composé reste.");
+assert.equal(partieStable('Avant <img src="a.jpg'), "Avant ");
+assert.equal(partieStable('Avant <img src="a.jpg"> après'), 'Avant <img src="a.jpg"> après');
+assert.equal(partieStable("3 < 5 donc oui"), "3 < 5 donc oui");
+
 // Découpage : jamais plus long que la limite, ordre et contenu conservés.
 const phrases = "Première phrase. Deuxième phrase! Troisième phrase? Quatrième phrase.";
 const morceaux = decouperEnMorceaux(phrases, 40);
@@ -62,6 +83,9 @@ const textes = [
   "Avant. ```js\nconst a = 1;\n``` Après. Fin",
   "Une seule phrase sans point final",
   "Une image à la fin https://exemple.org/photo.png",
+  "Regarde photo.jpg très belle. Puis va sur www.exemple.org/page. Fin",
+  "Voici (chat.png). Suite. Fin. Une image jpg et mp4. Encore",
+  'Un chat <img src="a.jpg" alt="chat. beau"> dort. Fin',
 ];
 for (const texte of textes) {
   const attendu = nettoyerPourVoix(texte).replace(/\s+/g, " ");
@@ -84,7 +108,7 @@ for (const texte of textes) {
       const derniere = nettoyerPourVoix(texte).split(/(?<=[.!?…])\s+|\n+/u).filter(Boolean).pop();
       assert.equal(restant.join(" "), derniere, `seule la dernière phrase attend la fin : ${texte.slice(0, 30)}`);
     }
-    assert.ok(!/https?:|youtu|\]\(|!\[|```/.test(dit), "ni lien ni mise en forme prononcés : " + dit);
+    assert.ok(!/https?:|youtu|\]\(|!\[|```|jpe?g|\.png|mp4|<img/i.test(dit), "ni lien ni mise en forme prononcés : " + dit);
   }
 }
 // Le point de la démarche : la première phrase part bien avant la fin du texte.
