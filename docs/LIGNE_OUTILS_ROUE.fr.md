@@ -10,7 +10,8 @@ Demande du 25 novembre 2026. La partie backend (l'outil `commenter` et l'événe
 - **Aucune durée minimale pour un outil.** Des outils appelés en même temps se remplacent vite (environ 170 ms d'écart). Une note de l'IA reste plus longtemps, selon sa longueur (de 1,4 s à 4,5 s), pour qu'on ait le temps de la lire.
 - **Une seule ligne de texte.** Le texte est coupé par « ... » quand il est trop long (surtout sur mobile) au lieu de passer à la ligne. La liste dépliée, elle, passe toujours à la ligne.
 - **Notes.** Une note de l'IA est une ligne à part entière avec une icône point à la place de l'icône d'outil. Elle ne casse pas un groupe et n'est jamais comptée comme un outil.
-- **Quand le travail est fini.** La roue devient « N outils utilisés », repliée, comme avant. Un clic déplie la liste complète, outils et notes dans l'ordre. Le shimmer d'une ligne indique que son outil tourne encore ; il n'y a ni compteur ni mention « en cours » ou « terminé ».
+- **Tant que la réponse n'est pas finie** (outil en cours, réflexion, texte ou confirmation en attente), la dernière ligne reste affichée jusqu'à ce que la suivante la remplace. La roue ne repasse jamais par une ligne déjà montrée (26 novembre 2026).
+- **Quand la réponse est finie.** La roue devient « N outils utilisés », repliée, comme avant. Un clic déplie la liste complète, outils et notes dans l'ordre. Le shimmer d'une ligne indique que son outil tourne encore ; il n'y a ni compteur ni mention « en cours » ou « terminé ».
 - **Un seul outil sans note** garde l'affichage simple.
 
 ## Code

@@ -10,6 +10,7 @@ Request of 25 November 2026. The backend part (the `commenter` tool and the `com
 - **No minimum display time for a tool.** Tools called at the same time replace each other fast (about 170 ms apart). A note from the AI stays longer, according to its length (1.4 s to 4.5 s), so it can be read.
 - **One line of text.** The text is cut with an ellipsis when it is too long (mostly on mobile) instead of wrapping. The unfolded list still wraps.
 - **Notes.** A note from the AI is its own line with a dot icon instead of a tool icon. It does not break a group and is never counted as a tool.
+- **Until the answer is finished** (tool running, reasoning, text or pending confirmation), the last line stays on screen until the next one replaces it. The wheel never goes back over a line already shown (26 November 2026).
 - **When the work is done.** The wheel becomes "N tools used", collapsed, as before. A click unfolds the full list, tools and notes in order. The shimmer on a line shows that its tool is still running; there is no "running" or "done" counter.
 - **A single tool without a note** keeps the simple display.
 

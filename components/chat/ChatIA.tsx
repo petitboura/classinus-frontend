@@ -2403,6 +2403,11 @@ export function ChatIA({
                 !message.raisonnement
               }
               estEnCoursDeGeneration={estDernier && affichageEnCours && message.role === "assistant"}
+              travailEnCours={
+                estDernier &&
+                message.role === "assistant" &&
+                ((genEnCours && !sauvegardeRecue) || affichageEnCours || !!confirmation)
+              }
               raisonnement={message.raisonnement}
               raisonnementEnCours={estDernier ? raisonnementEnCours : false}
               outilsResultats={message.outilsResultats}

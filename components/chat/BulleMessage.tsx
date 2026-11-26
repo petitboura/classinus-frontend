@@ -755,6 +755,7 @@ function BulleMessageInterne({
   nomAgent,
   enAttente,
   estEnCoursDeGeneration,
+  travailEnCours,
   raisonnement,
   raisonnementEnCours,
   outilsResultats,
@@ -821,6 +822,9 @@ function BulleMessageInterne({
   // ci-dessous UNIQUEMENT pour ce message -- jamais pour un message déjà
   // terminé/historique.
   estEnCoursDeGeneration?: boolean;
+  // Vrai tant que la réponse de ce message n'est pas finie, y compris entre deux outils ou
+  // pendant une confirmation (26/11/2026). Pilote la ligne des outils, voir OutilResultatBulle.tsx.
+  travailEnCours?: boolean;
   raisonnement?: string;
   raisonnementEnCours?: boolean;
   outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; arguments?: string; resultatComplet?: string; action?: string; domaines?: string[]; langage?: string; idAppel?: string; texteTermine?: string; sources?: { numero: number; titre: string; url: string; extrait?: string; url_extrait?: string; reperage?: string; position_type?: "page" | "timestamp"; position_valeur?: number; type_mime?: string | null }[]; images?: { titre: string; url: string; miniature: string; credit?: string | null }[]; videos?: { titre: string; url: string; miniature?: string | null; chaine?: string | null; duree?: string | null; id_video?: string | null }[]; ressourcesUi?: RessourceUi[] }[];
@@ -1393,7 +1397,7 @@ function BulleMessageInterne({
                             commentaires={commentairesDuRun.length ? commentairesDuRun : undefined}
                             enCours={enCoursDuRun}
                             groupe={total > 1}
-                            peutSeReplier={!dernierRun || outilsEnCours === undefined}
+                            travailFini={!travailEnCours}
                             texteMessage={message.content}
                             reponseTerminee={!estEnCoursDeGeneration}
                           />,
@@ -1415,7 +1419,7 @@ function BulleMessageInterne({
                           key={`outils-${segments.length}`}
                           enCours={outilsEnCours}
                           groupe={outilsEnCours.length > 1}
-                          peutSeReplier={false}
+                          travailFini={!travailEnCours}
                         />,
                       );
                     }
@@ -1621,6 +1625,7 @@ function memeApparence(
     precedent.nomAgent === suivant.nomAgent &&
     precedent.enAttente === suivant.enAttente &&
     precedent.estEnCoursDeGeneration === suivant.estEnCoursDeGeneration &&
+    precedent.travailEnCours === suivant.travailEnCours &&
     precedent.raisonnement === suivant.raisonnement &&
     precedent.raisonnementEnCours === suivant.raisonnementEnCours &&
     precedent.outilsResultats === suivant.outilsResultats &&
