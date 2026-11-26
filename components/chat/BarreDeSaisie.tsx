@@ -134,6 +134,7 @@ export function BarreDeSaisie({
   desactive,
   genererEnCours = false,
   onArreter,
+  onEnvoyerPendantTour,
   agentId,
   modelesDisponibles = [],
   modeleSelectionne = null,
@@ -170,6 +171,10 @@ export function BarreDeSaisie({
   // au clic au lieu d'envoyer un message.
   genererEnCours?: boolean;
   onArreter?: () => void;
+  // 26/11/2026 (demande Bourama) : pendant que Classinus travaille, la barre reste utilisable. Un
+  // message texte part ici (ChatIA.tsx:envoyerPendantTour) au lieu d'être refusé, sans arrêter le
+  // travail en cours. Absent : ancien comportement (envoi bloqué pendant la génération).
+  onEnvoyerPendantTour?: (texte: string) => void;
   agentId?: string;
   // Selecteur de modele premium (02/08/2026, voir ChatIA.tsx et
   // core/fournisseurs_llm.py) -- liste vide = agent sans abonnement
@@ -1375,8 +1380,31 @@ export function BarreDeSaisie({
 
   // Garde-fou anti double POST (31/10/2026, boumiservice@gmail.com : double-Enter → 422 vide → bandeau "Modifie ton message") : bloque le 2e appui tant que le 1er n'a pas vidé le champ.
   const envoiEnCoursRef = useRef(false);
+  // Pendant la génération, seul un message texte peut rejoindre le tour en cours (un fichier ou une
+  // localisation ne passent pas par la file : le bouton Arrêter reste alors affiché).
+  const envoiPendantTourPossible =
+    genererEnCours &&
+    !!onEnvoyerPendantTour &&
+    !desactive &&
+    (texte.trim().length > 0 || textesColles.length > 0) &&
+    fichiers.length === 0 &&
+    !localisation;
+  const placeholderSaisie =
+    genererEnCours && onEnvoyerPendantTour
+      ? "Ajoute une précision, Classinus la lira en route..."
+      : "Pose ta question...";
   function envoyer() {
     if (envoiEnCoursRef.current) return;
+    if (genererEnCours && onEnvoyerPendantTour) {
+      if (!envoiPendantTourPossible) return;
+      envoiEnCoursRef.current = true;
+      onEnvoyerPendantTour([texte.trim(), ...textesColles.map((t) => t.contenu)].filter(Boolean).join("\n\n"));
+      setTexte("");
+      setTextesColles([]);
+      requestAnimationFrame(ajusterHauteurTexte);
+      setTimeout(() => { envoiEnCoursRef.current = false; }, 600);
+      return;
+    }
     // Fix 31/10/2026 (Demande Bourama — staging uniquement, fix 1) : n'envoyer QUE si utile — texte non vide OU pièce jointe OU localisation. Avant, texte vide + Enter → POST /api/chat vide → 422 → bandeau "Cette demande n'a pas pu être traitée" pour un simple message.
     const aDuContenu = texte.trim() || textesColles.length > 0 || fichiers.length > 0 || !!localisation;
     if (!aDuContenu || desactive || genererEnCours) return;
@@ -1732,7 +1760,7 @@ export function BarreDeSaisie({
                 envoyer();
               }
             }}
-            placeholder={transcriptionEnCours ? "Transcription en cours..." : "Pose ta question..."}
+            placeholder={transcriptionEnCours ? "Transcription en cours..." : placeholderSaisie}
             rows={1}
             className="relative max-h-64 w-full resize-none overflow-y-auto bg-transparent text-[15px] leading-normal text-transparent caret-dj-texte outline-none placeholder:text-dj-texte-muet"
           />
@@ -1992,7 +2020,7 @@ export function BarreDeSaisie({
               >
                 <Square size={14} />
               </button>
-            ) : genererEnCours ? (
+            ) : genererEnCours && !envoiPendantTourPossible ? (
               <button
                 onClick={onArreter}
                 aria-label="Arrêter la génération"
@@ -2003,7 +2031,7 @@ export function BarreDeSaisie({
             ) : texte.trim() || textesColles.length > 0 || fichiers.length > 0 || !!localisation ? (
               <button
                 onClick={envoyer}
-                disabled={desactive || genererEnCours}
+                disabled={desactive || (genererEnCours && !envoiPendantTourPossible)}
                 aria-label="Envoyer"
                 className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
               >
@@ -2099,7 +2127,7 @@ export function BarreDeSaisie({
             const el = e.currentTarget;
             setTimeout(() => el.scrollIntoView({ block: "end", behavior: "smooth" }), 300);
           }}
-          placeholder={transcriptionEnCours ? "Transcription en cours..." : "Pose ta question..."}
+          placeholder={transcriptionEnCours ? "Transcription en cours..." : placeholderSaisie}
           rows={1}
           className="max-h-32 min-h-8 w-full resize-none overflow-y-auto bg-transparent px-1 py-1 text-base leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
         />
@@ -2158,7 +2186,7 @@ export function BarreDeSaisie({
           >
             <Square size={14} />
           </button>
-        ) : genererEnCours ? (
+        ) : genererEnCours && !envoiPendantTourPossible ? (
           <button
             onClick={onArreter}
             aria-label="Arrêter la génération"
@@ -2169,7 +2197,7 @@ export function BarreDeSaisie({
         ) : texte.trim() || textesColles.length > 0 || fichiers.length > 0 || !!localisation ? (
           <button
             onClick={envoyer}
-            disabled={desactive || genererEnCours}
+            disabled={desactive || (genererEnCours && !envoiPendantTourPossible)}
             aria-label="Envoyer"
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
           >
@@ -2544,7 +2572,7 @@ export function BarreDeSaisie({
                   fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));
                 }
               }}
-              placeholder="Pose ta question..."
+              placeholder={placeholderSaisie}
               className="relative h-full w-full resize-none overflow-y-auto bg-transparent text-base leading-relaxed text-transparent caret-dj-texte outline-none placeholder:text-dj-texte-muet"
             />
           </div>
@@ -2554,7 +2582,7 @@ export function BarreDeSaisie({
                 envoyer();
                 fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));
               }}
-              disabled={(!texte.trim() && textesColles.length === 0 && fichiers.length === 0 && !localisation) || desactive || genererEnCours}
+              disabled={(!texte.trim() && textesColles.length === 0 && fichiers.length === 0 && !localisation) || desactive || (genererEnCours && !envoiPendantTourPossible)}
               aria-label="Envoyer"
               className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >

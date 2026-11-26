@@ -8,6 +8,15 @@ import { EN_POSITIONNEMENT_DECOUVRIR } from "@/lib/i18n/positionnementDecouvrir"
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Messages et questions pendant que Classinus travaille (26/11/2026).
+  "Puis-je écrire à Classinus pendant qu'il travaille ?": "Can I write to Classinus while it is working?",
+  "Oui. Pendant qu'une réponse se prépare, la barre de saisie reste utilisable : ton message apparaît tout de suite avec la mention « Pris en compte », et Classinus le lit au prochain pas de son travail sans s'arrêter. Si la réponse vient de se terminer, ton message part comme un message normal. Le bouton Arrêter reste là quand le champ est vide, ou si tu joins un fichier.": "Yes. While an answer is being prepared, the input bar stays usable: your message appears right away with the mention \"Received\", and Classinus reads it at the next step of its work without stopping. If the answer has just finished, your message is sent as a normal message. The Stop button stays when the field is empty, or if you attach a file.",
+  "Classinus peut-il me poser une question pendant qu'il travaille ?": "Can Classinus ask me a question while it is working?",
+  "Oui. Quand il a besoin d'un choix ou d'une précision, une carte de question s'affiche dans la conversation. Si la tâche peut continuer sans toi, elle continue et ta réponse lui parvient dès que tu la donnes. S'il est vraiment bloqué, il attend ta réponse dans le même tour, sans s'arrêter pour l'écrire ensuite. Sans réponse après un délai (10 minutes par défaut), il termine son tour, explique qu'il ne peut pas continuer et te repose la question. Les questions à choix proposent « Autre » pour écrire ta propre réponse, et les questions à plusieurs champs se terminent par un champ libre « Un avis, une précision ? ».": "Yes. When it needs a choice or a detail, a question card appears in the conversation. If the task can go on without you, it continues and your answer reaches it as soon as you give it. If it is really stuck, it waits for your answer inside the same turn, without stopping to write it afterwards. With no answer after a delay (10 minutes by default), it ends its turn, explains that it cannot continue and asks you the question again. Choice questions offer \"Other\" so you can write your own answer, and multi-field questions end with a free field \"A view, a detail?\".",
+  "Ajoute une précision, Classinus la lira en route...": "Add a detail, Classinus will read it along the way...",
+  "Pris en compte, Classinus le lira en route": "Received, Classinus will read it along the way",
+  "Sera envoyé dès que la réponse est terminée": "Will be sent as soon as the answer is finished",
+  "Classinus n'a pas reçu de réponse à temps. Il te posera de nouveau la question.": "Classinus did not get an answer in time. It will ask the question again.",
   // Autoriser d'un coup les outils non sensibles d'un serveur MCP personnalisé (17/11/2026).
   "Toujours autoriser tous les outils non sensibles de": "Always allow all non-sensitive tools of",
   "ce serveur": "this server",

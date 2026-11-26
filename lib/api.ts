@@ -1396,6 +1396,39 @@ export async function transcrireAudioChat(fichier: File) {
 }
 
 /**
+ * Message écrit pendant que Classinus travaille (26/11/2026, voir api/chat_en_cours.py côté serveur).
+ * `pris_en_compte: true` : le message est dans la file du tour, Classinus le lit au prochain aller-retour.
+ * `false` : aucun tour ne peut le lire (tour fini, ou texte trop long pour la file) : l'appelant l'envoie
+ * comme un message normal, rien n'est perdu.
+ */
+export async function envoyerMessagePendantTour(texte: string): Promise<{ pris_en_compte: boolean }> {
+  const resultat = await appelerApi("/api/chat/message-en-cours", {
+    method: "POST",
+    body: JSON.stringify({ texte }),
+  });
+  return { pris_en_compte: resultat?.pris_en_compte === true };
+}
+
+/**
+ * Réponse à une question posée par Classinus avec l'outil poser_question (26/11/2026).
+ * `recue` : l'appel bloquant attendait cette réponse et reprend. `en_file` : la tâche continue, la
+ * réponse arrive comme un message. `a_renvoyer` : plus rien n'attend, l'appelant l'envoie comme un
+ * message normal.
+ */
+export async function repondreQuestionEnCours(
+  idQuestion: string,
+  reponse: string,
+  question?: string
+): Promise<{ statut: "recue" | "en_file" | "a_renvoyer" }> {
+  const resultat = await appelerApi("/api/chat/question-reponse", {
+    method: "POST",
+    body: JSON.stringify({ id_question: idQuestion, reponse, ...(question ? { question } : {}) }),
+  });
+  const statut = resultat?.statut;
+  return { statut: statut === "recue" || statut === "en_file" ? statut : "a_renvoyer" };
+}
+
+/**
  * Vidéo ou audio joint à un message de chat : le serveur enregistre le fichier
  * et renvoie ses informations (api/uploads.py:uploader_media_chat), sans le
  * transcrire ni extraire d'images. C'est le modèle qui décide ensuite de le

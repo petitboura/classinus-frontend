@@ -336,6 +336,16 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
       "Le travail continue sur le serveur. En revenant dans la conversation, la réponse en cours se réaffiche depuis le début puis se poursuit en direct, ou apparaît terminée si elle est finie entre-temps. Si ta connexion est perturbée, un bandeau indique que Classinus se reconnecte et la suite s'affiche dès le retour du réseau. Le bouton Arrêter n'arrête que la conversation affichée. Limites : une action qui a besoin de ton écran ou de ton appareil (exécution de code dans la page, vision de l'écran du téléphone, voix) attend que la page soit de nouveau ouverte, et une réponse n'est retrouvable que pendant environ 30 minutes.",
   },
   {
+    question: "Puis-je écrire à Classinus pendant qu'il travaille ?",
+    reponse:
+      "Oui. Pendant qu'une réponse se prépare, la barre de saisie reste utilisable : ton message apparaît tout de suite avec la mention « Pris en compte », et Classinus le lit au prochain pas de son travail sans s'arrêter. Si la réponse vient de se terminer, ton message part comme un message normal. Le bouton Arrêter reste là quand le champ est vide, ou si tu joins un fichier.",
+  },
+  {
+    question: "Classinus peut-il me poser une question pendant qu'il travaille ?",
+    reponse:
+      "Oui. Quand il a besoin d'un choix ou d'une précision, une carte de question s'affiche dans la conversation. Si la tâche peut continuer sans toi, elle continue et ta réponse lui parvient dès que tu la donnes. S'il est vraiment bloqué, il attend ta réponse dans le même tour, sans s'arrêter pour l'écrire ensuite. Sans réponse après un délai (10 minutes par défaut), il termine son tour, explique qu'il ne peut pas continuer et te repose la question. Les questions à choix proposent « Autre » pour écrire ta propre réponse, et les questions à plusieurs champs se terminent par un champ libre « Un avis, une précision ? ».",
+  },
+  {
     question: "Puis-je retrouver mes conversations précédentes ?",
     reponse:
       "Oui. Ouvre l'historique ou une conversation récente pour reprendre le fil et continuer ton travail. L'accueil peut aussi afficher les fichiers récemment ajoutés à ta bibliothèque personnelle.",
