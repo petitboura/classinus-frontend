@@ -16,9 +16,14 @@ Request of 27 November 2026.
 
 On a very short screen the list keeps a minimum height and the whole sidebar scrolls: nothing overlaps.
 
+## On phones
+
+- **The conversation list is shown directly in the menu**, below the sections, with no "History" button. It takes the remaining space, scrolls on its own and fades at the top and bottom; More and the profile stay at the bottom.
+- **A long press on a conversation** shows the bubble (full name and date) above the line; it closes when you touch elsewhere or scroll. A short tap opens the conversation.
+
 ## What does not change
 
-- Mobile keeps its drawer over the chat, with the "History" button and its floating list.
+- On phones, the menu is still a drawer drawn over the chat.
 - Pages other than the chat keep the previous behavior: the open sidebar is drawn over the page, which does not move.
 
 ## Where it lives
