@@ -1,9 +1,9 @@
 # Lecteurs en volet à côté du chat
 
-- **Statut** : code écrit sur la branche `volet-lecteur`, en attente de vérification par Bourama avant fusion dans `main`
-- **Dernière mise à jour** : 2026-11-27 (après-midi)
+- **Statut** : fusionné dans `main` et reporté sur `staging` le 27/11/2026 à la demande de Bourama ; retours de design appliqués (boutons comme la maquette, zone de tirage invisible collée au volet, tiret jaune retiré), à revoir à l'écran
+- **Dernière mise à jour** : 2026-11-27 (soir)
 - **Dépôts concernés** : classinus-frontend (le backend n'a pas été regardé, à confirmer)
-- **Branche(s)** : `volet-lecteur` (classinus-frontend), depuis `main` du 27/11/2026
+- **Branche(s)** : `volet-lecteur` fusionnée puis supprimée ; sur `staging` le code a été repris par report du commit 6cc665b (conflits résolus : galerie d'images et dictionnaire i18n)
 
 ## Le but, en langage clair
 Bourama juge les lecteurs de Classinus « complètement nuls ». Il veut qu'ils fassent comme les autres IA : le lecteur s'ouvre **à côté du chat**, le chat est poussé sur le côté, et on agrandit simplement en élargissant le volet. Cela concerne tous les contenus : fichiers (PDF, livres, Word, Excel, texte), audio et vidéo, images, animation.
