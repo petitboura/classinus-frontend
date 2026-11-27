@@ -66,6 +66,7 @@ Le dossier **components/** regroupe les éléments visuels par fonctionnalité.
 | **higgsfield/** | interface des fonctions Higgsfield |
 | **icons/** et **icones/** | icônes |
 | **AppShell.tsx**, **AppSidebar.tsx** | structure et navigation générale |
+| **MenuGroupeRail.tsx** | groupes de la barre latérale : les sous-sections s’ouvrent en accordéon dans la barre dépliée et le tiroir mobile, et dans un panneau au survol quand la barre est repliée |
 | **InteractionGlobale.tsx** | fournisseurs et interactions qui persistent entre les pages |
 | **Logo.tsx**, **ThemeToggle.tsx** | identité visuelle et changement de thème |
 

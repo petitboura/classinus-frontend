@@ -66,6 +66,7 @@ The **components/** directory groups visible interface elements by feature.
 | **higgsfield/** | Higgsfield feature interface |
 | **icons/** and **icones/** | icon components |
 | **AppShell.tsx**, **AppSidebar.tsx** | overall structure and navigation |
+| **MenuGroupeRail.tsx** | sidebar groups: sub-sections open as an accordion inside the expanded sidebar and the mobile drawer, and in a hover panel when the sidebar is collapsed |
 | **InteractionGlobale.tsx** | providers and interactions that persist across pages |
 | **Logo.tsx**, **ThemeToggle.tsx** | brand identity and theme switching |
 
