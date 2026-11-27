@@ -16,9 +16,14 @@ Demande du 27 novembre 2026.
 
 Sur un écran très peu haut, la liste garde une hauteur minimale et c'est toute la barre qui défile : rien ne se superpose.
 
+## Sur téléphone
+
+- **La liste des conversations est affichée directement dans le menu**, sous les sections, sans bouton « Historique ». Elle prend la place restante, défile seule et se fond en haut et en bas ; Plus et le profil restent en bas.
+- **Un appui long sur une conversation** montre la bulle (nom complet et date) au dessus de la ligne ; elle se ferme quand on touche ailleurs ou qu'on fait défiler. Un appui court ouvre la conversation.
+
 ## Ce qui ne change pas
 
-- Le mobile garde son tiroir par-dessus le chat, avec le bouton « Historique » et sa liste flottante.
+- Sur téléphone, le menu reste un tiroir dessiné par dessus le chat.
 - Les pages autres que le chat gardent l'ancien comportement : la barre ouverte est dessinée par-dessus la page, qui ne bouge pas.
 
 ## Où ça se passe

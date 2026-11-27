@@ -357,7 +357,7 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivi
   const boutonMenuRef = useRef<HTMLButtonElement>(null);
   const champRef = useRef<HTMLInputElement>(null);
   const ligneRef = useRef<HTMLDivElement>(null);
-  const bulle = useBulleSurvolFil();
+  const bulle = useBulleSurvolFil(ligneRef);
   const { enSortie: menuEnSortie, demarrerFermeture: fermerMenuAnime } = useFermetureAnimee();
 
   useEffect(() => {
@@ -489,7 +489,8 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivi
       <div
         ref={ligneRef}
         {...bulle.gestes}
-        className={`group flex items-center rounded-lg transition-colors hover:bg-dj-surface-haute ${hauteur} ${
+        // Appui long : ni selection de texte ni menu du telephone sur la ligne.
+        className={`group [-webkit-touch-callout:none] [@media(hover:none)]:select-none flex items-center rounded-lg transition-colors hover:bg-dj-surface-haute ${hauteur} ${
           menu ? "bg-dj-surface-haute" : ""
         }`}
       >
@@ -526,6 +527,7 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivi
           titre={fil.titre}
           date={dateBulleFil(fil.derniere_activite, maintenant, locale)}
           enSortie={bulle.enSortie}
+          auDoigt={bulle.auDoigt}
         />
       )}
       {menu && (
