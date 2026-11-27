@@ -6,7 +6,7 @@ Request of 27 November 2026.
 
 ## What the user sees (desktop, chat page)
 
-- **The conversation history is shown directly in the sidebar**, under "New conversation", instead of a floating window opened from an "History" button. The list keeps pinned conversations, rename, delete and loading the next conversations while scrolling. A small button next to the "History" title opens the full screen history.
+- **The conversation history is shown directly in the sidebar**, under the navigation icons (Dashboard, Desk, Library...), instead of a floating window opened from an "History" button. The icons stay at the top and always visible; the list takes all the remaining space in the middle and scrolls on its own; Subscribe, More and the profile stay at the bottom. The list keeps pinned conversations, rename, delete and loading the next conversations while scrolling. A small button next to the "History" title opens the full screen history.
 - **The open sidebar pushes the chat to the right.** The sidebar opens on hover, as before, but it no longer covers the chat: the chat narrows by the same width, with a smooth transition.
 - **A narrow icon rail stays visible when the sidebar is closed.** In the history area only the history icon remains.
 - **The sidebar stays open while a conversation is being edited** (three dots menu open, rename field, delete confirmation), even if the mouse leaves it. It folds back once the edit ends and the mouse is away.
