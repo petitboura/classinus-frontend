@@ -1163,7 +1163,7 @@ function BulleMessageInterne({
           la réponse, ce qui ne reflétait pas l'ordre réel "le modèle
           réfléchit D'ABORD, répond ENSUITE". */}
       {!estUtilisateur && enAttente && (
-        <IndicateurReflexion nomAgent={nomAgent ?? "Classinus"} />
+        <IndicateurReflexion />
       )}
       {!estUtilisateur && !enTimeline && raisonnement && (
         <RaisonnementBulle nomAgent={nomAgent ?? "Classinus"} texte={raisonnement} enCours={!!raisonnementEnCours} />

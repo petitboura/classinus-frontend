@@ -167,7 +167,7 @@ const config: Config = {
           from: { opacity: "1", transform: "translateY(0) scale(1)" },
           to: { opacity: "0", transform: "translateY(8px) scale(.97)" },
         },
-        // Points de l'indicateur "{agent} réfléchit" (partie 5) : rythme
+        // Points du message d'attente (partie 5) : rythme
         // légèrement irrégulier plutôt que animate-bounce (délais
         // parfaitement réguliers) -- brief 4b.
         "cgpt-point-reflexion": {
@@ -205,6 +205,25 @@ const config: Config = {
           from: { opacity: "1", transform: "translateY(0)" },
           to: { opacity: "0", transform: "translateY(-100%)" },
         },
+        // Message d'attente (27/11/2026) : lettres une par une, vague, et
+        // reflet qui passe de lettre en lettre.
+        "dj-lettre-apparait": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "dj-vague-entree": {
+          "0%": { opacity: "0", transform: "translateY(100%)" },
+          "70%": { opacity: "1", transform: "translateY(-4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "dj-vague-sortie": {
+          from: { opacity: "1", transform: "translateY(0)" },
+          to: { opacity: "0", transform: "translateY(-100%)" },
+        },
+        "dj-lettre-reflet": {
+          "0%, 30%, 100%": { color: "var(--dj-texte-muet)" },
+          "15%": { color: "var(--dj-texte)" },
+        },
       },
       animation: {
         "dj-fade-up": "dj-fade-up 0.5s ease both",
@@ -227,6 +246,14 @@ const config: Config = {
         "dj-ligne-trace": "dj-ligne-trace 0.18s ease-out both",
         "dj-roue-entree": "dj-roue-entree 0.16s ease-out both",
         "dj-roue-sortie": "dj-roue-sortie 0.16s ease-in both",
+        // Mêmes mouvements que la roue des outils, plus posés pour le message
+        // d'attente.
+        "dj-attente-roue-entree": "dj-roue-entree 0.38s cubic-bezier(.25,.8,.35,1) both",
+        "dj-attente-roue-sortie": "dj-roue-sortie 0.38s cubic-bezier(.25,.8,.35,1) both",
+        "dj-lettre-apparait": "dj-lettre-apparait 0.06s linear both",
+        "dj-vague-entree": "dj-vague-entree 0.38s cubic-bezier(.25,.8,.35,1) both",
+        "dj-vague-sortie": "dj-vague-sortie 0.24s ease-in both",
+        "dj-lettre-reflet": "dj-lettre-reflet 2.2s ease-in-out infinite",
       },
     },
   },

@@ -14,6 +14,7 @@ Point d'entrée central de toute la documentation du frontend Classinus. L'angla
 - [Suivi des soumissions aux stores](./soumission-stores.fr.md)
 - [Liste d'attente des modèles « Bientôt »](./LISTE_ATTENTE_MODELES.fr.md)
 - [Ligne d'outils : la roue, les notes de l'IA et la réflexion](./LIGNE_OUTILS_ROUE.fr.md)
+- [Message d'attente du chat](./MESSAGE_ATTENTE.fr.md)
 
 ## Historique et spécifications du projet
 
