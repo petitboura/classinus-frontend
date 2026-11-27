@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BrainCog, ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { IconeReflexion } from "./IconeReflexion";
 import { TexteFondu } from "./TexteFondu";
 
 // Une réflexion du modèle dans la liste dépliée des outils (26/11/2026, demande Bourama), à la même
@@ -26,7 +27,7 @@ export function LigneReflexion({
     <div className="flex animate-dj-fade-in-rapide gap-2.5">
       <div className="flex w-4 flex-col items-center">
         <div className="relative mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
-          <BrainCog size={13} className="text-dj-texte" />
+          <IconeReflexion enCours={enCours} />
         </div>
         {!estDerniere && <div className="mt-1 min-h-[6px] w-[2px] flex-1 origin-top animate-dj-ligne-trace bg-dj-bordure" />}
       </div>
