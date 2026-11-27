@@ -386,7 +386,7 @@ export function ContenuOffice({ href, titre }: { href: string; titre: string }) 
   const urlVisionneuse = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(href)}`;
 
   return (
-    <div className="relative h-[75vh] w-full">
+    <div className="relative h-[75vh] w-full [[data-lecteur-lateral]_&]:h-full">
       {!charge && (
         <div className="absolute inset-0 flex items-center justify-center">
           <Loader2 size={20} className="animate-spin text-dj-texte-muet" />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { VisionneuseImage } from "./VisionneuseImage";
+import { ouvrirDansLecteur, useContenuLecteur } from "@/lib/lecteurLateral";
 
 // Galerie d'images affichée automatiquement par les outils qui renvoient une
 // liste d'images (captures du navigateur, Higgsfield...), embarquée par
@@ -19,7 +20,23 @@ type Image = { titre: string; url: string; miniature: string; credit?: string | 
 // 02/11/2026, décision de Bourama : cet élément s'affiche sans cadre (ni bordure ni fond de carte), le contenu repose directement sur le fond du chat. Ne jamais remettre de cadre sans que Bourama le demande.
 export function GalerieImagesBulle({ images }: { images?: Image[] }) {
   const [indexOuvert, setIndexOuvert] = useState<number | null>(null);
+  // 27/11/2026 : sur la page du chat, la galerie s'ouvre dans le lecteur à côté de
+  // la conversation (vignettes et flèches pour passer d'une image à l'autre).
+  // La miniature affichée dans le volet est entourée de doré.
+  const dansLeVolet = useContenuLecteur();
   if (!images || !images.length) return null;
+  const identifiantGalerie = `images:${images.map((i) => i.url).join("|")}`;
+  function ouvrir(index: number) {
+    const auVolet = ouvrirDansLecteur({
+      genre: "images",
+      id: identifiantGalerie,
+      liste: images!.map((i) => ({ src: i.url, alt: i.titre })),
+      index,
+    });
+    if (!auVolet) setIndexOuvert(index);
+  }
+  const indexAuVolet =
+    dansLeVolet?.genre === "images" && dansLeVolet.id === identifiantGalerie ? dansLeVolet.index : null;
 
   return (
     <>
@@ -28,9 +45,11 @@ export function GalerieImagesBulle({ images }: { images?: Image[] }) {
         <button
           key={image.url + index}
           type="button"
-          onClick={() => setIndexOuvert(index)}
+          onClick={() => ouvrir(index)}
           title={image.credit ? `${image.titre} · ${image.credit}` : image.titre}
-          className="group relative h-44 w-56 shrink-0 overflow-hidden rounded-xl"
+          className={`group relative h-44 w-56 shrink-0 overflow-hidden rounded-xl transition-shadow duration-200 ${
+            indexAuVolet === index ? "ring-2 ring-dj-accent-1" : ""
+          }`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- image
               externe (Pixabay/Pexels), pas un asset local optimisable par

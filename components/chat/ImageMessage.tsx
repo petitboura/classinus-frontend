@@ -5,6 +5,7 @@ import { ImageOff, ExternalLink } from "lucide-react";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { ContexteRangeeImages } from "./RangeeImagesContexte";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
+import { ouvrirDansLecteur, useImageOuverte } from "@/lib/lecteurLateral";
 
 // Le title Markdown contient la page d'origine de l'image. Le badge affiche
 // le favicon de ce domaine et ouvre cette page, jamais le moteur de recherche.
@@ -38,8 +39,27 @@ export function ImageMessage({
     }
   }
 
+  // 27/11/2026 : sur la page du chat, l'image s'ouvre dans le lecteur à côté de la
+  // conversation, avec ses voisines de la rangée en vignettes. Sa miniature est
+  // entourée de doré tant qu'elle y est affichée.
+  const dansLeVolet = useImageOuverte(src ?? "");
+
   if (!src) return null;
 
+  function ouvrir() {
+    const liste = rangee && rangee.length > 1 ? rangee : [{ src: src!, alt }];
+    const index = Math.max(0, liste.findIndex((i) => i.src === src));
+    const auVolet = ouvrirDansLecteur({
+      genre: "images",
+      id: `images:${liste.map((i) => i.src).join("|")}`,
+      liste: liste.map((i) => ({ src: i.src, alt: i.alt })),
+      index,
+    });
+    if (!auVolet) setOuverte(true);
+  }
+
+  // 12/09/2026, Bourama : vrai téléchargement système sur Android (au
+  // lieu du fetch+blob web ici depuis toujours) -- voir lib/telecharger.ts.
   function telecharger() {
     telechargerFichier(src!, alt || "image");
   }
@@ -91,11 +111,13 @@ export function ImageMessage({
       <div className={"relative " + (dansGalerie ? "group w-full min-w-0" : "my-2 w-fit max-w-full")}>
         <button
           type="button"
-          onClick={() => chargee && setOuverte(true)}
+          onClick={() => chargee && ouvrir()}
           className={
-            dansGalerie
+            (dansGalerie
               ? "relative block aspect-[4/3] w-full overflow-hidden rounded-xl bg-dj-surface-haute"
-              : "block max-h-96 overflow-hidden rounded-xl"
+              : "block max-h-96 overflow-hidden rounded-xl") +
+            " transition-shadow duration-200" +
+            (dansLeVolet ? " ring-2 ring-dj-accent-1" : "")
           }
           aria-label={alt || "Agrandir l'image"}
         >

@@ -1,134 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { X, ExternalLink, Maximize2, Minimize2 } from "lucide-react";
-import { LinkPreview } from "./LinkPreview";
+import { useCallback, useEffect, useState } from "react";
+import { X, Maximize2, Minimize2 } from "lucide-react";
 import { BoutonCopierLien } from "./BoutonCopierLien";
-import { VisionneurPdf } from "@/components/VisionneurPdf";
-import {
-  TYPES_MIME_OFFICE,
-  estTypeTexteLisible,
-  estFichierMarkdown,
-  ContenuTexte,
-  ContenuMarkdown,
-  ContenuOffice,
-  ContenuNonPrevisualisable,
-} from "../VisionneuseBibliotheque";
+import { ContenuFichierApercu, typeApercu } from "./ContenuFichierApercu";
 
-// Worker servi depuis notre propre /public (26/08, retour Bourama : le
-// clic sur "Ouvrir à cet endroit" faisait sortir de l'app -- ouvrir le
-// PDF/audio brut dans un nouvel onglet, en comptant sur le fragment
-// d'URL #page=/#t= pour se positionner, ne marche pas de façon fiable
-// (le lecteur PDF/audio du système, ou l'app externe qui prend la main,
-// ignore souvent ce fragment, surtout en PWA/mobile). Ce composant
-// affiche donc le PDF/audio directement DANS Classinus, avec un vrai
-// contrôle de la page/du timestamp, plutôt que de déléguer à un lecteur
-// externe. Mounté UNE SEULE FOIS (voir ChatIA.tsx), piloté par un simple
-// CustomEvent "clovis:ouvrir-position" -- évite le prop drilling entre
-// SourcesBulle.tsx (puce d'extrait) et BulleMessage.tsx (citation
-// inline), qui sont deux arbres de composants différents.
+// Fenêtre d'aperçu des sources citées et des liens qui veulent sortir de l'app
+// (26/08, retour de Bourama : le clic sur "Ouvrir à cet endroit" faisait sortir
+// de l'app. Ouvrir le PDF ou l'audio brut dans un nouvel onglet, en comptant
+// sur le fragment d'URL #page= ou #t= pour se positionner, ne marche pas de
+// façon fiable : le lecteur du système ou l'app externe ignore souvent ce
+// fragment, surtout en PWA et sur mobile). Ce composant affiche donc le fichier
+// directement DANS Classinus, avec un vrai contrôle de la page ou de l'instant.
+// Monté UNE SEULE FOIS (voir VisionneurGlobalRacine.tsx), piloté par un simple
+// CustomEvent "clovis:ouvrir-position" qui évite de faire passer des props entre
+// SourcesBulle.tsx (puce d'extrait) et BulleMessage.tsx (citation inline), deux
+// arbres de composants différents.
 //
-// CORRECTIF 2026-08-27 (demande Bourama : "que tout soit interne popup
-// comme les fichiers uploadés, même les sites") : ce visionneur ne se
-// limite plus au PDF/audio positionnés (page/timestamp) -- il dispatche
-// désormais TOUT type de source bibliothèque (image, Office, texte,
-// PDF/audio même sans position précise) vers le bon aperçu, en
-// réutilisant TEL QUEL le dispatch déjà écrit pour la bibliothèque
-// personnelle (VisionneuseBibliotheque.tsx, mêmes helpers exportés,
-// zéro duplication de logique). Une source qui n'a PAS de type_mime
-// (donc pas un fichier de bibliothèque -- un résultat de recherche web)
-// retombe sur une carte d'aperçu de site (LinkPreview) + un bouton
-// explicite pour sortir de l'app si l'utilisateur le veut vraiment --
-// même principe déjà en place pour les liens classiques du chat, jamais
-// de sortie automatique au simple clic.
+// 27/08/2026 (demande de Bourama : que tout reste en popup interne, même les
+// sites) : ce visionneur ne se limite pas au PDF et à l'audio positionnés, il
+// choisit l'aperçu de TOUT type de source. Le choix de l'aperçu vit maintenant
+// dans ContenuFichierApercu.tsx, partagé avec le volet à côté du chat.
 //
-// EXTRACTION 01/09 (demande Bourama : swipe + saut de page direct sur
-// le PDF, à la fois ici et dans la bibliothèque) : VisionneurPdf n'est
-// plus défini ici -- déplacé et enrichi dans components/VisionneurPdf.tsx
-// (partagé avec VisionneuseBibliotheque.tsx). Ce fichier reste chargé en
-// dynamic({ssr:false}) depuis ChatIA.tsx, donc l'import direct ci-dessous
-// est sans risque pour le SSR.
+// 27/11/2026 : sur la page du chat, un volet à côté de la conversation prend le
+// relais (voir lib/lecteurLateral.ts et VoletLecteur.tsx). Cette fenêtre ne
+// s'ouvre alors plus, elle reste le comportement partout ailleurs (chat flottant
+// sur une autre page, fenêtre de superposition du PC).
 
 import { DetailOuverturePosition, EVENEMENT_OUVRIR_POSITION } from "./visionneurPositionEvenement";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
-import { ouvrirSiteExterieur } from "@/lib/liensSortants";
-
-function LecteurAudioPosition({ url, debutSecondes }: { url: string; debutSecondes: number }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
-      <audio
-        ref={audioRef}
-        src={url}
-        controls
-        autoPlay
-        className="w-full max-w-md"
-        onLoadedMetadata={() => {
-          if (audioRef.current) audioRef.current.currentTime = debutSecondes;
-        }}
-      />
-      <p className="text-sm text-dj-texte-muet">
-        Lecture démarrée à {Math.floor(debutSecondes / 60)}:{String(debutSecondes % 60).padStart(2, "0")}
-      </p>
-    </div>
-  );
-}
-
-// Image bibliothèque citée en source (pas de position page/timestamp) --
-// même rendu simple qu'un aperçu plein cadre, cohérent avec
-// VisionneuseBibliotheque.tsx.
-function VisionneurImage({ url, titre }: { url: string; titre: string }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element -- source dynamique (bucket Supabase)
-    <img src={url} alt={titre} className="mx-auto min-h-[12rem] max-h-[75vh] w-auto object-contain" />
-  );
-}
-
-// Carte de site pour une source qui n'a PAS de type_mime -- donc PAS un
-// fichier de bibliothèque, forcément un résultat de recherche web (voir
-// docstring plus haut). Jamais d'iframe forcée (la quasi-totalité des
-// sites la refusent, voir LinkPreview.tsx) : aperçu Open Graph + bouton
-// explicite pour sortir si l'utilisateur le veut vraiment.
-function CarteSiteExterne({
-  url,
-  titre,
-  titreDuModele,
-  descriptionLien,
-}: {
-  url: string;
-  titre: string;
-  titreDuModele?: string;
-  descriptionLien?: string;
-}) {
-  return (
-    // data-apercu-actif : GardienLiensSortants.tsx laisse la carte inerte ici,
-    // la seule sortie est le bouton "Ouvrir le site" ci dessous.
-    <div className="p-5" data-apercu-actif>
-      <LinkPreview href={url} texteLien={titre} titreDuModele={titreDuModele} descriptionLien={descriptionLien} detaille sansBoutonCopier />
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => ouvrirSiteExterieur(url)}
-          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
-        >
-          <ExternalLink size={13} /> Ouvrir le site
-        </button>
-        <BoutonCopierLien href={url} variante="texte" />
-      </div>
-    </div>
-  );
-}
+import { ouvrirDansLecteur } from "@/lib/lecteurLateral";
 
 export function VisionneurPositionGlobal() {
   const [detail, setDetail] = useState<DetailOuverturePosition | null>(null);
-  // 02/09, demande Bourama : plein écran pour le lecteur PDF (web,
-  // mobile web, mobile natif) -- même logique que VisionneuseBibliotheque.tsx
-  // (overlay CSS pur, pas la Fullscreen API du navigateur -- absente sur
-  // Safari iOS/webviews natives Capacitor).
+  // 02/09, demande de Bourama : plein écran pour le lecteur PDF (web, mobile web,
+  // mobile natif), même logique que VisionneuseBibliotheque.tsx (calque CSS pur,
+  // pas la Fullscreen API du navigateur, absente sur Safari iOS et dans les
+  // webviews natives Capacitor).
   const [pleinEcran, setPleinEcran] = useState(false);
-  // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
-  // brut") : ce visionneur n'avait aucune animation, ni entrée ni sortie
-  // -- aligné ici sur le même mécanisme que le reste de l'app (voir
+  // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent brut") :
+  // entrée et sortie animées, même mécanisme que le reste de l'app (voir
   // lib/useFermetureAnimee.ts).
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
 
@@ -136,8 +47,12 @@ export function VisionneurPositionGlobal() {
 
   useEffect(() => {
     function onOuvrir(e: Event) {
+      const demande = (e as CustomEvent<DetailOuverturePosition>).detail;
+      // Page du chat : le volet à côté de la conversation affiche le fichier.
+      const identifiant = `${demande.url}#${demande.positionType ?? ""}${demande.positionValeur ?? ""}`;
+      if (ouvrirDansLecteur({ genre: "fichier", id: identifiant, ...demande })) return;
       setPleinEcran(false);
-      setDetail((e as CustomEvent<DetailOuverturePosition>).detail);
+      setDetail(demande);
     }
     window.addEventListener(EVENEMENT_OUVRIR_POSITION, onOuvrir);
     return () => window.removeEventListener(EVENEMENT_OUVRIR_POSITION, onOuvrir);
@@ -154,28 +69,16 @@ export function VisionneurPositionGlobal() {
 
   if (!detail) return null;
 
-  const typeMime = detail.typeMime || "";
-  const estImage = typeMime.startsWith("image/");
-  const estAudio = typeMime.startsWith("audio/") || detail.positionType === "timestamp";
-  const estPdf = typeMime === "application/pdf" || detail.positionType === "page";
-  const estOffice = TYPES_MIME_OFFICE.has(typeMime);
-  const estLien = typeMime === "text/uri-list";
-  const estMarkdown = !estLien && estFichierMarkdown(detail.titre, typeMime);
-  const estTexte = !estLien && !estMarkdown && estTypeTexteLisible(typeMime);
-  // Aucun type_mime du tout : pas un fichier de bibliothèque, donc une
-  // source web (résultat de recherche) -- carte de site, jamais d'iframe.
-  const estSiteWeb = !detail.typeMime && !estPdf && !estAudio;
-  // 11/10/2026, demande Bourama : le cadre était toujours à 85 % de la
-  // hauteur de l'écran, même pour une simple carte de site (cadre presque
-  // vide). Les contenus dont la taille est connue tout de suite (carte de
-  // site, image, audio, fichier non prévisualisable) laissent le cadre suivre
-  // leur taille, avec un maximum de 85 % et un défilement au delà. PDF,
-  // Word/Excel, texte et markdown gardent la hauteur fixe : ils se chargent
-  // après l'ouverture (le cadre sauterait) et le lecteur PDF a besoin d'une
-  // hauteur définie.
-  const estNonPrevisualisable = !(estAudio || estPdf || estImage || estOffice || estMarkdown || estTexte || estSiteWeb || estLien);
-  const tailleAuto = estAudio || estImage || estSiteWeb || estLien || estNonPrevisualisable;
-  const largeurAuto = tailleAuto && !estImage;
+  const t = typeApercu(detail);
+  // 11/10/2026, demande de Bourama : le cadre était toujours à 85 % de la
+  // hauteur de l'écran, même pour une simple carte de site (cadre presque vide).
+  // Les contenus dont la taille est connue tout de suite (carte de site, image,
+  // audio, fichier non prévisualisable) laissent le cadre suivre leur taille,
+  // avec un maximum de 85 % et un défilement au delà. PDF, Word, Excel, texte et
+  // markdown gardent la hauteur fixe : ils se chargent après l'ouverture (le
+  // cadre sauterait) et le lecteur PDF a besoin d'une hauteur définie.
+  const tailleAuto = t.estAudio || t.estImage || t.estSiteWeb || t.estLien || t.estNonPrevisualisable;
+  const largeurAuto = tailleAuto && !t.estImage;
 
   return (
     <div
@@ -195,10 +98,10 @@ export function VisionneurPositionGlobal() {
         <div className="flex items-center justify-between gap-2 border-b border-dj-bordure px-4 py-3">
           <p className="min-w-0 truncate pr-3 text-sm font-medium text-dj-texte">{detail.titre}</p>
           <div className="flex shrink-0 items-center gap-1.5">
-            {/* Copier le lien (11/10/2026, demande Bourama : tous les types, pas
+            {/* Copier le lien (11/10/2026, demande de Bourama : tous les types, pas
                 seulement la carte de site, qui a déjà le sien sous la carte). */}
-            {!(estSiteWeb || estLien) && <BoutonCopierLien href={detail.url} variante="texte" />}
-            {estPdf && (
+            {!(t.estSiteWeb || t.estLien) && <BoutonCopierLien href={detail.url} variante="texte" />}
+            {t.estPdf && (
               <button
                 type="button"
                 onClick={() => setPleinEcran((v) => !v)}
@@ -220,23 +123,7 @@ export function VisionneurPositionGlobal() {
           </div>
         </div>
         <div className={`min-h-0 overflow-auto ${tailleAuto ? "" : "flex-1"}`}>
-          {estAudio ? (
-            <LecteurAudioPosition url={detail.url} debutSecondes={detail.positionValeur ?? 0} />
-          ) : estPdf ? (
-            <VisionneurPdf url={detail.url} page={detail.positionType === "page" ? detail.positionValeur ?? 1 : 1} />
-          ) : estImage ? (
-            <VisionneurImage url={detail.url} titre={detail.titre} />
-          ) : estOffice ? (
-            <ContenuOffice href={detail.url} titre={detail.titre} />
-          ) : estMarkdown ? (
-            <ContenuMarkdown href={detail.url} />
-          ) : estTexte ? (
-            <ContenuTexte href={detail.url} />
-          ) : estSiteWeb || estLien ? (
-            <CarteSiteExterne url={detail.url} titre={detail.titre} titreDuModele={detail.titreDuModele} descriptionLien={detail.descriptionLien} />
-          ) : (
-            <ContenuNonPrevisualisable href={detail.url} nom={detail.titre} />
-          )}
+          <ContenuFichierApercu detail={detail} />
         </div>
       </div>
     </div>

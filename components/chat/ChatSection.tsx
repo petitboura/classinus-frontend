@@ -14,6 +14,8 @@ import { useFenetres } from "@/lib/contexteFenetres";
 import { useOuvrirCatalogue } from "@/lib/contexteCatalogue";
 import { texteAccueilSelonHeure } from "@/lib/salutations";
 import { Skeleton } from "@/components/Skeleton";
+import { VoletLecteur } from "./VoletLecteur";
+import { fermerLecteur } from "@/lib/lecteurLateral";
 
 // Étape 2 (07/09/2026, chantier "chat plein écran = vraie section",
 // demande Bourama : "je veux que le chat plein écran soit une vraie
@@ -117,6 +119,12 @@ export function ChatSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- selectionnerConversation recréée à chaque rendu (pas dans useCallback) ; seuls demandeOuvrirConversation et agent doivent déclencher ce passage.
   }, [demandeOuvrirConversation, agent]);
 
+  // 27/11/2026 : le fichier ouvert à côté du chat appartient à la conversation
+  // qui l'a montré. Une autre conversation, ou une nouvelle, referme le lecteur.
+  useEffect(() => {
+    fermerLecteur();
+  }, [cle]);
+
   const { fenetres, fermerToutes } = useFenetres();
   function fermerFenetresAuClic() {
     if (fenetres.length > 0) fermerToutes();
@@ -217,7 +225,9 @@ export function ChatSection() {
           // largeur de référence ici aussi ; cette page occupe toujours
           // largement plus de 360px, donc la version desktop reste
           // affichée comme avant, aucun changement de comportement ici.
-          className="@container relative min-h-0 flex-1"
+          // min-w-0 (27/11/2026) : sans lui, la colonne du chat ne peut pas
+          // rétrécir sous la largeur de son contenu quand le lecteur s'ouvre à côté.
+          className="@container relative min-h-0 min-w-0 flex-1"
         >
           {chargementFilConversation && (
             <div className="absolute inset-0 z-10 overflow-hidden bg-dj-fond">
@@ -287,6 +297,11 @@ export function ChatSection() {
             />
           )}
         </div>
+
+        {/* Lecteur à côté du chat (27/11/2026) : s'ouvre quand on clique un fichier,
+            une image ou un média de la conversation, pousse le chat, et se ferme
+            quand on change de conversation (voir plus haut). */}
+        <VoletLecteur />
       </div>
 
       {compteRequis && (
