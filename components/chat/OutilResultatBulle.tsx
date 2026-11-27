@@ -11,6 +11,7 @@ import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 import { LigneCommentaire } from "./LigneCommentaire";
 import { LigneReflexion } from "./LigneReflexion";
 import { RoueOutils, type ElementRoue } from "./RoueOutils";
+import { TexteFondu } from "./TexteFondu";
 import { imagesNonPlacees, videosNonPlacees } from "./mediasNonPlaces";
 import { WidgetsMcpUi } from "./WidgetMcpUi";
 import type { RessourceUi } from "@/lib/mcpUi";
@@ -420,9 +421,7 @@ export function OutilResultatBulle({
             <Layers size={13} className="shrink-0 text-dj-texte" />
             {/* Un seul nœud de texte (26/11/2026) : en morceaux, la traduction anglaise de
                 l'interface donnait « 2Toolsuseds ». */}
-            <span className="truncate">
-              {nbLignesOutils > 1 ? `${nbLignesOutils} outils utilisés` : `${nbLignesOutils} outil utilisé`}
-            </span>
+            <TexteFondu texte={nbLignesOutils > 1 ? `${nbLignesOutils} outils utilisés` : `${nbLignesOutils} outil utilisé`} />
           </span>
         )}
         {groupeOuvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />}

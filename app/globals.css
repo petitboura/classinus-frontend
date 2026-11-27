@@ -235,6 +235,11 @@ math-field {
   }
 }
 
+.dj-fondu-fin {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+}
+
 .voile-chat-haut {
   pointer-events: none;
   height: calc(var(--dj-chat-haut) + 1.25rem);
