@@ -15,6 +15,7 @@ Central entry point for all Classinus frontend documentation. English is the def
 - [Waiting list for "Coming soon" models](./LISTE_ATTENTE_MODELES.md)
 - [Tool line: the wheel, AI notes and reasoning](./LIGNE_OUTILS_ROUE.md)
 - [Chat waiting message](./MESSAGE_ATTENTE.md)
+- [Sidebar: history in the sidebar, chat pushed to the right](./BARRE_LATERALE_HISTORIQUE.md)
 
 ## Project history and specifications
 

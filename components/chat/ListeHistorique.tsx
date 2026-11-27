@@ -87,6 +87,12 @@ type PropsListe = {
   variante?: "popup" | "pleinEcran";
   // Classes du conteneur qui defile (hauteur max, bordures...).
   className?: string;
+  // Dit au parent quand une ligne est en cours d'edition (menu des trois
+  // points ouvert, renommage, confirmation de suppression). Sert a la barre
+  // laterale, qui se replie quand la souris la quitte : elle doit rester
+  // ouverte tant qu'une edition est en cours (le menu est pose dans le body,
+  // donc la souris quitte la barre en l'utilisant).
+  onOccupe?: (occupe: boolean) => void;
 };
 
 export function ListeHistorique({
@@ -95,6 +101,7 @@ export function ListeHistorique({
   onSupprimee,
   variante = "popup",
   className = "",
+  onOccupe,
 }: PropsListe) {
   const locale = useLocale();
   const ctx = useContext(ContexteChat);
@@ -154,6 +161,21 @@ export function ListeHistorique({
 
   const grand = variante === "pleinEcran";
 
+  // Lignes en cours d'edition, par cle : on previent le parent seulement
+  // quand on passe de "aucune" a "au moins une" et inversement.
+  const lignesOccupeesRef = useRef<Set<string>>(new Set());
+  const signalerActivite = useCallback(
+    (cle: string, actif: boolean) => {
+      const lignes = lignesOccupeesRef.current;
+      const avant = lignes.size > 0;
+      if (actif) lignes.add(cle);
+      else lignes.delete(cle);
+      const apres = lignes.size > 0;
+      if (avant !== apres) onOccupe?.(apres);
+    },
+    [onOccupe]
+  );
+
   function rendreLignes(fils: FilConversation[]) {
     return fils.map((fil) => (
       <LigneFil
@@ -163,6 +185,7 @@ export function ListeHistorique({
         grand={grand}
         onSelectionner={onSelectionner}
         onSupprimee={onSupprimee}
+        onActivite={signalerActivite}
       />
     ));
   }
@@ -268,6 +291,7 @@ type PropsLigne = {
   grand: boolean;
   onSelectionner: (fil: FilConversation) => void;
   onSupprimee?: (fil: FilConversation) => void;
+  onActivite?: (cle: string, actif: boolean) => void;
 };
 
 // Date courte d'un fil : Aujourd'hui, Hier, puis jour et mois (avec l'annee
@@ -286,7 +310,7 @@ function libelleDateFil(iso: string): string {
 
 type ModeLigne = "normal" | "renommer" | "confirmerSuppression";
 
-function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsLigne) {
+function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivite }: PropsLigne) {
   const ctx = useContext(ContexteChat);
   const [mode, setMode] = useState<ModeLigne>("normal");
   const [titreSaisi, setTitreSaisi] = useState(fil.titre);
@@ -301,6 +325,16 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
       champRef.current?.select();
     }
   }, [mode]);
+
+  // Previent la liste tant que cette ligne est en cours d'edition (menu
+  // ouvert, renommage, confirmation de suppression). A la disparition de la
+  // ligne on retire toujours son signal, pour ne jamais bloquer le parent.
+  const cleActivite = cleFil(fil);
+  const enEdition = mode !== "normal" || menu !== null;
+  useEffect(() => {
+    onActivite?.(cleActivite, enEdition);
+    return () => onActivite?.(cleActivite, false);
+  }, [onActivite, cleActivite, enEdition]);
 
   function ouvrirMenu() {
     const bouton = boutonMenuRef.current;
