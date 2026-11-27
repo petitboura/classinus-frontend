@@ -3,7 +3,8 @@
 import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronRight, ChevronUp, BrainCog } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
+import { IconeReflexion } from "./IconeReflexion";
 
 // Affiche le raisonnement interne du modèle -- consomme les événements SSE
 // {"type": "raisonnement", "texte": "..."} que core/main.py:_agent_groq
@@ -122,7 +123,9 @@ export function RaisonnementBulle({
         onClick={basculer}
         className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
-        <BrainCog size={13} className="shrink-0 text-dj-texte" />
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+          <IconeReflexion enCours={enCours} />
+        </span>
         <span
           className={
             enCours

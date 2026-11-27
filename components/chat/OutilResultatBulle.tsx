@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { BrainCog, ChevronDown, ChevronRight, Layers } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
 import { useLocale } from "@/lib/i18n/useLocale";
 import { titreReflexion } from "@/lib/titreReflexion";
@@ -371,7 +371,7 @@ export function OutilResultatBulle({
       return { cle: element.cle, membres: [element.cle], genre: "commentaire", texte: element.texte, enCours: false };
     }
     if (element.genre === "reflexion") {
-      return { cle: element.cle, membres: [element.cle], genre: "reflexion", texte: element.titre, enCours: element.enCours, Icone: BrainCog };
+      return { cle: element.cle, membres: [element.cle], genre: "reflexion", texte: element.titre, enCours: element.enCours };
     }
     const ligne = element.ligne;
     const donnees = donneesDeLigne(ligne);
