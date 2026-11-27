@@ -598,6 +598,23 @@ select:focus-visible {
   contain: paint;
 }
 
+/* Bas d'une liste qui defile (historique de la barre laterale) : le contenu se
+   fond au lieu d'etre coupe net. La hauteur du fondu est une propriete declaree
+   pour pouvoir apparaitre et disparaitre en douceur. */
+@property --dj-fondu-bas {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.dj-fondu-bas {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--dj-fondu-bas)), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--dj-fondu-bas)), transparent);
+  transition: --dj-fondu-bas 0.2s ease-out;
+}
+.dj-fondu-bas-actif {
+  --dj-fondu-bas: 3rem;
+}
+
 /* 08/09/2026, demande Bourama (Bureau + tous les autres écrans utilisant
    OngletsSegment.tsx) : la rangée d'onglets défile horizontalement
    (overflow-x-auto) quand ils débordent, mais laisser la barre de
