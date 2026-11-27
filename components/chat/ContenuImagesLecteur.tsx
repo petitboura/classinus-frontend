@@ -16,7 +16,7 @@ const ZOOM_MAX = 4;
 const PAS_ZOOM = 0.25;
 
 const classeBoutonRond =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-dj-texte-muet";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-40 disabled:hover:bg-dj-surface-haute";
 
 export function ContenuImagesLecteur({
   liste,
@@ -66,7 +66,7 @@ export function ContenuImagesLecteur({
 
   return (
     <div className="flex h-full min-h-0 flex-col outline-none" tabIndex={-1} onKeyDown={surTouche}>
-      <div className="flex shrink-0 items-center gap-1 border-b border-dj-bordure px-3 py-2">
+      <div className="flex shrink-0 items-center gap-2 border-b border-dj-bordure px-3 py-2">
         <button
           type="button"
           onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - PAS_ZOOM))}

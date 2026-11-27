@@ -76,13 +76,16 @@ const ContenuFichierApercu = dynamic(() => import("./ContenuFichierApercu").then
 
 // Doit rester synchronisée avec la durée de la transition de largeur et de fondu.
 const DUREE_TRANSITION_MS = 280;
-const LARGEUR_POIGNEE = 12;
+// La zone qui sert à tirer la barre est superposée au bord du volet (aucune bande
+// visible) : la barre de défilement du chat touche le lecteur.
+const LARGEUR_POIGNEE = 0;
+const LARGEUR_ZONE_TIREE = 8;
 // Le chat garde toujours au moins cette largeur quand on élargit le volet.
 const LARGEUR_CHAT_MIN = 340;
 const PAS_CLAVIER = 24;
 
 const classeBouton =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-dj-bordure bg-dj-surface-haute text-dj-texte-muet transition-colors hover:text-dj-texte";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte transition-colors hover:bg-dj-bordure";
 
 function titreDe(c: ContenuLecteur): string {
   if (c.genre === "images") return c.liste[c.index]?.alt || "Image";
@@ -285,14 +288,14 @@ export function VoletLecteur() {
           <ArrowLeft size={16} />
         </button>
       )}
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-accent-1-texte">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-dj-accent-1/15 text-dj-accent-1-texte">
         <IconeDe contenu={rendu} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-dj-texte">{titre}</p>
         {sousTitre && <p className="truncate text-[11px] text-dj-texte-muet">{sousTitre}</p>}
       </div>
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-2">
         {estMarkdown(rendu) && (
           <>
             <button
@@ -300,22 +303,22 @@ export function VoletLecteur() {
               onClick={() => setVueBruteMarkdown(false)}
               aria-label="Formaté"
               title="Formaté"
-              className={`${classeBouton} ${!vueBruteMarkdown ? "border-dj-bordure-forte text-dj-texte" : ""}`}
+              className={`${classeBouton} ${!vueBruteMarkdown ? "bg-dj-bordure" : ""}`}
             >
-              <Eye size={14} />
+              <Eye size={16} />
             </button>
             <button
               type="button"
               onClick={() => setVueBruteMarkdown(true)}
               aria-label="Brut"
               title="Brut"
-              className={`${classeBouton} ${vueBruteMarkdown ? "border-dj-bordure-forte text-dj-texte" : ""}`}
+              className={`${classeBouton} ${vueBruteMarkdown ? "bg-dj-bordure" : ""}`}
             >
-              <Code2 size={14} />
+              <Code2 size={16} />
             </button>
             {texteMarkdown && (
               <button type="button" onClick={copierTexte} aria-label="Copier" title="Copier" className={classeBouton}>
-                {copie ? <Check size={14} /> : <Copy size={14} />}
+                {copie ? <Check size={16} /> : <Copy size={16} />}
               </button>
             )}
           </>
@@ -333,7 +336,7 @@ export function VoletLecteur() {
             title="Télécharger"
             className={`${classeBouton} ${classeEtatTelechargement(etatTelechargement)}`}
           >
-            <IconeTelechargement href={cibleTelechargement.url} size={14} />
+            <IconeTelechargement href={cibleTelechargement.url} size={16} />
           </button>
         )}
         {deuxColonnes && (
@@ -344,11 +347,11 @@ export function VoletLecteur() {
             title={pleinEcran ? "Quitter le plein écran" : "Plein écran"}
             className={classeBouton}
           >
-            {pleinEcran ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            {pleinEcran ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
         )}
         <button type="button" onClick={fermer} aria-label="Fermer le lecteur" title="Fermer le lecteur" className={classeBouton}>
-          <X size={14} />
+          <X size={16} />
         </button>
       </div>
     </div>
@@ -437,17 +440,9 @@ export function VoletLecteur() {
           setLargeur(LARGEUR_LECTEUR_DEFAUT);
           ecrireLargeurLecteur(LARGEUR_LECTEUR_DEFAUT);
         }}
-        className="group flex shrink-0 cursor-col-resize items-center justify-center outline-none"
-        style={{ width: LARGEUR_POIGNEE, touchAction: "none" }}
-      >
-        <span
-          className={`w-1 rounded-full transition-all duration-200 ${
-            glisse
-              ? "h-16 bg-dj-accent-1"
-              : "h-12 bg-dj-bordure-forte group-hover:h-16 group-hover:bg-dj-accent-1 group-focus-visible:bg-dj-accent-1"
-          }`}
-        />
-      </div>
+        className="absolute inset-y-0 left-0 z-10 cursor-col-resize outline-none"
+        style={{ width: LARGEUR_ZONE_TIREE, touchAction: "none" }}
+      />
       {/* Largeur fixe à l'intérieur : le contenu ne se recalcule pas pendant que le volet glisse. */}
       <div className="flex min-h-0 shrink-0 flex-col border-l border-dj-bordure bg-dj-surface" style={{ width: largeur }}>
         {entete}
