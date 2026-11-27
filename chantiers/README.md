@@ -33,4 +33,4 @@ Un travail fini, fusionné et vérifié n'est plus un chantier : on le retire de
 Une ligne par chantier, avec le lien vers son sous-dossier.
 
 - [Page bambara : réponse plus rapide](bambara-vitesse/RESUME.md) : en attente d'une décision de Bourama (fusion avec la lecture par blocs).
-- [Visibilité de Classinus auprès de ChatGPT et des IA : publications](visibilite-ia-publications/RESUME.md) : en cours (Show HN publié, Bing et Hashnode en place, BetaList prêt mais non envoyé ; règle « publier seulement ce qui est réel » à reconfirmer).
+- [Visibilité de Classinus auprès de ChatGPT et des IA : publications](visibilite-ia-publications/RESUME.md) : en cours (le 27/11 publiés : Show HN, X, Facebook, LinkedIn, Indie Hackers, Product Hunt, Hashnode, Dev.to, Threads, Bluesky, Peerlist ; reste e-mail médias, BetaList, DevHunt, annuaires, Telegram et WhatsApp).
