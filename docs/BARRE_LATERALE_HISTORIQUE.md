@@ -11,6 +11,8 @@ Request of 27 November 2026.
 - **A narrow icon rail stays visible when the sidebar is closed.** In the history area only the history icon remains.
 - **The sidebar stays open while a conversation is being edited** (three dots menu open, rename field, delete confirmation), even if the mouse leaves it. It folds back once the edit ends and the mouse is away.
 
+On a very short screen the list keeps a minimum height and the whole sidebar scrolls: nothing overlaps.
+
 ## What does not change
 
 - Mobile keeps its drawer over the chat, with the "History" button and its floating list.
