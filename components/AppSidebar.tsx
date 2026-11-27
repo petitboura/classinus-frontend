@@ -670,19 +670,17 @@ export function AppSidebar({
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
 
-        {contexteChat && (
+        {contexteChat && aDesMessages && (
           <>
-            {aDesMessages && (
-              <button
-                onClick={onNouvelleConversation}
-                className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-              >
-                <span className={CELLULE_ICONE_RAIL}>
-                  <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
-                </span>
-                <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
-              </button>
-            )}
+            <button
+              onClick={onNouvelleConversation}
+              className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              <span className={CELLULE_ICONE_RAIL}>
+                <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
+              </span>
+              <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
+            </button>
 
             <div className="my-2 h-px w-full bg-dj-bordure" />
           </>
@@ -713,47 +711,47 @@ export function AppSidebar({
         {contexteChat && historique.length > 0 && (
           <>
             <div className="my-2 h-px w-full bg-dj-bordure" />
-        {historique.length > 0 && (
-          railOuvert ? (
-            // Barre ouverte : la liste des conversations est affichee
-            // directement dans la barre (27/11/2026, demande Bourama),
-            // sous "Nouvelle conversation". Elle defile seule et charge la
-            // suite au defilement (ListeHistorique).
-            <div className="flex min-h-0 flex-1 animate-dj-fade-in-rapide flex-col">
-              <div className="flex items-center justify-between px-1.5 pb-1 pt-0.5">
-                <span className="text-xs font-semibold text-dj-texte-muet">Historique</span>
-                <button
-                  type="button"
-                  onClick={() => setHistoriquePleinEcran(true)}
-                  title="Plein écran"
-                  aria-label="Afficher l'historique en plein écran"
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                >
-                  <ArrowUpRight size={14} strokeWidth={1.75} />
-                </button>
+            {railOuvert ? (
+              // Barre ouverte : la liste des conversations est affichee
+              // directement dans la barre (27/11/2026, demande Bourama),
+              // sous les icones de navigation. Elle defile seule et charge la
+              // suite au defilement (ListeHistorique). Hauteur plancher (titre
+              // plus min-h-24 de la liste) : sur un ecran tres peu haut, c'est
+              // la barre qui defile, la liste ne passe jamais sur le bas.
+              <div className="flex min-h-[7.875rem] flex-1 animate-dj-fade-in-rapide flex-col">
+                <div className="flex items-center justify-between px-1.5 pb-1 pt-0.5">
+                  <span className="text-xs font-semibold text-dj-texte-muet">Historique</span>
+                  <button
+                    type="button"
+                    onClick={() => setHistoriquePleinEcran(true)}
+                    title="Plein écran"
+                    aria-label="Afficher l'historique en plein écran"
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                  >
+                    <ArrowUpRight size={14} strokeWidth={1.75} />
+                  </button>
+                </div>
+                <ListeHistorique
+                  conversationActiveId={conversationActiveId}
+                  onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+                  onSupprimee={onConversationSupprimee}
+                  onOccupe={setListeHistoriqueOccupee}
+                  className="min-h-24 flex-1"
+                />
               </div>
-              <ListeHistorique
-                conversationActiveId={conversationActiveId}
-                onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
-                onSupprimee={onConversationSupprimee}
-                onOccupe={setListeHistoriqueOccupee}
-                className="min-h-24 flex-1"
-              />
-            </div>
-          ) : (
-            // Barre repliee : seule l'icone reste, le survol ouvre la barre.
-            <button
-              type="button"
-              onClick={() => setSurvolRail(true)}
-              aria-label="Historique"
-              className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              <span className={CELLULE_ICONE_RAIL}>
-                <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-300 group-hover:rotate-45" />
-              </span>
-            </button>
-          )
-        )}
+            ) : (
+              // Barre repliee : seule l'icone reste, le survol ouvre la barre.
+              <button
+                type="button"
+                onClick={() => setSurvolRail(true)}
+                aria-label="Historique"
+                className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              >
+                <span className={CELLULE_ICONE_RAIL}>
+                  <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-300 group-hover:rotate-45" />
+                </span>
+              </button>
+            )}
           </>
         )}
 

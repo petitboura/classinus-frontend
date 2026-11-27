@@ -11,6 +11,8 @@ Demande du 27 novembre 2026.
 - **Un rail étroit d'icônes reste visible quand la barre est fermée.** Dans la zone de l'historique, seule l'icône de l'historique reste.
 - **La barre reste ouverte pendant la modification d'une conversation** (menu des trois points ouvert, champ de renommage, confirmation de suppression), même si la souris la quitte. Elle se replie quand la modification est finie et que la souris est partie.
 
+Sur un écran très peu haut, la liste garde une hauteur minimale et c'est toute la barre qui défile : rien ne se superpose.
+
 ## Ce qui ne change pas
 
 - Le mobile garde son tiroir par-dessus le chat, avec le bouton « Historique » et sa liste flottante.
