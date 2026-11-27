@@ -598,18 +598,26 @@ select:focus-visible {
   contain: paint;
 }
 
-/* Bas d'une liste qui defile (historique de la barre laterale) : le contenu se
-   fond au lieu d'etre coupe net. La hauteur du fondu est une propriete declaree
-   pour pouvoir apparaitre et disparaitre en douceur. */
+/* Haut et bas d'une liste qui defile (historique de la barre laterale) : le
+   contenu se fond au lieu d'etre coupe net. Les hauteurs des fondus sont des
+   proprietes declarees pour pouvoir apparaitre et disparaitre en douceur. */
+@property --dj-fondu-haut {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
 @property --dj-fondu-bas {
   syntax: "<length>";
   inherits: false;
   initial-value: 0px;
 }
-.dj-fondu-bas {
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--dj-fondu-bas)), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--dj-fondu-bas)), transparent);
-  transition: --dj-fondu-bas 0.2s ease-out;
+.dj-fondu-vertical {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--dj-fondu-haut), #000 calc(100% - var(--dj-fondu-bas)), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--dj-fondu-haut), #000 calc(100% - var(--dj-fondu-bas)), transparent);
+  transition: --dj-fondu-haut 0.2s ease-out, --dj-fondu-bas 0.2s ease-out;
+}
+.dj-fondu-haut-actif {
+  --dj-fondu-haut: 3rem;
 }
 .dj-fondu-bas-actif {
   --dj-fondu-bas: 3rem;
