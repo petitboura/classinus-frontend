@@ -24,6 +24,7 @@ import { VisionneuseImage } from "./VisionneuseImage";
 import { LigneApercuPieces, type PieceApercu } from "./LigneApercuPieces";
 import { FenetreTexteColle } from "./FenetreTexteColle";
 import { FenetreMedia } from "./FenetreMedia";
+import { ouvrirDansLecteur } from "@/lib/lecteurLateral";
 import { detecterLangageCode } from "@/lib/texteColle";
 import { RaisonnementBulle } from "./RaisonnementBulle";
 import { OutilResultatBulle, OutilEnCours } from "./OutilResultatBulle";
@@ -1205,9 +1206,33 @@ function BulleMessageInterne({
                 const index = Number(pieceOuverte.id);
                 const piece = message.piecesJointes?.[index];
                 if (!piece) return;
-                if (piece.type === "image") setPieceJointeOuverteIndex(index);
-                else if (piece.type === "texte") setTexteColleOuvertIndex(index);
-                else if (piece.type === "video" || piece.type === "audio") setMediaOuvertIndex(index);
+                // 27/11/2026 : sur la page du chat, images et médias joints s'ouvrent dans
+                // le lecteur à côté de la conversation (lib/lecteurLateral.ts). Ailleurs
+                // (chat flottant), les fenêtres d'avant restent.
+                if (piece.type === "image") {
+                  const images = (message.piecesJointes ?? [])
+                    .map((p, i) => ({ p, i }))
+                    .filter(({ p }) => p.type === "image" && p.previewUrl);
+                  const auVolet = ouvrirDansLecteur({
+                    genre: "images",
+                    id: `images:${images.map(({ p }) => p.previewUrl).join("|")}`,
+                    liste: images.map(({ p }) => ({ src: p.previewUrl!, alt: p.nom })),
+                    index: Math.max(0, images.findIndex(({ i }) => i === index)),
+                  });
+                  if (!auVolet) setPieceJointeOuverteIndex(index);
+                } else if (piece.type === "texte") setTexteColleOuvertIndex(index);
+                else if (piece.type === "video" || piece.type === "audio") {
+                  const auVolet =
+                    !!piece.previewUrl &&
+                    ouvrirDansLecteur({
+                      genre: "media",
+                      id: `media:${piece.previewUrl}`,
+                      titre: piece.nom,
+                      url: piece.previewUrl,
+                      media: piece.type,
+                    });
+                  if (!auVolet) setMediaOuvertIndex(index);
+                }
                 else if (piece.previewUrl) {
                   // 04/09/2026, demande Bourama : jamais de nouvel onglet,
                   // même visionneur interne que pour un fichier reçu.

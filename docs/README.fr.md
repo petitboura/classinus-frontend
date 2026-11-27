@@ -17,6 +17,7 @@ Point d'entrée central de toute la documentation du frontend Classinus. L'angla
 - [Message d'attente du chat](./MESSAGE_ATTENTE.fr.md)
 - [Le style vivant de l'attente et de la réflexion](./STYLE_VIVANT.fr.md)
 - [Barre latérale : historique dans la barre, chat poussé vers la droite](./BARRE_LATERALE_HISTORIQUE.fr.md)
+- [Lecteur à côté du chat](./LECTEUR_LATERAL.fr.md)
 
 ## Historique et spécifications du projet
 
