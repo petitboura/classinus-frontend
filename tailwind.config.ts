@@ -46,6 +46,7 @@ const config: Config = {
           surface: "var(--dj-surface)",
           "surface-haute": "var(--dj-surface-haute)",
           rail: "var(--dj-rail)",
+          panneau: "var(--dj-panneau)",
           bordure: "var(--dj-bordure)",
           "bordure-forte": "var(--dj-bordure-forte)",
           "accent-1": "var(--dj-accent-1)",
@@ -132,6 +133,18 @@ const config: Config = {
         "dj-fade-in-rapide": {
           from: { opacity: "0" },
           to: { opacity: "1" },
+        },
+        // Panneau de sous-sections de la barre latérale repliée (27/11/2026,
+        // refonte mixte demandée par Bourama) : fondu + léger glissement depuis
+        // la barre. La durée de sortie doit rester alignée sur
+        // DUREE_SORTIE_PANNEAU_MS dans components/MenuGroupeRail.tsx.
+        "dj-flyout-entree": {
+          from: { opacity: "0", transform: "translateX(-6px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "dj-flyout-sortie": {
+          from: { opacity: "1", transform: "translateX(0)" },
+          to: { opacity: "0", transform: "translateX(-4px)" },
         },
         "dj-orbit": {
           from: { transform: "rotate(0deg)" },
@@ -242,6 +255,8 @@ const config: Config = {
         "dj-fade-up": "dj-fade-up 0.5s ease both",
         "dj-fade-in": "dj-fade-in 0.8s ease both",
         "dj-fade-in-rapide": "dj-fade-in-rapide 0.18s ease both",
+        "dj-flyout-entree": "dj-flyout-entree 0.16s cubic-bezier(.25,.8,.35,1) both",
+        "dj-flyout-sortie": "dj-flyout-sortie 0.14s cubic-bezier(.4,0,1,1) both",
         "dj-orbit": "dj-orbit 18s linear infinite",
         "dj-glow": "dj-glow 3.2s ease-in-out infinite",
         "cgpt-entree-message": "cgpt-entree-message 0.4s cubic-bezier(.25,.8,.35,1) both",

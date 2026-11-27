@@ -9,9 +9,6 @@ export const TAILLE_ICONE_RAIL = 14;
 /** Épaisseur du trait des icônes de la barre latérale (2 par défaut dans lucide). */
 export const TRAIT_ICONE_RAIL = 2.25;
 
-/** Taille des icônes dans la bulle des sous-sections sur PC, en pixels. */
-export const TAILLE_ICONE_BULLE = 12;
-
 // Espacement du rail PC. La cellule garde la largeur de 40 px (l'icône reste
 // centrée quand le rail est replié) mais perd en hauteur, la marge entre deux
 // éléments se réduit presque à zéro, et le texte se rapproche de l'icône, pour

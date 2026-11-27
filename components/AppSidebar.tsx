@@ -375,7 +375,10 @@ export function AppSidebar({
   useEffect(() => {
     if (!actionsDeplie) return;
     function onClicExterieur(e: MouseEvent) {
-      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
+      const cible = e.target as Element;
+      // Le panneau de sous-sections d'un groupe (ex. Concentration dans ce menu)
+      // est rendu dans le corps de la page : un appui dessus n'est pas "dehors".
+      if (actionsRef.current && !actionsRef.current.contains(cible) && !cible.closest?.("[data-flyout-groupe]")) {
         setActionsDeplie(false);
       }
     }
@@ -516,9 +519,10 @@ export function AppSidebar({
   // Bureau, ajouté ce jour-là au rail desktop.
   // Bureau, Bibliothèque, Concentration et Personnaliser Classinus ne sont
   // plus des liens simples : ce sont des groupes (MenuGroupeRail.tsx) qui
-  // montrent leurs sous-sections au survol. Dans le chat, Bureau est dans
-  // le rail comme les autres ; Concentration reste dans "Plus", avec sa
-  // liste sur le côté.
+  // ouvrent leurs sous-sections en accordéon quand la barre est dépliée, et
+  // dans un panneau au survol quand elle est repliée. Dans le chat, Bureau
+  // est dans le rail comme les autres ; Concentration reste dans "Plus", avec
+  // sa liste sur le côté.
   const idsPlusFlat: OngletId[] = ["claude", "thonny"];
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
   const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_HIGGSFIELD, GROUPE_PERSONNALISER] : GROUPES_RAIL;
@@ -633,10 +637,10 @@ export function AppSidebar({
           sourisSurRail.current = false;
           if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie || listeHistoriqueOccupee)) setSurvolRail(false);
         }}
-        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 py-3 transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 pb-3 pt-[calc(0.375rem_+_var(--safe-top,0px))] transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
           railOuvert && !contexteChat ? "shadow-xl" : ""
         } ${
-          actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
+          actionsDeplie || historiqueDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${railOuvert ? "md:w-72" : "md:w-14"}`}
       >
         <button
@@ -668,7 +672,11 @@ export function AppSidebar({
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
 
-        <div className="my-2 h-px w-full bg-dj-bordure" />
+        {/* Ce trait tombe à 40 px du haut (plus --safe-top), exactement là où
+            l'en-tête des pages (EnTeteApp, h-10) a sa bordure du bas : les deux
+            lignes se rejoignent. Si la hauteur de l'en-tête change, changer
+            aussi le haut du rail ci-dessus. */}
+        <div className="mb-2 mt-[5px] h-px w-full bg-dj-bordure" />
 
         {contexteChat && aDesMessages && (
           <>
@@ -1005,14 +1013,7 @@ export function AppSidebar({
           data-agent-zone="Menu latéral"
           className={
             `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-surface px-2 pt-2 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
-              // 07/09/2026, correctif Bourama (bug "sous-sections de
-              // Personnaliser Classinus ne marchent pas") : groupeOuvertId
-              // manquait ici, contrairement au rail desktop juste plus
-              // haut dans ce fichier (ligne ~823) qui l'inclut déjà --
-              // le sous-menu (MenuGroupe, position absolute) se
-              // retrouvait recadré/coupé par overflow-y-auto/x-hidden au
-              // lieu de rester visible comme sur desktop.
-              historiqueDeplie || profilDeplie || groupeOuvertId ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
+              historiqueDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
             }` +
             (tiroirEnSortie
               ? " pointer-events-none translate-x-2 opacity-0 transition-all duration-200 ease-cgpt-doux"
@@ -1104,12 +1105,6 @@ export function AppSidebar({
                     // navigation (naviguerVersSection, voir MenuGroupe).
                     marquerTiroirSansHistorique();
                     fermerTiroirMobile(() => setOuverte(false));
-                    // Le popup du groupe (groupeOuvertId, voir MenuGroupe
-                    // ci-dessus) est un calque à part -- sa fermeture
-                    // (onFermer, appelé juste avant ce callback par
-                    // MenuGroupe) consomme sinon sa propre entrée
-                    // d'historique et annule quand même la navigation.
-                    marquerGroupeSansHistorique();
                   }}
                 />
               ) : (
