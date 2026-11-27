@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { LogoSite } from "./LogoSite";
 import { couleurMarque } from "@/lib/couleursIcones";
+import { TexteFondu } from "./TexteFondu";
 
 // La roue des outils (25/11/2026, demande Bourama) : pendant que l'IA travaille, les outils et ses
 // notes tiennent sur UNE seule ligne repliée. Quand une nouvelle ligne arrive, elle monte par le
@@ -12,8 +13,9 @@ import { couleurMarque } from "@/lib/couleursIcones";
 // Seule une note de l'IA ou une réflexion reste affichée plus longtemps, selon sa longueur, pour
 // qu'on ait le temps de la lire.
 //
-// Texte sur une seule ligne, coupé par « ... » quand il est trop long (surtout sur mobile), au lieu
-// de passer à la ligne comme dans la liste dépliée.
+// Texte sur une seule ligne, qui finit en fondu quand il est trop long (27/11/2026, partout, PC et
+// mobile), au lieu des « ... » ou d'un retour à la ligne. La ligne prend la largeur de son texte,
+// pour que la flèche de dépliage se pose juste après sa fin.
 
 // Pause entre deux lignes d'outils quand plusieurs attendent : juste de quoi voir la roue tourner.
 const DELAI_ROUE_MS = 170;
@@ -37,11 +39,13 @@ export type ElementRoue = {
   domaine?: string | null;
 };
 
-function LigneRoue({ element, classe, onFin }: { element: ElementRoue; classe: string; onFin?: () => void }) {
+// La ligne qui s'affiche est dans le flux (elle donne sa largeur à la roue) ; la ligne qui part est
+// posée par-dessus, hors flux, le temps de l'animation.
+function LigneRoue({ element, classe, onFin, partante }: { element: ElementRoue; classe: string; onFin?: () => void; partante?: boolean }) {
   const couleur = element.Icone ? couleurMarque(element.Icone) : undefined;
   const Icone = element.Icone;
   return (
-    <div className={`absolute inset-0 flex items-center gap-2 ${classe}`} onAnimationEnd={onFin}>
+    <div className={`${partante ? "absolute inset-0" : "relative"} flex h-5 min-w-0 items-center gap-2 ${classe}`} onAnimationEnd={onFin}>
       <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
         {element.genre === "commentaire" ? (
           <span className="h-1.5 w-1.5 rounded-full bg-dj-texte-muet" aria-hidden />
@@ -51,16 +55,15 @@ function LigneRoue({ element, classe, onFin }: { element: ElementRoue; classe: s
           <Icone size={13} className={couleur ? undefined : "text-dj-texte"} style={couleur ? { color: couleur } : undefined} />
         ) : null}
       </span>
-      <span
+      <TexteFondu
         key={element.enCours ? "en-cours" : "fini"}
-        className={`block min-w-0 flex-1 animate-dj-fade-in-rapide truncate text-left text-[13px] ${
+        texte={element.texte}
+        className={`animate-dj-fade-in-rapide text-left text-[13px] ${
           element.enCours
             ? "animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent"
             : "text-dj-texte-muet"
         }`}
-      >
-        {element.texte}
-      </span>
+      />
     </div>
   );
 }
@@ -114,9 +117,9 @@ export function RoueOutils({ elements, depart }: { elements: ElementRoue[]; depa
   if (!courant) return null;
 
   return (
-    <div className="relative h-5 min-w-0 flex-1 overflow-hidden">
+    <div className="relative h-5 min-w-0 max-w-full overflow-hidden">
       {partant && partant.cle !== courant.cle && (
-        <LigneRoue key={`partant-${partant.cle}`} element={partant} classe="animate-dj-roue-sortie" onFin={() => setPartant(null)} />
+        <LigneRoue key={`partant-${partant.cle}`} element={partant} classe="animate-dj-roue-sortie" onFin={() => setPartant(null)} partante />
       )}
       <LigneRoue
         key={courant.cle}
