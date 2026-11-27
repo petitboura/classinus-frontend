@@ -87,6 +87,15 @@ type PropsListe = {
   variante?: "popup" | "pleinEcran";
   // Classes du conteneur qui defile (hauteur max, bordures...).
   className?: string;
+  // Dit au parent quand une ligne est en cours d'edition (menu des trois
+  // points ouvert, renommage, confirmation de suppression). Sert a la barre
+  // laterale, qui se replie quand la souris la quitte : elle doit rester
+  // ouverte tant qu'une edition est en cours (le menu est pose dans le body,
+  // donc la souris quitte la barre en l'utilisant).
+  onOccupe?: (occupe: boolean) => void;
+  // Fond le bas de la liste tant qu'il reste des conversations plus bas,
+  // au lieu de la couper net. Le fondu s'efface une fois tout en bas.
+  fonduBas?: boolean;
 };
 
 export function ListeHistorique({
@@ -95,6 +104,8 @@ export function ListeHistorique({
   onSupprimee,
   variante = "popup",
   className = "",
+  onOccupe,
+  fonduBas = false,
 }: PropsListe) {
   const locale = useLocale();
   const ctx = useContext(ContexteChat);
@@ -154,6 +165,42 @@ export function ListeHistorique({
 
   const grand = variante === "pleinEcran";
 
+  // Reste-t-il quelque chose sous la zone visible ? On remesure au
+  // defilement et quand la liste ou son contenu change de taille (section
+  // pliee, page suivante recue, fenetre redimensionnee).
+  const contenuRef = useRef<HTMLDivElement>(null);
+  const [resteEnBas, setResteEnBas] = useState(false);
+  const mesurerBas = useCallback(() => {
+    const racine = racineRef.current;
+    if (!racine) return;
+    // 1 px de marge : les hauteurs fractionnaires (zoom) ne tombent pas juste.
+    setResteEnBas(racine.scrollHeight - racine.scrollTop - racine.clientHeight > 1);
+  }, []);
+  useEffect(() => {
+    const racine = racineRef.current;
+    const contenu = contenuRef.current;
+    if (!fonduBas || !racine || !contenu) return;
+    const observateur = new ResizeObserver(mesurerBas);
+    observateur.observe(racine);
+    observateur.observe(contenu);
+    return () => observateur.disconnect();
+  }, [fonduBas, mesurerBas]);
+
+  // Lignes en cours d'edition, par cle : on previent le parent seulement
+  // quand on passe de "aucune" a "au moins une" et inversement.
+  const lignesOccupeesRef = useRef<Set<string>>(new Set());
+  const signalerActivite = useCallback(
+    (cle: string, actif: boolean) => {
+      const lignes = lignesOccupeesRef.current;
+      const avant = lignes.size > 0;
+      if (actif) lignes.add(cle);
+      else lignes.delete(cle);
+      const apres = lignes.size > 0;
+      if (avant !== apres) onOccupe?.(apres);
+    },
+    [onOccupe]
+  );
+
   function rendreLignes(fils: FilConversation[]) {
     return fils.map((fil) => (
       <LigneFil
@@ -163,56 +210,65 @@ export function ListeHistorique({
         grand={grand}
         onSelectionner={onSelectionner}
         onSupprimee={onSupprimee}
+        onActivite={signalerActivite}
       />
     ));
   }
 
   return (
-    <div ref={racineRef} className={`dj-scroll-isole overflow-y-auto ${className}`}>
-      {erreurAction && (
-        <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
-          {erreurAction}
-        </p>
-      )}
+    <div
+      ref={racineRef}
+      onScroll={fonduBas ? mesurerBas : undefined}
+      className={`dj-scroll-isole overflow-y-auto ${fonduBas ? "dj-fondu-bas" : ""} ${
+        fonduBas && resteEnBas ? "dj-fondu-bas-actif" : ""
+      } ${className}`}
+    >
+      <div ref={contenuRef}>
+        {erreurAction && (
+          <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
+            {erreurAction}
+          </p>
+        )}
 
-      {epingles.length > 0 && (
-        <SectionPliable
-          Icone={Pin}
-          titre="Épinglés"
-          nombre={epingles.length}
-          ouverte={epinglesOuverts}
-          onBasculer={() => setEpinglesOuverts((v) => !v)}
-          grand={grand}
-        >
-          {rendreLignes(epingles)}
-        </SectionPliable>
-      )}
+        {epingles.length > 0 && (
+          <SectionPliable
+            Icone={Pin}
+            titre="Épinglés"
+            nombre={epingles.length}
+            ouverte={epinglesOuverts}
+            onBasculer={() => setEpinglesOuverts((v) => !v)}
+            grand={grand}
+          >
+            {rendreLignes(epingles)}
+          </SectionPliable>
+        )}
 
-      {groupes.map((g) => (
-        <SectionPliable
-          key={g.cle}
-          titre={g.libelle}
-          ouverte={!groupesFermes.has(g.cle)}
-          onBasculer={() => basculerGroupe(g.cle)}
-          grand={grand}
-        >
-          {rendreLignes(g.fils)}
-        </SectionPliable>
-      ))}
+        {groupes.map((g) => (
+          <SectionPliable
+            key={g.cle}
+            titre={g.libelle}
+            ouverte={!groupesFermes.has(g.cle)}
+            onBasculer={() => basculerGroupe(g.cle)}
+            grand={grand}
+          >
+            {rendreLignes(g.fils)}
+          </SectionPliable>
+        ))}
 
-      {aPlus && (
-        <div ref={sentinelleRef} className="py-1">
-          {chargementPlus && <SqueletteLignes grand={grand} />}
-          {erreurPlus && (
-            <button
-              onClick={() => void chargerPlus?.()}
-              className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              Impossible de charger la suite. Réessayer
-            </button>
-          )}
-        </div>
-      )}
+        {aPlus && (
+          <div ref={sentinelleRef} className="py-1">
+            {chargementPlus && <SqueletteLignes grand={grand} />}
+            {erreurPlus && (
+              <button
+                onClick={() => void chargerPlus?.()}
+                className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              >
+                Impossible de charger la suite. Réessayer
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -268,6 +324,7 @@ type PropsLigne = {
   grand: boolean;
   onSelectionner: (fil: FilConversation) => void;
   onSupprimee?: (fil: FilConversation) => void;
+  onActivite?: (cle: string, actif: boolean) => void;
 };
 
 // Date courte d'un fil : Aujourd'hui, Hier, puis jour et mois (avec l'annee
@@ -286,7 +343,7 @@ function libelleDateFil(iso: string): string {
 
 type ModeLigne = "normal" | "renommer" | "confirmerSuppression";
 
-function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsLigne) {
+function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivite }: PropsLigne) {
   const ctx = useContext(ContexteChat);
   const [mode, setMode] = useState<ModeLigne>("normal");
   const [titreSaisi, setTitreSaisi] = useState(fil.titre);
@@ -301,6 +358,16 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee }: PropsL
       champRef.current?.select();
     }
   }, [mode]);
+
+  // Previent la liste tant que cette ligne est en cours d'edition (menu
+  // ouvert, renommage, confirmation de suppression). A la disparition de la
+  // ligne on retire toujours son signal, pour ne jamais bloquer le parent.
+  const cleActivite = cleFil(fil);
+  const enEdition = mode !== "normal" || menu !== null;
+  useEffect(() => {
+    onActivite?.(cleActivite, enEdition);
+    return () => onActivite?.(cleActivite, false);
+  }, [onActivite, cleActivite, enEdition]);
 
   function ouvrirMenu() {
     const bouton = boutonMenuRef.current;

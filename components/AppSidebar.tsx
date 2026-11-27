@@ -273,6 +273,11 @@ export function AppSidebar({
   const [avisDeplie, setAvisDeplie] = useState(false);
   const [copie, setCopie] = useState(false);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
+  // Sur ordinateur (chat), la liste d'historique est affichee directement
+  // dans la barre. Vrai tant qu'une de ses lignes est en cours d'edition
+  // (menu des trois points, renommage, suppression) : la barre ne se replie
+  // pas pendant ce temps.
+  const [listeHistoriqueOccupee, setListeHistoriqueOccupee] = useState(false);
   // Historique en plein ecran (01/10/2026), ouvert depuis le popup Historique.
   const [historiquePleinEcran, setHistoriquePleinEcran] = useState(false);
   // Popup du menu profil (24/08/2026, correctif demande Bourama : voir
@@ -292,7 +297,7 @@ export function AppSidebar({
   // Vrai tant que la souris est sur le rail : permet de replier le rail une
   // fois les menus ouverts fermes, si la souris est deja partie.
   const sourisSurRail = useRef(false);
-  const aUnMenuOuvert = actionsDeplie || historiqueDeplie || Boolean(groupeOuvertId) || profilDeplie;
+  const aUnMenuOuvert = actionsDeplie || historiqueDeplie || Boolean(groupeOuvertId) || profilDeplie || listeHistoriqueOccupee;
   useEffect(() => {
     if (survolRail && !aUnMenuOuvert && !sourisSurRail.current) setSurvolRail(false);
   }, [survolRail, aUnMenuOuvert]);
@@ -609,10 +614,14 @@ export function AppSidebar({
       )}
 
       <div
-        // Cette boite garde la largeur du rail replie (la page ne bouge pas),
-        // le rail deplie passe par-dessus.
+        // Cette boite reserve la place du rail. Hors chat elle garde la
+        // largeur du rail replie (la page ne bouge pas, le rail deplie passe
+        // par-dessus). Dans le chat (27/11/2026, demande Bourama) elle suit
+        // la largeur du rail : le rail ouvert pousse le chat vers la droite.
         data-rail-lateral
-        className="relative hidden w-14 flex-shrink-0 md:block"
+        className={`relative hidden flex-shrink-0 transition-[width] duration-300 ease-out md:block ${
+          contexteChat && railOuvert ? "md:w-72" : "md:w-14"
+        }`}
       >
       <div
         ref={asideRef}
@@ -622,10 +631,10 @@ export function AppSidebar({
         }}
         onMouseLeave={() => {
           sourisSurRail.current = false;
-          if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
+          if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie || listeHistoriqueOccupee)) setSurvolRail(false);
         }}
         className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 py-3 transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
-          railOuvert ? "shadow-xl" : ""
+          railOuvert && !contexteChat ? "shadow-xl" : ""
         } ${
           actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${railOuvert ? "md:w-72" : "md:w-14"}`}
@@ -661,59 +670,17 @@ export function AppSidebar({
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
 
-        {contexteChat && (
+        {contexteChat && aDesMessages && (
           <>
-            {aDesMessages && (
-              <button
-                onClick={onNouvelleConversation}
-                className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-              >
-                <span className={CELLULE_ICONE_RAIL}>
-                  <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
-                </span>
-                <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
-              </button>
-            )}
-
-            {historique.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setHistoriqueDeplie((v) => !v)}
-                  className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
-                    historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-                  }`}
-                >
-                  <span className={CELLULE_ICONE_RAIL}>
-                    <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-300 group-hover:rotate-45" />
-                  </span>
-                  <LibelleRail ouverte={railOuvert}>Historique</LibelleRail>
-                </button>
-                {historiqueDeplie && (
-                  <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-rail shadow-lg">
-                    {/* Plein écran : même style que celui de la barre de saisie, posé
-                        dehors, collé juste au-dessus du coin haut droit du panneau. */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHistoriqueDeplie(false);
-                        setHistoriquePleinEcran(true);
-                      }}
-                      title="Plein écran"
-                      aria-label="Afficher l'historique en plein écran"
-                      className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
-                    >
-                      <ArrowUpRight size={12} strokeWidth={1.75} />
-                    </button>
-                    <ListeHistorique
-                      conversationActiveId={conversationActiveId}
-                      onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
-                      onSupprimee={onConversationSupprimee}
-                      className="max-h-72 p-1"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+            <button
+              onClick={onNouvelleConversation}
+              className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              <span className={CELLULE_ICONE_RAIL}>
+                <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
+              </span>
+              <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
+            </button>
 
             <div className="my-2 h-px w-full bg-dj-bordure" />
           </>
@@ -737,6 +704,41 @@ export function AppSidebar({
             onNaviguer={() => marquerGroupeSansHistorique()}
           />
         ))}
+
+        {/* Historique (27/11/2026, demande Bourama) : sous les icones de navigation, il prend tout
+            l'espace restant au milieu de la barre et defile seul. S'abonner, Plus et le profil restent
+            en bas. Barre repliee : rien ici, pas de bouton Historique, le survol ouvre la barre. */}
+        {contexteChat && railOuvert && historique.length > 0 && (
+          <>
+            <div className="my-2 h-px w-full bg-dj-bordure" />
+            {/* Liste des conversations (27/11/2026, demande Bourama) : elle defile seule, charge la
+                suite au defilement et son bas se fond (ListeHistorique). Hauteur plancher (titre plus
+                min-h-24 de la liste) : sur un ecran tres peu haut, c'est la barre qui defile, la liste
+                ne passe jamais sur le bas. */}
+            <div className="flex min-h-[7.875rem] flex-1 animate-dj-fade-in-rapide flex-col">
+              <div className="flex items-center justify-between px-1.5 pb-1 pt-0.5">
+                <span className="text-xs font-semibold text-dj-texte-muet">Historique</span>
+                <button
+                  type="button"
+                  onClick={() => setHistoriquePleinEcran(true)}
+                  title="Plein écran"
+                  aria-label="Afficher l'historique en plein écran"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <ArrowUpRight size={14} strokeWidth={1.75} />
+                </button>
+              </div>
+              <ListeHistorique
+                conversationActiveId={conversationActiveId}
+                onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+                onSupprimee={onConversationSupprimee}
+                onOccupe={setListeHistoriqueOccupee}
+                fonduBas
+                className="min-h-24 flex-1"
+              />
+            </div>
+          </>
+        )}
 
         {railOuvert && (
           <div className="mt-auto flex justify-center pt-2">
