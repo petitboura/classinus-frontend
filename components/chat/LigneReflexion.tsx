@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { BrainCog, ChevronDown, ChevronRight } from "lucide-react";
+import { TexteFondu } from "./TexteFondu";
 
 // Une réflexion du modèle dans la liste dépliée des outils (26/11/2026, demande Bourama), à la même
 // place que les outils et les notes, dans l'ordre réel. La ligne montre son titre ; un clic la déplie
 // pour lire le texte brut de la réflexion, comme le résultat d'un outil. Pendant que le modèle
-// réfléchit, le titre scintille.
+// réfléchit, le titre scintille. Le titre tient sur une seule ligne et finit en fondu au lieu de
+// passer à la ligne (27/11/2026, demande Bourama) ; la flèche suit la fin du titre. Le texte complet
+// ne se lit qu'une fois la ligne dépliée.
 export function LigneReflexion({
   titre,
   brut,
@@ -32,19 +35,16 @@ export function LigneReflexion({
           type="button"
           onClick={() => setOuvert((precedent) => !precedent)}
           aria-expanded={ouvert}
-          className="flex w-full min-w-0 items-start gap-1.5 text-left text-[13px] leading-snug text-dj-texte-muet transition-colors hover:text-dj-texte"
+          className="flex w-full min-w-0 items-center gap-1.5 text-left text-[13px] leading-snug text-dj-texte-muet transition-colors hover:text-dj-texte"
         >
-          <span
-            className={`min-w-0 flex-1 ${
-              enCours ? "animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent" : ""
-            }`}
-          >
-            {titre}
-          </span>
+          <TexteFondu
+            texte={titre}
+            className={enCours ? "animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent" : ""}
+          />
           {ouvert ? (
-            <ChevronDown size={13} className="mt-0.5 shrink-0" />
+            <ChevronDown size={13} className="shrink-0" />
           ) : (
-            <ChevronRight size={13} className="mt-0.5 shrink-0" />
+            <ChevronRight size={13} className="shrink-0" />
           )}
         </button>
         <div
