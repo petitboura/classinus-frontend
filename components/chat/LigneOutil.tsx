@@ -9,6 +9,7 @@ import { CartesVideosBulle } from "./CartesVideosBulle";
 import { WidgetsMcpUi } from "./WidgetMcpUi";
 import { masquerLigneRessource, type RessourceUi } from "@/lib/mcpUi";
 import { LogoSite, LogosSites } from "./LogoSite";
+import { TexteFondu } from "./TexteFondu";
 import { logoPourLangage } from "@/lib/logosLangages";
 import { couleurMarque } from "@/lib/couleursIcones";
 
@@ -227,16 +228,16 @@ export function LigneOutil({
 
       <div className={`min-w-0 flex-1 ${estDerniere ? "" : "pb-3"}`}>
         {phase !== "final" ? (
-          <span key={phase} className="flex animate-dj-fade-in-rapide items-center gap-x-2 text-[13px] text-dj-texte-muet">
-            <span
+          <span key={phase} className="flex min-w-0 animate-dj-fade-in-rapide items-center gap-x-2 text-[13px] text-dj-texte-muet">
+            {/* Une seule ligne qui finit en fondu au lieu de passer à la ligne (27/11/2026, demande Bourama). */}
+            <TexteFondu
+              texte={texteAffiche ?? ""}
               className={
                 phase === "en_cours"
                   ? "animate-dj-shimmer bg-dj-shimmer-texte bg-[length:200%_100%] bg-clip-text text-transparent"
                   : ""
               }
-            >
-              {texteAffiche}
-            </span>
+            />
             {pastille}
           </span>
         ) : (
@@ -244,9 +245,9 @@ export function LigneOutil({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <button
                 onClick={() => setOuvert((precedent) => !precedent)}
-                className="flex items-center gap-1.5 text-left text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+                className="flex min-w-0 max-w-full items-center gap-1.5 text-left text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
-                <span>{nomLisible}</span>
+                <TexteFondu texte={nomLisible ?? ""} />
                 {plusieursLogos && <LogosSites domaines={domaines!} />}
                 {pastille}
                 {ouvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />}
