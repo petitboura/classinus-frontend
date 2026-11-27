@@ -31,6 +31,11 @@ export const QUESTIONS_DECOUVRIR_BIBLIOTHEQUE: GroupeQuestionsDecouvrir[] = [
           "Les fichiers envoyés dans le chat sont ajoutés à ta bibliothèque personnelle selon le fonctionnement de l'application. Tu peux ensuite les retrouver dans tes documents.",
       },
       {
+        question: "Comment ouvrir un fichier ou une image à côté de la conversation ?",
+        reponse:
+          "Quand Classinus te donne un fichier (PDF, livre numérique, Word, Excel, PowerPoint, texte), une image, un audio ou une vidéo, clique dessus : il s'ouvre dans un volet à droite du chat, et tu peux continuer à discuter pendant que tu lis. Tire la barre au milieu pour élargir ou rétrécir le volet, la largeur est mémorisée. Le bouton plein écran l'agrandit sur toute la fenêtre, et un nouveau fichier remplace celui qui est ouvert. Sur téléphone, le fichier s'ouvre en plein écran avec une flèche pour revenir à la conversation.",
+      },
+      {
         question: "Comment Classinus traite-t-il un fichier ZIP ?",
         reponse:
           "Lorsqu'un fichier ZIP est pris en charge, Classinus en extrait les fichiers et les ajoute séparément dans un dossier dédié, afin que tu puisses les retrouver plus facilement.",

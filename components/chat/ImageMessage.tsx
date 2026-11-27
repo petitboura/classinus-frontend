@@ -5,6 +5,7 @@ import { ImageOff, ExternalLink } from "lucide-react";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { ContexteRangeeImages } from "./RangeeImagesContexte";
 import { telecharger as telechargerFichier } from "@/lib/telecharger";
+import { ouvrirDansLecteur, useImageOuverte } from "@/lib/lecteurLateral";
 
 // Remplace le <img> par défaut de ReactMarkdown (![alt](url) en markdown).
 // Trois problèmes réglés par rapport au <img> nu :
@@ -26,8 +27,24 @@ export function ImageMessage({ src, alt }: { src?: string; alt?: string }) {
   const [enErreur, setEnErreur] = useState(false);
   const [ouverte, setOuverte] = useState(false);
   const rangee = useContext(ContexteRangeeImages);
+  // 27/11/2026 : sur la page du chat, l'image s'ouvre dans le lecteur à côté de la
+  // conversation, avec ses voisines de la rangée en vignettes. Sa miniature est
+  // entourée de doré tant qu'elle y est affichée.
+  const dansLeVolet = useImageOuverte(src ?? "");
 
   if (!src) return null;
+
+  function ouvrir() {
+    const liste = rangee && rangee.length > 1 ? rangee : [{ src: src!, alt }];
+    const index = Math.max(0, liste.findIndex((i) => i.src === src));
+    const auVolet = ouvrirDansLecteur({
+      genre: "images",
+      id: `images:${liste.map((i) => i.src).join("|")}`,
+      liste: liste.map((i) => ({ src: i.src, alt: i.alt })),
+      index,
+    });
+    if (!auVolet) setOuverte(true);
+  }
 
   // 12/09/2026, Bourama : vrai téléchargement système sur Android (au
   // lieu du fetch+blob web ici depuis toujours) -- voir lib/telecharger.ts.
@@ -53,8 +70,10 @@ export function ImageMessage({ src, alt }: { src?: string; alt?: string }) {
   return (
     <>
       <button
-        onClick={() => chargee && setOuverte(true)}
-        className="my-2 block max-h-96 overflow-hidden rounded-xl"
+        onClick={() => chargee && ouvrir()}
+        className={`my-2 block max-h-96 overflow-hidden rounded-xl transition-shadow duration-200 ${
+          dansLeVolet ? "ring-2 ring-dj-accent-1" : ""
+        }`}
         aria-label={alt || "Agrandir l'image"}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique fournie par le modèle, pas un asset local optimisable */}

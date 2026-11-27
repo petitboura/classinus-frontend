@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, ImageOff, Loader2, Eye, Code2, BookOpen, Film, Music } from "lucide-react";
+import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, ImageOff, Loader2, Eye, Code2, BookOpen, Film, Music, ChevronRight } from "lucide-react";
+import {
+  ouvrirDansLecteur,
+  useFichierOuvert,
+  useImageOuverte,
+  useLecteurDisponible,
+  type ContenuLecteur,
+} from "@/lib/lecteurLateral";
 import { BlocExpansible } from "./BlocExpansible";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuTexte, ContenuMarkdown, ContenuOffice } from "../VisionneuseBibliotheque";
@@ -236,6 +243,18 @@ function ImageGenereeChip({
   const [ouverte, setOuverte] = useState(false);
   const [enErreur, setEnErreur] = useState(false);
   const [modalTelechargementOuverte, setModalTelechargementOuverte] = useState(false);
+  // 27/11/2026 : sur la page du chat, l'image s'ouvre dans le lecteur à côté de la
+  // conversation et sa vignette est entourée de doré tant qu'elle y est affichée.
+  const dansLeVolet = useImageOuverte(href);
+  function ouvrir() {
+    const ouverteAuVolet = ouvrirDansLecteur({
+      genre: "images",
+      id: `images:${href}:1`,
+      liste: [{ src: href, alt: nom, surCopie: copieDisponible }],
+      index: 0,
+    });
+    if (!ouverteAuVolet) setOuverte(true);
+  }
 
   if (enErreur) {
     return (
@@ -254,8 +273,10 @@ function ImageGenereeChip({
   return (
     <>
       <button
-        onClick={() => setOuverte(true)}
-        className="my-2 block max-h-96 overflow-hidden rounded-xl"
+        onClick={ouvrir}
+        className={`my-2 block max-h-96 overflow-hidden rounded-xl transition-shadow duration-200 ${
+          dansLeVolet ? "ring-2 ring-dj-accent-1" : ""
+        }`}
         aria-label={`Agrandir ${nom}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- source dynamique (fichier généré), pas un asset local optimisable */}
@@ -371,6 +392,8 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // markdown plus bas les utilise réellement.
   const [texteMarkdown, setTexteMarkdown] = useState<string | null>(null);
   const [vueBruteMarkdown, setVueBruteMarkdown] = useState(false);
+  // 27/11/2026 : vrai sur la page du chat, où le lecteur s'ouvre à côté de la conversation.
+  const lecteurAuVolet = useLecteurDisponible();
 
   if (relais.enAttente) {
     return <Skeleton className="h-14 w-full max-w-xl rounded-xl" />;
@@ -383,6 +406,43 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // ci-dessus. Inchangé par le correctif du 09/10 -- déjà un bon aperçu.
   if (infos && EXTENSIONS_IMAGE.has(infos)) {
     return <ImageGenereeChip href={relais.href} nom={nom} idBibliothequePublique={idBibliothequePublique} surCopie={surCopieExterne} />;
+  }
+
+  // 27/11/2026, demande de Bourama : sur la page du chat, PDF, livres, Word, Excel,
+  // PowerPoint, texte et markdown ne se déplient plus dans le fil. Une carte ouvre
+  // le fichier dans le lecteur à côté de la conversation (VoletLecteur.tsx). Les
+  // blocs dépliables ci-dessous restent le comportement partout où ce lecteur
+  // n'existe pas (chat flottant sur une autre page, fenêtre de superposition).
+  if (lecteurAuVolet && infos) {
+    const typeMimeVolet = infos === "pdf" ? "application/pdf" : TYPE_MIME_PAR_EXTENSION[infos];
+    const ouvrableAuVolet =
+      infos === "pdf" ||
+      infos === "epub" ||
+      infos === "mobi" ||
+      (!!typeMimeVolet &&
+        (estFichierMarkdown(nom, typeMimeVolet) || TYPES_MIME_OFFICE.has(typeMimeVolet) || estTypeTexteLisible(typeMimeVolet)));
+    if (ouvrableAuVolet) {
+      return (
+        <CarteFichierLecteur
+          nom={nom}
+          sousTitre={sousTitre}
+          Icone={Icone}
+          contenu={{
+            genre: "fichier",
+            id: `fichier:${href}`,
+            titre: nom,
+            url: relais.href,
+            extension: infos,
+            typeMime: typeMimeVolet ?? null,
+            sousTitre,
+            icone: Icone,
+            telechargeable: true,
+            idBibliothequePublique,
+            surCopie: surCopieExterne,
+          }}
+        />
+      );
+    }
   }
 
   // PDF : déroulé dans le fil comme le code et les widgets (voir
@@ -446,6 +506,46 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // entrée de la bibliothèque publique, ouvre TelechargerCopierModal au
   // lieu de lancer directement le téléchargement.
   return <FichierGeneriqueChip href={relais.href} nom={nom} libelle={libelle} Icone={Icone} idBibliothequePublique={idBibliothequePublique} />;
+}
+
+// Carte d'un fichier ouvrable dans le lecteur à côté du chat. Même gabarit que la
+// puce repliée de BlocExpansible.tsx. Tant que ce fichier est celui affiché dans
+// le lecteur, la ligne du dessous l'indique ("Ouvert à droite").
+function CarteFichierLecteur({
+  nom,
+  sousTitre,
+  Icone,
+  contenu,
+}: {
+  nom: string;
+  sousTitre: string;
+  Icone: typeof File;
+  contenu: ContenuLecteur;
+}) {
+  const ouvert = useFichierOuvert(contenu.id);
+  return (
+    <button
+      type="button"
+      onClick={() => ouvrirDansLecteur(contenu)}
+      aria-pressed={ouvert}
+      className="my-2 flex w-full max-w-sm animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-3 text-left transition-colors hover:border-dj-bordure-forte"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte">
+        <Icone size={16} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm text-dj-texte">{nom}</span>
+        <span
+          className={`block text-[11px] transition-colors duration-200 ${
+            ouvert ? "text-dj-accent-1-texte" : "uppercase text-dj-texte-muet"
+          }`}
+        >
+          {ouvert ? "Ouvert à droite" : sousTitre}
+        </span>
+      </span>
+      <ChevronRight size={16} className="shrink-0 text-dj-texte-muet" />
+    </button>
+  );
 }
 
 function FichierGeneriqueChip({

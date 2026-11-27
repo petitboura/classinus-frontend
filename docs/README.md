@@ -17,6 +17,7 @@ Central entry point for all Classinus frontend documentation. English is the def
 - [Chat waiting message](./MESSAGE_ATTENTE.md)
 - [The lively style for waiting and reasoning](./STYLE_VIVANT.md)
 - [Sidebar: history in the sidebar, chat pushed to the right](./BARRE_LATERALE_HISTORIQUE.md)
+- [Reader beside the chat](./LECTEUR_LATERAL.md)
 
 ## Project history and specifications
 

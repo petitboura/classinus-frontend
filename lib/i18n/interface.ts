@@ -8,6 +8,19 @@ import { EN_POSITIONNEMENT_DECOUVRIR } from "@/lib/i18n/positionnementDecouvrir"
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Lecteur à côté du chat (27/11/2026).
+  "Comment ouvrir un fichier ou une image à côté de la conversation ?": "How do I open a file or an image beside the conversation?",
+  "Quand Classinus te donne un fichier (PDF, livre numérique, Word, Excel, PowerPoint, texte), une image, un audio ou une vidéo, clique dessus : il s'ouvre dans un volet à droite du chat, et tu peux continuer à discuter pendant que tu lis. Tire la barre au milieu pour élargir ou rétrécir le volet, la largeur est mémorisée. Le bouton plein écran l'agrandit sur toute la fenêtre, et un nouveau fichier remplace celui qui est ouvert. Sur téléphone, le fichier s'ouvre en plein écran avec une flèche pour revenir à la conversation.": "When Classinus gives you a file (PDF, e-book, Word, Excel, PowerPoint, text), an image, an audio or a video, click it: it opens in a pane to the right of the chat, and you can keep talking while you read. Drag the bar in the middle to widen or narrow the pane, the width is remembered. The full screen button enlarges it over the whole window, and a new file replaces the one that is open. On a phone, the file opens full screen with an arrow to go back to the conversation.",
+  "Fermer le lecteur": "Close reader",
+  "Redimensionner le lecteur": "Resize reader",
+  "Retour à la conversation": "Back to the conversation",
+  "Copier": "Copy",
+  "Image suivante": "Next image",
+  "Image indisponible": "Image unavailable",
+  "Ouvert à droite": "Opened on the right",
+  "Image": "Image",
+  "Vidéo": "Video",
+  "Audio": "Audio",
   // Autoriser d'un coup les outils non sensibles d'un serveur MCP personnalisé (17/11/2026).
   "Toujours autoriser tous les outils non sensibles de": "Always allow all non-sensitive tools of",
   "ce serveur": "this server",
@@ -2898,6 +2911,7 @@ export function traduireTexteInterface(texte: string, locale: Locale): string {
   const traduction = INDEX_EN.get(cle);
   if (traduction) return traduction;
   const dynamique = [
+    [/^image (\d+) sur (\d+)$/i, "Image $1 of $2"],
     [/^création\s+(\d+)\s*%$/i, "Creating $1%"],
     [/^étape\s+(\d+)$/i, "Step $1"],
     [/^mes skills \((\d+)\)$/i, "My skills ($1)"],
