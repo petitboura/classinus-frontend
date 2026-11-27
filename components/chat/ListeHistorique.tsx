@@ -93,6 +93,9 @@ type PropsListe = {
   // ouverte tant qu'une edition est en cours (le menu est pose dans le body,
   // donc la souris quitte la barre en l'utilisant).
   onOccupe?: (occupe: boolean) => void;
+  // Fond le bas de la liste tant qu'il reste des conversations plus bas,
+  // au lieu de la couper net. Le fondu s'efface une fois tout en bas.
+  fonduBas?: boolean;
 };
 
 export function ListeHistorique({
@@ -102,6 +105,7 @@ export function ListeHistorique({
   variante = "popup",
   className = "",
   onOccupe,
+  fonduBas = false,
 }: PropsListe) {
   const locale = useLocale();
   const ctx = useContext(ContexteChat);
@@ -161,6 +165,27 @@ export function ListeHistorique({
 
   const grand = variante === "pleinEcran";
 
+  // Reste-t-il quelque chose sous la zone visible ? On remesure au
+  // defilement et quand la liste ou son contenu change de taille (section
+  // pliee, page suivante recue, fenetre redimensionnee).
+  const contenuRef = useRef<HTMLDivElement>(null);
+  const [resteEnBas, setResteEnBas] = useState(false);
+  const mesurerBas = useCallback(() => {
+    const racine = racineRef.current;
+    if (!racine) return;
+    // 1 px de marge : les hauteurs fractionnaires (zoom) ne tombent pas juste.
+    setResteEnBas(racine.scrollHeight - racine.scrollTop - racine.clientHeight > 1);
+  }, []);
+  useEffect(() => {
+    const racine = racineRef.current;
+    const contenu = contenuRef.current;
+    if (!fonduBas || !racine || !contenu) return;
+    const observateur = new ResizeObserver(mesurerBas);
+    observateur.observe(racine);
+    observateur.observe(contenu);
+    return () => observateur.disconnect();
+  }, [fonduBas, mesurerBas]);
+
   // Lignes en cours d'edition, par cle : on previent le parent seulement
   // quand on passe de "aucune" a "au moins une" et inversement.
   const lignesOccupeesRef = useRef<Set<string>>(new Set());
@@ -191,51 +216,59 @@ export function ListeHistorique({
   }
 
   return (
-    <div ref={racineRef} className={`dj-scroll-isole overflow-y-auto ${className}`}>
-      {erreurAction && (
-        <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
-          {erreurAction}
-        </p>
-      )}
+    <div
+      ref={racineRef}
+      onScroll={fonduBas ? mesurerBas : undefined}
+      className={`dj-scroll-isole overflow-y-auto ${fonduBas ? "dj-fondu-bas" : ""} ${
+        fonduBas && resteEnBas ? "dj-fondu-bas-actif" : ""
+      } ${className}`}
+    >
+      <div ref={contenuRef}>
+        {erreurAction && (
+          <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
+            {erreurAction}
+          </p>
+        )}
 
-      {epingles.length > 0 && (
-        <SectionPliable
-          Icone={Pin}
-          titre="Épinglés"
-          nombre={epingles.length}
-          ouverte={epinglesOuverts}
-          onBasculer={() => setEpinglesOuverts((v) => !v)}
-          grand={grand}
-        >
-          {rendreLignes(epingles)}
-        </SectionPliable>
-      )}
+        {epingles.length > 0 && (
+          <SectionPliable
+            Icone={Pin}
+            titre="Épinglés"
+            nombre={epingles.length}
+            ouverte={epinglesOuverts}
+            onBasculer={() => setEpinglesOuverts((v) => !v)}
+            grand={grand}
+          >
+            {rendreLignes(epingles)}
+          </SectionPliable>
+        )}
 
-      {groupes.map((g) => (
-        <SectionPliable
-          key={g.cle}
-          titre={g.libelle}
-          ouverte={!groupesFermes.has(g.cle)}
-          onBasculer={() => basculerGroupe(g.cle)}
-          grand={grand}
-        >
-          {rendreLignes(g.fils)}
-        </SectionPliable>
-      ))}
+        {groupes.map((g) => (
+          <SectionPliable
+            key={g.cle}
+            titre={g.libelle}
+            ouverte={!groupesFermes.has(g.cle)}
+            onBasculer={() => basculerGroupe(g.cle)}
+            grand={grand}
+          >
+            {rendreLignes(g.fils)}
+          </SectionPliable>
+        ))}
 
-      {aPlus && (
-        <div ref={sentinelleRef} className="py-1">
-          {chargementPlus && <SqueletteLignes grand={grand} />}
-          {erreurPlus && (
-            <button
-              onClick={() => void chargerPlus?.()}
-              className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              Impossible de charger la suite. Réessayer
-            </button>
-          )}
-        </div>
-      )}
+        {aPlus && (
+          <div ref={sentinelleRef} className="py-1">
+            {chargementPlus && <SqueletteLignes grand={grand} />}
+            {erreurPlus && (
+              <button
+                onClick={() => void chargerPlus?.()}
+                className="w-full rounded-lg px-2.5 py-2 text-center text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              >
+                Impossible de charger la suite. Réessayer
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
