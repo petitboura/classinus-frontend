@@ -220,6 +220,19 @@ const config: Config = {
           from: { opacity: "1", transform: "translateY(0)" },
           to: { opacity: "0", transform: "translateY(-100%)" },
         },
+        // Icônes de la réflexion (27/11/2026).
+        "dj-icone-etincelle": {
+          "0%, 100%": { transform: "scale(.75) rotate(0deg)" },
+          "50%": { transform: "scale(1.1) rotate(90deg)" },
+        },
+        "dj-icone-lueur": {
+          "0%, 100%": { opacity: ".35" },
+          "50%": { opacity: "1" },
+        },
+        "dj-icone-plume": {
+          "0%, 100%": { transform: "rotate(-10deg)" },
+          "50%": { transform: "rotate(8deg) translateX(2px)" },
+        },
         "dj-lettre-reflet": {
           "0%, 30%, 100%": { color: "var(--dj-texte-muet)" },
           "15%": { color: "var(--dj-texte)" },
@@ -254,6 +267,10 @@ const config: Config = {
         "dj-vague-entree": "dj-vague-entree 0.38s cubic-bezier(.25,.8,.35,1) both",
         "dj-vague-sortie": "dj-vague-sortie 0.24s ease-in both",
         "dj-lettre-reflet": "dj-lettre-reflet 2.2s ease-in-out infinite",
+        "dj-icone-etincelle": "dj-icone-etincelle 1.8s ease-in-out infinite",
+        "dj-icone-lueur": "dj-icone-lueur 1.6s ease-in-out infinite",
+        "dj-icone-tour": "dj-orbit 4s linear infinite",
+        "dj-icone-plume": "dj-icone-plume 1.1s ease-in-out infinite",
       },
     },
   },

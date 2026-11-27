@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { LogoSite } from "./LogoSite";
 import { couleurMarque } from "@/lib/couleursIcones";
 import { TexteFondu } from "./TexteFondu";
+import { IconeReflexion } from "./IconeReflexion";
 
 // La roue des outils (25/11/2026, demande Bourama) : pendant que l'IA travaille, les outils et ses
 // notes tiennent sur UNE seule ligne repliée. Quand une nouvelle ligne arrive, elle monte par le
@@ -49,6 +50,8 @@ function LigneRoue({ element, classe, onFin, partante }: { element: ElementRoue;
       <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
         {element.genre === "commentaire" ? (
           <span className="h-1.5 w-1.5 rounded-full bg-dj-texte-muet" aria-hidden />
+        ) : element.genre === "reflexion" ? (
+          <IconeReflexion enCours={element.enCours} graine={element.texte} />
         ) : element.domaine ? (
           <LogoSite domaine={element.domaine} size={13} />
         ) : Icone ? (
