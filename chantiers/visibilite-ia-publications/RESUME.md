@@ -33,6 +33,29 @@ Bourama a dit que tout cela est publié. Les liens ne sont pas dans le dossier :
 - Hashnode : blog « Classinus » en cours de création (nom, adresse classinus.hashnode.dev à confirmer, logo, favicon, image d'aperçu en anglais, titre et description SEO, barre de navigation avec 4 liens externes). Premier article rédigé en anglais, à publier : voir `textes/hashnode-article-en.md`. Il est publié sous le nom de Bourama dans le blog Classinus.
 - BetaList : dossier de soumission prêt (`textes/betalist-submission.json`) mais **non envoyé** : l'environnement de l'IA ne pouvait pas joindre betalist.com. La publication y est payante (Lite, Standard, Premium) et c'est Bourama qui doit ouvrir le lien de validation et payer.
 
+## Routine de publication (validée par Bourama le 27/11)
+Rythme proposé par l'IA et accepté par Bourama. Règle de fond : ne jamais republier le même texte, publier du nouveau, et n'annoncer que ce qui est réellement ouvert (paiement, Claude, GPT, Gemini, Grok).
+
+| Plateforme | Rythme | Dernière publication |
+|---|---|---|
+| Hacker News (Show HN) | Une seule fois. Nouveau post seulement pour une grosse nouveauté, dans plusieurs mois | 25/11 |
+| Product Hunt | Une seule fois. Relancement seulement avec une vraie nouvelle version, dans plusieurs mois | à renseigner |
+| Reddit | Ne pas remettre le même texte. Commenter des fils existants, 2 à 3 fois par semaine, pour donner un historique au compte | post retiré le 25/11 |
+| X | 2 à 3 posts par semaine | à renseigner |
+| Threads | 2 à 3 posts par semaine | à renseigner |
+| Bluesky | 2 à 3 posts par semaine | à renseigner |
+| LinkedIn | 1 à 2 posts par semaine | à renseigner |
+| Facebook | 1 post par semaine, ou à chaque nouveauté | à renseigner |
+| Hashnode | Un article tous les 15 jours à 1 mois, sujet différent à chaque fois | à renseigner |
+| Dev.to | Même rythme que Hashnode, possibilité de reprendre le même article avec Hashnode comme source d'origine | à renseigner |
+| Indie Hackers | Une mise à jour de progrès toutes les 2 à 4 semaines, ou à chaque jalon | à renseigner |
+| Peerlist | Même rythme qu'Indie Hackers | à renseigner |
+
+Entretien :
+- README GitHub (petitboura/petitboura) : mettre à jour à chaque vraie nouveauté, relire une fois par mois.
+- Bing Webmaster Tools : suivre la demande d'indexation de /decouvrir chaque semaine pendant le premier mois.
+- Test dans ChatGPT avec la recherche activée, « Qu'est-ce que Classinus ? » : à refaire dans 4 à 6 semaines.
+
 ## Ce qui reste à faire
 1. Ouvrir réellement le paiement par Orange Money et Wave (voir `constats/etat-reel-2026-11-25.md`).
 2. Ouvrir réellement Claude, GPT, Gemini et Grok, ou retirer ces noms des textes.
