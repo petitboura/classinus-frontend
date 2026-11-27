@@ -6,6 +6,8 @@ import { RefObject, useLayoutEffect } from "react";
 // 1. Jusqu'à 7 colonnes, le tableau reste dans la colonne du texte.
 // 2. Au delà de 7 colonnes, s'il a besoin de plus de place, il s'élargit des
 //    deux côtés, vers les bords de la zone visible, sans jamais les toucher.
+// Toutes les colonnes d'un tableau ont la même largeur : deux tableaux ayant le
+// même nombre de colonnes s'alignent donc toujours.
 // 3. Si même avec toute cette place les mots (gardés entiers) ne tiennent pas,
 //    comme sur téléphone ou avec beaucoup de colonnes, le tableau défile de
 //    gauche à droite, sans barre, avec un fondu sur les bords. Lui seul défile,
@@ -61,14 +63,29 @@ export function useTableLargeur(
 
       p.style.marginLeft = "";
       p.style.marginRight = "";
+      t.style.tableLayout = "";
       t.style.width = "max-content";
       const largeurMax = t.offsetWidth;
       t.style.width = "min-content";
-      const largeurMin = t.offsetWidth;
+      const premiere = t.rows[0];
+      const nbColonnes = premiere?.cells.length ?? 0;
+      // Plus petite largeur qu'une colonne peut avoir sans couper un mot.
+      let plusEtroite = 0;
+      if (premiere) {
+        for (const cellule of Array.from(premiere.cells)) plusEtroite = Math.max(plusEtroite, cellule.offsetWidth);
+      }
       t.style.width = "";
+      if (nbColonnes === 0) {
+        enCours = false;
+        return;
+      }
+
+      // Toutes les colonnes ont la meme largeur, quel que soit leur contenu : ainsi
+      // deux tableaux ayant le meme nombre de colonnes s'alignent parfaitement,
+      // meme dans des messages ou des conversations differents.
+      const largeurEgale = plusEtroite * nbColonnes;
 
       const largeurColonne = b.clientWidth;
-      const nbColonnes = t.rows[0]?.cells.length ?? 0;
       const peutElargir = elargir && nbColonnes > COLONNES_AVANT_ELARGISSEMENT;
 
       let extraMax = 0;
@@ -82,19 +99,21 @@ export function useTableLargeur(
       }
 
       let extra = peutElargir && largeurMax > largeurColonne ? Math.min(extraMax, Math.ceil((largeurMax - largeurColonne) / 2)) : 0;
-      if (largeurMin > largeurColonne + 2 * extra) extra = extraMax;
+      if (largeurEgale > largeurColonne + 2 * extra) extra = extraMax;
 
       const largeurDispo = largeurColonne + 2 * extra;
-      const defile = largeurMin > largeurDispo + 1;
+      const defile = largeurEgale > largeurDispo + 1;
 
       if (extra > 0) {
         p.style.marginLeft = `-${extra}px`;
         p.style.marginRight = `-${extra}px`;
       }
+      t.style.tableLayout = "fixed";
       if (defile) {
-        t.style.width = `${Math.max(largeurMin, Math.min(largeurMax, 2 * largeurDispo))}px`;
-      } else if (p.scrollLeft !== 0) {
-        p.scrollLeft = 0;
+        t.style.width = `${largeurEgale}px`;
+      } else {
+        t.style.width = "100%";
+        if (p.scrollLeft !== 0) p.scrollLeft = 0;
       }
       p.dataset.defile = defile ? "1" : "0";
       majFondu();
