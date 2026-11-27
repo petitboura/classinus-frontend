@@ -102,12 +102,14 @@ export function MenuGroupe({
   // le tiroir mobile. Sinon (barre repliée, menu "Plus"), panneau flottant.
   const enLigne = mobile || (variante === "rail" && ouverte);
 
-  // Accordéon : ouvert d'office pour le groupe de la page où l'on se trouve,
-  // puis libre. L'état survit au repli de la barre.
-  const [deplie, setDeplie] = useState(actif);
+  // Accordéon : jamais ouvert d'office (demande du 27/11/2026). Chaque groupe
+  // ne se déplie que si l'utilisateur le déplie lui-même, et tout revient
+  // replié quand la barre se replie.
+  const [deplie, setDeplie] = useState(false);
+  const barreRepliee = variante === "rail" && !ouverte;
   useEffect(() => {
-    if (actif) setDeplie(true);
-  }, [actif]);
+    if (barreRepliee) setDeplie(false);
+  }, [barreRepliee]);
   const accordeonOuvert = enLigne && deplie && !sansSousSection;
 
   const panneauVoulu = ouvert && !sansSousSection && !enLigne;
@@ -359,8 +361,7 @@ export function MenuGroupe({
           groupe rappelle d'où viennent les lignes. Le vide transparent autour du
           panneau (py-8, pr-8) laisse la place à l'ombre : FlottantAncre coupe
           tout ce qui dépasse de sa boîte, ce qui donnait une ombre tranchée en
-          bas. Un petit triangle, au milieu
-          du bord, pointe vers le bouton (le panneau est centré sur lui). */}
+          bas. Le panneau est centré sur son bouton. */}
       {affichePanneau && !sansSousSection && (
         <FlottantAncre
           ancreRef={ref}
@@ -372,7 +373,7 @@ export function MenuGroupe({
           className={panneauEnSortie ? "pointer-events-none animate-dj-flyout-sortie" : "animate-dj-flyout-entree"}
         >
           <div data-flyout-groupe onMouseEnter={annulerFermeture} onMouseLeave={planifierFermeture} className="py-8 pl-3 pr-8">
-            <div className="relative min-w-[12rem] max-w-[17rem] rounded-xl border border-dj-bordure bg-dj-panneau p-1.5 shadow-[4px_8px_24px_-8px_rgba(0,0,0,0.3)] [--dj-surface-haute:var(--dj-panneau-survol)]">
+            <div className="min-w-[12rem] max-w-[17rem] rounded-xl border border-dj-bordure bg-dj-panneau p-1.5 shadow-[4px_8px_24px_-8px_rgba(0,0,0,0.3)] [--dj-surface-haute:var(--dj-panneau-survol)]">
               <p className="truncate px-2.5 pb-1 pt-1 text-xs font-semibold text-dj-texte-muet">{groupe.label}</p>
               <div className="mx-1 mb-1 h-px bg-dj-bordure" />
               {sections.map((s) => {
@@ -393,15 +394,6 @@ export function MenuGroupe({
                   </Link>
                 );
               })}
-              {/* Petit triangle au milieu du bord côté bouton : le panneau est
-                  centré sur son bouton, donc il pointe vers lui. Un carré
-                  tourné de 45 degrés, dont les deux bords tournés vers
-                  l'extérieur reprennent la bordure du panneau et dont le fond
-                  recouvre la bordure du panneau à cet endroit. */}
-              <div
-                aria-hidden="true"
-                className="absolute -left-[6px] top-1/2 h-[10px] w-[10px] -translate-y-1/2 rotate-45 border-b border-l border-dj-bordure bg-dj-panneau"
-              />
             </div>
           </div>
         </FlottantAncre>
