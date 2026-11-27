@@ -106,7 +106,10 @@ export function IndicateurReflexion() {
   const precedente = etapes?.precedente;
 
   return (
-    <div className="my-1 text-[13px] text-dj-texte-muet">
+    // w-full : les lignes animées sont posées en absolu et ne donnent aucune
+    // largeur. Dans la colonne d'un message (items-start), le bloc se réduirait
+    // à zéro et rien ne serait visible.
+    <div className="my-1 w-full text-[13px] text-dj-texte-muet">
       {/* Les lecteurs d'écran entendent une seule annonce, pas chaque changement. */}
       <span role="status" className="sr-only">
         {traduireTexteInterface(TEXTES_ATTENTE[0], locale)}
