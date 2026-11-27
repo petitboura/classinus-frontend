@@ -356,20 +356,20 @@ export function MenuGroupe({
           FlottantAncre, à droite du bouton. Le bord transparent de gauche
           (pl-3) fait partie du panneau pour la souris : en passant du bouton
           au panneau, le curseur reste toujours dans l'un des deux. Le titre du
-          groupe rappelle d'où viennent les lignes, et un petit triangle pointe
-          vers le bouton. */}
+          groupe rappelle d'où viennent les lignes, et un petit triangle, au milieu
+          du bord, pointe vers le bouton (le panneau est centré sur lui). */}
       {affichePanneau && !sansSousSection && (
         <FlottantAncre
           ancreRef={ref}
           innerRef={panneauRef}
           role="menu"
           cotes={COTES_PANNEAU}
-          alignement="debut"
+          alignement="centre"
           ecart={0}
           className={panneauEnSortie ? "pointer-events-none animate-dj-flyout-sortie" : "animate-dj-flyout-entree"}
         >
-          <div data-flyout-groupe onMouseEnter={annulerFermeture} onMouseLeave={planifierFermeture} className="relative pb-4 pl-3 pr-4">
-            <div className="min-w-[12rem] max-w-[17rem] rounded-xl border border-dj-bordure bg-dj-rail p-1.5 shadow-xl [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)]">
+          <div data-flyout-groupe onMouseEnter={annulerFermeture} onMouseLeave={planifierFermeture} className="py-4 pl-3 pr-4">
+            <div className="relative min-w-[12rem] max-w-[17rem] rounded-xl border border-dj-bordure bg-dj-rail p-1.5 shadow-xl [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)]">
               <p className="truncate px-2.5 pb-1 pt-1 text-xs font-semibold text-dj-texte-muet">{groupe.label}</p>
               <div className="mx-1 mb-1 h-px bg-dj-bordure" />
               {sections.map((s) => {
@@ -390,17 +390,16 @@ export function MenuGroupe({
                   </Link>
                 );
               })}
+              {/* Petit triangle au milieu du bord côté bouton : le panneau est
+                  centré sur son bouton, donc il pointe vers lui. Un carré
+                  tourné de 45 degrés, dont les deux bords tournés vers
+                  l'extérieur reprennent la bordure du panneau et dont le fond
+                  recouvre la bordure du panneau à cet endroit. */}
+              <div
+                aria-hidden="true"
+                className="absolute -left-[6px] top-1/2 h-[10px] w-[10px] -translate-y-1/2 rotate-45 border-b border-l border-dj-bordure bg-dj-rail"
+              />
             </div>
-            {/* Petit triangle côté bouton : montre que le panneau est celui de
-                ce bouton. Un carré tourné de 45 degrés, dont les deux bords
-                tournés vers l'extérieur reprennent la bordure du panneau et
-                dont le fond recouvre la bordure du panneau à cet endroit. */}
-            <div
-              aria-hidden="true"
-              className={`absolute left-[7px] h-[10px] w-[10px] rotate-45 border-b border-l border-dj-bordure bg-dj-rail ${
-                plus ? "top-[13px]" : "top-[9px]"
-              }`}
-            />
           </div>
         </FlottantAncre>
       )}
