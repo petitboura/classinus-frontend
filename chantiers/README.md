@@ -34,3 +34,4 @@ Une ligne par chantier, avec le lien vers son sous-dossier.
 
 - [Page bambara : réponse plus rapide](bambara-vitesse/RESUME.md) : en attente d'une décision de Bourama (fusion avec la lecture par blocs).
 - [Visibilité de Classinus auprès de ChatGPT et des IA : publications](visibilite-ia-publications/RESUME.md) : en cours (le 27/11 publiés : Show HN, X, Facebook, LinkedIn, Indie Hackers, Product Hunt, Hashnode, Dev.to, Threads, Bluesky, Peerlist ; reste e-mail médias, BetaList, DevHunt, annuaires, Telegram et WhatsApp).
+- [Page bambara : images et vidéos façon Google](page-bambara-visuels/RESUME.md) : en cours (effet d'attente, rangées d'images et galerie multi-sources dans staging ; reste à décider du commit « affichage progressif » sur la branche galerie).
