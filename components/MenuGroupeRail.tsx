@@ -356,7 +356,10 @@ export function MenuGroupe({
           FlottantAncre, à droite du bouton. Le bord transparent de gauche
           (pl-3) fait partie du panneau pour la souris : en passant du bouton
           au panneau, le curseur reste toujours dans l'un des deux. Le titre du
-          groupe rappelle d'où viennent les lignes, et un petit triangle, au milieu
+          groupe rappelle d'où viennent les lignes. Le vide transparent autour du
+          panneau (py-8, pr-8) laisse la place à l'ombre : FlottantAncre coupe
+          tout ce qui dépasse de sa boîte, ce qui donnait une ombre tranchée en
+          bas. Un petit triangle, au milieu
           du bord, pointe vers le bouton (le panneau est centré sur lui). */}
       {affichePanneau && !sansSousSection && (
         <FlottantAncre
@@ -368,8 +371,8 @@ export function MenuGroupe({
           ecart={0}
           className={panneauEnSortie ? "pointer-events-none animate-dj-flyout-sortie" : "animate-dj-flyout-entree"}
         >
-          <div data-flyout-groupe onMouseEnter={annulerFermeture} onMouseLeave={planifierFermeture} className="py-4 pl-3 pr-4">
-            <div className="relative min-w-[12rem] max-w-[17rem] rounded-xl border border-dj-bordure bg-dj-rail p-1.5 shadow-xl [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)]">
+          <div data-flyout-groupe onMouseEnter={annulerFermeture} onMouseLeave={planifierFermeture} className="py-8 pl-3 pr-8">
+            <div className="relative min-w-[12rem] max-w-[17rem] rounded-xl border border-dj-bordure bg-dj-panneau p-1.5 shadow-[4px_8px_24px_-8px_rgba(0,0,0,0.3)] [--dj-surface-haute:var(--dj-panneau-survol)]">
               <p className="truncate px-2.5 pb-1 pt-1 text-xs font-semibold text-dj-texte-muet">{groupe.label}</p>
               <div className="mx-1 mb-1 h-px bg-dj-bordure" />
               {sections.map((s) => {
@@ -397,7 +400,7 @@ export function MenuGroupe({
                   recouvre la bordure du panneau à cet endroit. */}
               <div
                 aria-hidden="true"
-                className="absolute -left-[6px] top-1/2 h-[10px] w-[10px] -translate-y-1/2 rotate-45 border-b border-l border-dj-bordure bg-dj-rail"
+                className="absolute -left-[6px] top-1/2 h-[10px] w-[10px] -translate-y-1/2 rotate-45 border-b border-l border-dj-bordure bg-dj-panneau"
               />
             </div>
           </div>

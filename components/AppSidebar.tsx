@@ -628,7 +628,7 @@ export function AppSidebar({
           sourisSurRail.current = false;
           if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie)) setSurvolRail(false);
         }}
-        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 py-3 transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 pb-3 pt-[calc(0.375rem_+_var(--safe-top,0px))] transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
           railOuvert ? "shadow-xl" : ""
         } ${
           actionsDeplie || historiqueDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
@@ -663,7 +663,11 @@ export function AppSidebar({
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
 
-        <div className="my-2 h-px w-full bg-dj-bordure" />
+        {/* Ce trait tombe à 40 px du haut (plus --safe-top), exactement là où
+            l'en-tête des pages (EnTeteApp, h-10) a sa bordure du bas : les deux
+            lignes se rejoignent. Si la hauteur de l'en-tête change, changer
+            aussi le haut du rail ci-dessus. */}
+        <div className="mb-2 mt-[5px] h-px w-full bg-dj-bordure" />
 
         {contexteChat && (
           <>
