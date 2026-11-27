@@ -28,9 +28,11 @@ import {
 // - Barre dépliée (PC) et tiroir mobile : les sous-sections s'ouvrent dans la
 //   barre elle-même, en accordéon animé. Aucun panneau flottant, donc rien qui
 //   double ce que la barre montre déjà et plus de couloir étroit à suivre à la
-//   souris. Sur PC, le bouton du groupe mène à sa page et le chevron à droite
-//   ouvre ou ferme la liste ; sur mobile, toucher la ligne ouvre ou ferme la
-//   liste, on entre dans une page en touchant sa ligne.
+//   souris. Sur PC, hors du chat, un clic sur le bouton du groupe plie ou
+//   déplie la liste (demande du 27/11/2026) ; dans le chat, il mène à la page
+//   du groupe et seul le chevron à droite plie ou déplie. Sur mobile, toucher
+//   la ligne plie ou déplie la liste, on entre dans une page en touchant sa
+//   ligne.
 // - Barre repliée (icônes seules) et ligne du menu "Plus" : le survol ouvre un
 //   petit panneau flottant, placé par FlottantAncre (règle commune des
 //   panneaux ancrés). Il garde le comportement demandé le 05/10/2026 : le
@@ -210,7 +212,13 @@ export function MenuGroupe({
         actif || panneauVoulu ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
       }`;
 
-  const ariaExpanded = sansSousSection ? undefined : mobile ? accordeonOuvert : enLigne ? undefined : panneauVoulu;
+  const ariaExpanded = sansSousSection
+    ? undefined
+    : mobile || (enLigne && !contexteChat)
+      ? accordeonOuvert
+      : enLigne
+        ? undefined
+        : panneauVoulu;
 
   return (
     <div
@@ -254,6 +262,11 @@ export function MenuGroupe({
               premierClicFait.current = false;
               entrerDansGroupe();
             }
+          } else if (enLigne && !sansSousSection) {
+            // Hors du chat, barre dépliée : le clic plie ou déplie la liste, il
+            // n'emmène pas dans la page du groupe.
+            e.preventDefault();
+            setDeplie((v) => !v);
           } else {
             onNaviguer?.();
             onFermer();
@@ -343,7 +356,8 @@ export function MenuGroupe({
           FlottantAncre, à droite du bouton. Le bord transparent de gauche
           (pl-3) fait partie du panneau pour la souris : en passant du bouton
           au panneau, le curseur reste toujours dans l'un des deux. Le titre du
-          groupe rappelle d'où viennent les lignes. */}
+          groupe rappelle d'où viennent les lignes, et un petit triangle pointe
+          vers le bouton. */}
       {affichePanneau && !sansSousSection && (
         <FlottantAncre
           ancreRef={ref}
@@ -354,7 +368,7 @@ export function MenuGroupe({
           ecart={0}
           className={panneauEnSortie ? "pointer-events-none animate-dj-flyout-sortie" : "animate-dj-flyout-entree"}
         >
-          <div data-flyout-groupe onMouseEnter={annulerFermeture} onMouseLeave={planifierFermeture} className="pb-4 pl-3 pr-4">
+          <div data-flyout-groupe onMouseEnter={annulerFermeture} onMouseLeave={planifierFermeture} className="relative pb-4 pl-3 pr-4">
             <div className="min-w-[12rem] max-w-[17rem] rounded-xl border border-dj-bordure bg-dj-rail p-1.5 shadow-xl [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)]">
               <p className="truncate px-2.5 pb-1 pt-1 text-xs font-semibold text-dj-texte-muet">{groupe.label}</p>
               <div className="mx-1 mb-1 h-px bg-dj-bordure" />
@@ -377,6 +391,16 @@ export function MenuGroupe({
                 );
               })}
             </div>
+            {/* Petit triangle côté bouton : montre que le panneau est celui de
+                ce bouton. Un carré tourné de 45 degrés, dont les deux bords
+                tournés vers l'extérieur reprennent la bordure du panneau et
+                dont le fond recouvre la bordure du panneau à cet endroit. */}
+            <div
+              aria-hidden="true"
+              className={`absolute left-[7px] h-[10px] w-[10px] rotate-45 border-b border-l border-dj-bordure bg-dj-rail ${
+                plus ? "top-[13px]" : "top-[9px]"
+              }`}
+            />
           </div>
         </FlottantAncre>
       )}
