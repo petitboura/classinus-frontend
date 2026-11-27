@@ -14,11 +14,16 @@ import { Check, ChevronRight, MessageSquare, MoreVertical, Pencil, Pin, PinOff, 
 import { ContexteChat, type FilConversation } from "@/lib/contexteChat";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useLocale } from "@/lib/i18n/useLocale";
+import type { Locale } from "@/lib/i18n/locale";
+import { dateBulleFil, dateCourteFil } from "@/lib/datesHistorique";
+import { BulleFil, useBulleSurvolFil } from "@/components/chat/BulleFil";
 
 const LONGUEUR_MAX_TITRE = 80;
 // Distance (px) avant la fin de la liste a laquelle on charge deja la suite,
 // pour que le defilement ne bute jamais sur un vide.
 const MARGE_CHARGEMENT_PX = 160;
+// Rythme de mise a jour des "il y a X min" tant que la liste est affichee.
+const RAFRAICHISSEMENT_DATES_MS = 60_000;
 const LARGEUR_MENU_PX = 192;
 const HAUTEUR_MENU_PX = 140;
 
@@ -93,9 +98,9 @@ type PropsListe = {
   // ouverte tant qu'une edition est en cours (le menu est pose dans le body,
   // donc la souris quitte la barre en l'utilisant).
   onOccupe?: (occupe: boolean) => void;
-  // Fond le bas de la liste tant qu'il reste des conversations plus bas,
-  // au lieu de la couper net. Le fondu s'efface une fois tout en bas.
-  fonduBas?: boolean;
+  // Fond le haut et le bas de la liste tant qu'il reste des conversations de
+  // ce cote, au lieu de la couper net. Chaque fondu s'efface une fois au bout.
+  fondu?: boolean;
 };
 
 export function ListeHistorique({
@@ -105,7 +110,7 @@ export function ListeHistorique({
   variante = "popup",
   className = "",
   onOccupe,
-  fonduBas = false,
+  fondu = false,
 }: PropsListe) {
   const locale = useLocale();
   const ctx = useContext(ContexteChat);
@@ -165,26 +170,37 @@ export function ListeHistorique({
 
   const grand = variante === "pleinEcran";
 
-  // Reste-t-il quelque chose sous la zone visible ? On remesure au
-  // defilement et quand la liste ou son contenu change de taille (section
-  // pliee, page suivante recue, fenetre redimensionnee).
+  // Reste-t-il quelque chose au dessus ou en dessous de la zone visible ? On
+  // remesure au defilement et quand la liste ou son contenu change de taille
+  // (section pliee, page suivante recue, fenetre redimensionnee).
   const contenuRef = useRef<HTMLDivElement>(null);
-  const [resteEnBas, setResteEnBas] = useState(false);
-  const mesurerBas = useCallback(() => {
+  const [reste, setReste] = useState({ haut: false, bas: false });
+  const mesurerBords = useCallback(() => {
     const racine = racineRef.current;
     if (!racine) return;
     // 1 px de marge : les hauteurs fractionnaires (zoom) ne tombent pas juste.
-    setResteEnBas(racine.scrollHeight - racine.scrollTop - racine.clientHeight > 1);
+    const haut = racine.scrollTop > 1;
+    const bas = racine.scrollHeight - racine.scrollTop - racine.clientHeight > 1;
+    setReste((avant) => (avant.haut === haut && avant.bas === bas ? avant : { haut, bas }));
   }, []);
   useEffect(() => {
     const racine = racineRef.current;
     const contenu = contenuRef.current;
-    if (!fonduBas || !racine || !contenu) return;
-    const observateur = new ResizeObserver(mesurerBas);
+    if (!fondu || !racine || !contenu) return;
+    const observateur = new ResizeObserver(mesurerBords);
     observateur.observe(racine);
     observateur.observe(contenu);
     return () => observateur.disconnect();
-  }, [fonduBas, mesurerBas]);
+  }, [fondu, mesurerBords]);
+
+  const [maintenant, setMaintenant] = useState(() => new Date());
+  useEffect(() => {
+    const minuteur = setInterval(() => setMaintenant(new Date()), RAFRAICHISSEMENT_DATES_MS);
+    return () => clearInterval(minuteur);
+  }, []);
+  // Une conversation recue ou mise a jour entre deux rafraichissements ne doit
+  // pas etre comparee a une heure ancienne.
+  useEffect(() => setMaintenant(new Date()), [historique.length]);
 
   // Lignes en cours d'edition, par cle : on previent le parent seulement
   // quand on passe de "aucune" a "au moins une" et inversement.
@@ -211,6 +227,8 @@ export function ListeHistorique({
         onSelectionner={onSelectionner}
         onSupprimee={onSupprimee}
         onActivite={signalerActivite}
+        maintenant={maintenant}
+        locale={locale}
       />
     ));
   }
@@ -218,10 +236,10 @@ export function ListeHistorique({
   return (
     <div
       ref={racineRef}
-      onScroll={fonduBas ? mesurerBas : undefined}
-      className={`dj-scroll-isole overflow-y-auto ${fonduBas ? "dj-fondu-bas" : ""} ${
-        fonduBas && resteEnBas ? "dj-fondu-bas-actif" : ""
-      } ${className}`}
+      onScroll={fondu ? mesurerBords : undefined}
+      className={`dj-scroll-isole overflow-y-auto ${fondu ? "dj-fondu-vertical" : ""} ${
+        fondu && reste.haut ? "dj-fondu-haut-actif" : ""
+      } ${fondu && reste.bas ? "dj-fondu-bas-actif" : ""} ${className}`}
     >
       <div ref={contenuRef}>
         {erreurAction && (
@@ -325,31 +343,21 @@ type PropsLigne = {
   onSelectionner: (fil: FilConversation) => void;
   onSupprimee?: (fil: FilConversation) => void;
   onActivite?: (cle: string, actif: boolean) => void;
+  maintenant: Date;
+  locale: Locale;
 };
-
-// Date courte d'un fil : Aujourd'hui, Hier, puis jour et mois (avec l'annee
-// seulement si ce n'est pas l'annee en cours). Chaine vide si la date est illisible.
-function libelleDateFil(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const debutJour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const maintenant = new Date();
-  const ecartJours = Math.round((debutJour(maintenant) - debutJour(d)) / 86400000);
-  if (ecartJours <= 0) return "Aujourd'hui";
-  if (ecartJours === 1) return "Hier";
-  const memeAnnee = d.getFullYear() === maintenant.getFullYear();
-  return d.toLocaleDateString("fr-FR", memeAnnee ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" });
-}
 
 type ModeLigne = "normal" | "renommer" | "confirmerSuppression";
 
-function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivite }: PropsLigne) {
+function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivite, maintenant, locale }: PropsLigne) {
   const ctx = useContext(ContexteChat);
   const [mode, setMode] = useState<ModeLigne>("normal");
   const [titreSaisi, setTitreSaisi] = useState(fil.titre);
   const [menu, setMenu] = useState<{ haut: number; gauche: number } | null>(null);
   const boutonMenuRef = useRef<HTMLButtonElement>(null);
   const champRef = useRef<HTMLInputElement>(null);
+  const ligneRef = useRef<HTMLDivElement>(null);
+  const bulle = useBulleSurvolFil();
   const { enSortie: menuEnSortie, demarrerFermeture: fermerMenuAnime } = useFermetureAnimee();
 
   useEffect(() => {
@@ -479,6 +487,8 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivi
   return (
     <div className="relative">
       <div
+        ref={ligneRef}
+        {...bulle.gestes}
         className={`group flex items-center rounded-lg transition-colors hover:bg-dj-surface-haute ${hauteur} ${
           menu ? "bg-dj-surface-haute" : ""
         }`}
@@ -492,7 +502,7 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivi
         >
           <MessageSquare size={11} strokeWidth={2} className={`flex-shrink-0 ${estActive ? "" : "text-dj-texte-muet"}`} />
           <span className="min-w-0 flex-1 truncate">{fil.titre}</span>
-          <span className="flex-shrink-0 pl-2 text-xs text-dj-texte-muet">{libelleDateFil(fil.derniere_activite)}</span>
+          <span className="flex-shrink-0 pl-2 text-xs text-dj-texte-muet">{dateCourteFil(fil.derniere_activite, maintenant, locale)}</span>
         </button>
         <button
           ref={boutonMenuRef}
@@ -510,6 +520,14 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivi
           <MoreVertical size={16} strokeWidth={2.25} />
         </button>
       </div>
+      {bulle.ouverte && !menu && (
+        <BulleFil
+          ancreRef={ligneRef}
+          titre={fil.titre}
+          date={dateBulleFil(fil.derniere_activite, maintenant, locale)}
+          enSortie={bulle.enSortie}
+        />
+      )}
       {menu && (
         <MenuFil
           position={menu}

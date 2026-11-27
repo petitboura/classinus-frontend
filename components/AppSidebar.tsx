@@ -712,7 +712,7 @@ export function AppSidebar({
           <>
             <div className="my-2 h-px w-full bg-dj-bordure" />
             {/* Liste des conversations (27/11/2026, demande Bourama) : elle defile seule, charge la
-                suite au defilement et son bas se fond (ListeHistorique). Hauteur plancher (titre plus
+                suite au defilement, son haut et son bas se fondent (ListeHistorique). Hauteur plancher (titre plus
                 min-h-24 de la liste) : sur un ecran tres peu haut, c'est la barre qui defile, la liste
                 ne passe jamais sur le bas. */}
             <div className="flex min-h-[7.875rem] flex-1 animate-dj-fade-in-rapide flex-col">
@@ -733,7 +733,7 @@ export function AppSidebar({
                 onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
                 onSupprimee={onConversationSupprimee}
                 onOccupe={setListeHistoriqueOccupee}
-                fonduBas
+                fondu
                 className="min-h-24 flex-1"
               />
             </div>
