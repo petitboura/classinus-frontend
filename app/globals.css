@@ -524,6 +524,9 @@ select:focus-visible {
 
 #dj-barres-couche {
   --dj-barre-e: 12px;
+  /* Une seule couleur pour le curseur et les flèches. */
+  --dj-barre-couleur: color-mix(in srgb, var(--dj-texte-muet) 55%, transparent);
+  --dj-barre-couleur-survol: color-mix(in srgb, var(--dj-texte-muet) 85%, transparent);
   position: fixed;
   inset: 0;
   z-index: 2147483000;
@@ -562,7 +565,7 @@ select:focus-visible {
 .dj-barre-pouce {
   position: absolute;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--dj-texte-muet) 55%, transparent);
+  background: var(--dj-barre-couleur);
   pointer-events: auto;
   touch-action: none;
   transition: background-color 0.15s ease;
@@ -579,7 +582,7 @@ select:focus-visible {
 }
 .dj-barre-pouce:hover,
 .dj-barre-pouce[data-actif="1"] {
-  background: color-mix(in srgb, var(--dj-texte-muet) 85%, transparent);
+  background: var(--dj-barre-couleur-survol);
 }
 .dj-barre-fleche {
   flex: none;
@@ -590,22 +593,24 @@ select:focus-visible {
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--dj-fond) 70%, transparent);
-  color: var(--dj-texte-muet);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--dj-barre-couleur);
   cursor: pointer;
   pointer-events: auto;
   touch-action: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: color 0.15s ease, opacity 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
 }
 .dj-barre-fleche:hover {
-  color: var(--dj-texte);
+  color: var(--dj-barre-couleur-survol);
+  background: color-mix(in srgb, var(--dj-texte-muet) 14%, transparent);
 }
 .dj-barre-fleche[aria-disabled="true"] {
   opacity: 0.35;
   cursor: default;
+  background: transparent;
 }
 .dj-barre-fleche[data-sens="droite"] svg {
   transform: rotate(90deg);

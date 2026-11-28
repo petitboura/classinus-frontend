@@ -41,7 +41,7 @@ const LIBELLES_FR: Record<Sens, string> = {
 };
 
 const SVG_FLECHE =
-  '<svg viewBox="0 0 10 10" width="8" height="8" aria-hidden="true" focusable="false"><path d="M1.5 6.5 5 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  '<svg viewBox="0 0 10 10" width="8" height="8" aria-hidden="true" focusable="false"><path d="M1 7h8L5 2.5z" fill="currentColor"/></svg>';
 
 interface BarreAxe {
   axe: Axe;
