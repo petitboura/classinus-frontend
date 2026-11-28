@@ -286,7 +286,7 @@ export function MenuGroupe({
             <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
               <groupe.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             </span>
-            {mobile ? <span className="text-sm font-semibold">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
+            {mobile ? <span className="text-sm font-medium">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
             {mobile && !sansSousSection && (
               <ChevronRight
                 size={TAILLE_ICONE_RAIL}
@@ -308,7 +308,7 @@ export function MenuGroupe({
           aria-expanded={accordeonOuvert}
           tabIndex={ouverte ? 0 : -1}
           onClick={() => setDeplie((v) => !v)}
-          className={`absolute right-1 top-0.5 flex h-6 w-6 items-center justify-center rounded-md text-dj-texte-muet transition-[opacity,background-color,color] duration-200 hover:bg-dj-bordure hover:text-dj-texte ${
+          className={`absolute right-1 top-[5px] flex h-6 w-6 items-center justify-center rounded-md text-dj-texte-muet transition-[opacity,background-color,color] duration-200 hover:bg-dj-bordure hover:text-dj-texte ${
             ouverte ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >

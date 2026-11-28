@@ -164,7 +164,7 @@ function LibelleRail({ ouverte, children, titre = false }: { ouverte: boolean; c
   return (
     <span
       className={`${RAPPROCHE_LIBELLE_RAIL} overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-out ${
-        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm font-semibold"
+        titre ? "font-display text-lg font-bold text-dj-texte" : "text-sm font-medium"
       } ${
         ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
       }`}
@@ -515,7 +515,7 @@ export function AppSidebar({
         <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
           <onglet.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
-        {mobile ? <span className="text-sm font-semibold">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
+        {mobile ? <span className="text-sm font-medium">{onglet.label}</span> : <LibelleRail ouverte={railOuvert}>{onglet.label}</LibelleRail>}
       </Link>
     );
   }
@@ -649,7 +649,7 @@ export function AppSidebar({
           sourisSurRail.current = false;
           if (!(actionsDeplie || groupeOuvertId || profilDeplie || listeHistoriqueOccupee)) setSurvolRail(false);
         }}
-        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 pb-3 pt-[calc(0.375rem_+_var(--safe-top,0px))] transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
+        className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 pb-3 pt-[calc(0.125rem_+_var(--safe-top,0px))] transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
           railOuvert && !contexteChat ? "shadow-xl" : ""
         } ${
           actionsDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
@@ -684,11 +684,12 @@ export function AppSidebar({
           <LibelleRail ouverte={railOuvert} titre>Classinus</LibelleRail>
         </button>
 
-        {/* Ce trait tombe à 40 px du haut (plus --safe-top), exactement là où
+        {/* Ce trait tombe à 40 px du haut (2 px de marge, cellule de 34 px, 3 px
+            avant le trait, plus --safe-top), exactement là où
             l'en-tête des pages (EnTeteApp, h-10) a sa bordure du bas : les deux
             lignes se rejoignent. Si la hauteur de l'en-tête change, changer
             aussi le haut du rail ci-dessus. */}
-        <div className="mb-2 mt-[5px] h-px w-full bg-dj-bordure" />
+        <div className="mb-2 mt-[3px] h-px w-full bg-dj-bordure" />
 
         {contexteChat && aDesMessages && (
           <>
@@ -702,7 +703,7 @@ export function AppSidebar({
               <LibelleRail ouverte={railOuvert}>Nouvelle conversation</LibelleRail>
             </button>
 
-            <div className="my-2 h-px w-full bg-dj-bordure" />
+            <div className="h-2" />
           </>
         )}
 
@@ -730,7 +731,7 @@ export function AppSidebar({
             en bas. Barre repliee : rien ici, pas de bouton Historique, le survol ouvre la barre. */}
         {contexteChat && railOuvert && historique.length > 0 && (
           <>
-            <div className="my-2 h-px w-full bg-dj-bordure" />
+            <div className="h-2" />
             {/* Liste des conversations (27/11/2026, demande Bourama) : elle defile seule, charge la
                 suite au defilement, son haut et son bas se fondent (ListeHistorique). Hauteur plancher (titre plus
                 min-h-24 de la liste) : sur un ecran tres peu haut, c'est la barre qui defile, la liste
@@ -767,30 +768,27 @@ export function AppSidebar({
         )}
 
         {/* 20/11/2026, demande de Bourama : bouton « S'abonner » dans la barre latérale, hors du panneau du
-            sélecteur de modèle. Refait le même jour : la première version (une ligne grise) était trop
-            discrète. C'est maintenant un bouton plein couleur d'accent avec une couronne pleine, comme le
-            bouton d'abonnement des autres applications de chat. Ouvre la page des abonnements sans modèle.
+            sélecteur de modèle. Il était un bouton plein couleur d'accent ; 27/11/2026, refonte Calme
+            (branche barre-calme) : il redevient une ligne discrète comme les autres. Ouvre la page des
+            abonnements sans modèle.
             Il prend la place du mt-auto quand la barre est repliée, pour que ce bloc du bas (S'abonner,
             Télécharger, Plus) reste collé en bas. */}
         <Link
           href="/abonnements"
           title="S'abonner"
           aria-current={pathname === "/abonnements" ? "page" : undefined}
-          className={`group flex w-full items-center gap-2 rounded-xl bg-dj-accent-1 text-[#1A0D02] transition-colors hover:bg-dj-accent-2 ${
+          className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
             railOuvert ? "mt-2" : "mt-auto"
-          } ${pathname === "/abonnements" ? "ring-2 ring-dj-accent-1 ring-offset-2 ring-offset-dj-rail" : ""}`}
+          } ${pathname === "/abonnements" ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
         >
           <span className={CELLULE_ICONE_RAIL}>
             <Crown
               size={TAILLE_ICONE_RAIL}
-              strokeWidth={1.75}
-              fill="currentColor"
+              strokeWidth={TRAIT_ICONE_RAIL}
               className="transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-110"
             />
           </span>
-          <LibelleRail ouverte={railOuvert}>
-            <span className="font-bold">S'abonner</span>
-          </LibelleRail>
+          <LibelleRail ouverte={railOuvert}>S'abonner</LibelleRail>
         </Link>
 
         {/* 20/10/2026, demande de Bourama : le bouton "Télécharger pour PC" est une
@@ -1050,7 +1048,7 @@ export function AppSidebar({
                   className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                 >
                   <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
-                  <span className="text-sm font-semibold">Nouvelle conversation</span>
+                  <span className="text-sm font-medium">Nouvelle conversation</span>
                 </button>
                 <div className="my-2 h-px w-full bg-dj-bordure" />
               </>
