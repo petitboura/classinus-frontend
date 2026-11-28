@@ -20,6 +20,10 @@ Sur un écran très peu haut, la liste garde une hauteur minimale et c'est toute
 
 - **La liste des conversations est affichée directement dans le menu**, sous les sections, sans bouton « Historique ». Elle prend la place restante, défile seule et se fond en haut et en bas ; Plus et le profil restent en bas.
 - **Un appui long sur une conversation** montre la bulle (nom complet et date) au dessus de la ligne ; elle se ferme quand on touche ailleurs ou qu'on fait défiler. Un appui court ouvre la conversation.
+- **Le menu se referme dès qu'on choisit une conversation**, dans sa liste comme dans l'historique en plein écran. Toucher la conversation déjà ouverte le referme aussi. (Demande du 28 novembre 2026.)
+- **Un glissement du doigt vers la droite ouvre le menu**, depuis n'importe où sur l'écran du chat, en plus du bouton. (Demande du 28 novembre 2026.)
+
+Le glissement ne fait rien quand un autre geste est prioritaire : un bloc de code, un tableau ou une rangée d'images déjà avancés vers la droite (revenus au début, le glissement suivant ouvre le menu), un curseur de réglage, un champ en cours de saisie, du texte sélectionné, un petit menu de la barre de saisie ou une fenêtre ouverte par dessus le chat, une page agrandie avec deux doigts. Les widgets interactifs gardent leurs propres gestes.
 
 ## Ce qui ne change pas
 
@@ -32,6 +36,8 @@ Sur un écran très peu haut, la liste garde une hauteur minimale et c'est toute
 - `components/chat/ListeHistorique.tsx` : la propriété `onOccupe` prévient la barre quand une ligne est en cours de modification ; la propriété `fondu` active les fondus du haut et du bas (style `dj-fondu-vertical` dans `app/globals.css`).
 - `components/chat/BulleFil.tsx` : la bulle de survol d'une conversation.
 - `lib/datesHistorique.ts` : les dates des lignes et de la bulle, en français et en anglais.
+- `lib/useGlissementOuvreMenu.ts` : le glissement qui ouvre le menu. Il écoute la zone marquée `data-zone-glissement-menu` (`components/chat/ChatSection.tsx`). Un petit menu posé sur le chat porte `data-sans-glissement` pour suspendre le geste.
+- La propriété `onChoisirActive` de `ListeHistorique` et de `HistoriquePleinEcran` referme le menu quand on touche la conversation déjà ouverte.
 
 ## Compromis connu
 

@@ -101,6 +101,9 @@ type PropsListe = {
   // Fond le haut et le bas de la liste tant qu'il reste des conversations de
   // ce cote, au lieu de la couper net. Chaque fondu s'efface une fois au bout.
   fondu?: boolean;
+  // Fourni quand toucher la conversation deja ouverte doit faire quelque chose
+  // (sur telephone : refermer le menu) ; sinon cette ligne reste inactive.
+  onChoisirActive?: () => void;
 };
 
 export function ListeHistorique({
@@ -111,6 +114,7 @@ export function ListeHistorique({
   className = "",
   onOccupe,
   fondu = false,
+  onChoisirActive,
 }: PropsListe) {
   const locale = useLocale();
   const ctx = useContext(ContexteChat);
@@ -225,6 +229,7 @@ export function ListeHistorique({
         estActive={fil.conversation_id === conversationActiveId}
         grand={grand}
         onSelectionner={onSelectionner}
+        onChoisirActive={onChoisirActive}
         onSupprimee={onSupprimee}
         onActivite={signalerActivite}
         maintenant={maintenant}
@@ -341,6 +346,7 @@ type PropsLigne = {
   estActive: boolean;
   grand: boolean;
   onSelectionner: (fil: FilConversation) => void;
+  onChoisirActive?: () => void;
   onSupprimee?: (fil: FilConversation) => void;
   onActivite?: (cle: string, actif: boolean) => void;
   maintenant: Date;
@@ -349,7 +355,17 @@ type PropsLigne = {
 
 type ModeLigne = "normal" | "renommer" | "confirmerSuppression";
 
-function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivite, maintenant, locale }: PropsLigne) {
+function LigneFil({
+  fil,
+  estActive,
+  grand,
+  onSelectionner,
+  onChoisirActive,
+  onSupprimee,
+  onActivite,
+  maintenant,
+  locale,
+}: PropsLigne) {
   const ctx = useContext(ContexteChat);
   const [mode, setMode] = useState<ModeLigne>("normal");
   const [titreSaisi, setTitreSaisi] = useState(fil.titre);
@@ -495,8 +511,8 @@ function LigneFil({ fil, estActive, grand, onSelectionner, onSupprimee, onActivi
         }`}
       >
         <button
-          onClick={() => !estActive && onSelectionner(fil)}
-          disabled={estActive}
+          onClick={() => (estActive ? onChoisirActive?.() : onSelectionner(fil))}
+          disabled={estActive && !onChoisirActive}
           className={`flex min-w-0 flex-1 items-center gap-1.5 truncate px-2.5 py-2 text-left ${texte} ${
             estActive ? "text-dj-accent-1-texte" : "text-dj-texte"
           }`}

@@ -2262,6 +2262,7 @@ export function BarreDeSaisie({
       {menuUtilitairesOuvert && (
         <div
           ref={menuUtilitairesMobileRef}
+          data-sans-glissement=""
           className="fixed bottom-[calc(6rem+var(--safe-bottom))] right-4 z-40 flex max-h-[45vh] w-64 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
         >
           <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
@@ -2305,6 +2306,7 @@ export function BarreDeSaisie({
       {menuAppliOuvert && (
         <div
           ref={menuAppliMobileRef}
+          data-sans-glissement=""
           className="fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] z-40 max-h-[60vh] overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl md:hidden"
         >
           {[...applisPourAgent]
@@ -2339,6 +2341,7 @@ export function BarreDeSaisie({
       {selecteurOuvert && (
         <div
           ref={selecteurMobileRef}
+          data-sans-glissement=""
           className="fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] z-40 max-h-[60vh] overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl md:hidden"
         >
           {depots === null && (
@@ -2387,6 +2390,7 @@ export function BarreDeSaisie({
       {selecteurNotionOuvert && (
         <div
           ref={selecteurNotionMobileRef}
+          data-sans-glissement=""
           className="fixed inset-x-4 bottom-[calc(6rem+var(--safe-bottom))] z-40 max-h-[60vh] overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-xl md:hidden"
         >
           {contenuSelecteurNotion("bg-dj-surface-haute", "bg-dj-surface-haute")}
