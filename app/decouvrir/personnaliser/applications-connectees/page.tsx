@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 export const metadata: Metadata = {
-  title: "Applications connectées Classinus : relier GitHub, Notion, Railway, Supabase et tes serveurs MCP",
+  title: "Applications connectées Classinus : GitHub, Notion et serveurs MCP",
   description:
     "Relie GitHub, Notion, Railway, Supabase ou Higgsfield à ton compte Classinus, ajoute tes propres serveurs MCP et retire leurs autorisations quand tu veux.",
 };

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 export const metadata: Metadata = {
-  title: "Mes skills Classinus : créer des consignes adaptées à ta façon d'apprendre",
+  title: "Mes skills Classinus : crée les consignes de tes agents",
   description: "Crée et ajuste des skills personnelles pour guider les réponses de Classinus, par exemple sur le niveau de détail, la méthode d'explication ou le format attendu.",
 };
 

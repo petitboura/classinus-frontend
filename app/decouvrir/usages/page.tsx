@@ -102,7 +102,7 @@ const AUTRES_PARCOURS: Parcours[] = [
     facultatif: true,
   },
   {
-    titre: "Partager des ressources et travailler en classe",
+    titre: "Partager des ressources avec un code",
     description:
       "Utilise des codes de partage pour transmettre des contenus, consulte les établissements et demande l'accès aux ressources auxquelles tu es autorisé. Le Bureau comprend aussi des outils réservés aux enseignants.",
     href: ROUTES_DECOUVRIR.bureau.accueil,
@@ -179,7 +179,7 @@ export default function PageDecouvrirUsages() {
           Tu peux partir d'une idée, d'un document, d'un projet, d'un code à analyser ou d'un service à connecter.
           Classinus te permet de choisir un modèle d'IA, de configurer des agents, de rechercher des informations,
           de créer des fichiers, de programmer et d'utiliser tes applications connectées. Les outils d'étude, de
-          concentration et de classe sont facultatifs : ils ne sont pas le cœur de Classinus. Choisis ton objectif
+          concentration et de partage par code sont facultatifs : ils ne sont pas le cœur de Classinus. Choisis ton objectif
           pour découvrir les fonctions et leurs limites.
         </p>
       </header>

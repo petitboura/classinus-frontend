@@ -7,7 +7,7 @@ import { QUESTIONS_DECOUVRIR_BUREAU } from "@/lib/questionsDecouvrir";
 import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDecouvrir";
 
 export const metadata: Metadata = {
-  title: "Bureau Classinus : outils pour enseignants et gestion de classe",
+  title: "Bureau Classinus : codes de partage, programme et signalements",
   description:
     "Explore les outils du Bureau Classinus : partage par codes, programme pédagogique, signalements, audit hebdomadaire, éditeur de code et configuration de l'assistant.",
 };
@@ -20,10 +20,10 @@ export default function PageDecouvrirBureau() {
         Découvrir Classinus
       </Link>
       <header className="mt-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">Outils de classe</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">Outils de partage</p>
         <h1 className="mt-2 font-display text-2xl font-bold text-dj-texte">Le Bureau de Classinus</h1>
         <p className="mt-3 text-base leading-relaxed text-dj-texte">
-          Le Bureau rassemble des outils pour préparer un programme, partager des ressources ou des consignes, et suivre les signalements transmis par les élèves. Certaines fonctions sont réservées aux enseignants ; les guides précisent leur rôle et ce que chaque outil permet de faire.
+          Le Bureau rassemble des outils pour préparer un programme, partager des ressources ou des consignes, et suivre les signalements transmis par les personnes qui utilisent tes codes. Certaines fonctions sont réservées aux enseignants ; les guides précisent leur rôle et ce que chaque outil permet de faire.
         </p>
       </header>
       <nav className="mt-8" aria-label="Outils du Bureau">

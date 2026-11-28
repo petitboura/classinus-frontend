@@ -16,7 +16,7 @@ export default function PageDecouvrirPersonnaliserMemoire() {
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Consulter ce qui est retenu</h2>
-        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux parcourir les catégories pour voir les informations conservées, notamment les éléments liés à ton parcours scolaire, aux notions étudiées et à tes préférences de travail. Prends le temps de les vérifier si elles ne correspondent plus à ta situation.</p>
+        <p className="mt-2 text-sm leading-relaxed text-dj-texte-muet">Tu peux parcourir les catégories pour voir les informations conservées, notamment les éléments liés à ton parcours, à tes projets et à tes préférences de travail. Prends le temps de les vérifier si elles ne correspondent plus à ta situation.</p>
       </section>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Supprimer des informations</h2>

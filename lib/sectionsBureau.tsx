@@ -14,7 +14,7 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
   {
     href: ROUTES_BUREAU.audit,
     label: "Audit hebdomadaire",
-    description: "Un résumé chaque semaine des signalements de tes élèves",
+    description: "Un résumé chaque semaine des signalements liés à tes codes",
     Icone: CalendarCheck,
   },
   {
@@ -26,7 +26,7 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
   {
     href: ROUTES_BUREAU.programme,
     label: "Programme",
-    description: "Les notions à enseigner pour chaque code, avec leur avancement",
+    description: "Les notions à traiter pour chaque code, avec leur avancement",
     Icone: ListChecks,
   },
   {
@@ -44,7 +44,7 @@ export const SECTIONS_BUREAU: SectionDeGroupe[] = [
   {
     href: ROUTES_BUREAU.signalements,
     label: "Signalements",
-    description: "Les problèmes que tes élèves ont signalés sur une réponse",
+    description: "Les problèmes signalés sur une réponse",
     Icone: MessageSquareWarning,
   },
   {

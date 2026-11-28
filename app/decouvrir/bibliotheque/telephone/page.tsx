@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirBibliotheque } from "@/components/EnTeteDecouvrirBibliotheque";
 
 export const metadata: Metadata = {
-  title: "Dossiers du téléphone dans Classinus : accéder à tes fichiers sur mobile",
+  title: "Dossiers du téléphone : donne tes fichiers mobiles à Classinus",
   description: "Dans l'application mobile, désigne des dossiers de ton téléphone pour que Classinus puisse parcourir et organiser les fichiers concernés selon les autorisations accordées.",
 };
 

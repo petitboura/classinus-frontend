@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirBureau } from "@/components/EnTeteDecouvrirBureau";
 
 export const metadata: Metadata = {
-  title: "Signalements Classinus : examiner les problèmes remontés par les élèves",
+  title: "Signalements Classinus : examiner les retours sur les réponses",
   description: "Les enseignants peuvent ouvrir un signalement, examiner le problème avec Classinus et décider des suites à donner. Rien n'est corrigé automatiquement.",
 };
 
@@ -11,7 +11,7 @@ export default function PageDecouvrirBureauSignalements() {
     <MiseEnPageDecouvrirBureau>
       <h1 className="font-display text-2xl font-bold text-dj-texte">Signalements</h1>
       <p className="mt-4 text-base leading-relaxed text-dj-texte">
-        Lorsqu'un élève signale un problème lié à une réponse de Classinus, l'enseignant peut ouvrir le signalement et examiner le cas avec l'assistant. L'objectif est de comprendre ce qui s'est passé et de décider de la suite à donner, en conservant un contrôle humain sur le traitement.
+        Lorsqu'un utilisateur signale un problème lié à une réponse de Classinus, l'enseignant peut ouvrir le signalement et examiner le cas avec l'assistant. L'objectif est de comprendre ce qui s'est passé et de décider de la suite à donner, en conservant un contrôle humain sur le traitement.
       </p>
       <section className="mt-6">
         <h2 className="font-display text-lg font-semibold text-dj-texte">Un examen au cas par cas</h2>

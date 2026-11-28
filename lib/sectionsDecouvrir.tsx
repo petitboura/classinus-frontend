@@ -58,8 +58,8 @@ export const SECTIONS_DECOUVRIR: CarteDecouvrir[] = [
   {
     slug: "bureau",
     href: ROUTES_DECOUVRIR.bureau.accueil,
-    titre: "Bureau et outils de classe",
-    description: "Partage des ressources par code, organise le programme pédagogique et consulte les outils réservés aux enseignants.",
+    titre: "Bureau et partage par code",
+    description: "Partage des ressources par code, organise un programme et suis les signalements. Certains outils sont réservés aux enseignants.",
     facultatif: true,
   },
 ];
@@ -162,7 +162,7 @@ export const SOUS_PAGES_DECOUVRIR_BUREAU: CarteDecouvrir[] = [
     slug: "signalements",
     href: ROUTES_DECOUVRIR.bureau.signalements,
     titre: "Signalements",
-    description: "Examine les problèmes signalés par les élèves et échange avec Classinus pour les analyser. Réservé aux enseignants.",
+    description: "Examine les problèmes signalés par les utilisateurs de tes codes et échange avec Classinus pour les analyser. Réservé aux enseignants.",
   },
   {
     slug: "editeur",

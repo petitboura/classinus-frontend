@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirBibliotheque } from "@/components/EnTeteDecouvrirBibliotheque";
 
 export const metadata: Metadata = {
-  title: "Bibliothèque personnelle Classinus : organiser et exploiter ses documents",
+  title: "Bibliothèque personnelle Classinus : tes fichiers, lus par l'IA",
   description: "Range tes fichiers dans des dossiers personnels, retrouve les documents envoyés dans le chat et demande à Classinus de les retrouver ou de les analyser.",
 };
 

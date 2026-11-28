@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirPersonnaliser } from "@/components/EnTeteDecouvrirPersonnaliser";
 
 export const metadata: Metadata = {
-  title: "Skills publics Classinus : découvrir et réutiliser les consignes partagées",
+  title: "Skills publics Classinus : réutiliser les consignes partagées",
   description: "Explore les skills partagées par la communauté, consulte leur contenu avant de les activer et ajoute une copie à tes skills personnelles.",
 };
 
