@@ -131,9 +131,9 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
           "Oui. Parcours le catalogue des skills publiques, consulte celle qui t'intéresse puis active-la. Une copie est ajoutée à tes skills personnelles ; tu peux ainsi l'adapter à tes besoins sans modifier l'original publié par son auteur.",
       },
       {
-        question: "Les skills remplacent-elles les consignes de mon enseignant ?",
+        question: "Les skills remplacent-elles les consignes d'un code de partage ?",
         reponse:
-          "Non. Tes skills personnalisent tes échanges, mais elles ne remplacent pas les consignes ou règles de travail mises en place par ton enseignant.",
+          "Non. Tes skills personnalisent tes échanges, mais elles ne remplacent pas les consignes ou règles de travail mises en place par l'auteur du code de partage que tu utilises.",
       },
     ],
   },
@@ -143,7 +143,7 @@ export const QUESTIONS_DECOUVRIR_PERSONNALISER: GroupeQuestionsDecouvrir[] = [
       {
         question: "À quoi sert la mémoire de Classinus ?",
         reponse:
-          "La mémoire regroupe certaines informations retenues au fil des conversations afin de mieux adapter les échanges, notamment sur ton parcours, ta façon d'apprendre et tes préférences.",
+          "La mémoire regroupe certaines informations retenues au fil des conversations afin de mieux adapter les échanges, notamment sur ton parcours, ta façon de travailler et tes préférences.",
       },
       {
         question: "Puis-je consulter ou supprimer les informations de la mémoire ?",
@@ -234,7 +234,7 @@ export const QUESTIONS_DECOUVRIR_BUREAU: GroupeQuestionsDecouvrir[] = [
       {
         question: "Quelle différence entre Signalements et Audit hebdomadaire ?",
         reponse:
-          "Signalements permet à l'enseignant d'examiner un problème remonté par un élève et d'en discuter avec Classinus. L'Audit hebdomadaire fournit un résumé périodique des signalements et met en évidence ceux qui demandent encore une correction. Ces outils sont réservés aux enseignants.",
+          "Signalements permet à l'enseignant d'examiner un problème remonté par un utilisateur et d'en discuter avec Classinus. L'Audit hebdomadaire fournit un résumé périodique des signalements et met en évidence ceux qui demandent encore une correction. Ces outils sont réservés aux enseignants.",
       },
       {
         question: "Les signalements sont-ils traités automatiquement ?",

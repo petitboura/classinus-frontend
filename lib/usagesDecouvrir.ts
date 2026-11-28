@@ -131,14 +131,14 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
         lien: { href: ROUTES_DECOUVRIR.thonny, libelle: "Voir le guide Thonny-Classinus" },
       },
       {
-        titre: "Adapter les explications à ta manière d'apprendre",
+        titre: "Adapter les explications à ta manière de travailler",
         texte:
           "Les skills te permettent de définir des consignes personnelles, par exemple demander des explications progressives, des indices avant la solution ou des exemples commentés. Utilise-les pour guider les réponses, sans remplacer la vérification et les essais par toi-même.",
       },
     ],
     questions: [
       {
-        question: "Comment apprendre à coder avec une IA dans Classinus ?",
+        question: "Comment progresser en code avec une IA dans Classinus ?",
         reponse:
           "Pose une question précise, partage ton code ou décris le résultat attendu. Classinus peut expliquer un concept, proposer un exemple et t'aider à comprendre une erreur. Pour progresser, teste les exemples et demande une explication des étapes plutôt que de copier une solution sans la comprendre.",
       },
@@ -194,7 +194,7 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
     ],
     questions: [
       {
-        question: "Comment trouver une vidéo éducative avec Classinus ?",
+        question: "Comment trouver une vidéo explicative avec Classinus ?",
         reponse:
           "Demande une vidéo sur un thème précis dans le chat. Classinus peut rechercher des vidéos, présenter les résultats et lire les contenus pris en charge directement dans la conversation. Les résultats dépendent de la recherche et des sources accessibles.",
       },
@@ -213,14 +213,14 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
   {
     slug: "etudier",
     href: ROUTES_DECOUVRIR.usages.etudier,
-    titreCarte: "Réviser et étudier",
-    resumeCarte: "Transforme tes cours en fiches, QCM et animations, avec des outils pour lire, calculer et organiser ton travail.",
-    titrePage: "Réviser et étudier avec Classinus : fiches, QCM et documents",
-    titreH1: "Réviser et étudier avec Classinus",
+    titreCarte: "Fiches, QCM et animations",
+    resumeCarte: "Crée des fiches, des QCM et des animations à partir de tes documents, avec des outils pour lire, calculer et organiser ton travail.",
+    titrePage: "Fiches, QCM et animations avec Classinus",
+    titreH1: "Créer des fiches, des QCM et des animations avec Classinus",
     description:
-      "Utilise Classinus pour étudier avec une IA : fiches de révision, QCM interactifs, animations, calcul symbolique, lecture de documents, mode vocal et outils de concentration.",
+      "Utilise Classinus pour créer des fiches, des QCM interactifs et des animations, lire des documents, calculer en symbolique, parler en mode vocal et organiser ton temps.",
     introduction:
-      "Classinus rassemble des outils pour travailler un cours de plusieurs façons : poser une question, consulter tes documents, créer une fiche de révision, t'entraîner avec un QCM ou visualiser une notion avec une animation. Tu peux choisir l'outil qui correspond à ton objectif, puis vérifier les réponses et retravailler les points que tu n'as pas encore compris.",
+      "Classinus rassemble des outils pour travailler un sujet de plusieurs façons : poser une question, consulter tes documents, créer une fiche, t'entraîner avec un QCM ou visualiser une notion avec une animation. Tu peux choisir l'outil qui correspond à ton objectif, puis vérifier les réponses et retravailler les points que tu n'as pas encore compris.",
     facultatif: true,
     points: [
       {
@@ -229,9 +229,9 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
           "Utilise le chat pour demander une définition, comparer deux notions ou détailler un raisonnement. Si la première réponse reste trop générale, précise ton niveau, le chapitre concerné et l'étape qui te pose problème.",
       },
       {
-        titre: "Préparer des fiches de révision",
+        titre: "Préparer des fiches",
         texte:
-          "Demande une fiche structurée à partir d'un sujet ou de documents. Classinus peut produire des documents de révision dans des formats tels que PDF, Word ou PowerPoint, selon le résultat demandé et les fonctions disponibles.",
+          "Demande une fiche structurée à partir d'un sujet ou de documents. Classinus peut produire des documents de synthèse dans des formats tels que PDF, Word ou PowerPoint, selon le résultat demandé et les fonctions disponibles.",
       },
       {
         titre: "T'entraîner avec des QCM interactifs",
@@ -261,14 +261,14 @@ export const USAGES_DECOUVRIR: UsageDecouvrir[] = [
     ],
     questions: [
       {
-        question: "Comment réviser avec Classinus ?",
+        question: "Comment travailler un sujet avec Classinus ?",
         reponse:
-          "Commence par poser une question sur ton cours ou ajoute un document à ta bibliothèque. Tu peux ensuite demander une explication, une fiche de révision, un QCM interactif ou une animation. Pour vérifier tes acquis, essaie de répondre avant de consulter la correction.",
+          "Commence par poser une question sur ton sujet ou ajoute un document à ta bibliothèque. Tu peux ensuite demander une explication, une fiche, un QCM interactif ou une animation. Pour vérifier tes acquis, essaie de répondre avant de consulter la correction.",
       },
       {
-        question: "Classinus peut-il créer des fiches de révision et des QCM ?",
+        question: "Classinus peut-il créer des fiches et des QCM ?",
         reponse:
-          "Oui. Classinus peut préparer des fiches de révision et des QCM interactifs avec correction et explication. Relis les contenus produits et compare-les à ton cours, en particulier pour les notions ou formules qui doivent être exactes.",
+          "Oui. Classinus peut préparer des fiches et des QCM interactifs avec correction et explication. Relis les contenus produits et compare-les à tes sources, en particulier pour les notions ou formules qui doivent être exactes.",
       },
       {
         question: "Puis-je parler à Classinus au lieu de taper ?",
@@ -368,7 +368,7 @@ export const QUESTIONS_GENERALES_CLASSINUS: QuestionReponse[] = [
   {
     question: "Classinus crée-t-il des fiches, des QCM et des animations ?",
     reponse:
-      "Tu peux demander des fiches de révision, des QCM interactifs avec correction expliquée ou des animations explicatives. Certaines animations peuvent être téléchargées en MP4, selon les outils disponibles.",
+      "Tu peux demander des fiches, des QCM interactifs avec correction expliquée ou des animations explicatives. Certaines animations peuvent être téléchargées en MP4, selon les outils disponibles.",
   },
   {
     question: "Où trouver les pages de présentation de Classinus ?",

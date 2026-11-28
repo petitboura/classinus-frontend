@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirBibliotheque } from "@/components/EnTeteDecouvrirBibliotheque";
 
 export const metadata: Metadata = {
-  title: "Bibliothèque publique Classinus : rechercher et partager des ressources",
+  title: "Bibliothèque publique Classinus : ressources partagées",
   description: "Explore le catalogue de ressources partagées par la communauté, consulte les informations des documents, note les ressources et découvre les profils des contributeurs.",
 };
 

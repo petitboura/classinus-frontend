@@ -7,8 +7,8 @@ import { QUESTIONS_DECOUVRIR_BIBLIOTHEQUE } from "@/lib/questionsDecouvrir";
 import { AccordeonQuestionsDecouvrir } from "@/components/AccordeonQuestionsDecouvrir";
 
 export const metadata: Metadata = {
-  title: "Bibliothèque Classinus : documents personnels, ressources partagées et fichiers mobiles",
-  description: "Organise tes cours dans une bibliothèque personnelle, explore les ressources partagées par les élèves et accède aux dossiers que tu désignes sur mobile.",
+  title: "Bibliothèque Classinus : tes documents, utilisables par l'IA",
+  description: "Explore la bibliothèque : range tes fichiers par dossier, retrouve les ressources partagées par la communauté et accède aux dossiers que tu désignes sur mobile.",
 };
 
 export default function PageDecouvrirBibliotheque() {
@@ -22,7 +22,7 @@ export default function PageDecouvrirBibliotheque() {
         <p className="text-xs font-semibold uppercase tracking-wider text-dj-texte-muet">Documents et ressources</p>
         <h1 className="mt-2 font-display text-2xl font-bold text-dj-texte">La bibliothèque Classinus</h1>
         <p className="mt-3 text-base leading-relaxed text-dj-texte">
-          La bibliothèque rassemble les documents dont tu te sers pour étudier et les ressources que la communauté partage. Elle comprend un espace personnel, un catalogue public et, sur mobile, un accès aux dossiers que tu choisis sur ton téléphone. Chaque espace a un rôle différent : sélectionne le guide correspondant à ce que tu veux faire.
+          La bibliothèque rassemble les documents dont tu te sers au quotidien et les ressources que la communauté partage. Elle comprend un espace personnel, un catalogue public et, sur mobile, un accès aux dossiers que tu choisis sur ton téléphone. Chaque espace a un rôle différent : sélectionne le guide correspondant à ce que tu veux faire.
         </p>
       </header>
       <nav className="mt-8" aria-label="Espaces de la bibliothèque">

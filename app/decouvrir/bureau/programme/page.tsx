@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MiseEnPageDecouvrirBureau } from "@/components/EnTeteDecouvrirBureau";
 
 export const metadata: Metadata = {
-  title: "Programme pédagogique Classinus : structurer les notions à enseigner",
+  title: "Programme Classinus : organiser un contenu en chapitres et notions",
   description: "Organise le programme d'un code en matières, chapitres, parties et notions, suis leur état d'avancement et importe un document comme point de départ.",
 };
 

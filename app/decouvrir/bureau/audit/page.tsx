@@ -18,7 +18,7 @@ export default function PageDecouvrirBureauAudit() {
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-dj-texte-muet">
           <li>Les signalements reçus, avec une priorité donnée à ceux qui attendent encore une correction.</li>
           <li>Un accès pour ouvrir le signalement concerné et examiner le problème.</li>
-          <li>Un accès au tableau de bord détaillé d'un code, avec des indicateurs d'activité tels que les élèves actifs, les conversations, les périodes les plus actives et les outils les plus utilisés.</li>
+          <li>Un accès au tableau de bord détaillé d'un code, avec des indicateurs d'activité tels que les utilisateurs actifs, les conversations, les périodes les plus actives et les outils les plus utilisés.</li>
         </ul>
       </section>
       <p className="mt-5 text-sm leading-relaxed text-dj-texte-muet">L'audit sert à repérer les points à examiner ; il ne signifie pas qu'un problème est corrigé automatiquement. Le traitement reste sous le contrôle de l'enseignant.</p>
