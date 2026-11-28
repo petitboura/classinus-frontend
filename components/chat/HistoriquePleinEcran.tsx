@@ -20,9 +20,19 @@ type Props = {
   conversationActiveId?: string | null;
   onSelectionner: (fil: FilConversation) => void;
   onSupprimee?: (fil: FilConversation) => void;
+  // Fourni quand toucher la conversation deja ouverte doit refermer la vue
+  // (telephone) ; sinon cette ligne reste inactive.
+  onChoisirActive?: () => void;
 };
 
-export function HistoriquePleinEcran({ ouvert, onFermer, conversationActiveId, onSelectionner, onSupprimee }: Props) {
+export function HistoriquePleinEcran({
+  ouvert,
+  onFermer,
+  conversationActiveId,
+  onSelectionner,
+  onSupprimee,
+  onChoisirActive,
+}: Props) {
   const [monte, setMonte] = useState(false);
   useEffect(() => setMonte(true), []);
   const { enSortie, demarrerFermeture } = useFermetureAnimee();
@@ -75,6 +85,14 @@ export function HistoriquePleinEcran({ ouvert, onFermer, conversationActiveId, o
             demarrerFermeture(onFermer);
             onSelectionner(fil);
           }}
+          onChoisirActive={
+            onChoisirActive
+              ? () => {
+                  demarrerFermeture(onFermer);
+                  onChoisirActive();
+                }
+              : undefined
+          }
           onSupprimee={onSupprimee}
           className="min-h-0 flex-1 pr-1"
         />

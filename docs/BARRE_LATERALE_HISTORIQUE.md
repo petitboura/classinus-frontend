@@ -20,6 +20,10 @@ On a very short screen the list keeps a minimum height and the whole sidebar scr
 
 - **The conversation list is shown directly in the menu**, below the sections, with no "History" button. It takes the remaining space, scrolls on its own and fades at the top and bottom; More and the profile stay at the bottom.
 - **A long press on a conversation** shows the bubble (full name and date) above the line; it closes when you touch elsewhere or scroll. A short tap opens the conversation.
+- **The menu closes as soon as a conversation is chosen**, from its list or from the full screen history. Tapping the conversation already open closes it too. (Request of 28 November 2026.)
+- **A swipe to the right opens the menu**, from anywhere on the chat screen, in addition to the button. (Request of 28 November 2026.)
+
+The swipe does nothing when another gesture comes first: a code block, a table or a row of images already moved to the right (once back at the start, the next swipe opens the menu), a slider, a field being typed in, selected text, a small menu of the input bar or a window open over the chat, a page zoomed with two fingers. Interactive widgets keep their own gestures.
 
 ## What does not change
 
@@ -32,6 +36,8 @@ On a very short screen the list keeps a minimum height and the whole sidebar scr
 - `components/chat/ListeHistorique.tsx`: the `onOccupe` property tells the sidebar when a line is being edited; the `fondu` property enables the top and bottom fades (`dj-fondu-vertical` style in `app/globals.css`).
 - `components/chat/BulleFil.tsx`: the hover bubble of a conversation.
 - `lib/datesHistorique.ts`: line and bubble dates, in French and English.
+- `lib/useGlissementOuvreMenu.ts`: the swipe that opens the menu. It listens to the area marked `data-zone-glissement-menu` (`components/chat/ChatSection.tsx`). A small menu laid over the chat carries `data-sans-glissement` to suspend the gesture.
+- The `onChoisirActive` property of `ListeHistorique` and `HistoriquePleinEcran` closes the menu when the conversation already open is tapped.
 
 ## Known trade-off
 

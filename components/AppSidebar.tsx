@@ -42,6 +42,7 @@ import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useEstDesktop } from "@/lib/useEstDesktop";
+import { useGlissementOuvreMenu } from "@/lib/useGlissementOuvreMenu";
 import { useProposerTelechargementPc } from "@/lib/useProposerTelechargementPc";
 import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
@@ -358,6 +359,20 @@ export function AppSidebar({
   // remonté à AppShell, qui ne connaît que le booléen `connecte`) car
   // c'est le seul endroit de l'app qui en a besoin.
   const { avatarUrl, nomAffiche } = useMonProfilAffiche(connecte);
+
+  // Telephone, page du chat (28/11/2026, demande Bourama) : un glissement vers
+  // la droite ouvre le menu, et le menu se referme des qu'une conversation est
+  // choisie, dans sa liste comme dans l'historique en plein ecran.
+  useGlissementOuvreMenu(contexteChat && !masquerChromeMobile && !estDesktop && !ouverte, () => setOuverte(true));
+
+  function fermerMenuApresChoix() {
+    if (ouverte) fermerTiroirMobile(() => setOuverte(false));
+  }
+
+  function choisirConversationMobile(fil: FilConversation) {
+    onSelectionnerConversation?.(fil);
+    fermerMenuApresChoix();
+  }
 
   function basculerActions() {
     setActionsDeplie((v) => !v);
@@ -988,7 +1003,8 @@ export function AppSidebar({
           ouvert={historiquePleinEcran}
           onFermer={() => setHistoriquePleinEcran(false)}
           conversationActiveId={conversationActiveId}
-          onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+          onSelectionner={choisirConversationMobile}
+          onChoisirActive={ouverte ? fermerMenuApresChoix : undefined}
           onSupprimee={onConversationSupprimee}
         />
       )}
@@ -1096,7 +1112,8 @@ export function AppSidebar({
                 </div>
                 <ListeHistorique
                   conversationActiveId={conversationActiveId}
-                  onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+                  onSelectionner={choisirConversationMobile}
+                  onChoisirActive={fermerMenuApresChoix}
                   onSupprimee={onConversationSupprimee}
                   fondu
                   className="min-h-24 flex-1"
