@@ -25,6 +25,7 @@ import { LigneApercuPieces, type PieceApercu } from "./LigneApercuPieces";
 import { FenetreTexteColle } from "./FenetreTexteColle";
 import { FenetreMedia } from "./FenetreMedia";
 import { ouvrirDansLecteur } from "@/lib/lecteurLateral";
+import { infosFichierJoint } from "./typeMimePieceJointe";
 import { detecterLangageCode } from "@/lib/texteColle";
 import { RaisonnementBulle } from "./RaisonnementBulle";
 import { OutilResultatBulle, OutilEnCours } from "./OutilResultatBulle";
@@ -134,23 +135,6 @@ function pluginMotsFade(options: { seuil: number; rapporterTotal: (n: number) =>
 
 // texteBrut vit dans ./texteBrut (réexporté ici pour les importeurs existants).
 export { texteBrut };
-
-// 04/09/2026 : piece.type ne connaît que la catégorie large ("document"),
-// pas le vrai type MIME dont VisionneurPositionGlobal a besoin pour
-// choisir le bon aperçu. PDF détecté par extension (cas le plus courant,
-// aperçu réel) ; tout le reste retombe sur "application/octet-stream" --
-// un type MIME quelconque mais non vide, pour que VisionneurPositionGlobal
-// ne le traite pas comme un résultat web (estSiteWeb) et affiche plutôt
-// son repli "Aperçu non disponible" + téléchargement, qui reste dans
-// l'appli (voir ContenuNonPrevisualisable).
-// Le nom peut ne pas finir par .pdf (extension absente, nom coupé par un
-// séparateur du marqueur de pièce jointe) : l'adresse réelle du fichier,
-// qui garde toujours son extension, sert alors de second indice.
-function typeMimeDepuisNom(nom: string, adresse?: string): string {
-  const extNom = nom.split(".").pop()?.toLowerCase() ?? "";
-  const extAdresse = adresse?.split("?")[0].split("#")[0].split(".").pop()?.toLowerCase() ?? "";
-  return extNom === "pdf" || extAdresse === "pdf" ? "application/pdf" : "application/octet-stream";
-}
 
 // Nettoie le markdown avant lecture à voix haute (Web Speech API, voir
 // lireAVoixHaute() dans le composant) -- sans ça, la synthèse vocale lit
@@ -1236,7 +1220,7 @@ function BulleMessageInterne({
                 else if (piece.previewUrl) {
                   // 04/09/2026, demande Bourama : jamais de nouvel onglet,
                   // même visionneur interne que pour un fichier reçu.
-                  ouvrirPosition({ url: piece.previewUrl, titre: piece.nom, typeMime: typeMimeDepuisNom(piece.nom, piece.previewUrl) });
+                  ouvrirPosition({ url: piece.previewUrl, titre: piece.nom, ...infosFichierJoint(piece.nom, piece.previewUrl) });
                 }
               }}
             />

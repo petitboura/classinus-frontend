@@ -28,6 +28,8 @@ export type DetailOuverturePosition = {
   // description) afin que l'aperçu les montre comme la carte du chat.
   titreDuModele?: string;
   descriptionLien?: string;
+  /** Extension connue par ailleurs (epub, py...), quand le type MIME est générique ou manque. */
+  extension?: string | null;
 };
 
 export const EVENEMENT_OUVRIR_POSITION = "clovis:ouvrir-position";

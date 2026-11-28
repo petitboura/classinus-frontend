@@ -194,3 +194,46 @@ export function useDeuxColonnes(): boolean {
     () => true
   );
 }
+
+// Ouverture automatique : à la fin d'une réponse, le premier fichier qu'elle
+// contient s'ouvre tout seul dans le lecteur (voir useOuvertureAutoReponse.ts).
+// Réglage de l'appareil, actif par défaut, modifiable dans Paramètres > Préférences.
+// Le stockage peut être indisponible (navigation privée) : la valeur est alors
+// gardée en mémoire pour la session, et toute lecture ou écriture est protégée.
+const CLE_OUVERTURE_AUTO = "classinus.lecteur.ouvertureAuto";
+const EVENEMENT_OUVERTURE_AUTO = "classinus:ouverture-auto-lecteur";
+let ouvertureAutoEnMemoire: boolean | null = null;
+
+export function lireOuvertureAuto(): boolean {
+  try {
+    const brut = window.localStorage.getItem(CLE_OUVERTURE_AUTO);
+    if (brut !== null) return brut !== "0";
+  } catch {
+    // Sans stockage, on retombe sur la valeur gardée en mémoire.
+  }
+  return ouvertureAutoEnMemoire ?? true;
+}
+
+export function ecrireOuvertureAuto(actif: boolean) {
+  ouvertureAutoEnMemoire = actif;
+  try {
+    window.localStorage.setItem(CLE_OUVERTURE_AUTO, actif ? "1" : "0");
+  } catch {
+    // Valeur déjà gardée en mémoire plus haut.
+  }
+  window.dispatchEvent(new Event(EVENEMENT_OUVERTURE_AUTO));
+}
+
+function abonnerOuvertureAuto(rappel: () => void) {
+  window.addEventListener(EVENEMENT_OUVERTURE_AUTO, rappel);
+  // Un autre onglet qui change le réglage.
+  window.addEventListener("storage", rappel);
+  return () => {
+    window.removeEventListener(EVENEMENT_OUVERTURE_AUTO, rappel);
+    window.removeEventListener("storage", rappel);
+  };
+}
+
+export function useOuvertureAuto(): boolean {
+  return useSyncExternalStore(abonnerOuvertureAuto, lireOuvertureAuto, () => true);
+}

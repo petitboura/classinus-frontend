@@ -2,15 +2,11 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, ImageOff, Loader2, Eye, Code2, BookOpen, Film, Music, ChevronRight } from "lucide-react";
-import {
-  ouvrirDansLecteur,
-  useFichierOuvert,
-  useImageOuverte,
-  useLecteurDisponible,
-  type ContenuLecteur,
-} from "@/lib/lecteurLateral";
+import { FileText, FileSpreadsheet, Presentation, FileArchive, FileJson, FileCode, Image as IconeImage, Box, File, ImageOff, Loader2, Eye, Code2, BookOpen, Film, Music } from "lucide-react";
+import { ouvrirDansLecteur, useImageOuverte, useLecteurDisponible } from "@/lib/lecteurLateral";
 import { BlocExpansible } from "./BlocExpansible";
+import { CarteFichierLecteur } from "./CarteFichierLecteur";
+import { TYPE_MIME_PAR_EXTENSION, contenuLecteurFichier } from "./contenuLecteurFichier";
 import { VisionneuseImage } from "./VisionneuseImage";
 import { TYPES_MIME_OFFICE, estTypeTexteLisible, estFichierMarkdown, ContenuTexte, ContenuMarkdown, ContenuOffice } from "../VisionneuseBibliotheque";
 import { telecharger } from "@/lib/telecharger";
@@ -68,28 +64,7 @@ const VisionneurLivre = dynamic(() => import("../VisionneurLivre").then((m) => m
   ),
 });
 
-// Type MIME approximatif déduit de l'extension d'URL -- ce fichier n'a
-// jamais le vrai type_mime renvoyé par le backend (contrairement à
-// DetailOuverturePosition, alimenté par core/bibliotheque_rag.py), donc
-// on le reconstruit ici juste pour réutiliser les mêmes helpers
-// (estTypeTexteLisible, estFichierMarkdown, TYPES_MIME_OFFICE) que la
-// bibliothèque. PDF et images gérés à part plus bas, zip/glb absents
-// volontairement (aucun aperçu possible pour ces deux-là).
-const TYPE_MIME_PAR_EXTENSION: Record<string, string> = {
-  doc: "application/msword",
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  xls: "application/vnd.ms-excel",
-  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  csv: "text/csv",
-  ppt: "application/vnd.ms-powerpoint",
-  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  json: "application/json",
-  xml: "application/xml",
-  tex: "text/x-tex",
-  md: "text/markdown",
-};
-
-const EXTENSIONS_FICHIER: Record<string, { icone: typeof File; libelle: string }> = {
+export const EXTENSIONS_FICHIER: Record<string, { icone: typeof File; libelle: string }> = {
   pdf: { icone: FileText, libelle: "PDF" },
   doc: { icone: FileText, libelle: "Word" },
   docx: { icone: FileText, libelle: "Word" },
@@ -164,7 +139,7 @@ const EXTENSIONS_FICHIER: Record<string, { icone: typeof File; libelle: string }
   mid: { icone: Music, libelle: "Audio MIDI" },
 };
 
-const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp", "gif", "bmp", "avif"]);
+export const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp", "gif", "bmp", "avif"]);
 
 // Types que l'import dans la bibliothèque personnelle accepte (backend,
 // api/bibliotheque_utilisateur.py, _TYPES_IMPORT_DEPUIS_URL : pdf, docx, xlsx,
@@ -414,34 +389,18 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // blocs dépliables ci-dessous restent le comportement partout où ce lecteur
   // n'existe pas (chat flottant sur une autre page, fenêtre de superposition).
   if (lecteurAuVolet && infos) {
-    const typeMimeVolet = infos === "pdf" ? "application/pdf" : TYPE_MIME_PAR_EXTENSION[infos];
-    const ouvrableAuVolet =
-      infos === "pdf" ||
-      infos === "epub" ||
-      infos === "mobi" ||
-      (!!typeMimeVolet &&
-        (estFichierMarkdown(nom, typeMimeVolet) || TYPES_MIME_OFFICE.has(typeMimeVolet) || estTypeTexteLisible(typeMimeVolet)));
-    if (ouvrableAuVolet) {
-      return (
-        <CarteFichierLecteur
-          nom={nom}
-          sousTitre={sousTitre}
-          Icone={Icone}
-          contenu={{
-            genre: "fichier",
-            id: `fichier:${href}`,
-            titre: nom,
-            url: relais.href,
-            extension: infos,
-            typeMime: typeMimeVolet ?? null,
-            sousTitre,
-            icone: Icone,
-            telechargeable: true,
-            idBibliothequePublique,
-            surCopie: surCopieExterne,
-          }}
-        />
-      );
+    const contenuVolet = contenuLecteurFichier({
+      href,
+      url: relais.href,
+      nom,
+      infos,
+      sousTitre,
+      icone: Icone,
+      idBibliothequePublique,
+      surCopie: surCopieExterne,
+    });
+    if (contenuVolet) {
+      return <CarteFichierLecteur nom={nom} sousTitre={sousTitre} Icone={Icone} contenu={contenuVolet} />;
     }
   }
 
@@ -506,46 +465,6 @@ export function FichierChip({ href, nom, extensionForcee }: { href: string; nom:
   // entrée de la bibliothèque publique, ouvre TelechargerCopierModal au
   // lieu de lancer directement le téléchargement.
   return <FichierGeneriqueChip href={relais.href} nom={nom} libelle={libelle} Icone={Icone} idBibliothequePublique={idBibliothequePublique} />;
-}
-
-// Carte d'un fichier ouvrable dans le lecteur à côté du chat. Même gabarit que la
-// puce repliée de BlocExpansible.tsx. Tant que ce fichier est celui affiché dans
-// le lecteur, la ligne du dessous l'indique ("Ouvert à droite").
-function CarteFichierLecteur({
-  nom,
-  sousTitre,
-  Icone,
-  contenu,
-}: {
-  nom: string;
-  sousTitre: string;
-  Icone: typeof File;
-  contenu: ContenuLecteur;
-}) {
-  const ouvert = useFichierOuvert(contenu.id);
-  return (
-    <button
-      type="button"
-      onClick={() => ouvrirDansLecteur(contenu)}
-      aria-pressed={ouvert}
-      className="my-2 flex w-full max-w-sm animate-dj-fade-in items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface p-3 text-left transition-colors hover:border-dj-bordure-forte"
-    >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte">
-        <Icone size={16} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm text-dj-texte">{nom}</span>
-        <span
-          className={`block text-[11px] transition-colors duration-200 ${
-            ouvert ? "text-dj-accent-1-texte" : "uppercase text-dj-texte-muet"
-          }`}
-        >
-          {ouvert ? "Ouvert à droite" : sousTitre}
-        </span>
-      </span>
-      <ChevronRight size={16} className="shrink-0 text-dj-texte-muet" />
-    </button>
-  );
 }
 
 function FichierGeneriqueChip({

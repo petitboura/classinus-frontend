@@ -7,6 +7,7 @@ import { RAISON_DEMONTAGE, demontageDemande } from "@/lib/repriseFluxChat";
 import { dernierIdEnregistre, versionsAvecActiveMiseAJour, versionsExistantesPour } from "@/lib/versionsConversation";
 import { useNotificationsPush, proposerNotificationsPushUneFois } from "@/lib/useNotificationsPush";
 import { BulleMessage, MessageAffiche, SegmentMessage } from "./BulleMessage";
+import { useOuvertureAutoReponse } from "./useOuvertureAutoReponse";
 import type { OutilEnCours } from "./OutilResultatBulle";
 import { BarreDeSaisie, LongueurReponse, LocalisationJointe } from "./BarreDeSaisie";
 import { PopupFeedback } from "./PopupFeedback";
@@ -2072,6 +2073,10 @@ export function ChatIA({
     });
   }, [genEnCours, derniereReponseInterrompue]);
   useEffect(() => () => retirerSourceTache("chat"), []);
+
+  // Fin de réponse : ouvre à droite le premier fichier de la réponse (réglage dans
+  // Préférences). Une carte d'autorisation en attente compte comme réponse en cours.
+  useOuvertureAutoReponse(genEnCours || affichageEnCours || confirmation !== null, messages);
 
   // Bouton "Modifier" du bandeau (choix Bourama, 20/09/2026, parmi les
   // deux lectures possibles) : reprend le message UTILISATEUR précédent

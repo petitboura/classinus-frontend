@@ -4,13 +4,15 @@ import { useMemo, useState } from "react";
 import { FileCode } from "lucide-react";
 import hljs from "@/lib/coloration";
 import { BlocExpansible } from "./BlocExpansible";
+import { CarteFichierLecteur } from "./CarteFichierLecteur";
+import { useLecteurDisponible, type ContenuLecteur } from "@/lib/lecteurLateral";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
 
 // Extensions de code reconnues -> langage highlight.js. Un fichier de
 // code livré seul (voir le fix backend generation_code.py, 2026-07-20 :
-// un .py seul n'est plus forcé dans un .zip) se déroule dans le fil au
-// clic (voir BlocExpansible.tsx) -- plus de panneau latéral, retiré à la
-// demande de Bourama.
+// un .py seul n'est plus forcé dans un .zip) s'ouvre dans le lecteur à côté
+// du chat quand il existe (page du chat, voir VoletLecteur.tsx), et se
+// déroule dans le fil au clic (voir BlocExpansible.tsx) partout ailleurs.
 //
 // 20/09/2026, demande Bourama : "md" n'est plus dans cette liste. Un
 // fichier .md passait ici (texte brut, police à chasse fixe, lignes jamais
@@ -26,6 +28,21 @@ const LANGAGE_PAR_EXTENSION: Record<string, string> = {
   cpp: "cpp", go: "go", rs: "rust", php: "php", rb: "ruby", yml: "yaml", yaml: "yaml",
   toml: "ini",
 };
+
+/** Langage highlight.js d'une extension de code (py, ts...), ou null si ce n'est pas du code. */
+export function langageDeCode(extension: string | null | undefined): string | null {
+  const ext = (extension || "").toLowerCase();
+  return ext && ext in LANGAGE_PAR_EXTENSION ? LANGAGE_PAR_EXTENSION[ext] : null;
+}
+
+/** HTML coloré d'un code source. Même rendu dans le fil (FichierCode) et dans le lecteur (ContenuCode.tsx). */
+export function colorierCode(contenu: string, langage: string): string {
+  try {
+    return hljs.getLanguage(langage) ? hljs.highlight(contenu, { language: langage }).value : hljs.highlightAuto(contenu).value;
+  } catch {
+    return contenu.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
+  }
+}
 
 export function extensionCode(href: string): string | null {
   const match = href.split("?")[0].match(/\.([a-zA-Z0-9]+)$/);
@@ -53,6 +70,24 @@ export function estFichierCodeAffichable(href: string): boolean {
   return extensionCode(href) !== null && estOrigineDeConfiance(href);
 }
 
+// Ce que le lecteur affiche pour un fichier de code. Partagé avec l'ouverture
+// automatique en fin de réponse (premierContenuReponse.ts) : mêmes champs, même
+// identifiant, donc la carte indique bien "Ouvert à droite".
+export function contenuLecteurCode(href: string, nom: string): ContenuLecteur {
+  const extension = extensionCode(href) || "";
+  return {
+    genre: "fichier",
+    id: `fichier:${href}`,
+    titre: nom,
+    url: href,
+    extension,
+    typeMime: null,
+    sousTitre: extension,
+    icone: FileCode,
+    telechargeable: true,
+  };
+}
+
 export function FichierCode({ href, nom }: { href: string; nom: string }) {
   const [contenu, setContenu] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
@@ -61,14 +96,9 @@ export function FichierCode({ href, nom }: { href: string; nom: string }) {
   const extension = extensionCode(href) || "";
   const langage = LANGAGE_PAR_EXTENSION[extension] || "plaintext";
 
-  const html = useMemo(() => {
-    if (!contenu) return "";
-    try {
-      return hljs.getLanguage(langage) ? hljs.highlight(contenu, { language: langage }).value : hljs.highlightAuto(contenu).value;
-    } catch {
-      return contenu.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
-    }
-  }, [contenu, langage]);
+  const html = useMemo(() => (contenu ? colorierCode(contenu, langage) : ""), [contenu, langage]);
+  // Page du chat : une carte ouvre le code dans le lecteur à côté de la conversation.
+  const lecteurAuVolet = useLecteurDisponible();
 
   async function charger() {
     setChargement(true);
@@ -81,6 +111,17 @@ export function FichierCode({ href, nom }: { href: string; nom: string }) {
     } finally {
       setChargement(false);
     }
+  }
+
+  if (lecteurAuVolet) {
+    return (
+      <CarteFichierLecteur
+        nom={nom}
+        sousTitre={extension}
+        Icone={FileCode}
+        contenu={contenuLecteurCode(href, nom)}
+      />
+    );
   }
 
   return (

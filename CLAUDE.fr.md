@@ -172,3 +172,13 @@ Règle de Bourama du 8 novembre 2026. Un aperçu doit être un vrai modèle : la
 
 - L'interrupteur unique est `estGenerationDisponible` dans `lib/higgsfieldGeneration.ts`. Pour ouvrir un autre type d'effet, on le change là, quand Higgsfield sait reproduire cet aperçu fidèlement, jamais dans un seul onglet.
 - Ne jamais faire d'un aperçu une décoration ou une pub : s'il ne peut pas être reproduit sur l'image de la personne, on le marque « Bientôt ».
+
+## Le skeleton des Préférences doit toujours correspondre à l'écran des Préférences
+
+Ordre de Bourama du 28 novembre 2026. C'est une règle, pas une question.
+
+`components/ParametresPreferencesSkeleton.tsx` est le gabarit de chargement de Paramètres > Préférences (`components/ParametresPreferences.tsx`). Il doit reproduire la vraie mise en page ligne par ligne, pour que rien ne saute quand le contenu apparaît.
+
+- Dès qu'une préférence est ajoutée, retirée, déplacée, ou change de taille (description plus longue, nouveau bloc), on met à jour le skeleton dans le même changement.
+- Compter les lignes d'interrupteurs, les listes et les lignes de texte, et montrer le même nombre dans le même ordre dans le skeleton.
+- Une tâche qui change les Préférences sans mettre à jour le skeleton n'est pas terminée.
