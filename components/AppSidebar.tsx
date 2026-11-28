@@ -374,6 +374,12 @@ export function AppSidebar({
     fermerMenuApresChoix();
   }
 
+  // Zones qui defilent entre le haut (nom et trait) et le bas (trait et boutons
+  // fixes), sur ordinateur et dans le menu du telephone. En etat, pour que
+  // l'historique charge la suite quand la zone est affichee.
+  const [zoneRail, setZoneRail] = useState<HTMLDivElement | null>(null);
+  const [zoneTiroir, setZoneTiroir] = useState<HTMLDivElement | null>(null);
+
   function basculerActions() {
     setActionsDeplie((v) => !v);
   }
@@ -689,7 +695,13 @@ export function AppSidebar({
             l'en-tête des pages (EnTeteApp, h-10) a sa bordure du bas : les deux
             lignes se rejoignent. Si la hauteur de l'en-tête change, changer
             aussi le haut du rail ci-dessus. */}
-        <div className="mb-2 mt-[3px] h-px w-full bg-dj-bordure" />
+        <div className="mt-[3px] h-px w-full flex-shrink-0 bg-dj-bordure" />
+
+        {/* 28/11/2026, demande Bourama : tout ce qui est entre les deux traits defile
+            ensemble et disparait net au trait, sans fondu. Hauteur plancher : sur un
+            ecran tres peu haut, c'est la barre qui defile. */}
+        <div ref={setZoneRail} className="dj-scroll-isole min-h-24 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex flex-col py-2">
 
         {contexteChat && aDesMessages && (
           <>
@@ -726,17 +738,13 @@ export function AppSidebar({
           />
         ))}
 
-        {/* Historique (27/11/2026, demande Bourama) : sous les icones de navigation, il prend tout
-            l'espace restant au milieu de la barre et defile seul. S'abonner, Plus et le profil restent
-            en bas. Barre repliee : rien ici, pas de bouton Historique, le survol ouvre la barre. */}
+        {/* Historique (27/11/2026, demande Bourama) : sous les icones de navigation, dans la meme
+            zone qui defile. Barre repliee : rien ici, pas de bouton Historique, le survol ouvre
+            la barre. */}
         {contexteChat && railOuvert && historique.length > 0 && (
           <>
             <div className="h-2" />
-            {/* Liste des conversations (27/11/2026, demande Bourama) : elle defile seule, charge la
-                suite au defilement, son haut et son bas se fondent (ListeHistorique). Hauteur plancher (titre plus
-                min-h-24 de la liste) : sur un ecran tres peu haut, c'est la barre qui defile, la liste
-                ne passe jamais sur le bas. */}
-            <div className="flex min-h-[7.875rem] flex-1 animate-dj-fade-in-rapide flex-col">
+            <div className="animate-dj-fade-in-rapide">
               <div className="flex items-center justify-between px-1.5 pb-1 pt-0.5">
                 <span className="text-xs font-semibold text-dj-texte-muet">Historique</span>
                 <button
@@ -754,15 +762,19 @@ export function AppSidebar({
                 onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
                 onSupprimee={onConversationSupprimee}
                 onOccupe={setListeHistoriqueOccupee}
-                fondu
-                className="min-h-24 flex-1"
+                defilementParent={zoneRail}
               />
             </div>
           </>
         )}
+        </div>
+        </div>
+
+        {/* Bas fixe : trait, Télécharger, S'abonner, Télécharger pour PC, Plus et profil. */}
+        <div className="mb-2 h-px w-full flex-shrink-0 bg-dj-bordure" />
 
         {railOuvert && (
-          <div className="mt-auto flex justify-center pt-2">
+          <div className="flex flex-shrink-0 justify-center pb-2 empty:hidden">
             <BoutonInstaller />
           </div>
         )}
@@ -770,16 +782,12 @@ export function AppSidebar({
         {/* 20/11/2026, demande de Bourama : bouton « S'abonner » dans la barre latérale, hors du panneau du
             sélecteur de modèle. Il était un bouton plein couleur d'accent ; 27/11/2026, refonte Calme
             (branche barre-calme) : il redevient une ligne discrète comme les autres. Ouvre la page des
-            abonnements sans modèle.
-            Il prend la place du mt-auto quand la barre est repliée, pour que ce bloc du bas (S'abonner,
-            Télécharger, Plus) reste collé en bas. */}
+            abonnements sans modèle. */}
         <Link
           href="/abonnements"
           title="S'abonner"
           aria-current={pathname === "/abonnements" ? "page" : undefined}
-          className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
-            railOuvert ? "mt-2" : "mt-auto"
-          } ${pathname === "/abonnements" ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
+          className={`group flex w-full flex-shrink-0 items-center gap-2 rounded-xl transition-colors ${pathname === "/abonnements" ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"}`}
         >
           <span className={CELLULE_ICONE_RAIL}>
             <Crown
@@ -793,14 +801,12 @@ export function AppSidebar({
 
         {/* 20/10/2026, demande de Bourama : le bouton "Télécharger pour PC" est une
             ligne de la barre, juste au dessus de "Plus". Visible seulement dans
-            un navigateur sur Windows (voir lib/useProposerTelechargementPc.ts).
-            Il prend la place du mt-auto de "Plus" quand la barre est repliée,
-            pour que les deux restent collés en bas. */}
+            un navigateur sur Windows (voir lib/useProposerTelechargementPc.ts). */}
         {proposerTelechargementPc && (
           <Link
             href="/telecharger"
             title="Télécharger pour PC"
-            className="group mt-2 flex w-full animate-dj-fade-in-rapide items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            className="group mt-2 flex w-full flex-shrink-0 animate-dj-fade-in-rapide items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             <span className={CELLULE_ICONE_RAIL}>
               <MonitorDown
@@ -815,7 +821,7 @@ export function AppSidebar({
 
         <div
           ref={actionsRef}
-          className="relative mt-2 rounded-xl"
+          className="relative mt-2 flex-shrink-0 rounded-xl"
         >
           <button
             onClick={basculerActions}
@@ -1031,7 +1037,7 @@ export function AppSidebar({
               : " animate-cgpt-entree-modal transition-all duration-200 ease-cgpt-doux")
           }
         >
-          <div className="mt-[var(--safe-top)]">
+          <div className="mt-[var(--safe-top)] flex-shrink-0">
             {/* Identité en tête du panneau : même logo que le reste de l'appli,
                 suivi du nom, avec le même séparateur que le rail desktop. Le
                 pl-10 garde le logo à droite du bouton hamburger flottant, sur la même
@@ -1040,11 +1046,25 @@ export function AppSidebar({
               <Logo taille={28} sansFond />
               <span className="text-base font-semibold text-dj-texte">Classinus</span>
             </div>
-            <div className="my-2 h-px w-full bg-dj-bordure" />
+            <div className="mt-2 h-px w-full bg-dj-bordure" />
+          </div>
+
+          {/* 28/11/2026, demande Bourama : comme sur ordinateur, tout ce qui est entre
+              les deux traits defile ensemble et disparait net au trait. */}
+          <div ref={setZoneTiroir} className="dj-scroll-isole min-h-24 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="py-2">
             {contexteChat && aDesMessages && (
               <>
                 <button
-                  onClick={onNouvelleConversation}
+                  onClick={() => {
+                    // 28/11/2026, demande Bourama : le menu se ferme. La nouvelle
+                    // conversation attend la fin du fondu, sinon ce bouton
+                    // disparaitrait pendant que le menu est encore visible.
+                    fermerTiroirMobile(() => {
+                      setOuverte(false);
+                      onNouvelleConversation?.();
+                    });
+                  }}
                   className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                 >
                   <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
@@ -1086,16 +1106,13 @@ export function AppSidebar({
                 })
               )
             )}
-          </div>
 
           {/* Historique (27/11/2026, demande Bourama) : comme sur ordinateur, la liste est affichee
-              directement sous les sections, sans bouton Historique. Elle prend la place restante,
-              defile seule et se fond en haut et en bas. Hauteur plancher : sur un ecran tres peu
-              haut, c'est tout le menu qui defile, la liste ne passe jamais sur le bas. */}
+              directement sous les sections, sans bouton Historique. */}
           {contexteChat && historique.length > 0 && (
             <>
               <div className="my-2 h-px w-full flex-shrink-0 bg-dj-bordure" />
-              <div className="flex min-h-[7.875rem] flex-1 animate-dj-fade-in-rapide flex-col">
+              <div className="animate-dj-fade-in-rapide">
                 <div className="flex items-center justify-between pb-1 pl-2 pt-0.5">
                   <span className="text-xs font-semibold text-dj-texte-muet">Historique</span>
                   <button
@@ -1113,14 +1130,18 @@ export function AppSidebar({
                   onSelectionner={choisirConversationMobile}
                   onChoisirActive={fermerMenuApresChoix}
                   onSupprimee={onConversationSupprimee}
-                  fondu
-                  className="min-h-24 flex-1"
+                  defilementParent={zoneTiroir}
                 />
               </div>
             </>
           )}
+          </div>
+          </div>
 
-          <div className="mt-2 flex justify-center">
+          {/* Bas fixe : trait, Télécharger, Plus et profil. */}
+          <div className="mb-2 h-px w-full flex-shrink-0 bg-dj-bordure" />
+
+          <div className="flex flex-shrink-0 justify-center pb-2 empty:hidden">
             <BoutonInstaller />
           </div>
 
@@ -1155,7 +1176,7 @@ export function AppSidebar({
               déconnecter) qui refaisaient à la main ce que MenuProfil
               fait déjà proprement côté desktop : c'est ce doublon qui
               faisait déborder le panneau mobile. */}
-          <div className="mt-auto">
+          <div className="flex-shrink-0">
             {connecte ? (
               <MenuProfil
                 avatarUrl={avatarUrl}
