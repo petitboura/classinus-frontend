@@ -11,16 +11,18 @@ import { IconeReflexion } from "./IconeReflexion";
 // notes tiennent sur UNE seule ligne repliée. Quand une nouvelle ligne arrive, elle monte par le
 // bas et l'ancienne glisse vers le haut, comme une roue qui tourne. Depuis le 28/11/2026 (demande
 // Bourama), le mouvement se limite à 5 px avec un fondu (0.2 s) au lieu de défiler sur toute la
-// hauteur. Aucune durée minimale pour un outil : plusieurs outils appelés en même temps se remplacent vite, au rythme où ils arrivent.
-// Seule une note de l'IA ou une réflexion reste affichée plus longtemps, selon sa longueur, pour
-// qu'on ait le temps de la lire.
+// hauteur. Depuis le 28/11/2026 (demande Bourama : la roue tournait trop vite), une ligne d'outil reste
+// affichée au moins une seconde (DELAI_ROUE_MS) avant de laisser la place à la suivante. Une note de
+// l'IA ou une réflexion reste affichée plus longtemps, selon sa longueur, pour qu'on ait le temps
+// de la lire.
 //
 // Texte sur une seule ligne, qui finit en fondu quand il est trop long (27/11/2026, partout, PC et
 // mobile), au lieu des « ... » ou d'un retour à la ligne. La ligne prend la largeur de son texte,
 // pour que la flèche de dépliage se pose juste après sa fin.
 
-// Pause entre deux lignes d'outils quand plusieurs attendent : juste de quoi voir la roue tourner.
-const DELAI_ROUE_MS = 170;
+// Temps minimum d'affichage d'une ligne d'outil, en millisecondes, compté depuis le moment où elle
+// apparaît : une ligne qui est déjà restée plus longtemps laisse sa place sans attendre.
+const DELAI_ROUE_MS = 1000;
 
 // Temps d'affichage d'une note de l'IA avant de laisser la place à la suivante.
 function dureeCommentaireMs(longueur: number): number {
@@ -82,6 +84,7 @@ export function RoueOutils({ elements, depart }: { elements: ElementRoue[]; depa
   const [affiche, setAffiche] = useState<string>(() => (rangDepart >= 0 ? depart! : dernier?.membres[0] ?? ""));
   const [partant, setPartant] = useState<ElementRoue | null>(null);
   const vusRef = useRef<Set<string> | null>(null);
+  const afficheDepuisRef = useRef<number>(Date.now());
   if (vusRef.current === null) {
     const dejaVus = rangDepart >= 0 ? elements.slice(0, rangDepart + 1) : elements;
     vusRef.current = new Set(dejaVus.flatMap((e) => e.membres));
@@ -107,11 +110,15 @@ export function RoueOutils({ elements, depart }: { elements: ElementRoue[]; depa
 
   useEffect(() => {
     if (!cleSuivante) return;
-    const delai = genreCourant !== "outil" ? dureeCommentaireMs(longueurCourante) : DELAI_ROUE_MS;
+    const delai =
+      genreCourant !== "outil"
+        ? dureeCommentaireMs(longueurCourante)
+        : Math.max(0, DELAI_ROUE_MS - (Date.now() - afficheDepuisRef.current));
     const minuteur = setTimeout(() => {
       const prochain = suivantRef.current;
       if (!prochain) return;
       prochain.membres.forEach((m) => vus.add(m));
+      afficheDepuisRef.current = Date.now();
       setPartant(courantRef.current ?? null);
       setAffiche(prochain.membres[0]);
     }, delai);

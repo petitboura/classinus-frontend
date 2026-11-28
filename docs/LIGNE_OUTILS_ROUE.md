@@ -7,7 +7,7 @@ Request of 25 November 2026. The backend part (the `commenter` tool and the `com
 ## What the user sees
 
 - **One line, collapsed by default.** When two or more lines exist (tools or notes), the tool activity is a single line. While the AI works, each new line replaces the previous one like a wheel turning upward: the new line comes up from the bottom, the old one slides up and fades.
-- **No minimum display time for a tool.** Tools called at the same time replace each other fast (about 170 ms apart). A note from the AI stays longer, according to its length (1.4 s to 4.5 s), so it can be read.
+- **A tool line stays at least one second (28 November 2026).** Tools called at the same time therefore replace each other one per second, and a line that has already stayed longer gives way at once (`DELAI_ROUE_MS` setting). A note from the AI stays longer, according to its length (1.4 s to 4.5 s), so it can be read.
 - **One line of text that fades out (27 November 2026).** When a text is too long, it fades out at the end instead of wrapping or ending with an ellipsis. This applies everywhere, on desktop and mobile, to the wheel, the "N tools used" summary, the line of a tool, the title of a reasoning line and a note. A text short enough keeps a clean end. The full text of a reasoning line or a note can only be read by unfolding the line (a note only has an arrow when it is cut).
 - **Unfold arrow.** It sits right after the end of the line's text, no longer at the far right.
 - **Notes.** A note from the AI is its own line with a dot icon instead of a tool icon. It does not break a group and is never counted as a tool.
