@@ -98,9 +98,10 @@ type PropsListe = {
   // ouverte tant qu'une edition est en cours (le menu est pose dans le body,
   // donc la souris quitte la barre en l'utilisant).
   onOccupe?: (occupe: boolean) => void;
-  // Fond le haut et le bas de la liste tant qu'il reste des conversations de
-  // ce cote, au lieu de la couper net. Chaque fondu s'efface une fois au bout.
-  fondu?: boolean;
+  // Fourni quand la liste ne defile pas elle-meme : c'est la zone du parent qui
+  // defile (barre laterale et menu du telephone). null tant que cette zone
+  // n'est pas encore affichee.
+  defilementParent?: HTMLElement | null;
   // Fourni quand toucher la conversation deja ouverte doit faire quelque chose
   // (sur telephone : refermer le menu) ; sinon cette ligne reste inactive.
   onChoisirActive?: () => void;
@@ -113,7 +114,7 @@ export function ListeHistorique({
   variante = "popup",
   className = "",
   onOccupe,
-  fondu = false,
+  defilementParent,
   onChoisirActive,
 }: PropsListe) {
   const locale = useLocale();
@@ -155,9 +156,10 @@ export function ListeHistorique({
   }
 
   // Charge la page suivante quand le bas de la liste approche (defilement
-  // progressif). La liste elle-meme est le conteneur observe.
+  // progressif). Le conteneur observe est celui qui defile : la liste, ou la
+  // zone du parent.
   useEffect(() => {
-    const racine = racineRef.current;
+    const racine = defilementParent === undefined ? racineRef.current : defilementParent;
     const sentinelle = sentinelleRef.current;
     if (!racine || !sentinelle || !chargementAutorise || !aPlus || erreurPlus || !chargerPlus) return;
     const observateur = new IntersectionObserver(
@@ -170,32 +172,9 @@ export function ListeHistorique({
     return () => observateur.disconnect();
     // historique.length : apres chaque page recue la sentinelle est
     // observee a nouveau (elle est deja visible si la liste reste courte).
-  }, [chargementAutorise, aPlus, erreurPlus, chargerPlus, historique.length]);
+  }, [chargementAutorise, aPlus, erreurPlus, chargerPlus, historique.length, defilementParent]);
 
   const grand = variante === "pleinEcran";
-
-  // Reste-t-il quelque chose au dessus ou en dessous de la zone visible ? On
-  // remesure au defilement et quand la liste ou son contenu change de taille
-  // (section pliee, page suivante recue, fenetre redimensionnee).
-  const contenuRef = useRef<HTMLDivElement>(null);
-  const [reste, setReste] = useState({ haut: false, bas: false });
-  const mesurerBords = useCallback(() => {
-    const racine = racineRef.current;
-    if (!racine) return;
-    // 1 px de marge : les hauteurs fractionnaires (zoom) ne tombent pas juste.
-    const haut = racine.scrollTop > 1;
-    const bas = racine.scrollHeight - racine.scrollTop - racine.clientHeight > 1;
-    setReste((avant) => (avant.haut === haut && avant.bas === bas ? avant : { haut, bas }));
-  }, []);
-  useEffect(() => {
-    const racine = racineRef.current;
-    const contenu = contenuRef.current;
-    if (!fondu || !racine || !contenu) return;
-    const observateur = new ResizeObserver(mesurerBords);
-    observateur.observe(racine);
-    observateur.observe(contenu);
-    return () => observateur.disconnect();
-  }, [fondu, mesurerBords]);
 
   const [maintenant, setMaintenant] = useState(() => new Date());
   useEffect(() => {
@@ -241,12 +220,9 @@ export function ListeHistorique({
   return (
     <div
       ref={racineRef}
-      onScroll={fondu ? mesurerBords : undefined}
-      className={`dj-scroll-isole overflow-y-auto ${fondu ? "dj-fondu-vertical" : ""} ${
-        fondu && reste.haut ? "dj-fondu-haut-actif" : ""
-      } ${fondu && reste.bas ? "dj-fondu-bas-actif" : ""} ${className}`}
+      className={`${defilementParent === undefined ? "dj-scroll-isole overflow-y-auto " : ""}${className}`}
     >
-      <div ref={contenuRef}>
+      <div>
         {erreurAction && (
           <p role="alert" className="animate-dj-fade-in-rapide px-2.5 pb-1.5 pt-1 text-xs text-red-500">
             {erreurAction}
