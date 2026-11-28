@@ -7,7 +7,7 @@ import { TexteFondu } from "./TexteFondu";
 
 // Une réflexion du modèle dans la liste dépliée des outils (26/11/2026, demande Bourama), à la même
 // place que les outils et les notes, dans l'ordre réel. La ligne montre son titre ; un clic la déplie
-// pour lire le texte brut de la réflexion, comme le résultat d'un outil. Pendant que le modèle
+// pour lire le texte brut de la réflexion, comme le résultat d'un outil. Une seule ligne verticale à gauche, celle qui relie les lignes : le texte déplié n'a plus la sienne (28/11/2026, demande Bourama). Pendant que le modèle
 // réfléchit, le titre scintille. Le titre tient sur une seule ligne et finit en fondu au lieu de
 // passer à la ligne (27/11/2026, demande Bourama) ; la flèche suit la fin du titre. Le texte complet
 // ne se lit qu'une fois la ligne dépliée.
@@ -54,7 +54,7 @@ export function LigneReflexion({
           }`}
         >
           <div className="overflow-hidden">
-            <div className="mt-1.5 whitespace-pre-wrap break-words border-l-2 border-dj-bordure pl-3 text-[13px] italic leading-relaxed text-dj-texte-muet">
+            <div className="mt-1.5 whitespace-pre-wrap break-words text-[13px] italic leading-relaxed text-dj-texte-muet">
               {brut}
             </div>
           </div>
