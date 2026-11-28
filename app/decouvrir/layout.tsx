@@ -33,6 +33,11 @@ import { CtaDecouvrirIcones } from "@/components/CtaDecouvrirIcones";
 // d'une section, vers cette section de l'appli, sous le contenu de chaque
 // page (lib/ctaDecouvrir.ts), et les mêmes en icônes seules en haut à droite
 // (CtaDecouvrirIcones).
+//
+// Logo avec alt="Classinus" (28/11/2026) : l'audit SEO signalait les 27 pages
+// /decouvrir pour "image sans alt", et le logo de cet en-tête est leur seule
+// image commune. Le nom écrit à côté est masqué aux lecteurs d'écran (le lien
+// est lu une seule fois, "Classinus").
 export default function LayoutDecouvrir({ children }: { children: ReactNode }) {
   return (
     <EcranAutonome className="min-h-screen bg-dj-fond">
@@ -44,8 +49,8 @@ export default function LayoutDecouvrir({ children }: { children: ReactNode }) {
               <BoutonRetourDecouvrir />
             </Suspense>
             <Link href="/" className="flex items-center gap-2.5">
-              <Logo taille={28} sansFond />
-              <span className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
+              <Logo taille={28} sansFond alt="Classinus" />
+              <span aria-hidden="true" className="font-display text-base font-bold tracking-tight text-dj-texte">Classinus</span>
             </Link>
           </div>
           <CtaDecouvrirIcones />
