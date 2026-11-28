@@ -1,11 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import {
-  DUREE_FERMETURE_CHAT_MS,
-  DUREE_OUVERTURE_CHAT_MS,
-  LARGEUR_CHAT_LATERAL_MIN,
-} from "@/lib/chatLateral";
+import { LARGEUR_CHAT_LATERAL_MIN } from "@/lib/chatLateral";
 import type { EtatChatLateral } from "@/lib/useChatLateral";
 
 // Cadre du chat dans ChatFlottant.tsx (28/11/2026, demande de Bourama : le chat
@@ -17,7 +13,8 @@ import type { EtatChatLateral } from "@/lib/useChatLateral";
 // en cours, une réponse qui arrive, tout reste en place) :
 // - collé (docke) : colonne à droite de la page, dont la largeur glisse de 0 à
 //   la largeur choisie. Le chat à l'intérieur garde une largeur fixe : son
-//   contenu ne se recalcule pas pendant l'animation ;
+//   contenu ne se recalcule pas pendant l'animation (sauf à l'étirement plein
+//   écran et à l'arrivée depuis le chat plein écran, où il suit la colonne) ;
 // - flottant (paramètres, fenêtre étroite) : l'enveloppe n'a aucune boîte
 //   (display: contents), la fenêtre flottante se place comme avant.
 
@@ -42,11 +39,11 @@ export function CadreChatLateral({
       style={
         docke
           ? {
-              width: lateral.deploye ? lateral.largeur : 0,
+              // 0 fermé, la largeur choisie ouvert, toute la fenêtre pendant
+              // l'étirement plein écran ou à l'arrivée depuis le chat plein écran.
+              width: lateral.largeurColonne,
               // Pendant le glissement de la barre, la largeur suit le doigt sans retard.
-              transition: lateral.glisse
-                ? "none"
-                : `width ${lateral.deploye ? DUREE_OUVERTURE_CHAT_MS : DUREE_FERMETURE_CHAT_MS}ms cubic-bezier(.25,.8,.35,1)`,
+              transition: lateral.transitionLargeur,
             }
           : undefined
       }

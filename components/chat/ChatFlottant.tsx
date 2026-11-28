@@ -3,8 +3,8 @@
 import { useLocale } from "@/lib/i18n/useLocale";
 import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Bird, X, Maximize2, MessageSquarePlus, History } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Bird, X, Maximize2, ArrowLeftToLine, MessageSquarePlus, History } from "lucide-react";
 import { appelerApi, lireMonProfil, enregistrerMonProfil } from "@/lib/api";
 import { ChatIA } from "./ChatIA";
 import { MessageAffiche, SegmentMessage, construireMessagesDepuisHistorique, LigneHistorique } from "./BulleMessage";
@@ -128,6 +128,7 @@ export function ChatFlottant({
   // chat, cette bulle/ce popup y feraient doublon). Voir le early return
   // plus bas.
   const pathname = usePathname();
+  const router = useRouter();
 
   // 28/11/2026, demande Bourama : sur les pages de l'app, sauf les paramètres,
   // le chat ne flotte plus : il se colle à droite, pousse la page, et on
@@ -389,8 +390,13 @@ export function ChatFlottant({
   // comme d'habitude). Quand on passe d'une fenêtre flottante à la colonne
   // (on quitte les paramètres, chat ouvert), le calque de retour qui se retire
   // ne doit rien consommer dans l'historique : on le marque avant.
+  //
+  // Même chose sur la page du chat plein écran : le chat y reste "ouvert" dans
+  // le contexte (il se recolle tout seul dès qu'on clique une section, voir
+  // lib/useGarderLeChatOuvert.ts), mais il n'est pas affiché ici (voir le
+  // return plus bas), donc il n'y a aucun calque à fermer au bouton retour.
   const { marquerFermetureSansHistorique: marquerMiniSansHistorique } = useFermetureAuRetour(
-    etat === "mini" && !docke,
+    etat === "mini" && !docke && !estPageChat(pathname),
     fermerAvecFondu
   );
   if (docke) marquerMiniSansHistorique?.();
@@ -412,6 +418,17 @@ export function ChatFlottant({
   function fermerMiniAvantNavigation() {
     marquerMiniSansHistorique?.();
     fermerAvecFondu();
+  }
+  // 28/11/2026, demande Bourama : collé à droite, le bouton plein écran étire
+  // le chat vers la gauche (la page est poussée hors de la fenêtre), puis on
+  // arrive sur le chat plein écran. Le chat reste "ouvert" dans le contexte :
+  // il ne se ferme pas pour naviguer, il se recolle dès qu'on clique une
+  // section depuis le chat plein écran. Un clic avec Ctrl, Cmd ou Maj, ou un
+  // clic du milieu, garde le comportement normal d'un lien (nouvel onglet).
+  function etirerPleinEcran(e: React.MouseEvent) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    lateral.etirerVersGauche(() => router.push(ROUTES_APP.chat));
   }
   // Sous-menu historique (mode mini, dropdown dans l'en-tête -- voir plus
   // bas) et modale "compte requis" : mêmes calques de retour que le reste
@@ -505,7 +522,7 @@ export function ChatFlottant({
       // qu'avant (bas-droite, taille fixe), pas de style inline.
       style={
         docke
-          ? { width: lateral.largeur }
+          ? { width: lateral.largeurPanneau, transition: lateral.transitionLargeur }
           : estDesktop
             ? { left: popup.x, top: popup.y, width: popup.largeur, height: popup.hauteur }
             : undefined
@@ -574,12 +591,22 @@ export function ChatFlottant({
         // ternaire hidden md:flex qui ne servait qu'à le masquer en mode
         // plein écran mobile, cas qui n'existe plus ici.
         className={
-          "flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5" +
+          // Collé à droite (28/11/2026, demande Bourama) : même hauteur et même
+          // trait du bas que l'en-tête des pages (EnTeteApp.tsx), pour que les
+          // deux lignes se prolongent, et ni logo ni nom : la colonne est déjà
+          // le chat. La zone de sécurité du haut est reprise à l'identique.
+          (docke
+            ? "flex h-[calc(2.5rem_+_var(--safe-top,0px))] flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pt-[var(--safe-top,0px)]"
+            : "flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5") +
           (estDesktop && !docke ? " cursor-grab select-none active:cursor-grabbing" : "")
         }
       >
-        <Logo taille={20} sansFond />
-        <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
+        {!docke && (
+          <>
+            <Logo taille={20} sansFond />
+            <span className="font-display text-sm font-bold text-dj-texte">Classinus</span>
+          </>
+        )}
 
         <div className="ml-auto flex items-center gap-1">
           {nbMessages > 0 && (
@@ -623,12 +650,17 @@ export function ChatFlottant({
           )}
           <Link
             href={ROUTES_APP.chat}
-            onClick={fermerMiniAvantNavigation}
+            onClick={docke ? etirerPleinEcran : fermerMiniAvantNavigation}
             onPointerDown={(e) => e.stopPropagation()}
-            title="Plein écran"
+            title={docke ? "Étendre le chat vers la gauche" : "Plein écran"}
+            aria-label={docke ? "Étendre le chat vers la gauche" : "Plein écran"}
             className="group flex h-8 w-8 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
-            <Maximize2 size={16} className="transition-transform duration-200 group-hover:scale-110" />
+            {docke ? (
+              <ArrowLeftToLine size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
+            ) : (
+              <Maximize2 size={16} className="transition-transform duration-200 group-hover:scale-110" />
+            )}
           </Link>
           <button
             onClick={fermerAvecFondu}

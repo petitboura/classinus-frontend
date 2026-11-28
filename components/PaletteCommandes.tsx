@@ -22,6 +22,7 @@ import type { EtatChat } from "@/lib/contexteChat";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { ROUTES_APP } from "@/lib/routesApp";
+import { useGarderLeChatOuvert } from "@/lib/useGarderLeChatOuvert";
 
 // Palette de commandes (Cmd+K / Ctrl+K), 22/08/2026, demande Bourama --
 // un des chantiers "grandes applis" (avec fil d'Ariane et historique dans
@@ -116,14 +117,29 @@ export function PaletteCommandes({
     changerTheme(ORDRE_THEME[(i + 1) % ORDRE_THEME.length]);
   }
 
+  // Depuis le chat plein écran, aller à une section ouvre le chat collé à droite
+  // au lieu de le laisser derrière (28/11/2026, voir lib/useGarderLeChatOuvert.ts).
+  const garderLeChatOuvert = useGarderLeChatOuvert();
+
   const commandes: Commande[] = useMemo(() => {
     const nav: Commande[] = [
-      { id: "tableau-de-bord", label: "Aller au tableau de bord", Icone: Home, action: () => router.push(ROUTES_APP.tableauDeBord) },
+      {
+        id: "tableau-de-bord",
+        label: "Aller au tableau de bord",
+        Icone: Home,
+        action: () => {
+          garderLeChatOuvert(ROUTES_APP.tableauDeBord);
+          router.push(ROUTES_APP.tableauDeBord);
+        },
+      },
       ...ONGLETS.map((o) => ({
         id: `nav-${o.id}`,
         label: `Aller à ${o.label}`,
         Icone: o.Icone,
-        action: () => router.push(o.href),
+        action: () => {
+          garderLeChatOuvert(o.href);
+          router.push(o.href);
+        },
       })),
     ];
 

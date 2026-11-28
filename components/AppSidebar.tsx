@@ -48,6 +48,7 @@ import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 import { ROUTES_APP } from "@/lib/routesApp";
+import { useGarderLeChatOuvert } from "@/lib/useGarderLeChatOuvert";
 import {
   CELLULE_ICONE_RAIL,
   CELLULE_ICONE_TACTILE,
@@ -251,7 +252,13 @@ export function AppSidebar({
   // naviguer, sinon la page cible se chargeait invisible derrière lui.
   // /chat est désormais une vraie route comme les autres : il n'y a plus
   // de calque à fermer, juste une navigation normale.
+  // 28/11/2026, demande Bourama : le chat ne se ferme que par son bouton
+  // Fermer. Depuis le chat plein écran, cliquer une section ouvre le chat collé
+  // à droite et la section à gauche (voir lib/useGarderLeChatOuvert.ts). Sans
+  // effet hors du chat plein écran, sur téléphone et dans une fenêtre étroite.
+  const garderLeChatOuvert = useGarderLeChatOuvert();
   function naviguerVersSection(href: string) {
+    garderLeChatOuvert(href);
     router.push(href);
   }
   const [ouverte, setOuverte] = useState(false);
@@ -506,6 +513,10 @@ export function AppSidebar({
             } else {
               naviguerVersSection(onglet.href);
             }
+          } else if (contexteChat) {
+            // Sans id de section (Tableau de bord) : le Link navigue tout seul,
+            // il reste juste à garder le chat ouvert.
+            garderLeChatOuvert(onglet.href);
           }
         }}
         className={`group relative ${mobile ? ECART_ELEMENTS_TIROIR : ECART_ELEMENTS_RAIL} flex w-full items-center ${mobile ? ECART_LIBELLE_TIROIR : "gap-2"} rounded-xl transition-colors ${
@@ -969,12 +980,14 @@ export function AppSidebar({
               // dans MenuProfil, ce callback ne gère plus que l'effet de
               // bord (fermeture du menu profil).
               marquerProfilSansHistorique();
+              garderLeChatOuvert("/parametres");
             }}
             onNaviguerVersProfil={() => {
               // Même besoin que onNaviguerVersParametres juste au dessus,
               // mais vers la section Profil directement (/parametres/profil,
               // voir lib/sectionsParametres.tsx).
               marquerProfilSansHistorique();
+              garderLeChatOuvert("/parametres/profil");
             }}
             onSeDeconnecter={seDeconnecter}
           />

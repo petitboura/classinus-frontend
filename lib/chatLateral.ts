@@ -9,7 +9,7 @@ import { correspondARoute, estPageChat } from "@/lib/routesApp";
 //
 // Ce module est la seule source de vérité de ces règles : quand le chat est
 // collé, quelle largeur il a, quelles pages sont concernées. Le composant qui
-// l'affiche est components/chat/ColonneChatLateral.tsx, branché par
+// l'affiche est components/chat/CadreChatLateral.tsx, branché par
 // ChatFlottant.tsx.
 
 export const LARGEUR_CHAT_LATERAL_DEFAUT = 420;
@@ -44,6 +44,29 @@ export function pageAccepteChatLateral(pathname: string | null | undefined): boo
   if (!pathname) return false;
   if (estPageChat(pathname)) return false;
   return !correspondARoute(pathname, "/parametres");
+}
+
+// Arrivée du chat plein écran vers une page de l'app (28/11/2026, demande de
+// Bourama : quand on clique une section depuis le chat plein écran, la section
+// s'ouvre à gauche et le chat est repoussé vers la droite). La barre latérale
+// pose ce repère juste avant de naviguer ; le chat collé le lit à son
+// apparition pour partir de toute la largeur de la fenêtre et rétrécir vers la
+// droite, au lieu de sortir de 0. Un simple repère en mémoire, sans état React :
+// il est posé et lu dans deux composants éloignés, à quelques instants d'écart.
+// Il expire vite, pour qu'un repère resté sans suite (page qui n'accepte pas le
+// chat collé, navigation annulée) ne déclenche jamais cette animation plus tard.
+const DELAI_ARRIVEE_MS = 6000;
+let arriveeDepuisChatLe = 0;
+
+export function marquerArriveeDepuisChat() {
+  arriveeDepuisChatLe = Date.now();
+}
+
+/** Vrai une seule fois après marquerArriveeDepuisChat (puis le repère est effacé). */
+export function consommerArriveeDepuisChat(): boolean {
+  const recent = arriveeDepuisChatLe > 0 && Date.now() - arriveeDepuisChatLe < DELAI_ARRIVEE_MS;
+  arriveeDepuisChatLe = 0;
+  return recent;
 }
 
 function abonnerEcran(rappel: () => void) {

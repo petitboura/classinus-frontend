@@ -8,16 +8,20 @@ Request of 28 November 2026. On the pages of the app, the chat no longer floats 
 
 - Where it docks: every page of the app except the chat page itself (which has its own interface) and the Settings pages. On a phone, and in a window narrower than 768 px, the chat keeps its previous floating window.
 - Opening and closing: the column slides in from the right (the width goes from 0 to the chosen width) and back out on close. The page shrinks accordingly.
+- The chat only closes with its Close button. Navigating never closes it: when you are on the full screen chat page and click a section or a sub-section (sidebar or command palette), the chat docks on the right with the same conversation and the section opens on the left. The chat starts at the full width of the window and shrinks to the right while the page opens. Going to Settings opens the chat as the floating window there. On a phone or in a narrow window, navigation is unchanged.
+- Header: same height and same bottom line as the page header (`components/EnTeteApp.tsx`), so the two lines continue each other. The docked header has no logo and no name, only the action buttons.
+- Full screen: the button at the top of the docked chat (left arrow icon) stretches the chat to the left over the whole window, pushing the page out, then opens the full screen chat page. While it stretches, the chat content follows the column width (it is the only time besides the arrival animation that the content reflows during an animation). The chat stays open in the app state, so clicking a section from the full screen chat docks it again.
 - Resizing: drag the bar on the left edge of the chat. The arrow keys also work, and a double click restores the default width (420 px). The chat is never narrower than 340 px, and the page never narrower than 360 px.
 - Remembered per account: the width is saved on the profile (column `volet_chat_largeur` of `profiles`), so it is the same on every device. It is also kept on the device so it shows instantly before the profile answers.
 - The controls fixed on the right of the screen (notification bell, timers, Discover button, library buttons, agent action log button) move left by the width of the chat, so they never end up underneath it.
-- The browser back button does not close a docked chat: it is a column of the page, not a window.
+- The browser back button does not close a docked chat: it is a column of the page, not a window. On the full screen chat page the chat shows no popup, so back simply navigates.
 - Going from a page to Settings (or shrinking the window) switches to the floating window without losing the conversation: the chat is never unmounted, only its classes change.
 
 ## Where the code lives
 
 - `lib/chatLateral.ts`: the rules (which pages, which screens, widths, durations, the CSS variable and the device memory of the width).
-- `lib/useChatLateral.ts`: the hook (width, dragging, keyboard, opening and closing animation, clamping when the window shrinks, publishing the width in `--dj-chat-lateral` on `<html>`).
+- `lib/useChatLateral.ts`: the hook (width, dragging, keyboard, opening and closing animation, stretching to full screen, arrival from the full screen chat, clamping when the window shrinks, publishing the width in `--dj-chat-lateral` on `<html>`).
+- `lib/useGarderLeChatOuvert.ts`: called just before navigating from the full screen chat (sidebar `components/AppSidebar.tsx`, command palette `components/PaletteCommandes.tsx`). Opens the chat and marks the arrival so the docked chat starts at full width.
 - `components/chat/CadreChatLateral.tsx`: the wrapper and the drag bar. Docked, it is the column; floating, it has no box (`display: contents`).
 - `components/chat/ChatFlottant.tsx`: decides `docke` (open, large screen, page accepted) and switches the chat panel between the column and the floating window.
 - `app/globals.css`: `.dj-decale-chat`, the transition of the shifted controls (none while the bar is dragged).

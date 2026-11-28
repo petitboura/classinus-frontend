@@ -110,7 +110,7 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
       {
         question: "Où s'affiche le chat quand je suis sur une autre page de l'application ?",
         reponse:
-          "Sur ordinateur, dans les pages de l'application (sauf les paramètres), le chat s'ouvre dans une colonne à droite de la page : il pousse le contenu au lieu de le recouvrir. Tire la barre sur son bord gauche pour l'élargir ou le rétrécir, un double clic remet la largeur d'origine, et ta largeur est retrouvée sur tous tes appareils. Dans les paramètres, sur téléphone et dans une petite fenêtre, le chat reste une fenêtre flottante.",
+          "Sur ordinateur, dans les pages de l'application (sauf les paramètres), le chat s'ouvre dans une colonne à droite de la page : il pousse le contenu au lieu de le recouvrir, et il ne se ferme qu'avec son bouton Fermer. Depuis le chat en plein écran, un clic sur une section ouvre cette section à gauche et repousse le chat vers la droite. Le bouton à flèche vers la gauche, en haut du chat, l'étire vers la gauche jusqu'au plein écran. Tire la barre sur son bord gauche pour l'élargir ou le rétrécir, un double clic remet la largeur d'origine, et ta largeur est retrouvée sur tous tes appareils. Dans les paramètres, sur téléphone et dans une petite fenêtre, le chat reste une fenêtre flottante.",
       },
       {
         question: "À qui s'adresse Classinus ?",
