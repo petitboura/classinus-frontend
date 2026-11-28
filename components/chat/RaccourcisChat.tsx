@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { estCleSection } from "@/lib/cleSections";
-import { useFenetres } from "@/lib/contexteFenetres";
+import { useGarderLeChatOuvert } from "@/lib/useGarderLeChatOuvert";
 import { RACCOURCIS_CHAT_BUREAU, RACCOURCIS_CHAT_MOBILE } from "@/lib/raccourcisChat";
 
 // 01/10/2026, demande Bourama : raccourcis directs vers des sous-sections
@@ -13,9 +12,9 @@ import { RACCOURCIS_CHAT_BUREAU, RACCOURCIS_CHAT_MOBILE } from "@/lib/raccourcis
 //   petits, ni pilule ronde ni carré, sur une seule ligne. Chaque bouton
 //   garde la largeur de son contenu (aucun libellé coupé), puis ils
 //   s'allongent tous du même surplus pour que le premier et le dernier
-//   touchent les bords de la barre. Un clic ouvre la sous-section en fenêtre flottante par-dessus
-//   le chat (même mécanisme que le rail, voir lib/contexteFenetres.tsx),
-//   sans quitter la page.
+//   touchent les bords de la barre. Un clic ouvre la sous-section comme une
+//   vraie page, avec le chat collé à droite (28/11/2026, demande Bourama :
+//   plus aucune fenêtre flottante de section).
 // - "mobile" : une liste, une ligne par raccourci, placée AU-DESSUS de la
 //   barre de saisie (qui reste collée en bas, avec le clavier). Chaque
 //   icône est centrée sur la même verticale que le bouton "+" de la barre
@@ -36,7 +35,7 @@ type Props = {
 const DECALAGE_ALIGNEMENT_PLUS = "pl-[calc(1px+0.75rem)]";
 
 export function RaccourcisChat({ variante, visible = true }: Props) {
-  const { ouvrir } = useFenetres();
+  const garderLeChatOuvert = useGarderLeChatOuvert();
 
   if (variante === "bureau") {
     return (
@@ -46,11 +45,9 @@ export function RaccourcisChat({ variante, visible = true }: Props) {
             key={id}
             href={href}
             onClick={(e) => {
-              // Clic simple : fenêtre flottante. Ctrl/Cmd/clic molette gardent
-              // le comportement de lien (nouvel onglet), comme tout lien.
-              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !estCleSection(href)) return;
-              e.preventDefault();
-              ouvrir(href);
+              // Ctrl/Cmd/Maj/Alt gardent le comportement de lien (nouvel onglet).
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+              garderLeChatOuvert(href);
             }}
             className="inline-flex flex-auto items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
           >

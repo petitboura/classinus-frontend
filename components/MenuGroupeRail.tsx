@@ -4,8 +4,6 @@ import { useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
-import { estCleSection } from "@/lib/cleSections";
-import type { CleFenetre } from "@/lib/contexteFenetres";
 import { sectionsVisiblesDuGroupe, type GroupeRail } from "@/lib/groupesRail";
 import { FlottantAncre } from "@/components/FlottantAncre";
 import type { CoteFlottant } from "@/lib/placementFlottant";
@@ -28,23 +26,22 @@ import {
 // - Barre dépliée (PC) et tiroir mobile : les sous-sections s'ouvrent dans la
 //   barre elle-même, en accordéon animé. Aucun panneau flottant, donc rien qui
 //   double ce que la barre montre déjà et plus de couloir étroit à suivre à la
-//   souris. Sur PC, hors du chat, un clic sur le bouton du groupe plie ou
-//   déplie la liste (demande du 27/11/2026) ; dans le chat, il mène à la page
-//   du groupe et seul le chevron à droite plie ou déplie. Sur mobile, toucher
-//   la ligne plie ou déplie la liste, on entre dans une page en touchant sa
-//   ligne.
-// - Barre repliée (icônes seules) et ligne du menu "Plus" : le survol ouvre un
-//   petit panneau flottant, placé par FlottantAncre (règle commune des
-//   panneaux ancrés). Il garde le comportement demandé le 05/10/2026 : le
-//   premier clic ne change rien, le second entre dans la page du groupe.
+//   souris. Un clic sur le bouton du groupe plie ou déplie la liste.
+// - Barre repliée (icônes seules) : le survol ouvre un petit panneau flottant,
+//   placé par FlottantAncre (règle commune des panneaux ancrés). Un clic sur le
+//   bouton entre dans la page du groupe.
 // - Un groupe sans aucune sous-section entre directement dans sa page.
 //
-// Trois variantes :
+// 28/11/2026, demande de Bourama : le chat est collé à droite de toutes les
+// pages, il n'y a donc plus de "dans le chat" et "hors du chat". Ce menu se
+// comporte partout de la même façon, et une sous-section s'ouvre toujours comme
+// une vraie page (plus aucune fenêtre flottante de section).
+//
+// Deux variantes :
 // - "rail" : bouton du rail PC.
 // - "mobile" : tiroir du chat sur mobile.
-// - "plus" : ligne du menu "Plus" du rail dans le chat, panneau sur le côté.
 
-export type VarianteGroupe = "rail" | "mobile" | "plus";
+export type VarianteGroupe = "rail" | "mobile";
 
 // Délai avant fermeture quand la souris quitte le groupe : sans lui, le
 // moindre trajet en diagonale fermait le panneau avant qu'on puisse cliquer.
@@ -63,8 +60,6 @@ export function MenuGroupe({
   ouverte,
   LibelleRail,
   pathname,
-  contexteChat,
-  ouvrirFenetre,
   naviguerVersSection,
   ouvert,
   onOuvrir,
@@ -77,10 +72,8 @@ export function MenuGroupe({
   ouverte: boolean;
   LibelleRail: React.ComponentType<{ ouverte: boolean; children: React.ReactNode }>;
   pathname: string;
-  contexteChat: boolean;
-  ouvrirFenetre: (cle: CleFenetre) => void;
-  // Requis pour la variante mobile : naviguer vraiment au lieu d'ouvrir la
-  // fenêtre flottante (qui ne fonctionne pas sur mobile).
+  // Navigue vers la page (et garde le chat ouvert, collé à droite, quand on part
+  // du chat plein écran).
   naviguerVersSection: (href: string) => void;
   /** Le panneau flottant est voulu ouvert (jamais utilisé en accordéon). */
   ouvert: boolean;
@@ -89,7 +82,6 @@ export function MenuGroupe({
   onNaviguer?: () => void;
 }) {
   const mobile = variante === "mobile";
-  const plus = variante === "plus";
   const ref = useRef<HTMLDivElement>(null);
   const panneauRef = useRef<HTMLDivElement | null>(null);
   const { estProfesseur } = useContext(ContexteStatutUtilisateur);
@@ -134,13 +126,6 @@ export function MenuGroupe({
     if (enLigne && ouvert) onFermer();
   }, [enLigne, ouvert, onFermer]);
 
-  // Vrai après le premier clic sur le bouton pendant que le panneau est
-  // affiché (PC, barre repliée). Le second clic entre alors dans la page.
-  const premierClicFait = useRef(false);
-  useEffect(() => {
-    if (!ouvert) premierClicFait.current = false;
-  }, [ouvert]);
-
   const minuteurFermeture = useRef<ReturnType<typeof setTimeout> | null>(null);
   function annulerFermeture() {
     if (minuteurFermeture.current) {
@@ -184,48 +169,27 @@ export function MenuGroupe({
     return () => document.removeEventListener("keydown", onTouche);
   }, [panneauVoulu, onFermer]);
 
-  function entrerDansGroupe() {
-    onNaviguer?.();
-    onFermer();
-    naviguerVersSection(groupe.href);
-  }
-
+  // Une sous-section s'ouvre toujours comme une vraie page, avec ou sans le chat
+  // plein écran. Ctrl, Cmd, Maj ou Alt gardent le comportement d'un lien
+  // (nouvel onglet).
   function cliquerSection(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     onNaviguer?.();
     onFermer();
-    // Dans le chat, la sous-section s'ouvre en fenêtre flottante par-dessus
-    // (desktop seulement), avec le même contenu que sa vraie page. Sur
-    // mobile, vraie navigation.
-    if (contexteChat) {
-      e.preventDefault();
-      if (mobile || !estCleSection(href)) {
-        naviguerVersSection(href);
-      } else {
-        ouvrirFenetre(href);
-      }
-    }
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    naviguerVersSection(href);
   }
 
-  const classeBouton = plus
-    ? `group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
-        actif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-      } ${panneauVoulu && !actif ? "bg-dj-surface-haute text-dj-texte" : ""}`
-    : `group flex w-full items-center ${mobile ? `${ECART_LIBELLE_TIROIR} px-2` : "gap-2"} rounded-xl transition-colors ${
-        actif || panneauVoulu ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
-      }`;
+  const classeBouton = `group flex w-full items-center ${mobile ? `${ECART_LIBELLE_TIROIR} px-2` : "gap-2"} rounded-xl transition-colors ${
+    actif || panneauVoulu ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+  }`;
 
-  const ariaExpanded = sansSousSection
-    ? undefined
-    : mobile || (enLigne && !contexteChat)
-      ? accordeonOuvert
-      : enLigne
-        ? undefined
-        : panneauVoulu;
+  const ariaExpanded = sansSousSection ? undefined : enLigne ? accordeonOuvert : panneauVoulu;
 
   return (
     <div
       ref={ref}
-      className={`relative w-full ${plus ? "" : mobile ? ECART_ELEMENTS_TIROIR : ECART_ELEMENTS_RAIL}`}
+      className={`relative w-full ${mobile ? ECART_ELEMENTS_TIROIR : ECART_ELEMENTS_RAIL}`}
       onMouseEnter={() => {
         if (enLigne) return;
         annulerFermeture();
@@ -233,8 +197,6 @@ export function MenuGroupe({
       }}
       onMouseLeave={() => {
         if (enLigne) return;
-        // La souris quitte le groupe : le compte des clics repart de zéro.
-        premierClicFait.current = false;
         planifierFermeture();
       }}
     >
@@ -246,56 +208,32 @@ export function MenuGroupe({
         aria-current={actif ? "page" : undefined}
         aria-expanded={ariaExpanded}
         onClick={(e) => {
-          if (contexteChat) {
-            e.preventDefault();
-            if (sansSousSection || (enLigne && !mobile)) {
-              // Rien à déplier ici (ou la liste a son propre chevron) : on
-              // entre directement dans la page du groupe.
-              entrerDansGroupe();
-            } else if (mobile) {
-              setDeplie((v) => !v);
-            } else if (!ouvert) {
-              // Panneau pas encore affiché (clavier, par exemple) : ce clic
-              // l'ouvre seulement.
-              onOuvrir();
-            } else if (!premierClicFait.current) {
-              premierClicFait.current = true;
-            } else {
-              premierClicFait.current = false;
-              entrerDansGroupe();
-            }
-          } else if (enLigne && !sansSousSection) {
-            // Hors du chat, barre dépliée : le clic plie ou déplie la liste, il
+          if (enLigne && !sansSousSection) {
+            // Barre dépliée ou tiroir mobile : le clic plie ou déplie la liste, il
             // n'emmène pas dans la page du groupe.
             e.preventDefault();
             setDeplie((v) => !v);
           } else {
             onNaviguer?.();
             onFermer();
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            naviguerVersSection(groupe.href);
           }
         }}
         className={classeBouton}
       >
-        {plus ? (
-          <>
-            <groupe.Icone size={16} className="flex-shrink-0" />
-            {groupe.label}
-          </>
-        ) : (
-          <>
-            <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
-              <groupe.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-            </span>
-            {mobile ? <span className="text-sm font-medium">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
-            {mobile && !sansSousSection && (
-              <ChevronRight
-                size={TAILLE_ICONE_RAIL}
-                strokeWidth={TRAIT_ICONE_RAIL}
-                aria-hidden="true"
-                className={`ml-auto mr-1 flex-shrink-0 transition-transform duration-200 ${accordeonOuvert ? "rotate-90" : ""}`}
-              />
-            )}
-          </>
+        <span className={mobile ? CELLULE_ICONE_TACTILE : CELLULE_ICONE_RAIL}>
+          <groupe.Icone size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+        </span>
+        {mobile ? <span className="text-sm font-medium">{groupe.label}</span> : <LibelleRail ouverte={ouverte}>{groupe.label}</LibelleRail>}
+        {mobile && !sansSousSection && (
+          <ChevronRight
+            size={TAILLE_ICONE_RAIL}
+            strokeWidth={TRAIT_ICONE_RAIL}
+            aria-hidden="true"
+            className={`ml-auto mr-1 flex-shrink-0 transition-transform duration-200 ${accordeonOuvert ? "rotate-90" : ""}`}
+          />
         )}
       </Link>
 
@@ -323,7 +261,7 @@ export function MenuGroupe({
       {/* Accordéon dans la barre : la hauteur s'anime de 0 à la taille réelle,
           jamais d'apparition brute. Le filet vertical tombe sous l'icône du
           groupe et relie visuellement les lignes à leur parent. */}
-      {!plus && !sansSousSection && (
+      {!sansSousSection && (
         <div
           className={`grid transition-[grid-template-rows,visibility] duration-300 ease-cgpt-doux ${
             accordeonOuvert ? "visible grid-rows-[1fr]" : "invisible grid-rows-[0fr]"

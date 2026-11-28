@@ -17,6 +17,7 @@ import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useFenetreDeplacable, POIGNEES_REDIMENSIONNEMENT } from "@/lib/useFenetreDeplacable";
 import { TAILLE_MIN } from "@/lib/contexteFenetres";
 import { texteAccueilSelonHeure } from "@/lib/salutations";
+import { reinitialiserRevelationTitreAccueil } from "@/lib/revelationTitreAccueil";
 import { Skeleton } from "@/components/Skeleton";
 import { ROUTES_APP, estPageChat } from "@/lib/routesApp";
 import { CadreChatLateral } from "@/components/chat/CadreChatLateral";
@@ -350,6 +351,16 @@ export function ChatFlottant({
 
   const fermerAvecFondu = ctxChat?.fermerAvecFondu ?? (() => setEtat("fermee"));
 
+  // Chat fermé : à sa prochaine ouverture, le titre d'accueil s'animera de nouveau
+  // (une seule animation par ouverture, voir lib/revelationTitreAccueil.ts).
+  useEffect(() => {
+    if (etat === "fermee") reinitialiserRevelationTitreAccueil();
+  }, [etat]);
+
+  // Titre affiché dans l'en-tête du chat collé : celui de la conversation active
+  // dans l'historique (vide pour une nouvelle conversation sans titre).
+  const titreConversation = historique.find((f) => f.conversation_id === cle)?.titre ?? "";
+
   function nouvelleConversation() {
     setCle(crypto.randomUUID());
     setMessagesInitiaux([]);
@@ -608,7 +619,21 @@ export function ChatFlottant({
           </>
         )}
 
-        <div className="ml-auto flex items-center gap-1">
+        {/* Chat collé (28/11/2026, demande Bourama) : à la place du nom, le titre
+            de la conversation, toujours sur une seule ligne, coupé par des
+            points de suspension s'il est long. Vide tant que la conversation
+            n'a pas de titre (nouvelle conversation). */}
+        {docke && (
+          <span
+            key={titreConversation}
+            title={titreConversation || undefined}
+            className="min-w-0 flex-1 animate-dj-fade-in-rapide truncate whitespace-nowrap text-sm font-medium text-dj-texte"
+          >
+            {titreConversation}
+          </span>
+        )}
+
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           {nbMessages > 0 && (
             <button
               onClick={nouvelleConversation}

@@ -24,6 +24,7 @@ import { codeDepuisException, codeErreurValide } from "@/lib/erreurTour";
 import { CtaImportIa } from "./CtaImportIa";
 import { BandeauReconnexionFlux } from "./BandeauReconnexionFlux";
 import { RaccourcisChat } from "./RaccourcisChat";
+import { marquerTitreAccueilRevele, titreAccueilDejaRevele } from "@/lib/revelationTitreAccueil";
 import { messageErreur } from "@/lib/erreurs";
 import { ContexteChat, type DemandeVoixEnAttente } from "@/lib/contexteChat";
 import { ContexteCanalEnDirect } from "@/lib/contexteCanalEnDirect";
@@ -347,13 +348,21 @@ export function ChatIA({
   // grandir juste le texte progressivement suffit à obtenir l'effet
   // demandé, l'icône se déplaçant seule vers la gauche à mesure que le
   // bloc entier se recentre.
-  const [titreRevele, setTitreRevele] = useState("");
+  // 28/11/2026, demande Bourama : le titre ne s'anime qu'une fois, à l'ouverture
+  // de la page ou à l'ouverture du chat après l'avoir fermé (mémoire dans
+  // lib/revelationTitreAccueil.ts). Les autres fois (chat collé, plein écran,
+  // nouvelle conversation), il s'affiche d'un coup, sans bouger.
+  const [titreRevele, setTitreRevele] = useState(() => (titreAccueilDejaRevele() ? (titreAccueil ?? "") : ""));
   const idIntervalTitreRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function jouerRevelationTitre() {
     if (idIntervalTitreRef.current) clearInterval(idIntervalTitreRef.current);
     if (!titreAccueil) {
       setTitreRevele("");
+      return;
+    }
+    if (titreAccueilDejaRevele()) {
+      setTitreRevele(titreAccueil);
       return;
     }
     setTitreRevele("");
@@ -364,12 +373,13 @@ export function ChatIA({
       if (i >= titreAccueil.length && idIntervalTitreRef.current) {
         clearInterval(idIntervalTitreRef.current);
         idIntervalTitreRef.current = null;
+        marquerTitreAccueilRevele();
       }
     }, 35);
   }
 
-  // Relance au montage et à chaque nouveau titreAccueil (nouvelle
-  // conversation ou nouvelle heure).
+  // Au montage et à chaque nouveau titreAccueil (nouvelle heure) : animé la
+  // première fois seulement, voir jouerRevelationTitre.
   useEffect(() => {
     jouerRevelationTitre();
     return () => {
@@ -377,22 +387,6 @@ export function ChatIA({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [titreAccueil]);
-
-  // Relance spécifiquement à l'ENTRÉE en plein écran (18/08/2026, demande
-  // Bourama) -- ChatIA reste monté en continu entre mini/plein écran pour
-  // préserver la conversation (voir ChatFlottant.tsx), donc l'effet
-  // ci-dessus ne se redéclenche pas tout seul au changement d'état. Ne se
-  // relance PAS en sortant du plein écran (retour au mini) : seule
-  // l'entrée est concernée, via le ref qui retient l'état précédent.
-  const pleinEcranPrecedentRef = useRef(pleinEcran);
-  useEffect(() => {
-    const entreEnPleinEcran = pleinEcran && !pleinEcranPrecedentRef.current;
-    pleinEcranPrecedentRef.current = pleinEcran;
-    if (entreEnPleinEcran) {
-      jouerRevelationTitre();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pleinEcran]);
 
   function majMessages(fabriqueSuivant: (prec: MessageAffiche[]) => MessageAffiche[]) {
     setMessages((prec) => {
