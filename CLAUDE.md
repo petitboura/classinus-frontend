@@ -121,3 +121,13 @@ Bourama's rule from 8 November 2026. A preview must be a real template: the pers
 
 - The single switch is `estGenerationDisponible` in `lib/higgsfieldGeneration.ts`. To open another kind of effect, change it there once Higgsfield can reproduce that preview faithfully, never in a single tab.
 - Never make a preview a decoration or an advert: if it cannot be reproduced on the person's image, mark it "Coming soon".
+
+## The Preferences skeleton must always match the Preferences screen
+
+Bourama's order from 28 November 2026. It is a rule, not a question.
+
+`components/ParametresPreferencesSkeleton.tsx` is the loading placeholder of Settings > Preferences (`components/ParametresPreferences.tsx`). It must mirror the real layout line by line, so nothing jumps when the content appears.
+
+- Whenever a preference is added, removed, moved, or changes size (a longer description, a new block), update the skeleton in the same change.
+- Count the switch rows, selects, and text lines, and make the skeleton show the same number in the same order.
+- A task that changes Preferences without updating the skeleton is not finished.

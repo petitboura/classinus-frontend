@@ -323,6 +323,12 @@ export function VoletLecteur() {
             )}
           </>
         )}
+        {/* Code source : seul le bouton Copier, le texte est chargé par ContenuCode (même pilote que le markdown). */}
+        {!estMarkdown(rendu) && texteMarkdown && (
+          <button type="button" onClick={copierTexte} aria-label="Copier" title="Copier" className={classeBouton}>
+            {copie ? <Check size={16} /> : <Copy size={16} />}
+          </button>
+        )}
         {avecCopierLien && <BoutonCopierLien href={rendu.url} variante="texte" />}
         {cibleTelechargement && (
           <button

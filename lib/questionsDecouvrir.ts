@@ -33,7 +33,7 @@ export const QUESTIONS_DECOUVRIR_BIBLIOTHEQUE: GroupeQuestionsDecouvrir[] = [
       {
         question: "Comment ouvrir un fichier ou une image à côté de la conversation ?",
         reponse:
-          "Quand Classinus te donne un fichier (PDF, livre numérique, Word, Excel, PowerPoint, texte), une image, un audio ou une vidéo, clique dessus : il s'ouvre dans un volet à droite du chat, et tu peux continuer à discuter pendant que tu lis. Tire la barre au milieu pour élargir ou rétrécir le volet, la largeur est mémorisée. Le bouton plein écran l'agrandit sur toute la fenêtre, et un nouveau fichier remplace celui qui est ouvert. Sur téléphone, le fichier s'ouvre en plein écran avec une flèche pour revenir à la conversation.",
+          "Quand Classinus te donne un fichier (PDF, livre numérique, Word, Excel, PowerPoint, texte, code), une image, un audio ou une vidéo, clique dessus : il s'ouvre dans un volet à droite du chat, et tu peux continuer à discuter pendant que tu lis. Tire la barre au milieu pour élargir ou rétrécir le volet, la largeur est mémorisée. Le bouton plein écran l'agrandit sur toute la fenêtre, et un nouveau fichier remplace celui qui est ouvert. Les notes de ta bibliothèque s'ouvrent aussi dans ce volet. Sur ordinateur, à la fin d'une réponse, le premier fichier qu'elle contient s'ouvre tout seul à droite ; tu peux couper cela dans Paramètres > Préférences (Ouverture automatique du lecteur). Sur téléphone, le fichier s'ouvre en plein écran avec une flèche pour revenir à la conversation.",
       },
       {
         question: "Comment Classinus traite-t-il un fichier ZIP ?",

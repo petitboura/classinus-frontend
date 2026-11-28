@@ -16,6 +16,8 @@ import {
   ContenuNonPrevisualisable,
 } from "@/components/VisionneuseBibliotheque";
 import { ouvrirSiteExterieur } from "@/lib/liensSortants";
+import { langageDeCode } from "./FichierCode";
+import { ContenuCode } from "./ContenuCode";
 
 // 27/11/2026 : le choix de l'aperçu selon le type d'un fichier (PDF, livre,
 // image, Office, markdown, texte, audio, carte de site) vivait entièrement dans
@@ -57,15 +59,23 @@ export function typeApercu(detail: ApercuFichier) {
   const estPdf = typeMime === "application/pdf" || detail.positionType === "page" || extension === "pdf";
   const estOffice = TYPES_MIME_OFFICE.has(typeMime);
   const estLien = typeMime === "text/uri-list";
-  const estMarkdown = !estLien && estFichierMarkdown(detail.titre, typeMime);
-  const estTexte = !estLien && !estMarkdown && estTypeTexteLisible(typeMime);
+  // Code source (py, js, ts, html...) : reconnu par l'extension, celle donnée ou
+  // celle du nom du fichier (une pièce jointe n'a souvent qu'un type MIME générique).
+  const extensionDuNom = detail.titre.includes(".") ? detail.titre.split(".").pop() : null;
+  const extensionCodeFichier = extension || (extensionDuNom || "").toLowerCase();
+  const estCode =
+    !estLien && !estPdf && !estLivre && !estImage && !estAudio && !estOffice && langageDeCode(extensionCodeFichier) !== null;
+  const estMarkdown = !estLien && !estCode && estFichierMarkdown(detail.titre, typeMime);
+  const estTexte = !estLien && !estCode && !estMarkdown && estTypeTexteLisible(typeMime);
   // Aucun type MIME du tout : pas un fichier de bibliothèque, donc une source
   // web (résultat de recherche), affichée en carte de site, jamais en iframe.
-  const estSiteWeb = !detail.typeMime && !estPdf && !estAudio && !estLivre;
+  const estSiteWeb = !detail.typeMime && !estPdf && !estAudio && !estLivre && !estCode;
   const estNonPrevisualisable = !(
-    estAudio || estPdf || estLivre || estImage || estOffice || estMarkdown || estTexte || estSiteWeb || estLien
+    estAudio || estPdf || estLivre || estImage || estOffice || estCode || estMarkdown || estTexte || estSiteWeb || estLien
   );
   return {
+    extensionCodeFichier,
+    estCode,
     estLivre,
     estImage,
     estAudio,
@@ -150,7 +160,8 @@ export function ContenuFichierApercu({
 }: {
   detail: ApercuFichier;
   /** Fourni par le volet : la vue Formaté ou Brut et le texte chargé vivent dans
-   * son en-tête. Sans cette prop, le markdown garde son bandeau interne. */
+   * son en-tête (le texte chargé sert aussi au bouton Copier du code). Sans cette
+   * prop, le markdown garde son bandeau interne. */
   markdownPilote?: { vueBrute: boolean; surTexteCharge: (texte: string) => void };
 }) {
   const t = typeApercu(detail);
@@ -164,6 +175,11 @@ export function ContenuFichierApercu({
   }
   if (t.estImage) return <VisionneurImage url={detail.url} titre={detail.titre} />;
   if (t.estOffice) return <ContenuOffice href={detail.url} titre={detail.titre} />;
+  if (t.estCode) {
+    return (
+      <ContenuCode href={detail.url} extension={t.extensionCodeFichier} onTexteCharge={markdownPilote?.surTexteCharge} />
+    );
+  }
   if (t.estMarkdown) {
     return markdownPilote ? (
       <ContenuMarkdown

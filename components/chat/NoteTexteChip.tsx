@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import { BlocExpansible } from "./BlocExpansible";
+import { CarteFichierLecteur } from "./CarteFichierLecteur";
+import { useLecteurDisponible, type ContenuLecteur } from "@/lib/lecteurLateral";
 import { Skeleton } from "@/components/Skeleton";
 import { estOrigineDeConfiance } from "@/lib/originesFiables";
 
@@ -31,15 +33,39 @@ export function estNoteTexteBibliotheque(href: string): boolean {
   return href.split("?")[0].toLowerCase().endsWith(".txt");
 }
 
+// Ce que le lecteur affiche pour une note : un texte brut. Partagé avec l'ouverture
+// automatique en fin de réponse (premierContenuReponse.ts) pour que les deux ouvrent
+// exactement la même chose, sous le même identifiant ("Ouvert à droite").
+export function contenuLecteurNote(href: string, nom: string): ContenuLecteur {
+  return {
+    genre: "fichier",
+    id: `fichier:${href}`,
+    titre: nom,
+    url: href,
+    extension: "txt",
+    typeMime: "text/plain",
+    sousTitre: "Note",
+    icone: FileText,
+    telechargeable: true,
+  };
+}
+
 export function NoteTexteChip({ href, nom }: { href: string; nom: string }) {
   const [texte, setTexte] = useState<string | null>(null);
   const [enErreur, setEnErreur] = useState(false);
+  // Page du chat : une carte ouvre la note dans le lecteur à côté de la conversation
+  // (VoletLecteur.tsx). Ailleurs, la note se déroule dans le fil comme avant.
+  const lecteurAuVolet = useLecteurDisponible();
 
   function chargerAuPremierClic() {
     fetch(href)
       .then((r) => (r.ok ? r.text() : Promise.reject()))
       .then(setTexte)
       .catch(() => setEnErreur(true));
+  }
+
+  if (lecteurAuVolet) {
+    return <CarteFichierLecteur nom={nom} sousTitre="Note" Icone={FileText} contenu={contenuLecteurNote(href, nom)} />;
   }
 
   return (

@@ -5,13 +5,14 @@ import { Monitor, Sun, Moon } from "lucide-react";
 import { lireMonProfil, enregistrerMonProfil } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
-import { Skeleton } from "./Skeleton";
+import { ParametresPreferencesSkeleton } from "./ParametresPreferencesSkeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { ContexteStatutUtilisateur } from "@/lib/contexteStatutUtilisateur";
 import { LANGUES_TRADUCTION_ERREURS } from "@/lib/languesTraductionErreurs";
 import { useLocale } from "@/lib/i18n/useLocale";
 import type { Locale } from "@/lib/i18n/locale";
 import { SelectPersonnalise } from "./SelectPersonnalise";
+import { ecrireOuvertureAuto, useOuvertureAuto } from "@/lib/lecteurLateral";
 
 // 19/09/2026, demande Bourama : ancien écran "preferences" d'EspaceParametres.tsx.
 const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
@@ -52,6 +53,10 @@ export function ParametresPreferences() {
   const [messageAuto, setMessageAuto] = useState<string | null>(null);
   const [enregistrementAuto, setEnregistrementAuto] = useState(false);
   const traductionAuto = traductionAutoErreurs ?? false;
+  // 28/11/2026, demande Bourama : ouverture automatique du lecteur en fin de réponse.
+  // Réglage de l'appareil (voir lib/lecteurLateral.ts), actif par défaut.
+  const ouvertureAuto = useOuvertureAuto();
+  const [messageOuverture, setMessageOuverture] = useState<string | null>(null);
 
   useEffect(() => {
     lireMonProfil()
@@ -94,6 +99,12 @@ export function ParametresPreferences() {
     } finally {
       setEnregistrementProf(false);
     }
+  }
+
+  function basculerOuvertureAuto() {
+    const nouvelleValeur = !ouvertureAuto;
+    ecrireOuvertureAuto(nouvelleValeur);
+    setMessageOuverture(nouvelleValeur ? "Ouverture automatique activée." : "Ouverture automatique désactivée.");
   }
 
   async function choisirLangueCibleErreurs(langue: string) {
@@ -140,12 +151,7 @@ export function ParametresPreferences() {
   }
 
   if (chargement) {
-    return (
-      <div className="flex flex-col gap-4 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4" aria-hidden>
-        <Skeleton className="h-9 w-full rounded-lg" />
-        <Skeleton className="h-9 w-full rounded-lg" />
-      </div>
-    );
+    return <ParametresPreferencesSkeleton />;
   }
 
   if (erreurChargement) {
@@ -220,6 +226,30 @@ export function ParametresPreferences() {
         </button>
       </div>
       {messageNotifs && <span className="text-sm text-dj-texte-muet">{messageNotifs}</span>}
+
+      <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-dj-texte">Ouverture automatique du lecteur</span>
+          <span className="text-xs text-dj-texte-muet">
+            À la fin d'une réponse, ouvre à droite du chat le premier fichier qu'elle contient (document, code, note, image, audio ou vidéo). Ordinateur seulement, réglage propre à cet appareil.
+          </span>
+        </div>
+        <button
+          role="switch"
+          aria-checked={ouvertureAuto}
+          onClick={basculerOuvertureAuto}
+          className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+            ouvertureAuto ? "bg-dj-accent-1" : "bg-dj-inactif"
+          }`}
+        >
+          <span
+            className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              ouvertureAuto ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+      {messageOuverture && <span className="text-sm text-dj-texte-muet">{messageOuverture}</span>}
 
       <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
         <div className="flex flex-col gap-0.5">
