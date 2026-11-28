@@ -37,13 +37,14 @@ const REQUETE_GRAND_ECRAN = "(min-width: 768px)";
 
 /**
  * Vrai pour les pages où le chat peut se coller à droite : toutes celles de
- * l'app, sauf le chat lui-même (qui a sa propre interface) et les paramètres
- * (où le chat reste flottant).
+ * l'app, sauf le chat lui-même (qui a sa propre interface), les paramètres et la
+ * page des abonnements (où le chat reste flottant ; abonnements : demande de
+ * Bourama du 28/11/2026).
  */
 export function pageAccepteChatLateral(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
   if (estPageChat(pathname)) return false;
-  return !correspondARoute(pathname, "/parametres");
+  return !correspondARoute(pathname, "/parametres") && !correspondARoute(pathname, "/abonnements");
 }
 
 // Arrivée du chat plein écran vers une page de l'app (28/11/2026, demande de
