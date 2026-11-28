@@ -62,7 +62,7 @@ export function LanceurMinuteur({
   return (
     // Position fixe à gauche de la cloche des notifications (BoutonNotifications.tsx :
     // 32px de large à 8px du bord droit) pour ne jamais la recouvrir, sur tous les écrans.
-    <div className="fixed right-11 top-[calc(0.625rem+var(--safe-top,0px))] z-40">
+    <div className="dj-decale-chat fixed right-[calc(2.75rem+var(--dj-chat-lateral,0px))] top-[calc(0.625rem+var(--safe-top,0px))] z-40">
       <button
         type="button"
         onClick={() => setOuvert((v) => !v)}

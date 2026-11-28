@@ -1154,3 +1154,15 @@ html[data-ouverture-vue="1"] #clovis-splash {
 .hf-point {
   animation: hf-point 1.4s ease-in-out infinite;
 }
+
+/* Chat collé à droite des pages (28/11/2026, voir lib/chatLateral.ts) : les
+   éléments fixés à droite de l'écran se décalent de la largeur du chat via
+   var(--dj-chat-lateral). Leur déplacement suit l'ouverture du chat (même
+   durée et même courbe que la colonne, CadreChatLateral.tsx), mais colle au
+   doigt pendant que la barre est tirée. */
+.dj-decale-chat {
+  transition: right 280ms cubic-bezier(0.25, 0.8, 0.35, 1);
+}
+html[data-chat-glisse="true"] .dj-decale-chat {
+  transition: none;
+}

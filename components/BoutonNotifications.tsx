@@ -132,7 +132,7 @@ export function BoutonNotifications({ connecte }: { connecte: boolean }) {
   }
 
   return (
-    <div ref={ref} className="fixed right-2 top-[calc(0.5rem+var(--safe-top,0px))] z-40">
+    <div ref={ref} className="dj-decale-chat fixed right-[calc(0.5rem+var(--dj-chat-lateral,0px))] top-[calc(0.5rem+var(--safe-top,0px))] z-40">
       <button
         onClick={() => setOuvert((v) => !v)}
         aria-label="Notifications"

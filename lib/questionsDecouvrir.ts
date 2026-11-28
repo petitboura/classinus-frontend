@@ -108,6 +108,11 @@ export const QUESTIONS_DECOUVRIR_GENERAL: GroupeQuestionsDecouvrir[] = [
           "Le sélecteur du chat affiche les modèles actuellement disponibles, regroupés par fournisseur. La sélection peut évoluer selon les modèles activés et les conditions de ton offre. Les modèles non encore disponibles sont signalés séparément.",
       },
       {
+        question: "Où s'affiche le chat quand je suis sur une autre page de l'application ?",
+        reponse:
+          "Sur ordinateur, dans les pages de l'application (sauf les paramètres), le chat s'ouvre dans une colonne à droite de la page : il pousse le contenu au lieu de le recouvrir. Tire la barre sur son bord gauche pour l'élargir ou le rétrécir, un double clic remet la largeur d'origine, et ta largeur est retrouvée sur tous tes appareils. Dans les paramètres, sur téléphone et dans une petite fenêtre, le chat reste une fenêtre flottante.",
+      },
+      {
         question: "À qui s'adresse Classinus ?",
         reponse:
           "Classinus s'adresse d'abord aux personnes en Afrique qui veulent accéder à plusieurs grands modèles d'IA, connecter leurs applications, créer, rechercher, programmer ou organiser leurs projets. Il comprend aussi, en option, des outils d'apprentissage et un Bureau avec des fonctions réservées aux enseignants. Ces outils sont facultatifs et ne sont pas le cœur de Classinus.",

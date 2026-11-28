@@ -19,6 +19,9 @@ import { TAILLE_MIN } from "@/lib/contexteFenetres";
 import { texteAccueilSelonHeure } from "@/lib/salutations";
 import { Skeleton } from "@/components/Skeleton";
 import { ROUTES_APP, estPageChat } from "@/lib/routesApp";
+import { CadreChatLateral } from "@/components/chat/CadreChatLateral";
+import { pageAccepteChatLateral, useGrandEcranChat } from "@/lib/chatLateral";
+import { useChatLateral } from "@/lib/useChatLateral";
 
 // Chat flottant global (refonte "Mon espace = l'app", 15/08/2026, demande
 // Bourama : "il faut un bouton pour ouvrir le chat en plein écran"). Avant
@@ -126,6 +129,31 @@ export function ChatFlottant({
   // plus bas.
   const pathname = usePathname();
 
+  // 28/11/2026, demande Bourama : sur les pages de l'app, sauf les paramètres,
+  // le chat ne flotte plus : il se colle à droite, pousse la page, et on
+  // l'élargit en tirant sa barre (voir lib/chatLateral.ts et
+  // components/chat/CadreChatLateral.tsx). Sur téléphone, dans une fenêtre
+  // étroite (moins de 768 px) et dans les paramètres, la fenêtre flottante
+  // d'avant reste telle quelle. Le chat n'est jamais démonté en passant de
+  // l'une à l'autre présentation : même enveloppe, seules les classes changent.
+  const grandEcran = useGrandEcranChat();
+  const docke = etat === "mini" && grandEcran && pageAccepteChatLateral(pathname);
+  // Largeur du chat collé, enregistrée sur le compte (colonne volet_chat_largeur
+  // du profil) pour la retrouver sur tous les appareils.
+  const [largeurVoletCompte, setLargeurVoletCompte] = useState<number | null>(null);
+  const lateral = useChatLateral({
+    docke,
+    enFermeture,
+    largeurCompte: largeurVoletCompte,
+    surLargeurFinale: (largeur) => {
+      setLargeurVoletCompte(largeur);
+      // Échec silencieux volontaire (comme sauvegarderPopup) : la largeur reste
+      // gardée sur cet appareil, une préférence de confort ne doit pas
+      // interrompre le chat.
+      enregistrerMonProfil({ volet_chat_largeur: largeur }).catch(() => {});
+    },
+  });
+
   // 07/09/2026, demande Bourama : popup mini déplaçable/redimensionnable
   // (desktop uniquement) avec taille/position retrouvée par compte.
   //
@@ -163,7 +191,10 @@ export function ChatFlottant({
     lireMonProfil()
       .then((p) => {
         if (annule) return;
-        const { popup_chat_x, popup_chat_y, popup_chat_largeur, popup_chat_hauteur } = p ?? {};
+        const { popup_chat_x, popup_chat_y, popup_chat_largeur, popup_chat_hauteur, volet_chat_largeur } = p ?? {};
+        // Lue avant le return ci-dessous : un compte peut avoir réglé la largeur
+        // du chat collé sans jamais avoir déplacé la fenêtre flottante.
+        if (volet_chat_largeur != null) setLargeurVoletCompte(volet_chat_largeur);
         if (
           popup_chat_x == null ||
           popup_chat_y == null ||
@@ -353,7 +384,16 @@ export function ChatFlottant({
   // "plein_ecran" (marquerPleinEcranSansHistorique) est retiré avec lui.
   // Le comportement du bouton retour sur la vraie page /chat reste à
   // trancher séparément avec Bourama (voir ChatSection.tsx).
-  const { marquerFermetureSansHistorique: marquerMiniSansHistorique } = useFermetureAuRetour(etat === "mini", fermerAvecFondu);
+  // 28/11/2026 : un chat collé à droite est une colonne de la page, pas une
+  // fenêtre : le bouton retour du navigateur ne le ferme pas (il navigue
+  // comme d'habitude). Quand on passe d'une fenêtre flottante à la colonne
+  // (on quitte les paramètres, chat ouvert), le calque de retour qui se retire
+  // ne doit rien consommer dans l'historique : on le marque avant.
+  const { marquerFermetureSansHistorique: marquerMiniSansHistorique } = useFermetureAuRetour(
+    etat === "mini" && !docke,
+    fermerAvecFondu
+  );
+  if (docke) marquerMiniSansHistorique?.();
 
   // Étape 4 (07/09/2026, chantier "chat plein écran = vraie section") :
   // agrandir le popup mini (bouton Maximize2 plus bas) navigue vers la
@@ -451,6 +491,7 @@ export function ChatFlottant({
   // fermer.
 
   return (
+    <CadreChatLateral docke={docke} lateral={lateral}>
     <div
       // 07/09/2026, demande Bourama : popup mini déplaçable/redimensionnable
       // sur desktop, avec taille/position mémorisée par compte (voir
@@ -462,7 +503,13 @@ export function ChatFlottant({
       // active en même temps sur desktop, sous peine de conflit. Sur
       // mobile (estDesktop=false), rien ne change : mêmes classes
       // qu'avant (bas-droite, taille fixe), pas de style inline.
-      style={estDesktop ? { left: popup.x, top: popup.y, width: popup.largeur, height: popup.hauteur } : undefined}
+      style={
+        docke
+          ? { width: lateral.largeur }
+          : estDesktop
+            ? { left: popup.x, top: popup.y, width: popup.largeur, height: popup.hauteur }
+            : undefined
+      }
       className={
         // 18/09/2026, correctif Bourama ("la barre de saisie perd des
         // morceaux quand on rétrécit la popup") : "@container" (plugin
@@ -475,7 +522,11 @@ export function ChatFlottant({
         // popup ne faisait donc jamais basculer vers la mise en page
         // pensée pour un espace étroit, même quand il ne restait plus
         // assez de place pour la version "large".
-        "@container fixed z-40 flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)]" +
+        // 28/11/2026 : collé à droite, le panneau est la colonne elle-même
+        // (largeur fixe, c'est le cadre qui glisse), sans fenêtre ni ombre.
+        (docke
+          ? "@container relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-l border-dj-bordure bg-dj-fond"
+          : "@container fixed z-40 flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)]") +
         // Sur mobile, la fenêtre est centrée (inset-x-0 mx-auto) et entièrement
         // visible. Le panneau d'historique est à z-30 pour passer au dessus de la
         // rangée du modèle du chat (z-20).
@@ -486,16 +537,20 @@ export function ChatFlottant({
         // --dj-barre-onglets-web (vaut 0px en natif et sur desktop, voir
         // app/globals.css), pour lever le popup au-dessus de
         // BarreOngletsWeb sur mobile web.
-        (estDesktop
+        (docke || estDesktop
           ? ""
           : " inset-x-0 mx-auto bottom-[calc(1.25rem+var(--dj-barre-onglets-web,0px))] h-[min(70dvh,600px)] w-[min(92vw,380px)]") +
         // Fondu d'ouverture (mount -- reprend l'animation standard des
         // modals du projet, cgpt-entree-modal) et de fermeture (juste
         // avant le démontage réel, voir fermerAvecFondu) -- demande
         // Bourama 18/08/2026 : "le popup disparaît ... apparaît brut".
-        (enFermeture
-          ? " pointer-events-none scale-95 opacity-0 transition-all duration-200 ease-cgpt-doux"
-          : " animate-cgpt-entree-modal transition-all duration-200 ease-cgpt-doux")
+        (docke
+          ? enFermeture
+            ? " pointer-events-none"
+            : ""
+          : enFermeture
+            ? " pointer-events-none scale-95 opacity-0 transition-all duration-200 ease-cgpt-doux"
+            : " animate-cgpt-entree-modal transition-all duration-200 ease-cgpt-doux")
       }
     >
       {/* En-tête compact du popup mini : nouvelle conversation +
@@ -510,8 +565,8 @@ export function ChatFlottant({
           tactile capte le geste comme un scroll avant que le glissement
           démarre). */}
       <div
-        onPointerDown={estDesktop ? demarrerGlissementPopup : undefined}
-        style={estDesktop ? { touchAction: "none" } : undefined}
+        onPointerDown={estDesktop && !docke ? demarrerGlissementPopup : undefined}
+        style={estDesktop && !docke ? { touchAction: "none" } : undefined}
         // Étape 5 (07/09/2026) : cet en-tête ne gère plus que le mode
         // mini (popup, desktop uniquement, voir le early return "fermee"
         // plus haut et BarreOngletsNative.tsx/BarreOngletsWeb.tsx qui
@@ -520,7 +575,7 @@ export function ChatFlottant({
         // plein écran mobile, cas qui n'existe plus ici.
         className={
           "flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5" +
-          (estDesktop ? " cursor-grab select-none active:cursor-grabbing" : "")
+          (estDesktop && !docke ? " cursor-grab select-none active:cursor-grabbing" : "")
         }
       >
         <Logo taille={20} sansFond />
@@ -688,7 +743,7 @@ export function ChatFlottant({
           FenetresSections.tsx) : sans ça, rien ne garantit qu'elles
           passent devant le contenu du chat (ChatIA) selon comment son
           propre contenu se positionne à l'intérieur. */}
-      {estDesktop &&
+      {estDesktop && !docke &&
         POIGNEES_REDIMENSIONNEMENT.map((p) => (
           <div
             key={p.direction}
@@ -698,5 +753,6 @@ export function ChatFlottant({
           />
         ))}
     </div>
+    </CadreChatLateral>
   );
 }

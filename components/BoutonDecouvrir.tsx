@@ -38,7 +38,11 @@ export function BoutonDecouvrir({ connecte }: { connecte: boolean }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className={`fixed top-[calc(0.625rem+var(--safe-top,0px))] z-40 ${connecte ? "right-[4.75rem]" : "right-2"}`}
+          className={`dj-decale-chat fixed top-[calc(0.625rem+var(--safe-top,0px))] z-40 ${
+            connecte
+              ? "right-[calc(4.75rem+var(--dj-chat-lateral,0px))]"
+              : "right-[calc(0.5rem+var(--dj-chat-lateral,0px))]"
+          }`}
         >
           <Link
             href={href}

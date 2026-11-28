@@ -1241,7 +1241,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           vaut 0px sur PC, pour lever ces boutons au-dessus de
           BarreOngletsWeb.tsx (barre du bas commune au site et au natif). */}
       {(envoi || uploadDossierEnCours || uploadDansPickerEnCours) && (
-        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl">
+        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-[calc(1.25rem+var(--dj-chat-lateral,0px))] dj-decale-chat z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl">
           <div className="flex items-center gap-2">
             <Loader2 size={14} className="animate-spin" />
             {progressionEnvoi && progressionEnvoi.total > 1
@@ -1272,7 +1272,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
           s'ils sont visibles en même temps. */}
       {lotVectorisation && lotVectorisation.enAttente.size > 0 && (
         <div
-          className={`fixed right-5 z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl animate-dj-fade-in-rapide ${
+          className={`fixed right-[calc(1.25rem+var(--dj-chat-lateral,0px))] dj-decale-chat z-40 flex flex-col gap-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-2 text-xs text-dj-texte shadow-xl animate-dj-fade-in-rapide ${
             envoi || uploadDossierEnCours || uploadDansPickerEnCours
               ? "bottom-[calc(11rem+var(--dj-barre-onglets-web,0px))]"
               : "bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))]"
@@ -1298,7 +1298,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
         />
       )}
       {menuAjoutOuvert && (
-        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex animate-dj-fade-in-rapide flex-col items-end gap-2">
+        <div className="fixed bottom-[calc(8.25rem+var(--dj-barre-onglets-web,0px))] right-[calc(1.25rem+var(--dj-chat-lateral,0px))] dj-decale-chat z-40 flex animate-dj-fade-in-rapide flex-col items-end gap-2">
           {/* 12/09/2026, demande Bourama : sélection multiple, entrée
               placée en premier dans le même "+" flottant plutôt qu'un
               deuxième bouton séparé. */}
@@ -1407,7 +1407,7 @@ async function envoyerFichiersDirect(fichiersChoisis: FileList | File[]) {
       <button
         onClick={() => setMenuAjoutOuvert((v) => !v)}
         aria-label={menuAjoutOuvert ? "Fermer le menu d'ajout" : "Ajouter"}
-        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-5 z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
+        className="fixed bottom-[calc(5rem+var(--dj-barre-onglets-web,0px))] right-[calc(1.25rem+var(--dj-chat-lateral,0px))] dj-decale-chat z-40 flex h-10 w-10 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:bg-dj-accent-2"
       >
         <Plus size={18} className={`transition-transform ${menuAjoutOuvert ? "rotate-45" : ""}`} />
       </button>

@@ -103,8 +103,8 @@ export function BoutonJournalAgent() {
         deplacement.ref(noeud);
       }}
       data-agent-superposition="true"
-      className={`fixed bottom-4 right-4 z-agent-controles ${
-        surChat ? "" : "md:bottom-[calc(1.5rem+var(--dj-barre-onglets-web,0px))] md:right-20"
+      className={`dj-decale-chat fixed bottom-4 right-4 z-agent-controles ${
+        surChat ? "" : "md:bottom-[calc(1.5rem+var(--dj-barre-onglets-web,0px))] md:right-[calc(5rem+var(--dj-chat-lateral,0px))]"
       }`}
       style={deplacement.style}
     >

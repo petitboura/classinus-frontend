@@ -74,7 +74,7 @@ export function DockMinuteurs() {
 
   return (
     <>
-      <div className="pointer-events-none fixed right-2 top-[calc(2.75rem+var(--safe-top,0px))] z-40 flex w-[min(22rem,calc(100vw-1rem))] flex-col items-end gap-2 empty:hidden">
+      <div className="dj-decale-chat pointer-events-none fixed right-[calc(0.5rem+var(--dj-chat-lateral,0px))] top-[calc(2.75rem+var(--safe-top,0px))] z-40 flex w-[min(22rem,calc(100vw-1rem))] flex-col items-end gap-2 empty:hidden">
         <AnimatePresence initial={false}>
           {ctx.erreur && (
             <motion.p
