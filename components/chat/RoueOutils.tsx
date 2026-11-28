@@ -9,8 +9,9 @@ import { IconeReflexion } from "./IconeReflexion";
 
 // La roue des outils (25/11/2026, demande Bourama) : pendant que l'IA travaille, les outils et ses
 // notes tiennent sur UNE seule ligne repliée. Quand une nouvelle ligne arrive, elle monte par le
-// bas et l'ancienne glisse vers le haut, comme une roue qui tourne. Aucune durée minimale pour un
-// outil : plusieurs outils appelés en même temps se remplacent vite, au rythme où ils arrivent.
+// bas et l'ancienne glisse vers le haut, comme une roue qui tourne. Depuis le 28/11/2026 (demande
+// Bourama), le mouvement se limite à 5 px avec un fondu (0.2 s) au lieu de défiler sur toute la
+// hauteur. Aucune durée minimale pour un outil : plusieurs outils appelés en même temps se remplacent vite, au rythme où ils arrivent.
 // Seule une note de l'IA ou une réflexion reste affichée plus longtemps, selon sa longueur, pour
 // qu'on ait le temps de la lire.
 //
@@ -122,12 +123,12 @@ export function RoueOutils({ elements, depart }: { elements: ElementRoue[]; depa
   return (
     <div className="relative h-5 min-w-0 max-w-full overflow-hidden">
       {partant && partant.cle !== courant.cle && (
-        <LigneRoue key={`partant-${partant.cle}`} element={partant} classe="animate-dj-roue-sortie" onFin={() => setPartant(null)} partante />
+        <LigneRoue key={`partant-${partant.cle}`} element={partant} classe="animate-dj-roue-fondu-sortie" onFin={() => setPartant(null)} partante />
       )}
       <LigneRoue
         key={courant.cle}
         element={courant}
-        classe={partant ? "animate-dj-roue-entree" : "animate-dj-fade-in-rapide"}
+        classe={partant ? "animate-dj-roue-fondu-entree" : "animate-dj-fade-in-rapide"}
       />
     </div>
   );

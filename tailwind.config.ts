@@ -218,6 +218,17 @@ const config: Config = {
           from: { opacity: "1", transform: "translateY(0)" },
           to: { opacity: "0", transform: "translateY(-100%)" },
         },
+        // Roue des outils en fondu (28/11/2026, demande Bourama) : la ligne qui arrive monte de 5 px en
+        // apparaissant, celle qui part monte de 5 px en s'estompant, au lieu du défilement sur toute
+        // la hauteur. Les keyframes dj-roue-entree/sortie restent pour le message d'attente.
+        "dj-roue-fondu-entree": {
+          from: { opacity: "0", transform: "translateY(5px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "dj-roue-fondu-sortie": {
+          from: { opacity: "1", transform: "translateY(0)" },
+          to: { opacity: "0", transform: "translateY(-5px)" },
+        },
         // Message d'attente (27/11/2026) : lettres une par une, vague, et
         // reflet qui passe de lettre en lettre.
         "dj-lettre-apparait": {
@@ -274,6 +285,8 @@ const config: Config = {
         "dj-ligne-trace": "dj-ligne-trace 0.18s ease-out both",
         "dj-roue-entree": "dj-roue-entree 0.16s ease-out both",
         "dj-roue-sortie": "dj-roue-sortie 0.16s ease-in both",
+        "dj-roue-fondu-entree": "dj-roue-fondu-entree 0.2s ease-out both",
+        "dj-roue-fondu-sortie": "dj-roue-fondu-sortie 0.2s ease-in both",
         // Mêmes mouvements que la roue des outils, plus posés pour le message
         // d'attente.
         "dj-attente-roue-entree": "dj-roue-entree 0.38s cubic-bezier(.25,.8,.35,1) both",
