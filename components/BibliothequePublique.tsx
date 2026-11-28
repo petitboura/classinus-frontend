@@ -2338,7 +2338,7 @@ export function BibliothequePublique() {
                     setNouvelleDescriptionDossier("");
                     reinitialiserFiltresDossier();
                   }}
-                  className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+                  className="rounded-cgpt-bouton px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
                 >
                   Annuler
                 </button>
@@ -2700,7 +2700,7 @@ export function BibliothequePublique() {
                         <button
                           onClick={() => refuserDemande(demande.id)}
                           disabled={demandeEnCoursId === demande.id}
-                          className="flex flex-1 items-center justify-center gap-1 rounded-cgpt-bouton border border-dj-bordure px-2 py-1.5 text-xs font-semibold text-dj-texte-muet hover:text-[var(--dj-erreur)] disabled:opacity-50"
+                          className="flex flex-1 items-center justify-center gap-1 rounded-cgpt-bouton px-2 py-1.5 text-xs font-semibold text-dj-texte-muet hover:text-[var(--dj-erreur)] disabled:opacity-50"
                         >
                           <XCircle size={13} /> Refuser
                         </button>
@@ -2983,7 +2983,7 @@ export function BibliothequePublique() {
                   setDescription("");
                   reinitialiserChampsFiltragePublication();
                 }}
-                className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+                className="rounded-cgpt-bouton px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
               >
                 Annuler
               </button>
@@ -3064,7 +3064,7 @@ export function BibliothequePublique() {
                   reinitialiserChampsFiltragePublication();
                   setDescription("");
                 }}
-                className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+                className="rounded-cgpt-bouton px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
               >
                 Annuler
               </button>

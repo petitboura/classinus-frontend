@@ -484,7 +484,7 @@ export function MaMemoire() {
                               type="button"
                               onClick={() => setEnEdition(null)}
                               disabled={enregistrement}
-                              className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+                              className="rounded-cgpt-bouton px-3 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
                             >
                               Annuler
                             </button>

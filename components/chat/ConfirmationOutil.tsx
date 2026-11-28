@@ -117,7 +117,7 @@ export function ConfirmationOutil({
               <button
                 onClick={() => onToujoursAutoriser(caseServeur && autoriserServeur)}
                 disabled={enAttente}
-                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface-haute disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface-haute disabled:opacity-50"
               >
                 <ShieldCheck size={13} /> {t("Toujours autoriser")}
               </button>
@@ -125,7 +125,7 @@ export function ConfirmationOutil({
             <button
               onClick={onAnnuler}
               disabled={enAttente}
-              className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte disabled:opacity-50"
             >
               <X size={13} /> {t("Annuler")}
             </button>

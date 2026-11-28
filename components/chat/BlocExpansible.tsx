@@ -294,7 +294,7 @@ export function BlocExpansible({
         <div className="pointer-events-none absolute inset-0 z-10 flex justify-end">
           <div className={`sticky top-2 mr-1 self-start ${classeRail}`} onClick={(e) => e.stopPropagation()}>
             <BoutonsActions avecTexte={false} surAgrandir={() => setPleinEcran((v) => !v)} />
-            <button onClick={fermer} className="flex h-8 w-8 items-center justify-center rounded-lg border border-dj-bordure bg-dj-surface-haute text-dj-texte-muet hover:text-dj-texte" aria-label="Fermer">
+            <button onClick={fermer} className="flex h-8 w-8 items-center justify-center rounded-lg text-dj-texte-muet hover:text-dj-texte" aria-label="Fermer">
               <X size={14} />
             </button>
           </div>
@@ -307,7 +307,7 @@ export function BlocExpansible({
       <div className="pt-2">
         <button
           onClick={fermer}
-          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
         >
           <ChevronUp size={14} /> Fermer
         </button>
@@ -337,7 +337,7 @@ export function BlocExpansible({
               <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
               <div className="flex shrink-0 gap-1.5">
                 <BoutonsActions avecTexte surAgrandir={() => setPleinEcran(false)} />
-                <button onClick={() => demarrerFermeture(fermer)} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
+                <button onClick={() => demarrerFermeture(fermer)} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
                   <X size={14} /> Fermer
                 </button>
               </div>

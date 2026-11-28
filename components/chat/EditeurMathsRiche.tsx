@@ -155,7 +155,7 @@ export function EditeurMathsRiche({
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <button
           onClick={inserdFormuleVide}
-          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
         >
           <Sigma size={16} /> Insérer une formule
         </button>
@@ -164,7 +164,7 @@ export function EditeurMathsRiche({
           <button
             onClick={demarrerDicteeMaths}
             disabled={transcriptionEnCours}
-            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-60"
           >
             <Mic size={16} /> {transcriptionEnCours ? "Conversion en cours..." : "Dicter une formule"}
           </button>

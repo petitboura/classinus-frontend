@@ -260,7 +260,7 @@ export function McpPersonnalises() {
             type="button"
             onClick={() => ouvrirChatAvecTexte(traduireTexteInterface(TEXTE_DEMANDE_IA, obtenirLocale()))}
             disabled={!!enCours}
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
           >
             <Sparkles size={14} />Le faire avec Classinus
           </button>
@@ -282,7 +282,7 @@ export function McpPersonnalises() {
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-sm font-semibold text-dj-texte">Tes serveurs MCP</h3>
-          <button type="button" onClick={() => void recharger()} disabled={chargement || !!enCours} className="inline-flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50">
+          <button type="button" onClick={() => void recharger()} disabled={chargement || !!enCours} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50">
             <RefreshCw size={13} className={chargement ? "animate-spin" : ""} />Actualiser
           </button>
         </div>

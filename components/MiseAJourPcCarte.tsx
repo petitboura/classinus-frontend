@@ -152,7 +152,7 @@ export function MiseAJourPcCarte() {
           <button
             onClick={verifier}
             disabled={action === "verification"}
-            className="flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
+            className="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
           >
             <RefreshCw size={12} className={action === "verification" ? "animate-spin" : ""} />
             Vérifier

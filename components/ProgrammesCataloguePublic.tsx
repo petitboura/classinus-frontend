@@ -422,7 +422,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
         </div>
         <button
           onClick={() => setFormulaireOuvert((v) => !v)}
-          className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-2 text-xs font-medium text-dj-texte hover:bg-dj-surface-haute"
+          className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton px-3 py-2 text-xs font-medium text-dj-texte hover:bg-dj-surface-haute"
         >
           <Upload size={14} /> Publier mon Programme
         </button>
@@ -469,7 +469,7 @@ export function ProgrammesCataloguePublic({ mesCodes }: { mesCodes: CodePartage[
             </button>
             <button
               onClick={() => setFormulaireOuvert(false)}
-              className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte"
+              className="rounded-cgpt-bouton px-3 py-1.5 text-xs font-medium text-dj-texte"
             >
               Annuler
             </button>

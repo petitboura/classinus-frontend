@@ -119,7 +119,7 @@ export function EspaceInviter() {
               </span>
               <button
                 onClick={() => copier(contenuExistant.code)}
-                className="flex items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-4 py-3 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
+                className="flex items-center gap-1.5 rounded-cgpt-bouton px-4 py-3 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
                 {codeCopie === contenuExistant.code ? <Check size={14} /> : <Copy size={14} />}
                 {codeCopie === contenuExistant.code ? "Copié !" : "Copier"}

@@ -188,7 +188,7 @@ export function EditeurCode() {
       <button
         onClick={() => setPleinEcran((v) => !v)}
         aria-label={pleinEcran ? "Rétrécir" : "Agrandir l'éditeur"}
-        className="flex items-center rounded-lg border border-dj-bordure bg-dj-surface-haute p-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte md:px-2.5"
+        className="flex items-center rounded-lg p-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte md:px-2.5"
       >
         {pleinEcran ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
       </button>

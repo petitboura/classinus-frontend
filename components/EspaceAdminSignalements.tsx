@@ -109,7 +109,7 @@ export function EspaceAdminSignalements() {
                 <button
                   onClick={() => traiter(s.id, "rejete")}
                   disabled={enTraitement === s.id}
-                  className="flex items-center gap-1 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                  className="flex items-center gap-1 rounded-cgpt-bouton px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
                 >
                   <IconRejeter size={13} /> Rejeter
                 </button>

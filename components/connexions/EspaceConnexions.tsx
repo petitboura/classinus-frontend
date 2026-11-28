@@ -101,7 +101,7 @@ export function EspaceConnexions() {
               etat={ligne.etat}
               onVoirPlus={() => setPanneau(app.nom)}
               actions={connecte ? (
-                <button type="button" onClick={() => void depuisCarte(app.nom, () => deconnecter(app.nom))} disabled={!!enCours} className="inline-flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50">
+                <button type="button" onClick={() => void depuisCarte(app.nom, () => deconnecter(app.nom))} disabled={!!enCours} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50">
                   <Unplug size={14} />{occupee ? "Déconnexion…" : "Déconnecter"}
                 </button>
               ) : (

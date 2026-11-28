@@ -143,7 +143,7 @@ function UrlACopier() {
       </span>
       <button
         onClick={copier}
-        className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-2.5 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
+        className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton px-3 py-2.5 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
       >
         {copie ? <Check size={14} /> : <Copy size={14} />}
         {copie ? "Copié !" : "Copier"}

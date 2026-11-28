@@ -219,7 +219,7 @@ export function EditeurConfiguration({
                 <button
                   onClick={supprimer}
                   disabled={actionEnCours}
-                  className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
                 >
                   <Trash2 size={14} /> {texteConfiguration("action.supprimer")}
                 </button>

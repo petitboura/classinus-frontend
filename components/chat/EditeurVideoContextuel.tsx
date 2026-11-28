@@ -344,7 +344,7 @@ export function EditeurVideoContextuel({
               <button
                 type="button"
                 onClick={() => setRetry((valeur) => valeur + 1)}
-                className="shrink-0 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs hover:bg-dj-surface-haute"
+                className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs hover:bg-dj-surface-haute"
               >
                 {t.reessayer}
               </button>

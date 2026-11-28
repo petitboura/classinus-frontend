@@ -477,7 +477,7 @@ export function EditeurComportement({
                 <button
                   onClick={() => inputImportRef.current?.click()}
                   disabled={importEnCours}
-                  className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                  className="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
                 >
                   {importEnCours ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />}
                   {importEnCours ? "Import…" : "Uploader des .md"}
@@ -498,7 +498,7 @@ export function EditeurComportement({
                 <button
                   onClick={() => inputImportDossierRef.current?.click()}
                   disabled={importEnCours}
-                  className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                  className="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
                   title="Seuls les fichiers .md du dossier seront importés, le reste est ignoré"
                 >
                   {importEnCours ? <Loader2 size={13} className="animate-spin" /> : <FolderUp size={13} />}
@@ -554,14 +554,14 @@ export function EditeurComportement({
                     onClick={publier}
                     disabled={publicationEnCours || enregistrementEnCours || suppressionEnCours}
                     title="Publier une copie dans le catalogue public -- n'importe qui pourra l'activer"
-                    className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
                   >
                     <Upload size={14} /> {publicationEnCours ? "Publication…" : publie ? "Publié !" : "Publier"}
                   </button>
                   <button
                     onClick={supprimer}
                     disabled={enregistrementEnCours || suppressionEnCours}
-                    className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
                   >
                     <Trash2 size={14} /> Supprimer
                   </button>
@@ -634,7 +634,7 @@ export function EditeurComportement({
                 onClick={telechargerSkillActuel}
                 disabled={skillChargement || !skillOuvert.trim()}
                 title={categoriePreset ? "Télécharger en .md" : "Télécharger ce skill en .md"}
-                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte disabled:opacity-50"
               >
                 <Download size={14} /> Télécharger
               </button>
@@ -642,7 +642,7 @@ export function EditeurComportement({
                 onClick={publier}
                 disabled={publicationEnCours || skillEnregistrementEnCours || skillChargement}
                 title="Publier une copie dans le catalogue public -- n'importe qui pourra l'activer"
-                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
               >
                 <Upload size={14} /> {publicationEnCours ? "Publication…" : publie ? "Publié !" : "Publier"}
               </button>

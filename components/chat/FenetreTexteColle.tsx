@@ -112,7 +112,7 @@ export function FenetreTexteColle({
           <button
             onClick={fermer}
             aria-label="Fermer"
-            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
           >
             <X size={14} /> Fermer
           </button>
