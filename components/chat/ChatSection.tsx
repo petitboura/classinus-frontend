@@ -219,6 +219,8 @@ export function ChatSection() {
 
         <div
           onMouseDownCapture={fermerFenetresAuClic}
+          // Telephone : un glissement vers la droite sur cette zone ouvre le menu.
+          data-zone-glissement-menu=""
           // 18/09/2026 : "@container" (voir le même correctif sur la
           // popup, ChatFlottant.tsx) -- nécessaire pour que les classes
           // "@[360px]:" de BarreDeSaisie.tsx (via ChatIA.tsx) aient une

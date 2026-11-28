@@ -26,7 +26,6 @@ import {
   Plug,
   Code2,
   MessageSquarePlus,
-  History,
   PanelLeft,
   ArrowUpRight,
   Hourglass,
@@ -43,6 +42,7 @@ import { MenuPlusChatFlottant } from "@/components/mobile/MenuPlusChatFlottant";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { useFermetureAuRetour } from "@/lib/contexteRetour";
 import { useEstDesktop } from "@/lib/useEstDesktop";
+import { useGlissementOuvreMenu } from "@/lib/useGlissementOuvreMenu";
 import { useProposerTelechargementPc } from "@/lib/useProposerTelechargementPc";
 import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
@@ -272,17 +272,16 @@ export function AppSidebar({
   const [groupeOuvertId, setGroupeOuvertId] = useState<string | null>(null);
   const [avisDeplie, setAvisDeplie] = useState(false);
   const [copie, setCopie] = useState(false);
-  const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
   // Sur ordinateur (chat), la liste d'historique est affichee directement
   // dans la barre. Vrai tant qu'une de ses lignes est en cours d'edition
   // (menu des trois points, renommage, suppression) : la barre ne se replie
   // pas pendant ce temps.
   const [listeHistoriqueOccupee, setListeHistoriqueOccupee] = useState(false);
-  // Historique en plein ecran (01/10/2026), ouvert depuis le popup Historique.
+  // Historique en plein ecran (01/10/2026), ouvert depuis la fleche du titre Historique.
   const [historiquePleinEcran, setHistoriquePleinEcran] = useState(false);
   // Popup du menu profil (24/08/2026, correctif demande Bourama : voir
   // commentaire dans MenuProfil plus haut). Remonté ici pour piloter le
-  // overflow-visible du rail, comme actionsDeplie/historiqueDeplie/groupeOuvertId.
+  // overflow-visible du rail, comme actionsDeplie/groupeOuvertId.
   const [profilDeplie, setProfilDeplie] = useState(false);
   // 01/09/2026 (Bourama : "plein de boutons qui se ferment et s'ouvrent
   // brut") : remonté ici (plutôt que gardé local à MenuProfil) pour la
@@ -297,7 +296,7 @@ export function AppSidebar({
   // Vrai tant que la souris est sur le rail : permet de replier le rail une
   // fois les menus ouverts fermes, si la souris est deja partie.
   const sourisSurRail = useRef(false);
-  const aUnMenuOuvert = actionsDeplie || historiqueDeplie || Boolean(groupeOuvertId) || profilDeplie || listeHistoriqueOccupee;
+  const aUnMenuOuvert = actionsDeplie || Boolean(groupeOuvertId) || profilDeplie || listeHistoriqueOccupee;
   useEffect(() => {
     if (survolRail && !aUnMenuOuvert && !sourisSurRail.current) setSurvolRail(false);
   }, [survolRail, aUnMenuOuvert]);
@@ -349,7 +348,6 @@ export function AppSidebar({
     () => setActionsDeplie(false)
   );
   const { marquerFermetureSansHistorique: marquerGroupeSansHistorique } = useFermetureAuRetour(groupeOuvertId !== null, () => setGroupeOuvertId(null));
-  useFermetureAuRetour(historiqueDeplie, () => setHistoriqueDeplie(false));
   const { marquerFermetureSansHistorique: marquerProfilSansHistorique } = useFermetureAuRetour(profilDeplie, () => fermerProfilMenu(() => setProfilDeplie(false)));
   useFermetureAuRetour(avisDeplie, () => setAvisDeplie(false));
 
@@ -361,6 +359,20 @@ export function AppSidebar({
   // remonté à AppShell, qui ne connaît que le booléen `connecte`) car
   // c'est le seul endroit de l'app qui en a besoin.
   const { avatarUrl, nomAffiche } = useMonProfilAffiche(connecte);
+
+  // Telephone, page du chat (28/11/2026, demande Bourama) : un glissement vers
+  // la droite ouvre le menu, et le menu se referme des qu'une conversation est
+  // choisie, dans sa liste comme dans l'historique en plein ecran.
+  useGlissementOuvreMenu(contexteChat && !masquerChromeMobile && !estDesktop && !ouverte, () => setOuverte(true));
+
+  function fermerMenuApresChoix() {
+    if (ouverte) fermerTiroirMobile(() => setOuverte(false));
+  }
+
+  function choisirConversationMobile(fil: FilConversation) {
+    onSelectionnerConversation?.(fil);
+    fermerMenuApresChoix();
+  }
 
   function basculerActions() {
     setActionsDeplie((v) => !v);
@@ -635,12 +647,12 @@ export function AppSidebar({
         }}
         onMouseLeave={() => {
           sourisSurRail.current = false;
-          if (!(actionsDeplie || historiqueDeplie || groupeOuvertId || profilDeplie || listeHistoriqueOccupee)) setSurvolRail(false);
+          if (!(actionsDeplie || groupeOuvertId || profilDeplie || listeHistoriqueOccupee)) setSurvolRail(false);
         }}
         className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 pb-3 pt-[calc(0.375rem_+_var(--safe-top,0px))] transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
           railOuvert && !contexteChat ? "shadow-xl" : ""
         } ${
-          actionsDeplie || historiqueDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
+          actionsDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${railOuvert ? "md:w-72" : "md:w-14"}`}
       >
         <button
@@ -991,7 +1003,8 @@ export function AppSidebar({
           ouvert={historiquePleinEcran}
           onFermer={() => setHistoriquePleinEcran(false)}
           conversationActiveId={conversationActiveId}
-          onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
+          onSelectionner={choisirConversationMobile}
+          onChoisirActive={ouverte ? fermerMenuApresChoix : undefined}
           onSupprimee={onConversationSupprimee}
         />
       )}
@@ -1013,7 +1026,7 @@ export function AppSidebar({
           data-agent-zone="Menu latéral"
           className={
             `fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-dj-bordure bg-dj-surface px-2 pt-2 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden ${
-              historiqueDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
+              profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
             }` +
             (tiroirEnSortie
               ? " pointer-events-none translate-x-2 opacity-0 transition-all duration-200 ease-cgpt-doux"
@@ -1030,56 +1043,15 @@ export function AppSidebar({
               <span className="text-base font-semibold text-dj-texte">Classinus</span>
             </div>
             <div className="my-2 h-px w-full bg-dj-bordure" />
-            {contexteChat && (
+            {contexteChat && aDesMessages && (
               <>
-                {aDesMessages && (
-                  <button
-                    onClick={onNouvelleConversation}
-                    className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                  >
-                    <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
-                    <span className="text-sm font-semibold">Nouvelle conversation</span>
-                  </button>
-                )}
-
-                {historique.length > 0 && (
-                  <div className="relative mt-1">
-                    <button
-                      onClick={() => setHistoriqueDeplie((v) => !v)}
-                      className={`group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold transition-colors ${
-                        historiqueDeplie ? "text-dj-texte" : "text-dj-texte-muet"
-                      }`}
-                    >
-                      <History size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
-                      Historique
-                    </button>
-                    {historiqueDeplie && (
-                      <div className="absolute left-1 top-11 z-10 w-64 animate-dj-fade-in-rapide rounded-xl border border-dj-bordure bg-dj-surface shadow-lg">
-                        {/* Plein écran : même bouton que sur ordinateur, posé dehors,
-                            collé juste au-dessus du coin haut droit du panneau. */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setHistoriqueDeplie(false);
-                            setHistoriquePleinEcran(true);
-                          }}
-                          title="Plein écran"
-                          aria-label="Afficher l'historique en plein écran"
-                          className="absolute -top-6 right-0 z-10 flex h-6 w-6 items-center justify-center text-dj-texte-muet opacity-70 transition-opacity hover:text-dj-texte hover:opacity-100"
-                        >
-                          <ArrowUpRight size={12} strokeWidth={1.75} />
-                        </button>
-                        <ListeHistorique
-                          conversationActiveId={conversationActiveId}
-                          onSelectionner={(fil) => onSelectionnerConversation?.(fil)}
-                          onSupprimee={onConversationSupprimee}
-                          className="max-h-72 p-1"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
+                <button
+                  onClick={onNouvelleConversation}
+                  className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <MessageSquarePlus size={TAILLE_ICONE_RAIL} strokeWidth={TRAIT_ICONE_RAIL} className="flex-shrink-0" />
+                  <span className="text-sm font-semibold">Nouvelle conversation</span>
+                </button>
                 <div className="my-2 h-px w-full bg-dj-bordure" />
               </>
             )}
@@ -1117,6 +1089,38 @@ export function AppSidebar({
               )
             )}
           </div>
+
+          {/* Historique (27/11/2026, demande Bourama) : comme sur ordinateur, la liste est affichee
+              directement sous les sections, sans bouton Historique. Elle prend la place restante,
+              defile seule et se fond en haut et en bas. Hauteur plancher : sur un ecran tres peu
+              haut, c'est tout le menu qui defile, la liste ne passe jamais sur le bas. */}
+          {contexteChat && historique.length > 0 && (
+            <>
+              <div className="my-2 h-px w-full flex-shrink-0 bg-dj-bordure" />
+              <div className="flex min-h-[7.875rem] flex-1 animate-dj-fade-in-rapide flex-col">
+                <div className="flex items-center justify-between pb-1 pl-2 pt-0.5">
+                  <span className="text-xs font-semibold text-dj-texte-muet">Historique</span>
+                  <button
+                    type="button"
+                    onClick={() => setHistoriquePleinEcran(true)}
+                    title="Plein écran"
+                    aria-label="Afficher l'historique en plein écran"
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                  >
+                    <ArrowUpRight size={14} strokeWidth={1.75} />
+                  </button>
+                </div>
+                <ListeHistorique
+                  conversationActiveId={conversationActiveId}
+                  onSelectionner={choisirConversationMobile}
+                  onChoisirActive={fermerMenuApresChoix}
+                  onSupprimee={onConversationSupprimee}
+                  fondu
+                  className="min-h-24 flex-1"
+                />
+              </div>
+            </>
+          )}
 
           <div className="mt-2 flex justify-center">
             <BoutonInstaller />
