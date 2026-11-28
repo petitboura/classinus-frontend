@@ -28,6 +28,7 @@ import { ReveilBackend } from "@/components/ReveilBackend";
 import { SplashOuverture } from "@/components/SplashOuverture";
 import { SplashPret } from "@/components/SplashPret";
 import { InternationalisationGlobale } from "@/components/InternationalisationGlobale";
+import { BarresDefilement } from "@/components/BarresDefilement";
 import { BoutonFlottantTelecharger } from "@/components/BoutonFlottantTelecharger";
 import { PopupExplorationDossier } from "@/components/PopupExplorationDossier";
 import { GardienLiensSortants } from "@/components/GardienLiensSortants";
@@ -244,6 +245,7 @@ export default function RacineLayout({
         <VisionneurGlobalRacine />
         <SplashPret />
         <InternationalisationGlobale />
+        <BarresDefilement />
       </body>
     </html>
   );

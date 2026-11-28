@@ -8,6 +8,11 @@ import { EN_POSITIONNEMENT_DECOUVRIR } from "@/lib/i18n/positionnementDecouvrir"
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Flèches des barres de défilement (27/11/2026).
+  "Défiler vers le haut": "Scroll up",
+  "Défiler vers le bas": "Scroll down",
+  "Défiler vers la gauche": "Scroll left",
+  "Défiler vers la droite": "Scroll right",
   // Lecteur à côté du chat (27/11/2026).
   "Comment ouvrir un fichier ou une image à côté de la conversation ?": "How do I open a file or an image beside the conversation?",
   "Quand Classinus te donne un fichier (PDF, livre numérique, Word, Excel, PowerPoint, texte), une image, un audio ou une vidéo, clique dessus : il s'ouvre dans un volet à droite du chat, et tu peux continuer à discuter pendant que tu lis. Tire la barre au milieu pour élargir ou rétrécir le volet, la largeur est mémorisée. Le bouton plein écran l'agrandit sur toute la fenêtre, et un nouveau fichier remplace celui qui est ouvert. Sur téléphone, le fichier s'ouvre en plein écran avec une flèche pour revenir à la conversation.": "When Classinus gives you a file (PDF, e-book, Word, Excel, PowerPoint, text), an image, an audio or a video, click it: it opens in a pane to the right of the chat, and you can keep talking while you read. Drag the bar in the middle to widen or narrow the pane, the width is remembered. The full screen button enlarges it over the whole window, and a new file replaces the one that is open. On a phone, the file opens full screen with an arrow to go back to the conversation.",
