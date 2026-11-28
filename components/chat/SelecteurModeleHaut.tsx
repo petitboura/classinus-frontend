@@ -71,8 +71,9 @@ export function SelecteurModeleHaut({
   modeleSelectionne: string | null;
   onModeleChange: (modeleId: string) => void;
   // Chat collé à droite (28/11/2026, demande Bourama) : le bouton est dans l'en-tête, à côté du
-  // titre de la conversation et des boutons. Plus compact, et la liste s'ouvre sous l'en-tête,
-  // alignée à sa droite (la colonne du chat coupe ce qui dépasse, voir CadreChatLateral.tsx).
+  // titre de la conversation et des boutons, toujours au centre, avec le nom du modèle en entier
+  // (jamais coupé). La liste s'ouvre sous l'en-tête, centrée (la colonne du chat coupe ce qui
+  // dépasse, voir CadreChatLateral.tsx). Aussi dans la fenêtre flottante (paramètres).
   dansEntete?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(false);
@@ -131,11 +132,11 @@ export function SelecteurModeleHaut({
         aria-controls={idListe}
         className={
           "flex items-center rounded-xl text-sm font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute " +
-          (dansEntete ? "max-w-[11rem] gap-1.5 px-2 py-1" : "max-w-[70vw] gap-2 px-3 py-1.5")
+          (dansEntete ? "gap-1.5 whitespace-nowrap px-2 py-1" : "max-w-[70vw] gap-2 px-3 py-1.5")
         }
       >
         <IconeFournisseur distributeur={modeleActif?.distributeur ?? null} />
-        <span className="truncate">{modeleActif?.label ?? ""}</span>
+        <span className={dansEntete ? "whitespace-nowrap" : "truncate"}>{modeleActif?.label ?? ""}</span>
         <ChevronDown
           size={14}
           className={"flex-shrink-0 text-dj-texte-muet transition-transform duration-200 " + (ouvert ? "rotate-180" : "")}
@@ -147,7 +148,7 @@ export function SelecteurModeleHaut({
           <div
             className={
               dansEntete
-                ? "absolute right-3 top-full z-30 mt-1 w-72 max-w-[calc(100%-1.5rem)]"
+                ? "absolute left-1/2 top-full z-30 mt-1 w-72 max-w-[calc(100%-1.5rem)] -translate-x-1/2"
                 : "absolute left-1/2 top-full z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2"
             }>
             <motion.div

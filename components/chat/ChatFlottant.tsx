@@ -613,7 +613,7 @@ export function ChatFlottant({
           // le chat. La zone de sécurité du haut est reprise à l'identique.
           (docke
             ? "relative flex h-[calc(2.5rem_+_var(--safe-top,0px))] flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pt-[var(--safe-top,0px)]"
-            : "flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5") +
+            : "relative flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5") +
           (estDesktop && !docke ? " cursor-grab select-none active:cursor-grabbing" : "")
         }
       >
@@ -632,13 +632,22 @@ export function ChatFlottant({
           <span
             key={titreConversation}
             title={titreConversation || undefined}
-            className="min-w-0 flex-1 animate-dj-fade-in-rapide truncate whitespace-nowrap text-sm font-medium text-dj-texte"
+            className="min-w-0 max-w-[30%] flex-1 animate-dj-fade-in-rapide truncate whitespace-nowrap text-sm font-medium text-dj-texte"
           >
             {titreConversation}
           </span>
         )}
 
-        {docke && <div ref={setEmplacementModele} className="flex shrink-0 items-center" />}
+        {/* Emplacement du bouton du modèle : toujours au centre de l'en-tête, posé par-dessus
+            (il laisse passer les clics, seul le bouton les reçoit), donc centré quels que soient
+            le titre et le nombre de boutons. Aussi dans la fenêtre flottante (paramètres). */}
+        <div
+          ref={setEmplacementModele}
+          className={
+            "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-center justify-center " +
+            (docke ? "top-[var(--safe-top,0px)]" : "top-0")
+          }
+        />
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {nbMessages > 0 && (
@@ -776,7 +785,7 @@ export function ChatFlottant({
               onMessagesSync={setMessagesInitiaux}
               onNouvelleConversationDemarree={ajouterConversationHistorique}
               natif={natif}
-              emplacementModele={docke ? emplacementModele : null}
+              emplacementModele={emplacementModele}
             />
           )}
         </div>
