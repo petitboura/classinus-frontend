@@ -508,20 +508,121 @@ select:focus-visible {
   outline: none;
 }
 
+/* Barres de défilement (27/11/2026) : les barres natives sont masquées
+   partout et remplacées par les barres de lib/barresDefilement.ts, posées par
+   dessus le contenu (aucune place réservée, plus de "trou"), avec une flèche à
+   chaque bout. Les zones qui cachent déjà leur barre (dj-scrollbar-cachee,
+   dj-table-piste, scrollbar-width: none) restent sans barre. */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  display: none;
+  width: 0;
+  height: 0;
 }
-::-webkit-scrollbar-track {
-  background: var(--dj-fond);
+[data-dj-barre] {
+  scrollbar-width: none;
 }
-::-webkit-scrollbar-thumb {
-  background: var(--dj-surface-haute);
+
+#dj-barres-couche {
+  --dj-barre-e: 12px;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+}
+.dj-barre {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+}
+.dj-barre[data-visible="1"] {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.15s ease, visibility 0s;
+}
+.dj-barre-y {
+  flex-direction: column;
+  width: var(--dj-barre-e);
+}
+.dj-barre-x {
+  flex-direction: row;
+  height: var(--dj-barre-e);
+}
+.dj-barre-piste {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+}
+.dj-barre-pouce {
+  position: absolute;
   border-radius: 999px;
-  border: 2px solid var(--dj-fond);
+  background: color-mix(in srgb, var(--dj-texte-muet) 55%, transparent);
+  pointer-events: auto;
+  touch-action: none;
+  transition: background-color 0.15s ease;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--dj-bordure-forte);
+.dj-barre-y .dj-barre-pouce {
+  left: 3px;
+  right: 3px;
+  top: 0;
+}
+.dj-barre-x .dj-barre-pouce {
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+}
+.dj-barre-pouce:hover,
+.dj-barre-pouce[data-actif="1"] {
+  background: color-mix(in srgb, var(--dj-texte-muet) 85%, transparent);
+}
+.dj-barre-fleche {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--dj-barre-e);
+  height: var(--dj-barre-e);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dj-fond) 70%, transparent);
+  color: var(--dj-texte-muet);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.dj-barre-fleche:hover {
+  color: var(--dj-texte);
+}
+.dj-barre-fleche[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: default;
+}
+.dj-barre-fleche[data-sens="droite"] svg {
+  transform: rotate(90deg);
+}
+.dj-barre-fleche[data-sens="bas"] svg {
+  transform: rotate(180deg);
+}
+.dj-barre-fleche[data-sens="gauche"] svg {
+  transform: rotate(270deg);
+}
+/* Au doigt, la piste laisse passer le toucher vers le contenu : seuls le
+   pouce et les flèches captent le doigt. À la souris, un clic sur la piste
+   fait défiler d'une page. */
+@media (pointer: fine) {
+  .dj-barre-piste {
+    pointer-events: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

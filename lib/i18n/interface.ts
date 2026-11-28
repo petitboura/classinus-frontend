@@ -8,6 +8,11 @@ import { EN_POSITIONNEMENT_DECOUVRIR } from "@/lib/i18n/positionnementDecouvrir"
  * l'IA ne sont pas traduits par cette couche.
  */
 const EN: Record<string, string> = {
+  // Flèches des barres de défilement (27/11/2026).
+  "Défiler vers le haut": "Scroll up",
+  "Défiler vers le bas": "Scroll down",
+  "Défiler vers la gauche": "Scroll left",
+  "Défiler vers la droite": "Scroll right",
   // Messages et questions pendant que Classinus travaille (26/11/2026).
   "Puis-je écrire à Classinus pendant qu'il travaille ?": "Can I write to Classinus while it is working?",
   "Oui. Pendant qu'une réponse se prépare, la barre de saisie reste utilisable : ton message apparaît tout de suite avec la mention « Pris en compte », et Classinus le lit au prochain pas de son travail sans s'arrêter. Si la réponse vient de se terminer, ton message part comme un message normal. Le bouton Arrêter reste là quand le champ est vide, ou si tu joins un fichier.": "Yes. While an answer is being prepared, the input bar stays usable: your message appears right away with the mention \"Received\", and Classinus reads it at the next step of its work without stopping. If the answer has just finished, your message is sent as a normal message. The Stop button stays when the field is empty, or if you attach a file.",
