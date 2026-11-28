@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ComponentProps } from "react";
-import { CheckCircle2, ChevronDown, ChevronRight, Link2, Loader2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { SourcesBulle } from "./SourcesBulle";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
@@ -71,7 +71,6 @@ export function LigneOutil({
   nombre = 1,
   estDerniere,
   estGroupe,
-  sourcesTour,
 }: {
   donnees: DonneesLigneOutil;
   Icone: typeof Loader2;
@@ -91,9 +90,6 @@ export function LigneOutil({
   nombre?: number;
   estDerniere: boolean;
   estGroupe: boolean;
-  // Toutes les sources du tour (28/11/2026, demande Bourama) : le bouton « Sources » ouvre la liste
-  // complète du message, pas seulement celle de cet outil. Les cercles, eux, restent ceux de l'outil.
-  sourcesTour?: ComponentProps<typeof SourcesBulle>["sources"];
 }) {
   const { etat, texteEnCours, texteTermine, nomLisible, resultat, sources, images, videos, ressourcesUi } = donnees;
 
@@ -154,17 +150,6 @@ export function LigneOutil({
   }, [etat]);
 
   const aDesSources = !!sources && sources.length > 0;
-  // Liste du bouton : toutes les sources du tour, sans doublon ; à défaut, celles de l'outil.
-  const sourcesListe = (() => {
-    const base = sourcesTour && sourcesTour.length > 0 ? sourcesTour : sources ?? [];
-    const vues = new Set<string>();
-    return base.filter((source) => {
-      const cle = `${source.numero}|${source.url}`;
-      if (vues.has(cle)) return false;
-      vues.add(cle);
-      return true;
-    });
-  })();
   const logoUnique = domaines && domaines.length === 1 ? domaines[0] : null;
   const logoLangage = logoPourLangage(langage);
   const plusieursLogos = !!domaines && domaines.length > 1;
@@ -262,8 +247,9 @@ export function LigneOutil({
         ) : (
           <div className={demarreEnFinal ? "" : "animate-dj-fade-in-rapide"}>
             {/* Une seule ligne (28/11/2026, demande Bourama) : le texte de l'outil se fond là où
-                commencent les cercles de sources, puis le compteur, puis le bouton « Sources »
-                qui ouvre la liste complète, tout à la fin. */}
+                commencent les cercles des sources de cet outil, puis la flèche. Les cercles sont le
+                bouton qui déplie les sources de cet outil ; la liste de toutes les sources du tour
+                est une ligne à part, tout en bas des outils (LigneSourcesTour.tsx). */}
             <div className="flex min-w-0 items-center gap-x-2">
               <button
                 onClick={() => setOuvert((precedent) => !precedent)}
@@ -272,18 +258,28 @@ export function LigneOutil({
                 <TexteFondu texte={nomLisible ?? ""} onDebordement={setNomCoupe} />
                 {plusieursLogos && <LogosSites domaines={domaines!} />}
                 {pastille}
-                {ouvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />}
+                {!aDesSources && (ouvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />)}
               </button>
-              {aDesSources && <CerclesSources sources={sources!} />}
               {aDesSources && (
-                <button
-                  onClick={() => setSourcesOuvert((precedent) => !precedent)}
-                  className="flex shrink-0 items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
-                >
-                  <Link2 size={13} />
-                  <span>Sources ({sourcesListe.length})</span>
-                  {sourcesOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSourcesOuvert((precedent) => !precedent)}
+                    aria-expanded={sourcesOuvert}
+                    aria-label="Sources"
+                    className={`shrink-0 rounded-full transition-opacity hover:opacity-80 ${sourcesOuvert ? "opacity-100" : ""}`}
+                  >
+                    <CerclesSources sources={sources!} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOuvert((precedent) => !precedent)}
+                    aria-expanded={ouvert}
+                    className="shrink-0 text-dj-texte-muet transition-colors hover:text-dj-texte"
+                  >
+                    {ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                  </button>
+                </>
               )}
             </div>
             {/* Galerie d'images (01/09) : TOUJOURS visible, contrairement au
@@ -315,7 +311,7 @@ export function LigneOutil({
                 }`}
               >
                 <div className="overflow-hidden">
-                  <SourcesBulle sources={sourcesListe} />
+                  <SourcesBulle sources={sources} />
                 </div>
               </div>
             )}

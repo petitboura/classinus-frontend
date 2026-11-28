@@ -4,11 +4,12 @@ import { LogoSite } from "./LogoSite";
 
 // Petits cercles de sources posés sur la ligne d'un outil (28/11/2026, demande Bourama) : plus de
 // noms ni de puces, seulement les logos des sites en cercles qui se chevauchent, puis le nombre
-// de sources restantes (« +5 »). Le bouton « Sources » qui ouvre la liste complète reste à côté,
-// c'est lui qui est cliquable : les cercles sont purement visuels.
+// de sites restants (« +2 »). Posés sur la ligne de l'outil juste avant la flèche, ils servent de
+// bouton pour déplier les sources de CET outil : le bouton est dans LigneOutil.tsx, les cercles
+// eux-mêmes sont purement visuels.
 
 // Nombre maximal de cercles montrés avant le compteur.
-const CERCLES_MAX = 3;
+const CERCLES_MAX = 5;
 const TAILLE_CERCLE = 16;
 const TAILLE_LOGO = 12;
 
@@ -30,9 +31,9 @@ export function CerclesSources({ sources }: { sources: { url: string }[] }) {
   if (!domaines.length) return null;
 
   const montres = domaines.slice(0, CERCLES_MAX);
-  // Le compteur compte les sources, pas les sites : « +5 » = cinq sources de plus que celles
-  // dont le logo est visible.
-  const reste = Math.max(0, sources.length - montres.length);
+  // Le compteur compte les sites, comme les cercles : « +2 » = deux sites de plus que ceux dont
+  // le logo est visible.
+  const reste = domaines.length - montres.length;
 
   return (
     <span className="flex shrink-0 items-center" aria-hidden="true">

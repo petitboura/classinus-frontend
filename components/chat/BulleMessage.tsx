@@ -1324,6 +1324,9 @@ function BulleMessageInterne({
                     const elements: ReactNode[] = [];
                     let i = 0;
                     let enCoursAttache = false;
+                    // Dernier segment qui n'est pas du texte : le bloc d'outils qui le contient est le
+                    // dernier, c'est lui qui porte la ligne « Sources » du tour (28/11/2026).
+                    const derniereIdxHorsTexte = segments.reduce((acc, seg, idx) => (seg.type !== "texte" ? idx : acc), -1);
                     while (i < segments.length) {
                       const segment = segments[i];
 
@@ -1403,6 +1406,7 @@ function BulleMessageInterne({
                             texteMessage={message.content}
                             reponseTerminee={!estEnCoursDeGeneration}
                             sourcesTour={sourcesAplaties}
+                            afficherSourcesTour={i > derniereIdxHorsTexte}
                           />,
                         );
                       }
@@ -1466,7 +1470,7 @@ function BulleMessageInterne({
       </div>
 
       {!estUtilisateur && !enTimeline && outilsResultats && outilsResultats.length > 0 && (
-        <OutilResultatBulle resultats={outilsResultats} texteMessage={message.content} reponseTerminee={!estEnCoursDeGeneration} sourcesTour={sourcesAplaties} />
+        <OutilResultatBulle resultats={outilsResultats} texteMessage={message.content} reponseTerminee={!estEnCoursDeGeneration} sourcesTour={sourcesAplaties} afficherSourcesTour />
       )}
       {/* Bloc "Fichier(s) généré(s)" retiré (04/09/2026, demande Bourama) :
           ne reste plus que le lien que le modèle écrit lui-même dans sa
