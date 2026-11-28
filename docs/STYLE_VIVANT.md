@@ -69,7 +69,7 @@ Once reasoning is finished, the light bulb always remains, still.
 
 ## Where it is used today
 
-- [Chat waiting message](MESSAGE_ATTENTE.md): texts, three styles, highlight and dots.
+- [Chat waiting message](MESSAGE_ATTENTE.md): texts, a single animation and dots.
 - [Tool line](LIGNE_OUTILS_ROUE.md): the reasoning icons.
 
 The settings live in `lib/messageAttente.ts`, `components/IndicateurReflexion.tsx`, `components/chat/IconeReflexion.tsx` and `tailwind.config.ts`. If one of them changes, this sheet changes with it.

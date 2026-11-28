@@ -69,7 +69,7 @@ Quand la réflexion est finie, il reste toujours l'ampoule, immobile.
 
 ## Où il sert aujourd'hui
 
-- [Message d'attente du chat](MESSAGE_ATTENTE.fr.md) : textes, trois styles, reflet et points.
+- [Message d'attente du chat](MESSAGE_ATTENTE.fr.md) : textes, une seule animation et points.
 - [Ligne d'outils](LIGNE_OUTILS_ROUE.fr.md) : les icônes de la réflexion.
 
 Les réglages se trouvent dans `lib/messageAttente.ts`, `components/IndicateurReflexion.tsx`, `components/chat/IconeReflexion.tsx` et `tailwind.config.ts`. Si l'un change, cette fiche change avec lui.

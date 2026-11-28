@@ -3,73 +3,27 @@
 import { useEffect, useState } from "react";
 import { traduireTexteInterface } from "@/lib/i18n/interface";
 import { useLocale } from "@/lib/i18n/useLocale";
-import { DUREES_ATTENTE_MS, STYLES_ATTENTE, TEXTES_ATTENTE, tirerAutre } from "@/lib/messageAttente";
+import { dureeAttenteAleatoireMs, TEXTES_ATTENTE, texteAttenteSuivant } from "@/lib/messageAttente";
 
-// Message d'attente vivant (27/11/2026, demande Bourama) : le texte change à un
-// rythme irrégulier, chaque changement prend au hasard l'un des trois styles
-// (roue, lettres une par une, vague), et trois points sautillent à la suite.
-// Aucun nom d'agent n'est affiché.
+// Message d'attente vivant (27/11/2026, demande Bourama). Depuis le 28/11/2026 (demande Bourama), le
+// texte change plus lentement (de 2 à 5 secondes, au hasard) et avec une seule animation, la même que la roue
+// des outils : la nouvelle ligne monte de 5 px en apparaissant, l'ancienne monte de 5 px en
+// s'estompant. Trois points sautillent toujours à la suite du texte. Aucun nom d'agent n'est affiché.
 
-type Style = (typeof STYLES_ATTENTE)[number];
-type Etape = { numero: number; texte: string; style: Style };
-
-const DELAI_LETTRE_MS = { roue: 0, lettres: 38, vague: 25 } as const;
-const DELAI_ENTREE_VAGUE_MS = 120;
-const DELAI_SORTIE_VAGUE_MS = 18;
-const DELAI_REFLET_MS = 60;
-const DELAI_POINT_MS = 150;
-
-const CLASSE_ENTREE: Record<Style, string> = {
-  roue: "",
-  lettres: "animate-dj-lettre-apparait",
-  vague: "animate-dj-vague-entree",
-};
-
+type Etape = { numero: number; texte: string };
 type Etapes = { courante: Etape; precedente: Etape | null };
 
-function etapeSuivante(actuelle?: Etape): Etape {
-  return {
-    numero: actuelle ? actuelle.numero + 1 : 0,
-    texte: tirerAutre(TEXTES_ATTENTE, actuelle?.texte),
-    style: tirerAutre(STYLES_ATTENTE, actuelle?.style),
-  };
-}
+const DELAI_POINT_MS = 150;
 
-function Ligne({ texte, style, sortie }: { texte: string; style: Style; sortie: boolean }) {
-  const lettres = Array.from(texte);
-  const delaiEntree = (rang: number) =>
-    style === "vague" ? DELAI_ENTREE_VAGUE_MS + rang * DELAI_LETTRE_MS.vague : rang * DELAI_LETTRE_MS[style];
-  // La roue déplace la ligne entière, les deux autres styles lettre par lettre.
-  const classeLigne =
-    style === "roue" ? (sortie ? "animate-dj-attente-roue-sortie" : "animate-dj-attente-roue-entree") : "";
-  const classeLettre = sortie ? (style === "vague" ? "animate-dj-vague-sortie" : "") : CLASSE_ENTREE[style];
-
+function Ligne({ texte, classe, sortie }: { texte: string; classe: string; sortie: boolean }) {
   return (
     <span
-      className={`absolute left-0 top-0 flex items-baseline whitespace-pre ${classeLigne} ${
+      className={`absolute left-0 top-0 flex items-baseline whitespace-pre ${classe} ${
         sortie ? "motion-reduce:hidden" : "motion-reduce:animate-dj-fade-in-rapide"
       }`}
     >
-      {lettres.map((lettre, rang) => (
-        <span
-          key={rang}
-          className={`inline-block motion-reduce:animate-none ${classeLettre}`}
-          style={{ animationDelay: `${sortie ? rang * DELAI_SORTIE_VAGUE_MS : delaiEntree(rang)}ms` }}
-        >
-          <span
-            className="inline-block animate-dj-lettre-reflet motion-reduce:animate-none"
-            style={{ animationDelay: `${rang * DELAI_REFLET_MS}ms` }}
-          >
-            {lettre}
-          </span>
-        </span>
-      ))}
-      <span
-        className={`inline-flex motion-reduce:animate-none ${classeLettre}`}
-        style={{
-          animationDelay: `${sortie ? lettres.length * DELAI_SORTIE_VAGUE_MS : delaiEntree(lettres.length)}ms`,
-        }}
-      >
+      {texte}
+      <span className="inline-flex">
         {[0, 1, 2].map((point) => (
           <span
             key={point}
@@ -92,12 +46,16 @@ export function IndicateurReflexion() {
 
   useEffect(() => {
     const minuteur = window.setTimeout(
-      () =>
+      () => {
+        // Le tirage se fait ici et non dans la fonction de setEtapes : elle peut être appelée deux
+        // fois par React, ce qui ferait avancer le sac de deux textes pour un seul affiché.
+        const texte = texteAttenteSuivant();
         setEtapes((avant) => ({
           precedente: avant?.courante ?? null,
-          courante: etapeSuivante(avant?.courante),
-        })),
-      etapes ? tirerAutre<number>(DUREES_ATTENTE_MS) : 0
+          courante: { numero: avant ? avant.courante.numero + 1 : 0, texte },
+        }));
+      },
+      etapes ? dureeAttenteAleatoireMs() : 0
     );
     return () => window.clearTimeout(minuteur);
   }, [etapes]);
@@ -115,13 +73,11 @@ export function IndicateurReflexion() {
         {traduireTexteInterface(TEXTES_ATTENTE[0], locale)}
       </span>
       <div aria-hidden="true" className="relative h-6 overflow-hidden leading-6">
-        {/* Le texte sortant suit le style du texte qui arrive. En style
-            lettres, il disparaît aussitôt. */}
-        {precedente && courante && courante.style !== "lettres" && (
+        {precedente && (
           <Ligne
             key={`sortie-${precedente.numero}`}
             texte={traduireTexteInterface(precedente.texte, locale)}
-            style={courante.style}
+            classe="animate-dj-roue-fondu-sortie"
             sortie
           />
         )}
@@ -129,7 +85,7 @@ export function IndicateurReflexion() {
           <Ligne
             key={courante.numero}
             texte={traduireTexteInterface(courante.texte, locale)}
-            style={courante.style}
+            classe={precedente ? "animate-dj-roue-fondu-entree" : "animate-dj-fade-in-rapide"}
             sortie={false}
           />
         )}

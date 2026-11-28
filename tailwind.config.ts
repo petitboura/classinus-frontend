@@ -220,7 +220,7 @@ const config: Config = {
         },
         // Roue des outils en fondu (28/11/2026, demande Bourama) : la ligne qui arrive monte de 5 px en
         // apparaissant, celle qui part monte de 5 px en s'estompant, au lieu du défilement sur toute
-        // la hauteur. Les keyframes dj-roue-entree/sortie restent pour le message d'attente.
+        // la hauteur. Le message d'attente du chat utilise les mêmes animations (28/11/2026).
         "dj-roue-fondu-entree": {
           from: { opacity: "0", transform: "translateY(5px)" },
           to: { opacity: "1", transform: "translateY(0)" },
@@ -228,21 +228,6 @@ const config: Config = {
         "dj-roue-fondu-sortie": {
           from: { opacity: "1", transform: "translateY(0)" },
           to: { opacity: "0", transform: "translateY(-5px)" },
-        },
-        // Message d'attente (27/11/2026) : lettres une par une, vague, et
-        // reflet qui passe de lettre en lettre.
-        "dj-lettre-apparait": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "dj-vague-entree": {
-          "0%": { opacity: "0", transform: "translateY(100%)" },
-          "70%": { opacity: "1", transform: "translateY(-4px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-        "dj-vague-sortie": {
-          from: { opacity: "1", transform: "translateY(0)" },
-          to: { opacity: "0", transform: "translateY(-100%)" },
         },
         // Icônes de la réflexion (27/11/2026).
         "dj-icone-etincelle": {
@@ -256,10 +241,6 @@ const config: Config = {
         "dj-icone-plume": {
           "0%, 100%": { transform: "rotate(-10deg)" },
           "50%": { transform: "rotate(8deg) translateX(2px)" },
-        },
-        "dj-lettre-reflet": {
-          "0%, 30%, 100%": { color: "var(--dj-texte-muet)" },
-          "15%": { color: "var(--dj-texte)" },
         },
       },
       animation: {
@@ -287,14 +268,6 @@ const config: Config = {
         "dj-roue-sortie": "dj-roue-sortie 0.16s ease-in both",
         "dj-roue-fondu-entree": "dj-roue-fondu-entree 0.2s ease-out both",
         "dj-roue-fondu-sortie": "dj-roue-fondu-sortie 0.2s ease-in both",
-        // Mêmes mouvements que la roue des outils, plus posés pour le message
-        // d'attente.
-        "dj-attente-roue-entree": "dj-roue-entree 0.38s cubic-bezier(.25,.8,.35,1) both",
-        "dj-attente-roue-sortie": "dj-roue-sortie 0.38s cubic-bezier(.25,.8,.35,1) both",
-        "dj-lettre-apparait": "dj-lettre-apparait 0.06s linear both",
-        "dj-vague-entree": "dj-vague-entree 0.38s cubic-bezier(.25,.8,.35,1) both",
-        "dj-vague-sortie": "dj-vague-sortie 0.24s ease-in both",
-        "dj-lettre-reflet": "dj-lettre-reflet 2.2s ease-in-out infinite",
         "dj-icone-etincelle": "dj-icone-etincelle 1.8s ease-in-out infinite",
         "dj-icone-lueur": "dj-icone-lueur 1.6s ease-in-out infinite",
         "dj-icone-tour": "dj-orbit 4s linear infinite",
