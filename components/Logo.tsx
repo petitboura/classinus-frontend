@@ -11,17 +11,28 @@
 //   tuile sombre jurerait avec le thème clair. La version à tuile ne sert
 //   plus qu'aux icônes (web, PWA, natif) et à l'image de partage.
 //
-// `taille` est en pixels. Image décorative : le nom "Classinus" est toujours
-// écrit à côté, d'où l'alt vide.
-export function Logo({ taille = 40, sansFond = false }: { taille?: number; sansFond?: boolean }) {
+// `taille` est en pixels. Par défaut l'image est décorative : le nom "Classinus"
+// est écrit à côté, d'où l'alt vide. Sur les pages publiques que les robots
+// parcourent (en-tête de /decouvrir), on passe `alt="Classinus"` : l'image
+// porte alors le nom, et le texte écrit à côté est masqué aux lecteurs d'écran
+// pour que le lien ne soit pas lu deux fois.
+export function Logo({
+  taille = 40,
+  sansFond = false,
+  alt = "",
+}: {
+  taille?: number;
+  sansFond?: boolean;
+  alt?: string;
+}) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={sansFond ? "/logo-classinus-sans-fond.webp" : "/logo-classinus.webp"}
       width={taille}
       height={taille}
-      alt=""
-      aria-hidden="true"
+      alt={alt}
+      aria-hidden={alt ? undefined : "true"}
       draggable={false}
       className="flex-shrink-0 select-none"
       style={{ width: taille, height: taille }}
