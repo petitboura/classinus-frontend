@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ComponentProps } from "react";
-import { CheckCircle2, ChevronDown, ChevronRight, Link2, Loader2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { SourcesBulle } from "./SourcesBulle";
 import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { WidgetsMcpUi } from "./WidgetMcpUi";
 import { masquerLigneRessource, type RessourceUi } from "@/lib/mcpUi";
 import { LogoSite, LogosSites } from "./LogoSite";
+import { CerclesSources } from "./CerclesSources";
 import { TexteFondu } from "./TexteFondu";
 import { logoPourLangage } from "@/lib/logosLangages";
 import { couleurMarque } from "@/lib/couleursIcones";
@@ -98,6 +99,9 @@ export function LigneOutil({
   const [demarreEnFinal] = useState(() => phaseInitiale(etat) === "final");
   const [ouvert, setOuvert] = useState(false);
   const [sourcesOuvert, setSourcesOuvert] = useState(false);
+  // Vrai quand le libellé de l'outil est coupé par le fondu : une fois la ligne dépliée, il s'affiche
+  // alors en entier (28/11/2026, demande Bourama).
+  const [nomCoupe, setNomCoupe] = useState(false);
 
   // Les textes reçus une fois restent disponibles : au moment où le
   // résultat arrive, l'entrée "en cours" n'existe plus côté parent, mais la
@@ -242,25 +246,40 @@ export function LigneOutil({
           </span>
         ) : (
           <div className={demarreEnFinal ? "" : "animate-dj-fade-in-rapide"}>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {/* Une seule ligne (28/11/2026, demande Bourama) : le texte de l'outil se fond là où
+                commencent les cercles des sources de cet outil, puis la flèche. Les cercles sont le
+                bouton qui déplie les sources de cet outil ; la liste de toutes les sources du tour
+                est une ligne à part, tout en bas des outils (LigneSourcesTour.tsx). */}
+            <div className="flex min-w-0 items-center gap-x-2">
               <button
                 onClick={() => setOuvert((precedent) => !precedent)}
-                className="flex min-w-0 max-w-full items-center gap-1.5 text-left text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
+                className="flex min-w-0 shrink items-center gap-1.5 text-left text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
-                <TexteFondu texte={nomLisible ?? ""} />
+                <TexteFondu texte={nomLisible ?? ""} onDebordement={setNomCoupe} />
                 {plusieursLogos && <LogosSites domaines={domaines!} />}
                 {pastille}
-                {ouvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />}
+                {!aDesSources && (ouvert ? <ChevronDown size={13} className="shrink-0" /> : <ChevronRight size={13} className="shrink-0" />)}
               </button>
               {aDesSources && (
-                <button
-                  onClick={() => setSourcesOuvert((precedent) => !precedent)}
-                  className="flex items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
-                >
-                  <Link2 size={13} />
-                  <span>Sources ({sources!.length})</span>
-                  {sourcesOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSourcesOuvert((precedent) => !precedent)}
+                    aria-expanded={sourcesOuvert}
+                    aria-label="Sources"
+                    className={`shrink-0 rounded-full transition-opacity hover:opacity-80 ${sourcesOuvert ? "opacity-100" : ""}`}
+                  >
+                    <CerclesSources sources={sources!} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOuvert((precedent) => !precedent)}
+                    aria-expanded={ouvert}
+                    className="shrink-0 text-dj-texte-muet transition-colors hover:text-dj-texte"
+                  >
+                    {ouvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                  </button>
+                </>
               )}
             </div>
             {/* Galerie d'images (01/09) : TOUJOURS visible, contrairement au
@@ -277,6 +296,9 @@ export function LigneOutil({
               }`}
             >
               <div className="overflow-hidden">
+                {nomCoupe && (
+                  <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-snug text-dj-texte-muet">{nomLisible}</p>
+                )}
                 <pre className="mt-1.5 max-h-64 overflow-auto rounded-xl border border-dj-bordure bg-dj-surface p-2.5 text-[12px] leading-relaxed text-dj-texte-muet">
                   {masquerLigneRessource(resultat ?? "", ressourcesUi)}
                 </pre>

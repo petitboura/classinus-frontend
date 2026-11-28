@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type { ComponentProps } from "react";
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
 import { useLocale } from "@/lib/i18n/useLocale";
@@ -9,6 +10,8 @@ import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 import { LigneCommentaire } from "./LigneCommentaire";
+import { LigneSourcesTour } from "./LigneSourcesTour";
+import type { SourcesBulle } from "./SourcesBulle";
 import { LigneReflexion } from "./LigneReflexion";
 import { RoueOutils, type ElementRoue } from "./RoueOutils";
 import { TexteFondu } from "./TexteFondu";
@@ -163,6 +166,8 @@ export function OutilResultatBulle({
   travailFini = true,
   texteMessage = "",
   reponseTerminee = true,
+  sourcesTour,
+  afficherSourcesTour = false,
 }: {
   resultats?: ResultatOutil[];
   // Notes de l'IA entre deux outils (25/11/2026, demande Bourama) : des lignes à point, jamais des
@@ -178,6 +183,11 @@ export function OutilResultatBulle({
   // réponse terminée.
   texteMessage?: string;
   reponseTerminee?: boolean;
+  // Toutes les sources du message (28/11/2026, demande Bourama) : la ligne « Sources » posée tout
+  // en bas des outils les déplie ; `afficherSourcesTour` n'est vrai que pour le dernier bloc d'outils
+  // du message, pour qu'il n'y ait qu'une seule ligne.
+  sourcesTour?: ComponentProps<typeof SourcesBulle>["sources"];
+  afficherSourcesTour?: boolean;
   // Outils encore en train de s'exécuter, à afficher DANS la même colonne
   // icône/ligne que les outils déjà terminés (15/09/2026, demande
   // Bourama) -- peu importe le mélange (que des en cours, que des
@@ -324,8 +334,21 @@ export function OutilResultatBulle({
   // Même icône d'outil dès qu'on la connaît (nomOutil transmis dès
   // l'événement "statut" par ChatIA.tsx). Repli Wrench pour tout outil
   // absent du registre (voir iconePourOutil).
+  const sourcesTourUniques = (() => {
+    const vues = new Set<string>();
+    return (sourcesTour ?? []).filter((source) => {
+      const cle = `${source.numero}|${source.url}`;
+      if (vues.has(cle)) return false;
+      vues.add(cle);
+      return true;
+    });
+  })();
+  const ligneSourcesTour =
+    afficherSourcesTour && sourcesTourUniques.length > 0 ? <LigneSourcesTour key="sources-tour" sources={sourcesTourUniques} /> : null;
+
   const elementsResultats = elements.map((element, position) => {
-    const estDerniere = position === elements.length - 1;
+    // La ligne « Sources » du bas prolonge la ligne connectrice : le dernier élément n'est plus le dernier.
+    const estDerniere = position === elements.length - 1 && !ligneSourcesTour;
     if (element.genre === "commentaire") {
       return <LigneCommentaire key={element.cle} texte={element.texte} estDerniere={estDerniere} />;
     }
@@ -361,7 +384,12 @@ export function OutilResultatBulle({
     const premier = elements[0];
     ligneSeuleRef.current =
       enDirect && premier?.genre === "ligne" ? premier.ligne.cle : enDirect && premier?.genre === "reflexion" ? premier.cle : null;
-    return <div className="my-1.5 flex max-w-[85%] flex-col">{elementsResultats}</div>;
+    return (
+      <div className="my-1.5 flex max-w-[85%] flex-col">
+        {elementsResultats}
+        {ligneSourcesTour}
+      </div>
+    );
   }
 
   // Ce que montre la roue : une ligne par élément, avec le texte que montrerait la liste dépliée
@@ -437,7 +465,10 @@ export function OutilResultatBulle({
           groupeOuvert ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
-        <div className="overflow-hidden flex flex-col">{elementsResultats}</div>
+        <div className="overflow-hidden flex flex-col">
+          {elementsResultats}
+          {ligneSourcesTour}
+        </div>
       </div>
       {galeriesExternes.length > 0 && (
         <div className="flex flex-col gap-1.5">{galeriesExternes}</div>
