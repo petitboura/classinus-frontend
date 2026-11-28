@@ -27,8 +27,9 @@ function texteDe(node: ReactNode): string {
 // diminue quand il y a beaucoup de colonnes (voir lib/lisibilite.ts). Au dela
 // de 7 colonnes le tableau s'elargit vers les bords, et s'il ne tient toujours
 // pas il defile de gauche a droite sans barre (voir lib/useTableLargeur.ts).
-// Style : une seule couleur, pas de cadre exterieur, seules les lignes entre
-// les cases restent (voir .dj-table-chat dans globals.css).
+// Style : une seule couleur, pas de cadre exterieur, pas de trait vertical entre
+// les colonnes, seules les lignes horizontales entre les rangees restent (voir
+// .dj-table-chat dans globals.css). Chaque colonne prend la largeur de son contenu.
 function TableConteneur({ enfants, taille }: { enfants: ReactNode; taille: string }) {
   const boiteRef = useRef<HTMLDivElement>(null);
   const pisteRef = useRef<HTMLDivElement>(null);
