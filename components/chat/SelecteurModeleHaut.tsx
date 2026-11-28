@@ -62,6 +62,7 @@ export function SelecteurModeleHaut({
   modelesBientot = [],
   modeleSelectionne,
   onModeleChange,
+  dansEntete = false,
 }: {
   modelesDisponibles: ModeleDisponible[];
   // Modèles à crédit montrés grisés avec un verrou, jamais choisissables.
@@ -69,6 +70,10 @@ export function SelecteurModeleHaut({
   // Modèle actif déjà résolu (lib/modeleActif.ts), toujours présent dans la liste.
   modeleSelectionne: string | null;
   onModeleChange: (modeleId: string) => void;
+  // Chat collé à droite (28/11/2026, demande Bourama) : le bouton est dans l'en-tête, à côté du
+  // titre de la conversation et des boutons. Plus compact, et la liste s'ouvre sous l'en-tête,
+  // alignée à sa droite (la colonne du chat coupe ce qui dépasse, voir CadreChatLateral.tsx).
+  dansEntete?: boolean;
 }) {
   const [ouvert, setOuvert] = useState(false);
   const router = useRouter();
@@ -117,14 +122,17 @@ export function SelecteurModeleHaut({
   }
 
   return (
-    <div ref={racineRef} className="pointer-events-auto relative">
+    <div ref={racineRef} className={"pointer-events-auto" + (dansEntete ? "" : " relative")}>
       <button
         type="button"
         onClick={() => setOuvert((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={ouvert}
         aria-controls={idListe}
-        className="flex max-w-[70vw] items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute"
+        className={
+          "flex items-center rounded-xl text-sm font-medium text-dj-texte transition-colors hover:bg-dj-surface-haute " +
+          (dansEntete ? "max-w-[11rem] gap-1.5 px-2 py-1" : "max-w-[70vw] gap-2 px-3 py-1.5")
+        }
       >
         <IconeFournisseur distributeur={modeleActif?.distributeur ?? null} />
         <span className="truncate">{modeleActif?.label ?? ""}</span>
@@ -136,7 +144,12 @@ export function SelecteurModeleHaut({
 
       <AnimatePresence>
         {ouvert && (
-          <div className="absolute left-1/2 top-full z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2">
+          <div
+            className={
+              dansEntete
+                ? "absolute right-3 top-full z-30 mt-1 w-72 max-w-[calc(100%-1.5rem)]"
+                : "absolute left-1/2 top-full z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2"
+            }>
             <motion.div
               id={idListe}
               role="listbox"

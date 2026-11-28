@@ -2,6 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 import { appelerApi, appelerApiStream, lireEtatTourEnCours, signalerPedagogique, suivreTourEnCours } from "@/lib/api";
 import { RAISON_DEMONTAGE, demontageDemande } from "@/lib/repriseFluxChat";
 import { dernierIdEnregistre, versionsAvecActiveMiseAJour, versionsExistantesPour } from "@/lib/versionsConversation";
@@ -126,6 +127,7 @@ export function ChatIA({
   pleinEcran = false,
   natif = false,
   raccourcis = false,
+  emplacementModele = null,
 }: {
   agentId: string;
   nomAgent: string;
@@ -207,6 +209,10 @@ export function ChatIA({
   // sous-sections (RaccourcisChat.tsx) sur l'écran vide. Seulement pour la
   // vraie page du chat (ChatSection.tsx), jamais pour la popup mini.
   raccourcis?: boolean;
+  // Chat collé à droite (28/11/2026, demande Bourama) : élément de l'en-tête de ChatFlottant.tsx où
+  // afficher le bouton du modèle, à côté du titre et des boutons. Quand il est donné, la rangée du
+  // modèle en haut au milieu du chat n'est pas affichée. null : comportement d'avant.
+  emplacementModele?: HTMLElement | null;
 }) {
   // Modèle actif (15/10/2026, demande Bourama, plus de choix "Auto") : le dernier choix de
   // l'élève, sinon DeepSeek Flash, sinon le premier de la liste (lib/modeleActif.ts). Le choix
@@ -2187,6 +2193,21 @@ export function ChatIA({
   // l'envoi du premier message, messages.length > 0 et on retombe sur la
   // mise en page normale (liste défilante + barre fixée en bas) plus
   // bas dans ce fichier.
+  // Chat collé : le bouton du modèle va dans l'en-tête (emplacementModele), pas en haut au milieu.
+  const modeleDansEntete =
+    emplacementModele && modelesDisponibles.length > 0
+      ? createPortal(
+          <SelecteurModeleHaut
+            modelesDisponibles={modelesDisponibles}
+            modelesBientot={modelesBientot}
+            modeleSelectionne={modeleSelectionne}
+            onModeleChange={setModeleSelectionne}
+            dansEntete
+          />,
+          emplacementModele
+        )
+      : null;
+
   if (messages.length === 0) {
     return (
       <div
@@ -2201,20 +2222,24 @@ export function ChatIA({
             14/10/2026, demande Bourama : bouton du modèle en haut au milieu du chat.
             15/10/2026 : sur téléphone (chat plein écran), il est posé tout en haut de l'écran,
             sur la ligne du bouton hamburger (même décalage, voir AppSidebar.tsx). */}
-        <div
-          className={
-            "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center" +
-            (pleinEcran
-              ? " md:top-[var(--safe-top)] max-md:fixed max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-[25] max-md:h-8"
-              : "")
-          }>
-          <SelecteurModeleHaut
-            modelesDisponibles={modelesDisponibles}
-            modelesBientot={modelesBientot}
-            modeleSelectionne={modeleSelectionne}
-            onModeleChange={setModeleSelectionne}
-          />
-        </div>
+        {emplacementModele ? (
+          modeleDansEntete
+        ) : (
+          <div
+            className={
+              "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-11 items-center justify-center" +
+              (pleinEcran
+                ? " md:top-[var(--safe-top)] max-md:fixed max-md:top-[calc(0.5rem+var(--safe-top))] max-md:z-[25] max-md:h-8"
+                : "")
+            }>
+            <SelecteurModeleHaut
+              modelesDisponibles={modelesDisponibles}
+              modelesBientot={modelesBientot}
+              modeleSelectionne={modeleSelectionne}
+              onModeleChange={setModeleSelectionne}
+            />
+          </div>
+        )}
         {/* 01/10/2026, demande Bourama (raccourcis, voir RaccourcisChat.tsx).
             Le centrage vertical passe de justify-center à trois espaceurs
             dont la croissance s'anime : sur PC rien ne change (titre + barre
@@ -2329,7 +2354,8 @@ export function ChatIA({
           liste (plus de ligne à part) : le texte des messages passe derrière, adouci par le
           voile du haut (voir plus bas). Elle laisse passer les clics et la molette, seul le
           bouton du modèle les reçoit. */}
-      {modelesDisponibles.length > 0 && (
+      {emplacementModele && modeleDansEntete}
+      {!emplacementModele && modelesDisponibles.length > 0 && (
         <div
           className={
             pleinEcran

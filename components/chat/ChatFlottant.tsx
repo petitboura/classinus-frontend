@@ -361,6 +361,11 @@ export function ChatFlottant({
   // dans l'historique (vide pour une nouvelle conversation sans titre).
   const titreConversation = historique.find((f) => f.conversation_id === cle)?.titre ?? "";
 
+  // Chat collé (28/11/2026, demande Bourama) : le bouton du modèle se place dans l'en-tête, entre le
+  // titre de la conversation et les boutons. Le modèle et sa liste vivent dans ChatIA : on lui
+  // donne l'emplacement (div ci-dessous) et il y affiche son bouton par un portail.
+  const [emplacementModele, setEmplacementModele] = useState<HTMLElement | null>(null);
+
   function nouvelleConversation() {
     setCle(crypto.randomUUID());
     setMessagesInitiaux([]);
@@ -607,7 +612,7 @@ export function ChatFlottant({
           // deux lignes se prolongent, et ni logo ni nom : la colonne est déjà
           // le chat. La zone de sécurité du haut est reprise à l'identique.
           (docke
-            ? "flex h-[calc(2.5rem_+_var(--safe-top,0px))] flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pt-[var(--safe-top,0px)]"
+            ? "relative flex h-[calc(2.5rem_+_var(--safe-top,0px))] flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pt-[var(--safe-top,0px)]"
             : "flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 pb-2.5 pt-2.5") +
           (estDesktop && !docke ? " cursor-grab select-none active:cursor-grabbing" : "")
         }
@@ -632,6 +637,8 @@ export function ChatFlottant({
             {titreConversation}
           </span>
         )}
+
+        {docke && <div ref={setEmplacementModele} className="flex shrink-0 items-center" />}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {nbMessages > 0 && (
@@ -769,6 +776,7 @@ export function ChatFlottant({
               onMessagesSync={setMessagesInitiaux}
               onNouvelleConversationDemarree={ajouterConversationHistorique}
               natif={natif}
+              emplacementModele={docke ? emplacementModele : null}
             />
           )}
         </div>
