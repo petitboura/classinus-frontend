@@ -1130,30 +1130,23 @@ html[data-ouverture-vue="1"] #clovis-splash {
 }
 
 /* Tableaux du chat (TableauMessage.tsx, FicheTableauComparatif.tsx) : une seule
-   couleur partout, pas de cadre exterieur, seules les lignes entre les cases
-   restent. Les bordures des quatre bords sont retirees. */
+   couleur partout, pas de cadre exterieur, pas de trait vertical entre les
+   colonnes. Seules les lignes horizontales entre les rangees restent. Chaque
+   colonne prend la largeur que son contenu demande (mise en page automatique). */
 .dj-table-chat {
   width: 100%;
   border-collapse: collapse;
 }
 .dj-table-chat th,
 .dj-table-chat td {
-  border: 1px solid var(--dj-bordure);
+  border: 0;
+  border-top: 1px solid var(--dj-bordure);
   padding: 0.375rem 0.625rem;
   text-align: left;
   overflow-wrap: break-word;
 }
 .dj-table-chat thead tr:first-child > * {
   border-top: 0;
-}
-.dj-table-chat tbody tr:last-child > * {
-  border-bottom: 0;
-}
-.dj-table-chat tr > :first-child {
-  border-left: 0;
-}
-.dj-table-chat tr > :last-child {
-  border-right: 0;
 }
 /* Piste du tableau, voir lib/useTableLargeur.ts. Quand le tableau ne tient pas,
    seule la piste defile de gauche a droite : pas de barre, un fondu sur les
