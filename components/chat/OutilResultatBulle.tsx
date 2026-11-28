@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type { ComponentProps } from "react";
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { iconePrincipalePour, sousIconePour, useOutilsRegistre } from "@/lib/outils";
 import { useLocale } from "@/lib/i18n/useLocale";
@@ -9,6 +10,7 @@ import { GalerieImagesBulle } from "./GalerieImagesBulle";
 import { CartesVideosBulle } from "./CartesVideosBulle";
 import { LigneOutil, DonneesLigneOutil } from "./LigneOutil";
 import { LigneCommentaire } from "./LigneCommentaire";
+import type { SourcesBulle } from "./SourcesBulle";
 import { LigneReflexion } from "./LigneReflexion";
 import { RoueOutils, type ElementRoue } from "./RoueOutils";
 import { TexteFondu } from "./TexteFondu";
@@ -163,6 +165,7 @@ export function OutilResultatBulle({
   travailFini = true,
   texteMessage = "",
   reponseTerminee = true,
+  sourcesTour,
 }: {
   resultats?: ResultatOutil[];
   // Notes de l'IA entre deux outils (25/11/2026, demande Bourama) : des lignes à point, jamais des
@@ -178,6 +181,9 @@ export function OutilResultatBulle({
   // réponse terminée.
   texteMessage?: string;
   reponseTerminee?: boolean;
+  // Toutes les sources du message (28/11/2026, demande Bourama) : le bouton « Sources » de chaque
+  // ligne d'outil ouvre cette liste complète, pas seulement les sources de l'outil.
+  sourcesTour?: ComponentProps<typeof SourcesBulle>["sources"];
   // Outils encore en train de s'exécuter, à afficher DANS la même colonne
   // icône/ligne que les outils déjà terminés (15/09/2026, demande
   // Bourama) -- peu importe le mélange (que des en cours, que des
@@ -353,6 +359,7 @@ export function OutilResultatBulle({
         nombre={ligne.membres.length}
         estDerniere={estDerniere}
         estGroupe={estGroupe}
+        sourcesTour={sourcesTour}
       />
     );
   });

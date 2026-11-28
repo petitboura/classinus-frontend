@@ -71,6 +71,7 @@ export function LigneOutil({
   nombre = 1,
   estDerniere,
   estGroupe,
+  sourcesTour,
 }: {
   donnees: DonneesLigneOutil;
   Icone: typeof Loader2;
@@ -90,6 +91,9 @@ export function LigneOutil({
   nombre?: number;
   estDerniere: boolean;
   estGroupe: boolean;
+  // Toutes les sources du tour (28/11/2026, demande Bourama) : le bouton « Sources » ouvre la liste
+  // complète du message, pas seulement celle de cet outil. Les cercles, eux, restent ceux de l'outil.
+  sourcesTour?: ComponentProps<typeof SourcesBulle>["sources"];
 }) {
   const { etat, texteEnCours, texteTermine, nomLisible, resultat, sources, images, videos, ressourcesUi } = donnees;
 
@@ -150,6 +154,17 @@ export function LigneOutil({
   }, [etat]);
 
   const aDesSources = !!sources && sources.length > 0;
+  // Liste du bouton : toutes les sources du tour, sans doublon ; à défaut, celles de l'outil.
+  const sourcesListe = (() => {
+    const base = sourcesTour && sourcesTour.length > 0 ? sourcesTour : sources ?? [];
+    const vues = new Set<string>();
+    return base.filter((source) => {
+      const cle = `${source.numero}|${source.url}`;
+      if (vues.has(cle)) return false;
+      vues.add(cle);
+      return true;
+    });
+  })();
   const logoUnique = domaines && domaines.length === 1 ? domaines[0] : null;
   const logoLangage = logoPourLangage(langage);
   const plusieursLogos = !!domaines && domaines.length > 1;
@@ -266,7 +281,7 @@ export function LigneOutil({
                   className="flex shrink-0 items-center gap-1.5 text-[13px] text-dj-texte-muet transition-colors hover:text-dj-texte"
                 >
                   <Link2 size={13} />
-                  <span>Sources ({sources!.length})</span>
+                  <span>Sources ({sourcesListe.length})</span>
                   {sourcesOuvert ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                 </button>
               )}
@@ -300,7 +315,7 @@ export function LigneOutil({
                 }`}
               >
                 <div className="overflow-hidden">
-                  <SourcesBulle sources={sources} />
+                  <SourcesBulle sources={sourcesListe} />
                 </div>
               </div>
             )}

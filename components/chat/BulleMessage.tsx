@@ -1402,6 +1402,7 @@ function BulleMessageInterne({
                             travailFini={!travailEnCours}
                             texteMessage={message.content}
                             reponseTerminee={!estEnCoursDeGeneration}
+                            sourcesTour={sourcesAplaties}
                           />,
                         );
                       }
@@ -1465,7 +1466,7 @@ function BulleMessageInterne({
       </div>
 
       {!estUtilisateur && !enTimeline && outilsResultats && outilsResultats.length > 0 && (
-        <OutilResultatBulle resultats={outilsResultats} texteMessage={message.content} reponseTerminee={!estEnCoursDeGeneration} />
+        <OutilResultatBulle resultats={outilsResultats} texteMessage={message.content} reponseTerminee={!estEnCoursDeGeneration} sourcesTour={sourcesAplaties} />
       )}
       {/* Bloc "Fichier(s) généré(s)" retiré (04/09/2026, demande Bourama) :
           ne reste plus que le lien que le modèle écrit lui-même dans sa
