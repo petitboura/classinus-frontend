@@ -684,7 +684,7 @@ export function ProgrammeNotions() {
         <div className="flex justify-end">
           <button
             onClick={() => setGenererOuvert((v) => !v)}
-            className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-2 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-surface-haute"
+            className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton px-3 py-2 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
             <Upload size={14} /> Importer un document
           </button>
@@ -740,7 +740,7 @@ export function ProgrammeNotions() {
                     <button
                       onClick={() => setStructureProposee(null)}
                       disabled={genererEnCours}
-                      className="rounded-md border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte"
+                      className="rounded-md px-3 py-1.5 text-xs font-medium text-dj-texte"
                     >
                       Annuler
                     </button>
@@ -771,7 +771,7 @@ export function ProgrammeNotions() {
                   />
                   <button
                     onClick={() => inputFichierRef.current?.click()}
-                    className="self-start rounded-md border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte hover:bg-dj-surface"
+                    className="self-start rounded-md px-3 py-1.5 text-xs font-medium text-dj-texte hover:bg-dj-surface"
                   >
                     Choisir un fichier
                   </button>
@@ -881,7 +881,7 @@ export function ProgrammeNotions() {
               </button>
               <button
                 onClick={() => setNotionEnEditionId(null)}
-                className="rounded-md border border-dj-bordure px-3 py-1.5 text-xs font-medium text-dj-texte"
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-dj-texte"
               >
                 Annuler
               </button>

@@ -162,7 +162,7 @@ export function SkillsIndependants() {
         </div>
         <div className="flex flex-wrap gap-2">
           <input ref={champZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" className="hidden" onChange={e => void envoyerZip(e.target.files?.[0])} />
-          <button type="button" disabled={zipEnCours} onClick={() => champZip.current?.click()} className={`border border-dj-bordure ${bouton}`}>{zipEnCours ? "Envoi du zip…" : "Envoyer un zip"}</button>
+          <button type="button" disabled={zipEnCours} onClick={() => champZip.current?.click()} className={`${bouton}`}>{zipEnCours ? "Envoi du zip…" : "Envoyer un zip"}</button>
           <button type="button" onClick={nouveau} className={`bg-dj-accent-1 font-semibold text-[#1A0D02] hover:bg-dj-accent-2 ${bouton}`}>Nouveau skill</button>
         </div>
       </header>
@@ -189,7 +189,7 @@ export function SkillsIndependants() {
             <h3 className="mb-2 text-sm font-semibold">Fichiers et dossiers</h3>
             <div className="min-h-0 flex-1 overflow-y-auto">{fichiers.map(f => <button key={f.chemin} type="button" onClick={() => { setFichierActif(f.chemin); setVueBrute(false); }} className={`mb-1 block w-full truncate rounded px-2 py-1 text-left text-xs transition-colors hover:bg-dj-surface-haute ${f.chemin === fichierActif ? "bg-dj-surface-haute" : ""}`}>{f.chemin}</button>)}</div>
             <input value={nouveauChemin} onChange={e => setNouveauChemin(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); ajouterFichier(); } }} placeholder="dossier/fichier.md" className={`mt-3 w-full text-xs ${champ}`} />
-            <button type="button" onClick={ajouterFichier} className="mt-2 rounded border border-dj-bordure px-2 py-1 text-xs transition-colors hover:bg-dj-surface-haute">Ajouter un fichier</button>
+            <button type="button" onClick={ajouterFichier} className="mt-2 rounded px-2 py-1 text-xs transition-colors hover:bg-dj-surface-haute">Ajouter un fichier</button>
           </div>
           <div className="flex h-[calc(100dvh-10rem)] min-h-[420px] min-w-0 flex-col md:h-auto md:min-h-0">
             <div className="mb-2 flex items-center justify-between gap-2">

@@ -216,7 +216,7 @@ function BoutonsRattachement({
         <button
           onClick={onSuivre}
           disabled={enCours !== null}
-          className="rounded-cgpt-bouton border border-dj-bordure px-2.5 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface disabled:opacity-50"
+          className="rounded-cgpt-bouton px-2.5 py-1.5 text-xs font-medium text-dj-texte transition-colors hover:bg-dj-surface disabled:opacity-50"
         >
           {enCours === "suivre" ? "..." : "Suivre"}
         </button>

@@ -58,7 +58,7 @@ export function ActionsToujoursAutorisees({ filtre }: { filtre: (autorisation: A
               type="button"
               onClick={() => void retirer(a.cle)}
               disabled={retrait !== null}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
             >
               {retrait === a.cle && <LoaderCircle size={12} className="animate-spin" />}
               {retrait === a.cle ? t("Retrait…") : t("Retirer")}

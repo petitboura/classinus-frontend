@@ -68,7 +68,7 @@ export function PopupProposerProfilPublic({ onFermer }: { onFermer: () => void }
           <button
             onClick={fermer}
             disabled={enregistrement}
-            className="flex-1 rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-sm font-medium text-dj-texte-muet transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+            className="flex-1 rounded-cgpt-bouton px-4 py-2 text-sm font-medium text-dj-texte-muet transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
           >
             Plus tard
           </button>

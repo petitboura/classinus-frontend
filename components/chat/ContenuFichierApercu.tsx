@@ -134,7 +134,7 @@ function CarteSiteExterne({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           onClick={() => ouvrirSiteExterieur(url)}
-          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <ExternalLink size={13} /> Ouvrir le site
         </button>

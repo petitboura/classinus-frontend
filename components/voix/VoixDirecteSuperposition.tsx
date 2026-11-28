@@ -163,7 +163,7 @@ export function VoixDirecteSuperposition() {
                 onClick={voix.reduire}
                 aria-label="Réduire en bulle"
                 title="Réduire en bulle"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
               >
                 <Minimize2 size={20} />
               </button>
@@ -172,7 +172,7 @@ export function VoixDirecteSuperposition() {
                 onClick={voix.fermer}
                 aria-label="Arrêter la voix"
                 title="Arrêter la voix"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-dj-bordure bg-dj-surface text-dj-texte transition-colors hover:border-dj-bordure-forte"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-dj-texte transition-colors hover:bg-dj-surface-haute"
               >
                 <X size={20} />
               </button>

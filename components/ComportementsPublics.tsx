@@ -289,7 +289,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
       {!formulaireOuvert ? (
         <button
           onClick={() => setFormulaireOuvert(true)}
-          className="flex w-fit items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+          className="flex w-fit items-center gap-1.5 rounded-cgpt-bouton px-3 py-1.5 text-xs font-semibold text-dj-texte transition-colors hover:bg-dj-surface-haute hover:bg-dj-surface-haute"
         >
           <Plus size={14} /> Ajouter un skill
         </button>
@@ -361,7 +361,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
                 setFichiersUploadLot([]);
                 setErreursUploadLot([]);
               }}
-              className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+              className="rounded-cgpt-bouton px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
             >
               Annuler
             </button>

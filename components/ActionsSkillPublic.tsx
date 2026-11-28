@@ -68,7 +68,7 @@ export function ActionsSkillPublic({ skill }: { skill: ComportementPublic }) {
         </button>
         <button
           onClick={telecharger}
-          className="flex items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute px-4 py-2 text-sm font-semibold text-dj-texte transition-colors duration-200 ease-cgpt-doux hover:border-dj-bordure-forte"
+          className="flex items-center gap-1.5 rounded-cgpt-bouton px-4 py-2 text-sm font-semibold text-dj-texte transition-colors duration-200 ease-cgpt-doux hover:bg-dj-surface-haute"
         >
           <Download size={15} />
           Télécharger (.md)

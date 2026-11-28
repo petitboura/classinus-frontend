@@ -176,7 +176,7 @@ function UnWidget({ ressource, texteRepli }: { ressource: RessourceUi; texteRepl
             <button
               type="button"
               onClick={reessayer}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1 text-[12px] text-dj-texte transition-colors hover:bg-dj-surface-haute"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] text-dj-texte transition-colors hover:bg-dj-surface-haute"
             >
               <RotateCw size={12} />
               {t.reessayer}
@@ -186,7 +186,7 @@ function UnWidget({ ressource, texteRepli }: { ressource: RessourceUi; texteRepl
             <button
               type="button"
               onClick={() => traiterLienSortant(ressource.contenu)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1 text-[12px] text-dj-texte transition-colors hover:bg-dj-surface-haute"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] text-dj-texte transition-colors hover:bg-dj-surface-haute"
             >
               <ExternalLink size={12} />
               {t.ouvrir}

@@ -19,6 +19,7 @@ import { MenuHamburgerNatif } from "@/components/mobile/MenuHamburgerNatif";
 import { MenuHamburgerWeb } from "@/components/mobile/MenuHamburgerWeb";
 import { TransitionPage } from "@/components/TransitionPage";
 import { BoutonNotifications } from "@/components/BoutonNotifications";
+import { MasquerSiLecteurOuvert } from "@/components/MasquerSiLecteurOuvert";
 import { BoutonDecouvrir } from "@/components/BoutonDecouvrir";
 import { EnTeteApp } from "@/components/EnTeteApp";
 import { ContexteEnTete, useFournirEnTete } from "@/lib/contexteEnTete";
@@ -228,12 +229,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               visible mobile ET desktop -- pas de barre du haut dédiée
               dans cette appli, voir commentaire dans
               BoutonNotifications.tsx. */}
-          <BoutonNotifications connecte={connecte} />
+          <MasquerSiLecteurOuvert>
+            <BoutonNotifications connecte={connecte} />
+          </MasquerSiLecteurOuvert>
           {/* 03/10/2026, demande Bourama : minuteurs (cartes, pastilles) et
               bouton horloge sur tous les écrans, à gauche de la cloche. Une
               seule copie ici, plus une par chat. Réservé aux comptes connectés
               (un minuteur est enregistré sur le compte). */}
-          {connecte && <DockMinuteurs />}
+          {connecte && (
+            <MasquerSiLecteurOuvert>
+              <DockMinuteurs />
+            </MasquerSiLecteurOuvert>
+          )}
           {/* 18/10/2026, demande Bourama : bouton vers la page générale
               /decouvrir, à gauche de l'horloge des minuteurs, masqué dans le
               chat (voir BoutonDecouvrir.tsx). */}

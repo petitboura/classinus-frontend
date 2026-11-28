@@ -164,7 +164,7 @@ export function PopupFeedback({
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={fermer}
-            className="rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte"
+            className="rounded-cgpt-bouton px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
             Annuler
           </button>

@@ -214,7 +214,7 @@ export function AjoutRegle({ onAjouter }: { onAjouter: (texte: string) => Promis
       <button
         onClick={valider}
         disabled={enCours || !texte.trim()}
-        className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-carte border border-dj-bordure px-3 py-2.5 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+        className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-carte px-3 py-2.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
       >
         {enCours ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
         {texteConfiguration("regle.ajout.bouton")}

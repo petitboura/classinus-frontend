@@ -47,7 +47,7 @@ export function CtaImportIa() {
         <section aria-label={t("Importer depuis une autre IA")} className="px-3 pb-1 pt-1">
           <div className="flex items-center gap-2">
             <p className="min-w-0 flex-1 text-sm text-dj-texte-muet">{t("Tu viens d'une autre IA ? Retrouve ici ta mémoire, tes skills et ta configuration.")}</p>
-            <button type="button" aria-expanded={deplie} onClick={() => setDeplie((v) => !v)} className="shrink-0 rounded-lg border border-dj-bordure px-3 py-1.5 text-sm transition-colors hover:border-dj-bordure-forte">
+            <button type="button" aria-expanded={deplie} onClick={() => setDeplie((v) => !v)} className="shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-dj-surface-haute">
               {deplie ? t("Réduire") : t("Importer")}
             </button>
             <button type="button" aria-label={t("Enlever ce bandeau")} onClick={enlever} className="shrink-0 rounded-lg px-2 py-1.5 text-sm text-dj-texte-muet transition-colors hover:text-dj-texte">

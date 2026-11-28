@@ -410,7 +410,7 @@ export function ContenuNonPrevisualisable({ href, nom }: { href: string; nom: st
       <p className="text-sm text-dj-texte-muet">Aperçu non disponible pour ce type de fichier.</p>
       <button
         onClick={() => void telecharger(href, nom)}
-        className={`flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte ${classeEtatTelechargement(etat)}`}
+        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${classeEtatTelechargement(etat)}`}
       >
         <IconeTelechargement href={href} size={13} /> <LibelleTelechargement href={href} defaut="Télécharger" />
       </button>
@@ -599,7 +599,7 @@ export function VisionneuseBibliotheque({
               <LinkPreview href={f.url_publique} texteLien={titre} />
               <button
                 onClick={() => ouvrirSiteExterieur(f.url_publique)}
-                className="mt-3 flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+                className="mt-3 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
               >
                 <ExternalLink size={13} /> Ouvrir le site
               </button>

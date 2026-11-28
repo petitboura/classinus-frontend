@@ -122,7 +122,7 @@ export function ButtonPartager({
     <button
       onClick={partager}
       className={
-        "flex items-center gap-1 rounded-lg border border-dj-bordure px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte " +
+"flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"+
         className
       }
     >

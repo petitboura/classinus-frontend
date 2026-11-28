@@ -233,7 +233,7 @@ export function EditionFiltresDossierModal({
         />
 
         <div className="flex items-center justify-end gap-2 pt-1">
-          <button onClick={fermer} className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
+          <button onClick={fermer} className="rounded-cgpt-bouton px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
             Annuler
           </button>
           <button

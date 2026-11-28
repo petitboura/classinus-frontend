@@ -146,7 +146,7 @@ export function RelaisPcCarte() {
           {etat?.etat === "enmarche" && etat.urlSante && (
             <button
               onClick={ouvrirPageSante}
-              className="rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
+              className="rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
             >
               Page de santé
             </button>
@@ -164,7 +164,7 @@ export function RelaisPcCarte() {
             <button
               onClick={arreter}
               disabled={action === "arret"}
-              className="flex items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
             >
               <Power size={12} />
               {action === "arret" ? "Arrêt..." : "Arrêter"}

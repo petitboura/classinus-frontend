@@ -32,7 +32,7 @@ export function BoutonRepriseAgent({
       <button
         onClick={onReprendre}
         disabled={enAttente}
-        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-dj-texte hover:bg-dj-surface disabled:opacity-50"
       >
         {estRepetition ? <RotateCw size={13} /> : <ArrowRight size={13} />}
         {estRepetition ? t.reessayer : t.continuer}

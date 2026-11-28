@@ -454,7 +454,7 @@ export function EspaceDossiers() {
             {(dossiersDesignes ?? []).length > 0 && (
               <button
                 onClick={() => selectionDossiersDesignes.activer()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
               >
                 <CheckSquare size={14} />
                 Sélectionner
@@ -473,7 +473,7 @@ export function EspaceDossiers() {
             {(elements ?? []).length > 0 && (
               <button
                 onClick={() => selectionElements.activer()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
               >
                 <CheckSquare size={14} />
                 Sélectionner
@@ -484,7 +484,7 @@ export function EspaceDossiers() {
                 setDialogue("sous-dossier");
                 setValeurSaisie("");
               }}
-              className="flex items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
             >
               <FolderPlus size={14} />
               Sous-dossier
@@ -494,7 +494,7 @@ export function EspaceDossiers() {
                 setDialogue("fichier");
                 setValeurSaisie("");
               }}
-              className="flex items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure"
             >
               <FilePlus size={14} />
               Fichier

@@ -211,7 +211,7 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
             type="button"
             onClick={fermer}
             aria-label="Fermer"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dj-bordure text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             <X className="h-4 w-4" />
           </button>
@@ -372,7 +372,7 @@ export function PanneauGenererMarketingStudio({ preset, onClose }: { preset: Mar
           <button
             type="button"
             onClick={fermer}
-            className="flex flex-1 items-center justify-center rounded-full border border-dj-bordure bg-transparent px-4 py-3 text-sm font-semibold text-dj-texte transition-colors hover:bg-dj-surface"
+            className="flex flex-1 items-center justify-center rounded-full px-4 py-3 text-sm font-semibold text-dj-texte transition-colors hover:bg-dj-surface"
           >
             Fermer
           </button>

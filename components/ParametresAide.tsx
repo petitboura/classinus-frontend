@@ -56,7 +56,7 @@ export function ParametresAide() {
       <div className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
         <button
           onClick={() => router.push(ROUTES_APP.chat)}
-          className="flex items-center gap-2 rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
         >
           <MessageCircle size={16} />
           Poser une question à Classinus

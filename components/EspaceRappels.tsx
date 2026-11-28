@@ -256,7 +256,7 @@ export function EspaceRappels() {
               <button
                 onClick={envoyerTest}
                 disabled={action || !titreRappel.trim() || !corpsRappel.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
               >
                 <Send size={13} />
                 Tester maintenant
@@ -331,7 +331,7 @@ export function EspaceRappels() {
             <button
               onClick={ouvrirApp}
               disabled={action || (!nomPaquet.trim() && !schema.trim())}
-              className="flex w-fit items-center gap-1.5 rounded-lg bg-dj-surface-haute px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
+              className="flex w-fit items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-50"
             >
               <ExternalLink size={13} />
               Ouvrir
