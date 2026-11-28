@@ -2180,6 +2180,8 @@ export async function enregistrerMonProfil(payload: {
   popup_chat_y?: number;
   popup_chat_largeur?: number;
   popup_chat_hauteur?: number;
+  // 28/11/2026 : largeur du chat collé à droite des pages (voir api/profiles.py).
+  volet_chat_largeur?: number;
   // 18/09/2026, chantier "profil contributeur bibliotheque publique",
   // étape 11 : conditionne l'affichage de bio/nom/photo à un visiteur
   // externe (voir api/profiles.py::obtenir_profil_public).

@@ -7,7 +7,6 @@ import { PAGES_FILLES_BUREAU } from "@/lib/routesBureau";
 import { PAGES_FILLES_CONCENTRATION } from "@/lib/routesConcentration";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useFenetres } from "@/lib/contexteFenetres";
 import { MenuGroupe } from "@/components/MenuGroupeRail";
 import { GROUPE_BIBLIOTHEQUE, GROUPE_BUREAU, GROUPE_CONCENTRATION, GROUPE_HIGGSFIELD, GROUPE_PERSONNALISER, GROUPES_RAIL } from "@/lib/groupesRail";
 import { Logo } from "@/components/Logo";
@@ -48,6 +47,7 @@ import { ListeHistorique } from "@/components/chat/ListeHistorique";
 import { HistoriquePleinEcran } from "@/components/chat/HistoriquePleinEcran";
 import { useMiseAJourDisponible } from "@/lib/useMiseAJourDisponible";
 import { ROUTES_APP } from "@/lib/routesApp";
+import { useGarderLeChatOuvert } from "@/lib/useGarderLeChatOuvert";
 import {
   CELLULE_ICONE_RAIL,
   CELLULE_ICONE_TACTILE,
@@ -223,14 +223,6 @@ export function AppSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
-  // 22/08/2026, demande Bourama : remplace le comportement précédent
-  // (fermer le chat plein écran au clic sur une section, cf. commit du
-  // même jour) -- désormais le clic ouvre la section dans une fenêtre
-  // flottante PAR-DESSUS le chat plein écran, qui reste ouvert. Voir
-  // lib/contexteFenetres.tsx + components/chat/FenetresSections.tsx.
-  // Seulement en contexteChat=true (l'autre instance, hors chat, garde
-  // sa vraie navigation classique par route).
-  const { ouvrir: ouvrirFenetre } = useFenetres();
   // Le rail ordinateur et le tiroir mobile sont tous deux montes dans le DOM,
   // l'un masque par CSS. Chacun a ses propres boutons de groupe, qui ecoutent
   // les appuis sur le document : seul celui qui est visible doit etre monte.
@@ -238,12 +230,6 @@ export function AppSidebar({
   // Bouton "Télécharger pour PC" de la barre latérale : navigateur sur Windows
   // seulement (voir lib/useProposerTelechargementPc.ts).
   const proposerTelechargementPc = useProposerTelechargementPc();
-  // 03/09/2026, demande Bourama, audit "clic sur une section ne fait
-  // rien en plein écran mobile web/natif" : la fenêtre flottante
-  // (ouvrirFenetre ci-dessus) ne fonctionne que sur desktop. Sur mobile
-  // (tiroir du chat, mobile=true plus bas dans ce fichier), le clic doit
-  // naviguer vraiment vers la page, même mécanique que
-  // naviguerDepuisPlusMobile plus bas.
   // 07/09/2026, demande Bourama (chantier "chat plein écran = vraie
   // section" terminé, étape 5) : ex-fermerChatEtNaviguer. Avant, /chat
   // était un calque flottant par-dessus l'app qu'il fallait fermer
@@ -251,7 +237,13 @@ export function AppSidebar({
   // naviguer, sinon la page cible se chargeait invisible derrière lui.
   // /chat est désormais une vraie route comme les autres : il n'y a plus
   // de calque à fermer, juste une navigation normale.
+  // 28/11/2026, demande Bourama : le chat ne se ferme que par son bouton
+  // Fermer. Depuis le chat plein écran, cliquer une section ouvre le chat collé
+  // à droite et la section à gauche (voir lib/useGarderLeChatOuvert.ts). Sans
+  // effet hors du chat plein écran, sur téléphone et dans une fenêtre étroite.
+  const garderLeChatOuvert = useGarderLeChatOuvert();
   function naviguerVersSection(href: string) {
+    garderLeChatOuvert(href);
     router.push(href);
   }
   const [ouverte, setOuverte] = useState(false);
@@ -496,23 +488,10 @@ export function AppSidebar({
             marquerTiroirSansHistorique();
             fermerTiroirMobile(() => setOuverte(false));
           }
-          // En contexteChat=true, une vraie "section" (id présent --
-          // "Accueil" n'en a pas, cf. navComplete plus bas, et garde sa
-          // navigation classique) s'ouvre en fenêtre flottante par-dessus
-          // le chat au lieu de naviguer -- SEULEMENT sur desktop
-          // (mobile=false, rail). 03/09/2026, demande Bourama : sur
-          // mobile web et natif (mobile=true, tiroir du chat), la
-          // fenêtre flottante ne fonctionne pas -- comportement aligné
-          // sur naviguerDepuisPlusMobile, naviguer vraiment, comme depuis
-          // la barre du bas.
-          if (contexteChat && onglet.id) {
-            e.preventDefault();
-            if (!mobile && (onglet.id === "claude" || onglet.id === "thonny")) {
-              ouvrirFenetre(onglet.id);
-            } else {
-              naviguerVersSection(onglet.href);
-            }
-          }
+          // Même comportement partout (28/11/2026, demande Bourama) : le lien
+          // navigue comme une vraie page, et depuis le chat plein écran le chat se
+          // colle à droite (sans effet ailleurs, voir useGarderLeChatOuvert).
+          garderLeChatOuvert(onglet.href);
         }}
         className={`group relative ${mobile ? ECART_ELEMENTS_TIROIR : ECART_ELEMENTS_RAIL} flex w-full items-center ${mobile ? ECART_LIBELLE_TIROIR : "gap-2"} rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -543,7 +522,7 @@ export function AppSidebar({
   // sa liste sur le côté.
   const idsPlusFlat: OngletId[] = ["claude", "thonny"];
   const ongletsDansActions = ONGLETS.filter((o) => idsPlusFlat.includes(o.id));
-  const groupesDuRail = contexteChat ? [GROUPE_BUREAU, GROUPE_BIBLIOTHEQUE, GROUPE_HIGGSFIELD, GROUPE_PERSONNALISER] : GROUPES_RAIL;
+  const groupesDuRail = GROUPES_RAIL;
   const navComplete = [{ href: ROUTES_APP.tableauDeBord, label: "Tableau de bord", Icone: Home }];
 
   // Tiroir mobile du chat : les groupes de la barre d'onglets mobile,
@@ -566,10 +545,6 @@ export function AppSidebar({
     // router.push de naviguerVersSection juste en dessous.
     marquerTiroirSansHistorique();
     fermerTiroirMobile(() => setOuverte(false));
-    // 03/09/2026, demande Bourama : "Connecter Claude" avait un cas
-    // spécial ici (ouvrirFenetre, fenêtre flottante), qui ne fonctionne
-    // pas sur mobile -- retiré, traité maintenant comme tous les autres
-    // liens du menu Plus (navigue vraiment).
     naviguerVersSection(href);
   }
 
@@ -636,14 +611,12 @@ export function AppSidebar({
       )}
 
       <div
-        // Cette boite reserve la place du rail. Hors chat elle garde la
-        // largeur du rail replie (la page ne bouge pas, le rail deplie passe
-        // par-dessus). Dans le chat (27/11/2026, demande Bourama) elle suit
-        // la largeur du rail : le rail ouvert pousse le chat vers la droite.
+        // Cette boite reserve la place du rail replie : la page ne bouge pas, le
+        // rail deplie passe par-dessus. Pareil partout (28/11/2026, demande
+        // Bourama : le chat est partout, plus de difference dans le chat et hors
+        // du chat), y compris sur le chat plein ecran.
         data-rail-lateral
-        className={`relative hidden flex-shrink-0 transition-[width] duration-300 ease-out md:block ${
-          contexteChat && railOuvert ? "md:w-72" : "md:w-14"
-        }`}
+        className="relative hidden flex-shrink-0 transition-[width] duration-300 ease-out md:block md:w-14"
       >
       <div
         ref={asideRef}
@@ -656,7 +629,7 @@ export function AppSidebar({
           if (!(actionsDeplie || groupeOuvertId || profilDeplie || listeHistoriqueOccupee)) setSurvolRail(false);
         }}
         className={`absolute inset-y-0 left-0 z-40 hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-rail px-2 pb-3 pt-[calc(0.125rem_+_var(--safe-top,0px))] transition-[width,box-shadow] duration-300 ease-out [--dj-surface-haute:var(--dj-rail-survol)] [--dj-texte-muet:var(--dj-rail-texte)] md:flex ${
-          railOuvert && !contexteChat ? "shadow-xl" : ""
+          railOuvert ? "shadow-xl" : ""
         } ${
           actionsDeplie || profilDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${railOuvert ? "md:w-72" : "md:w-14"}`}
@@ -728,8 +701,6 @@ export function AppSidebar({
             ouverte={railOuvert}
             LibelleRail={LibelleRail}
             pathname={pathname}
-            contexteChat={contexteChat}
-            ouvrirFenetre={ouvrirFenetre}
             naviguerVersSection={naviguerVersSection}
             ouvert={groupeOuvertId === g.id}
             onOuvrir={() => setGroupeOuvertId(g.id)}
@@ -857,11 +828,7 @@ export function AppSidebar({
                           // place pour le tiroir/le groupe/le menu profil.
                           marquerActionsSansHistorique();
                           setActionsDeplie(false);
-                          if (contexteChat) {
-                            e.preventDefault();
-                            if (o.id === "claude" || o.id === "thonny") ouvrirFenetre(o.id);
-                            else naviguerVersSection(o.href);
-                          }
+                          garderLeChatOuvert(o.href);
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
                           actif ? "text-dj-accent-1-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -872,23 +839,6 @@ export function AppSidebar({
                       </Link>
                     );
                   })}
-                {estDesktop && contexteChat && (
-                  <MenuGroupe
-                    variante="plus"
-                    groupe={GROUPE_CONCENTRATION}
-                    ouverte={railOuvert}
-                    LibelleRail={LibelleRail}
-                    pathname={pathname}
-                    contexteChat={contexteChat}
-                    ouvrirFenetre={ouvrirFenetre}
-                    naviguerVersSection={naviguerVersSection}
-                    ouvert={groupeOuvertId === "controle-session"}
-                    onOuvrir={() => setGroupeOuvertId("controle-session")}
-                    onFermer={() => setGroupeOuvertId((v) => (v === "controle-session" ? null : v))}
-                    onNaviguer={() => marquerGroupeSansHistorique()}
-                  />
-                )}
-
                 <button
                   onClick={partager}
                   className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -975,12 +925,14 @@ export function AppSidebar({
               // dans MenuProfil, ce callback ne gère plus que l'effet de
               // bord (fermeture du menu profil).
               marquerProfilSansHistorique();
+              garderLeChatOuvert("/parametres");
             }}
             onNaviguerVersProfil={() => {
               // Même besoin que onNaviguerVersParametres juste au dessus,
               // mais vers la section Profil directement (/parametres/profil,
               // voir lib/sectionsParametres.tsx).
               marquerProfilSansHistorique();
+              garderLeChatOuvert("/parametres/profil");
             }}
             onSeDeconnecter={seDeconnecter}
           />
@@ -1083,8 +1035,6 @@ export function AppSidebar({
                   ouverte
                   LibelleRail={LibelleRail}
                   pathname={pathname}
-                  contexteChat={contexteChat}
-                  ouvrirFenetre={ouvrirFenetre}
                   naviguerVersSection={naviguerVersSection}
                   ouvert={groupeOuvertId === g.id}
                   onOuvrir={() => setGroupeOuvertId(g.id)}

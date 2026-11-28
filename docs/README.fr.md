@@ -18,6 +18,7 @@ Point d'entrée central de toute la documentation du frontend Classinus. L'angla
 - [Le style vivant de l'attente et de la réflexion](./STYLE_VIVANT.fr.md)
 - [Barre latérale : historique dans la barre, chat poussé vers la droite](./BARRE_LATERALE_HISTORIQUE.fr.md)
 - [Lecteur à côté du chat](./LECTEUR_LATERAL.fr.md)
+- [Chat collé à droite des pages](./CHAT_LATERAL.fr.md)
 
 ## Historique et spécifications du projet
 
