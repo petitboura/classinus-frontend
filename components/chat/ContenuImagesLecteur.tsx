@@ -16,7 +16,7 @@ const ZOOM_MAX = 4;
 const PAS_ZOOM = 0.25;
 
 const classeBoutonRond =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte transition-colors hover:bg-dj-bordure disabled:opacity-40 disabled:hover:bg-dj-surface-haute";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-40 disabled:hover:text-dj-texte-muet";
 
 export function ContenuImagesLecteur({
   liste,

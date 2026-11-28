@@ -85,7 +85,7 @@ const LARGEUR_CHAT_MIN = 340;
 const PAS_CLAVIER = 24;
 
 const classeBouton =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dj-surface-haute text-dj-texte transition-colors hover:bg-dj-bordure";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:text-dj-texte";
 
 function titreDe(c: ContenuLecteur): string {
   if (c.genre === "images") return c.liste[c.index]?.alt || "Image";
@@ -303,7 +303,7 @@ export function VoletLecteur() {
               onClick={() => setVueBruteMarkdown(false)}
               aria-label="Formaté"
               title="Formaté"
-              className={`${classeBouton} ${!vueBruteMarkdown ? "bg-dj-bordure" : ""}`}
+              className={`${classeBouton} ${!vueBruteMarkdown ? "text-dj-texte" : ""}`}
             >
               <Eye size={16} />
             </button>
@@ -312,7 +312,7 @@ export function VoletLecteur() {
               onClick={() => setVueBruteMarkdown(true)}
               aria-label="Brut"
               title="Brut"
-              className={`${classeBouton} ${vueBruteMarkdown ? "bg-dj-bordure" : ""}`}
+              className={`${classeBouton} ${vueBruteMarkdown ? "text-dj-texte" : ""}`}
             >
               <Code2 size={16} />
             </button>
